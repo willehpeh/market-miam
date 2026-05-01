@@ -10,7 +10,7 @@ export class AddItemToRepertoireHandler {
     const event: ItemAddedToRepertoire = {
       type: 'ItemAddedToRepertoire',
       payload: {
-        id: request.id,
+        itemId: request.itemId,
         repertoireId: request.repertoireId,
         name: request.name,
         description: request.description,

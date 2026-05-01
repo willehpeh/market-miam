@@ -13,7 +13,7 @@ describe('AddItemToRepertoire', () => {
 
   it('should add the item to the repertoire', async () => {
     request = {
-      id: 'item-id',
+      itemId: 'item-id',
       repertoireId: 'repertoire-id',
       name: 'Item Name',
       description: 'Item Description',
@@ -26,7 +26,7 @@ describe('AddItemToRepertoire', () => {
     const expectedEvent: ItemAddedToRepertoire = {
       type: "ItemAddedToRepertoire",
       payload: {
-        id: request.id,
+        itemId: request.itemId,
         repertoireId: request.repertoireId,
         name: request.name,
         description: request.description,
