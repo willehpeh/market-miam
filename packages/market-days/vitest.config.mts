@@ -4,17 +4,17 @@ import { nxCopyAssetsPlugin } from '@nx/vite/plugins/nx-copy-assets.plugin';
 
 export default defineConfig(() => ({
   root: __dirname,
-  cacheDir: '../../node_modules/.vite/libs/baby-turtal-es',
+  cacheDir: '../../node_modules/.vite/packages/market-days',
   plugins: [nxViteTsPaths(), nxCopyAssetsPlugin(['*.md'])],
   test: {
-    name: 'baby-turtal-es',
+    name: 'market-days',
     watch: false,
     globals: true,
     environment: 'node',
     include: ['{src,tests}/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
     reporters: ['default'],
     coverage: {
-      reportsDirectory: '../../coverage/libs/baby-turtal-es',
+      reportsDirectory: '../../coverage/packages/market-days',
       provider: 'v8' as const,
     },
   },

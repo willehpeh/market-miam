@@ -15,7 +15,7 @@
     "skipDefaultLibCheck": true,
     "baseUrl": ".",
     "paths": {
-      "@market-monster/baby-turtal-es": ["libs/baby-turtal-es/src/index.ts"]
+      "@market-monster/market-days": ["packages/market-days/src/index.ts"]
     }
   },
   "exclude": ["node_modules", "tmp"]
