@@ -1,11 +1,4 @@
-export type DomainEvent = {
-  id: string;
-  type: string;
-  streamId: string;
-  payload: {
-    [key: string]: unknown;
-  };
-  metadata?: {
-    [key: string]: unknown;
-  };
+export type DomainEvent<T extends string = string, P extends Record<string, unknown> = Record<string, unknown>> = {
+  type: T;
+  payload: P;
 };

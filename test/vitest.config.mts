@@ -8,7 +8,7 @@ export default defineConfig(() => ({
   plugins: [nxViteTsPaths(), nxCopyAssetsPlugin(['*.md'])],
   test: {
     name: 'testing',
-    watch: false,
+    watch: true,
     globals: true,
     environment: 'node',
     include: ['{src,tests}/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
