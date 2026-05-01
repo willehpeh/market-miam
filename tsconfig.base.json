@@ -16,7 +16,10 @@
     "baseUrl": ".",
     "paths": {
       "@market-monster/market-days": ["packages/market-days/src/index.ts"],
-      "@market-monster/event-sourcing": ["packages/event-sourcing/src/index.ts"]
+      "@market-monster/event-sourcing": [
+        "packages/event-sourcing/src/index.ts"
+      ],
+      "@market-monster/testing": ["test/src/index.ts"]
     }
   },
   "exclude": ["node_modules", "tmp"]
