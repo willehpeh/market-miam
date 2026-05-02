@@ -14,7 +14,7 @@ describe('AddItemToRepertoire', () => {
   it('should add the item to the repertoire', async () => {
     request = {
       itemId: 'item-id',
-      vendorId: 'repertoire-id',
+      vendorId: 'vendor-id',
       name: 'Item Name',
       description: 'Item Description',
       price: 500,
@@ -24,7 +24,7 @@ describe('AddItemToRepertoire', () => {
     await handler.handle(request);
 
     const expectedEvent: ItemAddedToRepertoire = {
-      type: "ItemAddedToRepertoire",
+      type: 'ItemAddedToRepertoire',
       payload: {
         itemId: request.itemId,
         name: request.name,
@@ -33,8 +33,8 @@ describe('AddItemToRepertoire', () => {
         photoUrl: request.photoUrl
       }
 
-    }
-    expect(eventStore.events).toEqual([expectedEvent]);
+    };
+    expect(eventStore.allEvents()).toEqual([expectedEvent]);
   });
 
 });
