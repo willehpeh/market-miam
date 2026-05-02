@@ -1,6 +1,6 @@
 export type AddItemToRepertoire = {
   itemId: string;
-  repertoireId: string;
+  vendorId: string;
   name: string;
   description: string;
   price: number;

@@ -14,7 +14,7 @@ describe('AddItemToRepertoire', () => {
   it('should add the item to the repertoire', async () => {
     request = {
       itemId: 'item-id',
-      repertoireId: 'repertoire-id',
+      vendorId: 'repertoire-id',
       name: 'Item Name',
       description: 'Item Description',
       price: 500,
@@ -27,7 +27,6 @@ describe('AddItemToRepertoire', () => {
       type: "ItemAddedToRepertoire",
       payload: {
         itemId: request.itemId,
-        repertoireId: request.repertoireId,
         name: request.name,
         description: request.description,
         price: request.price,

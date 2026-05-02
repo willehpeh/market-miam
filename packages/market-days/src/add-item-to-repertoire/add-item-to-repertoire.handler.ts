@@ -7,11 +7,11 @@ export class AddItemToRepertoireHandler {
   }
 
   async handle(request: AddItemToRepertoire): Promise<void> {
+    const streamId = `repertoire-${ request.vendorId }`;
     const event: ItemAddedToRepertoire = {
       type: 'ItemAddedToRepertoire',
       payload: {
         itemId: request.itemId,
-        repertoireId: request.repertoireId,
         name: request.name,
         description: request.description,
         price: request.price,
@@ -19,6 +19,6 @@ export class AddItemToRepertoireHandler {
       }
     };
 
-    await this.eventStore.append(event.payload.repertoireId, event, 0);
+    await this.eventStore.append(streamId, event, 0);
   }
 }
