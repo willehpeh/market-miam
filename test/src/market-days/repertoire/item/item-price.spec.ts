@@ -19,6 +19,11 @@ describe('ItemPrice', () => {
     expect(price1.equals(price2)).toBe(false);
   });
 
+  it('should allow free items', () => {
+    const price = new ItemPrice(0);
+    expect(price.value()).toBe(0);
+  });
+
   it('should not allow negative values', () => {
     expect(() => new ItemPrice(-100)).toThrow(InvalidPriceError);
   });

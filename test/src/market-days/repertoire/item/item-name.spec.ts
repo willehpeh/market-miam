@@ -8,8 +8,11 @@ describe('ItemName', () => {
     expect(name.value()).toBe('Lamb Tagine');
   });
 
-  it('should not create an empty ItemName', () => {
-    expect(() => new ItemName('')).toThrow(EmptyValueError);
+  it.each([
+    '',
+    '   ',
+  ])('should not create an empty ItemName: "%s"', (value) => {
+    expect(() => new ItemName(value)).toThrow(EmptyValueError);
   });
 
   it('should be equal to identical ItemName', () => {

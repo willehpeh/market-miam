@@ -7,8 +7,11 @@ describe('ItemId', () => {
     expect(new ItemId('test')).toBeDefined();
   });
 
-  it('should not create an empty ItemId', () => {
-    expect(() => new ItemId('')).toThrow(EmptyValueError);
+  it.each([
+    '',
+    '   ',
+  ])('should not create an empty ItemId: "%s"', (value) => {
+    expect(() => new ItemId(value)).toThrow(EmptyValueError);
   });
 
   it('should be equal to identical ItemId', () => {
