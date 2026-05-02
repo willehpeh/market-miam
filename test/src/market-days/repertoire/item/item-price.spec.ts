@@ -1,4 +1,4 @@
-import { ItemPrice } from '@market-monster/market-days';
+import { InvalidPriceError, ItemPrice } from '@market-monster/market-days';
 
 describe('ItemPrice', () => {
 
@@ -17,5 +17,9 @@ describe('ItemPrice', () => {
     const price1 = new ItemPrice(1200);
     const price2 = new ItemPrice(1500);
     expect(price1.equals(price2)).toBe(false);
+  });
+
+  it('should not allow negative values', () => {
+    expect(() => new ItemPrice(-100)).toThrow(InvalidPriceError);
   });
 });
