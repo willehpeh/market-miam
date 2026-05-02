@@ -1,4 +1,4 @@
-import { DomainEvent, EventStore, StoredEvent } from '@market-monster/event-sourcing';
+import { DomainEvent, EventStore, StoredEvent } from 'packages/event-sourcing/src';
 
 export class InMemoryEventStore implements EventStore {
 

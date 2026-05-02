@@ -1,6 +1,6 @@
 import { AddItemToRepertoire, AddItemToRepertoireHandler, ItemAddedToRepertoire, InvalidPriceError } from '@market-monster/market-days';
 import { EmptyValueError, InvalidUrlError } from '@market-monster/common';
-import { InMemoryEventStore } from '../in-memory.event-store';
+import { InMemoryEventStore } from '../../in-memory.event-store';
 
 describe('AddItemToRepertoire', () => {
   let eventStore: InMemoryEventStore;
