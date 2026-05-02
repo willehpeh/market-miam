@@ -19,7 +19,8 @@
       "@market-monster/event-sourcing": [
         "packages/event-sourcing/src/index.ts"
       ],
-      "@market-monster/testing": ["test/src/index.ts"]
+      "@market-monster/testing": ["test/src/index.ts"],
+      "@market-monster/common": ["packages/common/src/index.ts"]
     }
   },
   "exclude": ["node_modules", "tmp"]

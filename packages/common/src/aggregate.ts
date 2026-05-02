@@ -1,4 +1,4 @@
-import { DomainEvent } from './index';
+import { DomainEvent } from '@market-monster/event-sourcing';
 
 export abstract class Aggregate {
 

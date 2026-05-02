@@ -1,5 +1,5 @@
 import { AddItemToRepertoire, AddItemToRepertoireHandler, ItemAddedToRepertoire } from '@market-monster/market-days';
-import { InMemoryEventStore } from './in-memory.event-store';
+import { InMemoryEventStore } from '../in-memory.event-store';
 
 describe('AddItemToRepertoire', () => {
   let eventStore: InMemoryEventStore;

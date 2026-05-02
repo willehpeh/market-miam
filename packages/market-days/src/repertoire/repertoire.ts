@@ -1,5 +1,6 @@
-import { Aggregate, InvalidEventTypeError } from '@market-monster/event-sourcing';
 import { ItemAddedToRepertoire, RepertoireEvent } from './events';
+import { Aggregate } from '@market-monster/common';
+import { InvalidEventTypeError } from '@market-monster/event-sourcing';
 
 export class Repertoire extends Aggregate {
 
