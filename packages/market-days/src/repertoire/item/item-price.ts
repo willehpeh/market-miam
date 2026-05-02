@@ -13,8 +13,4 @@ export class ItemPrice {
   value(): number {
     return this._value;
   }
-
-  equals(other: ItemPrice): boolean {
-    return this._value === other._value;
-  }
 }

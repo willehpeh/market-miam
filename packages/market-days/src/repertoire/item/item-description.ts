@@ -8,8 +8,4 @@ export class ItemDescription {
   value(): string {
     return this._value;
   }
-
-  equals(other: ItemDescription): boolean {
-    return this._value === other._value;
-  }
 }

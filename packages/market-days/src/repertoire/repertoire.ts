@@ -1,13 +1,20 @@
 import { ItemAddedToRepertoire, RepertoireEvent } from './events';
-import { Aggregate } from '@market-monster/common';
+import { Aggregate, Url } from '@market-monster/common';
 import { InvalidEventTypeError } from '@market-monster/event-sourcing';
+import { ItemDescription, ItemId, ItemName, ItemPrice } from './item';
 
 export class Repertoire extends Aggregate {
 
-  addItem(itemId: string, name: string, description: string, price: number, photoUrl: string) {
+  addItem(id: ItemId, name: ItemName, description: ItemDescription, price: ItemPrice, photoUrl: Url) {
     const event: ItemAddedToRepertoire = {
       type: 'ItemAddedToRepertoire',
-      payload: { itemId, name, description, price, photoUrl }
+      payload: {
+        itemId: id.value(),
+        name: name.value(),
+        description: description.value(),
+        price: price.value(),
+        photoUrl: photoUrl.value(),
+      },
     };
     this.raise(event);
   }

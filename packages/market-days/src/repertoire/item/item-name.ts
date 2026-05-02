@@ -14,8 +14,4 @@ export class ItemName {
   value(): string {
     return this._value;
   }
-
-  equals(other: ItemName): boolean {
-    return this._value === other._value;
-  }
 }
