@@ -1,4 +1,5 @@
 import { ItemId } from '@market-monster/market-days';
+import { EmptyValueError } from '@market-monster/common';
 
 describe('ItemId', () => {
 
@@ -6,8 +7,8 @@ describe('ItemId', () => {
     expect(new ItemId('test')).toBeDefined();
   });
 
-  it('should not allow empty values', () => {
-    expect(() => new ItemId('')).toThrow();
+  it('should not create an empty ItemId', () => {
+    expect(() => new ItemId('')).toThrow(EmptyValueError);
   });
 
   it('should be equal to identical ItemId', () => {

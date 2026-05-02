@@ -1,10 +1,15 @@
 import { ItemName } from '@market-monster/market-days';
+import { EmptyValueError } from '@market-monster/common';
 
 describe('ItemName', () => {
 
   it('should create an ItemName', () => {
     const name = new ItemName('Lamb Tagine');
     expect(name.value()).toBe('Lamb Tagine');
+  });
+
+  it('should not create an empty ItemName', () => {
+    expect(() => new ItemName('')).toThrow(EmptyValueError);
   });
 
   it('should be equal to identical ItemName', () => {
