@@ -8,4 +8,7 @@ export type RegisterMarketSchedule = {
     startTime?: string;
     endTime?: string;
   }[];
+  every?: {
+    weeks?: number;
+  }
 }

@@ -14,7 +14,7 @@ describe('Register Market Schedule', () => {
   it.each([
     TestRegisterMarketSchedule.simple(),
     TestRegisterMarketSchedule.everyDay()
-  ])('should register a market schedule', async request => {
+  ])('should register a market schedule, defaulting to weekly', async request => {
     await handler.handle(request);
 
     const expectedEvent: MarketScheduleRegistered = {
@@ -23,7 +23,10 @@ describe('Register Market Schedule', () => {
         scheduleName: request.scheduleName,
         marketId: request.marketId,
         directionsToStall: request.directionsToStall,
-        days: request.days
+        days: request.days,
+        every: {
+          weeks: 1
+        }
       }
     };
 

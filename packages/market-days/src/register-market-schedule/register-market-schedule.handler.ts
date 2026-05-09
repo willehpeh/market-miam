@@ -6,17 +6,25 @@ type CalendarEvent = MarketScheduleRegistered;
 
 class Calendar extends Aggregate {
   apply(event: CalendarEvent): void {
-    // TODO implement
+    switch (event.type) {
+      case 'MarketScheduleRegistered':
+        console.log('To implement when necessary');
+    }
   }
 
-  registerMarketSchedule(scheduleName: string, marketId: string, directionsToStall: string, days: { day: string, startTime?: string, endTime?: string }[]): void {
+  registerMarketSchedule(scheduleName: string,
+                         marketId: string,
+                         directionsToStall: string,
+                         days: { day: string, startTime?: string, endTime?: string }[],
+                         every = { weeks: 1 }): void {
     const event: MarketScheduleRegistered = {
       type: 'MarketScheduleRegistered',
       payload: {
         scheduleName,
         marketId,
         directionsToStall,
-        days
+        days,
+        every
       }
     };
     this.raise(event);

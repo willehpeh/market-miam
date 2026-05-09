@@ -9,4 +9,7 @@ export type MarketScheduleRegistered = DomainEvent<'MarketScheduleRegistered', {
     startTime?: string;
     endTime?: string;
   }[];
+  every: {
+    weeks?: number;
+  }
 }>;
