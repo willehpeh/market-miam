@@ -1,6 +1,7 @@
 import { InMemoryEventStore } from '../../in-memory.event-store';
 import { TestRegisterMarketSchedule } from './test-data';
 import { Calendars, MarketScheduleRegistered, RegisterMarketScheduleHandler } from '@market-monster/market-days';
+import { EmptyValueError } from '@market-monster/common';
 
 describe('Register Market Schedule', () => {
   let store: InMemoryEventStore;
@@ -33,5 +34,12 @@ describe('Register Market Schedule', () => {
     };
 
     expect(store.allEvents()).toEqual([expect.objectContaining(expectedEvent)]);
+  });
+
+  it.each([
+    ' ',
+    ''
+  ])('should not allow a schedule with an empty name', async scheduleName => {
+    await expect(handler.handle(TestRegisterMarketSchedule.with({ scheduleName }))).rejects.toThrow(EmptyValueError);
   });
 });
