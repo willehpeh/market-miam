@@ -1,16 +1,14 @@
-import { EventStore } from '@market-monster/event-sourcing';
 import { Url } from '@market-monster/common';
 import { AddItemToRepertoire } from './add-item-to-repertoire';
-import { Repertoire } from '../repertoire/repertoire';
 import { ItemDescription, ItemId, ItemName, ItemPrice } from '../repertoire/item';
+import { Repertoires } from '../repertoire/repertoires';
 
 export class AddItemToRepertoireHandler {
-  constructor(private readonly eventStore: EventStore) {
+  constructor(private readonly repertoires: Repertoires) {
   }
 
   async handle(request: AddItemToRepertoire): Promise<void> {
-    const streamId = `repertoire-${ request.vendorId }`;
-    const repertoire = new Repertoire();
+    const repertoire = await this.repertoires.forVendor(request.vendorId);
     repertoire.addItem(
       new ItemId(request.itemId),
       new ItemName(request.name),
@@ -19,6 +17,6 @@ export class AddItemToRepertoireHandler {
       new Url(request.photoUrl),
     );
 
-    await this.eventStore.append(streamId, repertoire.raisedEvents(), 0);
+    await this.repertoires.save(repertoire, request.vendorId);
   }
 }

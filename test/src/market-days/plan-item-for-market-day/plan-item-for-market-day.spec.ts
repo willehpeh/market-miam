@@ -2,7 +2,6 @@ import { InMemoryEventStore } from '../../in-memory.event-store';
 import { EventStore } from '@market-monster/event-sourcing';
 import { TestPlanItemForMarketDay } from './test-data';
 import { ItemAddedToRepertoire } from '@market-monster/market-days';
-import { describe, it, beforeEach } from 'vitest';
 
 class PlanItemForMarketDayHandler {
   constructor(private readonly store: EventStore) {
@@ -34,7 +33,7 @@ describe.skip('Plan Item For Market Day', () => {
       payload: { description: 'Item description', itemId, name: 'item name', photoUrl: 'https://photo.jpg', price: 200 },
       type: 'ItemAddedToRepertoire'
     };
-    store.seedWith('item-1', event);
+    store.seedWith('item-1', [{ event }]);
     handler.handle(TestPlanItemForMarketDay.forItem('item-1'));
   });
 });
