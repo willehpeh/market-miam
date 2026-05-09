@@ -1,4 +1,4 @@
-import { InvalidUrlError } from './invalid-url.error';
+import { InvalidUrlError } from './errors';
 
 export class Url {
   private readonly _value: string;
