@@ -11,8 +11,10 @@ describe('Register Market Schedule', () => {
     handler = new RegisterMarketScheduleHandler(store);
   });
 
-  it('should register a market schedule', async () => {
-    const request = TestRegisterMarketSchedule.valid();
+  it.each([
+    TestRegisterMarketSchedule.simple(),
+    TestRegisterMarketSchedule.everyDay()
+  ])('should register a market schedule', async request => {
     await handler.handle(request);
 
     const expectedEvent: MarketScheduleRegistered = {
