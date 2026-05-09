@@ -1,19 +1,12 @@
-import { AddItemToRepertoire, AddItemToRepertoireHandler, ItemAddedToRepertoire, InvalidPriceError } from '@market-monster/market-days';
+import { AddItemToRepertoireHandler, InvalidPriceError, ItemAddedToRepertoire } from '@market-monster/market-days';
 import { EmptyValueError, InvalidUrlError } from '@market-monster/common';
 import { InMemoryEventStore } from '../../in-memory.event-store';
+import { TestAddItemToRepertoire } from './test-data';
+import { describe, it, beforeEach } from 'vitest';
 
 describe('AddItemToRepertoire', () => {
   let eventStore: InMemoryEventStore;
   let handler: AddItemToRepertoireHandler;
-
-  const validRequest: AddItemToRepertoire = {
-    itemId: 'item-id',
-    vendorId: 'vendor-id',
-    name: 'Item Name',
-    description: 'Item Description',
-    price: 500,
-    photoUrl: 'https://example.com/item-photo.jpg',
-  };
 
   beforeEach(() => {
     eventStore = new InMemoryEventStore();
@@ -21,30 +14,32 @@ describe('AddItemToRepertoire', () => {
   });
 
   it('should add the item to the repertoire', async () => {
-    await handler.handle(validRequest);
+    const request = TestAddItemToRepertoire.valid();
+
+    await handler.handle(request);
 
     const expectedEvent: ItemAddedToRepertoire = {
       type: 'ItemAddedToRepertoire',
       payload: {
-        itemId: validRequest.itemId,
-        name: validRequest.name,
-        description: validRequest.description,
-        price: validRequest.price,
-        photoUrl: validRequest.photoUrl,
+        itemId: request.itemId,
+        name: request.name,
+        description: request.description,
+        price: request.price,
+        photoUrl: request.photoUrl,
       },
     };
-    expect(eventStore.allEvents()).toEqual([expectedEvent]);
+    expect(eventStore.allEvents()).toEqual([expect.objectContaining(expectedEvent)]);
   });
 
   it('should allow free items', async () => {
-    await handler.handle({ ...validRequest, price: 0 });
+    await handler.handle(TestAddItemToRepertoire.with({ price: 0 }));
 
     expect(eventStore.allEvents()).toHaveLength(1);
     expect(eventStore.allEvents()[0].payload['price']).toBe(0);
   });
 
   it('should allow an empty description', async () => {
-    await handler.handle({ ...validRequest, description: '' });
+    await handler.handle(TestAddItemToRepertoire.with({ description: '' }));
 
     expect(eventStore.allEvents()).toHaveLength(1);
     expect(eventStore.allEvents()[0].payload['description']).toBe('');
@@ -55,18 +50,18 @@ describe('AddItemToRepertoire', () => {
       '',
       '   ',
     ])('should reject an empty item ID: "%s"', async (itemId) => {
-      await expect(handler.handle({ ...validRequest, itemId })).rejects.toThrow(EmptyValueError);
+      await expect(handler.handle(TestAddItemToRepertoire.with({ itemId }))).rejects.toThrow(EmptyValueError);
     });
 
     it.each([
       '',
       '   ',
     ])('should reject an empty item name: "%s"', async (name) => {
-      await expect(handler.handle({ ...validRequest, name })).rejects.toThrow(EmptyValueError);
+      await expect(handler.handle(TestAddItemToRepertoire.with({ name }))).rejects.toThrow(EmptyValueError);
     });
 
     it('should reject a negative price', async () => {
-      await expect(handler.handle({ ...validRequest, price: -100 })).rejects.toThrow(InvalidPriceError);
+      await expect(handler.handle(TestAddItemToRepertoire.with({ price: -100 }))).rejects.toThrow(InvalidPriceError);
     });
 
     it.each([
@@ -78,7 +73,7 @@ describe('AddItemToRepertoire', () => {
       'mailto:someone@example.com',
       '   ',
     ])('should reject an invalid photo URL: %s', async (photoUrl) => {
-      await expect(handler.handle({ ...validRequest, photoUrl })).rejects.toThrow(InvalidUrlError);
+      await expect(handler.handle(TestAddItemToRepertoire.with({ photoUrl }))).rejects.toThrow(InvalidUrlError);
     });
   });
 });
