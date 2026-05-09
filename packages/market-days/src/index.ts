@@ -4,3 +4,5 @@ export * from './repertoire/events';
 export * from './repertoire/item';
 export * from './repertoire/repertoires';
 export * from './register-market-schedule';
+export * from './calendar/events';
+export * from './calendar';

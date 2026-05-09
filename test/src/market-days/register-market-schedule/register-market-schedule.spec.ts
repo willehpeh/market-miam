@@ -1,14 +1,16 @@
 import { InMemoryEventStore } from '../../in-memory.event-store';
 import { TestRegisterMarketSchedule } from './test-data';
-import { MarketScheduleRegistered, RegisterMarketScheduleHandler } from '@market-monster/market-days';
+import { Calendars, MarketScheduleRegistered, RegisterMarketScheduleHandler } from '@market-monster/market-days';
 
 describe('Register Market Schedule', () => {
   let store: InMemoryEventStore;
   let handler: RegisterMarketScheduleHandler;
+  let calendars: Calendars;
 
   beforeEach(() => {
     store = new InMemoryEventStore();
-    handler = new RegisterMarketScheduleHandler(store);
+    calendars = new Calendars(store);
+    handler = new RegisterMarketScheduleHandler(calendars);
   });
 
   it.each([

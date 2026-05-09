@@ -1,4 +1,5 @@
 import { DomainEvent } from './domain-event';
+import { StoredEvent } from './stored-event';
 
 export abstract class Aggregate {
 
@@ -11,10 +12,14 @@ export abstract class Aggregate {
     return this._raisedEvents.slice();
   }
 
-  rehydrate(events: DomainEvent[], currentStreamPosition = 0) {
-    this.currentStreamPosition = currentStreamPosition;
+  rehydrate(events: StoredEvent[]) {
+    this.currentStreamPosition = this.latestStreamPositionFor(events);
     events.forEach(event => this.apply(event));
     return this;
+  }
+
+  private latestStreamPositionFor(events: StoredEvent[]) {
+    return events.length === 0 ? 0 : events[events.length - 1].streamPosition;
   }
 
   protected raise(event: DomainEvent) {
