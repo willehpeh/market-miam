@@ -1,25 +1,8 @@
 import { InMemoryEventStore } from '../../in-memory.event-store';
-import { EventStore } from '@market-monster/event-sourcing';
+import { TestRegisterMarketSchedule } from './test-data';
+import { MarketScheduleRegistered, RegisterMarketScheduleHandler } from '@market-monster/market-days';
 
-type RegisterMarketSchedule = {
-  vendorId: string;
-  name: string;
-  address: string;
-  city: string;
-  zip: string;
-  directionsToStall?: string;
-  days: {
-    day: string;
-    startTime?: string;
-    endTime?: string;
-  }[];
-}
-
-class RegisterMarketScheduleHandler {
-  constructor(private readonly store: EventStore) {}
-}
-
-describe.skip('Register Market Schedule', () => {
+describe('Register Market Schedule', () => {
   let store: InMemoryEventStore;
   let handler: RegisterMarketScheduleHandler;
 
@@ -28,7 +11,20 @@ describe.skip('Register Market Schedule', () => {
     handler = new RegisterMarketScheduleHandler(store);
   });
 
-  it('should register a market schedule', () => {
+  it('should register a market schedule', async () => {
+    const request = TestRegisterMarketSchedule.valid();
+    await handler.handle(request);
 
+    const expectedEvent: MarketScheduleRegistered = {
+      type: "MarketScheduleRegistered",
+      payload: {
+        scheduleName: request.scheduleName,
+        marketId: request.marketId,
+        directionsToStall: request.directionsToStall,
+        days: request.days
+      }
+    };
+
+    expect(store.allEvents()).toEqual([expect.objectContaining(expectedEvent)]);
   });
 });
