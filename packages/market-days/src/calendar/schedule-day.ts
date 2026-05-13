@@ -1,4 +1,4 @@
-export class TimetableDay {
+export class ScheduleDay {
   private readonly _day: string;
   private readonly _startTime?: string;
   private readonly _endTime?: string;
@@ -9,7 +9,7 @@ export class TimetableDay {
     this._endTime = endTime;
   }
 
-  overlapsWith(other: TimetableDay): boolean {
+  overlapsWith(other: ScheduleDay): boolean {
     if (this._day !== other._day) {
       return false;
     }

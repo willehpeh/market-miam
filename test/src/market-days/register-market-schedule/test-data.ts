@@ -6,7 +6,6 @@ export class TestRegisterMarketSchedule {
       vendorId: 'vendor-id',
       scheduleName: 'Saturday Market',
       marketId: 'market-id',
-      directionsToStall: 'Third row, near the entrance',
       days: [
         { day: 'SAT', startTime: '08:00', endTime: '14:00' },
       ],

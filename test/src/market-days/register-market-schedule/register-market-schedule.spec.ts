@@ -3,7 +3,6 @@ import { TestRegisterMarketSchedule } from './test-data';
 import {
   Calendars,
   ConflictingScheduleError,
-  MarketScheduleRegistered,
   RegisterMarketScheduleHandler
 } from '@market-monster/market-days';
 import { EmptyValueError } from '@market-monster/common';
@@ -25,20 +24,18 @@ describe('Register Market Schedule', () => {
   ])('should register a market schedule, defaulting to weekly', async request => {
     await handler.handle(request);
 
-    const expectedEvent: MarketScheduleRegistered = {
+    expect(store.allEvents()).toEqual([expect.objectContaining({
       type: 'MarketScheduleRegistered',
-      payload: {
+      payload: expect.objectContaining({
+        scheduleId: expect.any(String),
         scheduleName: request.scheduleName,
         marketId: request.marketId,
-        directionsToStall: request.directionsToStall,
         days: request.days,
         every: {
           weeks: 1
         }
-      }
-    };
-
-    expect(store.allEvents()).toEqual([expect.objectContaining(expectedEvent)]);
+      })
+    })]);
   });
 
   it.each([
@@ -46,6 +43,14 @@ describe('Register Market Schedule', () => {
     ''
   ])('should not allow a schedule with an empty name', async scheduleName => {
     const request = TestRegisterMarketSchedule.with({ scheduleName });
+    await expect(handler.handle(request)).rejects.toThrow(EmptyValueError);
+  });
+
+  it.each([
+    ' ',
+    ''
+  ])('should not allow an empty market ID: "%s"', async marketId => {
+    const request = TestRegisterMarketSchedule.with({ marketId });
     await expect(handler.handle(request)).rejects.toThrow(EmptyValueError);
   });
 
