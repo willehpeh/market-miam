@@ -2,6 +2,7 @@ import { CalendarEvent } from './events';
 import { MarketScheduleRegistered } from '../register-market-schedule';
 import { Aggregate } from '@market-monster/event-sourcing';
 import { ScheduleName } from './schedule-name';
+import { Timetable } from './timetable';
 
 export class Calendar extends Aggregate {
   apply(event: CalendarEvent): void {
@@ -14,7 +15,7 @@ export class Calendar extends Aggregate {
   registerMarketSchedule(scheduleName: ScheduleName,
                          marketId: string,
                          directionsToStall: string,
-                         days: { day: string, startTime?: string, endTime?: string }[],
+                         timetable: Timetable,
                          every = { weeks: 1 }): void {
     const event: MarketScheduleRegistered = {
       type: 'MarketScheduleRegistered',
@@ -22,7 +23,7 @@ export class Calendar extends Aggregate {
         scheduleName: scheduleName.value(),
         marketId,
         directionsToStall,
-        days,
+        days: timetable.value(),
         every
       }
     };
