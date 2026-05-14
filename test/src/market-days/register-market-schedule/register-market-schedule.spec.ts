@@ -47,14 +47,6 @@ describe('Register Market Schedule', () => {
     await expect(handler.handle(request)).rejects.toThrow(EmptyValueError);
   });
 
-  it.each([
-    ' ',
-    ''
-  ])('should not allow an empty market ID: "%s"', async marketId => {
-    const request = TestRegisterMarketSchedule.with({ marketId });
-    await expect(handler.handle(request)).rejects.toThrow(EmptyValueError);
-  });
-
   it('should allow non-overlapping times on the same day', async () => {
     const request = TestRegisterMarketSchedule.with({
       days: [

@@ -1,21 +1,22 @@
 import { EventStore } from '@market-monster/event-sourcing';
 import { Repertoire } from './repertoire';
+import { VendorId } from '@market-monster/shared-kernel';
 
 export class Repertoires {
   constructor(private readonly store: EventStore) {
   }
 
-  async forVendor(vendorId: string): Promise<Repertoire> {
+  async forVendor(vendorId: VendorId): Promise<Repertoire> {
     const events = await this.store.load(this.streamIdFor(vendorId));
     return new Repertoire().rehydrate(events);
   }
 
-  async save(repertoire: Repertoire, vendorId: string): Promise<void> {
+  async save(repertoire: Repertoire, vendorId: VendorId): Promise<void> {
     const envelopes = repertoire.raisedEvents().map(event => ({ event }));
     await this.store.append(this.streamIdFor(vendorId), envelopes, repertoire.currentStreamPosition);
   }
 
-  private streamIdFor(vendorId: string) {
-    return `repertoire-${ vendorId }`;
+  private streamIdFor(vendorId: VendorId) {
+    return `repertoire-${ vendorId.value() }`;
   }
 }

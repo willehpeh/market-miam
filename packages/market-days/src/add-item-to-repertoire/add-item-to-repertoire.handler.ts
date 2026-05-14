@@ -1,4 +1,5 @@
 import { Url } from '@market-monster/common';
+import { VendorId } from '@market-monster/shared-kernel';
 import { AddItemToRepertoire } from './add-item-to-repertoire';
 import { ItemDescription, ItemId, ItemName, ItemPrice } from '../repertoire/item';
 import { Repertoires } from '../repertoire/repertoires';
@@ -8,7 +9,8 @@ export class AddItemToRepertoireHandler {
   }
 
   async handle(request: AddItemToRepertoire): Promise<void> {
-    const repertoire = await this.repertoires.forVendor(request.vendorId);
+    const vendorId = new VendorId(request.vendorId);
+    const repertoire = await this.repertoires.forVendor(vendorId);
     repertoire.addItem(
       new ItemId(request.itemId),
       new ItemName(request.name),
@@ -17,6 +19,6 @@ export class AddItemToRepertoireHandler {
       new Url(request.photoUrl),
     );
 
-    await this.repertoires.save(repertoire, request.vendorId);
+    await this.repertoires.save(repertoire, vendorId);
   }
 }
