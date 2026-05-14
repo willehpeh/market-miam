@@ -3,7 +3,7 @@ import { ScheduleDay } from './schedule-day';
 import { ScheduleFrequency } from './schedule-frequency';
 import { ConflictingScheduleError } from './conflicting-schedule.error';
 import { ScheduleSnapshot } from './schedule-snapshot';
-import { InvalidScheduleError } from '@market-monster/market-days';
+import { InvalidScheduleError } from './invalid-schedule.error';
 
 export class Schedule {
   private readonly _id: string;
