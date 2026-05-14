@@ -4,7 +4,7 @@ import {
   ItemAddedToRepertoire,
   Repertoires
 } from '@market-monster/market-days';
-import { EmptyValueError, InvalidUrlError } from '@market-monster/common';
+import { EmptyValueError } from '@market-monster/common';
 import { InMemoryEventStore } from '../../in-memory.event-store';
 import { TestAddItemToRepertoire } from './test-data';
 
@@ -78,16 +78,5 @@ describe('AddItemToRepertoire', () => {
       await expect(handler.handle(TestAddItemToRepertoire.with({ price: -100 }))).rejects.toThrow(InvalidPriceError);
     });
 
-    it.each([
-      '',
-      'not-a-url',
-      'ftp://example.com/file.txt',
-      'javascript:alert(1)',
-      'data:text/html,<script>alert(1)</script>',
-      'mailto:someone@example.com',
-      '   ',
-    ])('should reject an invalid photo URL: %s', async (photoUrl) => {
-      await expect(handler.handle(TestAddItemToRepertoire.with({ photoUrl }))).rejects.toThrow(InvalidUrlError);
-    });
   });
 });

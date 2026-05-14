@@ -3,6 +3,7 @@ import { ScheduleDay } from './schedule-day';
 import { ScheduleFrequency } from './schedule-frequency';
 import { ConflictingScheduleError } from './conflicting-schedule.error';
 import { ScheduleSnapshot } from './schedule-snapshot';
+import { InvalidScheduleError } from '@market-monster/market-days';
 
 export class Schedule {
   private readonly _id: string;
@@ -20,6 +21,9 @@ export class Schedule {
   }
 
   addDays(days: ScheduleDay[]): void {
+    if (days.length === 0) {
+      throw new InvalidScheduleError('Schedule must have at least one day');
+    }
     days.forEach(day => this.addDay(day));
   }
 

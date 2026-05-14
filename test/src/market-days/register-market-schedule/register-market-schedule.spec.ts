@@ -3,6 +3,7 @@ import { TestRegisterMarketSchedule } from './test-data';
 import {
   Calendars,
   ConflictingScheduleError,
+  InvalidScheduleError,
   RegisterMarketScheduleHandler
 } from '@market-monster/market-days';
 import { EmptyValueError } from '@market-monster/common';
@@ -97,6 +98,21 @@ describe('Register Market Schedule', () => {
   ])('should reject overlapping schedule: $scenario', async ({ days }) => {
     const request = TestRegisterMarketSchedule.with({ days });
     await expect(handler.handle(request)).rejects.toThrow(ConflictingScheduleError);
+  });
+
+  it('should reject a schedule with no days', async () => {
+    const request = TestRegisterMarketSchedule.with({ days: [] });
+    await expect(handler.handle(request)).rejects.toThrow(InvalidScheduleError);
+  });
+
+  it('should reject a schedule with even a single invalid day name', async () => {
+    const request = TestRegisterMarketSchedule.with({ days: [{ day: 'MON' }, { day: 'INVALID' }] });
+    await expect(handler.handle(request)).rejects.toThrow(InvalidScheduleError);
+  });
+
+  it('should reject a schedule where even a single day has an end time that is not after start time', async () => {
+    const request = TestRegisterMarketSchedule.with({ days: [{ day: 'SAT', startTime: '14:00', endTime: '12:00' }] });
+    await expect(handler.handle(request)).rejects.toThrow(InvalidScheduleError);
   });
 });
 

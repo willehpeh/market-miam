@@ -48,3 +48,5 @@ Thumbs.db
 __screenshots__/
 
 vitest.config.*.timestamp*
+.nx/polygraph
+.nx/self-healing
