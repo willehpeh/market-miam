@@ -1,9 +1,8 @@
 import { ScheduleName } from './schedule-name';
 import { ScheduleDay } from './schedule-day';
 import { ScheduleFrequency } from './schedule-frequency';
-import { ConflictingScheduleError } from './conflicting-schedule.error';
+import { ConflictingScheduleError, InvalidScheduleError } from '../errors';
 import { ScheduleSnapshot } from './schedule-snapshot';
-import { InvalidScheduleError } from './invalid-schedule.error';
 
 export class Schedule {
   private readonly _id: string;

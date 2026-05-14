@@ -1,15 +1,17 @@
-import { PlanItemForMarketDay } from './plan-item-for-market-day.spec';
+import { PlannedItem, PlanItemsForMarketDay } from './plan-item-for-market-day.spec';
 
-export class TestPlanItemForMarketDay {
-  static forItem(itemId: string): PlanItemForMarketDay {
+export class TestPlanItemsForMarketDay {
+  static forItems(...items: PlannedItem[]): PlanItemsForMarketDay {
     return {
-      itemId,
-      marketDayId: this.dateInFuture()
+      vendorId: 'vendor-1',
+      items,
+      marketId: 'market-1',
+      date: this.dateInFuture()
     };
   }
-  static forItemWith(itemId: string, overrides: Partial<PlanItemForMarketDay>): PlanItemForMarketDay {
-    const item = this.forItem(itemId);
-    return { ...item, ...overrides };
+  static forItemsWith(items: PlannedItem[], overrides: Partial<PlanItemsForMarketDay>): PlanItemsForMarketDay {
+    const command = this.forItems(...items);
+    return { ...command, ...overrides };
   }
 
   private static dateInFuture(): string {

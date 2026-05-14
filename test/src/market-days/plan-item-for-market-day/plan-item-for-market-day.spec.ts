@@ -1,39 +1,72 @@
 import { InMemoryEventStore } from '../../in-memory.event-store';
 import { EventStore } from '@market-monster/event-sourcing';
-import { TestPlanItemForMarketDay } from './test-data';
+import { TestPlanItemsForMarketDay } from './test-data';
 import { ItemAddedToRepertoire } from '@market-monster/market-days';
 
-class PlanItemForMarketDayHandler {
+class PlanItemsForMarketDayHandler {
   constructor(private readonly store: EventStore) {
   }
 
-  handle(planItemForMarketDay: PlanItemForMarketDay) {
-    throw new Error('Not implemented');
+  async handle(planItemsForMarketDay: PlanItemsForMarketDay) {
+    const { items, marketId, date } = planItemsForMarketDay;
+    const streamId = `market-day-${marketId}-${date}`;
+    await this.store.append(streamId, [{
+      event: {
+        type: 'ItemsPlannedForMarketDay',
+        payload: { items, marketId, date }
+      }
+    }], 0);
   }
 }
 
-export type PlanItemForMarketDay = {
+export type PlannedItem = {
   itemId: string,
-  marketDayId: string,
-  quantity?: number
+  quantity?: number,
 };
 
-describe.skip('Plan Item For Market Day', () => {
+export type PlanItemsForMarketDay = {
+  vendorId: string,
+  items: PlannedItem[],
+  marketId: string,
+  date: string,
+};
+
+describe('Plan Items For Market Day', () => {
   let store: InMemoryEventStore;
-  let handler: PlanItemForMarketDayHandler;
+  let handler: PlanItemsForMarketDayHandler;
 
   beforeEach(() => {
     store = new InMemoryEventStore();
-    handler = new PlanItemForMarketDayHandler(store);
+    handler = new PlanItemsForMarketDayHandler(store);
   });
 
   it('should plan an existing item with no quantity', () => {
     const itemId = 'item-1';
     const event: ItemAddedToRepertoire = {
-      payload: { description: 'Item description', itemId, name: 'item name', photoUrl: 'https://photo.jpg', price: 200 },
+      payload: {
+        description: 'Item description',
+        itemId,
+        name: 'item name',
+        photoUrl: 'https://photo.jpg',
+        price: 200
+      },
       type: 'ItemAddedToRepertoire'
     };
-    store.seedWith('item-1', [{ event }]);
-    handler.handle(TestPlanItemForMarketDay.forItem('item-1'));
+    store.seedWith(itemId, [{ event }]);
+    const planItemsForMarketDay = TestPlanItemsForMarketDay.forItems({ itemId });
+    handler.handle(planItemsForMarketDay);
+
+    expect(store.allEvents()).toEqual([
+      expect.objectContaining({
+        type: 'ItemAddedToRepertoire',
+      }),
+      expect.objectContaining({
+        type: 'ItemsPlannedForMarketDay',
+        payload: {
+          items: [{ itemId }],
+          marketId: planItemsForMarketDay.marketId,
+          date: planItemsForMarketDay.date
+        }
+      })]);
   });
 });

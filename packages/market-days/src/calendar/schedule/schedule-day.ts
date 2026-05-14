@@ -1,4 +1,4 @@
-import { InvalidScheduleError } from './invalid-schedule.error';
+import { InvalidScheduleError } from '../errors/';
 
 export class ScheduleDay {
   private readonly _day: string;

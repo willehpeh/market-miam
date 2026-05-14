@@ -1,9 +1,9 @@
 import { RegisterMarketSchedule } from './register-market-schedule';
 import { Calendars } from '../calendar';
-import { ScheduleName } from '../calendar/schedule-name';
-import { ScheduleDay } from '../calendar/schedule-day';
-import { ScheduleFrequency } from '../calendar/schedule-frequency';
-import { Schedule } from '../calendar/schedule';
+import { ScheduleName } from '../calendar/schedule/schedule-name';
+import { ScheduleDay } from '../calendar/schedule/schedule-day';
+import { ScheduleFrequency } from '../calendar/schedule/schedule-frequency';
+import { Schedule } from '../calendar/schedule/schedule';
 import { MarketId, VendorId } from '@market-monster/shared-kernel';
 
 export class RegisterMarketScheduleHandler {
