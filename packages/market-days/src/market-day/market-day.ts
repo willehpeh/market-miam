@@ -18,6 +18,11 @@ export class MarketDay extends Aggregate {
   }
 
   apply(event: MarketDayEvent): void {
+    switch (event.type) {
+      case 'ItemsPlannedForMarketDay':
+        // implement later
+        break;
+    }
   }
 
   planItems(items: PlannedItem[]) {
