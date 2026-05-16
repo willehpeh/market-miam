@@ -1,4 +1,6 @@
-import { Aggregate, DomainEvent } from '@market-monster/event-sourcing';
+import { Aggregate } from '@market-monster/event-sourcing';
+import { ItemsPlannedForMarketDay } from './events/items-planned-for-market-day';
+import { MarketDayEvent } from './events/market-day.event';
 
 export type PlannedItem = {
   itemId: string;
@@ -6,13 +8,14 @@ export type PlannedItem = {
 };
 
 export class MarketDay extends Aggregate {
-  apply(event: DomainEvent): void {
+  apply(event: MarketDayEvent): void {
   }
 
   planItems(items: PlannedItem[], marketId: string, date: string) {
-    this.raise({
+    const event: ItemsPlannedForMarketDay = {
       type: 'ItemsPlannedForMarketDay',
       payload: { items, marketId, date }
-    });
+    }
+    this.raise(event);
   }
 }
