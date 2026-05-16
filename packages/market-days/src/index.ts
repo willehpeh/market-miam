@@ -6,3 +6,5 @@ export * from './repertoire/repertoires';
 export * from './register-market-schedule';
 export * from './calendar/events';
 export * from './calendar';
+export * from './market-day';
+export * from './plan-items-for-market-day';

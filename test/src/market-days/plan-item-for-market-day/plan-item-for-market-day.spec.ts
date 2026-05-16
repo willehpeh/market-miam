@@ -1,35 +1,6 @@
 import { InMemoryEventStore } from '../../in-memory.event-store';
-import { EventStore } from '@market-monster/event-sourcing';
 import { TestPlanItemsForMarketDay } from './test-data';
-import { ItemAddedToRepertoire } from '@market-monster/market-days';
-
-class PlanItemsForMarketDayHandler {
-  constructor(private readonly store: EventStore) {
-  }
-
-  async handle(planItemsForMarketDay: PlanItemsForMarketDay) {
-    const { items, marketId, date } = planItemsForMarketDay;
-    const streamId = `market-day-${marketId}-${date}`;
-    await this.store.append(streamId, [{
-      event: {
-        type: 'ItemsPlannedForMarketDay',
-        payload: { items, marketId, date }
-      }
-    }], 0);
-  }
-}
-
-export type PlannedItem = {
-  itemId: string,
-  quantity?: number,
-};
-
-export type PlanItemsForMarketDay = {
-  vendorId: string,
-  items: PlannedItem[],
-  marketId: string,
-  date: string,
-};
+import { ItemAddedToRepertoire, PlanItemsForMarketDayHandler } from '@market-monster/market-days';
 
 describe('Plan Items For Market Day', () => {
   let store: InMemoryEventStore;
@@ -40,7 +11,7 @@ describe('Plan Items For Market Day', () => {
     handler = new PlanItemsForMarketDayHandler(store);
   });
 
-  it('should plan an existing item with no quantity', () => {
+  it('should plan an existing item with no quantity', async () => {
     const itemId = 'item-1';
     const event: ItemAddedToRepertoire = {
       payload: {
@@ -54,7 +25,7 @@ describe('Plan Items For Market Day', () => {
     };
     store.seedWith(itemId, [{ event }]);
     const planItemsForMarketDay = TestPlanItemsForMarketDay.forItems({ itemId });
-    handler.handle(planItemsForMarketDay);
+    await handler.handle(planItemsForMarketDay);
 
     expect(store.allEvents()).toEqual([
       expect.objectContaining({
