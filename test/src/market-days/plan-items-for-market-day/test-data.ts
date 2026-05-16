@@ -1,7 +1,7 @@
-import { PlanItemsForMarketDay, PlannedItem } from '@market-monster/market-days';
+import { PlanItemsForMarketDay } from '@market-monster/market-days';
 
 export class TestPlanItemsForMarketDay {
-  static forItems(...items: PlannedItem[]): PlanItemsForMarketDay {
+  static forItems(...items: { itemId: string; quantity?: number }[]): PlanItemsForMarketDay {
     return {
       vendorId: 'vendor-1',
       items,
@@ -9,7 +9,7 @@ export class TestPlanItemsForMarketDay {
       date: this.dateInFuture()
     };
   }
-  static forItemsWith(items: PlannedItem[], overrides: Partial<PlanItemsForMarketDay>): PlanItemsForMarketDay {
+  static forItemsWith(items: { itemId: string; quantity?: number }[], overrides: Partial<PlanItemsForMarketDay>): PlanItemsForMarketDay {
     const command = this.forItems(...items);
     return { ...command, ...overrides };
   }

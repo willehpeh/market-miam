@@ -5,15 +5,37 @@ import { ItemsPlannedForMarketDay } from './events/items-planned-for-market-day'
 import { MarketDayEvent } from './events/market-day.event';
 import { PlannedItem } from './planned-item';
 
+export type MarketDaySnapshot = {
+  marketId: string;
+  date: string;
+};
+
 export class MarketDay extends Aggregate {
+
+  constructor(private readonly _marketId: MarketId,
+              private readonly _date: LocalDate) {
+    super();
+  }
+
   apply(event: MarketDayEvent): void {
   }
 
-  planItems(items: PlannedItem[], marketId: MarketId, date: LocalDate) {
+  planItems(items: PlannedItem[]) {
     const event: ItemsPlannedForMarketDay = {
       type: 'ItemsPlannedForMarketDay',
-      payload: { items, marketId: marketId.value(), date: date.value() }
+      payload: {
+        items: items.map(item => ({ itemId: item.itemId(), quantity: item.quantity() })),
+        marketId: this._marketId.value(),
+        date: this._date.value()
+      }
     }
     this.raise(event);
+  }
+
+  snapshot(): MarketDaySnapshot {
+    return {
+      marketId: this._marketId.value(),
+      date: this._date.value()
+    };
   }
 }

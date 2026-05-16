@@ -10,18 +10,21 @@ export class MarketDays {
   forVendorAtMarket(vendorId: VendorId, marketId: MarketId) {
     return {
       on: async (date: LocalDate): Promise<MarketDay> => {
-        const events = await this.store.load(this.streamIdFor(vendorId, marketId, date));
-        return new MarketDay().rehydrate(events);
+        const streamId = this.streamIdFor(vendorId.value(), marketId.value(), date.value());
+        const events = await this.store.load(streamId);
+        return new MarketDay(marketId, date).rehydrate(events);
       }
     };
   }
 
-  async save(marketDay: MarketDay, vendorId: VendorId, marketId: MarketId, date: LocalDate): Promise<void> {
+  async save(marketDay: MarketDay, vendorId: VendorId): Promise<void> {
+    const snapshot = marketDay.snapshot();
+    const streamId = this.streamIdFor(vendorId.value(), snapshot.marketId, snapshot.date);
     const envelopes = marketDay.raisedEvents().map(event => ({ event }));
-    await this.store.append(this.streamIdFor(vendorId, marketId, date), envelopes, marketDay.currentStreamPosition);
+    await this.store.append(streamId, envelopes, marketDay.currentStreamPosition);
   }
 
-  private streamIdFor(vendorId: VendorId, marketId: MarketId, date: LocalDate) {
-    return `market-day-${vendorId.value()}-${marketId.value()}-${date.value()}`;
+  private streamIdFor(vendorId: string, marketId: string, date: string) {
+    return `market-day-${date}-${vendorId}-${marketId}`;
   }
 }

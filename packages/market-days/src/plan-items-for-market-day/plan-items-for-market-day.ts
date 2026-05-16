@@ -1,8 +1,6 @@
-import { PlannedItem } from '../market-day';
-
 export type PlanItemsForMarketDay = {
   vendorId: string;
-  items: PlannedItem[];
+  items: { itemId: string; quantity?: number }[];
   marketId: string;
   date: string;
 };
