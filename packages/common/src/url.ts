@@ -1,8 +1,32 @@
+import { EmptyValueError } from './errors';
+
+export class InvalidUrlError extends Error {
+  constructor() {
+    super('URL must be a valid http or https URL');
+    this.name = 'InvalidUrlError';
+  }
+}
+
 export class Url {
+  private static readonly ALLOWED_SCHEMES = ['http:', 'https:'];
+
   private readonly _value: string;
 
   constructor(value: string) {
-    this._value = value;
+    const trimmed = value.trim();
+    if (!trimmed) {
+      throw new EmptyValueError();
+    }
+    let parsed: URL;
+    try {
+      parsed = new URL(trimmed);
+    } catch {
+      throw new InvalidUrlError();
+    }
+    if (!Url.ALLOWED_SCHEMES.includes(parsed.protocol)) {
+      throw new InvalidUrlError();
+    }
+    this._value = trimmed;
   }
 
   value(): string {
