@@ -1,4 +1,4 @@
-import { DomainEvent } from '@market-monster/event-sourcing';
+import { DomainEvent } from 'packages/event-sourcing/src';
 
 export type MarketScheduleRegistered = DomainEvent<'MarketScheduleRegistered', {
   scheduleId: string;

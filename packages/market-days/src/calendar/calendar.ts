@@ -1,8 +1,7 @@
-import { CalendarEvent } from './events';
-import { MarketScheduleRegistered } from '../register-market-schedule';
+import { CalendarEvent, MarketScheduleRegistered } from './events';
 import { Aggregate } from '@market-monster/event-sourcing';
 import { Schedule } from './schedule/schedule';
-import { MarketId } from './market-id';
+import { MarketId } from '@market-monster/shared-kernel';
 
 export class Calendar extends Aggregate {
   apply(event: CalendarEvent): void {
