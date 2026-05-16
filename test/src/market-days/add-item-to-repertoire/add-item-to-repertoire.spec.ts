@@ -34,29 +34,29 @@ describe('AddItemToRepertoire', () => {
         photoUrl: request.photoUrl,
       },
     };
-    expect(store.allEvents()).toEqual([expect.objectContaining(expectedEvent)]);
+    expect(store.newEvents()).toEqual([expect.objectContaining(expectedEvent)]);
   });
 
   it('should allow free items', async () => {
     await handler.handle(TestAddItemToRepertoire.with({ price: 0 }));
 
-    expect(store.allEvents()).toHaveLength(1);
-    expect(store.allEvents()[0].payload['price']).toBe(0);
+    expect(store.newEvents()).toHaveLength(1);
+    expect(store.newEvents()[0].payload['price']).toBe(0);
   });
 
   it('should allow an empty description', async () => {
     await handler.handle(TestAddItemToRepertoire.with({ description: '' }));
 
-    expect(store.allEvents()).toHaveLength(1);
-    expect(store.allEvents()[0].payload['description']).toBe('');
+    expect(store.newEvents()).toHaveLength(1);
+    expect(store.newEvents()[0].payload['description']).toBe('');
   });
 
   it('should add a new item to an existing repertoire', async () => {
     await handler.handle(TestAddItemToRepertoire.valid());
     await handler.handle(TestAddItemToRepertoire.with({ name: 'new-name' }));
 
-    expect(store.allEvents()).toHaveLength(2);
-    expect(store.allEvents()[1].payload['name']).toBe('new-name');
+    expect(store.newEvents()).toHaveLength(2);
+    expect(store.newEvents()[1].payload['name']).toBe('new-name');
   });
 
   describe('rejects invalid input', () => {

@@ -25,7 +25,7 @@ describe('Register Market Schedule', () => {
   ])('should register a market schedule, defaulting to weekly', async request => {
     await handler.handle(request);
 
-    expect(store.allEvents()).toEqual([expect.objectContaining({
+    expect(store.newEvents()).toEqual([expect.objectContaining({
       type: 'MarketScheduleRegistered',
       payload: expect.objectContaining({
         scheduleId: expect.any(String),
@@ -56,7 +56,7 @@ describe('Register Market Schedule', () => {
     });
     await handler.handle(request);
 
-    expect(store.allEvents()).toEqual([expect.objectContaining({
+    expect(store.newEvents()).toEqual([expect.objectContaining({
       type: 'MarketScheduleRegistered',
       payload: expect.objectContaining({
         days: request.days,
