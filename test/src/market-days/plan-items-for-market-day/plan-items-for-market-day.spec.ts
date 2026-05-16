@@ -11,7 +11,7 @@ describe('Plan Items For Market Day', () => {
     handler = new PlanItemsForMarketDayHandler(store);
   });
 
-  it('should plan an existing item with no quantity', async () => {
+  it('should plan an item with no quantity', async () => {
     const itemId = 'item-1';
     const planItemsForMarketDay = TestPlanItemsForMarketDay.forItems({ itemId });
     await handler.handle(planItemsForMarketDay);
