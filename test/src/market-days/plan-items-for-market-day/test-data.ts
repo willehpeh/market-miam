@@ -1,4 +1,4 @@
-import { PlannedItem, PlanItemsForMarketDay } from '@market-monster/market-days';
+import { PlanItemsForMarketDay, PlannedItem } from '@market-monster/market-days';
 
 export class TestPlanItemsForMarketDay {
   static forItems(...items: PlannedItem[]): PlanItemsForMarketDay {

@@ -1,14 +1,16 @@
 import { InMemoryEventStore } from '../../in-memory.event-store';
 import { TestPlanItemsForMarketDay } from './test-data';
-import { PlanItemsForMarketDayHandler, PlannedItem } from '@market-monster/market-days';
+import { MarketDays, PlanItemsForMarketDayHandler, PlannedItem } from '@market-monster/market-days';
 
 describe('Plan Items For Market Day', () => {
   let store: InMemoryEventStore;
+  let marketDays: MarketDays;
   let handler: PlanItemsForMarketDayHandler;
 
   beforeEach(() => {
     store = new InMemoryEventStore();
-    handler = new PlanItemsForMarketDayHandler(store);
+    marketDays = new MarketDays(store);
+    handler = new PlanItemsForMarketDayHandler(marketDays);
   });
 
   it('should plan items for a market day', async () => {
