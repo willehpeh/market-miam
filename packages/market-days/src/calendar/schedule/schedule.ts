@@ -2,12 +2,28 @@ import { ScheduleName } from './schedule-name';
 import { ScheduleDay } from './schedule-day';
 import { ScheduleFrequency } from './schedule-frequency';
 import { ConflictingScheduleError, InvalidScheduleError } from '../errors';
-import { ScheduleSnapshot } from './schedule-snapshot';
 import { ScheduleId } from './schedule-id';
+
+type ScheduleSnapshot = {
+  scheduleId: string;
+  scheduleName: string;
+  days: { day: string; startTime?: string; endTime?: string }[];
+  every: { weeks: number };
+};
 
 export class Schedule {
   private readonly _days: ScheduleDay[] = [];
   private _frequency = new ScheduleFrequency();
+
+  static fromSnapshot(snapshot: ScheduleSnapshot): Schedule {
+    const schedule = new Schedule(
+      new ScheduleId(snapshot.scheduleId),
+      new ScheduleName(snapshot.scheduleName)
+    );
+    snapshot.days.forEach(d => schedule._days.push(new ScheduleDay(d.day, d.startTime, d.endTime)));
+    schedule._frequency = new ScheduleFrequency(snapshot.every);
+    return schedule;
+  }
 
   constructor(private readonly _id: ScheduleId,
               private readonly _name: ScheduleName) {
@@ -29,6 +45,10 @@ export class Schedule {
       throw new ConflictingScheduleError();
     }
     this._days.push(day);
+  }
+
+  conflictsWith(other: Schedule) {
+    return this._days.some(existing => other._days.some(otherDay => existing.overlapsWith(otherDay)));
   }
 
   snapshot(): ScheduleSnapshot {

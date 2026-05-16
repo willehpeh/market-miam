@@ -92,6 +92,19 @@ describe('Register Market Schedule', () => {
     await expect(handler.handle(request)).rejects.toThrow(ConflictingScheduleError);
   });
 
+  it('should reject a schedule that conflicts with a previously registered one', async () => {
+    await handler.handle(TestRegisterMarketSchedule.with({
+      scheduleName: 'Saturday Morning Market',
+      days: [{ day: 'SAT', startTime: '08:00', endTime: '14:00' }]
+    }));
+
+    const conflicting = TestRegisterMarketSchedule.with({
+      scheduleName: 'Saturday Afternoon Market',
+      days: [{ day: 'SAT', startTime: '10:00', endTime: '16:00' }]
+    });
+    await expect(handler.handle(conflicting)).rejects.toThrow(ConflictingScheduleError);
+  });
+
   it('should reject a schedule with no days', async () => {
     const request = TestRegisterMarketSchedule.with({ days: [] });
     await expect(handler.handle(request)).rejects.toThrow(InvalidScheduleError);
