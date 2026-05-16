@@ -7,13 +7,12 @@ export class PlanItemsForMarketDayHandler {
 
   constructor(private readonly marketDays: MarketDays) {}
 
-  async handle(planItemsForMarketDay: PlanItemsForMarketDay): Promise<void> {
-    const { items, vendorId, marketId, date } = planItemsForMarketDay;
-    const vendor = new VendorId(vendorId);
-    const market = new MarketId(marketId);
-    const localDate = new LocalDate(date);
-    const marketDay = await this.marketDays.forVendorAtMarket(vendor, market).on(localDate);
-    marketDay.planItems(items, marketId, date);
-    await this.marketDays.save(marketDay, vendor, market, localDate);
+  async handle(request: PlanItemsForMarketDay): Promise<void> {
+    const vendorId = new VendorId(request.vendorId);
+    const marketId = new MarketId(request.marketId);
+    const date = new LocalDate(request.date);
+    const marketDay = await this.marketDays.forVendorAtMarket(vendorId, marketId).on(date);
+    marketDay.planItems(request.items, marketId, date);
+    await this.marketDays.save(marketDay, vendorId, marketId, date);
   }
 }
