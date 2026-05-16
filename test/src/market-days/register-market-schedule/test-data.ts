@@ -4,6 +4,7 @@ export class TestRegisterMarketSchedule {
   static simple(): RegisterMarketSchedule {
     return {
       vendorId: 'vendor-id',
+      scheduleId: 'schedule-id',
       scheduleName: 'Saturday Market',
       marketId: 'market-id',
       days: [

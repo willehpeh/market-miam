@@ -1,5 +1,6 @@
 export type RegisterMarketSchedule = {
   vendorId: string;
+  scheduleId: string;
   scheduleName: string;
   marketId: string;
   days: {

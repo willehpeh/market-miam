@@ -3,16 +3,14 @@ import { ScheduleDay } from './schedule-day';
 import { ScheduleFrequency } from './schedule-frequency';
 import { ConflictingScheduleError, InvalidScheduleError } from '../errors';
 import { ScheduleSnapshot } from './schedule-snapshot';
+import { ScheduleId } from './schedule-id';
 
 export class Schedule {
-  private readonly _id: string;
-  private readonly _name: ScheduleName;
   private readonly _days: ScheduleDay[] = [];
   private _frequency = new ScheduleFrequency();
 
-  constructor(name: ScheduleName) {
-    this._id = crypto.randomUUID();
-    this._name = name;
+  constructor(private readonly _id: ScheduleId,
+              private readonly _name: ScheduleName) {
   }
 
   repeatEvery(frequency: ScheduleFrequency): void {
@@ -35,7 +33,7 @@ export class Schedule {
 
   snapshot(): ScheduleSnapshot {
     return {
-      scheduleId: this._id,
+      scheduleId: this._id.value(),
       scheduleName: this._name.value(),
       days: this._days.map(d => d.value()),
       every: this._frequency.value(),

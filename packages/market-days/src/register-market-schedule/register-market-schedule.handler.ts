@@ -5,6 +5,7 @@ import { ScheduleDay } from '../calendar/schedule/schedule-day';
 import { ScheduleFrequency } from '../calendar/schedule/schedule-frequency';
 import { Schedule } from '../calendar/schedule/schedule';
 import { MarketId, VendorId } from '@market-monster/shared-kernel';
+import { ScheduleId } from '../calendar/schedule/schedule-id';
 
 export class RegisterMarketScheduleHandler {
   constructor(private readonly calendars: Calendars) {
@@ -23,7 +24,10 @@ export class RegisterMarketScheduleHandler {
   }
 
   private scheduleFrom(registerMarketSchedule: RegisterMarketSchedule) {
-    const schedule = new Schedule(new ScheduleName(registerMarketSchedule.scheduleName));
+    const schedule = new Schedule(
+      new ScheduleId(registerMarketSchedule.scheduleId),
+      new ScheduleName(registerMarketSchedule.scheduleName)
+    );
     schedule.addDays(registerMarketSchedule.days.map(d => new ScheduleDay(d.day, d.startTime, d.endTime)));
     if (registerMarketSchedule.every) {
       schedule.repeatEvery(new ScheduleFrequency(registerMarketSchedule.every));
