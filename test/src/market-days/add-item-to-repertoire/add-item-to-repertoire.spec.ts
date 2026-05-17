@@ -20,18 +20,18 @@ describe('AddItemToRepertoire', () => {
   });
 
   it('should add the item to the repertoire', async () => {
-    const request = TestAddItemToRepertoire.valid();
+    const command = TestAddItemToRepertoire.valid();
 
-    await handler.handle(request);
+    await handler.handle(command);
 
     const expectedEvent: ItemAddedToRepertoire = {
       type: 'ItemAddedToRepertoire',
       payload: {
-        itemId: request.itemId,
-        name: request.name,
-        description: request.description,
-        price: request.price,
-        photoUrl: request.photoUrl,
+        itemId: command.itemId,
+        name: command.name,
+        description: command.description,
+        price: command.price,
+        photoUrl: command.photoUrl,
       },
     };
     expect(store.newEvents()).toEqual([expect.objectContaining(expectedEvent)]);

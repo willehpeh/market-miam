@@ -1,6 +1,14 @@
 import { PlanItemsForMarketDay } from '@market-monster/market-days';
 
 export class TestPlanItemsForMarketDay {
+  static withDefaults(): PlanItemsForMarketDay {
+    return this.forItems(
+      { itemId: 'item-1', quantity: 10 },
+      { itemId: 'item-2' },
+      { itemId: 'item-3', quantity: 5 },
+    );
+  }
+
   static forItems(...items: { itemId: string; quantity?: number }[]): PlanItemsForMarketDay {
     return {
       vendorId: 'vendor-1',

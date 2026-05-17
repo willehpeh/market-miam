@@ -1,6 +1,6 @@
 import { InMemoryEventStore } from '../../in-memory.event-store';
 import { TestPlanItemsForMarketDay } from './test-data';
-import { MarketDays, PlanItemsForMarketDayHandler } from '@market-monster/market-days';
+import { ItemsPlannedForMarketDay, MarketDays, PlanItemsForMarketDayHandler } from '@market-monster/market-days';
 
 describe('Plan Items For Market Day', () => {
   let store: InMemoryEventStore;
@@ -14,24 +14,38 @@ describe('Plan Items For Market Day', () => {
   });
 
   it('should plan items for a market day', async () => {
-    const items = [
-      { itemId: 'item-1', quantity: 10 },
-      { itemId: 'item-2' },
-    ];
-    const planItemsForMarketDay = TestPlanItemsForMarketDay.forItems(...items);
-    await handler.handle(planItemsForMarketDay);
+    const command = TestPlanItemsForMarketDay.withDefaults();
+    await handler.handle(command);
 
     expect(store.newEvents()).toEqual([
       expect.objectContaining({
         type: 'ItemsPlannedForMarketDay',
         payload: {
-          items: [
-            { itemId: 'item-1', quantity: 10 },
-            { itemId: 'item-2', quantity: undefined },
-          ],
-          marketId: planItemsForMarketDay.marketId,
-          date: planItemsForMarketDay.date
+          items: command.items,
+          marketId: command.marketId,
+          date: command.date
         }
       })]);
+  });
+
+  it('should plan extra items for a pre-existing market day', async () => {
+    const previousCommand = TestPlanItemsForMarketDay.withDefaults();
+    await handler.handle(previousCommand);
+
+    const newItems = [
+      { itemId: 'item-3', quantity: 5 },
+      { itemId: 'item-4', quantity: 15 }
+    ];
+
+    await handler.handle(TestPlanItemsForMarketDay.forItems(...newItems));
+
+    const domainEvents = (await store.load(store.newEvents()[0].streamId)).map(storedEvent => ({
+      payload: storedEvent.payload,
+      type: storedEvent.type
+    })) as ItemsPlannedForMarketDay[];
+
+    const allPlannedItems = domainEvents.flatMap(event => event.payload.items);
+
+    expect(allPlannedItems).toEqual([...previousCommand.items, ...newItems]);
   });
 });
