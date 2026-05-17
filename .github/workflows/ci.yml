@@ -9,10 +9,6 @@ jobs:
   ci:
     runs-on: ubuntu-latest
 
-    env:
-      NX_BASE: ${{ github.event.before }}
-      NX_HEAD: ${{ github.sha }}
-
     steps:
       - uses: actions/checkout@v4
         with:
@@ -25,6 +21,6 @@ jobs:
 
       - run: npm ci
 
-      - run: npx nx affected -t lint --parallel=3
-      - run: npx nx affected -t test --parallel=3
-      - run: npx nx affected -t build --parallel=3
+      - run: npx nx affected -t lint --base=${{ github.event.before }} --head=${{ github.sha }} --parallel=3
+      - run: npx nx affected -t test --base=${{ github.event.before }} --head=${{ github.sha }} --parallel=3
+      - run: npx nx affected -t build --base=${{ github.event.before }} --head=${{ github.sha }} --parallel=3
