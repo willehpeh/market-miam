@@ -12,7 +12,7 @@ export class MarketDays {
       on: async (date: LocalDate): Promise<MarketDay> => {
         const streamId = this.streamIdFor(vendorId.value(), marketId.value(), date.value());
         const events = await this.store.load(streamId);
-        return new MarketDay(marketId, date).rehydrate(events);
+        return new MarketDay(marketId, date, LocalDate.today()).rehydrate(events);
       }
     };
   }

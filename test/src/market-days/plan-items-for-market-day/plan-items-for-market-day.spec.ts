@@ -44,6 +44,12 @@ describe('Plan Items For Market Day', () => {
 
     expect(allPlannedItems).toEqual([...previousCommand.items, ...newItems]);
   });
+
+  it('should refuse to plan items for a day in the past', async () => {
+    const command = TestPlanItemsForMarketDay.withDefaults();
+    command.date = '2023-01-01';
+    await expect(() => handler.handle(command)).rejects.toThrow();
+  });
 });
 
 function plannedItemsFrom(stream: StoredEvent[]) {

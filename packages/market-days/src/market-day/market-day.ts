@@ -1,9 +1,9 @@
 import { Aggregate } from '@market-monster/event-sourcing';
 import { LocalDate } from '@market-monster/common';
 import { MarketId } from '@market-monster/shared-kernel';
-import { ItemsPlannedForMarketDay } from './events/items-planned-for-market-day';
-import { MarketDayEvent } from './events/market-day.event';
+import { ItemsPlannedForMarketDay, MarketDayEvent } from './events';
 import { PlannedItem } from './planned-item';
+import { MarketDayInThePastError } from './errors';
 
 export type MarketDaySnapshot = {
   marketId: string;
@@ -13,7 +13,8 @@ export type MarketDaySnapshot = {
 export class MarketDay extends Aggregate {
 
   constructor(private readonly _marketId: MarketId,
-              private readonly _date: LocalDate) {
+              private readonly _date: LocalDate,
+              private readonly _today: LocalDate) {
     super();
   }
 
@@ -26,6 +27,9 @@ export class MarketDay extends Aggregate {
   }
 
   planItems(items: PlannedItem[]) {
+    if (this._date.isBefore(this._today)) {
+      throw new MarketDayInThePastError();
+    }
     const event: ItemsPlannedForMarketDay = {
       type: 'ItemsPlannedForMarketDay',
       payload: {
