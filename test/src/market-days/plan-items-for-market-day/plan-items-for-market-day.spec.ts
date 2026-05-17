@@ -1,6 +1,15 @@
 import { InMemoryEventStore } from '../../in-memory.event-store';
 import { TestPlanItemsForMarketDay } from './test-data';
 import { ItemsPlannedForMarketDay, MarketDays, PlanItemsForMarketDayHandler } from '@market-monster/market-days';
+import { StoredEvent } from '@market-monster/event-sourcing';
+
+function plannedItemsFrom(stream: StoredEvent[]) {
+  return stream
+    .flatMap(storedEvent => ({
+      payload: storedEvent.payload,
+      type: storedEvent.type
+    } as ItemsPlannedForMarketDay).payload.items);
+}
 
 describe('Plan Items For Market Day', () => {
   let store: InMemoryEventStore;
@@ -36,16 +45,10 @@ describe('Plan Items For Market Day', () => {
       { itemId: 'item-3', quantity: 5 },
       { itemId: 'item-4', quantity: 15 }
     ];
-
     await handler.handle(TestPlanItemsForMarketDay.forItems(...newItems));
 
-    const streamId = store.newEvents()[0].streamId;
-    const allPlannedItems = (await store.load(streamId))
-      .map(storedEvent => ({
-        payload: storedEvent.payload,
-        type: storedEvent.type
-      } as ItemsPlannedForMarketDay))
-      .flatMap(event => event.payload.items);
+    const stream = await store.load(store.newEvents()[0].streamId);
+    const allPlannedItems = plannedItemsFrom(stream)
 
     expect(allPlannedItems).toEqual([...previousCommand.items, ...newItems]);
   });
