@@ -39,12 +39,13 @@ describe('Plan Items For Market Day', () => {
 
     await handler.handle(TestPlanItemsForMarketDay.forItems(...newItems));
 
-    const domainEvents = (await store.load(store.newEvents()[0].streamId)).map(storedEvent => ({
-      payload: storedEvent.payload,
-      type: storedEvent.type
-    })) as ItemsPlannedForMarketDay[];
-
-    const allPlannedItems = domainEvents.flatMap(event => event.payload.items);
+    const streamId = store.newEvents()[0].streamId;
+    const allPlannedItems = (await store.load(streamId))
+      .map(storedEvent => ({
+        payload: storedEvent.payload,
+        type: storedEvent.type
+      } as ItemsPlannedForMarketDay))
+      .flatMap(event => event.payload.items);
 
     expect(allPlannedItems).toEqual([...previousCommand.items, ...newItems]);
   });
