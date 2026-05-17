@@ -43,4 +43,8 @@ export class InMemoryEventStore implements EventStore {
     return [...this.appendedEvents];
   }
 
+  lastEvent(): StoredEvent {
+    return this.appendedEvents[this.appendedEvents.length - 1];
+  }
+
 }
