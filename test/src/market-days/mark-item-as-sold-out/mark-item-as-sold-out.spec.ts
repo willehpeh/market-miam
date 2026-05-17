@@ -6,7 +6,7 @@ class MarkItemAsSoldOutHandler {
   constructor(private readonly marketDays: MarketDays) {}
 
   async handle(command: MarkItemAsSoldOut) {
-
+    console.error('Not implemented');
   }
 }
 
