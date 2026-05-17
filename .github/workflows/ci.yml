@@ -5,13 +5,13 @@ on:
     branches:
       - main
 
-permissions:
-  actions: read
-  contents: read
-
 jobs:
   ci:
     runs-on: ubuntu-latest
+
+    env:
+      NX_BASE: ${{ github.event.before }}
+      NX_HEAD: ${{ github.sha }}
 
     steps:
       - uses: actions/checkout@v4
@@ -25,8 +25,7 @@ jobs:
 
       - run: npm ci
 
-      - uses: nrwl/nx-set-shas@v4
-
-      - run: npx nx affected -t lint --parallel=3
-      - run: npx nx affected -t test --parallel=3
-      - run: npx nx affected -t build --parallel=3
+      # TODO: revert to `nx affected` after first successful run
+      - run: npx nx run-many -t lint --parallel=3
+      - run: npx nx run-many -t test --parallel=3
+      - run: npx nx run-many -t build --parallel=3
