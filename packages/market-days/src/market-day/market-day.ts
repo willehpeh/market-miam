@@ -1,9 +1,10 @@
 import { Aggregate } from '@market-monster/event-sourcing';
-import { LocalDate } from '@market-monster/common';
+import { LocalDate, LocalTime } from '@market-monster/common';
 import { MarketId } from '@market-monster/shared-kernel';
-import { ItemsPlannedForMarketDay, MarketDayEvent } from './events';
+import { ItemMarkedAsSoldOut, ItemsPlannedForMarketDay, MarketDayEvent } from './events';
 import { PlannedItem } from './planned-item';
 import { MarketDayInThePastError } from './errors';
+import { ItemId } from '../repertoire/item';
 
 export type MarketDaySnapshot = {
   marketId: string;
@@ -37,7 +38,7 @@ export class MarketDay extends Aggregate {
         marketId: this._marketId.value(),
         date: this._date.value()
       }
-    }
+    };
     this.raise(event);
   }
 
@@ -46,5 +47,18 @@ export class MarketDay extends Aggregate {
       marketId: this._marketId.value(),
       date: this._date.value()
     };
+  }
+
+  markItemAsSoldOut(itemId: ItemId, time: LocalTime) {
+    const event: ItemMarkedAsSoldOut = {
+      type: 'ItemMarkedAsSoldOut',
+      payload: {
+        itemId: itemId.value(),
+        marketId: this._marketId.value(),
+        date: this._date.value(),
+        time: time.value()
+      }
+    };
+    this.raise(event);
   }
 }
