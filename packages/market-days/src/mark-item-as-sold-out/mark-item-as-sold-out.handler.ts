@@ -1,14 +1,16 @@
+import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { MarkItemAsSoldOut } from './mark-item-as-sold-out';
 import { MarketDays } from '../market-day';
 import { ItemId } from '../repertoire/item';
 import { MarketId, VendorId } from '@market-monster/shared-kernel';
 import { LocalDate, LocalTime } from '@market-monster/common';
 
-export class MarkItemAsSoldOutHandler {
+@CommandHandler(MarkItemAsSoldOut)
+export class MarkItemAsSoldOutHandler implements ICommandHandler<MarkItemAsSoldOut> {
 
   constructor(private readonly marketDays: MarketDays) {}
 
-  async handle(command: MarkItemAsSoldOut): Promise<void> {
+  async execute(command: MarkItemAsSoldOut): Promise<void> {
     const vendorId = new VendorId(command.vendorId);
     const marketId = new MarketId(command.marketId);
     const date = new LocalDate(command.date);

@@ -1,13 +1,15 @@
+import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { PlanItemsForMarketDay } from './plan-items-for-market-day';
 import { MarketDays, PlannedItem } from '../market-day';
 import { MarketId, VendorId } from '@market-monster/shared-kernel';
 import { LocalDate } from '@market-monster/common';
 
-export class PlanItemsForMarketDayHandler {
+@CommandHandler(PlanItemsForMarketDay)
+export class PlanItemsForMarketDayHandler implements ICommandHandler<PlanItemsForMarketDay> {
 
   constructor(private readonly marketDays: MarketDays) {}
 
-  async handle(request: PlanItemsForMarketDay): Promise<void> {
+  async execute(request: PlanItemsForMarketDay): Promise<void> {
     const vendorId = new VendorId(request.vendorId);
     const marketId = new MarketId(request.marketId);
     const date = new LocalDate(request.date);

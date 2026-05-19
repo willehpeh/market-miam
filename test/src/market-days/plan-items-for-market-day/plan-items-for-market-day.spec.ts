@@ -16,7 +16,7 @@ describe('Plan Items For Market Day', () => {
 
   it('should plan items for a market day', async () => {
     const command = TestPlanItemsForMarketDay.withDefaults();
-    await handler.handle(command);
+    await handler.execute(command);
 
     expect(store.newEvents()).toEqual([
       expect.objectContaining({
@@ -31,13 +31,13 @@ describe('Plan Items For Market Day', () => {
 
   it('should plan extra items for a pre-existing market day', async () => {
     const previousCommand = TestPlanItemsForMarketDay.withDefaults();
-    await handler.handle(previousCommand);
+    await handler.execute(previousCommand);
 
     const newItems = [
       { itemId: 'item-3', quantity: 5 },
       { itemId: 'item-4', quantity: 15 }
     ];
-    await handler.handle(TestPlanItemsForMarketDay.forItems(...newItems));
+    await handler.execute(TestPlanItemsForMarketDay.forItems(...newItems));
 
     const stream = await store.load(store.newEvents()[0].streamId);
     const allPlannedItems = plannedItemsFrom(stream)
@@ -47,7 +47,7 @@ describe('Plan Items For Market Day', () => {
 
   it('should refuse to plan items for a day in the past', async () => {
     const command = TestPlanItemsForMarketDay.forItemsWith([{ itemId: 'item-1' }], { date: '2023-01-01' });
-    await expect(() => handler.handle(command)).rejects.toThrow();
+    await expect(() => handler.execute(command)).rejects.toThrow();
   });
 
   it.each([
@@ -55,7 +55,7 @@ describe('Plan Items For Market Day', () => {
     '   ',
   ])('should reject an empty item ID: "%s"', async (itemId) => {
     const command = TestPlanItemsForMarketDay.forItems({ itemId });
-    await expect(() => handler.handle(command)).rejects.toThrow();
+    await expect(() => handler.execute(command)).rejects.toThrow();
   });
 
   it.each([
@@ -64,7 +64,7 @@ describe('Plan Items For Market Day', () => {
     -100,
   ])('should reject a non-positive quantity: %d', async (quantity) => {
     const command = TestPlanItemsForMarketDay.forItems({ itemId: 'item-1', quantity });
-    await expect(() => handler.handle(command)).rejects.toThrow();
+    await expect(() => handler.execute(command)).rejects.toThrow();
   });
 });
 

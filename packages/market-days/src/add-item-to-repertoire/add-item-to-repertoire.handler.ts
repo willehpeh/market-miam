@@ -1,14 +1,16 @@
+import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { Url } from '@market-monster/common';
 import { VendorId } from '@market-monster/shared-kernel';
 import { AddItemToRepertoire } from './add-item-to-repertoire';
 import { ItemDescription, ItemId, ItemName, ItemPrice } from '../repertoire/item';
 import { Repertoires } from '../repertoire/repertoires';
 
-export class AddItemToRepertoireHandler {
+@CommandHandler(AddItemToRepertoire)
+export class AddItemToRepertoireHandler implements ICommandHandler<AddItemToRepertoire> {
   constructor(private readonly repertoires: Repertoires) {
   }
 
-  async handle(request: AddItemToRepertoire): Promise<void> {
+  async execute(request: AddItemToRepertoire): Promise<void> {
     const vendorId = new VendorId(request.vendorId);
     const repertoire = await this.repertoires.forVendor(vendorId);
     repertoire.addItem(

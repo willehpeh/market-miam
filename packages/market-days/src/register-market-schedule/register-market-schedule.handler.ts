@@ -1,3 +1,4 @@
+import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { RegisterMarketSchedule } from './register-market-schedule';
 import { Calendars } from '../calendar';
 import { ScheduleName } from '../calendar/schedule/schedule-name';
@@ -7,11 +8,12 @@ import { Schedule } from '../calendar/schedule/schedule';
 import { MarketId, VendorId } from '@market-monster/shared-kernel';
 import { ScheduleId } from '../calendar/schedule/schedule-id';
 
-export class RegisterMarketScheduleHandler {
+@CommandHandler(RegisterMarketSchedule)
+export class RegisterMarketScheduleHandler implements ICommandHandler<RegisterMarketSchedule> {
   constructor(private readonly calendars: Calendars) {
   }
 
-  async handle(registerMarketSchedule: RegisterMarketSchedule): Promise<void> {
+  async execute(registerMarketSchedule: RegisterMarketSchedule): Promise<void> {
     const vendorId = new VendorId(registerMarketSchedule.vendorId);
     const marketId = new MarketId(registerMarketSchedule.marketId);
     const schedule = this.scheduleFrom(registerMarketSchedule);

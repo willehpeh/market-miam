@@ -21,11 +21,11 @@ describe('Mark Item As Sold Out', () => {
     const previousCommand = TestPlanItemsForMarketDay.forItemsWith([{ itemId }], {
       date: today
     });
-    await planItemsHandler.handle(previousCommand);
+    await planItemsHandler.execute(previousCommand);
 
     const command = new MarkItemAsSoldOut(vendorId, itemId, previousCommand.marketId, today, '10:00');
 
-    await handler.handle(command);
+    await handler.execute(command);
 
     expect(store.lastEvent().payload).toEqual(expect.objectContaining({
       itemId,

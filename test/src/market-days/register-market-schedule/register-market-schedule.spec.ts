@@ -23,7 +23,7 @@ describe('Register Market Schedule', () => {
     TestRegisterMarketSchedule.simple(),
     TestRegisterMarketSchedule.everyDay()
   ])('should register a market schedule, defaulting to weekly', async command => {
-    await handler.handle(command);
+    await handler.execute(command);
 
     expect(store.newEvents()).toEqual([expect.objectContaining({
       type: 'MarketScheduleRegistered',
@@ -44,7 +44,7 @@ describe('Register Market Schedule', () => {
     ''
   ])('should not allow a schedule with an empty name', async scheduleName => {
     const command = TestRegisterMarketSchedule.with({ scheduleName });
-    await expect(handler.handle(command)).rejects.toThrow(EmptyValueError);
+    await expect(handler.execute(command)).rejects.toThrow(EmptyValueError);
   });
 
   it('should allow non-overlapping times on the same day', async () => {
@@ -54,7 +54,7 @@ describe('Register Market Schedule', () => {
         { day: 'SAT', startTime: '14:00', endTime: '18:00' },
       ]
     });
-    await handler.handle(command);
+    await handler.execute(command);
 
     expect(store.newEvents()).toEqual([expect.objectContaining({
       type: 'MarketScheduleRegistered',
@@ -89,11 +89,11 @@ describe('Register Market Schedule', () => {
     },
   ])('should reject overlapping schedule: $scenario', async ({ days }) => {
     const command = TestRegisterMarketSchedule.with({ days });
-    await expect(handler.handle(command)).rejects.toThrow(ConflictingScheduleError);
+    await expect(handler.execute(command)).rejects.toThrow(ConflictingScheduleError);
   });
 
   it('should reject a schedule that conflicts with a previously registered one', async () => {
-    await handler.handle(TestRegisterMarketSchedule.with({
+    await handler.execute(TestRegisterMarketSchedule.with({
       scheduleName: 'Saturday Morning Market',
       days: [{ day: 'SAT', startTime: '08:00', endTime: '14:00' }]
     }));
@@ -102,22 +102,22 @@ describe('Register Market Schedule', () => {
       scheduleName: 'Saturday Afternoon Market',
       days: [{ day: 'SAT', startTime: '10:00', endTime: '16:00' }]
     });
-    await expect(handler.handle(conflicting)).rejects.toThrow(ConflictingScheduleError);
+    await expect(handler.execute(conflicting)).rejects.toThrow(ConflictingScheduleError);
   });
 
   it('should reject a schedule with no days', async () => {
     const command = TestRegisterMarketSchedule.with({ days: [] });
-    await expect(handler.handle(command)).rejects.toThrow(InvalidScheduleError);
+    await expect(handler.execute(command)).rejects.toThrow(InvalidScheduleError);
   });
 
   it('should reject a schedule with even a single invalid day name', async () => {
     const command = TestRegisterMarketSchedule.with({ days: [{ day: 'MON' }, { day: 'INVALID' }] });
-    await expect(handler.handle(command)).rejects.toThrow(InvalidScheduleError);
+    await expect(handler.execute(command)).rejects.toThrow(InvalidScheduleError);
   });
 
   it('should reject a schedule where even a single day has an end time that is not after start time', async () => {
     const command = TestRegisterMarketSchedule.with({ days: [{ day: 'SAT', startTime: '14:00', endTime: '12:00' }] });
-    await expect(handler.handle(command)).rejects.toThrow(InvalidScheduleError);
+    await expect(handler.execute(command)).rejects.toThrow(InvalidScheduleError);
   });
 });
 
