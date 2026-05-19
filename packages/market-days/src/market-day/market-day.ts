@@ -1,4 +1,4 @@
-import { Aggregate } from '@market-monster/event-sourcing';
+import { Aggregate, UnhandledEventTypeError } from '@market-monster/event-sourcing';
 import { LocalDate, LocalTime } from '@market-monster/common';
 import { MarketId } from '@market-monster/shared-kernel';
 import { ItemMarkedAsSoldOut, ItemsPlannedForMarketDay, MarketDayEvent } from './events';
@@ -24,6 +24,11 @@ export class MarketDay extends Aggregate {
       case 'ItemsPlannedForMarketDay':
         // implement later
         break;
+      case 'ItemMarkedAsSoldOut':
+        // implement later
+        break;
+      default:
+        throw new UnhandledEventTypeError(event, this.constructor.name);
     }
   }
 
@@ -34,7 +39,7 @@ export class MarketDay extends Aggregate {
     const event: ItemsPlannedForMarketDay = {
       type: 'ItemsPlannedForMarketDay',
       payload: {
-        items: items.map(item => ({ itemId: item.itemId(), quantity: item.quantity() })),
+        items: items.map(item => item.value()),
         marketId: this._marketId.value(),
         date: this._date.value()
       }

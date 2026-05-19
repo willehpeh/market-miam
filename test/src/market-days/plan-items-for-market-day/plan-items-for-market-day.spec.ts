@@ -46,8 +46,24 @@ describe('Plan Items For Market Day', () => {
   });
 
   it('should refuse to plan items for a day in the past', async () => {
-    const command = TestPlanItemsForMarketDay.withDefaults();
-    command.date = '2023-01-01';
+    const command = TestPlanItemsForMarketDay.forItemsWith([{ itemId: 'item-1' }], { date: '2023-01-01' });
+    await expect(() => handler.handle(command)).rejects.toThrow();
+  });
+
+  it.each([
+    '',
+    '   ',
+  ])('should reject an empty item ID: "%s"', async (itemId) => {
+    const command = TestPlanItemsForMarketDay.forItems({ itemId });
+    await expect(() => handler.handle(command)).rejects.toThrow();
+  });
+
+  it.each([
+    0,
+    -1,
+    -100,
+  ])('should reject a non-positive quantity: %d', async (quantity) => {
+    const command = TestPlanItemsForMarketDay.forItems({ itemId: 'item-1', quantity });
     await expect(() => handler.handle(command)).rejects.toThrow();
   });
 });

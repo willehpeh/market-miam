@@ -23,11 +23,7 @@ export class PlannedItem {
     this._quantity = quantity;
   }
 
-  itemId(): string {
-    return this._itemId;
-  }
-
-  quantity(): number | undefined {
-    return this._quantity;
+  value(): { itemId: string, quantity?: number } {
+    return { itemId: this._itemId, ...(this._quantity !== undefined && { quantity: this._quantity }) };
   }
 }
