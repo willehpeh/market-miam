@@ -23,13 +23,7 @@ describe('Mark Item As Sold Out', () => {
     });
     await planItemsHandler.handle(previousCommand);
 
-    const command: MarkItemAsSoldOut = {
-      vendorId,
-      itemId,
-      marketId: previousCommand.marketId,
-      date: today,
-      time: '10:00'
-    };
+    const command = new MarkItemAsSoldOut(vendorId, itemId, previousCommand.marketId, today, '10:00');
 
     await handler.handle(command);
 

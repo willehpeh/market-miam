@@ -2,19 +2,25 @@ import { RegisterMarketSchedule } from '@market-monster/market-days';
 
 export class TestRegisterMarketSchedule {
   static simple(): RegisterMarketSchedule {
-    return {
-      vendorId: 'vendor-id',
-      scheduleId: 'schedule-id',
-      scheduleName: 'Saturday Market',
-      marketId: 'market-id',
-      days: [
-        { day: 'SAT', startTime: '08:00', endTime: '14:00' },
-      ],
-    };
+    return new RegisterMarketSchedule(
+      'vendor-id',
+      'schedule-id',
+      'Saturday Market',
+      'market-id',
+      [{ day: 'SAT', startTime: '08:00', endTime: '14:00' }],
+    );
   }
 
   static with(overrides: Partial<RegisterMarketSchedule>): RegisterMarketSchedule {
-    return { ...this.simple(), ...overrides };
+    const defaults = this.simple();
+    return new RegisterMarketSchedule(
+      overrides.vendorId ?? defaults.vendorId,
+      overrides.scheduleId ?? defaults.scheduleId,
+      overrides.scheduleName ?? defaults.scheduleName,
+      overrides.marketId ?? defaults.marketId,
+      overrides.days ?? defaults.days,
+      overrides.every ?? defaults.every,
+    );
   }
 
   static everyDay(): RegisterMarketSchedule {

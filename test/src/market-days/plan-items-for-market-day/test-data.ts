@@ -10,16 +10,17 @@ export class TestPlanItemsForMarketDay {
   }
 
   static forItems(...items: { itemId: string; quantity?: number }[]): PlanItemsForMarketDay {
-    return {
-      vendorId: 'vendor-1',
-      items,
-      marketId: 'market-1',
-      date: this.dateInFuture()
-    };
+    return new PlanItemsForMarketDay('vendor-1', items, 'market-1', this.dateInFuture());
   }
+
   static forItemsWith(items: { itemId: string; quantity?: number }[], overrides: Partial<PlanItemsForMarketDay>): PlanItemsForMarketDay {
-    const command = this.forItems(...items);
-    return { ...command, ...overrides };
+    const defaults = this.forItems(...items);
+    return new PlanItemsForMarketDay(
+      overrides.vendorId ?? defaults.vendorId,
+      overrides.items ?? defaults.items,
+      overrides.marketId ?? defaults.marketId,
+      overrides.date ?? defaults.date,
+    );
   }
 
   private static dateInFuture(): string {
