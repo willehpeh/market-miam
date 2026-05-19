@@ -17,14 +17,17 @@ describe('Mark Item As Sold Out', () => {
     const planItemsHandler = new PlanItemsForMarketDayHandler(marketDays);
     const itemId = 'item1';
     const vendorId = 'vendor1';
-    const previousCommand = TestPlanItemsForMarketDay.forItems({ itemId });
+    const today = new Date().toISOString().split('T')[0];
+    const previousCommand = TestPlanItemsForMarketDay.forItemsWith([{ itemId }], {
+      date: today
+    });
     await planItemsHandler.handle(previousCommand);
 
     const command: MarkItemAsSoldOut = {
       vendorId,
       itemId,
       marketId: previousCommand.marketId,
-      date: previousCommand.date,
+      date: today,
       time: '10:00'
     };
 
@@ -33,7 +36,7 @@ describe('Mark Item As Sold Out', () => {
     expect(store.lastEvent().payload).toEqual(expect.objectContaining({
       itemId,
       marketId: previousCommand.marketId,
-      date: previousCommand.date,
+      date: today,
       time: '10:00'
     }));
   });
