@@ -1,6 +1,6 @@
 import { Calendar } from './index';
 import { EventStore } from '@market-monster/event-sourcing';
-import { VendorId } from '@market-monster/shared-kernel';
+import { assignedToVendor, VendorId } from '@market-monster/shared-kernel';
 
 export class Calendars {
   constructor(private readonly store: EventStore) {
@@ -12,7 +12,7 @@ export class Calendars {
   }
 
   async save(calendar: Calendar, vendorId: VendorId) {
-    const envelopes = calendar.raisedEvents().map(event => ({ event }));
+    const envelopes = assignedToVendor(calendar.raisedEvents(), vendorId);
     await this.store.append(this.streamIdFor(vendorId), envelopes, calendar.currentStreamPosition);
   }
 

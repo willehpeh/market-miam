@@ -1,6 +1,6 @@
 import { EventStore } from '@market-monster/event-sourcing';
 import { Repertoire } from './repertoire';
-import { VendorId } from '@market-monster/shared-kernel';
+import { assignedToVendor, VendorId } from '@market-monster/shared-kernel';
 
 export class Repertoires {
   constructor(private readonly store: EventStore) {
@@ -12,7 +12,7 @@ export class Repertoires {
   }
 
   async save(repertoire: Repertoire, vendorId: VendorId): Promise<void> {
-    const envelopes = repertoire.raisedEvents().map(event => ({ event }));
+    const envelopes = assignedToVendor(repertoire.raisedEvents(), vendorId);
     await this.store.append(this.streamIdFor(vendorId), envelopes, repertoire.currentStreamPosition);
   }
 
