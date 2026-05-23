@@ -2,6 +2,7 @@ import { InMemoryEventStore } from '../../in-memory.event-store';
 import { TestPlanItemsForMarketDay } from './test-data';
 import { ItemsPlannedForMarketDay, MarketDays, PlanItemsForMarketDayHandler } from '@market-monster/market-days';
 import { StoredEvent } from '@market-monster/event-sourcing';
+import { LocalDate } from '@market-monster/common';
 
 describe('Plan Items For Market Day', () => {
   let store: InMemoryEventStore;
@@ -10,7 +11,7 @@ describe('Plan Items For Market Day', () => {
 
   beforeEach(() => {
     store = new InMemoryEventStore();
-    marketDays = new MarketDays(store);
+    marketDays = new MarketDays(store, { today: () => LocalDate.today() });
     handler = new PlanItemsForMarketDayHandler(marketDays);
   });
 

@@ -1,10 +1,11 @@
 import { EventStore } from '@market-monster/event-sourcing';
 import { MarketId, VendorId } from '@market-monster/shared-kernel';
-import { LocalDate } from '@market-monster/common';
+import { Clock, LocalDate } from '@market-monster/common';
 import { MarketDay } from './market-day';
 
 export class MarketDays {
-  constructor(private readonly store: EventStore) {
+  constructor(private readonly store: EventStore,
+              private readonly clock: Clock) {
   }
 
   forVendorAtMarket(vendorId: VendorId, marketId: MarketId) {
@@ -12,7 +13,7 @@ export class MarketDays {
       on: async (date: LocalDate): Promise<MarketDay> => {
         const streamId = this.streamIdFor(vendorId.value(), marketId.value(), date.value());
         const events = await this.store.load(streamId);
-        return new MarketDay(marketId, date, LocalDate.today()).rehydrate(events);
+        return new MarketDay(marketId, date, this.clock.today()).rehydrate(events);
       }
     };
   }

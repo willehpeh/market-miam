@@ -1,6 +1,7 @@
 import { InMemoryEventStore } from '../../in-memory.event-store';
 import { MarketDays, PlanItemsForMarketDayHandler, MarkItemAsSoldOutHandler, MarkItemAsSoldOut } from '@market-monster/market-days';
 import { TestPlanItemsForMarketDay } from '../plan-items-for-market-day/test-data';
+import { LocalDate } from '@market-monster/common';
 
 describe('Mark Item As Sold Out', () => {
   let store: InMemoryEventStore;
@@ -9,7 +10,7 @@ describe('Mark Item As Sold Out', () => {
 
   beforeEach(() => {
     store = new InMemoryEventStore();
-    marketDays = new MarketDays(store);
+    marketDays = new MarketDays(store, { today: () => LocalDate.today() });
     handler = new MarkItemAsSoldOutHandler(marketDays);
   });
 
