@@ -1,5 +1,5 @@
 import { ItemAddedToRepertoire, RepertoireEvent } from './events';
-import { Aggregate, UnhandledEventTypeError } from '@market-monster/event-sourcing';
+import { Aggregate } from '@market-monster/event-sourcing';
 import { Url } from '@market-monster/common';
 import { ItemDescription, ItemId, ItemName, ItemPrice } from './item';
 
@@ -22,12 +22,7 @@ export class Repertoire extends Aggregate {
   apply(event: RepertoireEvent): void {
     switch (event.type) {
       case 'ItemAddedToRepertoire':
-        // implement when necessary
         break;
-      default:
-        // @ts-expect-error this single-case switch doesn't narrow the type of event to "never" for some unexpected TS reason
-        // Remove the @ts-expect-error when a second event type is added
-        throw new UnhandledEventTypeError(event, this.constructor.name);
     }
   }
 }
