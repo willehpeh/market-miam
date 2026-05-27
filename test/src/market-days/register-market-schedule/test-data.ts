@@ -6,6 +6,7 @@ export class TestRegisterMarketSchedule {
       vendorId: 'vendor-id',
       scheduleId: 'schedule-id',
       scheduleName: 'Saturday Market',
+      startDate: '2023-09-08',
       marketId: 'market-id',
       days: [{ day: 'SAT', startTime: '08:00', endTime: '14:00' }],
     });
@@ -16,6 +17,7 @@ export class TestRegisterMarketSchedule {
       vendorId: 'vendor-id',
       scheduleId: 'schedule-id',
       scheduleName: 'Saturday Market',
+      startDate: '2023-09-08',
       marketId: 'market-id',
       days: [{ day: 'SAT' }],
     });
@@ -26,6 +28,7 @@ export class TestRegisterMarketSchedule {
       vendorId: 'vendor-id',
       scheduleId: 'schedule-id',
       scheduleName: 'Saturday Market',
+      startDate: '2023-09-08',
       marketId: 'market-id',
       days: [{ day: 'SAT', startTime: '08:00', endTime: '14:00' }],
       every: { weeks: 4 },
@@ -38,6 +41,7 @@ export class TestRegisterMarketSchedule {
       vendorId: overrides.vendorId ?? defaults.vendorId,
       scheduleId: overrides.scheduleId ?? defaults.scheduleId,
       scheduleName: overrides.scheduleName ?? defaults.scheduleName,
+      startDate: overrides.startDate ?? defaults.startDate,
       marketId: overrides.marketId ?? defaults.marketId,
       days: overrides.days ?? defaults.days,
       every: overrides.every ?? defaults.every,
