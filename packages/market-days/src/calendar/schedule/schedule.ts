@@ -10,7 +10,7 @@ type ScheduleSnapshot = {
   scheduleName: string;
   startDate: string;
   days: { day: string; startTime?: string; endTime?: string }[];
-  every: { weeks: number };
+  frequency: { weeks: number };
 };
 
 type ScheduleParams = {
@@ -42,7 +42,7 @@ export class Schedule {
       name: new ScheduleName(snapshot.scheduleName),
       startDate: new LocalDate(snapshot.startDate),
       days: snapshot.days.map(d => new ScheduleDay(d.day, d.startTime, d.endTime)),
-      frequency: new ScheduleFrequency(snapshot.every),
+      frequency: new ScheduleFrequency(snapshot.frequency),
     });
   }
 
@@ -56,7 +56,7 @@ export class Schedule {
       scheduleName: this._name.value(),
       startDate: this._startDate.value(),
       days: this._days.map(d => d.value()),
-      every: this._frequency.value()
+      frequency: this._frequency.value()
     };
   }
 

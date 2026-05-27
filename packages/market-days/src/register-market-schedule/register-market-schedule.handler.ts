@@ -32,7 +32,7 @@ export class RegisterMarketScheduleHandler implements ICommandHandler<RegisterMa
       name: new ScheduleName(registerMarketSchedule.scheduleName),
       startDate: new LocalDate(registerMarketSchedule.startDate),
       days: registerMarketSchedule.days.map(d => new ScheduleDay(d.day, d.startTime, d.endTime)),
-      frequency: registerMarketSchedule.every ? new ScheduleFrequency(registerMarketSchedule.every) : undefined,
+      frequency: registerMarketSchedule.frequency ? new ScheduleFrequency(registerMarketSchedule.frequency) : undefined,
     });
   }
 }

@@ -31,7 +31,7 @@ export class TestRegisterMarketSchedule {
       startDate: '2023-09-08',
       marketId: 'market-id',
       days: [{ day: 'SAT', startTime: '08:00', endTime: '14:00' }],
-      every: { weeks: 4 },
+      frequency: { weeks: 4 },
     });
   }
 
@@ -44,7 +44,7 @@ export class TestRegisterMarketSchedule {
       startDate: overrides.startDate ?? defaults.startDate,
       marketId: overrides.marketId ?? defaults.marketId,
       days: overrides.days ?? defaults.days,
-      every: overrides.every ?? defaults.every,
+      frequency: overrides.frequency ?? defaults.frequency,
     });
   }
 

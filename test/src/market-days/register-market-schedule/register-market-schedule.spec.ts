@@ -35,7 +35,7 @@ describe('Register Market Schedule', () => {
         startDate: command.startDate,
         marketId: command.marketId,
         days: command.days,
-        every: command.every ?? { weeks: 1 }
+        frequency: command.frequency ?? { weeks: 1 }
       })
     })]);
   });

@@ -21,7 +21,7 @@ export class Calendar extends Aggregate {
     if (this._schedules.some(existing => existing.conflictsWith(schedule))) {
       throw new ConflictingScheduleError();
     }
-    const { scheduleId, scheduleName, days, every, startDate } = schedule.snapshot();
+    const { scheduleId, scheduleName, days, frequency, startDate } = schedule.snapshot();
     const event: MarketScheduleRegistered = {
       type: 'MarketScheduleRegistered',
       payload: {
@@ -30,7 +30,7 @@ export class Calendar extends Aggregate {
         scheduleName,
         startDate,
         days,
-        every
+        frequency
       }
     };
     this.raise(event);
