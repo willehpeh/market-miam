@@ -11,6 +11,27 @@ export class TestRegisterMarketSchedule {
     );
   }
 
+  static simpleNoTimes(): RegisterMarketSchedule {
+    return new RegisterMarketSchedule(
+      'vendor-id',
+      'schedule-id',
+      'Saturday Market',
+      'market-id',
+      [{ day: 'SAT' }]
+    )
+  }
+
+  static simpleMonthly(): RegisterMarketSchedule {
+    return new RegisterMarketSchedule(
+      'vendor-id',
+      'schedule-id',
+      'Saturday Market',
+      'market-id',
+      [{ day: 'SAT', startTime: '08:00', endTime: '14:00' }],
+      { weeks: 4 }
+    );
+  }
+
   static with(overrides: Partial<RegisterMarketSchedule>): RegisterMarketSchedule {
     const defaults = this.simple();
     return new RegisterMarketSchedule(

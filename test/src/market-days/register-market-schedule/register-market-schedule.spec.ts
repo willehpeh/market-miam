@@ -21,7 +21,9 @@ describe('Register Market Schedule', () => {
 
   it.each([
     TestRegisterMarketSchedule.simple(),
-    TestRegisterMarketSchedule.everyDay()
+    TestRegisterMarketSchedule.simpleNoTimes(),
+    TestRegisterMarketSchedule.everyDay(),
+    TestRegisterMarketSchedule.simpleMonthly()
   ])('should register a market schedule, defaulting to weekly', async command => {
     await handler.execute(command);
 
@@ -32,9 +34,7 @@ describe('Register Market Schedule', () => {
         scheduleName: command.scheduleName,
         marketId: command.marketId,
         days: command.days,
-        every: {
-          weeks: 1
-        }
+        every: command.every ?? { weeks: 1 }
       })
     })]);
   });
