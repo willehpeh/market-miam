@@ -32,6 +32,7 @@ describe('Register Market Schedule', () => {
       payload: expect.objectContaining({
         scheduleId: expect.any(String),
         scheduleName: command.scheduleName,
+        startDate: command.startDate,
         marketId: command.marketId,
         days: command.days,
         every: command.every ?? { weeks: 1 }

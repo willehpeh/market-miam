@@ -7,6 +7,7 @@ import { ScheduleFrequency } from '../calendar/schedule/schedule-frequency';
 import { Schedule } from '../calendar/schedule/schedule';
 import { MarketId, VendorId } from '@market-monster/shared-kernel';
 import { ScheduleId } from '../calendar/schedule/schedule-id';
+import { LocalDate } from '@market-monster/common';
 
 @CommandHandler(RegisterMarketSchedule)
 export class RegisterMarketScheduleHandler implements ICommandHandler<RegisterMarketSchedule> {
@@ -26,14 +27,12 @@ export class RegisterMarketScheduleHandler implements ICommandHandler<RegisterMa
   }
 
   private scheduleFrom(registerMarketSchedule: RegisterMarketSchedule) {
-    const schedule = new Schedule(
-      new ScheduleId(registerMarketSchedule.scheduleId),
-      new ScheduleName(registerMarketSchedule.scheduleName)
-    );
-    schedule.addDays(registerMarketSchedule.days.map(d => new ScheduleDay(d.day, d.startTime, d.endTime)));
-    if (registerMarketSchedule.every) {
-      schedule.repeatEvery(new ScheduleFrequency(registerMarketSchedule.every));
-    }
-    return schedule;
+    return new Schedule({
+      id: new ScheduleId(registerMarketSchedule.scheduleId),
+      name: new ScheduleName(registerMarketSchedule.scheduleName),
+      startDate: new LocalDate(registerMarketSchedule.startDate),
+      days: registerMarketSchedule.days.map(d => new ScheduleDay(d.day, d.startTime, d.endTime)),
+      frequency: registerMarketSchedule.every ? new ScheduleFrequency(registerMarketSchedule.every) : undefined,
+    });
   }
 }
