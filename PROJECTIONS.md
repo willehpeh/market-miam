@@ -1,71 +1,184 @@
-# Projection & Processor Architecture Plan
+# Projection & Processor Model
 
 ## Context
 
-The codebase has a working command side (commands, handlers, aggregates, events) but no read side. Queries currently require replaying events from the store, and cross-aggregate reads (e.g., looking up item details when planning a market day) have no clean path. Building projection infrastructure unblocks both query handlers and event enrichment.
+The command side works. The read side needs projections (materialize read models) and processors (execute side effects). A "pure fold" projection can't persist to domain-specific Postgres tables through a generic runner, processors can't be pure folds at all, and checkpoint storage was separated from read model data.
 
-## Architecture
+This plan resolves those tensions with a model where **projections own their persistence through injected ports** and a **Subscription handles only polling and checkpointing**.
 
-### Projections
+## The Model
 
-A projection is a pure fold over events that materializes a read model.
+### Projection
 
-- `init()` returns the initial state
-- `when(state, event)` returns new state — pure function, no side effects
-- The result is persisted to Postgres after each batch (not held in memory across polls)
-- Each projection writes to its own domain-specific Postgres table
-- Each projection is checkpointed: stores its read model + the last `globalPosition` it processed
+A projection receives events and writes to a views port. It owns its own dispatch and persistence logic. The views port is the boundary — a fake in tests, Postgres in production.
 
-### Processors
+```ts
+// packages/event-sourcing/src/projection.ts
+export abstract class Projection {
+  abstract handle(event: StoredEvent): void | Promise<void>;
+}
+```
 
-A processor shares the same plumbing as a projection but executes side effects instead of accumulating state.
+Concrete example:
 
-- `when(event)` performs a side effect (send notification, dispatch command, call API)
-- Checkpointed the same way — tracks `globalPosition` to avoid reprocessing
-- Same runner, same gap handling
+```ts
+export class RepertoireViewProjection extends Projection {
+  constructor(private readonly views: RepertoireViews) { super(); }
 
-### Projection Runner
+  handle(event: StoredEvent) {
+    switch (event.type) {
+      case 'ItemAddedToRepertoire':
+        this.views.add(event.metadata?.vendorId as string, {
+          itemId: event.payload['itemId'],
+          name: event.payload['name'],
+          // ...
+        });
+    }
+    // unhandled events are silently ignored (no default needed)
+  }
+}
+```
 
-Each projection/processor gets its own independent polling runner.
+### Processor
 
-- **Pull-based**: polls the event store via `loadFrom(globalPosition)`
-- **One runner per projection**: no fan-out, no shared coordination — each polls at its own pace, fails independently, can't block others
-- **Gap detection**: when a gap in `globalPosition` is detected, retries with exponential backoff (100ms doubling to 5s cap). Transient gaps (in-flight Postgres transactions) resolve in early retries. Permanent gaps (rollbacks, sequence skips) are accepted and logged after max retries.
-- **No staggering needed** at current scale
+Same shape, different intent. Side effects instead of read model writes.
 
-### Event Store Changes
+```ts
+// packages/event-sourcing/src/processor.ts
+export abstract class Processor {
+  abstract handle(event: StoredEvent): void | Promise<void>;
+}
+```
 
-- Add `loadFrom(globalPosition): Promise<StoredEvent[]>` — loads all events after a given global position, ordered by `globalPosition`
+Two base classes (not one `EventHandler`) communicates intent: projections are rebuildable and idempotent, processors have external side effects.
 
-### Query Side
+### Subscription (the runner)
 
-- Query classes named `<Thing>Query` (e.g., `RepertoireQuery`)
-- Query handlers named `<Thing>QueryHandler`
-- Read models named `<Thing>View` (e.g., `RepertoireView`)
-- Query handlers depend on projections, not the event store directly
-- RxJS available as an ergonomic layer for composing/transforming projections at the query level
+Polls the event store, dispatches to a handler, manages the checkpoint. Does not know or care whether the handler is a projection or processor.
 
-### Vendor Scoping
+```ts
+// packages/event-sourcing/src/subscription.ts
+export type SubscriptionHandler = {
+  handle(event: StoredEvent): void | Promise<void>;
+};
 
-- All vendor-scoped events carry `vendorId` in event **metadata** (not payload)
-- Metadata is set in repository `save()` methods when constructing envelopes
-- Projections read `StoredEvent.metadata.vendorId` to scope read models per vendor
+export abstract class Checkpoint {
+  abstract read(): Promise<number>;
+  abstract write(position: number): Promise<void>;
+}
 
-### Testing
+export class Subscription {
+  constructor(
+    private readonly name: string,
+    private readonly store: EventStore,
+    private readonly handler: SubscriptionHandler,
+    private readonly checkpoint: Checkpoint,
+  ) {}
 
-- Full social tests from event store through projection to query handler
-- `InMemoryEventStore` is the only fake
-- Tests use existing command handlers (e.g., `AddItemToRepertoireHandler`) to populate the store, avoiding coupling to stream ID formats
-- Projection tests verify the complete flow: seed via handler, run projection, query via handler, assert on view
+  async poll(): Promise<void> {
+    const position = await this.checkpoint.read();
+    const events = await this.store.loadFrom(position);
+    for (const event of events) {
+      await this.handler.handle(event);
+      await this.checkpoint.write(event.globalPosition);
+    }
+  }
+}
+```
+
+`poll()` is public so tests call it directly — no polling loop needed in tests.
+
+The continuous polling loop (`start`/`stop`) is deferred — it's infrastructure that isn't needed to prove the model works. Add it when there's a running application.
+
+### Views Port (per projection)
+
+Each projection defines its own port with domain-specific methods. This is how each projection gets its own Postgres schema without the runner needing to know about it.
+
+```ts
+// packages/market-days/src/repertoire-view/repertoire-views.ts
+export abstract class RepertoireViews {
+  abstract add(vendorId: string, item: RepertoireViewItem): void;
+  abstract forVendor(vendorId: string): RepertoireView | undefined;
+}
+```
+
+The projection writes through `add()`. The query handler reads through `forVendor()`. Decoupled by the port.
+
+## Why Not Pure Fold
+
+A pure fold `(state, event) -> state` requires the runner to load, pass, and persist the state — meaning the runner must understand every projection's schema. That's either a generic JSON blob (kills query performance) or a per-projection persistence adapter inside the runner (same coupling, worse location). Letting the projection write through its own port keeps schema knowledge where it belongs.
+
+## Event Store Change
+
+Add one method:
+
+```ts
+// packages/event-sourcing/src/event-store.ts
+abstract loadFrom(globalPosition: number): Promise<StoredEvent[]>;
+```
+
+Returns events with `globalPosition > globalPosition`, ordered by `globalPosition`.
+
+## Testing
+
+Full social test through the subscription:
+
+```ts
+beforeEach(() => {
+  store = new InMemoryEventStore();
+  views = new InMemoryRepertoireViews();
+  projection = new RepertoireViewProjection(views);
+  checkpoint = new InMemoryCheckpoint();
+  subscription = new Subscription('repertoire-view', store, projection, checkpoint);
+  repertoires = new Repertoires(store);
+  addItemHandler = new AddItemToRepertoireHandler(repertoires);
+});
+
+it('projects an item added to the repertoire', async () => {
+  await addItemHandler.execute(TestAddItemToRepertoire.valid());
+  await subscription.poll();
+  const view = views.forVendor('vendor-id');
+  expect(view.items).toEqual([...]);
+});
+```
+
+Fakes needed: `InMemoryEventStore` (exists), `InMemoryCheckpoint` (new, trivial), `InMemoryRepertoireViews` (new, per-projection).
+
+## Files to Create/Modify
+
+**New in `packages/event-sourcing/src/`:**
+- `projection.ts` — abstract Projection
+- `processor.ts` — abstract Processor
+- `subscription.ts` — Subscription, Checkpoint, SubscriptionHandler
+
+**New in `packages/market-days/src/repertoire-view/`:**
+- `repertoire-views.ts` — port + view types
+- `repertoire-view.projection.ts` — RepertoireViewProjection
+
+**New in `test/src/`:**
+- `in-memory.checkpoint.ts`
+- `market-days/repertoire-view/in-memory-repertoire-views.ts`
+
+**Modified:**
+- `packages/event-sourcing/src/event-store.ts` — add `loadFrom`
+- `packages/event-sourcing/src/index.ts` — export new types
+- `test/src/in-memory.event-store.ts` — implement `loadFrom`
+- `test/src/market-days/repertoire-view/repertoire-view.spec.ts` — full test
 
 ## Implementation Order
 
-1. Add `vendorId` to event metadata in all repository `save()` methods (`Calendars`, `Repertoires`, `MarketDays`)
-2. Add `loadFrom(globalPosition)` to `EventStore` abstract class and `InMemoryEventStore`
-3. `Projection` base class and `Checkpoint` type in `packages/event-sourcing`
-4. `ProjectionRunner` with poll-fold-checkpoint loop and gap detection
-5. `RepertoireView` read model and `RepertoireProjection` in `packages/market-days`
-6. `RepertoireQuery` and `RepertoireQueryHandler`
-7. Update `PlanItemsForMarketDay` handler to look up item details from the projection and enrich the `ItemsPlannedForMarketDay` event payload
+1. Add `loadFrom` to `EventStore` + `InMemoryEventStore`
+2. `Projection`, `Processor`, `Subscription`, `Checkpoint` in event-sourcing package
+3. `InMemoryCheckpoint` in test
+4. `RepertoireViews` port + types in market-days
+5. `InMemoryRepertoireViews` in test
+6. `RepertoireViewProjection` in market-days
+7. Repertoire view test — drives steps 4-6
 
-All steps TDD, driven from the repertoire query test.
+All TDD. Step 7 is the outside test that pulls everything together.
+
+## Verification
+
+```bash
+npx nx test market-days
+```
