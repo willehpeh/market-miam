@@ -1,4 +1,4 @@
-import { Checkpoint } from 'packages/event-sourcing/src';
+import { Checkpoint } from '@market-monster/event-sourcing';
 
 export class InMemoryCheckpoint implements Checkpoint {
   private position = 0;

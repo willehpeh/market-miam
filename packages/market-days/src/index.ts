@@ -9,3 +9,4 @@ export * from './calendar';
 export * from './market-day';
 export * from './plan-items-for-market-day';
 export * from './mark-item-as-sold-out';
+export * from './repertoire-view';

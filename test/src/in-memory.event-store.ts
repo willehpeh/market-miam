@@ -1,6 +1,6 @@
-import { EventEnvelope, Events, EventStore, StoredEvent } from 'packages/event-sourcing/src';
+import { EventEnvelope, Events, EventStore, StoredEvent } from '@market-monster/event-sourcing';
 
-export class InMemoryEventStore extends Events implements EventStore {
+export class InMemoryEventStore implements EventStore, Events {
 
   private seededEvents: StoredEvent[] = [];
   private appendedEvents: StoredEvent[] = [];
