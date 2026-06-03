@@ -1,6 +1,6 @@
-import { EventEnvelope, EventStore, StoredEvent } from 'packages/event-sourcing/src';
+import { EventEnvelope, Events, EventStore, StoredEvent } from 'packages/event-sourcing/src';
 
-export class InMemoryEventStore implements EventStore {
+export class InMemoryEventStore extends Events implements EventStore {
 
   private seededEvents: StoredEvent[] = [];
   private appendedEvents: StoredEvent[] = [];
@@ -45,6 +45,12 @@ export class InMemoryEventStore implements EventStore {
 
   lastEvent(): StoredEvent {
     return this.appendedEvents[this.appendedEvents.length - 1];
+  }
+
+  loadFrom(globalPosition: number): Promise<StoredEvent[]> {
+    return Promise.resolve(
+      this.allEvents().filter(event => event.globalPosition > globalPosition),
+    );
   }
 
 }
