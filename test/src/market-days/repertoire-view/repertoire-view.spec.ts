@@ -26,16 +26,7 @@ class InMemoryRepertoireViews implements RepertoireViews {
   }
 
   async forVendor(vendorId: string): Promise<RepertoireView> {
-    const item = TestAddItemToRepertoire.valid();
-    return {
-      items: [{
-        itemId: item.itemId,
-        name: item.name,
-        description: item.description,
-        price: item.price,
-        photoUrl: item.photoUrl
-      }]
-    };
+    return { items: this.items.get(vendorId) ?? [] };
   }
 }
 
@@ -55,21 +46,20 @@ describe('RepertoireView', () => {
     addItemHandler = new AddItemToRepertoireHandler(repertoires);
   });
 
-  it('projects an item added to the repertoire', async () => {
-    const command = TestAddItemToRepertoire.valid();
-    await addItemHandler.execute(command);
+  it('projects items added to the repertoire', async () => {
+    const first = TestAddItemToRepertoire.valid();
+    const second = TestAddItemToRepertoire.with({ itemId: 'second-item', name: 'Second Item' });
+    await addItemHandler.execute(first);
+    await addItemHandler.execute(second);
 
     await subscription.poll();
 
     const view = await views.forVendor('vendor-id');
     expect(view).toEqual({
-      items: [{
-        itemId: command.itemId,
-        name: command.name,
-        description: command.description,
-        price: command.price,
-        photoUrl: command.photoUrl
-      }]
+      items: [
+        { itemId: first.itemId, name: first.name, description: first.description, price: first.price, photoUrl: first.photoUrl },
+        { itemId: second.itemId, name: second.name, description: second.description, price: second.price, photoUrl: second.photoUrl },
+      ],
     });
   });
 });
