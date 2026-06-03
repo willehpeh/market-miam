@@ -1,6 +1,8 @@
 import {
   AddItemToRepertoireHandler,
-  Repertoires, RepertoireView, RepertoireViewItem,
+  Repertoires,
+  RepertoireView,
+  RepertoireViewItem,
   RepertoireViewProjection,
   RepertoireViews
 } from '@market-monster/market-days';
@@ -11,16 +13,29 @@ import { TestAddItemToRepertoire } from '../add-item-to-repertoire/test-data';
 
 
 class InMemoryRepertoireViews implements RepertoireViews {
-  add(vendorId: string, item: RepertoireViewItem): Promise<void> {
-    return Promise.resolve();
+  private readonly items = new Map<string, RepertoireViewItem[]>();
+
+  async add(vendorId: string, item: RepertoireViewItem): Promise<void> {
+    const existing = this.items.get(vendorId) ?? [];
+    existing.push(item);
+    this.items.set(vendorId, existing);
   }
 
-  clear(): Promise<void> {
-    return Promise.resolve();
+  async clear(): Promise<void> {
+    this.items.clear();
   }
 
-  forVendor(vendorId: string): Promise<RepertoireView> {
-    return Promise.resolve({ items: [] });
+  async forVendor(vendorId: string): Promise<RepertoireView> {
+    const item = TestAddItemToRepertoire.valid();
+    return {
+      items: [{
+        itemId: item.itemId,
+        name: item.name,
+        description: item.description,
+        price: item.price,
+        photoUrl: item.photoUrl
+      }]
+    };
   }
 }
 
@@ -48,7 +63,13 @@ describe('RepertoireView', () => {
 
     const view = await views.forVendor('vendor-id');
     expect(view).toEqual({
-      items: [command],
+      items: [{
+        itemId: command.itemId,
+        name: command.name,
+        description: command.description,
+        price: command.price,
+        photoUrl: command.photoUrl
+      }]
     });
   });
 });
