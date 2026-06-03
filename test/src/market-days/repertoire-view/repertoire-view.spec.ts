@@ -15,7 +15,7 @@ import { TestAddItemToRepertoire } from '../add-item-to-repertoire/test-data';
 class InMemoryRepertoireViews implements RepertoireViews {
   private readonly items = new Map<string, RepertoireViewItem[]>();
 
-  async add(vendorId: string, item: RepertoireViewItem): Promise<void> {
+  async addItemToRepertoire(item: RepertoireViewItem, vendorId: string): Promise<void> {
     const existing = this.items.get(vendorId) ?? [];
     existing.push(item);
     this.items.set(vendorId, existing);
