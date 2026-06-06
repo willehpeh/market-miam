@@ -4,11 +4,11 @@ Decisions made during the projection/processor design that are not yet implement
 
 ## Polling loop
 
-The `Subscription` exposes `poll()` but has no continuous polling loop (`start`/`stop`). Add this when there's a running application. In NestJS, subscriptions would be managed via `OnModuleInit`/`OnModuleDestroy` lifecycle hooks — either in-process with the API or in a separate worker process.
+`Subscription` is abstract — it only declares `poll()`. The production implementation should add a continuous polling loop (`start`/`stop`). In NestJS, subscriptions would be managed via `OnModuleInit`/`OnModuleDestroy` lifecycle hooks — either in-process with the API or in a separate worker process.
 
 ## Checkpoint/views transaction boundary
 
-`handler.handle(event)` and `checkpoint.write(position)` are two independent calls — not atomic. If the process crashes between them, the event is either duplicated or skipped. When building Postgres adapters, both writes need to happen in the same transaction. This will likely require a small change to the `Subscription` — either a unit-of-work injected into the loop, or an ambient transaction context (e.g. AsyncLocalStorage) that both adapters pick up.
+In the `InMemorySubscription`, `handler.handle(event)` and `checkpoint.write(position)` are two independent calls — not atomic. If the process crashes between them, the event is either duplicated or skipped. The production `Subscription` implementation should make both writes happen in the same transaction — either via a unit-of-work injected into the loop, or an ambient transaction context (e.g. AsyncLocalStorage) that both adapters pick up.
 
 ## Poison events
 
@@ -22,7 +22,7 @@ In production, a shared `checkpoints` table in Postgres keyed by subscription na
 
 In PostgreSQL, concurrent writers can cause gaps in the global position sequence. Transaction A gets position 5, transaction B gets position 6, B commits first — the subscription sees 6 but not 5. If it advances the checkpoint to 6, event 5 is permanently skipped when A commits. Rolled-back transactions also create permanent gaps. The `InMemoryEventStore` doesn't have this problem (single-threaded, no concurrent writes).
 
-Strategy: retry with exponential backoff, accept the gap as permanent after 5 seconds, log when a gap is accepted. This is a Postgres-specific concern — don't bake it into the Subscription itself. A decorator or wrapper around the `Events` port can handle gap detection and retries, returning only contiguous sequences. The Subscription stays simple, `InMemoryEventStore` is used unwrapped, and only the Postgres adapter gets wrapped in production wiring.
+Strategy: retry with exponential backoff, accept the gap as permanent after 5 seconds, log when a gap is accepted. This is a Postgres-specific concern — don't bake it into the abstract `Subscription`. A decorator or wrapper around the `Events` port can handle gap detection and retries, returning only contiguous sequences. The production `Subscription` implementation stays simple, `InMemoryEventStore` is used unwrapped, and only the Postgres adapter gets wrapped in production wiring.
 
 ## Distinguishing Projection from Processor
 

@@ -6,9 +6,8 @@ import {
   RepertoireViewProjection,
   RepertoireViews
 } from '@market-monster/market-days';
-import { Subscription } from '@market-monster/event-sourcing';
 import { InMemoryEventStore } from '../../in-memory.event-store';
-import { InMemoryCheckpoint } from '../../in-memory.checkpoint';
+import { InMemorySubscription } from '../../in-memory.subscription';
 import { TestAddItemToRepertoire } from '../add-item-to-repertoire/test-data';
 
 
@@ -33,15 +32,14 @@ class InMemoryRepertoireViews implements RepertoireViews {
 describe('RepertoireView', () => {
   let store: InMemoryEventStore;
   let views: InMemoryRepertoireViews;
-  let subscription: Subscription;
+  let subscription: InMemorySubscription;
   let addItemHandler: AddItemToRepertoireHandler;
 
   beforeEach(() => {
     store = new InMemoryEventStore();
     views = new InMemoryRepertoireViews();
     const projection = new RepertoireViewProjection(views);
-    const checkpoint = new InMemoryCheckpoint('repertoire-view');
-    subscription = new Subscription('repertoire-view', store, projection, checkpoint);
+    subscription = new InMemorySubscription('repertoire-view', store, projection);
     const repertoires = new Repertoires(store);
     addItemHandler = new AddItemToRepertoireHandler(repertoires);
   });

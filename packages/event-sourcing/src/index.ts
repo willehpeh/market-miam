@@ -6,4 +6,5 @@ export { Aggregate } from './aggregate';
 export { Events } from './events';
 export { Projection } from './projection';
 export { Processor } from './processor';
-export { Subscription, Checkpoint } from './subscription';
+export { Subscription } from './subscription';
+export { Checkpoint } from './checkpoint';
