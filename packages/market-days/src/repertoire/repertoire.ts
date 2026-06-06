@@ -7,10 +7,7 @@ import { NoSuchItemError } from './no-such-item.error';
 class Item {
   constructor(
     private _itemId: ItemId,
-    private _name: ItemName,
-    private _description: ItemDescription,
     private _price: ItemPrice,
-    private _photoUrl: Url
   ) {}
 
   hasId(itemId: ItemId): boolean {
@@ -45,11 +42,14 @@ export class Repertoire extends Aggregate {
       case 'ItemAddedToRepertoire':
         this._items.push(new Item(
           new ItemId(event.payload.itemId),
-          new ItemName(event.payload.name),
-          new ItemDescription(event.payload.description),
           new ItemPrice(event.payload.price),
-          new Url(event.payload.photoUrl)
         ));
+        break;
+      case 'ItemPriceChanged':
+        this._items = this._items.map(item => item.hasId(new ItemId(event.payload.itemId)) ? new Item(
+          new ItemId(event.payload.itemId),
+          new ItemPrice(event.payload.price),
+        ) : item);
         break;
     }
   }

@@ -61,7 +61,28 @@ describe('Change Item Price', () => {
         price: baseItem.price + 20
       }
     };
-    expect(actual).toEqual(expect.objectContaining(expected))
+    expect(actual).toEqual(expect.objectContaining(expected));
+  });
+
+  it('should change the price multiple times', async () => {
+    const baseItem = TestAddItemToRepertoire.valid();
+    await new AddItemToRepertoireHandler(repertoires).execute(baseItem);
+
+    const command = new ChangeItemPrice(baseItem.itemId, baseItem.price + 20, baseItem.vendorId);
+    await handler.execute(command);
+
+    const newCommand = new ChangeItemPrice(baseItem.itemId, baseItem.price + 40, baseItem.vendorId);
+    await handler.execute(newCommand);
+
+    const actual = store.lastEvent();
+    const expected: ItemPriceChanged = {
+      type: "ItemPriceChanged",
+      payload: {
+        itemId: baseItem.itemId,
+        price: baseItem.price + 40
+      }
+    };
+    expect(actual).toEqual(expect.objectContaining(expected));
   });
 
   it('should reject an inexistent item', async () => {
