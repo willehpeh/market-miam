@@ -4,6 +4,7 @@ import {
   ItemId,
   ItemPrice,
   ItemPriceChanged,
+  NoSuchItemError,
   Repertoires
 } from '@market-monster/market-days';
 import { TestAddItemToRepertoire } from '../add-item-to-repertoire/test-data';
@@ -62,4 +63,13 @@ describe('Change Item Price', () => {
     };
     expect(actual).toEqual(expect.objectContaining(expected))
   });
+
+  it('should reject an inexistent item', async () => {
+    const baseItem = TestAddItemToRepertoire.valid();
+    await new AddItemToRepertoireHandler(repertoires).execute(baseItem);
+
+    const command = new ChangeItemPrice('incorrect-id', baseItem.price + 20, baseItem.vendorId);
+    await expect(() => handler.execute(command)).rejects.toThrow(NoSuchItemError);
+  });
 });
+

@@ -2,6 +2,7 @@ import { ItemAddedToRepertoire, ItemPriceChanged, RepertoireEvent } from './even
 import { Aggregate } from '@market-monster/event-sourcing';
 import { Url } from '@market-monster/common';
 import { ItemDescription, ItemId, ItemName, ItemPrice } from './item';
+import { NoSuchItemError } from './no-such-item.error';
 
 class Item {
   constructor(
@@ -54,7 +55,10 @@ export class Repertoire extends Aggregate {
   }
 
   changeItemPrice(itemId: ItemId, itemPrice: ItemPrice) {
-    const item = this._items.find(item => item.hasId(itemId))!;
+    const item = this._items.find(item => item.hasId(itemId));
+    if (!item) {
+      throw new NoSuchItemError(`No item in repertoire with ID ${itemId.value()}`);
+    }
     item.changePrice(itemPrice);
     const event: ItemPriceChanged = {
       type: 'ItemPriceChanged',

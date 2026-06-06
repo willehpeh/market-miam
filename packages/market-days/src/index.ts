@@ -1,5 +1,4 @@
 export * from './add-item-to-repertoire';
-export * from './repertoire/repertoire';
 export * from './repertoire/events';
 export * from './repertoire/item';
 export * from './repertoire/repertoires';
@@ -11,3 +10,4 @@ export * from './plan-items-for-market-day';
 export * from './mark-item-as-sold-out';
 export * from './repertoire-view';
 export { ItemPriceChanged } from './repertoire/events';
+export * from './repertoire';
