@@ -33,8 +33,5 @@ Each `Checkpoint` instance is created for a specific subscription. The subscript
 ### Move vendorId from metadata to event payload
 `vendorId` is a domain concept, not an infrastructure concern. It currently travels through event metadata via `assignedToVendor()` and `vendorIdFrom()`. It should be part of the event payload so events remain self-describing. Those helpers should be removed once migrated.
 
-### Extract EventHandler abstract class
-`Projection` and `Processor` have identical interfaces (`handle(event)` and `eventTypes()`). Extract a shared `EventHandler` abstract class that both extend. `Subscription` should depend on `EventHandler`, decoupling it from whether it's driving a read model or a side effect. Abstract class (not interface) for consistency with the existing abstractions.
-
 ### Split read model interfaces (write surface vs read surface)
 Read model abstractions like `RepertoireViews` currently expose both write methods (used by projections) and read methods (used by query handlers). Split into a write interface for projections and a read interface for query handlers. Same interface segregation principle applied to `EventStore` vs `Events`.

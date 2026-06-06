@@ -1,6 +1,6 @@
-import { RepertoireView, RepertoireViewItem, RepertoireViews } from '@market-monster/market-days';
+import { RepertoireView, RepertoireViewItem, RepertoireViews, RepertoireViewStore } from '@market-monster/market-days';
 
-export class InMemoryRepertoireViews implements RepertoireViews {
+export class InMemoryRepertoireViews implements RepertoireViews, RepertoireViewStore {
   private readonly items = new Map<string, RepertoireViewItem[]>();
 
   async addItemToRepertoire(item: RepertoireViewItem, vendorId: string): Promise<void> {

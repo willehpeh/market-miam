@@ -1,11 +1,11 @@
-import { RepertoireViews } from './repertoire-views';
+import { RepertoireViewStore } from './repertoire-view-store';
 import { Projection, StoredEvent } from '@market-monster/event-sourcing';
 import { vendorIdFrom } from '@market-monster/shared-kernel';
 import { ItemAddedToRepertoire, RepertoireEvent } from '../repertoire/events';
 
 export class RepertoireViewProjection implements Projection {
 
-  constructor(private readonly views: RepertoireViews) {}
+  constructor(private readonly store: RepertoireViewStore) {}
 
   eventTypes(): string[] {
     return ['ItemAddedToRepertoire'];
@@ -21,7 +21,7 @@ export class RepertoireViewProjection implements Projection {
 
   private async handleItemAdded(event: StoredEvent): Promise<void> {
     const payload = event.payload as ItemAddedToRepertoire['payload'];
-    return this.views.addItemToRepertoire({
+    return this.store.addItemToRepertoire({
       itemId: payload.itemId,
       name: payload.name,
       description: payload.description,
