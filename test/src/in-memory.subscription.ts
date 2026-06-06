@@ -1,4 +1,4 @@
-import { Events, Projection, Processor, Subscription } from '@market-monster/event-sourcing';
+import { EventHandler, Events, Subscription } from '@market-monster/event-sourcing';
 import { InMemoryCheckpoint } from './in-memory.checkpoint';
 
 export class InMemorySubscription implements Subscription {
@@ -7,7 +7,7 @@ export class InMemorySubscription implements Subscription {
   constructor(
     private readonly name: string,
     private readonly events: Events,
-    private readonly handler: Projection | Processor,
+    private readonly handler: EventHandler,
   ) {
     this.checkpoint = new InMemoryCheckpoint(name);
   }

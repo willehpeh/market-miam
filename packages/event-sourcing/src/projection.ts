@@ -1,6 +1,3 @@
-import { StoredEvent } from './stored-event';
+import { EventHandler } from './event-handler';
 
-export abstract class Projection {
-  abstract handle(event: StoredEvent): void | Promise<void>;
-  abstract eventTypes(): string[];
-}
+export abstract class Projection extends EventHandler {}
