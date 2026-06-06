@@ -1,33 +1,9 @@
-import {
-  AddItemToRepertoireHandler,
-  Repertoires,
-  RepertoireView,
-  RepertoireViewItem,
-  RepertoireViewProjection,
-  RepertoireViews
-} from '@market-monster/market-days';
+import { AddItemToRepertoireHandler, Repertoires, RepertoireViewProjection } from '@market-monster/market-days';
 import { InMemoryEventStore } from '../../in-memory.event-store';
 import { InMemorySubscription } from '../../in-memory.subscription';
 import { TestAddItemToRepertoire } from '../add-item-to-repertoire/test-data';
+import { InMemoryRepertoireViews } from './in-memory-repertoire.views';
 
-
-class InMemoryRepertoireViews implements RepertoireViews {
-  private readonly items = new Map<string, RepertoireViewItem[]>();
-
-  async addItemToRepertoire(item: RepertoireViewItem, vendorId: string): Promise<void> {
-    const existing = this.items.get(vendorId) ?? [];
-    existing.push(item);
-    this.items.set(vendorId, existing);
-  }
-
-  async clear(): Promise<void> {
-    this.items.clear();
-  }
-
-  async forVendor(vendorId: string): Promise<RepertoireView> {
-    return { items: this.items.get(vendorId) ?? [] };
-  }
-}
 
 describe('RepertoireView', () => {
   let store: InMemoryEventStore;
@@ -38,17 +14,12 @@ describe('RepertoireView', () => {
   beforeEach(() => {
     store = new InMemoryEventStore();
     views = new InMemoryRepertoireViews();
-    const projection = new RepertoireViewProjection(views);
-    subscription = new InMemorySubscription('repertoire-view', store, projection);
-    const repertoires = new Repertoires(store);
-    addItemHandler = new AddItemToRepertoireHandler(repertoires);
+    subscription = new InMemorySubscription('repertoire-view', store, new RepertoireViewProjection(views));
+    addItemHandler = new AddItemToRepertoireHandler(new Repertoires(store));
   });
 
   it('projects items added to the repertoire', async () => {
-    const first = TestAddItemToRepertoire.valid();
-    const second = TestAddItemToRepertoire.with({ itemId: 'second-item', name: 'Second Item' });
-    await addItemHandler.execute(first);
-    await addItemHandler.execute(second);
+    const { first, second } = await addTwoItems(addItemHandler);
 
     await subscription.poll();
 
@@ -61,3 +32,11 @@ describe('RepertoireView', () => {
     });
   });
 });
+
+async function addTwoItems(addItemHandler: AddItemToRepertoireHandler) {
+  const first = TestAddItemToRepertoire.valid();
+  const second = TestAddItemToRepertoire.with({ itemId: 'second-item', name: 'Second Item' });
+  await addItemHandler.execute(first);
+  await addItemHandler.execute(second);
+  return { first, second };
+}
