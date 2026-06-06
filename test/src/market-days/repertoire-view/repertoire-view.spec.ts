@@ -18,7 +18,13 @@ describe('RepertoireView', () => {
     addItemHandler = new AddItemToRepertoireHandler(new Repertoires(store));
   });
 
-  it('projects items added to the repertoire', async () => {
+  it('should return an empty repertoire when none are added', async () => {
+    await subscription.poll();
+    const view = await views.forVendor('vendor-id');
+    expect(view).toEqual({ items: [] });
+  });
+
+  it('should project items added to the repertoire', async () => {
     const { first, second } = await addTwoItems(addItemHandler);
 
     await subscription.poll();
