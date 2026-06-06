@@ -9,6 +9,12 @@ export class InMemoryRepertoireViews implements RepertoireViews, RepertoireViewS
     this.items.set(vendorId, existing);
   }
 
+  async updateItemPrice(itemId: string, newPrice: number, vendorId: string): Promise<void> {
+    const vendorItems = this.items.get(vendorId)!;
+    const newItems = vendorItems.map(vendorItem => vendorItem.itemId === itemId ? { ...vendorItem, price: newPrice } : vendorItem);
+    this.items.set(vendorId, newItems);
+  }
+
   async clear(): Promise<void> {
     this.items.clear();
   }
