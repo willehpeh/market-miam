@@ -10,6 +10,7 @@ export class InMemoryRepertoireViews implements RepertoireViews, RepertoireViewS
   }
 
   async updateItemPrice(itemId: string, newPrice: number, vendorId: string): Promise<void> {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const vendorItems = this.items.get(vendorId)!;
     const newItems = vendorItems.map(vendorItem => vendorItem.itemId === itemId ? { ...vendorItem, price: newPrice } : vendorItem);
     this.items.set(vendorId, newItems);
