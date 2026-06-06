@@ -1,4 +1,5 @@
 export * from './add-item-to-repertoire';
+export * from './change-item-price';
 export * from './repertoire/events';
 export * from './repertoire/item';
 export * from './repertoire/repertoires';

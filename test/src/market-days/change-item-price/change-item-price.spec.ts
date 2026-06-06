@@ -1,39 +1,13 @@
 import { InMemoryEventStore } from '../../in-memory.event-store';
 import {
   AddItemToRepertoireHandler,
-  ItemId,
-  ItemPrice,
+  ChangeItemPrice,
+  ChangeItemPriceHandler,
   ItemPriceChanged,
   NoSuchItemError,
   Repertoires
 } from '@market-monster/market-days';
 import { TestAddItemToRepertoire } from '../add-item-to-repertoire/test-data';
-import { Command, CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { VendorId } from '@market-monster/shared-kernel';
-
-class ChangeItemPrice extends Command<void> {
-  constructor(readonly itemId: string,
-              readonly number: number,
-              readonly vendorId: string) {
-    super();
-  }
-}
-
-@CommandHandler(ChangeItemPrice)
-class ChangeItemPriceHandler implements ICommandHandler<ChangeItemPrice> {
-  constructor(private readonly repertoires: Repertoires) {
-  }
-
-  async execute(command: ChangeItemPrice): Promise<void> {
-    const vendorId = new VendorId(command.vendorId);
-    const repertoire = await this.repertoires.forVendor(vendorId);
-    repertoire.changeItemPrice(
-      new ItemId(command.itemId),
-      new ItemPrice(command.number),
-    );
-    await this.repertoires.save(repertoire, vendorId);
-  }
-}
 
 describe('Change Item Price', () => {
   let store: InMemoryEventStore;
@@ -55,7 +29,7 @@ describe('Change Item Price', () => {
 
     const actual = store.lastEvent();
     const expected: ItemPriceChanged = {
-      type: "ItemPriceChanged",
+      type: 'ItemPriceChanged',
       payload: {
         itemId: baseItem.itemId,
         price: baseItem.price + 20
@@ -76,7 +50,7 @@ describe('Change Item Price', () => {
 
     const actual = store.lastEvent();
     const expected: ItemPriceChanged = {
-      type: "ItemPriceChanged",
+      type: 'ItemPriceChanged',
       payload: {
         itemId: baseItem.itemId,
         price: baseItem.price + 40
