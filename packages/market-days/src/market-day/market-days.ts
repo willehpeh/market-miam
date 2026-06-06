@@ -1,5 +1,5 @@
 import { EventStore } from '@market-monster/event-sourcing';
-import { assignedToVendor, MarketId, VendorId } from '@market-monster/shared-kernel';
+import { MarketId, VendorId } from '@market-monster/shared-kernel';
 import { Clock, LocalDate } from '@market-monster/common';
 import { MarketDay } from './market-day';
 
@@ -21,8 +21,12 @@ export class MarketDays {
   async save(marketDay: MarketDay, vendorId: VendorId): Promise<void> {
     const snapshot = marketDay.snapshot();
     const streamId = this.streamIdFor(vendorId.value(), snapshot.marketId, snapshot.date);
-    const envelopes = assignedToVendor(marketDay.raisedEvents(), vendorId);
-    await this.store.append(streamId, envelopes, marketDay.currentStreamPosition);
+    await this.store.append(
+      streamId,
+      marketDay.raisedEvents(),
+      marketDay.currentStreamPosition,
+      { vendorId: vendorId.value() },
+    );
   }
 
   private streamIdFor(vendorId: string, marketId: string, date: string) {

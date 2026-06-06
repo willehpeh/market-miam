@@ -28,10 +28,8 @@ The orchestration (read checkpoint, load events, filter, handle, advance checkpo
 ### Checkpoint scoped at construction time
 Each `Checkpoint` instance is created for a specific subscription. The subscription name is a constructor dependency, not a method parameter. Keeps the `Checkpoint` interface simple (`read()`/`write(position)`).
 
-## Pending Changes
+### vendorId is domain context, not domain content
+vendorId represents "who it happened to," not "what happened." Events are self-describing within a vendor's context. vendorId stays in metadata — the right home for domain context the aggregate doesn't reason about. Metadata is passed directly on `EventStore.append()` rather than wrapped in an `EventEnvelope`.
 
-### Move vendorId from metadata to event payload
-`vendorId` is a domain concept, not an infrastructure concern. It currently travels through event metadata via `assignedToVendor()` and `vendorIdFrom()`. It should be part of the event payload so events remain self-describing. Those helpers should be removed once migrated.
-
-### Split read model interfaces (write surface vs read surface)
-Read model abstractions like `RepertoireViews` currently expose both write methods (used by projections) and read methods (used by query handlers). Split into a write interface for projections and a read interface for query handlers. Same interface segregation principle applied to `EventStore` vs `Events`.
+### No EventEnvelope wrapper
+`EventStore.append()` takes `DomainEvent[]` and optional `metadata` directly. `EventEnvelope` was a single-purpose wrapper that existed only to be destructured at the append boundary. Repositories pass `{ vendorId: vendorId.value() }` inline — no `assignedToVendor()` helper needed.

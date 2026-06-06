@@ -1,17 +1,17 @@
-import { EventEnvelope, Events, EventStore, StoredEvent } from '@market-monster/event-sourcing';
+import { DomainEvent, Events, EventStore, StoredEvent } from '@market-monster/event-sourcing';
 
 export class InMemoryEventStore implements EventStore, Events {
 
   private seededEvents: StoredEvent[] = [];
   private appendedEvents: StoredEvent[] = [];
 
-  append(streamId: string, envelopes: EventEnvelope[], expectedStreamPosition: number): Promise<void> {
+  append(streamId: string, events: DomainEvent[], expectedStreamPosition: number, metadata?: Record<string, unknown>): Promise<void> {
     const stream = this.allEvents().filter(e => e.streamId === streamId);
     if (stream.length !== expectedStreamPosition) {
       return Promise.reject(new Error(`Expected stream position ${expectedStreamPosition}, but stream is at ${stream.length}`));
     }
 
-    this.appendedEvents.push(...this.storedEventsFromEnvelopes(envelopes, streamId, stream));
+    this.appendedEvents.push(...this.toStoredEvents(events, streamId, stream, metadata));
     return Promise.resolve();
   }
 
@@ -19,16 +19,16 @@ export class InMemoryEventStore implements EventStore, Events {
     return Promise.resolve(this.allEvents().filter(e => e.streamId === streamId));
   }
 
-  seedWith(streamId: string, envelopes: EventEnvelope[]): void {
+  seedWith(streamId: string, events: DomainEvent[], metadata?: Record<string, unknown>): void {
     const stream = this.allEvents().filter(e => e.streamId === streamId);
-    this.seededEvents.push(...this.storedEventsFromEnvelopes(envelopes, streamId, stream));
+    this.seededEvents.push(...this.toStoredEvents(events, streamId, stream, metadata));
   }
 
-  private storedEventsFromEnvelopes(envelopes: EventEnvelope[], streamId: string, stream: StoredEvent[]) {
-    return envelopes.map((envelope, index) => ({
+  private toStoredEvents(events: DomainEvent[], streamId: string, stream: StoredEvent[], metadata?: Record<string, unknown>) {
+    return events.map((event, index) => ({
       streamId,
-      ...envelope.event,
-      ...envelope.metadata ? { metadata: envelope.metadata } : {},
+      ...event,
+      ...metadata ? { metadata } : {},
       streamPosition: stream.length + index + 1,
       globalPosition: this.allEvents().length + index + 1,
       timestamp: Date.now(),
