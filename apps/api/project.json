@@ -1,5 +1,5 @@
 {
-  "name": "market-monster-api",
+  "name": "api",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "apps/api/src",
   "projectType": "application",
@@ -64,15 +64,15 @@
         "build"
       ],
       "options": {
-        "buildTarget": "market-monster-api:build",
+        "buildTarget": "api:build",
         "runBuildTargetDependencies": false
       },
       "configurations": {
         "development": {
-          "buildTarget": "market-monster-api:build:development"
+          "buildTarget": "api:build:development"
         },
         "production": {
-          "buildTarget": "market-monster-api:build:production"
+          "buildTarget": "api:build:production"
         }
       }
     }

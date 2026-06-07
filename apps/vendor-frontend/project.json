@@ -1,5 +1,5 @@
 {
-  "name": "market-monster",
+  "name": "vendor-frontend",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "projectType": "application",
   "prefix": "app",
@@ -60,10 +60,10 @@
       "executor": "@angular/build:dev-server",
       "configurations": {
         "production": {
-          "buildTarget": "market-monster:build:production"
+          "buildTarget": "vendor-frontend:build:production"
         },
         "development": {
-          "buildTarget": "market-monster:build:development"
+          "buildTarget": "vendor-frontend:build:development"
         }
       },
       "defaultConfiguration": "development"
@@ -79,7 +79,7 @@
       "continuous": true,
       "executor": "@nx/web:file-server",
       "options": {
-        "buildTarget": "market-monster:build",
+        "buildTarget": "vendor-frontend:build",
         "port": 4200,
         "staticFilePath": "dist/apps/vendor-frontend/browser",
         "spa": true
