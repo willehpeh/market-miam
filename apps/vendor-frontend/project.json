@@ -3,27 +3,31 @@
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "projectType": "application",
   "prefix": "app",
-  "sourceRoot": "apps/market-monster/src",
+  "sourceRoot": "apps/vendor-frontend/src",
   "tags": [],
   "targets": {
     "build": {
       "executor": "@angular/build:application",
-      "outputs": ["{options.outputPath}"],
+      "outputs": [
+        "{options.outputPath}"
+      ],
       "options": {
-        "outputPath": "dist/apps/market-monster",
-        "browser": "apps/market-monster/src/main.ts",
-        "tsConfig": "apps/market-monster/tsconfig.app.json",
+        "outputPath": "dist/apps/vendor-frontend",
+        "browser": "apps/vendor-frontend/src/main.ts",
+        "tsConfig": "apps/vendor-frontend/tsconfig.app.json",
         "inlineStyleLanguage": "scss",
         "assets": [
           {
             "glob": "**/*",
-            "input": "apps/market-monster/public"
+            "input": "apps/vendor-frontend/public"
           }
         ],
-        "styles": ["apps/market-monster/src/styles.scss"],
-        "server": "apps/market-monster/src/main.server.ts",
+        "styles": [
+          "apps/vendor-frontend/src/styles.scss"
+        ],
+        "server": "apps/vendor-frontend/src/main.server.ts",
         "ssr": {
-          "entry": "apps/market-monster/src/server.ts"
+          "entry": "apps/vendor-frontend/src/server.ts"
         },
         "outputMode": "server"
       },
@@ -77,7 +81,7 @@
       "options": {
         "buildTarget": "market-monster:build",
         "port": 4200,
-        "staticFilePath": "dist/apps/market-monster/browser",
+        "staticFilePath": "dist/apps/vendor-frontend/browser",
         "spa": true
       }
     }
