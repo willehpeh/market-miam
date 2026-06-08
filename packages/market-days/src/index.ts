@@ -1,4 +1,4 @@
-export * from './add-item-to-repertoire';
+export * from './add-item-to-catalogue';
 export * from './change-item-price';
 export * from './catalogue/events';
 export * from './catalogue/item';

@@ -5,16 +5,16 @@ import { Catalogues, ItemId, ItemPrice } from '../catalogue';
 
 @CommandHandler(ChangeItemPrice)
 export class ChangeItemPriceHandler implements ICommandHandler<ChangeItemPrice> {
-  constructor(private readonly repertoires: Catalogues) {
+  constructor(private readonly catalogues: Catalogues) {
   }
 
   async execute(command: ChangeItemPrice): Promise<void> {
     const vendorId = new VendorId(command.vendorId);
-    const repertoire = await this.repertoires.forVendor(vendorId);
-    repertoire.changeItemPrice(
+    const catalogue = await this.catalogues.forVendor(vendorId);
+    catalogue.changeItemPrice(
       new ItemId(command.itemId),
       new ItemPrice(command.price),
     );
-    await this.repertoires.save(repertoire, vendorId);
+    await this.catalogues.save(catalogue, vendorId);
   }
 }

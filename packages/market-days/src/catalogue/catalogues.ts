@@ -21,6 +21,6 @@ export class Catalogues {
   }
 
   private streamIdFor(vendorId: VendorId) {
-    return `repertoire-${ vendorId.value() }`;
+    return `catalogue-${ vendorId.value() }`;
   }
 }
