@@ -2,8 +2,7 @@ import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { Url } from '@market-monster/common';
 import { VendorId } from '@market-monster/shared-kernel';
 import { AddItemToRepertoire } from './add-item-to-repertoire';
-import { ItemDescription, ItemId, ItemName, ItemPrice } from '../catalogue/item';
-import { Catalogues } from '../catalogue';
+import { Catalogues, ItemDescription, ItemId, ItemName, ItemPrice } from '../catalogue';
 
 @CommandHandler(AddItemToRepertoire)
 export class AddItemToRepertoireHandler implements ICommandHandler<AddItemToRepertoire> {

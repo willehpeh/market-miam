@@ -1,9 +1,9 @@
-import { RepertoireView, RepertoireViewItem, RepertoireViews, RepertoireViewStore } from '@market-monster/market-days';
+import { CatalogueView, CatalogueViewItem, CatalogueViews, CatalogueViewStore } from '@market-monster/market-days';
 
-export class InMemoryRepertoireViews implements RepertoireViews, RepertoireViewStore {
-  private readonly items = new Map<string, RepertoireViewItem[]>();
+export class InMemoryRepertoireViews implements CatalogueViews, CatalogueViewStore {
+  private readonly items = new Map<string, CatalogueViewItem[]>();
 
-  async addItemToRepertoire(item: RepertoireViewItem, vendorId: string): Promise<void> {
+  async addItemToCatalogue(item: CatalogueViewItem, vendorId: string): Promise<void> {
     const existing = this.items.get(vendorId) ?? [];
     existing.push(item);
     this.items.set(vendorId, existing);
@@ -20,7 +20,7 @@ export class InMemoryRepertoireViews implements RepertoireViews, RepertoireViewS
     this.items.clear();
   }
 
-  async forVendor(vendorId: string): Promise<RepertoireView> {
+  async forVendor(vendorId: string): Promise<CatalogueView> {
     return { items: this.items.get(vendorId) ?? [] };
   }
 }

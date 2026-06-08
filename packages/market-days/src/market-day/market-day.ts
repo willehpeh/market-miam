@@ -4,7 +4,7 @@ import { MarketId } from '@market-monster/shared-kernel';
 import { ItemMarkedAsSoldOut, ItemsPlannedForMarketDay, MarketDayEvent } from './events';
 import { PlannedItem } from './planned-item';
 import { MarketDayInThePastError } from './errors';
-import { ItemId } from '../catalogue/item';
+import { ItemId } from '../catalogue';
 
 export type MarketDaySnapshot = {
   marketId: string;

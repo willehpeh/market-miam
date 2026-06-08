@@ -1,4 +1,4 @@
-export type RepertoireViewItem = {
+export type CatalogueViewItem = {
   itemId: string;
   name: string;
   description: string;
@@ -6,6 +6,6 @@ export type RepertoireViewItem = {
   photoUrl: string;
 };
 
-export type RepertoireView = {
-  items: RepertoireViewItem[];
+export type CatalogueView = {
+  items: CatalogueViewItem[];
 };

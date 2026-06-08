@@ -1,8 +1,7 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { VendorId } from '@market-monster/shared-kernel';
 import { ChangeItemPrice } from './change-item-price';
-import { ItemId, ItemPrice } from '../catalogue/item';
-import { Catalogues } from '../catalogue';
+import { Catalogues, ItemId, ItemPrice } from '../catalogue';
 
 @CommandHandler(ChangeItemPrice)
 export class ChangeItemPriceHandler implements ICommandHandler<ChangeItemPrice> {

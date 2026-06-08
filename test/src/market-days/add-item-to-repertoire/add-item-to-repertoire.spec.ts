@@ -25,7 +25,7 @@ describe('AddItemToRepertoire', () => {
     await handler.execute(command);
 
     const expectedEvent: ItemAddedToCatalogue = {
-      type: 'ItemAddedToRepertoire',
+      type: 'ItemAddedToCatalogue',
       payload: {
         itemId: command.itemId,
         name: command.name,

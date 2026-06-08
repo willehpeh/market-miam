@@ -1,22 +1,22 @@
-import { RepertoireViewStore } from './repertoire-view-store';
+import { CatalogueViewStore } from './catalogue-view.store';
 import { Projection, StoredEvent } from '@market-monster/event-sourcing';
 import { vendorIdFrom } from '@market-monster/shared-kernel';
 import { ItemAddedToCatalogue, ItemPriceChanged, CatalogueEvent } from '../catalogue/events';
 
-export class RepertoireViewProjection implements Projection {
+export class CatalogueViewProjection implements Projection {
 
-  constructor(private readonly store: RepertoireViewStore) {}
+  constructor(private readonly store: CatalogueViewStore) {}
 
   eventTypes(): string[] {
     return [
-      'ItemAddedToRepertoire',
+      'ItemAddedToCatalogue',
       'ItemPriceChanged',
     ];
   }
 
   async handle(event: StoredEvent): Promise<void> {
     switch (event.type as CatalogueEvent['type']) {
-      case 'ItemAddedToRepertoire': {
+      case 'ItemAddedToCatalogue': {
         return this.handleItemAdded(event);
       }
       case 'ItemPriceChanged': {
@@ -27,7 +27,7 @@ export class RepertoireViewProjection implements Projection {
 
   private async handleItemAdded(event: StoredEvent): Promise<void> {
     const payload = event.payload as ItemAddedToCatalogue['payload'];
-    return this.store.addItemToRepertoire({
+    return this.store.addItemToCatalogue({
       itemId: payload.itemId,
       name: payload.name,
       description: payload.description,

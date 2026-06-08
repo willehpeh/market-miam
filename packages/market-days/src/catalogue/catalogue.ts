@@ -11,7 +11,7 @@ export class Catalogue extends Aggregate {
   addItem(id: ItemId, name: ItemName, description: ItemDescription, price: ItemPrice, photoUrl: Url) {
     const item = new Item(id, name, description, price, photoUrl);
     const event: ItemAddedToCatalogue = {
-      type: 'ItemAddedToRepertoire',
+      type: 'ItemAddedToCatalogue',
       payload: {
         itemId: item.itemId().value(),
         name: item.name().value(),
@@ -25,7 +25,7 @@ export class Catalogue extends Aggregate {
 
   apply(event: CatalogueEvent): void {
     switch (event.type) {
-      case 'ItemAddedToRepertoire':
+      case 'ItemAddedToCatalogue':
         this._items.push(new Item(
           new ItemId(event.payload.itemId),
           new ItemName(event.payload.name),

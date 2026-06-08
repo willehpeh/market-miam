@@ -3,7 +3,7 @@ import {
   ChangeItemPrice,
   ChangeItemPriceHandler,
   Catalogues,
-  RepertoireViewProjection
+  CatalogueViewProjection
 } from '@market-monster/market-days';
 import { InMemoryEventStore } from '../../in-memory.event-store';
 import { InMemorySubscription } from '../../in-memory.subscription';
@@ -22,7 +22,7 @@ describe('RepertoireView', () => {
   beforeEach(() => {
     store = new InMemoryEventStore();
     views = new InMemoryRepertoireViews();
-    subscription = new InMemorySubscription('repertoire-view', store, new RepertoireViewProjection(views));
+    subscription = new InMemorySubscription('repertoire-view', store, new CatalogueViewProjection(views));
     repertoires = new Catalogues(store);
     addItemHandler = new AddItemToRepertoireHandler(repertoires);
     changeItemPriceHandler = new ChangeItemPriceHandler(repertoires);
