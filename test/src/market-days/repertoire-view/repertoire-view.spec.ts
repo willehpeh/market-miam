@@ -7,34 +7,34 @@ import {
 } from '@market-monster/market-days';
 import { InMemoryEventStore } from '../../in-memory.event-store';
 import { InMemorySubscription } from '../../in-memory.subscription';
-import { TestAddItemToRepertoire } from '../add-item-to-repertoire/test-data';
-import { InMemoryRepertoireViews } from './in-memory-repertoire.views';
+import { TestAddItemToCatalogue } from '../add-item-to-catalogue/test-data';
+import { InMemoryCatalogueViews } from './in-memory-catalogue.views';
 
 
-describe('RepertoireView', () => {
+describe('CatalogueView', () => {
   let store: InMemoryEventStore;
-  let views: InMemoryRepertoireViews;
-  let repertoires: Catalogues;
+  let views: InMemoryCatalogueViews;
+  let catalogues: Catalogues;
   let subscription: InMemorySubscription;
   let addItemHandler: AddItemToCatalogueHandler;
   let changeItemPriceHandler: ChangeItemPriceHandler;
 
   beforeEach(() => {
     store = new InMemoryEventStore();
-    views = new InMemoryRepertoireViews();
-    subscription = new InMemorySubscription('repertoire-view', store, new CatalogueViewProjection(views));
-    repertoires = new Catalogues(store);
-    addItemHandler = new AddItemToCatalogueHandler(repertoires);
-    changeItemPriceHandler = new ChangeItemPriceHandler(repertoires);
+    views = new InMemoryCatalogueViews();
+    subscription = new InMemorySubscription('catalogue-view', store, new CatalogueViewProjection(views));
+    catalogues = new Catalogues(store);
+    addItemHandler = new AddItemToCatalogueHandler(catalogues);
+    changeItemPriceHandler = new ChangeItemPriceHandler(catalogues);
   });
 
-  it('should return an empty repertoire when none are added', async () => {
+  it('should return an empty catalogue when none are added', async () => {
     await subscription.poll();
     const view = await views.forVendor('vendor-id');
     expect(view).toEqual({ items: [] });
   });
 
-  it('should project items added to the repertoire', async () => {
+  it('should project items added to the catalogue', async () => {
     const { first, second } = await addTwoItems(addItemHandler);
 
     await subscription.poll();
@@ -49,7 +49,7 @@ describe('RepertoireView', () => {
   });
 
   it('should show the latest price', async () => {
-    const newItemCommand = TestAddItemToRepertoire.valid();
+    const newItemCommand = TestAddItemToCatalogue.valid();
     await addItemHandler.execute(newItemCommand);
     await changeItemPriceHandler.execute(new ChangeItemPrice(newItemCommand.itemId, newItemCommand.price + 300, newItemCommand.vendorId));
 
@@ -64,8 +64,8 @@ describe('RepertoireView', () => {
 });
 
 async function addTwoItems(addItemHandler: AddItemToCatalogueHandler) {
-  const first = TestAddItemToRepertoire.valid();
-  const second = TestAddItemToRepertoire.with({ itemId: 'second-item', name: 'Second Item' });
+  const first = TestAddItemToCatalogue.valid();
+  const second = TestAddItemToCatalogue.with({ itemId: 'second-item', name: 'Second Item' });
   await addItemHandler.execute(first);
   await addItemHandler.execute(second);
   return { first, second };

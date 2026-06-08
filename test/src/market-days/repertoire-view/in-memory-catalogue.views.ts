@@ -1,6 +1,6 @@
 import { CatalogueView, CatalogueViewItem, CatalogueViews, CatalogueViewStore } from '@market-monster/market-days';
 
-export class InMemoryRepertoireViews implements CatalogueViews, CatalogueViewStore {
+export class InMemoryCatalogueViews implements CatalogueViews, CatalogueViewStore {
   private readonly items = new Map<string, CatalogueViewItem[]>();
 
   async addItemToCatalogue(item: CatalogueViewItem, vendorId: string): Promise<void> {

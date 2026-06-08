@@ -29,13 +29,13 @@ A SaaS platform where each vendor gets their own branded website (Shopify model,
 
 ## Key Domain Concepts
 
-### Repertoire
+### catalogue
 
 The vendor’s living catalog of everything they know how to make. Long-lived, market-independent, accumulates history over time. This is the core differentiator — structured knowledge about the vendor’s business that Instagram can never provide.
 
 ### MarketDay
 
-A specific vendor, at a specific market, on a specific date. The operational heart of the system. Vendors assemble each market day’s offering by selecting items from their repertoire. Has a natural lifecycle: planned → published → in progress → completed.
+A specific vendor, at a specific market, on a specific date. The operational heart of the system. Vendors assemble each market day’s offering by selecting items from their catalogue. Has a natural lifecycle: planned → published → in progress → completed.
 
 ### Miam
 
@@ -43,7 +43,7 @@ Domain-specific term for a customer expressing appetite/intent for an item. Not 
 
 ### Item Request
 
-A customer can request a repertoire item for a specific market day — “I wish you’d bring the lamb tagine this Saturday.” Inverts the dynamic from vendor-push to customer-pull. Requires basic anonymous abuse prevention (e.g., one request per item per device per week).
+A customer can request a catalogue item for a specific market day — “I wish you’d bring the lamb tagine this Saturday.” Inverts the dynamic from vendor-push to customer-pull. Requires basic anonymous abuse prevention (e.g., one request per item per device per week).
 
 ## Post-Market Tracking
 
@@ -68,7 +68,7 @@ Concurrency per tenant is near zero, making event sourcing a natural fit. Single
 A single bounded context for now, containing four aggregates:
 
 - **Vendor** — identity, branding, profile
-- **Repertoire** — the item catalog
+- **catalogue** — the item catalog
 - **Schedule** — which markets, which days, absences
 - **MarketDay** — the concrete occurrence with planned items, customer signals, and outcomes
 
@@ -83,7 +83,7 @@ A customer-facing bounded context may emerge later as the language diverges betw
 |MarketDayAddedToSchedule|Schedule  |Setup          |
 |AbsenceDeclared         |Schedule  |Operational    |
 |AbsenceCancelled        |Schedule  |Operational    |
-|ItemAddedToRepertoire   |Repertoire|Setup          |
+|ItemAddedTocatalogue   |catalogue|Setup          |
 |ItemPlannedForMarketDay |MarketDay |Before market  |
 |ItemDroppedFromMarketDay|MarketDay |Before market  |
 |MarketDayPublished      |MarketDay |Before market  |
@@ -94,17 +94,17 @@ A customer-facing bounded context may emerge later as the language diverges betw
 
 ### Events still to consider
 
-- `ItemUpdated` / `ItemRetired` (Repertoire lifecycle)
+- `ItemUpdated` / `ItemRetired` (catalogue lifecycle)
 - `VendorProfileUpdated` (branding changes)
 - `ItemQuantityAdjusted` (vendor changes planned quantity before the day)
 - `MarketDayCompleted` (explicit lifecycle boundary — deferred for now, using date as implicit proxy)
 
 ## MVP Strategy
 
-The MVP is **vendor-facing first**: the repertoire and market day planning tool, with the customer-facing published page as the visible output.
+The MVP is **vendor-facing first**: the catalogue and market day planning tool, with the customer-facing published page as the visible output.
 
-1. **Build the repertoire** — vendor creates their catalog of items
-1. **Plan market days** — select items from repertoire, optionally set quantities
+1. **Build the catalogue** — vendor creates their catalog of items
+1. **Plan market days** — select items from catalogue, optionally set quantities
 1. **Publish** — customer-facing page shows what’s coming
 1. **Sold-out tracking** — live updates during the market
 1. **Post-market review** — log remaining quantities

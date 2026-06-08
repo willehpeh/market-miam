@@ -1,6 +1,6 @@
 import { AddItemToCatalogue } from '@market-monster/market-days';
 
-export class TestAddItemToRepertoire {
+export class TestAddItemToCatalogue {
   static valid(): AddItemToCatalogue {
     return new AddItemToCatalogue(
       'item-id',

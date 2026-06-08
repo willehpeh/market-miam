@@ -7,22 +7,22 @@ import {
   NoSuchItemError,
   Catalogues
 } from '@market-monster/market-days';
-import { TestAddItemToRepertoire } from '../add-item-to-repertoire/test-data';
+import { TestAddItemToCatalogue } from '../add-item-to-catalogue/test-data';
 
 describe('Change Item Price', () => {
   let store: InMemoryEventStore;
-  let repertoires: Catalogues;
+  let catalogues: Catalogues;
   let handler: ChangeItemPriceHandler;
 
   beforeEach(() => {
     store = new InMemoryEventStore();
-    repertoires = new Catalogues(store);
-    handler = new ChangeItemPriceHandler(repertoires);
+    catalogues = new Catalogues(store);
+    handler = new ChangeItemPriceHandler(catalogues);
   });
 
   it('should change the price of an existing item', async () => {
-    const baseItem = TestAddItemToRepertoire.valid();
-    await new AddItemToCatalogueHandler(repertoires).execute(baseItem);
+    const baseItem = TestAddItemToCatalogue.valid();
+    await new AddItemToCatalogueHandler(catalogues).execute(baseItem);
 
     const command = new ChangeItemPrice(baseItem.itemId, baseItem.price + 20, baseItem.vendorId);
     await handler.execute(command);
@@ -39,8 +39,8 @@ describe('Change Item Price', () => {
   });
 
   it('should change the price multiple times', async () => {
-    const baseItem = TestAddItemToRepertoire.valid();
-    await new AddItemToCatalogueHandler(repertoires).execute(baseItem);
+    const baseItem = TestAddItemToCatalogue.valid();
+    await new AddItemToCatalogueHandler(catalogues).execute(baseItem);
 
     const command = new ChangeItemPrice(baseItem.itemId, baseItem.price + 20, baseItem.vendorId);
     await handler.execute(command);
@@ -60,8 +60,8 @@ describe('Change Item Price', () => {
   });
 
   it('should reject an inexistent item', async () => {
-    const baseItem = TestAddItemToRepertoire.valid();
-    await new AddItemToCatalogueHandler(repertoires).execute(baseItem);
+    const baseItem = TestAddItemToCatalogue.valid();
+    await new AddItemToCatalogueHandler(catalogues).execute(baseItem);
 
     const command = new ChangeItemPrice('incorrect-id', baseItem.price + 20, baseItem.vendorId);
     await expect(() => handler.execute(command)).rejects.toThrow(NoSuchItemError);
