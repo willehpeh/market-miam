@@ -8,9 +8,7 @@
   "targets": {
     "build": {
       "executor": "@angular/build:application",
-      "outputs": [
-        "{options.outputPath}"
-      ],
+      "outputs": ["{options.outputPath}"],
       "options": {
         "outputPath": "dist/apps/vendor-frontend",
         "browser": "apps/vendor-frontend/src/main.ts",
@@ -22,14 +20,7 @@
             "input": "apps/vendor-frontend/public"
           }
         ],
-        "styles": [
-          "apps/vendor-frontend/src/styles.scss"
-        ],
-        "server": "apps/vendor-frontend/src/main.server.ts",
-        "ssr": {
-          "entry": "apps/vendor-frontend/src/server.ts"
-        },
-        "outputMode": "server"
+        "styles": ["apps/vendor-frontend/src/styles.scss"]
       },
       "configurations": {
         "production": {
@@ -73,7 +64,9 @@
     },
     "test": {
       "executor": "@angular/build:unit-test",
-      "options": {}
+      "options": {
+        "watch": false
+      }
     },
     "serve-static": {
       "continuous": true,
