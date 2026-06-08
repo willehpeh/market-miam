@@ -1,8 +1,8 @@
 import {
   AddItemToRepertoireHandler,
   InvalidPriceError,
-  ItemAddedToRepertoire,
-  Repertoires
+  ItemAddedToCatalogue,
+  Catalogues
 } from '@market-monster/market-days';
 import { EmptyValueError } from '@market-monster/common';
 import { InMemoryEventStore } from '../../in-memory.event-store';
@@ -11,11 +11,11 @@ import { TestAddItemToRepertoire } from './test-data';
 describe('AddItemToRepertoire', () => {
   let store: InMemoryEventStore;
   let handler: AddItemToRepertoireHandler;
-  let repertoires: Repertoires;
+  let repertoires: Catalogues;
 
   beforeEach(() => {
     store = new InMemoryEventStore();
-    repertoires = new Repertoires(store);
+    repertoires = new Catalogues(store);
     handler = new AddItemToRepertoireHandler(repertoires);
   });
 
@@ -24,7 +24,7 @@ describe('AddItemToRepertoire', () => {
 
     await handler.execute(command);
 
-    const expectedEvent: ItemAddedToRepertoire = {
+    const expectedEvent: ItemAddedToCatalogue = {
       type: 'ItemAddedToRepertoire',
       payload: {
         itemId: command.itemId,

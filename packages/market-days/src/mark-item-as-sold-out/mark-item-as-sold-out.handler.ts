@@ -1,7 +1,7 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { MarkItemAsSoldOut } from './mark-item-as-sold-out';
 import { MarketDays } from '../market-day';
-import { ItemId } from '../repertoire/item';
+import { ItemId } from '../catalogue/item';
 import { MarketId, VendorId } from '@market-monster/shared-kernel';
 import { LocalDate, LocalTime } from '@market-monster/common';
 

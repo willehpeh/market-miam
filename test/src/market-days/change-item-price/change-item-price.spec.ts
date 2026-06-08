@@ -5,18 +5,18 @@ import {
   ChangeItemPriceHandler,
   ItemPriceChanged,
   NoSuchItemError,
-  Repertoires
+  Catalogues
 } from '@market-monster/market-days';
 import { TestAddItemToRepertoire } from '../add-item-to-repertoire/test-data';
 
 describe('Change Item Price', () => {
   let store: InMemoryEventStore;
-  let repertoires: Repertoires;
+  let repertoires: Catalogues;
   let handler: ChangeItemPriceHandler;
 
   beforeEach(() => {
     store = new InMemoryEventStore();
-    repertoires = new Repertoires(store);
+    repertoires = new Catalogues(store);
     handler = new ChangeItemPriceHandler(repertoires);
   });
 

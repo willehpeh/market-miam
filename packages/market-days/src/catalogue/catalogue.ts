@@ -1,16 +1,16 @@
-import { ItemAddedToRepertoire, ItemPriceChanged, RepertoireEvent } from './events';
+import { ItemAddedToCatalogue, ItemPriceChanged, CatalogueEvent } from './events';
 import { Aggregate } from '@market-monster/event-sourcing';
 import { Url } from '@market-monster/common';
 import { Item, ItemDescription, ItemId, ItemName, ItemPrice } from './item';
 import { NoSuchItemError } from './no-such-item.error';
 
-export class Repertoire extends Aggregate {
+export class Catalogue extends Aggregate {
 
   private _items: Item[] = [];
 
   addItem(id: ItemId, name: ItemName, description: ItemDescription, price: ItemPrice, photoUrl: Url) {
     const item = new Item(id, name, description, price, photoUrl);
-    const event: ItemAddedToRepertoire = {
+    const event: ItemAddedToCatalogue = {
       type: 'ItemAddedToRepertoire',
       payload: {
         itemId: item.itemId().value(),
@@ -23,7 +23,7 @@ export class Repertoire extends Aggregate {
     this.raise(event);
   }
 
-  apply(event: RepertoireEvent): void {
+  apply(event: CatalogueEvent): void {
     switch (event.type) {
       case 'ItemAddedToRepertoire':
         this._items.push(new Item(
@@ -40,7 +40,7 @@ export class Repertoire extends Aggregate {
   changeItemPrice(itemId: ItemId, itemPrice: ItemPrice) {
     const item = this._items.find(item => item.hasId(itemId));
     if (!item) {
-      throw new NoSuchItemError(`No item in repertoire with ID ${ itemId.value() }`);
+      throw new NoSuchItemError(`No item in catalogue with ID ${ itemId.value() }`);
     }
     item.changePrice(itemPrice);
     const event: ItemPriceChanged = {
