@@ -1,6 +1,6 @@
 import { InMemoryEventStore } from '../../in-memory.event-store';
 import {
-  AddItemToRepertoireHandler,
+  AddItemToCatalogueHandler,
   ChangeItemPrice,
   ChangeItemPriceHandler,
   ItemPriceChanged,
@@ -22,7 +22,7 @@ describe('Change Item Price', () => {
 
   it('should change the price of an existing item', async () => {
     const baseItem = TestAddItemToRepertoire.valid();
-    await new AddItemToRepertoireHandler(repertoires).execute(baseItem);
+    await new AddItemToCatalogueHandler(repertoires).execute(baseItem);
 
     const command = new ChangeItemPrice(baseItem.itemId, baseItem.price + 20, baseItem.vendorId);
     await handler.execute(command);
@@ -40,7 +40,7 @@ describe('Change Item Price', () => {
 
   it('should change the price multiple times', async () => {
     const baseItem = TestAddItemToRepertoire.valid();
-    await new AddItemToRepertoireHandler(repertoires).execute(baseItem);
+    await new AddItemToCatalogueHandler(repertoires).execute(baseItem);
 
     const command = new ChangeItemPrice(baseItem.itemId, baseItem.price + 20, baseItem.vendorId);
     await handler.execute(command);
@@ -61,7 +61,7 @@ describe('Change Item Price', () => {
 
   it('should reject an inexistent item', async () => {
     const baseItem = TestAddItemToRepertoire.valid();
-    await new AddItemToRepertoireHandler(repertoires).execute(baseItem);
+    await new AddItemToCatalogueHandler(repertoires).execute(baseItem);
 
     const command = new ChangeItemPrice('incorrect-id', baseItem.price + 20, baseItem.vendorId);
     await expect(() => handler.execute(command)).rejects.toThrow(NoSuchItemError);

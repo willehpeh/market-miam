@@ -1,18 +1,18 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { Url } from '@market-monster/common';
 import { VendorId } from '@market-monster/shared-kernel';
-import { AddItemToRepertoire } from './add-item-to-repertoire';
+import { AddItemToCatalogue } from './add-item-to-catalogue';
 import { Catalogues, ItemDescription, ItemId, ItemName, ItemPrice } from '../catalogue';
 
-@CommandHandler(AddItemToRepertoire)
-export class AddItemToRepertoireHandler implements ICommandHandler<AddItemToRepertoire> {
-  constructor(private readonly repertoires: Catalogues) {
+@CommandHandler(AddItemToCatalogue)
+export class AddItemToCatalogueHandler implements ICommandHandler<AddItemToCatalogue> {
+  constructor(private readonly catalogues: Catalogues) {
   }
 
-  async execute(request: AddItemToRepertoire): Promise<void> {
+  async execute(request: AddItemToCatalogue): Promise<void> {
     const vendorId = new VendorId(request.vendorId);
-    const repertoire = await this.repertoires.forVendor(vendorId);
-    repertoire.addItem(
+    const catalogue = await this.catalogues.forVendor(vendorId);
+    catalogue.addItem(
       new ItemId(request.itemId),
       new ItemName(request.name),
       new ItemDescription(request.description),
@@ -20,6 +20,6 @@ export class AddItemToRepertoireHandler implements ICommandHandler<AddItemToRepe
       new Url(request.photoUrl),
     );
 
-    await this.repertoires.save(repertoire, vendorId);
+    await this.catalogues.save(catalogue, vendorId);
   }
 }

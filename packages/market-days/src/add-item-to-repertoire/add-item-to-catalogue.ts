@@ -1,6 +1,6 @@
 import { Command } from '@nestjs/cqrs';
 
-export class AddItemToRepertoire extends Command<void> {
+export class AddItemToCatalogue extends Command<void> {
   constructor(
     readonly itemId: string,
     readonly vendorId: string,

@@ -1,5 +1,5 @@
 import {
-  AddItemToRepertoireHandler,
+  AddItemToCatalogueHandler,
   ChangeItemPrice,
   ChangeItemPriceHandler,
   Catalogues,
@@ -16,7 +16,7 @@ describe('RepertoireView', () => {
   let views: InMemoryRepertoireViews;
   let repertoires: Catalogues;
   let subscription: InMemorySubscription;
-  let addItemHandler: AddItemToRepertoireHandler;
+  let addItemHandler: AddItemToCatalogueHandler;
   let changeItemPriceHandler: ChangeItemPriceHandler;
 
   beforeEach(() => {
@@ -24,7 +24,7 @@ describe('RepertoireView', () => {
     views = new InMemoryRepertoireViews();
     subscription = new InMemorySubscription('repertoire-view', store, new CatalogueViewProjection(views));
     repertoires = new Catalogues(store);
-    addItemHandler = new AddItemToRepertoireHandler(repertoires);
+    addItemHandler = new AddItemToCatalogueHandler(repertoires);
     changeItemPriceHandler = new ChangeItemPriceHandler(repertoires);
   });
 
@@ -63,7 +63,7 @@ describe('RepertoireView', () => {
   });
 });
 
-async function addTwoItems(addItemHandler: AddItemToRepertoireHandler) {
+async function addTwoItems(addItemHandler: AddItemToCatalogueHandler) {
   const first = TestAddItemToRepertoire.valid();
   const second = TestAddItemToRepertoire.with({ itemId: 'second-item', name: 'Second Item' });
   await addItemHandler.execute(first);

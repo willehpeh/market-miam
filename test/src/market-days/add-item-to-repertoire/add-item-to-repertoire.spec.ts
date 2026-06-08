@@ -1,5 +1,5 @@
 import {
-  AddItemToRepertoireHandler,
+  AddItemToCatalogueHandler,
   InvalidPriceError,
   ItemAddedToCatalogue,
   Catalogues
@@ -10,13 +10,13 @@ import { TestAddItemToRepertoire } from './test-data';
 
 describe('AddItemToRepertoire', () => {
   let store: InMemoryEventStore;
-  let handler: AddItemToRepertoireHandler;
+  let handler: AddItemToCatalogueHandler;
   let repertoires: Catalogues;
 
   beforeEach(() => {
     store = new InMemoryEventStore();
     repertoires = new Catalogues(store);
-    handler = new AddItemToRepertoireHandler(repertoires);
+    handler = new AddItemToCatalogueHandler(repertoires);
   });
 
   it('should add the item to the repertoire', async () => {

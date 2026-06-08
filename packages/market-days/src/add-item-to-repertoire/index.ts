@@ -1,2 +1,2 @@
-export * from './add-item-to-repertoire';
-export * from './add-item-to-repertoire.handler';
+export * from './add-item-to-catalogue';
+export * from './add-item-to-catalogue.handler';

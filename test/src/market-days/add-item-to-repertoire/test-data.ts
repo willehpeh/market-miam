@@ -1,8 +1,8 @@
-import { AddItemToRepertoire } from '@market-monster/market-days';
+import { AddItemToCatalogue } from '@market-monster/market-days';
 
 export class TestAddItemToRepertoire {
-  static valid(): AddItemToRepertoire {
-    return new AddItemToRepertoire(
+  static valid(): AddItemToCatalogue {
+    return new AddItemToCatalogue(
       'item-id',
       'vendor-id',
       'Item Name',
@@ -12,9 +12,9 @@ export class TestAddItemToRepertoire {
     );
   }
 
-  static with(overrides: Partial<AddItemToRepertoire>): AddItemToRepertoire {
+  static with(overrides: Partial<AddItemToCatalogue>): AddItemToCatalogue {
     const defaults = this.valid();
-    return new AddItemToRepertoire(
+    return new AddItemToCatalogue(
       overrides.itemId ?? defaults.itemId,
       overrides.vendorId ?? defaults.vendorId,
       overrides.name ?? defaults.name,
