@@ -9,11 +9,16 @@ export class Auth0Auth implements Auth {
 
   private readonly _auth = inject(AuthService);
   private readonly _isAuthenticated: WritableSignal<boolean> = signal(false);
+  private readonly _isAuthLoading: WritableSignal<boolean> = signal(true);
 
   constructor() {
     this._auth.isAuthenticated$.pipe(
       takeUntilDestroyed(),
       tap(isAuth => this._isAuthenticated.set(isAuth))
+    ).subscribe();
+    this._auth.isLoading$.pipe(
+      takeUntilDestroyed(),
+      tap(isLoading => this._isAuthLoading.set(isLoading))
     ).subscribe();
   }
 
@@ -23,5 +28,9 @@ export class Auth0Auth implements Auth {
 
   isAuthenticated(): Signal<boolean> {
     return this._isAuthenticated;
+  }
+
+  isLoading(): Signal<boolean> {
+    return this._isAuthLoading;
   }
 }

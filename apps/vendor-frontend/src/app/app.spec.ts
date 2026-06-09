@@ -28,9 +28,15 @@ describe('App', () => {
     expect(App).toBeDefined();
   });
 
-  it('should display the login button if the user is not logged in', () => {
+  it('should display the login button if the user is not logged in and the auth status is not loading', () => {
     fixture.detectChanges();
     expect(debugElement.query(By.css('button'))).toBeTruthy();
+  });
+
+  it('should not display the login button if auth status is loading', () => {
+    auth.setLoading(true);
+    fixture.detectChanges();
+    expect(debugElement.query(By.css('button'))).toBeNull();
   });
 
   it('should not display the login button if the user is logged in', () => {
