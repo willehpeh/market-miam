@@ -3,6 +3,8 @@ import { EnvironmentProviders, isDevMode, makeEnvironmentProviders } from '@angu
 import { provideAuth0 } from '@auth0/auth0-angular';
 import { FakeAuth } from './fake.auth';
 import { Auth0Auth } from './auth0.auth';
+import { provideState } from '@ngrx/store';
+import { authFeatureKey, authReducer } from './auth.state';
 
 export function provideAuth(): EnvironmentProviders {
   return makeEnvironmentProviders([
@@ -13,6 +15,7 @@ export function provideAuth(): EnvironmentProviders {
         redirect_uri: window.location.origin,
       },
     }),
-    { provide: Auth, useClass: isDevMode() ? FakeAuth : Auth0Auth }
+    { provide: Auth, useClass: isDevMode() ? FakeAuth : Auth0Auth },
+    provideState(authFeatureKey, authReducer),
   ])
 }
