@@ -33,4 +33,8 @@ export class Auth0Auth implements Auth {
   isLoading(): Signal<boolean> {
     return this._isAuthLoading;
   }
+
+  logout(): void {
+    this._auth.logout();
+  }
 }

@@ -3,10 +3,15 @@ import { Auth } from './auth';
 
 @Injectable()
 export class FakeAuth implements Auth {
-
+  loginStarted = false;
+  loggedOut = false;
   private _isAuthenticated: WritableSignal<boolean> = signal(false);
   private _isAuthLoading: WritableSignal<boolean> = signal(false);
-  loginStarted = false;
+
+  logout(): void {
+    this.loggedOut = true;
+    this._isAuthenticated.set(false);
+  }
 
   isAuthenticated(): Signal<boolean> {
     return this._isAuthenticated.asReadonly();
