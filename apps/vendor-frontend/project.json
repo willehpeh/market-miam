@@ -66,6 +66,11 @@
       "executor": "@angular/build:unit-test",
       "options": {
         "watch": false
+      },
+      "configurations": {
+        "watch": {
+          "watch": true
+        }
       }
     },
     "serve-static": {
