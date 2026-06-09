@@ -9,7 +9,7 @@ describe('App', () => {
 
   let fixture: ComponentFixture<App>;
   let debugElement: DebugElement;
-  let auth: Auth;
+  let auth: FakeAuth;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
@@ -20,7 +20,7 @@ describe('App', () => {
     }).compileComponents();
     fixture = TestBed.createComponent(App);
     debugElement = fixture.debugElement;
-    auth = TestBed.inject(Auth);
+    auth = TestBed.inject(Auth) as FakeAuth;
     fixture.detectChanges();
   });
 
@@ -41,6 +41,6 @@ describe('App', () => {
 
   it('should start login when clicked', () => {
     debugElement.query(By.css('#login-button')).triggerEventHandler('click', null);
-    expect(auth.isAuthenticated()()).toBe(true);
+    expect(auth.loginStarted).toBe(true);
   });
 });
