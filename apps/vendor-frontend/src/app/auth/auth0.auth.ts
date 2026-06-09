@@ -23,7 +23,7 @@ export class Auth0Auth implements Auth {
   }
 
   login(): void {
-    this._auth.loginWithRedirect({ authorizationParams: { connection: "email" } });
+    this._auth.loginWithRedirect();
   }
 
   isAuthenticated(): Signal<boolean> {
