@@ -4,7 +4,7 @@ import { Auth } from './auth';
 @Component({
   selector: 'mm-login-button',
   template: `
-    <button (click)="onClick()">Login</button>
+    <button id="login-button" (click)="onClick()">Login</button>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush
 })

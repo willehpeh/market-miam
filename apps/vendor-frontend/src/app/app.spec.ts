@@ -38,4 +38,9 @@ describe('App', () => {
     fixture.detectChanges();
     expect(debugElement.query(By.css('button'))).toBeNull();
   });
+
+  it('should start login when clicked', () => {
+    debugElement.query(By.css('#login-button')).triggerEventHandler('click', null);
+    expect(auth.isAuthenticated()()).toBe(true);
+  });
 });
