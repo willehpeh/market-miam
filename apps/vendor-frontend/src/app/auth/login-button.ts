@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { Auth } from './auth';
+import { AuthFacade } from './auth.facade';
 
 @Component({
   selector: 'mm-login-button',
@@ -12,8 +12,8 @@ import { Auth } from './auth';
 })
 export class LoginButton {
 
-  private readonly auth = inject(Auth);
-  protected readonly isLoading = this.auth.isLoading();
+  private readonly auth = inject(AuthFacade);
+  protected readonly isLoading = this.auth.isLoading;
 
   onClick(): void {
     this.auth.login();

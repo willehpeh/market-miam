@@ -1,7 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { LoginButton } from './auth/login-button';
-import { Auth } from './auth/auth';
 import { LogoutButton } from './auth/logout-button';
+import { AuthFacade } from './auth/auth.facade';
 
 @Component({
   selector: 'mm-root',
@@ -19,6 +19,6 @@ import { LogoutButton } from './auth/logout-button';
   ]
 })
 export class App {
-  private readonly auth = inject(Auth);
-  protected readonly isAuthenticated = this.auth.isAuthenticated();
+  private readonly auth = inject(AuthFacade);
+  protected readonly isAuthenticated = this.auth.isAuthenticated;
 }

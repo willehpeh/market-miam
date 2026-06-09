@@ -1,27 +1,32 @@
-import { createAction, createFeatureSelector, createReducer, createSelector, on, props } from '@ngrx/store';
+import { createAction, createFeature, createReducer, createSelector, on, props } from '@ngrx/store';
 
-const Login = createAction('[Auth] Login');
-const LoginSuccess = createAction('[Auth] Login Success', props<{ userId: string }>());
-
-export const authFeatureKey = 'auth';
+export const Login = createAction('[Auth] Login');
+export const Logout = createAction('[Auth] Logout');
+export const AuthLoadingChanged = createAction('[Auth] Loading Changed', props<{ isLoading: boolean }>());
+export const LoginSuccess = createAction('[Auth] Login Success', props<{ userId: string }>());
+export const LogoutSuccess = createAction('[Auth] Logout Success');
 
 export interface AuthState {
-  loading: boolean;
-  userId: string;
+  isLoading: boolean;
+  userId: string | null;
 }
 
 export const initialState: AuthState = {
-  loading: false,
-  userId: '',
+  isLoading: true,
+  userId: null,
 };
 
-export const authReducer = createReducer<AuthState>(
-  initialState,
-  on(Login, (state) => ({ ...state, isLoading: true })),
-  on(LoginSuccess, (state, { userId }) => ({ ...state, isLoading: false, userId })),
-);
+export const authFeature = createFeature({
+  name: 'auth',
+  reducer: createReducer<AuthState>(
+    initialState,
+    on(AuthLoadingChanged, (state, { isLoading }) => ({ ...state, isLoading })),
+    on(LoginSuccess, (state, { userId }) => ({ ...state, userId })),
+    on(LogoutSuccess, (state) => ({ ...state, userId: null })),
+  ),
+});
 
-export const selectAuthState = createFeatureSelector<AuthState>(authFeatureKey);
-export const selectAuthUserId = createSelector(selectAuthState, (state) => state.userId);
-export const selectAuthIsLoading = createSelector(selectAuthState, (state) => state.loading);
-export const selectIsAuthenticated = createSelector(selectAuthUserId, (userId) => userId !== '');
+export const selectIsAuthenticated = createSelector(
+  authFeature.selectUserId,
+  (userId) => userId !== null,
+);

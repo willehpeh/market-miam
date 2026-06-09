@@ -4,6 +4,11 @@ import { Auth } from './auth/auth';
 import { FakeAuth } from './auth/fake.auth';
 import { DebugElement } from '@angular/core';
 import { By } from '@angular/platform-browser';
+import { provideState, provideStore } from '@ngrx/store';
+import { provideEffects } from '@ngrx/effects';
+import { authFeature } from './auth/auth.state';
+import { AuthEffects } from './auth/auth.effects';
+import { AuthFacade } from './auth/auth.facade';
 
 describe('App', () => {
 
@@ -15,6 +20,10 @@ describe('App', () => {
     await TestBed.configureTestingModule({
       imports: [App],
       providers: [
+        provideStore(),
+        provideState(authFeature),
+        provideEffects(AuthEffects),
+        AuthFacade,
         { provide: Auth, useClass: FakeAuth }
       ]
     }).compileComponents();
@@ -72,5 +81,32 @@ describe('App', () => {
     fixture.detectChanges();
     debugElement.query(By.css('#logout-button')).triggerEventHandler('click', null);
     expect(auth.loggedOut).toBe(true);
-  })
+  });
+
+  it('should offer the user the chance to log in again once they have logged out', () => {
+    auth.login();
+    fixture.detectChanges();
+    debugElement.query(By.css('#logout-button')).triggerEventHandler('click', null);
+    fixture.detectChanges();
+    expect(debugElement.query(By.css('#login-button'))).toBeTruthy();
+    expect(debugElement.query(By.css('#logout-button'))).toBeNull();
+  });
+
+  it('should not offer logout while the auth status is loading, even if the user is logged in', () => {
+    auth.login();
+    auth.setLoading(true);
+    fixture.detectChanges();
+    expect(debugElement.query(By.css('#logout-button'))).toBeNull();
+  });
+
+  it('should not treat the user as logged in until the auth status has finished loading', () => {
+    auth.setLoading(true);
+    auth.login();
+    fixture.detectChanges();
+    expect(debugElement.query(By.css('#logout-button'))).toBeNull();
+
+    auth.setLoading(false);
+    fixture.detectChanges();
+    expect(debugElement.query(By.css('#logout-button'))).toBeTruthy();
+  });
 });

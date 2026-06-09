@@ -1,11 +1,11 @@
-import { Signal } from '@angular/core';
+import { Observable } from 'rxjs';
 
 export abstract class Auth {
   abstract login(): void;
 
   abstract logout(): void;
 
-  abstract isAuthenticated(): Signal<boolean>;
+  abstract isLoading$(): Observable<boolean>;
 
-  abstract isLoading(): Signal<boolean>;
+  abstract userId$(): Observable<string | null>;
 }

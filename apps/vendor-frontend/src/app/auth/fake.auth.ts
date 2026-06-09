@@ -1,32 +1,35 @@
-import { Injectable, Signal, signal, WritableSignal } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { Auth } from './auth';
+import { BehaviorSubject, Observable } from 'rxjs';
+
+const FAKE_USER_ID = 'fake|user';
 
 @Injectable()
 export class FakeAuth implements Auth {
   loginStarted = false;
   loggedOut = false;
-  private _isAuthenticated: WritableSignal<boolean> = signal(false);
-  private _isAuthLoading: WritableSignal<boolean> = signal(false);
-
-  logout(): void {
-    this.loggedOut = true;
-    this._isAuthenticated.set(false);
-  }
-
-  isAuthenticated(): Signal<boolean> {
-    return this._isAuthenticated.asReadonly();
-  }
+  private readonly _isLoading = new BehaviorSubject<boolean>(false);
+  private readonly _userId = new BehaviorSubject<string | null>(null);
 
   login(): void {
     this.loginStarted = true;
-    this._isAuthenticated.set(true);
+    this._userId.next(FAKE_USER_ID);
   }
 
-  isLoading(): Signal<boolean> {
-    return this._isAuthLoading.asReadonly();
+  logout(): void {
+    this.loggedOut = true;
+    this._userId.next(null);
+  }
+
+  isLoading$(): Observable<boolean> {
+    return this._isLoading.asObservable();
+  }
+
+  userId$(): Observable<string | null> {
+    return this._userId.asObservable();
   }
 
   setLoading(status: boolean): void {
-    this._isAuthLoading.set(status);
+    this._isLoading.next(status);
   }
 }
