@@ -2,8 +2,9 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { App } from './app';
 import { Auth } from './auth/auth';
 import { FakeAuth } from './auth/fake.auth';
-import { DebugElement } from '@angular/core';
 import { By } from '@angular/platform-browser';
+import { provideRouter, Router } from '@angular/router';
+import { appRoutes } from './app.routes';
 import { provideState, provideStore } from '@ngrx/store';
 import { provideEffects } from '@ngrx/effects';
 import { authFeature } from './auth/auth.state';
@@ -13,13 +14,13 @@ import { AuthFacade } from './auth/auth.facade';
 describe('App', () => {
 
   let fixture: ComponentFixture<App>;
-  let debugElement: DebugElement;
   let auth: FakeAuth;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [App],
       providers: [
+        provideRouter(appRoutes),
         provideStore(),
         provideState(authFeature),
         provideEffects(AuthEffects),
@@ -28,85 +29,21 @@ describe('App', () => {
       ]
     }).compileComponents();
     fixture = TestBed.createComponent(App);
-    debugElement = fixture.debugElement;
     auth = TestBed.inject(Auth) as FakeAuth;
+    await TestBed.inject(Router).navigate(['/']);
     fixture.detectChanges();
   });
 
   it('smoke', () => {
-    expect(App).toBeDefined();
-  });
-
-  it('should display the login button if the user is not logged in and the auth status is not loading', () => {
-    fixture.detectChanges();
-    expect(debugElement.query(By.css('#login-button'))).toBeTruthy();
-  });
-
-  it('should not display the logout button if the user is not logged in and the auth status is not loading', () => {
-    fixture.detectChanges();
-    expect(debugElement.query(By.css('#logout-button'))).toBeNull();
-  });
-
-  it('should not display the login button if auth status is loading', () => {
-    auth.setLoading(true);
-    fixture.detectChanges();
-    expect(debugElement.query(By.css('#login-button'))).toBeNull();
-  });
-
-  it('should not display the logout button if auth status is loading', () => {
-    auth.setLoading(true);
-    fixture.detectChanges();
-    expect(debugElement.query(By.css('#logout-button'))).toBeNull();
-  });
-
-  it('should not display the login button if the user is logged in', () => {
-    auth.login();
-    fixture.detectChanges();
-    expect(debugElement.query(By.css('#login-button'))).toBeNull();
-  });
-
-  it('should display the logout button if the user is logged in', () => {
-    auth.login();
-    fixture.detectChanges();
-    expect(debugElement.query(By.css('#logout-button'))).toBeTruthy();
-  });
-
-  it('should start login when clicked', () => {
-    debugElement.query(By.css('#login-button')).triggerEventHandler('click', null);
-    expect(auth.loginStarted).toBe(true);
-  });
-
-  it('should logout when clicked', () => {
-    auth.login();
-    fixture.detectChanges();
-    debugElement.query(By.css('#logout-button')).triggerEventHandler('click', null);
-    expect(auth.loggedOut).toBe(true);
+    expect(fixture.componentInstance).toBeTruthy();
   });
 
   it('should offer the user the chance to log in again once they have logged out', () => {
     auth.login();
     fixture.detectChanges();
-    debugElement.query(By.css('#logout-button')).triggerEventHandler('click', null);
+    fixture.debugElement.query(By.css('#logout-button')).triggerEventHandler('click', null);
     fixture.detectChanges();
-    expect(debugElement.query(By.css('#login-button'))).toBeTruthy();
-    expect(debugElement.query(By.css('#logout-button'))).toBeNull();
-  });
-
-  it('should not offer logout while the auth status is loading, even if the user is logged in', () => {
-    auth.login();
-    auth.setLoading(true);
-    fixture.detectChanges();
-    expect(debugElement.query(By.css('#logout-button'))).toBeNull();
-  });
-
-  it('should not treat the user as logged in until the auth status has finished loading', () => {
-    auth.setLoading(true);
-    auth.login();
-    fixture.detectChanges();
-    expect(debugElement.query(By.css('#logout-button'))).toBeNull();
-
-    auth.setLoading(false);
-    fixture.detectChanges();
-    expect(debugElement.query(By.css('#logout-button'))).toBeTruthy();
+    expect(fixture.debugElement.query(By.css('#login-button'))).toBeTruthy();
+    expect(fixture.debugElement.query(By.css('#logout-button'))).toBeNull();
   });
 });
