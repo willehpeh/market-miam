@@ -5,7 +5,7 @@ import { AuthFacade } from './auth.facade';
   selector: 'mm-login-button',
   template: `
     @if (!isLoading()) {
-      <button id="login-button" (click)="onClick()">Login</button>
+      <button id="login-button" (click)="onClick()">SE CONNECTER</button>
     }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush

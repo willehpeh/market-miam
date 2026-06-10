@@ -6,11 +6,13 @@ import { AuthFacade } from './auth/auth.facade';
 @Component({
   selector: 'mm-root',
   template: `
-    @if (isAuthenticated()) {
-      <mm-logout-button />
-    } @else {
-      <mm-login-button />
-    }
+    <div class="grid min-h-svh place-items-center">
+      @if (isAuthenticated()) {
+        <mm-logout-button />
+      } @else {
+        <mm-login-button />
+      }
+    </div>
   `,
   styleUrl: './app.scss',
   imports: [

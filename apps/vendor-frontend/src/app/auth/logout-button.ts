@@ -5,7 +5,7 @@ import { AuthFacade } from './auth.facade';
   selector: 'mm-logout-button',
   template: `
     @if (!isLoading()) {
-      <button id="logout-button" (click)="onClick()">Logout</button>
+      <button id="logout-button" (click)="onClick()">SE DÉCONNECTER</button>
     }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush
