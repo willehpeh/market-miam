@@ -20,7 +20,7 @@
             "input": "apps/customer-frontend/public"
           }
         ],
-        "styles": ["apps/customer-frontend/src/styles.scss"],
+        "styles": ["apps/customer-frontend/src/styles.css"],
         "server": "apps/customer-frontend/src/main.server.ts",
         "ssr": {
           "entry": "apps/customer-frontend/src/server.ts"

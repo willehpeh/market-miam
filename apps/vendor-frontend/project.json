@@ -20,7 +20,7 @@
             "input": "apps/vendor-frontend/public"
           }
         ],
-        "styles": ["apps/vendor-frontend/src/styles.scss"]
+        "styles": ["apps/vendor-frontend/src/styles.css"]
       },
       "configurations": {
         "production": {
