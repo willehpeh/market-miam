@@ -40,7 +40,7 @@ exports.onExecutePostLogin = async (event, api) => {
 - Vendors are manually provisioned (Auth0 user created by the operator) for now.
 - On first sign-in, the frontend **unconditionally** calls a registration endpoint (e.g. `POST /vendor/registrations`). Explicit command, not middleware magic.
 - The `RegisterVendor` handler is **idempotent**: the stream is keyed by vendorId; if `VendorRegistered` already exists, it no-ops. This is simpler and more robust than check-404-then-register.
-- `VendorRegistered` payload is minimal: `{ vendorId, registeredAt }`. Deliberately **no email or other PII** — don't copy claims out of the token "while you're there".
+- `VendorRegistered` payload is `{ vendorId, email, registeredAt }`. The `email` is read from the verified token claim (alongside the `vendorId` custom claim) and captured as a **registered-with snapshot** — it identifies the vendor administratively and pre-populates their profile so they needn't re-enter an address Auth0 already holds. It is **not** their current, editable email: registration is an idempotent no-op, so this value is frozen at first sign-in; updates flow through `UpdateVendorProfile`. The email is PII, so it is encrypted at rest via the crypto-shredding registry below (the pseudonymous `vendorId` and `registeredAt` stay plaintext). No *other* token claims are copied "while you're there".
 
 ## Progressive profile completion
 
@@ -72,6 +72,7 @@ Crypto-shredding is a **decorator around the `EventStore`/`Events` ports** (`pac
 export type PiiFields = Record<string, string[]>; // eventType -> payload field names
 
 const vendorPiiFields: PiiFields = {
+  VendorRegistered: ['email'], // registered-with email snapshot
   VendorProfileUpdated: ['name', 'email', 'addressLine1', 'addressLine2', 'postcode', 'phone'],
 };
 ```
