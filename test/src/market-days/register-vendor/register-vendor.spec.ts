@@ -1,5 +1,5 @@
 import { InMemoryEventStore } from '../../in-memory.event-store';
-import { RegisterVendorHandler, Vendors, VendorRegistered } from '@market-monster/market-days';
+import { RegisterVendor, RegisterVendorHandler, VendorRegistered, Vendors } from '@market-monster/market-days';
 import { TestRegisterVendor } from './test-data';
 
 describe('Register Vendor', () => {
@@ -17,6 +17,18 @@ describe('Register Vendor', () => {
     const command = TestRegisterVendor.valid();
     await handler.execute(command);
 
+    expectSingleEventFrom(command);
+  });
+
+  it('should be idempotent, doing nothing when a previously registered Vendor is re-registered', async () => {
+    const command = TestRegisterVendor.valid();
+    await handler.execute(command);
+    await handler.execute(command);
+
+    expectSingleEventFrom(command);
+  });
+
+  function expectSingleEventFrom(command: RegisterVendor) {
     const expectedEvent: VendorRegistered = {
       type: 'VendorRegistered',
       payload: {
@@ -27,5 +39,5 @@ describe('Register Vendor', () => {
     };
 
     expect(store.newEvents()).toEqual([expect.objectContaining(expectedEvent)]);
-  });
+  }
 });

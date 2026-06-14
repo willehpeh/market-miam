@@ -8,7 +8,7 @@ export class Vendors {
 
   async forVendor(vendorId: VendorId): Promise<Vendor> {
     const events = await this.store.load(this.streamIdFor(vendorId));
-    return new Vendor().rehydrate(events);
+    return new Vendor(vendorId).rehydrate(events);
   }
 
   async save(vendor: Vendor, vendorId: VendorId): Promise<void> {
