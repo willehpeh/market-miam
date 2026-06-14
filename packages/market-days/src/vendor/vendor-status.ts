@@ -1,19 +1,21 @@
-export class VendorStatus {
-  private readonly _status: 'reg' | 'unreg';
+type Status = 'registered' | 'unregistered';
 
-  private constructor(status: 'reg' | 'unreg') {
+export class VendorStatus {
+  private readonly _status: Status;
+
+  private constructor(status: Status) {
     this._status = status;
   }
 
   static registered(): VendorStatus {
-    return new VendorStatus('reg');
+    return new VendorStatus('registered');
   }
 
   static unregistered(): VendorStatus {
-    return new VendorStatus('unreg');
+    return new VendorStatus('unregistered');
   }
 
   isRegistered(): boolean {
-    return this._status === 'reg';
+    return this._status === 'registered';
   }
 }
