@@ -12,12 +12,10 @@ export class RegisterVendorHandler implements ICommandHandler<RegisterVendor> {
   async execute(request: RegisterVendor): Promise<void> {
     const vendorId = new VendorId(request.vendorId);
     const vendor = await this.vendors.forVendor(vendorId);
-    vendor.register(
-      vendorId,
-      new Instant(request.registeredAt),
-      new Email(request.email),
-    );
-
+    vendor.register(new Instant(request.registeredAt), new Email(request.email));
+    if (vendor.raisedEvents().length === 0) {
+      return;
+    }
     await this.vendors.save(vendor, vendorId);
   }
 }

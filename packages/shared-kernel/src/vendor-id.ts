@@ -14,8 +14,4 @@ export class VendorId {
   value(): string {
     return this._value;
   }
-
-  equals(other: VendorId): boolean {
-    return this._value === other._value;
-  }
 }
