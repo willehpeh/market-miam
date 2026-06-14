@@ -2,31 +2,41 @@ import { InMemoryEventStore } from '../../in-memory.event-store';
 import { Aggregate, DomainEvent, EventStore } from '@market-monster/event-sourcing';
 import { Command, CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { TestRegisterVendor } from './test-data';
+import { VendorId } from '@market-monster/shared-kernel';
+import { Email, Instant } from '@market-monster/common';
+
+type NewVendorProps = {
+  vendorId: VendorId,
+  registeredAt: Instant,
+  email: Email
+}
 
 export class Vendor extends Aggregate {
-  apply(event: DomainEvent): void {
-    // not implemented
+  static new(props: NewVendorProps): Vendor {
+    const vendor = new Vendor();
+    const event: VendorRegistered = {
+      type: 'VendorRegistered',
+      payload: {
+        vendorId: props.vendorId.value(),
+        registeredAt: props.registeredAt.value(),
+        email: props.email.value()
+      }
+    };
+    vendor.raise(event);
+    return vendor;
   }
 
-  static register(): Vendor {
-    const vendor = new Vendor();
-    const event = TestRegisterVendor.valid();
-    vendor.raise({
-      type: 'VendorRegistered',
-      payload: { ...event }
-    });
-    return vendor;
+  apply(event: DomainEvent): void {
+    // not implemented
   }
 }
 
 export class Vendors {
   constructor(private readonly store: EventStore) {
-
   }
-  async register(vendor: Vendor): Promise<void> {
-    const event = vendor.raisedEvents()[0] as VendorRegistered;
-    let vendorId = event.payload.vendorId;
-    return this.store.append(vendorId, [event], 0, { vendorId });
+
+  async register(vendor: Vendor, vendorId: VendorId): Promise<void> {
+    return this.store.append(vendorId.value(), vendor.raisedEvents(), 0, { vendorId: vendorId.value() });
   }
 }
 
@@ -45,8 +55,13 @@ export class RegisterVendorHandler implements ICommandHandler<RegisterVendor> {
   }
 
   async execute(command: RegisterVendor): Promise<void> {
-    const vendor = Vendor.register();
-    return this.vendors.register(vendor);
+    const vendorId = new VendorId(command.vendorId);
+    const registeredAt = new Instant(command.registeredAt);
+    const email = new Email(command.email);
+    const vendor = Vendor.new({
+      vendorId, registeredAt, email
+    });
+    return this.vendors.register(vendor, vendorId);
   }
 
 }
