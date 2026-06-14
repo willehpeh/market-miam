@@ -12,3 +12,6 @@ export * from './mark-item-as-sold-out';
 export * from './catalogue-view';
 export { ItemPriceChanged } from './catalogue/events';
 export * from './catalogue';
+export * from './register-vendor';
+export * from './vendor/events';
+export * from './vendor';
