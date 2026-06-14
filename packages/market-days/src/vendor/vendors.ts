@@ -12,6 +12,9 @@ export class Vendors {
   }
 
   async save(vendor: Vendor, vendorId: VendorId): Promise<void> {
+    if (vendor.raisedEvents().length === 0) {
+      return;
+    }
     await this.store.append(
       this.streamIdFor(vendorId),
       vendor.raisedEvents(),
