@@ -29,8 +29,13 @@ deletes the Auth0 user. Full design: `docs/VENDOR_REGISTRATION_AND_PII.md`.
   rewriting, and read models purge for free via replay.
 - Adopted now, while zero production events exist; retrofitting encryption
   onto live streams would be far costlier.
-- Consumers and value-object factories must tolerate `null` PII fields, and
-  aggregate `when()` logic must not branch on PII.
+- Shredded streams must stay loadable. PII is kept out of aggregate `apply`
+  wherever possible, so a shredded stream rehydrates untouched; where PII
+  absolutely must be rebuilt in `apply` (or a projection), that logic must
+  accept shredded streams — tolerating `null` PII fields rather than failing.
+  This is a narrow, deliberate exception to ADR 0007's re-validate-and-fail-
+  loudly rule, limited to shreddable fields; non-PII rehydration still
+  re-validates and fails loudly.
 - Subject resolution is vendorId-from-metadata for now; per-field subject
   mapping is a known extension point if customer PII ever lands in vendor
   streams.

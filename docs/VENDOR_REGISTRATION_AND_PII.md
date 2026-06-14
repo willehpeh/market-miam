@@ -117,7 +117,7 @@ The shredding subject is keyed off metadata already carried on every append (`ve
 **4. Ciphertext format & shredded-read semantics**
 
 - Each listed field's value is encrypted into a self-describing, versioned string: `enc:v1:<iv>:<authTag>:<ciphertext>` (base64 segments). Stored events remain valid JSON.
-- When `existingKeyFor` returns `null` (shredded), the decorator replaces each PII field with `null` (single convention — decide once). Value objects' `fromTrusted`/`fromSnapshot` factories and projections must tolerate it.
+- When `existingKeyFor` returns `null` (shredded), the decorator replaces each PII field with `null` (single convention — decide once). Aggregates keep PII out of `apply` wherever possible, so a shredded stream rehydrates untouched; where PII genuinely must be rebuilt in `apply` or a projection, that code must tolerate `null` (a `fromSnapshot` that admits `null` for shreddable fields — a narrow, deliberate exception to ADR 0007's re-validate-and-fail-loudly rule).
 - **Erasure flow**: `keys.shred(vendorId)` → rebuild projections (clear views, reset checkpoint to 0, replay — purges decrypted PII from read models for free) → delete the Auth0 user (they hold email/password).
 
 ### Cryptography
