@@ -20,12 +20,18 @@ describe('Register Vendor', () => {
     expectSingleEventFrom(command);
   });
 
-  it('should be idempotent, doing nothing when a previously registered Vendor is re-registered', async () => {
-    const command = TestRegisterVendor.valid();
-    await handler.execute(command);
-    await handler.execute(command);
+  it.each([
+    { scenario: 'an identical re-registration', second: TestRegisterVendor.valid() },
+    {
+      scenario: 'a re-registration with different details',
+      second: TestRegisterVendor.with({ registeredAt: '2026-06-14T09:00:00.000Z', email: 'different@anything.com' }),
+    },
+  ])('is idempotent on $scenario, retaining the original registration', async ({ second }) => {
+    const first = TestRegisterVendor.valid();
+    await handler.execute(first);
+    await handler.execute(second);
 
-    expectSingleEventFrom(command);
+    expectSingleEventFrom(first);
   });
 
   function expectSingleEventFrom(command: RegisterVendor) {
