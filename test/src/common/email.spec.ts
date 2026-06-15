@@ -1,8 +1,13 @@
 import { Email, InvalidEmailError } from '@market-monster/common';
 
 describe('Email', () => {
-  it('should create with a valid email', () => {
-    const validEmail = 'person@domain.com';
+  it.each([
+    ['a simple address', 'person@domain.com'],
+    ['plus-addressing', 'person+tag@domain.com'],
+    ['a dotted local part', 'p.lastname@domain.com'],
+    ['a subdomain', 'person@mail.domain.com'],
+    ['a multi-level top-level domain', 'person@mail.domain.co.uk'],
+  ])('should create with a valid email with %s', (_, validEmail) => {
     const email = new Email(validEmail);
 
     expect(email.value()).toBe(validEmail);
