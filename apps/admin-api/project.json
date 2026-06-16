@@ -9,12 +9,16 @@
       "executor": "nx:run-commands",
       "options": {
         "command": "webpack-cli build",
-        "args": ["--node-env=production"],
-        "cwd": "apps/admin-api"
+        "cwd": "apps/admin-api",
+        "env": {
+          "NODE_ENV": "production"
+        }
       },
       "configurations": {
         "development": {
-          "args": ["--node-env=development"]
+          "env": {
+            "NODE_ENV": "development"
+          }
         }
       }
     },
