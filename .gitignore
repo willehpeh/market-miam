@@ -50,3 +50,8 @@ __screenshots__/
 vitest.config.*.timestamp*
 .nx/polygraph
 .nx/self-healing
+
+.env
+.env.*
+
+.nx/migrate-runs
