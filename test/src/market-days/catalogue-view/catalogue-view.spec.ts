@@ -42,8 +42,8 @@ describe('CatalogueView', () => {
     const view = await views.forVendor('vendor-id');
     expect(view).toEqual({
       items: [
-        { itemId: first.itemId, name: first.name, description: first.description, price: first.price, photoUrl: first.photoUrl },
-        { itemId: second.itemId, name: second.name, description: second.description, price: second.price, photoUrl: second.photoUrl },
+        { itemId: first.itemId, name: first.name, description: first.description, price: first.price, photoUrl: first.imageReference },
+        { itemId: second.itemId, name: second.name, description: second.description, price: second.price, photoUrl: second.imageReference },
       ],
     });
   });
@@ -57,7 +57,7 @@ describe('CatalogueView', () => {
     const view = await views.forVendor('vendor-id');
     expect(view).toEqual({
       items: [
-        { itemId: newItemCommand.itemId, name: newItemCommand.name, description: newItemCommand.description, price: newItemCommand.price + 300, photoUrl: newItemCommand.photoUrl },
+        { itemId: newItemCommand.itemId, name: newItemCommand.name, description: newItemCommand.description, price: newItemCommand.price + 300, photoUrl: newItemCommand.imageReference },
       ],
     });
   });

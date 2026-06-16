@@ -17,7 +17,7 @@ export class AddItemToCatalogueHandler implements ICommandHandler<AddItemToCatal
       new ItemName(request.name),
       new ItemDescription(request.description),
       new ItemPrice(request.price),
-      new Url(request.photoUrl),
+      new Url(request.imageReference),
     );
 
     await this.catalogues.save(catalogue, vendorId);

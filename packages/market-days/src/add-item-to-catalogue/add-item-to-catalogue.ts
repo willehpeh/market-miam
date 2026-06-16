@@ -7,6 +7,6 @@ export class AddItemToCatalogue extends Command<void> {
     readonly name: string,
     readonly description: string,
     readonly price: number,
-    readonly photoUrl: string,
+    readonly imageReference: string,
   ) { super(); }
 }

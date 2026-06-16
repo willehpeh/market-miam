@@ -20,7 +20,7 @@ export class TestAddItemToCatalogue {
       overrides.name ?? defaults.name,
       overrides.description ?? defaults.description,
       overrides.price ?? defaults.price,
-      overrides.photoUrl ?? defaults.photoUrl,
+      overrides.imageReference ?? defaults.imageReference,
     );
   }
 }

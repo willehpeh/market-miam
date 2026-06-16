@@ -31,7 +31,7 @@ describe('AddItemToCatalogue', () => {
         name: command.name,
         description: command.description,
         price: command.price,
-        photoUrl: command.photoUrl,
+        photoUrl: command.imageReference,
       },
     };
     expect(store.newEvents()).toEqual([expect.objectContaining(expectedEvent)]);
