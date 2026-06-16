@@ -18,7 +18,7 @@ describe('Mark Item As Sold Out', () => {
     const planItemsHandler = new PlanItemsForMarketDayHandler(marketDays);
     const itemId = 'item1';
     const vendorId = 'vendor1';
-    const today = new Date().toISOString().split('T')[0];
+    const today = LocalDate.today().value();
     const previousCommand = TestPlanItemsForMarketDay.forItemsWith([{ itemId }], {
       date: today
     });
