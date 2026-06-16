@@ -1,5 +1,5 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { Url } from '@market-monster/common';
+import { ImageReference } from '@market-monster/common';
 import { VendorId } from '@market-monster/shared-kernel';
 import { AddItemToCatalogue } from './add-item-to-catalogue';
 import { Catalogues, ItemDescription, ItemId, ItemName, ItemPrice } from '../catalogue';
@@ -17,7 +17,7 @@ export class AddItemToCatalogueHandler implements ICommandHandler<AddItemToCatal
       new ItemName(request.name),
       new ItemDescription(request.description),
       new ItemPrice(request.price),
-      new Url(request.imageReference),
+      new ImageReference(request.imageReference),
     );
 
     await this.catalogues.save(catalogue, vendorId);

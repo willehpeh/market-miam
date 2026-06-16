@@ -32,7 +32,7 @@ export class CatalogueViewProjection implements Projection {
       name: payload.name,
       description: payload.description,
       price: payload.price,
-      photoUrl: payload.photoUrl
+      imageReference: payload.imageReference
     }, vendorIdFrom(event));
   }
 

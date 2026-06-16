@@ -1,6 +1,6 @@
 import { ItemAddedToCatalogue, ItemPriceChanged, CatalogueEvent } from './events';
 import { Aggregate } from '@market-monster/event-sourcing';
-import { Url } from '@market-monster/common';
+import { ImageReference } from '@market-monster/common';
 import { Item, ItemDescription, ItemId, ItemName, ItemPrice } from './item';
 import { NoSuchItemError } from './no-such-item.error';
 
@@ -8,8 +8,8 @@ export class Catalogue extends Aggregate {
 
   private _items: Item[] = [];
 
-  addItem(id: ItemId, name: ItemName, description: ItemDescription, price: ItemPrice, photoUrl: Url) {
-    const item = new Item(id, name, description, price, photoUrl);
+  addItem(id: ItemId, name: ItemName, description: ItemDescription, price: ItemPrice, imageReference: ImageReference) {
+    const item = new Item(id, name, description, price, imageReference);
     const event: ItemAddedToCatalogue = {
       type: 'ItemAddedToCatalogue',
       payload: {
@@ -17,7 +17,7 @@ export class Catalogue extends Aggregate {
         name: item.name().value(),
         description: item.description().value(),
         price: item.price().value(),
-        photoUrl: item.photoUrl().value()
+        imageReference: item.imageReference().value()
       }
     };
     this.raise(event);
@@ -31,7 +31,7 @@ export class Catalogue extends Aggregate {
           new ItemName(event.payload.name),
           new ItemDescription(event.payload.description),
           new ItemPrice(event.payload.price),
-          new Url(event.payload.photoUrl)
+          new ImageReference(event.payload.imageReference)
         ));
         break;
     }

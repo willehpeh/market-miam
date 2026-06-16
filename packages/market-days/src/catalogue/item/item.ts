@@ -2,7 +2,7 @@ import { ItemId } from './item-id';
 import { ItemName } from './item-name';
 import { ItemDescription } from './item-description';
 import { ItemPrice } from './item-price';
-import { Url } from '@market-monster/common';
+import { ImageReference } from '@market-monster/common';
 
 export class Item {
   constructor(
@@ -10,7 +10,7 @@ export class Item {
     private _name: ItemName,
     private _description: ItemDescription,
     private _price: ItemPrice,
-    private _photoUrl: Url
+    private _imageReference: ImageReference
   ) {
   }
 
@@ -30,8 +30,8 @@ export class Item {
     return this._price;
   }
 
-  photoUrl(): Url {
-    return this._photoUrl;
+  imageReference(): ImageReference {
+    return this._imageReference;
   }
 
   hasId(itemId: ItemId): boolean {

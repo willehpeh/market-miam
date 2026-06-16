@@ -31,7 +31,7 @@ describe('AddItemToCatalogue', () => {
         name: command.name,
         description: command.description,
         price: command.price,
-        photoUrl: command.imageReference,
+        imageReference: command.imageReference,
       },
     };
     expect(store.newEvents()).toEqual([expect.objectContaining(expectedEvent)]);
@@ -76,6 +76,13 @@ describe('AddItemToCatalogue', () => {
 
     it('should reject a negative price', async () => {
       await expect(handler.execute(TestAddItemToCatalogue.with({ price: -100 }))).rejects.toThrow(InvalidPriceError);
+    });
+
+    it.each([
+      '',
+      '   ',
+    ])('should reject an empty image reference: "%s"', async (imageReference) => {
+      await expect(handler.execute(TestAddItemToCatalogue.with({ imageReference }))).rejects.toThrow(EmptyValueError);
     });
 
   });

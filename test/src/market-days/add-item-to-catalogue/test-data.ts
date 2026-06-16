@@ -8,7 +8,7 @@ export class TestAddItemToCatalogue {
       'Item Name',
       'Item Description',
       500,
-      'https://example.com/item-photo.jpg',
+      'market-monster/items/item-photo',
     );
   }
 

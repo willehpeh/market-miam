@@ -3,7 +3,7 @@ export type CatalogueViewItem = {
   name: string;
   description: string;
   price: number;
-  photoUrl: string;
+  imageReference: string;
 };
 
 export type CatalogueView = {
