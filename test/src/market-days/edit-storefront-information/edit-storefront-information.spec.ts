@@ -1,31 +1,6 @@
 import { InMemoryEventStore } from '../../in-memory.event-store';
-import { StorefrontDescription, StorefrontName, Storefronts } from '@market-monster/market-days';
-import { Command, CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { VendorId } from '@market-monster/shared-kernel';
+import { EditStorefrontInformation, EditStorefrontInformationHandler, Storefronts } from '@market-monster/market-days';
 import { EmptyValueError } from '@market-monster/common';
-
-export class EditStorefrontInformation extends Command<void> {
-  constructor(public readonly vendorId: string,
-              public readonly name: string,
-              public readonly description: string) {
-    super();
-  }
-
-}
-
-@CommandHandler(EditStorefrontInformation)
-export class EditStorefrontInformationHandler implements ICommandHandler<EditStorefrontInformation> {
-  constructor(private readonly storefronts: Storefronts) {
-  }
-
-  async execute(command: EditStorefrontInformation): Promise<void> {
-    const vendorId = new VendorId(command.vendorId);
-    const storefront = await this.storefronts.forVendor(vendorId);
-    storefront.editInformation(new StorefrontName(command.name), new StorefrontDescription(command.description));
-    await this.storefronts.save(storefront, vendorId);
-  }
-
-}
 
 describe('Edit Storefront Information', () => {
   let store: InMemoryEventStore;
