@@ -1,15 +1,15 @@
 import { InMemoryEventStore } from '../../in-memory.event-store';
-import { SetStorefrontCoverPhotoHandler, StoreFronts } from '@market-monster/market-days';
+import { SetStorefrontCoverPhotoHandler, Storefronts } from '@market-monster/market-days';
 import { TestSetStorefrontCoverPhoto } from './test-data';
 
 describe('Set Storefront Cover Photo', () => {
   let store: InMemoryEventStore;
-  let storefronts: StoreFronts;
+  let storefronts: Storefronts;
   let handler: SetStorefrontCoverPhotoHandler;
 
   beforeEach(() => {
     store = new InMemoryEventStore();
-    storefronts = new StoreFronts(store);
+    storefronts = new Storefronts(store);
     handler = new SetStorefrontCoverPhotoHandler(storefronts);
   });
 

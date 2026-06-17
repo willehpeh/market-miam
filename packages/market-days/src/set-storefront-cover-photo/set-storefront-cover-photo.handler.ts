@@ -2,11 +2,11 @@ import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { VendorId } from '@market-monster/shared-kernel';
 import { ImageReference } from '@market-monster/common';
 import { SetStorefrontCoverPhoto } from './set-storefront-cover-photo';
-import { StoreFronts } from '../storefront';
+import { Storefronts } from '../storefront';
 
 @CommandHandler(SetStorefrontCoverPhoto)
 export class SetStorefrontCoverPhotoHandler implements ICommandHandler<SetStorefrontCoverPhoto> {
-  constructor(private readonly storefronts: StoreFronts) {
+  constructor(private readonly storefronts: Storefronts) {
   }
 
   async execute(command: SetStorefrontCoverPhoto): Promise<void> {

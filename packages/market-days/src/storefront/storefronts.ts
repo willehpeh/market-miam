@@ -2,7 +2,7 @@ import { EventStore } from '@market-monster/event-sourcing';
 import { VendorId } from '@market-monster/shared-kernel';
 import { Storefront } from './storefront';
 
-export class StoreFronts {
+export class Storefronts {
   constructor(private readonly store: EventStore) {
   }
 
