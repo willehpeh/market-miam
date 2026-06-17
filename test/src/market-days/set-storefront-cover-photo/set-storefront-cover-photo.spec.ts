@@ -17,7 +17,8 @@ export abstract class CoverPhoto {
 }
 
 export class SetCoverPhoto implements CoverPhoto {
-  constructor(private _imageReference: ImageReference) {}
+  constructor(private _imageReference: ImageReference) {
+  }
 
   sameAs(imageReference: ImageReference): boolean {
     return this._imageReference.value() === imageReference.value();
@@ -121,6 +122,28 @@ describe('Set Storefront Cover Photo', () => {
         imageReference: command.imageReference
       }
     })]);
+  });
+
+  it('should change the existing cover photo when a new one is set', async () => {
+    const first = TestSetStorefrontCoverPhoto.valid();
+    const second = TestSetStorefrontCoverPhoto.with({ imageReference: 'random/new-image-reference' });
+
+    await handler.execute(first);
+    await handler.execute(second);
+    expect(store.newEvents()).toEqual([
+      expect.objectContaining({
+        type: 'StorefrontCoverPhotoSet',
+        payload: {
+          imageReference: first.imageReference
+        }
+      }),
+      expect.objectContaining({
+        type: 'StorefrontCoverPhotoSet',
+        payload: {
+          imageReference: second.imageReference
+        }
+      })
+    ]);
   });
 
   it('should do nothing if the same image is submitted', async () => {
