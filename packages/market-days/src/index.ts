@@ -9,6 +9,7 @@ export * from './calendar';
 export * from './market-day';
 export * from './plan-items-for-market-day';
 export * from './mark-item-as-sold-out';
+export * from './unplan-item-from-market-day';
 export * from './catalogue-view';
 export { ItemPriceChanged } from './catalogue/events';
 export * from './catalogue';
