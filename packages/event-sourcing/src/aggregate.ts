@@ -3,7 +3,7 @@ import { StoredEvent } from './stored-event';
 
 export abstract class Aggregate {
 
-  public currentStreamPosition = 0;
+  private _currentStreamPosition = 0;
   private _raisedEvents: DomainEvent[] = [];
 
   abstract apply(event: DomainEvent): void;
@@ -12,8 +12,12 @@ export abstract class Aggregate {
     return this._raisedEvents.slice();
   }
 
+  currentStreamPosition(): number {
+    return this._currentStreamPosition;
+  }
+
   rehydrate(events: StoredEvent[]) {
-    this.currentStreamPosition = this.latestStreamPositionFor(events);
+    this._currentStreamPosition = this.latestStreamPositionFor(events);
     events.forEach(event => this.apply(event));
     return this;
   }

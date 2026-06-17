@@ -18,7 +18,7 @@ export class Vendors {
     await this.store.append(
       this.streamIdFor(vendorId),
       vendor.raisedEvents(),
-      vendor.currentStreamPosition,
+      vendor.currentStreamPosition(),
       { vendorId: vendorId.value() },
     );
   }

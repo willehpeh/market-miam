@@ -12,10 +12,13 @@ export class Catalogues {
   }
 
   async save(catalogue: Catalogue, vendorId: VendorId): Promise<void> {
+    if (catalogue.raisedEvents().length === 0) {
+      return;
+    }
     await this.store.append(
       this.streamIdFor(vendorId),
       catalogue.raisedEvents(),
-      catalogue.currentStreamPosition,
+      catalogue.currentStreamPosition(),
       { vendorId: vendorId.value() },
     );
   }

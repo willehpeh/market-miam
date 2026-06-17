@@ -12,10 +12,13 @@ export class Calendars {
   }
 
   async save(calendar: Calendar, vendorId: VendorId) {
+    if (calendar.raisedEvents().length === 0) {
+      return;
+    }
     await this.store.append(
       this.streamIdFor(vendorId),
       calendar.raisedEvents(),
-      calendar.currentStreamPosition,
+      calendar.currentStreamPosition(),
       { vendorId: vendorId.value() },
     );
   }
