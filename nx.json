@@ -16,6 +16,17 @@
     "sharedGlobals": []
   },
   "targetDefaults": {
+    "typecheck": {
+      "cache": true,
+      "executor": "nx:run-commands",
+      "inputs": [
+        "default",
+        "^default"
+      ],
+      "options": {
+        "command": "tsc --build {projectRoot}/tsconfig.json --noEmit"
+      }
+    },
     "@angular/build:application": {
       "cache": true,
       "dependsOn": [

@@ -22,5 +22,6 @@ jobs:
       - run: npm ci
 
       - run: npx nx affected -t lint --base=${{ github.event.before }} --head=${{ github.sha }} --parallel=3
+      - run: npx nx affected -t typecheck --base=${{ github.event.before }} --head=${{ github.sha }} --parallel=3
       - run: npx nx affected -t test --base=${{ github.event.before }} --head=${{ github.sha }} --parallel=3
       - run: npx nx affected -t build --base=${{ github.event.before }} --head=${{ github.sha }} --parallel=3

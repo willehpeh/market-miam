@@ -5,6 +5,7 @@
   "projectType": "application",
   "tags": [],
   "targets": {
+    "typecheck": {},
     "build": {
       "executor": "nx:run-commands",
       "options": {
