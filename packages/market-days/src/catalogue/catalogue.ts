@@ -37,11 +37,16 @@ export class Catalogue extends Aggregate {
     }
   }
 
-  changeItemPrice(itemId: ItemId, itemPrice: ItemPrice) {
+  itemWithId(itemId: ItemId): Item {
     const item = this._items.find(item => item.hasId(itemId));
     if (!item) {
       throw new NoSuchItemError(`No item in catalogue with ID ${ itemId.value() }`);
     }
+    return item;
+  }
+
+  changeItemPrice(itemId: ItemId, itemPrice: ItemPrice) {
+    const item = this.itemWithId(itemId);
     item.changePrice(itemPrice);
     const event: ItemPriceChanged = {
       type: 'ItemPriceChanged',

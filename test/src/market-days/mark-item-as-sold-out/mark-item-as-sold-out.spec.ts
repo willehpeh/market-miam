@@ -1,7 +1,8 @@
 import { InMemoryEventStore } from '../../in-memory.event-store';
-import { MarketDays, PlanItemsForMarketDayHandler, MarkItemAsSoldOutHandler, MarkItemAsSoldOut } from '@market-monster/market-days';
+import { Catalogues, MarketDays, PlanItemsForMarketDayHandler, MarkItemAsSoldOutHandler, MarkItemAsSoldOut } from '@market-monster/market-days';
 import { TestPlanItemsForMarketDay } from '../plan-items-for-market-day/test-data';
 import { LocalDate } from '@market-monster/common';
+import { seedCatalogue } from '../../seed-catalogue';
 
 describe('Mark Item As Sold Out', () => {
   let store: InMemoryEventStore;
@@ -15,13 +16,14 @@ describe('Mark Item As Sold Out', () => {
   });
 
   it('should mark an item available today as sold out', async () => {
-    const planItemsHandler = new PlanItemsForMarketDayHandler(marketDays);
     const itemId = 'item1';
     const vendorId = 'vendor1';
     const today = LocalDate.today().value();
     const previousCommand = TestPlanItemsForMarketDay.forItemsWith([{ itemId }], {
       date: today
     });
+    seedCatalogue(store, previousCommand.vendorId, itemId);
+    const planItemsHandler = new PlanItemsForMarketDayHandler(marketDays, new Catalogues(store));
     await planItemsHandler.execute(previousCommand);
 
     const command = new MarkItemAsSoldOut(vendorId, itemId, previousCommand.marketId, today, '10:00');

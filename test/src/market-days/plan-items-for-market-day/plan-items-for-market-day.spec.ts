@@ -1,18 +1,28 @@
 import { InMemoryEventStore } from '../../in-memory.event-store';
 import { TestPlanItemsForMarketDay } from './test-data';
-import { ItemsPlannedForMarketDay, MarketDays, PlanItemsForMarketDayHandler } from '@market-monster/market-days';
+import {
+  Catalogues,
+  ItemsPlannedForMarketDay,
+  MarketDays,
+  NoSuchItemError,
+  PlanItemsForMarketDayHandler
+} from '@market-monster/market-days';
 import { StoredEvent } from '@market-monster/event-sourcing';
 import { LocalDate } from '@market-monster/common';
+import { seedCatalogue } from '../../seed-catalogue';
 
 describe('Plan Items For Market Day', () => {
   let store: InMemoryEventStore;
   let marketDays: MarketDays;
+  let catalogues: Catalogues;
   let handler: PlanItemsForMarketDayHandler;
 
   beforeEach(() => {
     store = new InMemoryEventStore();
     marketDays = new MarketDays(store, { today: () => LocalDate.today() });
-    handler = new PlanItemsForMarketDayHandler(marketDays);
+    catalogues = new Catalogues(store);
+    seedCatalogue(store, 'vendor-1', 'item-1', 'item-2', 'item-3', 'item-4');
+    handler = new PlanItemsForMarketDayHandler(marketDays, catalogues);
   });
 
   it('should plan items for a market day', async () => {
@@ -23,7 +33,11 @@ describe('Plan Items For Market Day', () => {
       expect.objectContaining({
         type: 'ItemsPlannedForMarketDay',
         payload: {
-          items: command.items,
+          items: [
+            { itemId: 'item-1', name: 'Name for item-1', quantity: 10 },
+            { itemId: 'item-2', name: 'Name for item-2' },
+            { itemId: 'item-3', name: 'Name for item-3', quantity: 5 }
+          ],
           marketId: command.marketId,
           date: command.date
         }
@@ -43,12 +57,37 @@ describe('Plan Items For Market Day', () => {
     const stream = await store.load(store.newEvents()[0].streamId);
     const allPlannedItems = plannedItemsFrom(stream)
 
-    expect(allPlannedItems).toEqual([...previousCommand.items, ...newItems]);
+    expect(allPlannedItems).toEqual([
+      { itemId: 'item-1', name: 'Name for item-1', quantity: 10 },
+      { itemId: 'item-2', name: 'Name for item-2' },
+      { itemId: 'item-3', name: 'Name for item-3', quantity: 5 },
+      { itemId: 'item-3', name: 'Name for item-3', quantity: 5 },
+      { itemId: 'item-4', name: 'Name for item-4', quantity: 15 }
+    ]);
   });
 
   it('should refuse to plan items for a day in the past', async () => {
     const command = TestPlanItemsForMarketDay.forItemsWith([{ itemId: 'item-1' }], { date: '2023-01-01' });
     await expect(() => handler.execute(command)).rejects.toThrow();
+  });
+
+  it('should snapshot each planned item name from the catalogue', async () => {
+    const command = TestPlanItemsForMarketDay.forItems({ itemId: 'item-2', quantity: 8 });
+    await handler.execute(command);
+
+    expect(store.newEvents()).toEqual([
+      expect.objectContaining({
+        type: 'ItemsPlannedForMarketDay',
+        payload: expect.objectContaining({
+          items: [{ itemId: 'item-2', name: 'Name for item-2', quantity: 8 }]
+        })
+      })
+    ]);
+  });
+
+  it('should refuse to plan an item not in the vendor catalogue', async () => {
+    const command = TestPlanItemsForMarketDay.forItems({ itemId: 'not-in-catalogue', quantity: 5 });
+    await expect(() => handler.execute(command)).rejects.toThrow(NoSuchItemError);
   });
 
   it.each([
