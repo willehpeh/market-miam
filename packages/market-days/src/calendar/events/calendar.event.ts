@@ -1,3 +1,3 @@
-import { MarketScheduleRegistered } from '../../register-market-schedule';
+import { MarketScheduleRegistered } from './market-schedule-registered';
 
 export type CalendarEvent = MarketScheduleRegistered;
