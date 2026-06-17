@@ -1,26 +1,26 @@
-import { Calendar } from './index';
 import { EventStore } from '@market-monster/event-sourcing';
 import { VendorId } from '@market-monster/shared-kernel';
+import { Storefront } from './storefront';
 
-export class Calendars {
+export class StoreFronts {
   constructor(private readonly store: EventStore) {
   }
 
-  async forVendor(vendorId: VendorId): Promise<Calendar> {
+  async forVendor(vendorId: VendorId) {
     const events = await this.store.load(this.streamIdFor(vendorId));
-    return new Calendar().rehydrate(events);
+    return new Storefront().rehydrate(events);
   }
 
-  async save(calendar: Calendar, vendorId: VendorId) {
+  async save(storefront: Storefront, vendorId: VendorId) {
     await this.store.append(
       this.streamIdFor(vendorId),
-      calendar.raisedEvents(),
-      calendar.currentStreamPosition(),
-      { vendorId: vendorId.value() },
+      storefront.raisedEvents(),
+      storefront.currentStreamPosition(),
+      { vendorId: vendorId.value() }
     );
   }
 
   private streamIdFor(vendorId: VendorId) {
-    return `calendar-${ vendorId.value() }`;
+    return `storefront-${ vendorId.value() }`;
   }
 }

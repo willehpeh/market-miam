@@ -19,9 +19,6 @@ export class MarketDays {
   }
 
   async save(marketDay: MarketDay, vendorId: VendorId): Promise<void> {
-    if (marketDay.raisedEvents().length === 0) {
-      return;
-    }
     const snapshot = marketDay.snapshot();
     const streamId = this.streamIdFor(vendorId.value(), snapshot.marketId, snapshot.date);
     await this.store.append(

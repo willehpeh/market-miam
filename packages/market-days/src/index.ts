@@ -15,3 +15,6 @@ export * from './catalogue';
 export * from './register-vendor';
 export * from './vendor/events';
 export * from './vendor';
+export * from './storefront/events';
+export * from './storefront';
+export * from './set-storefront-cover-photo';
