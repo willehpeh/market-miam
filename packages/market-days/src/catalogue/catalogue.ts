@@ -1,8 +1,8 @@
-import { ItemAddedToCatalogue, ItemPriceChanged, CatalogueEvent } from './events';
+import { ItemAddedToCatalogue, ItemPriceChanged, ItemRetired, CatalogueEvent } from './events';
 import { Aggregate } from '@market-monster/event-sourcing';
 import { ImageReference } from '@market-monster/common';
 import { Item, ItemDescription, ItemId, ItemName, ItemPrice } from './item';
-import { NoSuchItemError } from './no-such-item.error';
+import { NoSuchItemError } from './errors/no-such-item.error';
 
 export class Catalogue extends Aggregate {
 
@@ -56,6 +56,23 @@ export class Catalogue extends Aggregate {
       }
     };
     this.raise(event);
+  }
+
+  retireItem(itemId: ItemId) {
+    if (!this.hasItem(itemId)) {
+      throw new NoSuchItemError(`No item in catalogue with ID ${ itemId.value() }`);
+    }
+    const event: ItemRetired = {
+      type: 'ItemRetired',
+      payload: {
+        itemId: itemId.value()
+      }
+    };
+    this.raise(event);
+  }
+
+  private hasItem(itemId: ItemId): boolean {
+    return this._items.some(item => item.hasId(itemId));
   }
 }
 

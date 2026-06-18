@@ -1,4 +1,4 @@
-import { InvalidPriceError } from './invalid-price.error';
+import { InvalidPriceError } from '../errors/invalid-price.error';
 
 export class ItemPrice {
   private readonly _value: number;

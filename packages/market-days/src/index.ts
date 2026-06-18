@@ -1,5 +1,6 @@
 export * from './add-item-to-catalogue';
 export * from './change-item-price';
+export * from './retire-item';
 export * from './catalogue/events';
 export * from './catalogue/item';
 export * from './catalogue/catalogues';
