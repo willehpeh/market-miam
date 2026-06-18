@@ -11,14 +11,19 @@ export class UnplanItemFromMarketDayHandler implements ICommandHandler<UnplanIte
   constructor(private readonly marketDays: MarketDays) {}
 
   async execute(command: UnplanItemFromMarketDay): Promise<void> {
-    const vendorId = new VendorId(command.vendorId);
-    const marketId = new MarketId(command.marketId);
-    const date = new LocalDate(command.date);
+    const { vendorId, marketId, date } = this.contextFrom(command);
     const itemId = new ItemId(command.itemId);
 
     const marketDay = await this.marketDays.forVendorAtMarket(vendorId, marketId).on(date);
     marketDay.unplanItem(itemId);
 
     await this.marketDays.save(marketDay, vendorId);
+  }
+
+  private contextFrom(command: UnplanItemFromMarketDay) {
+    const vendorId = new VendorId(command.vendorId);
+    const marketId = new MarketId(command.marketId);
+    const date = new LocalDate(command.date);
+    return { vendorId, marketId, date };
   }
 }

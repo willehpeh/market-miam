@@ -11,15 +11,20 @@ export class MarkItemAsSoldOutHandler implements ICommandHandler<MarkItemAsSoldO
   constructor(private readonly marketDays: MarketDays) {}
 
   async execute(command: MarkItemAsSoldOut): Promise<void> {
-    const vendorId = new VendorId(command.vendorId);
-    const marketId = new MarketId(command.marketId);
-    const date = new LocalDate(command.date);
+    const { vendorId, marketId, date, time } = this.contextFrom(command);
     const itemId = new ItemId(command.itemId);
-    const time = new LocalTime(command.time);
 
     const marketDay = await this.marketDays.forVendorAtMarket(vendorId, marketId).on(date);
     marketDay.markItemAsSoldOut(itemId, time);
 
     await this.marketDays.save(marketDay, vendorId);
+  }
+
+  private contextFrom(command: MarkItemAsSoldOut) {
+    const vendorId = new VendorId(command.vendorId);
+    const marketId = new MarketId(command.marketId);
+    const date = new LocalDate(command.date);
+    const time = new LocalTime(command.time);
+    return { vendorId, marketId, date, time };
   }
 }
