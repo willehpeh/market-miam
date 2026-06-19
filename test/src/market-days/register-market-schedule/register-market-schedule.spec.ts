@@ -120,5 +120,12 @@ describe('Register Market Schedule', () => {
     const command = TestRegisterMarketSchedule.with({ days: [{ day: 'SAT', startTime: '14:00', endTime: '12:00' }] });
     await expect(handler.execute(command)).rejects.toThrow(InvalidScheduleError);
   });
+
+  it.each([
+    [0], [-1]
+  ])('should reject a schedule with <= 0 weeks frequency', async (weeks) => {
+    const command = TestRegisterMarketSchedule.with({ frequency: { weeks} });
+    await expect(handler.execute(command)).rejects.toThrow(InvalidScheduleError);
+  });
 });
 
