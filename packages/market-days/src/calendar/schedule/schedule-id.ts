@@ -1,6 +1,16 @@
+import { EmptyValueError } from '@market-monster/common';
+
 export class ScheduleId {
 
-  constructor(private readonly _value: string) {}
+  private readonly _value: string
+
+  constructor(value: string) {
+    const trimmed = value.trim();
+    if (!trimmed) {
+      throw new EmptyValueError();
+    }
+    this._value = trimmed;
+  }
 
   value(): string {
     return this._value;

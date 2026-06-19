@@ -8,7 +8,7 @@ import {
   PlanItemsForMarketDayHandler
 } from '@market-monster/market-days';
 import { StoredEvent } from '@market-monster/event-sourcing';
-import { LocalDate } from '@market-monster/common';
+import { EmptyValueError, LocalDate } from '@market-monster/common';
 import { seedCatalogue } from '../../seed-catalogue';
 
 describe('Plan Items For Market Day', () => {
@@ -95,7 +95,8 @@ describe('Plan Items For Market Day', () => {
     '   ',
   ])('should reject an empty item ID: "%s"', async (itemId) => {
     const command = TestPlanItemsForMarketDay.forItems({ itemId });
-    await expect(() => handler.execute(command)).rejects.toThrow();
+    await expect(() => handler.execute(command)).rejects.toThrow(EmptyValueError);
+    expect(store.newEvents()).toEqual([]);
   });
 
   it.each([

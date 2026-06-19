@@ -48,11 +48,19 @@ describe('Register Market Schedule', () => {
     await expect(handler.execute(command)).rejects.toThrow(EmptyValueError);
   });
 
+  it.each([
+    ' ',
+    ''
+  ])('should not allow a schedule with an empty id', async scheduleId => {
+    const command = TestRegisterMarketSchedule.with({ scheduleId });
+    await expect(handler.execute(command)).rejects.toThrow(EmptyValueError);
+  });
+
   it('should allow non-overlapping times on the same day', async () => {
     const command = TestRegisterMarketSchedule.with({
       days: [
         { day: 'SAT', startTime: '08:00', endTime: '12:00' },
-        { day: 'SAT', startTime: '14:00', endTime: '18:00' },
+        { day: 'SAT', startTime: '14:00', endTime: '18:00' }
       ]
     });
     await handler.execute(command);
@@ -60,34 +68,34 @@ describe('Register Market Schedule', () => {
     expect(store.newEvents()).toEqual([expect.objectContaining({
       type: 'MarketScheduleRegistered',
       payload: expect.objectContaining({
-        days: command.days,
-      }),
+        days: command.days
+      })
     })]);
   });
 
   it.each([
     {
       scenario: 'identical whole-day entries',
-      days: [{ day: 'WED' }, { day: 'WED' }],
+      days: [{ day: 'WED' }, { day: 'WED' }]
     },
     {
       scenario: 'whole-day entry overlaps a timed entry',
-      days: [{ day: 'SAT' }, { day: 'SAT', startTime: '08:00', endTime: '12:00' }],
+      days: [{ day: 'SAT' }, { day: 'SAT', startTime: '08:00', endTime: '12:00' }]
     },
     {
       scenario: 'identical time ranges',
       days: [
         { day: 'SAT', startTime: '08:00', endTime: '14:00' },
-        { day: 'SAT', startTime: '08:00', endTime: '14:00' },
-      ],
+        { day: 'SAT', startTime: '08:00', endTime: '14:00' }
+      ]
     },
     {
       scenario: 'partially overlapping time ranges',
       days: [
         { day: 'SAT', startTime: '08:00', endTime: '14:00' },
-        { day: 'SAT', startTime: '12:00', endTime: '18:00' },
-      ],
-    },
+        { day: 'SAT', startTime: '12:00', endTime: '18:00' }
+      ]
+    }
   ])('should reject overlapping schedule: $scenario', async ({ days }) => {
     const command = TestRegisterMarketSchedule.with({ days });
     await expect(handler.execute(command)).rejects.toThrow(ConflictingScheduleError);
@@ -123,8 +131,8 @@ describe('Register Market Schedule', () => {
 
   it.each([
     [0], [-1]
-  ])('should reject a schedule with <= 0 weeks frequency', async (weeks) => {
-    const command = TestRegisterMarketSchedule.with({ frequency: { weeks} });
+  ])('should reject a schedule with %s weeks frequency', async (weeks) => {
+    const command = TestRegisterMarketSchedule.with({ frequency: { weeks } });
     await expect(handler.execute(command)).rejects.toThrow(InvalidScheduleError);
   });
 });

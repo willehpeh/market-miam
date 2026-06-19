@@ -1,5 +1,3 @@
-* scheduleId validation
-* scheduleFrequency weeks validation
 * remove item photo
 * change item photo
 * change item details
