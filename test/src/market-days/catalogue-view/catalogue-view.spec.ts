@@ -3,7 +3,7 @@ import {
   ChangeItemPrice,
   ChangeItemPriceHandler,
   Catalogues,
-  CatalogueViewProjection
+  CatalogueViewProjection, RetireItemHandler
 } from '@market-monster/market-days';
 import { InMemoryEventStore } from '../../in-memory.event-store';
 import { InMemorySubscription } from '../../in-memory.subscription';
@@ -18,6 +18,7 @@ describe('CatalogueView', () => {
   let subscription: InMemorySubscription;
   let addItemHandler: AddItemToCatalogueHandler;
   let changeItemPriceHandler: ChangeItemPriceHandler;
+  let retireItemHandler: RetireItemHandler;
 
   beforeEach(() => {
     store = new InMemoryEventStore();
@@ -26,6 +27,7 @@ describe('CatalogueView', () => {
     catalogues = new Catalogues(store);
     addItemHandler = new AddItemToCatalogueHandler(catalogues);
     changeItemPriceHandler = new ChangeItemPriceHandler(catalogues);
+    retireItemHandler = new RetireItemHandler(catalogues);
   });
 
   it('should return an empty catalogue when none are added', async () => {
@@ -54,12 +56,25 @@ describe('CatalogueView', () => {
     await changeItemPriceHandler.execute(new ChangeItemPrice(newItemCommand.itemId, newItemCommand.price + 300, newItemCommand.vendorId));
 
     await subscription.poll();
-    const view = await views.forVendor('vendor-id');
+    const view = await views.forVendor(newItemCommand.vendorId);
     expect(view).toEqual({
       items: [
         { itemId: newItemCommand.itemId, name: newItemCommand.name, description: newItemCommand.description, price: newItemCommand.price + 300, imageReference: newItemCommand.imageReference },
       ],
     });
+  });
+
+  it('should retire the item', async () => {
+    const { first, second } = await addTwoItems(addItemHandler);
+    await retireItemHandler.execute(first);
+
+    await subscription.poll();
+    const view = await views.forVendor(first.vendorId);
+    expect(view).toEqual({
+      items: [
+        { itemId: second.itemId, name: second.name, description: second.description, price: second.price, imageReference: second.imageReference }
+      ],
+    })
   });
 });
 
