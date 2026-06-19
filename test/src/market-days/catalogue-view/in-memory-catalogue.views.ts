@@ -20,6 +20,10 @@ export class InMemoryCatalogueViews implements CatalogueViews, CatalogueViewStor
     this.items.clear();
   }
 
+  async retireItem(itemId:string, vendorId:string): Promise<void> {
+    this.items.delete(itemId);
+  }
+
   async forVendor(vendorId: string): Promise<CatalogueView> {
     return { items: this.items.get(vendorId) ?? [] };
   }
