@@ -3,15 +3,17 @@ import { LocalDate, LocalTime } from '@market-monster/common';
 import { MarketId } from '@market-monster/shared-kernel';
 import { ItemMarkedAsSoldOut, ItemsPlannedForMarketDay, ItemUnplannedFromMarketDay, MarketDayEvent } from './events';
 import { PlannedItem } from './planned-item';
-import { MarketDayInThePastError } from './errors';
+import { ItemNotPlannedError, MarketDayInThePastError } from './errors';
 import { ItemId } from '../catalogue';
 
-export type MarketDaySnapshot = {
+type MarketDaySnapshot = {
   marketId: string;
   date: string;
 };
 
 export class MarketDay extends Aggregate {
+
+  private _items: ItemId[] = [];
 
   constructor(private readonly _marketId: MarketId,
               private readonly _date: LocalDate,
@@ -22,10 +24,12 @@ export class MarketDay extends Aggregate {
   apply(event: MarketDayEvent): void {
     switch (event.type) {
       case 'ItemsPlannedForMarketDay':
+        this._items.push(...event.payload.items.map(item => new ItemId(item.itemId)));
         break;
       case 'ItemMarkedAsSoldOut':
         break;
       case 'ItemUnplannedFromMarketDay':
+        this._items = this._items.filter(itemId => !itemId.equals(new ItemId(event.payload.itemId)));
         break;
     }
   }
@@ -53,6 +57,9 @@ export class MarketDay extends Aggregate {
   }
 
   markItemAsSoldOut(itemId: ItemId, time: LocalTime) {
+    if (!this._items.some(id => id.equals(itemId))) {
+      throw new ItemNotPlannedError();
+    }
     const event: ItemMarkedAsSoldOut = {
       type: 'ItemMarkedAsSoldOut',
       payload: {
