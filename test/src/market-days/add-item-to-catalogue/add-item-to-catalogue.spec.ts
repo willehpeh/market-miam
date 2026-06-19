@@ -2,6 +2,7 @@ import {
   AddItemToCatalogueHandler,
   InvalidPriceError,
   ItemAddedToCatalogue,
+  ItemAlreadyInCatalogueError,
   Catalogues
 } from '@market-monster/market-days';
 import { EmptyValueError } from '@market-monster/common';
@@ -53,10 +54,20 @@ describe('AddItemToCatalogue', () => {
 
   it('should add a new item to an existing catalogue', async () => {
     await handler.execute(TestAddItemToCatalogue.valid());
-    await handler.execute(TestAddItemToCatalogue.with({ name: 'new-name' }));
+    await handler.execute(TestAddItemToCatalogue.with({ itemId: 'another-item-id', name: 'new-name' }));
 
     expect(store.newEvents()).toHaveLength(2);
     expect(store.newEvents()[1].payload['name']).toBe('new-name');
+  });
+
+  it('should reject adding an item whose ID is already in the catalogue', async () => {
+    await handler.execute(TestAddItemToCatalogue.valid());
+
+    await expect(
+      handler.execute(TestAddItemToCatalogue.with({ name: 'different-name' }))
+    ).rejects.toThrow(ItemAlreadyInCatalogueError);
+
+    expect(store.newEvents()).toHaveLength(1);
   });
 
   describe('rejects invalid input', () => {
@@ -65,6 +76,7 @@ describe('AddItemToCatalogue', () => {
       '   ',
     ])('should reject an empty item ID: "%s"', async (itemId) => {
       await expect(handler.execute(TestAddItemToCatalogue.with({ itemId }))).rejects.toThrow(EmptyValueError);
+      expect(store.newEvents()).toEqual([]);
     });
 
     it.each([
@@ -72,10 +84,12 @@ describe('AddItemToCatalogue', () => {
       '   ',
     ])('should reject an empty item name: "%s"', async (name) => {
       await expect(handler.execute(TestAddItemToCatalogue.with({ name }))).rejects.toThrow(EmptyValueError);
+      expect(store.newEvents()).toEqual([]);
     });
 
     it('should reject a negative price', async () => {
       await expect(handler.execute(TestAddItemToCatalogue.with({ price: -100 }))).rejects.toThrow(InvalidPriceError);
+      expect(store.newEvents()).toEqual([]);
     });
 
     it.each([
@@ -83,6 +97,7 @@ describe('AddItemToCatalogue', () => {
       '   ',
     ])('should reject an empty image reference: "%s"', async (imageReference) => {
       await expect(handler.execute(TestAddItemToCatalogue.with({ imageReference }))).rejects.toThrow(EmptyValueError);
+      expect(store.newEvents()).toEqual([]);
     });
 
   });

@@ -3,12 +3,16 @@ import { Aggregate } from '@market-monster/event-sourcing';
 import { ImageReference } from '@market-monster/common';
 import { Item, ItemDescription, ItemId, ItemName, ItemPrice } from './item';
 import { NoSuchItemError } from './errors/no-such-item.error';
+import { ItemAlreadyInCatalogueError } from './errors/item-already-in-catalogue.error';
 
 export class Catalogue extends Aggregate {
 
   private _items: Item[] = [];
 
   addItem(id: ItemId, name: ItemName, description: ItemDescription, price: ItemPrice, imageReference: ImageReference) {
+    if (this.hasItem(id)) {
+      throw new ItemAlreadyInCatalogueError(`Item already in catalogue with ID ${ id.value() }`);
+    }
     const item = new Item(id, name, description, price, imageReference);
     const event: ItemAddedToCatalogue = {
       type: 'ItemAddedToCatalogue',
