@@ -1,4 +1,4 @@
-* sold out and unplan don't date check
+* sold out doesn't date check
 * scheduleId validation
 * scheduleFrequency weeks validation
 * remove item photo
