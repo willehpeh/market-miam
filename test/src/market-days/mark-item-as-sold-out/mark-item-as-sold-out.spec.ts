@@ -40,12 +40,18 @@ describe('Mark Item As Sold Out', () => {
 
     await handler.execute(command);
 
-    expect(store.lastEvent().payload).toEqual(expect.objectContaining({
-      itemId,
-      marketId: previousCommand.marketId,
-      date: TEST_TODAY,
-      time: '10:00'
-    }));
+    expect(store.newEvents()).toEqual([
+      expect.objectContaining({ type: 'ItemsPlannedForMarketDay' }),
+      expect.objectContaining({
+        type: 'ItemMarkedAsSoldOut',
+        payload: {
+          itemId,
+          marketId: previousCommand.marketId,
+          date: TEST_TODAY,
+          time: '10:00'
+        }
+      })
+    ]);
   });
 
   it('should reject marking an item not available today as sold out', async () => {
@@ -53,6 +59,7 @@ describe('Mark Item As Sold Out', () => {
     const command = new MarkItemAsSoldOut(plan.vendorId, plan.items[0].itemId, plan.marketId, TEST_TODAY, '10:00');
 
     await expect(() => handler.execute(command)).rejects.toThrow(ItemNotPlannedError);
+    expect(store.newEvents()).toEqual([]);
   });
 
   it('should reject marking an item that was planned for today then unplanned as sold out', async () => {
