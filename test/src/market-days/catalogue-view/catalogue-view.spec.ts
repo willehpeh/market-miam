@@ -1,9 +1,10 @@
 import {
   AddItemToCatalogueHandler,
+  Catalogues,
+  CatalogueViewProjection,
   ChangeItemPrice,
   ChangeItemPriceHandler,
-  Catalogues,
-  CatalogueViewProjection, RetireItemHandler
+  RetireItemHandler
 } from '@market-monster/market-days';
 import { InMemoryEventStore } from '../../in-memory.event-store';
 import { InMemorySubscription } from '../../in-memory.subscription';
@@ -16,18 +17,12 @@ describe('CatalogueView', () => {
   let views: InMemoryCatalogueViews;
   let catalogues: Catalogues;
   let subscription: InMemorySubscription;
-  let addItemHandler: AddItemToCatalogueHandler;
-  let changeItemPriceHandler: ChangeItemPriceHandler;
-  let retireItemHandler: RetireItemHandler;
 
   beforeEach(() => {
     store = new InMemoryEventStore();
     views = new InMemoryCatalogueViews();
     subscription = new InMemorySubscription('catalogue-view', store, new CatalogueViewProjection(views));
     catalogues = new Catalogues(store);
-    addItemHandler = new AddItemToCatalogueHandler(catalogues);
-    changeItemPriceHandler = new ChangeItemPriceHandler(catalogues);
-    retireItemHandler = new RetireItemHandler(catalogues);
   });
 
   it('should return an empty catalogue when none are added', async () => {
@@ -37,7 +32,7 @@ describe('CatalogueView', () => {
   });
 
   it('should project items added to the catalogue', async () => {
-    const { first, second } = await addTwoItems(addItemHandler);
+    const { first, second } = await addTwoItems(catalogues);
 
     await subscription.poll();
 
@@ -52,8 +47,8 @@ describe('CatalogueView', () => {
 
   it('should show the latest price', async () => {
     const newItemCommand = TestAddItemToCatalogue.valid();
-    await addItemHandler.execute(newItemCommand);
-    await changeItemPriceHandler.execute(new ChangeItemPrice(newItemCommand.itemId, newItemCommand.price + 300, newItemCommand.vendorId));
+    await new AddItemToCatalogueHandler(catalogues).execute(newItemCommand);
+    await new ChangeItemPriceHandler(catalogues).execute(new ChangeItemPrice(newItemCommand.itemId, newItemCommand.price + 300, newItemCommand.vendorId));
 
     await subscription.poll();
     const view = await views.forVendor(newItemCommand.vendorId);
@@ -65,8 +60,8 @@ describe('CatalogueView', () => {
   });
 
   it('should retire the item', async () => {
-    const { first, second } = await addTwoItems(addItemHandler);
-    await retireItemHandler.execute(first);
+    const { first, second } = await addTwoItems(catalogues);
+    await new RetireItemHandler(catalogues).execute(first);
 
     await subscription.poll();
     const view = await views.forVendor(first.vendorId);
@@ -78,9 +73,10 @@ describe('CatalogueView', () => {
   });
 });
 
-async function addTwoItems(addItemHandler: AddItemToCatalogueHandler) {
+async function addTwoItems(catalogues: Catalogues) {
   const first = TestAddItemToCatalogue.valid();
   const second = TestAddItemToCatalogue.with({ itemId: 'second-item', name: 'Second Item' });
+  const addItemHandler = new AddItemToCatalogueHandler(catalogues);
   await addItemHandler.execute(first);
   await addItemHandler.execute(second);
   return { first, second };
