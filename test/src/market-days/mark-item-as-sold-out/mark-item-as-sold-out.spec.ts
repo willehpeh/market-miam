@@ -14,6 +14,7 @@ describe('Mark Item As Sold Out', () => {
   let unplanHandler: UnplanItemFromMarketDayHandler;
 
   const TEST_TODAY = '2026-06-19';
+  const TEST_FUTURE = '2026-07-01';
 
   beforeEach(() => {
     store = new InMemoryEventStore();
@@ -22,10 +23,10 @@ describe('Mark Item As Sold Out', () => {
     unplanHandler = new UnplanItemFromMarketDayHandler(marketDays);
   });
 
-  async function addItemToCatalogueAndPlanIt() {
+  async function addItemToCatalogueAndPlanIt(date: string) {
     const itemId = 'item1';
     const previousCommand = TestPlanItemsForMarketDay.forItemsWith([{ itemId }], {
-      date: TEST_TODAY
+      date
     });
     seedCatalogue(store, previousCommand.vendorId, itemId);
     const planItemsHandler = new PlanItemsForMarketDayHandler(marketDays, new Catalogues(store));
@@ -34,7 +35,7 @@ describe('Mark Item As Sold Out', () => {
   }
 
   it('should mark an item available today as sold out', async () => {
-    const { itemId, previousCommand } = await addItemToCatalogueAndPlanIt();
+    const { itemId, previousCommand } = await addItemToCatalogueAndPlanIt(TEST_TODAY);
 
     const command = new MarkItemAsSoldOut(previousCommand.vendorId, itemId, previousCommand.marketId, TEST_TODAY, '10:00');
 
@@ -63,9 +64,16 @@ describe('Mark Item As Sold Out', () => {
   });
 
   it('should reject marking an item that was planned for today then unplanned as sold out', async () => {
-    const { itemId, previousCommand } = await addItemToCatalogueAndPlanIt();
+    const { itemId, previousCommand } = await addItemToCatalogueAndPlanIt(TEST_TODAY);
     const unplanCommand = new UnplanItemFromMarketDay(previousCommand.vendorId, itemId, previousCommand.marketId, TEST_TODAY);
     await unplanHandler.execute(unplanCommand);
+
+    const command = new MarkItemAsSoldOut(previousCommand.vendorId, itemId, previousCommand.marketId, TEST_TODAY, '10:00');
+    await expect(() => handler.execute(command)).rejects.toThrow(ItemNotPlannedError);
+  });
+
+  it('should reject marking an item planned for a different day as sold out', async () => {
+    const { itemId, previousCommand } = await addItemToCatalogueAndPlanIt(TEST_FUTURE);
 
     const command = new MarkItemAsSoldOut(previousCommand.vendorId, itemId, previousCommand.marketId, TEST_TODAY, '10:00');
     await expect(() => handler.execute(command)).rejects.toThrow(ItemNotPlannedError);
