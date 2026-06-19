@@ -66,6 +66,9 @@ export class MarketDay extends Aggregate {
   }
 
   unplanItem(itemId: ItemId) {
+    if (this._date.isBefore(this._today)) {
+      throw new MarketDayInThePastError();
+    }
     const event: ItemUnplannedFromMarketDay = {
       type: 'ItemUnplannedFromMarketDay',
       payload: {
