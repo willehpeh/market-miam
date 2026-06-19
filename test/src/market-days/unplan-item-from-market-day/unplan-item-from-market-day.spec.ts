@@ -1,7 +1,11 @@
 import { InMemoryEventStore } from '../../in-memory.event-store';
-import { MarketDays, UnplanItemFromMarketDay, UnplanItemFromMarketDayHandler } from '@market-monster/market-days';
+import {
+  MarketDayInThePastError,
+  MarketDays,
+  UnplanItemFromMarketDay,
+  UnplanItemFromMarketDayHandler
+} from '@market-monster/market-days';
 import { LocalDate } from '@market-monster/common';
-import { MarketDayInThePastError } from '../../../../packages/market-days/src/market-day/errors';
 
 describe('Unplan Item From Market Day', () => {
   let store: InMemoryEventStore;
