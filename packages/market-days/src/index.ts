@@ -21,3 +21,4 @@ export * from './storefront/events';
 export * from './storefront';
 export * from './set-storefront-cover-photo';
 export * from './edit-storefront-information';
+export * from './vendor-storefront-view';
