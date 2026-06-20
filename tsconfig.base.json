@@ -32,6 +32,9 @@
       ],
       "@market-monster/shared-kernel": [
         "packages/shared-kernel/src/index.ts"
+      ],
+      "@market-monster/auth": [
+        "packages/auth/src/index.ts"
       ]
     }
   },
