@@ -4,14 +4,13 @@ export class InMemoryCatalogueViews implements CatalogueViews, CatalogueViewStor
   private readonly items = new Map<string, CatalogueViewItem[]>();
 
   async addItemToCatalogue(item: CatalogueViewItem, vendorId: string): Promise<void> {
-    const existing = this.items.get(vendorId) ?? [];
+    const existing = (await this.forVendor(vendorId)).items;
     existing.push(item);
     this.items.set(vendorId, existing);
   }
 
   async updateItemPrice(itemId: string, newPrice: number, vendorId: string): Promise<void> {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const vendorItems = this.items.get(vendorId)!;
+    const vendorItems = (await this.forVendor(vendorId)).items;
     const newItems = vendorItems.map(vendorItem => vendorItem.itemId === itemId ? { ...vendorItem, price: newPrice } : vendorItem);
     this.items.set(vendorId, newItems);
   }
@@ -21,7 +20,7 @@ export class InMemoryCatalogueViews implements CatalogueViews, CatalogueViewStor
   }
 
   async retireItem(itemId:string, vendorId:string): Promise<void> {
-    const current = this.items.get(vendorId) ?? [];
+    const current = (await this.forVendor(vendorId)).items;
     this.items.set(vendorId, current.filter(item => item.itemId !== itemId));
   }
 
