@@ -53,5 +53,6 @@ vitest.config.*.timestamp*
 
 .env
 .env.*
+!.env.example
 
 .nx/migrate-runs

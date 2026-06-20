@@ -16,6 +16,7 @@ export function provideAuth(): EnvironmentProviders {
       clientId: "8Aotn34QyliBSeJbDSK9VMuZOiwM7WuY",
       authorizationParams: {
         redirect_uri: window.location.origin,
+        audience: 'https://api.marketmiam.fr'
       },
     }),
     { provide: Auth, useClass: isDevMode() ? FakeAuth : Auth0Auth },
