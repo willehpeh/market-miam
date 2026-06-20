@@ -1,11 +1,11 @@
 import { CatalogueViewStore } from './catalogue-view.store';
-import { Projection, StoredEvent } from '@market-monster/event-sourcing';
+import { EventHandlerMap, Projection, StoredEvent } from '@market-monster/event-sourcing';
 import { vendorIdFrom } from '@market-monster/shared-kernel';
-import { ItemAddedToCatalogue, ItemPriceChanged, CatalogueEvent, ItemRetired } from '../catalogue/events';
+import { CatalogueEvent, ItemAddedToCatalogue, ItemPriceChanged, ItemRetired } from '../catalogue/events';
 
 export class CatalogueViewProjection implements Projection {
 
-  private readonly _handlers: Record<CatalogueEvent['type'], (event: StoredEvent) => Promise<void>> = {
+  private readonly _handlers: EventHandlerMap<CatalogueEvent> = {
     ItemAddedToCatalogue: e => this.handleItemAdded(e),
     ItemPriceChanged: e => this.handleItemPriceChanged(e),
     ItemRetired: e => this.handleItemRetired(e)

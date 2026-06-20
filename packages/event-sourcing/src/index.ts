@@ -8,3 +8,4 @@ export { Projection } from './projection';
 export { Processor } from './processor';
 export { Subscription } from './subscription';
 export { Checkpoint } from './checkpoint';
+export * from './event-handler-map';

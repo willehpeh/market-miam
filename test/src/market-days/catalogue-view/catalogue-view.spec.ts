@@ -32,11 +32,11 @@ describe('CatalogueView', () => {
   });
 
   it('should project items added to the catalogue', async () => {
-    const { first, second } = await addTwoItems(catalogues);
+    const { first, second, vendorId } = await addTwoItems(catalogues);
 
     await subscription.poll();
 
-    const view = await views.forVendor('vendor-id');
+    const view = await views.forVendor(vendorId);
     expect(view).toEqual({
       items: [
         { itemId: first.itemId, name: first.name, description: first.description, price: first.price, imageReference: first.imageReference },
@@ -60,11 +60,11 @@ describe('CatalogueView', () => {
   });
 
   it('should retire the item', async () => {
-    const { first, second } = await addTwoItems(catalogues);
+    const { first, second, vendorId } = await addTwoItems(catalogues);
     await new RetireItemHandler(catalogues).execute(first);
 
     await subscription.poll();
-    const view = await views.forVendor(first.vendorId);
+    const view = await views.forVendor(vendorId);
     expect(view).toEqual({
       items: [
         { itemId: second.itemId, name: second.name, description: second.description, price: second.price, imageReference: second.imageReference }
@@ -76,8 +76,9 @@ describe('CatalogueView', () => {
 async function addTwoItems(catalogues: Catalogues) {
   const first = TestAddItemToCatalogue.valid();
   const second = TestAddItemToCatalogue.with({ itemId: 'second-item', name: 'Second Item' });
+  const vendorId = first.vendorId;
   const addItemHandler = new AddItemToCatalogueHandler(catalogues);
   await addItemHandler.execute(first);
   await addItemHandler.execute(second);
-  return { first, second };
+  return { first, second, vendorId };
 }
