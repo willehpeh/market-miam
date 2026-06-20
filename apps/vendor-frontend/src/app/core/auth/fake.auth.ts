@@ -2,10 +2,9 @@ import { Injectable } from '@angular/core';
 import { Auth } from './auth';
 import { BehaviorSubject, Observable } from 'rxjs';
 
-const FAKE_USER_ID = 'fake|user';
-
 @Injectable()
 export class FakeAuth implements Auth {
+  static USER_ID = 'fake|user';
   loginStarted = false;
   loggedOut = false;
   private readonly _isLoading = new BehaviorSubject<boolean>(false);
@@ -13,7 +12,7 @@ export class FakeAuth implements Auth {
 
   login(): void {
     this.loginStarted = true;
-    this._userId.next(FAKE_USER_ID);
+    this._userId.next(FakeAuth.USER_ID);
   }
 
   logout(): void {
