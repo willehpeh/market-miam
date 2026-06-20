@@ -35,6 +35,9 @@
       ],
       "@market-monster/auth": [
         "packages/auth/src/index.ts"
+      ],
+      "@market-monster/auth-nestjs": [
+        "packages/auth-nestjs/src/index.ts"
       ]
     }
   },
