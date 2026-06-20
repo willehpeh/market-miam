@@ -1,6 +1,7 @@
 import { InMemoryEventStore } from '../../in-memory.event-store';
-import { EditStorefrontInformation, EditStorefrontInformationHandler, Storefronts } from '@market-monster/market-days';
+import { EditStorefrontInformationHandler, Storefronts } from '@market-monster/market-days';
 import { EmptyValueError } from '@market-monster/common';
+import { TestEditStorefrontInformation } from './test-data';
 
 describe('Edit Storefront Information', () => {
   let store: InMemoryEventStore;
@@ -14,11 +15,7 @@ describe('Edit Storefront Information', () => {
   });
 
   it('should set storefront information when none was set previously', async () => {
-    const command = new EditStorefrontInformation(
-      'vendor-id',
-      'Jimmy\'s Sandwiches',
-      'The best you ever had'
-    );
+    const command = TestEditStorefrontInformation.valid();
     await handler.execute(command);
 
     expect(store.newEvents()).toEqual([
@@ -33,20 +30,15 @@ describe('Edit Storefront Information', () => {
   });
 
   it('should prevent an empty name', async () => {
-    const command = new EditStorefrontInformation(
-      'vendor-id',
-      '',
-      'The best you ever had'
-    );
+    const command = TestEditStorefrontInformation.with({ name: '' });
     await expect(handler.execute(command)).rejects.toThrow(EmptyValueError);
   });
 
   it('should trim name and description whitespace', async () => {
-    const command = new EditStorefrontInformation(
-      'vendor-id',
-      '  Thai Fried Chicken  ',
-      '  Better than KFC  '
-    );
+    const command = TestEditStorefrontInformation.with({
+      name: '  Thai Fried Chicken  ',
+      description: '  Better than KFC  '
+    });
     await handler.execute(command);
 
     expect(store.newEvents()).toEqual([
