@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
-import { AuthFacade } from '../auth/auth.facade';
-import { LogoutButton } from '../auth/logout-button';
+import { AuthFacade } from './auth/auth.facade';
+import { LogoutButton } from './auth/logout-button';
 
 @Component({
   selector: 'mm-layout',

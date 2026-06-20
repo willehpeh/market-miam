@@ -1,14 +1,14 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Layout } from './layout';
-import { Auth } from '../auth/auth';
-import { FakeAuth } from '../auth/fake.auth';
+import { Auth } from './auth/auth';
+import { FakeAuth } from './auth/fake.auth';
 import { DebugElement } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { provideState, provideStore } from '@ngrx/store';
 import { provideEffects } from '@ngrx/effects';
-import { authFeature } from '../auth/auth.state';
-import { AuthEffects } from '../auth/auth.effects';
-import { AuthFacade } from '../auth/auth.facade';
+import { authFeature } from './auth/auth.state';
+import { AuthEffects } from './auth/auth.effects';
+import { AuthFacade } from './auth/auth.facade';
 
 describe('Layout', () => {
 

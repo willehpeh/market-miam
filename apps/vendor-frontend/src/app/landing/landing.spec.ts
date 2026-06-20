@@ -1,14 +1,14 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Landing } from './landing';
-import { Auth } from '../auth/auth';
-import { FakeAuth } from '../auth/fake.auth';
+import { Auth } from '../core/auth/auth';
+import { FakeAuth } from '../core/auth/fake.auth';
 import { DebugElement } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { provideState, provideStore } from '@ngrx/store';
 import { provideEffects } from '@ngrx/effects';
-import { authFeature } from '../auth/auth.state';
-import { AuthEffects } from '../auth/auth.effects';
-import { AuthFacade } from '../auth/auth.facade';
+import { authFeature } from '../core/auth/auth.state';
+import { AuthEffects } from '../core/auth/auth.effects';
+import { AuthFacade } from '../core/auth/auth.facade';
 
 describe('Landing', () => {
 

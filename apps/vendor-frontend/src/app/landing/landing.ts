@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { AuthFacade } from '../auth/auth.facade';
-import { LoginButton } from '../auth/login-button';
+import { AuthFacade } from '../core/auth/auth.facade';
+import { LoginButton } from '../core/auth/login-button';
 
 @Component({
   selector: 'mm-landing',
