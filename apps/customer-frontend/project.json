@@ -41,7 +41,10 @@
               "maximumError": "8kb"
             }
           ],
-          "outputHashing": "all"
+          "outputHashing": "all",
+          "security": {
+            "allowedHosts": ["*.marketmiam.fr"]
+          }
         },
         "development": {
           "optimization": false,
