@@ -65,7 +65,15 @@
     "test": {
       "executor": "@angular/build:unit-test",
       "options": {
-        "watch": false
+        "watch": false,
+        "coverage": true,
+        "coverageInclude": ["src/**/*.ts"],
+        "coverageExclude": [
+          "src/**/*.spec.ts",
+          "src/main.ts",
+          "src/**/*.config.ts"
+        ],
+        "coverageReporters": ["text-summary", "html", "lcov"]
       },
       "configurations": {
         "watch": {
