@@ -31,3 +31,4 @@ deferred decisions in `docs/DEFERRED.md` (see ADR 0017).
 | [0023](0023-tailwind-css.md) | Tailwind CSS for frontend styling | 2026-06-10 |
 | [0024](0024-vendor-identity-and-registration.md) | Vendor identity: minted UUID, idempotent registration, no PII in events | 2026-06-10 |
 | [0025](0025-crypto-shredding-for-pii-erasure.md) | Crypto-shredding for GDPR erasure of PII | 2026-06-10 |
+| [0026](0026-event-based-observability-with-opentelemetry.md) | Event-based observability with OpenTelemetry | 2026-06-21 |
