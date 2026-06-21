@@ -17,7 +17,15 @@ projects:
                 sync: false
               - key: DATABASE_CONNECTION_STRING
                 sync: false
-              - key: HONEYCOMB_API_KEY
+              # OpenTelemetry -> Honeycomb (ADR 0026)
+              - key: OTEL_SERVICE_NAME
+                value: api
+              - key: OTEL_EXPORTER_OTLP_ENDPOINT
+                value: https://api.honeycomb.io
+              - key: OTEL_EXPORTER_OTLP_PROTOCOL
+                value: http/protobuf
+              # Secret: set in dashboard as `x-honeycomb-team=<ingest-key>`
+              - key: OTEL_EXPORTER_OTLP_HEADERS
                 sync: false
             region: frankfurt
             buildCommand: npm ci && npx nx run api:build
