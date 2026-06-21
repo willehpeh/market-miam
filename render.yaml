@@ -17,6 +17,8 @@ projects:
                 sync: false
               - key: DATABASE_CONNECTION_STRING
                 sync: false
+              - key: HONEYCOMB_API_KEY
+                sync: false
             region: frankfurt
             buildCommand: npm ci && npx nx run api:build
             startCommand: node dist/apps/api/main.js
