@@ -64,6 +64,17 @@ export function eventStoreContract(
       expect(types).toEqual(['First', 'Second', 'Third']);
     });
 
+    it('requires expectedStreamPosition 0 for the first append to a new stream', async () => {
+      // A non-zero expectation on an empty stream is stale: reject.
+      await expect(
+        store.append('stream-1', [dummyEvent('First')], 1),
+      ).rejects.toThrow();
+
+      // The correct first-append expectation is 0: accept.
+      await store.append('stream-2', [dummyEvent('First')], 0);
+      expect(await store.load('stream-2')).toHaveLength(1);
+    });
+
     it('assigns a unique id to every appended event', async () => {
       await store.append(
         'stream-1',
