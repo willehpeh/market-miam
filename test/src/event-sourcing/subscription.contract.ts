@@ -41,6 +41,17 @@ export function subscriptionContract(
 
       expect(handler.handled.map((e) => e.type)).toEqual(['Wanted']);
     });
+
+    it('does not redeliver events across successive polls', async () => {
+      const handler = new RecordingHandler(['First', 'Second']);
+      const subscription = subscribe(handler);
+
+      await writer.append('stream-1', [dummyEvent('First'), dummyEvent('Second')], 0);
+      await subscription.poll();
+      await subscription.poll();
+
+      expect(handler.handled.map((e) => e.type)).toEqual(['First', 'Second']);
+    });
   });
 }
 
