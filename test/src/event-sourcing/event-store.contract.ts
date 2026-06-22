@@ -117,6 +117,14 @@ export function eventStoreContract(
       ]);
     });
 
+    it('returns events without metadata when none is supplied', async () => {
+      await store.append('stream-1', [dummyEvent('First')], 0);
+
+      const [event] = await store.load('stream-1');
+
+      expect(event).not.toHaveProperty('metadata');
+    });
+
     it('assigns a unique id to every appended event', async () => {
       await store.append(
         'stream-1',
