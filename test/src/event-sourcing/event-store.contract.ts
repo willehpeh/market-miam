@@ -81,6 +81,18 @@ export function eventStoreContract(
       expect(streamTwoTypes).toEqual(['Other']);
     });
 
+    it('numbers streamPosition independently per stream', async () => {
+      await store.append('stream-1', [dummyEvent('A1')], 0);
+      await store.append('stream-2', [dummyEvent('B1'), dummyEvent('B2')], 0);
+      await store.append('stream-1', [dummyEvent('A2')], 1);
+
+      const streamOne = (await store.load('stream-1')).map((e) => e.streamPosition);
+      const streamTwo = (await store.load('stream-2')).map((e) => e.streamPosition);
+
+      expect(streamOne).toEqual([1, 2]);
+      expect(streamTwo).toEqual([1, 2]);
+    });
+
     it('assigns a unique id to every appended event', async () => {
       await store.append(
         'stream-1',
