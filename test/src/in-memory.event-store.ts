@@ -1,4 +1,5 @@
 import { DomainEvent, Events, EventStore, StoredEvent } from '@market-monster/event-sourcing';
+import { randomUUID } from 'node:crypto';
 
 export class InMemoryEventStore implements EventStore, Events {
 
@@ -26,6 +27,7 @@ export class InMemoryEventStore implements EventStore, Events {
 
   private toStoredEvents(events: DomainEvent[], streamId: string, stream: StoredEvent[], metadata?: Record<string, unknown>) {
     return events.map((event, index) => ({
+      id: randomUUID(),
       streamId,
       ...event,
       ...metadata ? { metadata } : {},
