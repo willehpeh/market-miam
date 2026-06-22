@@ -48,6 +48,22 @@ export function eventStoreContract(
       expect(positions).toEqual([1, 2, 3]);
     });
 
+    it('enforces optimistic concurrency, persisting nothing on a stale expected position', async () => {
+      await store.append('stream-1', [dummyEvent('First'), dummyEvent('Second')], 0);
+
+      // Accept: expected position matches the current length of 2.
+      await store.append('stream-1', [dummyEvent('Third')], 2);
+
+      // Reject: a writer that still thinks the stream is at 2 is now stale (it's at 3).
+      await expect(
+        store.append('stream-1', [dummyEvent('Stale')], 2),
+      ).rejects.toThrow();
+
+      // Persists nothing: the stale batch left no trace.
+      const types = (await store.load('stream-1')).map((e) => e.type);
+      expect(types).toEqual(['First', 'Second', 'Third']);
+    });
+
     it('assigns a unique id to every appended event', async () => {
       await store.append(
         'stream-1',
