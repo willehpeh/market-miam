@@ -93,6 +93,19 @@ export function eventStoreContract(
       expect(streamTwo).toEqual([1, 2]);
     });
 
+    it('assigns a globalPosition that increases monotonically in append order across streams', async () => {
+      await store.append('stream-1', [dummyEvent('A1')], 0);
+      await store.append('stream-2', [dummyEvent('B1')], 0);
+      await store.append('stream-1', [dummyEvent('A2')], 1);
+
+      const a = await store.load('stream-1');
+      const b = await store.load('stream-2');
+      const byAppendOrder = [a[0], b[0], a[1]].map((e) => e.globalPosition);
+
+      expect(byAppendOrder).toEqual([...byAppendOrder].sort((x, y) => x - y));
+      expect(new Set(byAppendOrder).size).toBe(3);
+    });
+
     it('assigns a unique id to every appended event', async () => {
       await store.append(
         'stream-1',
