@@ -16,6 +16,20 @@ export function eventStoreContract(
       expect(await store.load('never-touched')).toEqual([]);
     });
 
+    it('round-trips event type and payload faithfully', async () => {
+      const payload = {
+        itemId: 'item-1',
+        price: { amount: 500, currency: 'EUR' },
+        tags: ['fresh', 'local'],
+      };
+
+      await store.append('stream-1', [{ type: 'ItemAddedToCatalogue', payload }], 0);
+
+      expect(await store.load('stream-1')).toEqual([
+        expect.objectContaining({ type: 'ItemAddedToCatalogue', payload }),
+      ]);
+    });
+
     it('assigns a unique id to every appended event', async () => {
       await store.append(
         'stream-1',
