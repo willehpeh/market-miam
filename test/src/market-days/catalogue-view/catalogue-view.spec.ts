@@ -8,6 +8,7 @@ import {
 } from '@market-monster/market-days';
 import { InMemoryEventStore } from '../../in-memory.event-store';
 import { InMemorySubscription } from '../../in-memory.subscription';
+import { InMemoryCheckpoint } from '../../in-memory.checkpoint';
 import { TestAddItemToCatalogue } from '../add-item-to-catalogue/test-data';
 import { InMemoryCatalogueViews } from './in-memory-catalogue.views';
 
@@ -21,7 +22,7 @@ describe('CatalogueView', () => {
   beforeEach(() => {
     store = new InMemoryEventStore();
     views = new InMemoryCatalogueViews();
-    subscription = new InMemorySubscription('catalogue-view', store, new CatalogueViewProjection(views));
+    subscription = new InMemorySubscription(store, new CatalogueViewProjection(views), new InMemoryCheckpoint('catalogue-view'));
     catalogues = new Catalogues(store);
   });
 

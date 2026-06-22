@@ -65,10 +65,23 @@ export function subscriptionContract(
 
       expect(handler.handled.map((e) => e.type)).toEqual(['First', 'Second', 'Third']);
     });
+
+    it('advances past non-matching events, delivering a later matching event', async () => {
+      const handler = new RecordingHandler(['Wanted']);
+      const subscription = subscribe(handler);
+
+      await writer.append('stream-1', [dummyEvent('Ignored')], 0);
+      await subscription.poll();
+
+      await writer.append('stream-1', [dummyEvent('Wanted')], 1);
+      await subscription.poll();
+
+      expect(handler.handled.map((e) => e.type)).toEqual(['Wanted']);
+    });
   });
 }
 
-class RecordingHandler implements EventHandler {
+export class RecordingHandler implements EventHandler {
   readonly handled: StoredEvent[] = [];
 
   constructor(private readonly types: string[]) {}

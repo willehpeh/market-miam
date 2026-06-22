@@ -6,6 +6,7 @@ import {
   VendorStorefrontViewProjection
 } from '@market-monster/market-days';
 import { InMemorySubscription } from '../../in-memory.subscription';
+import { InMemoryCheckpoint } from '../../in-memory.checkpoint';
 import { TestEditStorefrontInformation } from '../edit-storefront-information/test-data';
 import { TestSetStorefrontCoverPhoto } from '../set-storefront-cover-photo/test-data';
 import { InMemoryVendorStorefrontViews } from './in-memory-vendor-storefront.views';
@@ -20,7 +21,7 @@ describe('VendorStorefrontView', () => {
     store = new InMemoryEventStore();
     views = new InMemoryVendorStorefrontViews();
     storefronts = new Storefronts(store);
-    subscription = new InMemorySubscription('vendor-storefront-view', store, new VendorStorefrontViewProjection(views));
+    subscription = new InMemorySubscription(store, new VendorStorefrontViewProjection(views), new InMemoryCheckpoint('vendor-storefront-view'));
   });
 
   it('should return an empty storefront if the vendor has not entered anything yet', async () => {
