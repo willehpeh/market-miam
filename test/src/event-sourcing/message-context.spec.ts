@@ -1,0 +1,43 @@
+import { describe, it, expect } from 'vitest';
+import {
+  MessageContext,
+  MessageContextDispatcher,
+  MessageContextEventStore,
+} from '@market-monster/event-sourcing';
+import { InMemoryEventStore } from '../in-memory.event-store';
+
+describe('Message context propagation', () => {
+  it('stamps a fresh correlationId and causationId onto events appended during a root dispatch', async () => {
+    const ids = stubIds(['corr-1', 'caus-1']);
+    const store = new InMemoryEventStore();
+    const context = new MessageContext();
+    const contextualStore = new MessageContextEventStore(store, context);
+    const dispatcher = new MessageContextDispatcher(context, ids);
+
+    await dispatcher.dispatch(async () => {
+      await contextualStore.append(
+        'stream-1',
+        [{ type: 'First', payload: {} }],
+        0,
+        { vendorId: 'v1' },
+      );
+    });
+
+    expect(await store.load('stream-1')).toEqual([
+      expect.objectContaining({
+        metadata: { vendorId: 'v1', correlationId: 'corr-1', causationId: 'caus-1' },
+      }),
+    ]);
+  });
+});
+
+function stubIds(ids: string[]): () => string {
+  const queue = [...ids];
+  return () => {
+    const next = queue.shift();
+    if (next === undefined) {
+      throw new Error('stubIds exhausted');
+    }
+    return next;
+  };
+}
