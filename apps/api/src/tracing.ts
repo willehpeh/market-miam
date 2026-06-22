@@ -22,19 +22,10 @@ import {
 
 // RENDER_GIT_COMMIT is injected by Render at build and runtime; absent locally.
 // Stamped as a resource attribute for per-deploy comparison in Honeycomb.
-const gitCommit = process.env.RENDER_GIT_COMMIT;
 
-const resource = defaultResource().merge(
-  resourceFromAttributes({
-    [ATTR_SERVICE_NAME]: process.env.OTEL_SERVICE_NAME ?? 'api',
-    ...(gitCommit
-      ? { [ATTR_SERVICE_VERSION]: gitCommit, 'render.git_commit': gitCommit }
-      : {}),
-  }),
-);
 
 const sdk = new NodeSDK({
-  resource,
+  resource: resourceWithAttributes(),
   traceExporter: new OTLPTraceExporter(),
   instrumentations: [getNodeAutoInstrumentations()],
 });
@@ -52,3 +43,19 @@ const shutdown = () => {
 
 process.once('SIGTERM', shutdown);
 process.once('SIGINT', shutdown);
+
+function gitCommitInfo() {
+  const gitCommit = process.env.RENDER_GIT_COMMIT;
+  return gitCommit
+    ? { [ATTR_SERVICE_VERSION]: gitCommit, 'render.git_commit': gitCommit }
+    : {};
+}
+
+function resourceWithAttributes() {
+  return defaultResource().merge(
+    resourceFromAttributes({
+      [ATTR_SERVICE_NAME]: process.env.OTEL_SERVICE_NAME ?? 'api',
+      ...gitCommitInfo()
+    })
+  );
+}
