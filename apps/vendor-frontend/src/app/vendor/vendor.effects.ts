@@ -1,8 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
-import { catchError, map, of, switchMap, tap } from 'rxjs';
+import { catchError, map, of, switchMap } from 'rxjs';
 import { LoginSuccess } from '../core/auth/auth.state';
-import { Errors } from '../core/errors/errors';
 import { Vendor } from './vendor';
 import { RegisterVendor, RegisterVendorFailure, RegisterVendorSuccess } from './vendor.state';
 
@@ -10,7 +9,6 @@ import { RegisterVendor, RegisterVendorFailure, RegisterVendorSuccess } from './
 export class VendorEffects {
   private readonly actions$ = inject(Actions);
   private readonly vendor = inject(Vendor);
-  private readonly errors = inject(Errors);
 
   registerOnLoginSuccess$ = createEffect(() => this.actions$.pipe(
     ofType(LoginSuccess),
@@ -24,9 +22,4 @@ export class VendorEffects {
       catchError(() => of(RegisterVendorFailure())),
     )),
   ));
-
-  raiseErrorOnRegistrationFail$ = createEffect(() => this.actions$.pipe(
-    ofType(RegisterVendorFailure),
-    tap(() => this.errors.raise(new Error('Registration failed'))),
-  ), { dispatch: false });
 }

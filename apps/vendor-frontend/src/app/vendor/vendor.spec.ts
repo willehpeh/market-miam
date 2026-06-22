@@ -7,7 +7,6 @@ import { FakeAuth } from '../core/auth/fake.auth';
 import { authFeature } from '../core/auth/auth.state';
 import { AuthEffects } from '../core/auth/auth.effects';
 import { AuthFacade } from '../core/auth/auth.facade';
-import { Errors, FakeErrors } from '../core/errors/errors';
 import { Vendor } from './vendor';
 import { HttpVendor } from './http.vendor';
 import { vendorFeature } from './vendor.state';
@@ -18,7 +17,6 @@ describe('Vendor', () => {
   let auth: AuthFacade;
   let facade: VendorFacade;
   let httpCtrl: HttpTestingController;
-  let errors: FakeErrors;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
@@ -33,13 +31,11 @@ describe('Vendor', () => {
         AuthFacade,
         VendorFacade,
         { provide: Auth, useClass: FakeAuth },
-        { provide: Errors, useClass: FakeErrors },
       ],
     });
     auth = TestBed.inject(AuthFacade);
     facade = TestBed.inject(VendorFacade);
     httpCtrl = TestBed.inject(HttpTestingController);
-    errors = TestBed.inject(Errors) as FakeErrors;
   });
 
   it('should register vendor when login succeeds', () => {
@@ -72,15 +68,6 @@ describe('Vendor', () => {
     req.flush({ error: 'error' }, { status: 400, statusText: 'Bad Request' });
 
     expect(facade.loading()).toBe(false);
-  });
-
-  it('should raise an error when registration fails', () => {
-    auth.login();
-
-    const req = httpCtrl.expectOne('/api/vendor/register');
-    req.flush({ error: 'error' }, { status: 400, statusText: 'Bad Request' });
-
-    expect(errors.raisedErrors.length).toBe(1);
   });
 
   afterEach(() => {
