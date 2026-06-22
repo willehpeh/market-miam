@@ -51,28 +51,34 @@ export function eventStoreContract(
     it('enforces optimistic concurrency, persisting nothing on a stale expected position', async () => {
       await store.append('stream-1', [dummyEvent('First'), dummyEvent('Second')], 0);
 
-      // Accept: expected position matches the current length of 2.
       await store.append('stream-1', [dummyEvent('Third')], 2);
 
-      // Reject: a writer that still thinks the stream is at 2 is now stale (it's at 3).
       await expect(
         store.append('stream-1', [dummyEvent('Stale')], 2),
       ).rejects.toThrow();
 
-      // Persists nothing: the stale batch left no trace.
       const types = (await store.load('stream-1')).map((e) => e.type);
       expect(types).toEqual(['First', 'Second', 'Third']);
     });
 
     it('requires expectedStreamPosition 0 for the first append to a new stream', async () => {
-      // A non-zero expectation on an empty stream is stale: reject.
       await expect(
         store.append('stream-1', [dummyEvent('First')], 1),
       ).rejects.toThrow();
 
-      // The correct first-append expectation is 0: accept.
       await store.append('stream-2', [dummyEvent('First')], 0);
       expect(await store.load('stream-2')).toHaveLength(1);
+    });
+
+    it('loads only the requested streams events, never another streams', async () => {
+      await store.append('stream-1', [dummyEvent('First'), dummyEvent('Second')], 0);
+      await store.append('stream-2', [dummyEvent('Other')], 0);
+
+      const streamOneTypes = (await store.load('stream-1')).map((e) => e.type);
+      const streamTwoTypes = (await store.load('stream-2')).map((e) => e.type);
+
+      expect(streamOneTypes).toEqual(['First', 'Second']);
+      expect(streamTwoTypes).toEqual(['Other']);
     });
 
     it('assigns a unique id to every appended event', async () => {
