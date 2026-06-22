@@ -125,6 +125,16 @@ export function eventStoreContract(
       expect(event).not.toHaveProperty('metadata');
     });
 
+    it('carries independent metadata per append on the same stream', async () => {
+      await store.append('stream-1', [dummyEvent('First')], 0, { correlationId: 'corr-1' });
+      await store.append('stream-1', [dummyEvent('Second')], 1, { correlationId: 'corr-2' });
+
+      expect(await store.load('stream-1')).toEqual([
+        expect.objectContaining({ type: 'First', metadata: { correlationId: 'corr-1' } }),
+        expect.objectContaining({ type: 'Second', metadata: { correlationId: 'corr-2' } }),
+      ]);
+    });
+
     it('assigns a unique id to every appended event', async () => {
       await store.append(
         'stream-1',
