@@ -135,6 +135,15 @@ export function eventStoreContract(
       ]);
     });
 
+    it('stamps every appended event with a numeric timestamp', async () => {
+      await store.append('stream-1', [dummyEvent('First'), dummyEvent('Second')], 0);
+
+      const timestamps = (await store.load('stream-1')).map((e) => e.timestamp);
+
+      expect(timestamps).toHaveLength(2);
+      expect(timestamps.every((t) => typeof t === 'number')).toBe(true);
+    });
+
     it('assigns a unique id to every appended event', async () => {
       await store.append(
         'stream-1',
