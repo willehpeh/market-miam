@@ -1,16 +1,6 @@
 import { DomainEvent, EventStore } from '@market-monster/event-sourcing';
 import { describe, it, beforeEach, expect } from 'vitest';
 
-/**
- * Behavioural contract for the EventStore port. Run it against any
- * implementation by passing a factory:
- *
- *   eventStoreContract('InMemoryEventStore', () => new InMemoryEventStore());
- *
- * Uses port methods only (append/load) so every implementation is held to the
- * same behaviour. Lives in a `.contract.ts` (not `.spec.ts`) file so Vitest
- * does not run it standalone.
- */
 export function eventStoreContract(
   implementationName: string,
   createStore: () => EventStore,
@@ -25,7 +15,7 @@ export function eventStoreContract(
     it('assigns a unique id to every appended event', async () => {
       await store.append(
         'stream-1',
-        [event('FirstHappened'), event('SecondHappened')],
+        [dummyEvent('FirstHappened'), dummyEvent('SecondHappened')],
         0,
       );
 
@@ -41,7 +31,7 @@ export function eventStoreContract(
     it('returns the same id for an event on subsequent loads', async () => {
       await store.append(
         'stream-1',
-        [event('FirstHappened'), event('SecondHappened')],
+        [dummyEvent('FirstHappened'), dummyEvent('SecondHappened')],
         0,
       );
 
@@ -50,9 +40,23 @@ export function eventStoreContract(
 
       expect(secondLoad).toEqual(firstLoad);
     });
+
+    it('assigns ids that are unique across streams and separate appends', async () => {
+      await store.append('stream-1', [dummyEvent('FirstHappened'), dummyEvent('SecondHappened')], 0);
+      await store.append('stream-2', [dummyEvent('ThirdHappened')], 0);
+      await store.append('stream-1', [dummyEvent('FourthHappened')], 2);
+
+      const ids = [
+        ...(await store.load('stream-1')),
+        ...(await store.load('stream-2')),
+      ].map((e) => e.id);
+
+      expect(ids).toHaveLength(4);
+      expect(new Set(ids).size).toBe(4);
+    });
   });
 }
 
-function event(type: string): DomainEvent {
+function dummyEvent(type: string): DomainEvent {
   return { type, payload: {} };
 }
