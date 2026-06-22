@@ -37,6 +37,19 @@ export function eventStoreContract(
       );
       expect(new Set(ids).size).toBe(2);
     });
+
+    it('returns the same id for an event on subsequent loads', async () => {
+      await store.append(
+        'stream-1',
+        [event('FirstHappened'), event('SecondHappened')],
+        0,
+      );
+
+      const firstLoad = (await store.load('stream-1')).map((e) => e.id);
+      const secondLoad = (await store.load('stream-1')).map((e) => e.id);
+
+      expect(secondLoad).toEqual(firstLoad);
+    });
   });
 }
 
