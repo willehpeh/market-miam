@@ -12,6 +12,10 @@ export function eventStoreContract(
       store = createStore();
     });
 
+    it('loads an empty array for a stream that has never been appended to', async () => {
+      expect(await store.load('never-touched')).toEqual([]);
+    });
+
     it('assigns a unique id to every appended event', async () => {
       await store.append(
         'stream-1',
