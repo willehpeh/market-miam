@@ -31,6 +31,16 @@ export function subscriptionContract(
 
       expect(handler.handled.map((e) => e.type)).toEqual(['First', 'Second']);
     });
+
+    it('does not dispatch events whose type the handler does not subscribe to', async () => {
+      const handler = new RecordingHandler(['Wanted']);
+      const subscription = subscribe(handler);
+
+      await writer.append('stream-1', [dummyEvent('Wanted'), dummyEvent('Ignored')], 0);
+      await subscription.poll();
+
+      expect(handler.handled.map((e) => e.type)).toEqual(['Wanted']);
+    });
   });
 }
 
