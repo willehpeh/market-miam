@@ -106,6 +106,17 @@ export function eventStoreContract(
       expect(new Set(byAppendOrder).size).toBe(3);
     });
 
+    it('attaches supplied metadata to every event in the batch', async () => {
+      const metadata = { vendorId: 'vendor-1', correlationId: 'corr-1' };
+
+      await store.append('stream-1', [dummyEvent('First'), dummyEvent('Second')], 0, metadata);
+
+      expect(await store.load('stream-1')).toEqual([
+        expect.objectContaining({ type: 'First', metadata }),
+        expect.objectContaining({ type: 'Second', metadata }),
+      ]);
+    });
+
     it('assigns a unique id to every appended event', async () => {
       await store.append(
         'stream-1',
