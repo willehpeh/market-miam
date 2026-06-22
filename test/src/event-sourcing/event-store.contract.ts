@@ -30,6 +30,15 @@ export function eventStoreContract(
       ]);
     });
 
+    it('preserves append order within a stream', async () => {
+      await store.append('stream-1', [dummyEvent('First'), dummyEvent('Second')], 0);
+      await store.append('stream-1', [dummyEvent('Third')], 2);
+
+      const types = (await store.load('stream-1')).map((e) => e.type);
+
+      expect(types).toEqual(['First', 'Second', 'Third']);
+    });
+
     it('assigns a unique id to every appended event', async () => {
       await store.append(
         'stream-1',
