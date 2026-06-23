@@ -8,7 +8,7 @@ import {
   PlanItemsForMarketDayHandler
 } from '@market-monster/market-days';
 import { StoredEvent } from '@market-monster/event-sourcing';
-import { EmptyValueError, LocalDate } from '@market-monster/common';
+import { EmptyValueError, Instant, LocalDate } from '@market-monster/common';
 import { seedCatalogue } from '../../seed-catalogue';
 
 describe('Plan Items For Market Day', () => {
@@ -19,7 +19,10 @@ describe('Plan Items For Market Day', () => {
 
   beforeEach(() => {
     store = new InMemoryEventStore();
-    marketDays = new MarketDays(store, { today: () => LocalDate.today() });
+    marketDays = new MarketDays(store, {
+      today: () => LocalDate.today(),
+      now: () => new Instant('2026-06-19T09:00:00.000Z'),
+    });
     catalogues = new Catalogues(store);
     seedCatalogue(store, 'vendor-1', 'item-1', 'item-2', 'item-3', 'item-4');
     handler = new PlanItemsForMarketDayHandler(marketDays, catalogues);

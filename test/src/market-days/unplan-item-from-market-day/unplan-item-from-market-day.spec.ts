@@ -5,7 +5,7 @@ import {
   UnplanItemFromMarketDay,
   UnplanItemFromMarketDayHandler
 } from '@market-monster/market-days';
-import { LocalDate } from '@market-monster/common';
+import { Instant, LocalDate } from '@market-monster/common';
 
 describe('Unplan Item From Market Day', () => {
   let store: InMemoryEventStore;
@@ -18,7 +18,10 @@ describe('Unplan Item From Market Day', () => {
 
   beforeEach(() => {
     store = new InMemoryEventStore();
-    marketDays = new MarketDays(store, { today: () => new LocalDate(TEST_TODAY) });
+    marketDays = new MarketDays(store, {
+      today: () => new LocalDate(TEST_TODAY),
+      now: () => new Instant(`${TEST_TODAY}T09:00:00.000Z`),
+    });
     handler = new UnplanItemFromMarketDayHandler(marketDays);
   });
 

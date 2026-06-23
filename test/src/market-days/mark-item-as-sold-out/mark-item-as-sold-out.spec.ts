@@ -4,7 +4,7 @@ import {
   ItemNotPlannedError, UnplanItemFromMarketDayHandler, UnplanItemFromMarketDay
 } from '@market-monster/market-days';
 import { TestPlanItemsForMarketDay } from '../plan-items-for-market-day/test-data';
-import { LocalDate } from '@market-monster/common';
+import { Instant, LocalDate } from '@market-monster/common';
 import { seedCatalogue } from '../../seed-catalogue';
 
 describe('Mark Item As Sold Out', () => {
@@ -18,7 +18,10 @@ describe('Mark Item As Sold Out', () => {
 
   beforeEach(() => {
     store = new InMemoryEventStore();
-    marketDays = new MarketDays(store, { today: () => new LocalDate(TEST_TODAY) });
+    marketDays = new MarketDays(store, {
+      today: () => new LocalDate(TEST_TODAY),
+      now: () => new Instant(`${TEST_TODAY}T09:00:00.000Z`),
+    });
     handler = new MarkItemAsSoldOutHandler(marketDays);
     unplanHandler = new UnplanItemFromMarketDayHandler(marketDays);
   });

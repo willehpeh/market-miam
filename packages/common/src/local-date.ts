@@ -1,4 +1,5 @@
 import { EmptyValueError } from './errors';
+import { Instant } from './instant';
 
 export class InvalidDateError extends Error {
   constructor() {
@@ -7,8 +8,9 @@ export class InvalidDateError extends Error {
   }
 }
 
-export interface Clock {
-  today(): LocalDate;
+export abstract class Clock {
+  abstract today(): LocalDate;
+  abstract now(): Instant;
 }
 
 export class LocalDate {
