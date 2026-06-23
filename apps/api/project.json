@@ -6,6 +6,12 @@
   "tags": [],
   "targets": {
     "typecheck": {},
+    "test": {
+      "command": "vitest run",
+      "options": {
+        "cwd": "apps/api"
+      }
+    },
     "build": {
       "executor": "nx:run-commands",
       "options": {

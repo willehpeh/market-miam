@@ -18,6 +18,7 @@ export class AuthModule {
   static forRootAsync(options: AuthModuleAsyncOptions): DynamicModule {
     return {
       module: AuthModule,
+      global: true,
       providers: [
         {
           provide: TokenVerifier,
