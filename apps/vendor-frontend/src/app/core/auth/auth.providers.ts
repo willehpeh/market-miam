@@ -8,6 +8,7 @@ import { authFeature } from './auth.state';
 import { provideEffects } from '@ngrx/effects';
 import { AuthFacade } from './auth.facade';
 import { AuthEffects } from './auth.effects';
+import { environment } from '../../../environments/environment';
 
 export function provideAuth(): EnvironmentProviders {
   return makeEnvironmentProviders([
@@ -17,6 +18,9 @@ export function provideAuth(): EnvironmentProviders {
       authorizationParams: {
         redirect_uri: window.location.origin,
         audience: 'https://api.marketmiam.fr'
+      },
+      httpInterceptor: {
+        allowedList: [`${environment.apiBaseUrl}/*`],
       },
     }),
     { provide: Auth, useClass: isDevMode() ? FakeAuth : Auth0Auth },
