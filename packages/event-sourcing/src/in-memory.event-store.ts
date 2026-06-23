@@ -1,5 +1,8 @@
-import { DomainEvent, Events, EventStore, StoredEvent } from '@market-monster/event-sourcing';
 import { randomUUID } from 'node:crypto';
+import { DomainEvent } from './domain-event';
+import { Events } from './events';
+import { EventStore } from './event-store';
+import { StoredEvent } from './stored-event';
 
 export class InMemoryEventStore implements EventStore, Events {
 

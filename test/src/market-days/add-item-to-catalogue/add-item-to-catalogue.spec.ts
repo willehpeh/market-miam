@@ -6,7 +6,7 @@ import {
   Catalogues
 } from '@market-monster/market-days';
 import { EmptyValueError } from '@market-monster/common';
-import { InMemoryEventStore } from '../../in-memory.event-store';
+import { InMemoryEventStore } from '@market-monster/event-sourcing';
 import { TestAddItemToCatalogue } from './test-data';
 
 describe('AddItemToCatalogue', () => {

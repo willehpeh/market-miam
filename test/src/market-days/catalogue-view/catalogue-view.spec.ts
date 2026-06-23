@@ -6,7 +6,7 @@ import {
   ChangeItemPriceHandler,
   RetireItemHandler
 } from '@market-monster/market-days';
-import { InMemoryEventStore } from '../../in-memory.event-store';
+import { InMemoryEventStore } from '@market-monster/event-sourcing';
 import { InMemorySubscription } from '../../in-memory.subscription';
 import { InMemoryCheckpoint } from '../../in-memory.checkpoint';
 import { TestAddItemToCatalogue } from '../add-item-to-catalogue/test-data';

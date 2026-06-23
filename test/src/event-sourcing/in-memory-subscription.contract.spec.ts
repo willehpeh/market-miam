@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { RecordingHandler, subscriptionContract } from './subscription.contract';
-import { InMemoryEventStore } from '../in-memory.event-store';
+import { InMemoryEventStore } from '@market-monster/event-sourcing';
 import { InMemoryCheckpoint } from '../in-memory.checkpoint';
 import { InMemorySubscription } from '../in-memory.subscription';
 

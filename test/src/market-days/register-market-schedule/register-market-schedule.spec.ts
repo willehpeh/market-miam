@@ -1,4 +1,4 @@
-import { InMemoryEventStore } from '../../in-memory.event-store';
+import { InMemoryEventStore } from '@market-monster/event-sourcing';
 import { TestRegisterMarketSchedule } from './test-data';
 import {
   Calendars,

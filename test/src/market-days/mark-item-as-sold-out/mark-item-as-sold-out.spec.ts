@@ -1,4 +1,4 @@
-import { InMemoryEventStore } from '../../in-memory.event-store';
+import { InMemoryEventStore } from '@market-monster/event-sourcing';
 import {
   Catalogues, MarketDays, PlanItemsForMarketDayHandler, MarkItemAsSoldOutHandler, MarkItemAsSoldOut,
   ItemNotPlannedError, UnplanItemFromMarketDayHandler, UnplanItemFromMarketDay

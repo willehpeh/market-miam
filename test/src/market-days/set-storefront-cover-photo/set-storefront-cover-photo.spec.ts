@@ -1,4 +1,4 @@
-import { InMemoryEventStore } from '../../in-memory.event-store';
+import { InMemoryEventStore } from '@market-monster/event-sourcing';
 import { SetStorefrontCoverPhotoHandler, Storefronts } from '@market-monster/market-days';
 import { TestSetStorefrontCoverPhoto } from './test-data';
 

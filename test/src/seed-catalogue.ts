@@ -1,5 +1,5 @@
 import { ItemAddedToCatalogue } from '@market-monster/market-days';
-import { InMemoryEventStore } from './in-memory.event-store';
+import { InMemoryEventStore } from '@market-monster/event-sourcing';
 
 export function seedCatalogue(store: InMemoryEventStore, vendorId: string, ...itemIds: string[]) {
   const events: ItemAddedToCatalogue[] = itemIds.map(itemId => ({

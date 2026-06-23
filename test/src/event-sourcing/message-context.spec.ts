@@ -1,10 +1,10 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
+  InMemoryEventStore,
   MessageContext,
   MessageContextDispatcher,
-  MessageContextEventStore,
+  MessageContextEventStore
 } from '@market-monster/event-sourcing';
-import { InMemoryEventStore } from '../in-memory.event-store';
 
 describe('Message context propagation', () => {
   it('stamps a fresh correlationId and causationId onto events appended during a root dispatch', async () => {

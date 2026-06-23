@@ -11,4 +11,5 @@ export { Checkpoint } from './checkpoint';
 export { MessageContext, MessageContextData } from './message-context';
 export { MessageContextDispatcher } from './message-context.dispatcher';
 export { MessageContextEventStore } from './message-context.event-store';
+export { InMemoryEventStore } from './in-memory.event-store';
 export * from './event-handler-map';

@@ -4,6 +4,7 @@ import { AuthModule } from '@market-monster/auth-nestjs';
 import { Auth0TokenVerifier } from '@market-monster/auth';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { MarketDaysModule } from './market-days.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { AppService } from './app.service';
           config.getOrThrow<string>('AUTH0_AUDIENCE'),
         ),
     }),
+    MarketDaysModule,
   ],
   controllers: [AppController],
   providers: [AppService],

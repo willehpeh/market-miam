@@ -1,4 +1,4 @@
-import { InMemoryEventStore } from '../../in-memory.event-store';
+import { InMemoryEventStore } from '@market-monster/event-sourcing';
 import { EditStorefrontInformationHandler, Storefronts } from '@market-monster/market-days';
 import { EmptyValueError } from '@market-monster/common';
 import { TestEditStorefrontInformation } from './test-data';

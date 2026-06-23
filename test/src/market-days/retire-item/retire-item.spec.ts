@@ -1,5 +1,5 @@
 import { describe } from 'vitest';
-import { InMemoryEventStore } from '../../in-memory.event-store';
+import { InMemoryEventStore } from '@market-monster/event-sourcing';
 import { AddItemToCatalogueHandler, Catalogues, NoSuchItemError, RetireItem, RetireItemHandler } from '@market-monster/market-days';
 import { TestAddItemToCatalogue } from '../add-item-to-catalogue/test-data';
 import { TestRetireItem } from './test-data';
