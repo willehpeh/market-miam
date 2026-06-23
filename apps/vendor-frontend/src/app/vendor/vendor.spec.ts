@@ -41,21 +41,21 @@ describe('Vendor', () => {
   it('should register vendor when login succeeds', () => {
     auth.login();
 
-    const req = httpCtrl.expectOne('/api/vendor/register');
+    const req = httpCtrl.expectOne('/api/vendors');
     expect(req.request.method).toBe('POST');
   });
 
   it('should show as loading when registering', () => {
     auth.login();
 
-    httpCtrl.expectOne('/api/vendor/register');
+    httpCtrl.expectOne('/api/vendors');
     expect(facade.loading()).toBe(true);
   });
 
   it('should stop showing as loading when registration succeeds', () => {
     auth.login();
 
-    const req = httpCtrl.expectOne('/api/vendor/register');
+    const req = httpCtrl.expectOne('/api/vendors');
     req.flush({ vendorId: '123' });
 
     expect(facade.loading()).toBe(false);
@@ -64,7 +64,7 @@ describe('Vendor', () => {
   it('should stop showing as loading when registration fails', () => {
     auth.login();
 
-    const req = httpCtrl.expectOne('/api/vendor/register');
+    const req = httpCtrl.expectOne('/api/vendors');
     req.flush({ error: 'error' }, { status: 400, statusText: 'Bad Request' });
 
     expect(facade.loading()).toBe(false);
