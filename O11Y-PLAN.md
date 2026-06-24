@@ -13,17 +13,33 @@ clause-by-clause. A span is a wide event; spans are fat, not many thin logs.
   `AsyncLocalStorage`, annotation in adapters") — established via `MessageContext`
   + the `MessageContextEventStore` decorator, currently carrying
   correlation/causation. Trace context will reuse this exact seam.
+- **Command dispatch spans** (producer step 1) — `CommandDispatcher` decorates
+  the `@nestjs/cqrs` `CommandBus` (B-pattern: distinct seam, delegates to the
+  real bus, never touches handler registration). Payload-blind span named for
+  the command, carrying `command.name` + `app.correlation_id`/`app.causation_id`
+  from the ambient `MessageContext`. On a handler throw it stamps a static
+  `exception.slug`, records the exception, sets `ERROR` status, and re-throws
+  (observe, never swallow). An ESLint `no-restricted-imports` guard makes "only
+  `command-dispatcher.ts` imports `CommandBus`" a build error, so every command
+  is uniformly traced. Commits `1964004`, `bc3f826`, `8fc68e1`.
 
-## Next set — producer-side tracing (unblocked)
+## Next set — producer-side tracing (remaining)
 
-Builds on the live root span and the existing dispatch→append path; a small
-extension of the current ALS + decorator machinery. No new architecture.
+Step 1 (above) is done. Remaining steps build on the live dispatch span and the
+existing append path.
 
-1. **Child spans on command/query dispatch** — extend the `@nestjs/cqrs` bus
-   (ADR: "Instrument command/query dispatch … as child spans of the request";
-   consequence: "extends the `@nestjs/cqrs` bus").
-2. **Child span on the event-store append** — extend the store adapter; natural
-   home alongside `MessageContextEventStore`.
+2. **Child span on the event-store append** — a tracing decorator composed with
+   `MessageContextEventStore`, nested under the dispatch span. Carries
+   `event.type`, `event.count`, `stream_id`, and **`vendor.id`** — all sourced
+   from append's own `events`/`metadata`/`streamId` arguments (payload-blind,
+   purity-safe). *Grill before building:* where the decorator sits relative to
+   `MessageContextEventStore`, and how the event→attributes mapper is **injected
+   from `apps/api`** so the `event-sourcing` package stays generic.
+   - **Correction logged:** `vendor.id` is **not** ambient. Repositories pass
+     `{ vendorId }` as the append `metadata` argument (from `command.vendorId`
+     via the handler — e.g. `calendars.ts:19`), so `vendor.id` belongs on the
+     **append** span, not the dispatch span. The earlier "`vendor.id` from
+     ambient context / enrich at the handler" note was wrong on both counts.
 3. **Inject W3C `traceparent` into event metadata at append** — capture the
    active span context, serialize to `traceparent`, merge into metadata in the
    adapter, alongside `vendorId`/correlation/causation (ADR: "At append time,
@@ -31,19 +47,30 @@ extension of the current ALS + decorator machinery. No new architecture.
    is the persistable string projection of the span — never store the live span
    object in `MessageContext`. Constraint (ADR): trace context is "plumbing, not
    domain fact … optional on rehydration … replay tolerates its absence."
-4. **Enrich spans with domain context, PII-safely** — `vendor.id` and other
-   identifiers/outcomes come from ambient `MessageContext` metadata on the bus
-   span; richer domain attributes (catalogue size, market-day status, …) are
-   added at the **command handler**, which holds the domain objects in scope.
-   Default-rich, never the raw payload (see *Attribute policy* below).
+4. **Per-type intent/outcome attributes** — adapter-side per-type extractors in
+   `apps/api` (allow-list per command/event type; exact-match-tested = the PII
+   guard). Dispatch span ← the command (what the user tried to do); append span
+   ← the events (what happened). **No handler span** — handlers live in
+   `packages/market-days`, which stays OTel-free *and* telemetry-free (purity).
+   Deferred until the first content-rich command: `RegisterVendor` is
+   content-thin (`vendorId` = identity → append span; `registeredAt` = clock;
+   `email` = PII), so step 1 stayed generic — no speculative extractors.
+
+**QueryBus** — deferred until a read/query surface exists; then mirror with a
+`QueryDispatcher` (same decorator + ESLint guard) but lighter: span only, no
+lineage, no append (reads cause nothing).
 
 Outcome: fat request-side spans, and the producer half of the producer→consumer
 link seeded into the event log (step 3) ready for the consumer side later.
 
-### Testing
-Verify spans with OTel's `InMemorySpanExporter` + `SimpleSpanProcessor` (a fake
-sink at the export boundary — assert `getFinishedSpans()`): span names,
-attributes (`vendor.id`), and parent/child relationships. Real SDK, fake export.
+### Testing (established in step 1)
+Hermetic span capture: a test-only `NodeTracerProvider` + `InMemorySpanExporter`
++ `SimpleSpanProcessor`, registered **once** (the global provider is set-once per
+process) with `exporter.reset()` between tests; **no auto-instrumentation**, so
+`getFinishedSpans()` holds only our spans. Social test: boot the module, `POST`
+via supertest, assert spans. **Exact-match** the attribute set — that doubles as
+the PII guard (a stray `email` fails the test). Failure paths driven by a stub
+`EventStore` whose `append` rejects. See `command-dispatch-tracing.spec.ts`.
 
 ## Blocked set — consumer-side tracing
 
