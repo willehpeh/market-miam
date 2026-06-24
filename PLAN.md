@@ -23,14 +23,37 @@ The vendor registration path is wired **end to end**:
 - **Store**: in-memory only (`InMemoryEventStore`) — events do **not** survive a
   restart. All four ports (`EventStore`, `Events`, `Checkpoint`, `Subscription`)
   have adapter-agnostic contract tests.
+- **Storefront slice** (in progress): `PUT /storefront` (`EditStorefrontInformation`)
+  produces `StorefrontInformationEdited`; `VendorStorefrontViewProjection` runs
+  behind an in-memory `Subscription` (driven by `poll()`) to build the read model.
+  Remaining: poller, query endpoint, frontend — see "Storefront slice — remaining".
+- **Observability** (ADR 0026): producer + consumer tracing are live end to end
+  (dispatch / append / load spans, `traceparent` in event metadata, consumer
+  new-trace + link + `processing.lag_ms`). See `O11Y-PLAN.md`.
 
 ## Verification gap (read before trusting "it works")
 
-In production we can currently confirm only that the request returns 2xx — **we
-cannot observe that an event was actually created**: the store is in-memory (no
-query surface, lost on restart) and Layer 2 spans (which would show the command
-on a trace) aren't built yet. So "registration works" is unproven beyond the
-HTTP status until persistence or tracing lands.
+Tracing now shows the command **and** its append on a trace (Layer 2 is live),
+so a request is observable beyond its 2xx. The remaining gap is **durability**:
+the store is in-memory, so events are lost on restart and there is no
+cross-restart record. Persistence (Postgres) closes this.
+
+## Storefront slice — remaining ("B")
+
+The storefront producer→projection loop works and is traced. What's left to make
+it a full, demonstrable vertical slice:
+
+1. **Background poller** — `onApplicationBootstrap` driving the subscription's
+   `poll()` on a schedule (drain-then-wait cadence; fixed interval, no jitter
+   pre-Postgres). `poll()` stays the deterministic, test-pumped unit; the poller
+   is thin timer glue. Workers / leasing / jitter are Postgres + multi-instance era.
+2. **`GET /storefront` query endpoint** — reads `VendorStorefrontViews`; builds
+   the deferred **`QueryDispatcher`** (span-only — see `O11Y-PLAN.md`).
+3. **Frontend** — storefront edit form + display ("something to show").
+
+Eventual-consistency note: the projection is async, so after an edit the read
+model updates only once `poll()` runs — the frontend must tolerate that lag
+(refetch / optimistic update). Decide when building the frontend.
 
 ## Next overall step — complete the post-login journey
 
@@ -65,14 +88,16 @@ guard**, now that there's a route to protect.
    existing contract suites (sibling specs). Gap-handling (MVCC global-position
    gaps) is Postgres integration-test territory, not the shared contract — see
    `docs/DEFERRED.md`. Closing this also closes the verification gap above.
-2. **Subscription / processor wrapper** (ADR 0026) — the async continuation
-   context seam: `correlationId` inherited from the consumed event,
-   `causationId` = the event's id. Decide here whether continuation events point
-   at the transient command id or the triggering event id.
-3. **Layer 2 — OTel spans** — child spans on command/query dispatch and store
-   append; `traceparent` into `MessageContext` (persistable projection only,
-   never the live span); span *links* for async consumers; `processing.lag_ms`
-   as the read-model freshness SLO. Verified with `InMemorySpanExporter`.
+2. **Processor continuation context** (ADR 0026) — the subscription itself is
+   done (projection side). Still open: when a **processor** dispatches a
+   follow-up command, establish a new message context with `correlationId`
+   inherited from the consumed event and `causationId` = the event's id. No
+   processor exists yet. Open: does a continuation command's `causationId` point
+   at the transient command id or the triggering event id?
+3. **Layer 2 — OTel spans** — **done** (dispatch / append / load spans,
+   `traceparent` in event metadata, consumer new-trace + link +
+   `processing.lag_ms`). Only per-type attribute extractors remain deferred. See
+   `O11Y-PLAN.md`.
 4. Remaining `docs/DEFERRED.md` items (polling loop, checkpoint/views txn
    boundary, poison events, client-supplied idempotency, replay strategy).
 
