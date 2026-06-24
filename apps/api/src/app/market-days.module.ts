@@ -2,11 +2,15 @@ import { randomUUID } from 'node:crypto';
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
 import {
+  Events,
   EventStore,
+  InMemoryCheckpoint,
   InMemoryEventStore,
+  InMemorySubscription,
   MessageContext,
   MessageContextDispatcher,
   MessageContextEventStore,
+  Subscription,
 } from '@market-monster/event-sourcing';
 import { Clock, DateClock } from '@market-monster/common';
 import {
@@ -15,6 +19,7 @@ import {
   Catalogues,
   ChangeItemPriceHandler,
   EditStorefrontInformationHandler,
+  InMemoryVendorStorefrontViews,
   MarkItemAsSoldOutHandler,
   MarketDays,
   PlanItemsForMarketDayHandler,
@@ -25,6 +30,9 @@ import {
   Storefronts,
   UnplanItemFromMarketDayHandler,
   Vendors,
+  VendorStorefrontViewProjection,
+  VendorStorefrontViews,
+  VendorStorefrontViewStore,
 } from '@market-monster/market-days';
 import { CommandDispatcher } from './command-dispatcher';
 import { TracingEventStore } from './tracing.event-store';
@@ -72,6 +80,28 @@ const repositories = [
   },
 ];
 
+// The storefront read model: one in-memory store serves both the projection's
+// write surface and the query read surface. A subscription drives the
+// projection off the global event log via a checkpoint; the poller (separate)
+// calls poll() on a schedule.
+const readModel = [
+  InMemoryVendorStorefrontViews,
+  { provide: VendorStorefrontViews, useExisting: InMemoryVendorStorefrontViews },
+  { provide: VendorStorefrontViewStore, useExisting: InMemoryVendorStorefrontViews },
+  { provide: Events, useExisting: InMemoryEventStore },
+  {
+    provide: VendorStorefrontViewProjection,
+    useFactory: (store: VendorStorefrontViewStore) => new VendorStorefrontViewProjection(store),
+    inject: [VendorStorefrontViewStore],
+  },
+  {
+    provide: Subscription,
+    useFactory: (events: Events, projection: VendorStorefrontViewProjection) =>
+      new InMemorySubscription(events, projection, new InMemoryCheckpoint('vendor-storefront-view')),
+    inject: [Events, VendorStorefrontViewProjection],
+  },
+];
+
 const commandHandlers = [
   RegisterVendorHandler,
   AddItemToCatalogueHandler,
@@ -93,6 +123,7 @@ const commandHandlers = [
     ...messageContext,
     ...eventStore,
     ...repositories,
+    ...readModel,
     ...commandHandlers,
     CommandDispatcher,
   ],
