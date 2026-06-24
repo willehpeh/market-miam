@@ -36,6 +36,7 @@ import {
 } from '@market-monster/market-days';
 import { CommandDispatcher } from './command-dispatcher';
 import { TracingEventStore } from './tracing.event-store';
+import { TracingEventHandler } from './tracing.event-handler';
 import { MessageContextMiddleware } from './message-context.middleware';
 import { VendorsController } from './vendors.controller';
 import { StorefrontController } from './storefront.controller';
@@ -97,7 +98,11 @@ const readModel = [
   {
     provide: Subscription,
     useFactory: (events: Events, projection: VendorStorefrontViewProjection) =>
-      new InMemorySubscription(events, projection, new InMemoryCheckpoint('vendor-storefront-view')),
+      new InMemorySubscription(
+        events,
+        new TracingEventHandler(projection),
+        new InMemoryCheckpoint('vendor-storefront-view'),
+      ),
     inject: [Events, VendorStorefrontViewProjection],
   },
 ];
