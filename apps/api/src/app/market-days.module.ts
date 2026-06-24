@@ -26,6 +26,7 @@ import {
   UnplanItemFromMarketDayHandler,
   Vendors,
 } from '@market-monster/market-days';
+import { CommandDispatcher } from './command-dispatcher';
 import { MessageContextMiddleware } from './message-context.middleware';
 import { VendorsController } from './vendors.controller';
 
@@ -86,6 +87,7 @@ const commandHandlers = [
     ...eventStore,
     ...repositories,
     ...commandHandlers,
+    CommandDispatcher,
   ],
 })
 export class MarketDaysModule implements NestModule {
