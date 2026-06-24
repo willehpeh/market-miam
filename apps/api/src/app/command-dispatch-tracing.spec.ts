@@ -119,6 +119,19 @@ describe('Command dispatch tracing', () => {
     expect(appends[0].spanContext().traceId).toBe(dispatch?.spanContext().traceId);
   });
 
+  it('injects the producing trace context into the appended event metadata', async () => {
+    await boot();
+
+    await register().expect(201);
+
+    const [event] = await app.get(EventStore).load('vendor-acme-bakery');
+    const append = exporter.getFinishedSpans().find((span) => span.name === 'event-store append');
+
+    const traceparent = event.metadata?.['traceparent'] as string;
+    expect(traceparent).toMatch(/^00-[0-9a-f]{32}-[0-9a-f]{16}-[0-9a-f]{2}$/);
+    expect(traceparent).toContain(append?.spanContext().traceId);
+  });
+
   it('opens a load span on the same trace when rehydrating', async () => {
     await boot();
 
