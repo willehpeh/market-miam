@@ -9,7 +9,7 @@ import { Clock, Email, Instant, LocalDate } from '@market-monster/common';
 import { VendorId } from '@market-monster/shared-kernel';
 import { TokenVerifier, VerifiedVendor } from '@market-monster/auth';
 import { AuthModule } from '@market-monster/auth-nestjs';
-import { EventStore, StoredEvent } from '@market-monster/event-sourcing';
+import { EventStore, InMemoryEventStore, StoredEvent } from '@market-monster/event-sourcing';
 import { MarketDaysModule } from './market-days.module';
 
 class FakeTokenVerifier extends TokenVerifier {
@@ -100,6 +100,42 @@ describe('Command dispatch tracing', () => {
     });
   });
 
+  it('opens an append span on the same trace, carrying the persisted event facts', async () => {
+    await boot();
+
+    await register().expect(201);
+
+    const spans = exporter.getFinishedSpans();
+    const dispatch = spans.find((span) => span.name === 'RegisterVendor');
+    const appends = spans.filter((span) => span.name === 'event-store append');
+
+    expect(appends).toHaveLength(1);
+    expect(appends[0].attributes).toEqual({
+      'event.type': 'VendorRegistered',
+      'event.count': 1,
+      stream_id: 'vendor-acme-bakery',
+      'vendor.id': 'acme-bakery',
+    });
+    expect(appends[0].spanContext().traceId).toBe(dispatch?.spanContext().traceId);
+  });
+
+  it('opens a load span on the same trace when rehydrating', async () => {
+    await boot();
+
+    await register().expect(201);
+
+    const spans = exporter.getFinishedSpans();
+    const dispatch = spans.find((span) => span.name === 'RegisterVendor');
+    const loads = spans.filter((span) => span.name === 'event-store load');
+
+    expect(loads).toHaveLength(1);
+    expect(loads[0].attributes).toEqual({
+      stream_id: 'vendor-acme-bakery',
+      'event.count': 0,
+    });
+    expect(loads[0].spanContext().traceId).toBe(dispatch?.spanContext().traceId);
+  });
+
   it('marks the span as failed and records the exception when the handler throws', async () => {
     await boot((builder) => builder.overrideProvider(EventStore).useValue(new FailingEventStore()));
 
@@ -114,6 +150,29 @@ describe('Command dispatch tracing', () => {
       'app.correlation_id': expect.any(String),
       'app.causation_id': expect.any(String),
       'exception.slug': 'command-dispatch-failed',
+    });
+  });
+
+  it('marks the append span as failed and records the exception when persistence throws', async () => {
+    await boot((builder) =>
+      builder.overrideProvider(InMemoryEventStore).useValue(new FailingEventStore()),
+    );
+
+    await register().expect(500);
+
+    const appends = exporter
+      .getFinishedSpans()
+      .filter((span) => span.name === 'event-store append');
+
+    expect(appends).toHaveLength(1);
+    expect(appends[0].status.code).toBe(SpanStatusCode.ERROR);
+    expect(appends[0].events.map((event) => event.name)).toContain('exception');
+    expect(appends[0].attributes).toEqual({
+      'event.type': 'VendorRegistered',
+      'event.count': 1,
+      stream_id: 'vendor-acme-bakery',
+      'vendor.id': 'acme-bakery',
+      'exception.slug': 'event-store-append-failed',
     });
   });
 });

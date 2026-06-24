@@ -27,6 +27,7 @@ import {
   Vendors,
 } from '@market-monster/market-days';
 import { CommandDispatcher } from './command-dispatcher';
+import { TracingEventStore } from './tracing.event-store';
 import { MessageContextMiddleware } from './message-context.middleware';
 import { VendorsController } from './vendors.controller';
 
@@ -46,10 +47,15 @@ const messageContext = [
 const eventStore = [
   InMemoryEventStore,
   {
-    provide: EventStore,
+    provide: MessageContextEventStore,
     useFactory: (inner: InMemoryEventStore, context: MessageContext) =>
       new MessageContextEventStore(inner, context),
     inject: [InMemoryEventStore, MessageContext],
+  },
+  {
+    provide: EventStore,
+    useFactory: (inner: MessageContextEventStore) => new TracingEventStore(inner),
+    inject: [MessageContextEventStore],
   },
 ];
 
