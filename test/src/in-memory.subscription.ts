@@ -9,7 +9,7 @@ export class InMemorySubscription implements Subscription {
 
   async poll(): Promise<void> {
     const position = await this.checkpoint.read();
-    const events = await this.events.loadFrom(position);
+    const events = await this.events.loadFrom(position, 100);
     for (const event of events) {
       if (this.handler.eventTypes().includes(event.type)) {
         await this.handler.handle(event);

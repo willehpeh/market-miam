@@ -52,9 +52,11 @@ export class InMemoryEventStore implements EventStore, Events {
     return this.appendedEvents[this.appendedEvents.length - 1];
   }
 
-  loadFrom(globalPosition: number): Promise<StoredEvent[]> {
+  loadFrom(globalPosition: number, limit: number): Promise<StoredEvent[]> {
     return Promise.resolve(
-      this.allEvents().filter(event => event.globalPosition > globalPosition),
+      this.allEvents()
+        .filter(event => event.globalPosition > globalPosition)
+        .slice(0, limit),
     );
   }
 
