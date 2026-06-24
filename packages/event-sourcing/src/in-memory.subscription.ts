@@ -1,4 +1,7 @@
-import { Checkpoint, EventHandler, Events, Subscription } from '@market-monster/event-sourcing';
+import { Checkpoint } from './checkpoint';
+import { EventHandler } from './event-handler';
+import { Events } from './events';
+import { Subscription } from './subscription';
 
 export class InMemorySubscription implements Subscription {
   constructor(

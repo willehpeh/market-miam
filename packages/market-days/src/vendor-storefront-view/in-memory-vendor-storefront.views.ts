@@ -1,4 +1,6 @@
-import { VendorStorefrontView, VendorStorefrontViews, VendorStorefrontViewStore } from '@market-monster/market-days';
+import { VendorStorefrontView } from './vendor-storefront-view';
+import { VendorStorefrontViews } from './vendor-storefront-views';
+import { VendorStorefrontViewStore } from './vendor-storefront-view.store';
 
 export class InMemoryVendorStorefrontViews implements VendorStorefrontViews, VendorStorefrontViewStore {
 

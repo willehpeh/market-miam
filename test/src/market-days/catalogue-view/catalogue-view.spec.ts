@@ -6,9 +6,11 @@ import {
   ChangeItemPriceHandler,
   RetireItemHandler
 } from '@market-monster/market-days';
-import { InMemoryEventStore } from '@market-monster/event-sourcing';
-import { InMemorySubscription } from '../../in-memory.subscription';
-import { InMemoryCheckpoint } from '../../in-memory.checkpoint';
+import {
+  InMemoryCheckpoint,
+  InMemoryEventStore,
+  InMemorySubscription,
+} from '@market-monster/event-sourcing';
 import { TestAddItemToCatalogue } from '../add-item-to-catalogue/test-data';
 import { InMemoryCatalogueViews } from './in-memory-catalogue.views';
 

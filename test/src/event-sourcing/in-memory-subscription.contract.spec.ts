@@ -1,8 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { RecordingHandler, subscriptionContract } from './subscription.contract';
-import { InMemoryEventStore } from '@market-monster/event-sourcing';
-import { InMemoryCheckpoint } from '../in-memory.checkpoint';
-import { InMemorySubscription } from '../in-memory.subscription';
+import {
+  InMemoryCheckpoint,
+  InMemoryEventStore,
+  InMemorySubscription,
+} from '@market-monster/event-sourcing';
 
 subscriptionContract('InMemorySubscription', () => {
   const store = new InMemoryEventStore();

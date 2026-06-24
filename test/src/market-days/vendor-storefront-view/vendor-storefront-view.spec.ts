@@ -1,15 +1,17 @@
-import { InMemoryEventStore } from '@market-monster/event-sourcing';
+import {
+  InMemoryCheckpoint,
+  InMemoryEventStore,
+  InMemorySubscription,
+} from '@market-monster/event-sourcing';
 import {
   EditStorefrontInformationHandler,
+  InMemoryVendorStorefrontViews,
   SetStorefrontCoverPhotoHandler,
   Storefronts,
   VendorStorefrontViewProjection
 } from '@market-monster/market-days';
-import { InMemorySubscription } from '../../in-memory.subscription';
-import { InMemoryCheckpoint } from '../../in-memory.checkpoint';
 import { TestEditStorefrontInformation } from '../edit-storefront-information/test-data';
 import { TestSetStorefrontCoverPhoto } from '../set-storefront-cover-photo/test-data';
-import { InMemoryVendorStorefrontViews } from './in-memory-vendor-storefront.views';
 
 describe('VendorStorefrontView', () => {
   let store: InMemoryEventStore;
