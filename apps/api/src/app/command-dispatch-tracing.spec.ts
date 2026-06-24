@@ -1,17 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { SpanStatusCode } from '@opentelemetry/api';
-import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
-import { InMemorySpanExporter, SimpleSpanProcessor } from '@opentelemetry/sdk-trace-base';
 import { INestApplication } from '@nestjs/common';
-import { Test, TestingModuleBuilder } from '@nestjs/testing';
+import { TestingModuleBuilder } from '@nestjs/testing';
 import request from 'supertest';
-import { Clock, Email, Instant, LocalDate } from '@market-monster/common';
-import { VendorId } from '@market-monster/shared-kernel';
-import { VerifiedVendor } from '@market-monster/auth';
-import { FakeTokenVerifier } from './testing/fake-token-verifier';
-import { AuthModule } from '@market-monster/auth-nestjs';
 import { EventStore, InMemoryEventStore, StoredEvent } from '@market-monster/event-sourcing';
-import { MarketDaysModule } from './market-days.module';
+import { bootApiTestApp, fixedClock } from './testing/api-test-app';
+import { registerSpanCapture } from './testing/span-capture';
 
 // A persistence boundary that rehydrates empty but fails to persist, so the
 // command handler throws and the failure propagates through the dispatcher.
@@ -25,24 +19,7 @@ class FailingEventStore extends EventStore {
   }
 }
 
-const vendor: VerifiedVendor = {
-  vendorId: new VendorId('acme-bakery'),
-  email: new Email('owner@acme.test'),
-};
-
-const fixedClock: Clock = {
-  today: () => new LocalDate('2026-06-23'),
-  now: () => new Instant('2026-06-23T09:00:00.000Z'),
-};
-
-// Hermetic span capture: a test-only provider with an in-memory exporter,
-// registered once (the global provider is set-once per process). No auto-
-// instrumentation, so getFinishedSpans() holds only spans our code creates.
-// SimpleSpanProcessor exports synchronously on span end — no flush race.
-const exporter = new InMemorySpanExporter();
-new NodeTracerProvider({
-  spanProcessors: [new SimpleSpanProcessor(exporter)],
-}).register();
+const exporter = registerSpanCapture();
 
 describe('Command dispatch tracing', () => {
   let app: INestApplication;
@@ -55,20 +32,8 @@ describe('Command dispatch tracing', () => {
     await app.close();
   });
 
-  async function boot(configure: (builder: TestingModuleBuilder) => void = () => undefined) {
-    const builder = Test.createTestingModule({
-      imports: [
-        AuthModule.forRootAsync({ useFactory: () => new FakeTokenVerifier(vendor) }),
-        MarketDaysModule,
-      ],
-    })
-      .overrideProvider(Clock)
-      .useValue(fixedClock);
-
-    configure(builder);
-
-    app = (await builder.compile()).createNestApplication();
-    await app.init();
+  async function boot(configure?: (builder: TestingModuleBuilder) => void) {
+    app = await bootApiTestApp({ clock: fixedClock, configure });
   }
 
   const register = () =>

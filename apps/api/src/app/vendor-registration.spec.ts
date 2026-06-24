@@ -1,43 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { INestApplication } from '@nestjs/common';
-import { Test } from '@nestjs/testing';
 import request from 'supertest';
-import { Clock, Email, Instant, LocalDate } from '@market-monster/common';
-import { VendorId } from '@market-monster/shared-kernel';
-import { VerifiedVendor } from '@market-monster/auth';
-import { FakeTokenVerifier } from './testing/fake-token-verifier';
-import { AuthModule } from '@market-monster/auth-nestjs';
 import { EventStore } from '@market-monster/event-sourcing';
-import { MarketDaysModule } from './market-days.module';
-
-const REGISTERED_AT = '2026-06-23T09:00:00.000Z';
-
-const fixedClock: Clock = {
-  today: () => new LocalDate('2026-06-23'),
-  now: () => new Instant(REGISTERED_AT),
-};
+import { bootApiTestApp, fixedClock, FIXED_NOW } from './testing/api-test-app';
 
 describe('Vendor registration over HTTP', () => {
   let app: INestApplication;
 
   beforeEach(async () => {
-    const vendor: VerifiedVendor = {
-      vendorId: new VendorId('acme-bakery'),
-      email: new Email('owner@acme.test'),
-    };
-
-    const moduleRef = await Test.createTestingModule({
-      imports: [
-        AuthModule.forRootAsync({ useFactory: () => new FakeTokenVerifier(vendor) }),
-        MarketDaysModule,
-      ],
-    })
-      .overrideProvider(Clock)
-      .useValue(fixedClock)
-      .compile();
-
-    app = moduleRef.createNestApplication();
-    await app.init();
+    app = await bootApiTestApp({ clock: fixedClock });
   });
 
   afterEach(async () => {
@@ -57,7 +28,7 @@ describe('Vendor registration over HTTP', () => {
         type: 'VendorRegistered',
         payload: {
           vendorId: 'acme-bakery',
-          registeredAt: REGISTERED_AT,
+          registeredAt: FIXED_NOW,
           email: 'owner@acme.test',
         },
         metadata: expect.objectContaining({

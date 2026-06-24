@@ -1,33 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { INestApplication } from '@nestjs/common';
-import { Test } from '@nestjs/testing';
 import request from 'supertest';
-import { Email } from '@market-monster/common';
-import { VendorId } from '@market-monster/shared-kernel';
-import { VerifiedVendor } from '@market-monster/auth';
-import { FakeTokenVerifier } from './testing/fake-token-verifier';
-import { AuthModule } from '@market-monster/auth-nestjs';
 import { EventStore } from '@market-monster/event-sourcing';
-import { MarketDaysModule } from './market-days.module';
+import { bootApiTestApp } from './testing/api-test-app';
 
 describe('Editing storefront information over HTTP', () => {
   let app: INestApplication;
 
   beforeEach(async () => {
-    const vendor: VerifiedVendor = {
-      vendorId: new VendorId('acme-bakery'),
-      email: new Email('owner@acme.test'),
-    };
-
-    const moduleRef = await Test.createTestingModule({
-      imports: [
-        AuthModule.forRootAsync({ useFactory: () => new FakeTokenVerifier(vendor) }),
-        MarketDaysModule,
-      ],
-    }).compile();
-
-    app = moduleRef.createNestApplication();
-    await app.init();
+    app = await bootApiTestApp();
   });
 
   afterEach(async () => {

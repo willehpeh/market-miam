@@ -1,42 +1,18 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
-import { InMemorySpanExporter, SimpleSpanProcessor } from '@opentelemetry/sdk-trace-base';
 import { INestApplication } from '@nestjs/common';
-import { Test } from '@nestjs/testing';
 import request from 'supertest';
-import { Email } from '@market-monster/common';
-import { VendorId } from '@market-monster/shared-kernel';
-import { VerifiedVendor } from '@market-monster/auth';
-import { FakeTokenVerifier } from './testing/fake-token-verifier';
-import { AuthModule } from '@market-monster/auth-nestjs';
 import { Subscription } from '@market-monster/event-sourcing';
-import { MarketDaysModule } from './market-days.module';
+import { bootApiTestApp } from './testing/api-test-app';
+import { registerSpanCapture } from './testing/span-capture';
 
-const exporter = new InMemorySpanExporter();
-new NodeTracerProvider({
-  spanProcessors: [new SimpleSpanProcessor(exporter)],
-}).register();
+const exporter = registerSpanCapture();
 
 describe('Storefront consumer tracing', () => {
   let app: INestApplication;
 
   beforeEach(async () => {
     exporter.reset();
-
-    const vendor: VerifiedVendor = {
-      vendorId: new VendorId('acme-bakery'),
-      email: new Email('owner@acme.test'),
-    };
-
-    const moduleRef = await Test.createTestingModule({
-      imports: [
-        AuthModule.forRootAsync({ useFactory: () => new FakeTokenVerifier(vendor) }),
-        MarketDaysModule,
-      ],
-    }).compile();
-
-    app = moduleRef.createNestApplication();
-    await app.init();
+    app = await bootApiTestApp();
   });
 
   afterEach(async () => {
