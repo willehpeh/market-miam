@@ -1,10 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { SpanStatusCode } from '@opentelemetry/api';
 import { INestApplication } from '@nestjs/common';
-import { TestingModuleBuilder } from '@nestjs/testing';
 import request from 'supertest';
 import { EventStore, InMemoryEventStore, StoredEvent } from '@market-monster/event-sourcing';
-import { bootApiTestApp, fixedClock } from './testing/api-test-app';
+import { apiTestModule, bootApiTestApp, fixedClock, startApp } from './testing/api-test-app';
 import { registerSpanCapture } from './testing/span-capture';
 
 // A persistence boundary that rehydrates empty but fails to persist, so the
@@ -32,9 +31,9 @@ describe('Command dispatch tracing', () => {
     await app.close();
   });
 
-  async function boot(configure?: (builder: TestingModuleBuilder) => void) {
-    app = await bootApiTestApp({ clock: fixedClock, configure });
-  }
+  const boot = async () => {
+    app = await bootApiTestApp({ clock: fixedClock });
+  };
 
   const register = () =>
     request(app.getHttpServer()).post('/vendors').set('Authorization', 'Bearer any-token');
@@ -106,7 +105,9 @@ describe('Command dispatch tracing', () => {
   });
 
   it('marks the span as failed and records the exception when the handler throws', async () => {
-    await boot((builder) => builder.overrideProvider(EventStore).useValue(new FailingEventStore()));
+    app = await startApp(
+      apiTestModule({ clock: fixedClock }).overrideProvider(EventStore).useValue(new FailingEventStore()),
+    );
 
     await register().expect(500);
 
@@ -123,8 +124,10 @@ describe('Command dispatch tracing', () => {
   });
 
   it('marks the append span as failed and records the exception when persistence throws', async () => {
-    await boot((builder) =>
-      builder.overrideProvider(InMemoryEventStore).useValue(new FailingEventStore()),
+    app = await startApp(
+      apiTestModule({ clock: fixedClock })
+        .overrideProvider(InMemoryEventStore)
+        .useValue(new FailingEventStore()),
     );
 
     await register().expect(500);

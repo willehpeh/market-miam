@@ -19,31 +19,36 @@ export const fixedClock: Clock = {
   now: () => new Instant(FIXED_NOW),
 };
 
-export interface BootOptions {
+export interface ApiTestOptions {
   vendor?: VerifiedVendor;
   clock?: Clock;
-  configure?: (builder: TestingModuleBuilder) => void;
 }
 
-// Boots the API behind a fake token verifier (any bearer token = the vendor).
-// `clock` overrides the server clock; `configure` lets a test swap further
-// providers (e.g. a failing EventStore) before the module compiles.
-export async function bootApiTestApp(options: BootOptions = {}): Promise<INestApplication> {
-  const { vendor = testVendor, clock, configure } = options;
-
+// The API test module: a fake verifier (any bearer token = the vendor) and an
+// optional fixed clock. Returns the builder so a test that needs to can override
+// further providers with Nest's native `.overrideProvider(...)` before starting.
+export function apiTestModule(options: ApiTestOptions = {}): TestingModuleBuilder {
+  const { vendor = testVendor, clock } = options;
   const builder = Test.createTestingModule({
     imports: [
       AuthModule.forRootAsync({ useFactory: () => new FakeTokenVerifier(vendor) }),
       MarketDaysModule,
     ],
   });
-
   if (clock) {
     builder.overrideProvider(Clock).useValue(clock);
   }
-  configure?.(builder);
+  return builder;
+}
 
+// Compile a (possibly overridden) module and start the app.
+export async function startApp(builder: TestingModuleBuilder): Promise<INestApplication> {
   const app = (await builder.compile()).createNestApplication();
   await app.init();
   return app;
+}
+
+// The common case: boot the standard API test app with no provider overrides.
+export function bootApiTestApp(options: ApiTestOptions = {}): Promise<INestApplication> {
+  return startApp(apiTestModule(options));
 }
