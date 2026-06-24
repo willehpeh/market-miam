@@ -30,6 +30,7 @@ import { CommandDispatcher } from './command-dispatcher';
 import { TracingEventStore } from './tracing.event-store';
 import { MessageContextMiddleware } from './message-context.middleware';
 import { VendorsController } from './vendors.controller';
+import { StorefrontController } from './storefront.controller';
 
 const clock = [{ provide: Clock, useClass: DateClock }];
 
@@ -86,7 +87,7 @@ const commandHandlers = [
 
 @Module({
   imports: [CqrsModule],
-  controllers: [VendorsController],
+  controllers: [VendorsController, StorefrontController],
   providers: [
     ...clock,
     ...messageContext,
@@ -98,6 +99,6 @@ const commandHandlers = [
 })
 export class MarketDaysModule implements NestModule {
   configure(consumer: MiddlewareConsumer): void {
-    consumer.apply(MessageContextMiddleware).forRoutes(VendorsController);
+    consumer.apply(MessageContextMiddleware).forRoutes(VendorsController, StorefrontController);
   }
 }
