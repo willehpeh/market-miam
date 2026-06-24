@@ -22,31 +22,32 @@ clause-by-clause. A span is a wide event; spans are fat, not many thin logs.
   (observe, never swallow). An ESLint `no-restricted-imports` guard makes "only
   `command-dispatcher.ts` imports `CommandBus`" a build error, so every command
   is uniformly traced. Commits `1964004`, `bc3f826`, `8fc68e1`.
+- **Event-store append + load spans** (producer step 2) — `TracingEventStore`,
+  the outermost store decorator (`EventStore → TracingEventStore →
+  MessageContextEventStore → InMemoryEventStore`), keeps `event-sourcing`
+  OTel-free. Append carries `event.type`/`event.count`/`stream_id`/`vendor.id`
+  from append's own args (payload-blind); load carries `stream_id` + rehydrated
+  `event.count`. Both nest on the dispatch trace (asserted by shared `traceId`,
+  not parent id, so intermediate spans don't break tests). Records exceptions on
+  persistence failure. Commit `efbb5ab`.
+- **`traceparent` into event metadata at append** (producer step 3) — the active
+  span's W3C context, persisted alongside vendorId/correlation/causation; the
+  durable producer half of the producer→consumer link. Commit `662b08c`.
+- **Consumer tracing** (steps 5–6) — `TracingEventHandler` decorates the
+  projection: each consumed event handled on its own **new root trace** with a
+  **span link** back to the producer (from the stored `traceparent`), plus
+  `processing.lag_ms` (commit-to-handle), `event.type`, `vendor.id`. The generic
+  `Subscription` stays OTel-free; the decorator wraps the handler at the app
+  edge, symmetric with `TracingEventStore`. Built on the storefront vertical
+  slice (`Events.loadFrom` gained a required page limit; in-memory subscription /
+  checkpoint / view store promoted to their packages; `PUT /storefront`
+  producer; projection wired behind a subscription). Commits `d2e4599`,
+  `3b2e26b`, `696ba33`, `e481fa2`, `8115c96`.
 
-## Next set — producer-side tracing (remaining)
+## Remaining producer-side work
 
-Step 1 (above) is done. Remaining steps build on the live dispatch span and the
-existing append path.
+Steps 1–3 are done (above). What's left:
 
-2. **Child span on the event-store append** — a tracing decorator composed with
-   `MessageContextEventStore`, nested under the dispatch span. Carries
-   `event.type`, `event.count`, `stream_id`, and **`vendor.id`** — all sourced
-   from append's own `events`/`metadata`/`streamId` arguments (payload-blind,
-   purity-safe). *Grill before building:* where the decorator sits relative to
-   `MessageContextEventStore`, and how the event→attributes mapper is **injected
-   from `apps/api`** so the `event-sourcing` package stays generic.
-   - **Correction logged:** `vendor.id` is **not** ambient. Repositories pass
-     `{ vendorId }` as the append `metadata` argument (from `command.vendorId`
-     via the handler — e.g. `calendars.ts:19`), so `vendor.id` belongs on the
-     **append** span, not the dispatch span. The earlier "`vendor.id` from
-     ambient context / enrich at the handler" note was wrong on both counts.
-3. **Inject W3C `traceparent` into event metadata at append** — capture the
-   active span context, serialize to `traceparent`, merge into metadata in the
-   adapter, alongside `vendorId`/correlation/causation (ADR: "At append time,
-   inject the W3C trace context into event metadata alongside `vendorId`"). This
-   is the persistable string projection of the span — never store the live span
-   object in `MessageContext`. Constraint (ADR): trace context is "plumbing, not
-   domain fact … optional on rehydration … replay tolerates its absence."
 4. **Per-type intent/outcome attributes** — adapter-side per-type extractors in
    `apps/api` (allow-list per command/event type; exact-match-tested = the PII
    guard). Dispatch span ← the command (what the user tried to do); append span
@@ -72,18 +73,17 @@ via supertest, assert spans. **Exact-match** the attribute set — that doubles 
 the PII guard (a stray `email` fails the test). Failure paths driven by a stub
 `EventStore` whose `append` rejects. See `command-dispatch-tracing.spec.ts`.
 
-## Blocked set — consumer-side tracing
+## Consumer-side tracing — done
 
-Gated on the **subscription/processor wrapper** existing (there's no async
-consumer to instrument yet — see the main plan's backlog).
+Steps 5 (new trace per handler + span link) and 6 (`processing.lag_ms`) are
+built — see Done above. The once-blocking subscription/processor wrapper now
+exists (storefront slice), so the consumer side is live and instrumented.
 
-5. **New trace per handler with a span *link* back to the producer** — the
-   wrapper reads `traceparent` from event metadata and links (ADR: "consumers do
-   not continue the request's trace: each consumed event starts a new trace per
-   handler with a span link … keeping traces bounded under processor→command
-   fan-out"). Consequence: "extends the … subscription adapter."
-6. **`processing.lag_ms` on every consumer span** — `StoredEvent.timestamp`
-   (commit) vs. handle time; the read-model freshness SLO (ADR consequence).
+Still functional-only (no observability work) and following next — the
+**storefront vertical slice's remainder (plan "B")**: a background **poller**
+driving `poll()` on a schedule; the **`GET /storefront` query endpoint** (which
+builds the deferred `QueryDispatcher` — span-only, no lineage); and the
+**frontend** (edit form + display). None of these is blocked.
 
 ## Deferred (per ADR)
 
