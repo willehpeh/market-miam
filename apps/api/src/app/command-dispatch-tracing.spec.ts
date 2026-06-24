@@ -7,20 +7,11 @@ import { Test, TestingModuleBuilder } from '@nestjs/testing';
 import request from 'supertest';
 import { Clock, Email, Instant, LocalDate } from '@market-monster/common';
 import { VendorId } from '@market-monster/shared-kernel';
-import { TokenVerifier, VerifiedVendor } from '@market-monster/auth';
+import { VerifiedVendor } from '@market-monster/auth';
+import { FakeTokenVerifier } from './testing/fake-token-verifier';
 import { AuthModule } from '@market-monster/auth-nestjs';
 import { EventStore, InMemoryEventStore, StoredEvent } from '@market-monster/event-sourcing';
 import { MarketDaysModule } from './market-days.module';
-
-class FakeTokenVerifier extends TokenVerifier {
-  constructor(private readonly vendor: VerifiedVendor) {
-    super();
-  }
-
-  verify(): Promise<VerifiedVendor> {
-    return Promise.resolve(this.vendor);
-  }
-}
 
 // A persistence boundary that rehydrates empty but fails to persist, so the
 // command handler throws and the failure propagates through the dispatcher.

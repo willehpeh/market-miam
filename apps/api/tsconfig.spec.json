@@ -9,5 +9,5 @@
     "target": "es2021",
     "moduleResolution": "node"
   },
-  "include": ["src/**/*.spec.ts", "vitest.config.mts"]
+  "include": ["src/**/*.spec.ts", "src/**/testing/**/*.ts", "vitest.config.mts"]
 }
