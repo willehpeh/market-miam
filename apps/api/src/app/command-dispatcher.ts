@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Command, CommandBus } from '@nestjs/cqrs';
-import { trace } from '@opentelemetry/api';
+import { SpanStatusCode, trace } from '@opentelemetry/api';
 import { MessageContext } from '@market-monster/event-sourcing';
 
 const tracer = trace.getTracer('command-dispatcher');
@@ -30,6 +30,11 @@ export class CommandDispatcher {
       });
       try {
         return await this.commandBus.execute(command);
+      } catch (error) {
+        span.setAttribute('exception.slug', 'command-dispatch-failed');
+        span.recordException(error as Error);
+        span.setStatus({ code: SpanStatusCode.ERROR });
+        throw error;
       } finally {
         span.end();
       }
