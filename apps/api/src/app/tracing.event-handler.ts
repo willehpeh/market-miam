@@ -21,11 +21,10 @@ export class TracingEventHandler implements EventHandler {
       'event-handler handle',
       { root: true, links: producer ? [{ context: producer }] : [] },
       async (span: Span) => {
-        const vendorId = event.metadata?.['vendorId'];
         span.setAttributes({
           'event.type': event.type,
           'processing.lag_ms': Date.now() - event.timestamp,
-          ...(typeof vendorId === 'string' ? { 'vendor.id': vendorId } : undefined),
+          'vendor.id': event.metadata?.['vendorId'] as string,
         });
         try {
           return await this.inner.handle(event);

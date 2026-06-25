@@ -8,6 +8,7 @@
     "typecheck": {},
     "test": {
       "command": "vitest run",
+      "outputs": ["{workspaceRoot}/coverage/api"],
       "options": {
         "cwd": "apps/api"
       }

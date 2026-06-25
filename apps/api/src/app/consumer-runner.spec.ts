@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { INestApplication } from '@nestjs/common';
+import { INestApplication, Logger } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { DiscoveryModule } from '@nestjs/core';
 import {
@@ -25,6 +25,17 @@ class StorefrontProjection extends NoopHandler {}
 
 @CheckpointedProjection('storefront')
 class CollidingProjection extends NoopHandler {}
+
+// A boundary fake for the injected logger: records errors instead of writing
+// them, so failures can be asserted without reaching for a mocking framework.
+// Exposes only error — the one behaviour ConsumerRunner uses.
+class RecordingLogger {
+  readonly errors: { message: unknown; params: unknown[] }[] = [];
+
+  error(message: unknown, ...params: unknown[]): void {
+    this.errors.push({ message, params });
+  }
+}
 
 const noEvents: Events = { loadFrom: () => Promise.resolve([] as StoredEvent[]) };
 
@@ -83,5 +94,42 @@ describe('ConsumerRunner', () => {
 
     await vi.advanceTimersByTimeAsync(5000);
     expect(polls).toBeGreaterThan(afterStart);
+  });
+
+  it('logs the failure and keeps polling when a subscription poll throws', async () => {
+    vi.useFakeTimers();
+    const logger = new RecordingLogger();
+    let polls = 0;
+    const flakyEvents: Events = {
+      loadFrom: () => {
+        polls++;
+        return polls === 1
+          ? Promise.reject(new Error('poll boom'))
+          : Promise.resolve([] as StoredEvent[]);
+      },
+    };
+
+    const moduleRef = await Test.createTestingModule({
+      imports: [DiscoveryModule],
+      providers: [
+        ConsumerRunner,
+        StorefrontProjection,
+        { provide: Events, useValue: flakyEvents },
+        { provide: POLLING_ENABLED, useValue: true },
+        { provide: Logger, useValue: logger },
+      ],
+    }).compile();
+
+    app = moduleRef.createNestApplication();
+    await app.init();
+
+    await vi.advanceTimersByTimeAsync(0); // first poll rejects
+    await vi.advanceTimersByTimeAsync(1000); // retry delay elapses, polling resumes
+
+    expect(polls).toBeGreaterThan(1);
+    expect(logger.errors).toContainEqual({
+      message: 'Subscription poll failed',
+      params: [expect.any(Error)],
+    });
   });
 });

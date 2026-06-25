@@ -25,5 +25,20 @@ export default defineConfig(() => ({
     include: ['src/**/*.spec.ts'],
     setupFiles: ['reflect-metadata'],
     reporters: ['default'],
+    coverage: {
+      reportsDirectory: '../../coverage/api',
+      provider: 'v8' as const,
+      // `all` so untested files surface as 0% rather than silently vanishing
+      // — the app tree is where the consumer/tracing infra lives.
+      all: true,
+      include: ['src/**/*.ts'],
+      exclude: [
+        'src/**/*.spec.ts',
+        'src/main.ts', // bootstrap
+        'src/app/app.module.ts', // composition root: prod-only Auth0 + config wiring
+        'src/tracing.ts', // OTel SDK bootstrap (side-effect import)
+        'src/app/testing/**', // test harness
+      ],
+    },
   },
 }));

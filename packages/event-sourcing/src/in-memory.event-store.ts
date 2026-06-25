@@ -40,7 +40,7 @@ export class InMemoryEventStore implements EventStore, Events {
     }));
   }
 
-  allEvents(): StoredEvent[] {
+  private allEvents(): StoredEvent[] {
     return [...this.seededEvents, ...this.appendedEvents];
   }
 

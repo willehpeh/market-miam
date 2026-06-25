@@ -26,12 +26,11 @@ export class TracingEventStore extends EventStore {
     metadata?: Record<string, unknown>,
   ): Promise<void> {
     return tracer.startActiveSpan('event-store append', async (span) => {
-      const vendorId = metadata?.['vendorId'];
       span.setAttributes({
         'event.type': events[0]?.type,
         'event.count': events.length,
         stream_id: streamId,
-        ...(typeof vendorId === 'string' ? { 'vendor.id': vendorId } : undefined),
+        'vendor.id': metadata?.['vendorId'] as string,
       });
       // Persist the producing trace context so an async consumer can link a new
       // trace back to it (ADR 0026). This is the W3C string projection of the

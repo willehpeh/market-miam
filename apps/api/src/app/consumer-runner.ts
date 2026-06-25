@@ -4,6 +4,7 @@ import {
   Logger,
   OnApplicationBootstrap,
   OnApplicationShutdown,
+  Optional,
 } from '@nestjs/common';
 import { DiscoveryService } from '@nestjs/core';
 import { defer, merge, repeat, retry, Subject, takeUntil, timer } from 'rxjs';
@@ -27,7 +28,6 @@ const POLL_INTERVAL_MS = 1000;
 // failures). Tests pump drain() deterministically instead of the timer.
 @Injectable()
 export class ConsumerRunner implements OnApplicationBootstrap, OnApplicationShutdown {
-  private readonly logger = new Logger(ConsumerRunner.name);
   private readonly stopped = new Subject<void>();
   private subscriptions: Subscription[] = [];
 
@@ -35,6 +35,8 @@ export class ConsumerRunner implements OnApplicationBootstrap, OnApplicationShut
     private readonly discovery: DiscoveryService,
     private readonly events: Events,
     @Inject(POLLING_ENABLED) private readonly pollingEnabled: boolean,
+    // Context co-located with the class; tests override with a recording fake.
+    @Optional() private readonly logger: Logger = new Logger(ConsumerRunner.name),
   ) {}
 
   onApplicationBootstrap(): void {

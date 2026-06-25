@@ -17,12 +17,12 @@ export class MessageContextEventStore extends EventStore {
     expectedStreamPosition: number,
     metadata?: Record<string, unknown>,
   ): Promise<void> {
-    return this.inner.append(
-      streamId,
-      events,
-      expectedStreamPosition,
-      { ...metadata, ...this.context.current() },
-    );
+    // Stamp the active correlation/causation context onto the append. Outside a
+    // dispatch there is no context, so add nothing — staying a faithful
+    // EventStore that fabricates no empty metadata where the base store has none.
+    const context = this.context.current();
+    const merged = metadata || context ? { ...metadata, ...context } : undefined;
+    return this.inner.append(streamId, events, expectedStreamPosition, merged);
   }
 
   load(streamId: string): Promise<StoredEvent[]> {
