@@ -5,7 +5,7 @@ export { Aggregate } from './aggregate';
 export { Events } from './events';
 export { EventHandler } from './event-handler';
 export { Projection } from './projection';
-export { Projects, projectsCheckpoint } from './projects.decorator';
+export { CheckpointedProjection, projectionCheckpoint } from './checkpointed-projection.decorator';
 export { Processor } from './processor';
 export { Subscription } from './subscription';
 export { Checkpoint } from './checkpoint';

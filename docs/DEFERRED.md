@@ -18,6 +18,8 @@ When the polling loop is added: fail loud (crash on repeated failure) rather tha
 
 In production, a shared `checkpoints` table in Postgres keyed by subscription name. Each subscription's checkpoint is independent — shared table, no coupling. A single `PostgresCheckpoint` adapter can serve every subscription.
 
+**Discovery-time orphan detection.** The `ConsumerRunner` discovers projections by their `@CheckpointedProjection('<name>')` decorator and builds one checkpoint per name. It already fails fast on *duplicate* names at bootstrap. It cannot detect a *renamed* checkpoint from code — discovery sees only the current names, so a rename silently orphans the old checkpoint and replays from zero. Against the Postgres `checkpoints` table this becomes detectable: at startup, diff persisted checkpoint names against discovered names and flag the leftovers ("checkpoint `X` has no projection — renamed or removed?"), which catches renames *and* accidental deletions. Needs the `Checkpoint` port to enumerate names (it currently only reads/writes one by name). In-memory has nothing to orphan, so this is Postgres-era.
+
 ## Global position gaps
 
 In PostgreSQL, concurrent writers can cause gaps in the global position sequence. Transaction A gets position 5, transaction B gets position 6, B commits first — the subscription sees 6 but not 5. If it advances the checkpoint to 6, event 5 is permanently skipped when A commits. Rolled-back transactions also create permanent gaps. The `InMemoryEventStore` doesn't have this problem (single-threaded, no concurrent writes).

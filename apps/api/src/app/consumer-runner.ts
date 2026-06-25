@@ -12,7 +12,7 @@ import {
   Events,
   InMemoryCheckpoint,
   InMemorySubscription,
-  projectsCheckpoint,
+  projectionCheckpoint,
   Subscription,
 } from '@market-monster/event-sourcing';
 import { TracingEventHandler } from './tracing.event-handler';
@@ -57,7 +57,7 @@ export class ConsumerRunner implements OnApplicationBootstrap, OnApplicationShut
   private buildSubscriptions(): Subscription[] {
     const checkpoints = new Set<string>();
     return this.projections().map((projection) => {
-      const checkpoint = projectsCheckpoint(projection.constructor) as string;
+      const checkpoint = projectionCheckpoint(projection.constructor) as string;
       if (checkpoints.has(checkpoint)) {
         throw new Error(`Duplicate projection checkpoint '${checkpoint}'`);
       }
@@ -100,6 +100,6 @@ function isProjection(instance: unknown): instance is EventHandler {
   return (
     typeof instance === 'object' &&
     instance !== null &&
-    projectsCheckpoint(instance.constructor) !== undefined
+    projectionCheckpoint(instance.constructor) !== undefined
   );
 }

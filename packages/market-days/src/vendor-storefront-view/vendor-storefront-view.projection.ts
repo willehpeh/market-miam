@@ -1,9 +1,9 @@
 import { VendorStorefrontViewStore } from './vendor-storefront-view.store';
-import { EventHandlerMap, Projection, Projects, StoredEvent } from '@market-monster/event-sourcing';
+import { CheckpointedProjection, EventHandlerMap, Projection, StoredEvent } from '@market-monster/event-sourcing';
 import { vendorIdFrom } from '@market-monster/shared-kernel';
 import { StorefrontCoverPhotoSet, StorefrontEvent, StorefrontInformationEdited } from '../storefront/events';
 
-@Projects('vendor-storefront-view')
+@CheckpointedProjection('vendor-storefront-view')
 export class VendorStorefrontViewProjection implements Projection {
 
   private readonly _handlers: EventHandlerMap<StorefrontEvent> = {
