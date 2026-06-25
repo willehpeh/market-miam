@@ -10,7 +10,7 @@ import {
 } from '@market-monster/event-sourcing';
 import { ConsumerRunner, POLLING_ENABLED } from './consumer-runner';
 
-class NoopProjection implements EventHandler {
+class NoopHandler implements EventHandler {
   eventTypes(): string[] {
     return [];
   }
@@ -21,10 +21,10 @@ class NoopProjection implements EventHandler {
 }
 
 @CheckpointedProjection('storefront')
-class StorefrontProjection extends NoopProjection {}
+class StorefrontProjection extends NoopHandler {}
 
 @CheckpointedProjection('storefront')
-class CollidingProjection extends NoopProjection {}
+class CollidingProjection extends NoopHandler {}
 
 const noEvents: Events = { loadFrom: () => Promise.resolve([] as StoredEvent[]) };
 

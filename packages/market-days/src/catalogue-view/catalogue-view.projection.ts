@@ -1,8 +1,9 @@
 import { CatalogueViewStore } from './catalogue-view.store';
-import { EventHandlerMap, Projection, StoredEvent } from '@market-monster/event-sourcing';
+import { CheckpointedProjection, EventHandlerMap, Projection, StoredEvent } from '@market-monster/event-sourcing';
 import { vendorIdFrom } from '@market-monster/shared-kernel';
 import { CatalogueEvent, ItemAddedToCatalogue, ItemPriceChanged, ItemRetired } from '../catalogue/events';
 
+@CheckpointedProjection('catalogue-view')
 export class CatalogueViewProjection implements Projection {
 
   private readonly _handlers: EventHandlerMap<CatalogueEvent> = {

@@ -28,7 +28,9 @@ Strategy: retry with exponential backoff, accept the gap as permanent after 5 se
 
 ## Distinguishing Projection from Processor
 
-Both are abstract classes with the same `handle()` shape. The subscription accepts either structurally. The distinction matters for rebuild: projections are safe to replay from position 0, processors are not. The mechanism for telling them apart programmatically is unresolved — `instanceof` was rejected as poor OO design. A better approach (e.g. a method on the type itself) should be chosen when rebuild tooling is built.
+Both are abstract classes with the same `handle()` shape; the subscription accepts either structurally. The distinction is operational: projections are safe to replay from position 0, processors are not (re-dispatching commands re-runs side effects), and processors need the continuation message-context wrapping (correlationId inherited from the event, causationId = the event id) that projections don't.
+
+**Resolution: the discriminator is the decorator, not the type.** `@CheckpointedProjection('<name>')` marks projections today; a future `@CheckpointedProcessor('<name>')` marks processors, sharing the discovery plumbing but distinguished by a `kind` in the metadata. The `ConsumerRunner` reads the kind to decide whether to wrap the handler with the continuation context (processors) and whether a replay-from-0 is safe (projections only). `instanceof` stays rejected as the discriminator. Don't build `@CheckpointedProcessor` until a real processor exists.
 
 ## vendorIdFrom error handling
 
