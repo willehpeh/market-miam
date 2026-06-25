@@ -1,11 +1,5 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
-import {
-  Events,
-  EventStore,
-  InMemoryCheckpoint,
-  InMemorySubscription,
-  Subscription,
-} from '@market-monster/event-sourcing';
+import { EventStore } from '@market-monster/event-sourcing';
 import { Clock, DateClock } from '@market-monster/common';
 import {
   AddItemToCatalogueHandler,
@@ -29,7 +23,6 @@ import {
   VendorStorefrontViewStore,
 } from '@market-monster/market-days';
 import { EventSourcingModule } from './event-sourcing.module';
-import { TracingEventHandler } from './tracing.event-handler';
 import { MessageContextMiddleware } from './message-context.middleware';
 import { VendorsController } from './vendors.controller';
 import { StorefrontController } from './storefront.controller';
@@ -49,9 +42,8 @@ const repositories = [
 ];
 
 // The storefront read model: one in-memory store serves both the projection's
-// write surface and the query read surface. A subscription drives the
-// projection off the global event log via a checkpoint; the poller (separate)
-// calls poll() on a schedule.
+// write surface and the query read surface. The @Projects-decorated projection
+// is discovered and driven by the ConsumerRunner (in EventSourcingModule).
 const readModel = [
   InMemoryVendorStorefrontViews,
   { provide: VendorStorefrontViews, useExisting: InMemoryVendorStorefrontViews },
@@ -60,16 +52,6 @@ const readModel = [
     provide: VendorStorefrontViewProjection,
     useFactory: (store: VendorStorefrontViewStore) => new VendorStorefrontViewProjection(store),
     inject: [VendorStorefrontViewStore],
-  },
-  {
-    provide: Subscription,
-    useFactory: (events: Events, projection: VendorStorefrontViewProjection) =>
-      new InMemorySubscription(
-        events,
-        new TracingEventHandler(projection),
-        new InMemoryCheckpoint('vendor-storefront-view'),
-      ),
-    inject: [Events, VendorStorefrontViewProjection],
   },
 ];
 

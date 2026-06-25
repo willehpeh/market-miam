@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { Module } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
+import { DiscoveryModule } from '@nestjs/core';
 import {
   Events,
   EventStore,
@@ -10,6 +11,7 @@ import {
   MessageContextEventStore,
 } from '@market-monster/event-sourcing';
 import { CommandDispatcher } from './command-dispatcher';
+import { ConsumerRunner, POLLING_ENABLED } from './consumer-runner';
 import { TracingEventStore } from './tracing.event-store';
 
 // Generic event-sourcing infrastructure: the message-context plumbing, the
@@ -43,8 +45,14 @@ const eventStore = [
 ];
 
 @Module({
-  imports: [CqrsModule],
-  providers: [...messageContext, ...eventStore, CommandDispatcher],
+  imports: [CqrsModule, DiscoveryModule],
+  providers: [
+    ...messageContext,
+    ...eventStore,
+    CommandDispatcher,
+    { provide: POLLING_ENABLED, useValue: true },
+    ConsumerRunner,
+  ],
   exports: [
     MessageContext,
     MessageContextDispatcher,
@@ -52,6 +60,7 @@ const eventStore = [
     Events,
     InMemoryEventStore,
     CommandDispatcher,
+    ConsumerRunner,
   ],
 })
 export class EventSourcingModule {}

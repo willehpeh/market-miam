@@ -5,6 +5,7 @@ import { VendorId } from '@market-monster/shared-kernel';
 import { VerifiedVendor } from '@market-monster/auth';
 import { AuthModule } from '@market-monster/auth-nestjs';
 import { MarketDaysModule } from '../market-days.module';
+import { POLLING_ENABLED } from '../consumer-runner';
 import { FakeTokenVerifier } from './fake-token-verifier';
 
 export const testVendor: VerifiedVendor = {
@@ -35,6 +36,8 @@ export function apiTestModule(options: ApiTestOptions = {}): TestingModuleBuilde
       MarketDaysModule,
     ],
   });
+  // Tests pump ConsumerRunner.drain() deterministically — no background timer.
+  builder.overrideProvider(POLLING_ENABLED).useValue(false);
   if (clock) {
     builder.overrideProvider(Clock).useValue(clock);
   }

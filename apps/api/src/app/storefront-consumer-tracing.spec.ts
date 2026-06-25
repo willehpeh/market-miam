@@ -1,9 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import { Subscription } from '@market-monster/event-sourcing';
 import { bootApiTestApp } from './testing/api-test-app';
 import { registerSpanCapture } from './testing/span-capture';
+import { ConsumerRunner } from './consumer-runner';
 
 const exporter = registerSpanCapture();
 
@@ -26,7 +26,7 @@ describe('Storefront consumer tracing', () => {
       .send({ name: 'Acme Bakery', description: 'Fresh bread daily' })
       .expect(200);
 
-    await app.get(Subscription).poll();
+    await app.get(ConsumerRunner).drain();
 
     const spans = exporter.getFinishedSpans();
     const append = spans.find((span) => span.name === 'event-store append');
