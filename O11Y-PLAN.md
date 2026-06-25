@@ -9,9 +9,12 @@ A span is a wide event; spans are fat, not many thin logs.
 
 Producer steps 1–3 (command dispatch span; event-store append/load spans;
 `traceparent` into event metadata) and consumer steps 5–6 (new-trace-per-handler
-+ span link back to the producer + `processing.lag_ms`) are live. Commits
++ span link back to the producer + `processing.lag_ms`) are live. The consumer
+`TracingEventHandler` is applied by the `ConsumerRunner` to every discovered
+projection, so instrumentation is uniform without per-projection wiring. Commits
 `1964004`, `bc3f826`, `8fc68e1`, `efbb5ab`, `662b08c`, `d2e4599`, `3b2e26b`,
-`696ba33`, `e481fa2`, `8115c96`; see the `*-tracing.spec.ts` files in `apps/api`.
+`696ba33`, `e481fa2`, `8115c96`, `944c49f`, `74acc02`; see the `*-tracing.spec.ts`
+files in `apps/api`.
 
 ## Remaining
 

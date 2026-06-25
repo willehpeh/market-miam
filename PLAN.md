@@ -24,9 +24,17 @@ The vendor registration path is wired **end to end**:
   restart. All four ports (`EventStore`, `Events`, `Checkpoint`, `Subscription`)
   have adapter-agnostic contract tests.
 - **Storefront slice** (in progress): `PUT /storefront` (`EditStorefrontInformation`)
-  produces `StorefrontInformationEdited`; `VendorStorefrontViewProjection` runs
-  behind an in-memory `Subscription` (driven by `poll()`) to build the read model.
-  Remaining: poller, query endpoint, frontend — see "Storefront slice — remaining".
+  produces `StorefrontInformationEdited`; `VendorStorefrontViewProjection` (marked
+  `@CheckpointedProjection('vendor-storefront-view')`) is **discovered and driven
+  by the `ConsumerRunner`** — a background RxJS poller (`merge`→`repeat`/`retry`,
+  per-subscription isolation) over checkpoint-driven, instrumented subscriptions,
+  gated by `POLLING_ENABLED` (off in tests, which pump `drain()`). A lint rule
+  enforces that every concrete `*Projection` carries the decorator. Remaining:
+  query endpoint, frontend.
+- **Module structure**: the generic event-sourcing infra (message context,
+  decorated store, `Events`, `CommandDispatcher`, the `ConsumerRunner`) now lives
+  in **`EventSourcingModule`**, extracted from the `MarketDaysModule` god-module;
+  `MarketDaysModule` imports it and holds only domain wiring.
 - **Observability** (ADR 0026): producer + consumer tracing are live end to end
   (dispatch / append / load spans, `traceparent` in event metadata, consumer
   new-trace + link + `processing.lag_ms`). See `O11Y-PLAN.md`.
@@ -40,16 +48,13 @@ cross-restart record. Persistence (Postgres) closes this.
 
 ## Storefront slice — remaining ("B")
 
-The storefront producer→projection loop works and is traced. What's left to make
-it a full, demonstrable vertical slice:
+The producer→projection loop works, is traced, and is driven by a real poller
+(**B.1 `ConsumerRunner` — done**: decorator-discovered subscriptions, RxJS poll
+loop, duplicate-checkpoint guard, fully tested). What's left:
 
-1. **Background poller** — `onApplicationBootstrap` driving the subscription's
-   `poll()` on a schedule (drain-then-wait cadence; fixed interval, no jitter
-   pre-Postgres). `poll()` stays the deterministic, test-pumped unit; the poller
-   is thin timer glue. Workers / leasing / jitter are Postgres + multi-instance era.
-2. **`GET /storefront` query endpoint** — reads `VendorStorefrontViews`; builds
+1. **`GET /storefront` query endpoint** — reads `VendorStorefrontViews`; builds
    the deferred **`QueryDispatcher`** (span-only — see `O11Y-PLAN.md`).
-3. **Frontend** — storefront edit form + display ("something to show").
+2. **Frontend** — storefront edit form + display ("something to show").
 
 Eventual-consistency note: the projection is async, so after an edit the read
 model updates only once `poll()` runs — the frontend must tolerate that lag
@@ -98,8 +103,11 @@ guard**, now that there's a route to protect.
    `traceparent` in event metadata, consumer new-trace + link +
    `processing.lag_ms`). Only per-type attribute extractors remain deferred. See
    `O11Y-PLAN.md`.
-4. Remaining `docs/DEFERRED.md` items (polling loop, checkpoint/views txn
-   boundary, poison events, client-supplied idempotency, replay strategy).
+4. Remaining `docs/DEFERRED.md` items — the polling loop is now built
+   (`ConsumerRunner`); still open: checkpoint/views txn boundary, poison events,
+   Postgres global-position gaps, discovery-time orphan-checkpoint detection,
+   `@CheckpointedProcessor` + continuation context, client-supplied idempotency,
+   replay strategy.
 
 ## Sequencing note
 
