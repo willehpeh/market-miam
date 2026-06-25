@@ -1,15 +1,9 @@
-import { randomUUID } from 'node:crypto';
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
-import { CqrsModule } from '@nestjs/cqrs';
 import {
   Events,
   EventStore,
   InMemoryCheckpoint,
-  InMemoryEventStore,
   InMemorySubscription,
-  MessageContext,
-  MessageContextDispatcher,
-  MessageContextEventStore,
   Subscription,
 } from '@market-monster/event-sourcing';
 import { Clock, DateClock } from '@market-monster/common';
@@ -34,40 +28,13 @@ import {
   VendorStorefrontViews,
   VendorStorefrontViewStore,
 } from '@market-monster/market-days';
-import { CommandDispatcher } from './command-dispatcher';
-import { TracingEventStore } from './tracing.event-store';
+import { EventSourcingModule } from './event-sourcing.module';
 import { TracingEventHandler } from './tracing.event-handler';
 import { MessageContextMiddleware } from './message-context.middleware';
 import { VendorsController } from './vendors.controller';
 import { StorefrontController } from './storefront.controller';
 
 const clock = [{ provide: Clock, useClass: DateClock }];
-
-const messageContext = [
-  MessageContext,
-  {
-    provide: MessageContextDispatcher,
-    useFactory: (context: MessageContext) =>
-      new MessageContextDispatcher(context, () => randomUUID()),
-    inject: [MessageContext],
-  },
-  MessageContextMiddleware,
-];
-
-const eventStore = [
-  InMemoryEventStore,
-  {
-    provide: MessageContextEventStore,
-    useFactory: (inner: InMemoryEventStore, context: MessageContext) =>
-      new MessageContextEventStore(inner, context),
-    inject: [InMemoryEventStore, MessageContext],
-  },
-  {
-    provide: EventStore,
-    useFactory: (inner: MessageContextEventStore) => new TracingEventStore(inner),
-    inject: [MessageContextEventStore],
-  },
-];
 
 const repositories = [
   { provide: Vendors, useFactory: (store: EventStore) => new Vendors(store), inject: [EventStore] },
@@ -89,7 +56,6 @@ const readModel = [
   InMemoryVendorStorefrontViews,
   { provide: VendorStorefrontViews, useExisting: InMemoryVendorStorefrontViews },
   { provide: VendorStorefrontViewStore, useExisting: InMemoryVendorStorefrontViews },
-  { provide: Events, useExisting: InMemoryEventStore },
   {
     provide: VendorStorefrontViewProjection,
     useFactory: (store: VendorStorefrontViewStore) => new VendorStorefrontViewProjection(store),
@@ -121,16 +87,14 @@ const commandHandlers = [
 ];
 
 @Module({
-  imports: [CqrsModule],
+  imports: [EventSourcingModule],
   controllers: [VendorsController, StorefrontController],
   providers: [
     ...clock,
-    ...messageContext,
-    ...eventStore,
+    MessageContextMiddleware,
     ...repositories,
     ...readModel,
     ...commandHandlers,
-    CommandDispatcher,
   ],
 })
 export class MarketDaysModule implements NestModule {
