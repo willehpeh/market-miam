@@ -7,6 +7,7 @@ import {
   EventHandler,
   Events,
   MessageContext,
+  Projection,
   StoredEvent,
 } from '@market-monster/event-sourcing';
 import { ConsumerRunner, POLLING_ENABLED } from './consumer-runner';
@@ -22,10 +23,10 @@ class NoopHandler implements EventHandler {
 }
 
 @CheckpointedProjection('storefront')
-class StorefrontProjection extends NoopHandler {}
+class StorefrontProjection extends NoopHandler implements Projection {}
 
 @CheckpointedProjection('storefront')
-class CollidingProjection extends NoopHandler {}
+class CollidingProjection extends NoopHandler implements Projection {}
 
 // A boundary fake for the injected logger: records errors instead of writing
 // them, so failures can be asserted without reaching for a mocking framework.

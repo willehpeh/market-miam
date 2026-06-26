@@ -1,50 +1,56 @@
 import nx from '@nx/eslint-plugin';
 
-// A projection is only run if the ConsumerRunner discovers it, which it does by
-// the @CheckpointedProjection decorator. A concrete *Projection class without it
-// silently never runs — and at runtime it's undetectable (projections only
-// `implements Projection`, so no instanceof). So enforce name <-> decorator at
-// lint time. Abstract classes are skipped; interfaces are never ClassDeclarations.
+// A projection/processor only runs if the ConsumerRunner discovers it by its
+// @Checkpointed* decorator. A concrete handler missing the decorator silently
+// never runs, and at runtime it's undetectable (handlers only `implements` their
+// interface, so no instanceof). So enforce interface <-> decorator at lint time,
+// keyed on the `implements` clause — the structural truth, not the class name.
+// Abstract base classes are skipped; interfaces are never ClassDeclarations.
+function checkpointDecoratorRule(interfaceName, decoratorName) {
+  return {
+    meta: {
+      type: 'problem',
+      docs: {
+        description: `Concrete classes implementing ${interfaceName} must carry @${decoratorName}, and vice versa.`,
+      },
+      schema: [],
+    },
+    create(context) {
+      return {
+        ClassDeclaration(node) {
+          if (node.abstract || !node.id) {
+            return;
+          }
+          const implementsInterface = (node.implements ?? []).some(
+            (clause) => clause.expression?.name === interfaceName,
+          );
+          const decorated = (node.decorators ?? []).some(
+            (decorator) =>
+              decorator.expression?.type === 'CallExpression' &&
+              decorator.expression.callee?.name === decoratorName,
+          );
+          if (implementsInterface && !decorated) {
+            context.report({
+              node: node.id,
+              message: `A class implementing ${interfaceName} must be annotated with @${decoratorName} so the ConsumerRunner discovers it.`,
+            });
+          }
+          if (decorated && !implementsInterface) {
+            context.report({
+              node: node.id,
+              message: `A @${decoratorName} class must implement ${interfaceName}.`,
+            });
+          }
+        },
+      };
+    },
+  };
+}
+
 const eventSourcingConventions = {
   rules: {
-    'projection-decorator': {
-      meta: {
-        type: 'problem',
-        docs: {
-          description:
-            'Concrete *Projection classes must carry @CheckpointedProjection, and vice versa.',
-        },
-        schema: [],
-      },
-      create(context) {
-        return {
-          ClassDeclaration(node) {
-            if (node.abstract || !node.id) {
-              return;
-            }
-            const named = node.id.name.endsWith('Projection');
-            const decorated = (node.decorators ?? []).some(
-              (decorator) =>
-                decorator.expression?.type === 'CallExpression' &&
-                decorator.expression.callee?.name === 'CheckpointedProjection',
-            );
-            if (named && !decorated) {
-              context.report({
-                node: node.id,
-                message:
-                  'A concrete *Projection class must be annotated with @CheckpointedProjection so the ConsumerRunner discovers it.',
-              });
-            }
-            if (decorated && !named) {
-              context.report({
-                node: node.id,
-                message: 'A @CheckpointedProjection class must be named with the Projection suffix.',
-              });
-            }
-          },
-        };
-      },
-    },
+    'projection-decorator': checkpointDecoratorRule('Projection', 'CheckpointedProjection'),
+    'processor-decorator': checkpointDecoratorRule('Processor', 'CheckpointedProcessor'),
   },
 };
 
@@ -90,6 +96,9 @@ export default [
   {
     files: ['**/*.ts'],
     plugins: { 'event-sourcing': eventSourcingConventions },
-    rules: { 'event-sourcing/projection-decorator': 'error' },
+    rules: {
+      'event-sourcing/projection-decorator': 'error',
+      'event-sourcing/processor-decorator': 'error',
+    },
   },
 ];

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   CheckpointedProjection,
+  Projection,
   projectionCheckpoint,
 } from '@market-monster/event-sourcing';
 
@@ -10,7 +11,15 @@ import {
 describe('@CheckpointedProjection', () => {
   it('exposes the checkpoint name stamped on a decorated class', () => {
     @CheckpointedProjection('storefront')
-    class StorefrontProjection {}
+    class StorefrontProjection implements Projection {
+      eventTypes(): string[] {
+        return [];
+      }
+
+      handle(): Promise<void> {
+        return Promise.resolve();
+      }
+    }
 
     expect(projectionCheckpoint(StorefrontProjection)).toBe('storefront');
   });
