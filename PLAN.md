@@ -23,14 +23,17 @@ The vendor registration path is wired **end to end**:
 - **Store**: in-memory only (`InMemoryEventStore`) — events do **not** survive a
   restart. All four ports (`EventStore`, `Events`, `Checkpoint`, `Subscription`)
   have adapter-agnostic contract tests.
-- **Storefront slice** (in progress): `PUT /storefront` (`EditStorefrontInformation`)
-  produces `StorefrontInformationEdited`; `VendorStorefrontViewProjection` (marked
-  `@CheckpointedProjection('vendor-storefront-view')`) is **discovered and driven
-  by the `ConsumerRunner`** — a background RxJS poller (`merge`→`repeat`/`retry`,
-  per-subscription isolation) over checkpoint-driven, instrumented subscriptions,
-  gated by `POLLING_ENABLED` (off in tests, which pump `drain()`). A lint rule
-  enforces that every concrete `*Projection` carries the decorator. Remaining:
-  query endpoint, frontend.
+- **Storefront slice**: registering a vendor **opens their storefront** — the
+  `StorefrontOpener` (`@CheckpointedProcessor('storefront-opener')`) reacts to
+  `VendorRegistered` and dispatches `OpenStorefront` → `StorefrontOpened`; the
+  `VendorStorefrontViewProjection` (`@CheckpointedProjection('vendor-storefront-view')`)
+  materialises the view. Edits (`PUT /storefront`) assert the storefront is open.
+  Both handlers are **discovered and driven by the `ConsumerRunner`** — a
+  background RxJS poller (`merge`→`repeat`/`retry`, per-subscription isolation)
+  over checkpoint-driven, instrumented subscriptions, gated by `POLLING_ENABLED`
+  (off in tests, which pump `drain()` to quiescence). A lint rule enforces the
+  `implements` ⇔ decorator correspondence for every concrete projection and
+  processor. Remaining: `GET` query endpoint, frontend.
 - **Module structure**: the generic event-sourcing infra (message context,
   decorated store, `Events`, `CommandDispatcher`, the `ConsumerRunner`) now lives
   in **`EventSourcingModule`**, extracted from the `MarketDaysModule` god-module;
@@ -48,9 +51,10 @@ cross-restart record. Persistence (Postgres) closes this.
 
 ## Storefront slice — remaining ("B")
 
-The producer→projection loop works, is traced, and is driven by a real poller
-(**B.1 `ConsumerRunner` — done**: decorator-discovered subscriptions, RxJS poll
-loop, duplicate-checkpoint guard, fully tested). What's left:
+The write side is **done**: registration opens the storefront and edits flow
+through to the view, all traced and driven by the real poller (**B.1
+`ConsumerRunner`** discovers projections *and* processors; the first processor
+shipped — see the slice above). What's left on the read side:
 
 1. **`GET /storefront` query endpoint** — reads `VendorStorefrontViews`; builds
    the deferred **`QueryDispatcher`** (span-only — see `O11Y-PLAN.md`).
@@ -225,10 +229,11 @@ guard**, now that there's a route to protect.
    `traceparent` in event metadata, consumer new-trace + link +
    `processing.lag_ms`). Only per-type attribute extractors remain deferred. See
    `O11Y-PLAN.md`.
-4. Remaining `docs/DEFERRED.md` items — the polling loop is now built
-   (`ConsumerRunner`); still open: checkpoint/views txn boundary, poison events,
-   Postgres global-position gaps, discovery-time orphan-checkpoint detection,
-   `@CheckpointedProcessor` + continuation context, client-supplied idempotency,
+4. Remaining `docs/DEFERRED.md` items — the polling loop and the
+   `@CheckpointedProcessor` + continuation context are now built; still open:
+   checkpoint/views txn boundary, poison events, Postgres global-position gaps,
+   discovery-time orphan-checkpoint detection, processor **replay safety**
+   (re-dispatching commands re-runs side effects), client-supplied idempotency,
    replay strategy.
 
 ## Sequencing note
