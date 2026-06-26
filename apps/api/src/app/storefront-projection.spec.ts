@@ -25,7 +25,7 @@ describe('Storefront view projection', () => {
 
     await app.get(ConsumerRunner).drain();
 
-    const view = await app.get(VendorStorefrontViews).findOrCreateForVendor('acme-bakery');
+    const view = await app.get(VendorStorefrontViews).findByVendor('acme-bakery');
 
     expect(view).toEqual({
       name: 'Acme Bakery',

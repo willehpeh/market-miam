@@ -6,28 +6,30 @@ export class InMemoryVendorStorefrontViews implements VendorStorefrontViews, Ven
 
   private readonly _storefronts: Map<string, VendorStorefrontView> = new Map<string, VendorStorefrontView>();
 
+  findByVendor(vendorId: string): Promise<VendorStorefrontView | undefined> {
+    return Promise.resolve(this._storefronts.get(vendorId));
+  }
+
+  async open(vendorId: string): Promise<void> {
+    this.viewFor(vendorId);
+  }
+
   async setCoverPhoto(vendorId: string, imageReference: string): Promise<void> {
-    const storefront = await this.findOrCreateForVendor(vendorId);
-    this._storefronts.set(vendorId, { ...storefront, imageReference });
+    this._storefronts.set(vendorId, { ...this.viewFor(vendorId), imageReference });
   }
 
   async editInformation(vendorId: string, information: { name: string; description: string }): Promise<void> {
-    const storefront = await this.findOrCreateForVendor(vendorId);
-    this._storefronts.set(vendorId, { ...storefront, ...information });
+    this._storefronts.set(vendorId, { ...this.viewFor(vendorId), ...information });
   }
 
-  findOrCreateForVendor(vendorId: string): Promise<VendorStorefrontView> {
-    const storefront = this._storefronts.get(vendorId);
-    if (!storefront) {
-      const newStorefront = {
-        name: '',
-        description: '',
-        imageReference: ''
-      };
-      this._storefronts.set(vendorId, newStorefront);
-      return Promise.resolve(newStorefront);
+  private viewFor(vendorId: string): VendorStorefrontView {
+    const existing = this._storefronts.get(vendorId);
+    if (existing) {
+      return existing;
     }
-    return Promise.resolve(storefront);
+    const created = { name: '', description: '', imageReference: '' };
+    this._storefronts.set(vendorId, created);
+    return created;
   }
 
 }

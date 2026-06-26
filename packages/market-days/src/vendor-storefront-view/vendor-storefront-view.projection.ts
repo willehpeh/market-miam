@@ -7,6 +7,7 @@ import { StorefrontCoverPhotoSet, StorefrontEvent, StorefrontInformationEdited }
 export class VendorStorefrontViewProjection implements Projection {
 
   private readonly _handlers: EventHandlerMap<StorefrontEvent> = {
+    StorefrontOpened: e => this.handleStorefrontOpened(e),
     StorefrontCoverPhotoSet: e => this.handleStorefrontCoverPhotoSet(e),
     StorefrontInformationEdited: e => this.handleStorefrontInformationEdited(e)
   };
@@ -19,6 +20,10 @@ export class VendorStorefrontViewProjection implements Projection {
 
   eventTypes(): string[] {
     return Object.keys(this._handlers);
+  }
+
+  private async handleStorefrontOpened(event: StoredEvent): Promise<void> {
+    return this.store.open(vendorIdFrom(event));
   }
 
   private async handleStorefrontCoverPhotoSet(event: StoredEvent): Promise<void> {
