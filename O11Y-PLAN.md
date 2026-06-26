@@ -42,11 +42,21 @@ files in `apps/api`.
 Hermetic span capture: a test-only `NodeTracerProvider` + `InMemorySpanExporter`
 + `SimpleSpanProcessor`, registered **once** (the global provider is set-once per
 process) with `exporter.reset()` between tests; **no auto-instrumentation**, so
-`getFinishedSpans()` holds only our spans. Social test: boot the module, drive
-HTTP via supertest (and `poll()` for consumers), assert spans. **Exact-match**
-the attribute set — that doubles as the PII guard (a stray `email` fails the
-test). Failure paths driven by a stub whose inner `append`/`handle` throws. See
-`command-dispatch-tracing.spec.ts` and `storefront-consumer-tracing.spec.ts`.
+`getFinishedSpans()` holds only our spans.
+
+**Synthetic for mechanism, real-domain only for content-bearing spans.** The
+generic tracing machinery — new-trace/link/lag, the no-link fallback, failure
+paths — is parametric over event/command type, so it's tested with a **synthetic**
+event at the decorator unit level (`tracing.event-handler.spec.ts`). Coupling it
+to a domain flow only makes it brittle to that domain's rules (an unrelated
+`assert-opened` once broke a consumer tracing test). A **real-domain** social test
+earns its keep only where exact-match attributes are a genuine PII guard — a span
+*handed a content-bearing message*. Today that is the dispatch span proven blind
+to `RegisterVendor`'s `email` (`command-dispatch-tracing.spec.ts`); the deferred
+content-rich handler span will be the next. The consumer path keeps one thin
+**wiring** smoke test (`storefront-consumer-tracing.spec.ts`) — that the
+`ConsumerRunner` wraps a discovered projection — and nothing more. Failure paths
+are driven by a stub whose inner `append`/`handle` throws.
 
 ## Attribute policy — default-rich, PII-safe by seam
 

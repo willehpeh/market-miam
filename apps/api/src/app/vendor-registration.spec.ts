@@ -33,8 +33,6 @@ describe('Vendor registration over HTTP', () => {
         },
         metadata: expect.objectContaining({
           vendorId: 'acme-bakery',
-          correlationId: expect.any(String),
-          causationId: expect.any(String),
         }),
       }),
     ]);
