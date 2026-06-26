@@ -23,4 +23,16 @@ describe('Open Storefront', () => {
       }),
     ]);
   });
+
+  it('is idempotent, ignoring a second open of the same storefront', async () => {
+    await handler.execute(TestOpenStorefront.valid());
+    await handler.execute(TestOpenStorefront.valid());
+
+    expect(store.newEvents()).toEqual([
+      expect.objectContaining({
+        type: 'StorefrontOpened',
+        payload: { vendorId: 'vendor-id' },
+      }),
+    ]);
+  });
 });

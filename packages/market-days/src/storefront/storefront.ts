@@ -5,13 +5,18 @@ import { StorefrontCoverPhotoSet, StorefrontEvent, StorefrontInformationEdited, 
 import { CoverPhoto, NoCoverPhoto, SetCoverPhoto } from './cover-photo';
 import { StorefrontName } from './storefront-name';
 import { StorefrontDescription } from './storefront-description';
+import { StorefrontNotOpenError } from './storefront-not-open.error';
 
 export class Storefront extends Aggregate {
 
+  private _opened = false;
   private _coverPhoto: CoverPhoto = new NoCoverPhoto();
 
   apply(event: StorefrontEvent): void {
     switch (event.type) {
+      case 'StorefrontOpened':
+        this._opened = true;
+        break;
       case 'StorefrontCoverPhotoSet':
         this._coverPhoto = new SetCoverPhoto(new ImageReference(event.payload.imageReference));
         break;
@@ -19,6 +24,9 @@ export class Storefront extends Aggregate {
   }
 
   open(vendorId: VendorId) {
+    if (this._opened) {
+      return;
+    }
     const event: StorefrontOpened = {
       type: 'StorefrontOpened',
       payload: { vendorId: vendorId.value() }
@@ -27,6 +35,7 @@ export class Storefront extends Aggregate {
   }
 
   setCoverPhoto(imageReference: ImageReference) {
+    this.assertOpen();
     if (this._coverPhoto.sameAs(imageReference)) {
       return;
     }
@@ -38,6 +47,7 @@ export class Storefront extends Aggregate {
   }
 
   editInformation(name: StorefrontName, description: StorefrontDescription) {
+    this.assertOpen();
     const event: StorefrontInformationEdited = {
       type: 'StorefrontInformationEdited',
       payload: {
@@ -46,5 +56,11 @@ export class Storefront extends Aggregate {
       }
     };
     this.raise(event);
+  }
+
+  private assertOpen() {
+    if (!this._opened) {
+      throw new StorefrontNotOpenError();
+    }
   }
 }

@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import { bootApiTestApp } from './testing/api-test-app';
+import { bootApiTestApp, openStorefrontFor } from './testing/api-test-app';
 import { registerSpanCapture } from './testing/span-capture';
 import { ConsumerRunner } from './consumer-runner';
 
@@ -20,6 +20,10 @@ describe('Storefront consumer tracing', () => {
   });
 
   it('handles each event on a new trace linked back to the producer, with lag', async () => {
+    await openStorefrontFor(app, 'acme-bakery');
+    await app.get(ConsumerRunner).drain();
+    exporter.reset();
+
     await request(app.getHttpServer())
       .put('/storefront')
       .set('Authorization', 'Bearer any-token')

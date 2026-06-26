@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { VendorStorefrontViews } from '@market-monster/market-days';
-import { bootApiTestApp } from './testing/api-test-app';
+import { bootApiTestApp, openStorefrontFor } from './testing/api-test-app';
 import { ConsumerRunner } from './consumer-runner';
 
 describe('Storefront view projection', () => {
@@ -17,6 +17,8 @@ describe('Storefront view projection', () => {
   });
 
   it('projects edited storefront information into the read model once polled', async () => {
+    await openStorefrontFor(app, 'acme-bakery');
+
     await request(app.getHttpServer())
       .put('/storefront')
       .set('Authorization', 'Bearer any-token')

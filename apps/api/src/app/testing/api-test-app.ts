@@ -2,6 +2,8 @@ import { INestApplication } from '@nestjs/common';
 import { Test, TestingModuleBuilder } from '@nestjs/testing';
 import { Clock, Email, Instant, LocalDate } from '@market-monster/common';
 import { VendorId } from '@market-monster/shared-kernel';
+import { EventStore } from '@market-monster/event-sourcing';
+import { StorefrontOpened } from '@market-monster/market-days';
 import { VerifiedVendor } from '@market-monster/auth';
 import { AuthModule } from '@market-monster/auth-nestjs';
 import { MarketDaysModule } from '../market-days.module';
@@ -54,4 +56,11 @@ export async function startApp(builder: TestingModuleBuilder): Promise<INestAppl
 // The common case: boot the standard API test app with no provider overrides.
 export function bootApiTestApp(options: ApiTestOptions = {}): Promise<INestApplication> {
   return startApp(apiTestModule(options));
+}
+
+// Until the StorefrontOpener is wired into the ConsumerRunner, tests that edit a
+// storefront arrange its opening directly: editing asserts the storefront is open.
+export async function openStorefrontFor(app: INestApplication, vendorId: string): Promise<void> {
+  const opened: StorefrontOpened = { type: 'StorefrontOpened', payload: { vendorId } };
+  await app.get(EventStore).append(`storefront-${vendorId}`, [opened], 0, { vendorId });
 }

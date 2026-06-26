@@ -1,5 +1,5 @@
 import { InMemoryEventStore } from '@market-monster/event-sourcing';
-import { SetStorefrontCoverPhotoHandler, Storefronts } from '@market-monster/market-days';
+import { SetStorefrontCoverPhotoHandler, StorefrontNotOpenError, Storefronts } from '@market-monster/market-days';
 import { TestSetStorefrontCoverPhoto } from './test-data';
 
 describe('Set Storefront Cover Photo', () => {
@@ -13,7 +13,12 @@ describe('Set Storefront Cover Photo', () => {
     handler = new SetStorefrontCoverPhotoHandler(storefronts);
   });
 
+  it('rejects setting a cover photo on a storefront that has not been opened', async () => {
+    await expect(handler.execute(TestSetStorefrontCoverPhoto.valid())).rejects.toThrow(StorefrontNotOpenError);
+  });
+
   it('should set the cover photo for the given vendor', async () => {
+    openStorefront();
     const command = TestSetStorefrontCoverPhoto.valid();
     await handler.execute(command);
 
@@ -26,6 +31,7 @@ describe('Set Storefront Cover Photo', () => {
   });
 
   it('should change the existing cover photo when a new one is set', async () => {
+    openStorefront();
     const first = TestSetStorefrontCoverPhoto.valid();
     const second = TestSetStorefrontCoverPhoto.with({ imageReference: 'random/new-image-reference' });
 
@@ -48,6 +54,7 @@ describe('Set Storefront Cover Photo', () => {
   });
 
   it('should do nothing if the same image is submitted', async () => {
+    openStorefront();
     const command = TestSetStorefrontCoverPhoto.valid();
     await handler.execute(command);
     await handler.execute(command);
@@ -59,4 +66,8 @@ describe('Set Storefront Cover Photo', () => {
       }
     })]);
   });
+
+  function openStorefront() {
+    store.seedWith('storefront-vendor-id', [{ type: 'StorefrontOpened', payload: { vendorId: 'vendor-id' } }], { vendorId: 'vendor-id' });
+  }
 });
