@@ -11,7 +11,11 @@ Producer steps 1–3 (command dispatch span; event-store append/load spans;
 `traceparent` into event metadata) and consumer steps 5–6 (new-trace-per-handler
 + span link back to the producer + `processing.lag_ms`) are live. The consumer
 `TracingEventHandler` is applied by the `ConsumerRunner` to every discovered
-projection, so instrumentation is uniform without per-projection wiring. Commits
+projection *and processor*, so instrumentation is uniform without per-projection
+wiring. The first **processor→command fan-out** (the `StorefrontOpener`) is
+bounded as ADR 0026 anticipated: the dispatched command and its appended event
+run on the opener's own consumer trace (a child of the handle span), linked back
+to the request rather than threading the request trace through. Commits
 `1964004`, `bc3f826`, `8fc68e1`, `efbb5ab`, `662b08c`, `d2e4599`, `3b2e26b`,
 `696ba33`, `e481fa2`, `8115c96`, `944c49f`, `74acc02`; see the `*-tracing.spec.ts`
 files in `apps/api`.

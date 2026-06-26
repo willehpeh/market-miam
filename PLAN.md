@@ -60,11 +60,19 @@ Eventual-consistency note: the projection is async, so after an edit the read
 model updates only once `poll()` runs — the frontend must tolerate that lag
 (refetch / optimistic update). Decide when building the frontend.
 
-## Storefront opening — the first processor (agreed slice)
+## Storefront opening — the first processor (SHIPPED)
 
-Grilled and settled. This is the write-side prerequisite to "B": it makes "every
-vendor has a storefront" a **fact in the event log** and lands the platform's
-first **processor** (backlog #2). The read-side (`GET`, frontend) follows.
+**Shipped end to end** (commits `a237759`, `8e978ba`, `615c58e`, `c28094d`;
+test-tidy `7b2c8e9`, `27e2ed3`). Registering a vendor now opens their storefront
+for real: the `StorefrontOpener` (`@CheckpointedProcessor`) is discovered and
+driven by the `ConsumerRunner` with continuation context + bounded-fan-out
+tracing, dispatching `OpenStorefront` → `StorefrontOpened` → the view. The
+read-side (`GET`, frontend) is what remains of "B". The design notes below are
+kept as the rationale record.
+
+This was the write-side prerequisite to "B": it makes "every vendor has a
+storefront" a **fact in the event log** and lands the platform's first
+**processor** (backlog #2).
 
 **Domain decision.** A storefront is a facet of the vendor: one-to-one, born at
 registration, no independent lifecycle (you don't close a storefront while
@@ -205,13 +213,14 @@ guard**, now that there's a route to protect.
    existing contract suites (sibling specs). Gap-handling (MVCC global-position
    gaps) is Postgres integration-test territory, not the shared contract — see
    `docs/DEFERRED.md`. Closing this also closes the verification gap above.
-2. **Processor continuation context** (ADR 0026) — now being built as part of
-   the **StorefrontOpener** slice above (the platform's first processor). When a
-   processor dispatches a follow-up command it establishes a new message context
-   with `correlationId` inherited from the consumed event and `causationId` =
-   the consumed event's id (`event.id`). The "transient command id vs triggering
-   event id" question is **resolved**: the event id (the transient command has no
-   id in the lineage), per `DEFERRED.md`.
+2. **Processor continuation context** (ADR 0026) — **done** with the
+   **StorefrontOpener** slice above (the platform's first processor). The
+   `ConsumerRunner` wraps a discovered `@CheckpointedProcessor` with a
+   `ContinuationContextHandler` (inside the tracing wrapper) that establishes a
+   new message context with `correlationId` inherited from the consumed event and
+   `causationId` = the consumed event's id; the dispatched command and its event
+   land on the opener's own trace, linked back to the request. The "transient
+   command id vs triggering event id" question is resolved: the event id.
 3. **Layer 2 — OTel spans** — **done** (dispatch / append / load spans,
    `traceparent` in event metadata, consumer new-trace + link +
    `processing.lag_ms`). Only per-type attribute extractors remain deferred. See
