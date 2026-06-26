@@ -16,7 +16,7 @@ export default [
               name: '@nestjs/cqrs',
               importNames: ['CommandBus'],
               message:
-                'Dispatch commands through CommandDispatcher; only command-dispatcher.ts may import CommandBus.',
+                'Dispatch commands through CommandDispatcher; only tracing.command-dispatcher.ts may import CommandBus.',
             },
           ],
         },
@@ -24,7 +24,7 @@ export default [
     },
   },
   {
-    files: ['src/app/command-dispatcher.ts'],
+    files: ['src/app/tracing.command-dispatcher.ts'],
     rules: {
       'no-restricted-imports': 'off',
     },

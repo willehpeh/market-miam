@@ -1,5 +1,5 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
-import { EventStore } from '@market-monster/event-sourcing';
+import { CommandDispatcher, EventStore } from '@market-monster/event-sourcing';
 import { Clock, DateClock } from '@market-monster/common';
 import {
   AddItemToCatalogueHandler,
@@ -10,11 +10,13 @@ import {
   InMemoryVendorStorefrontViews,
   MarkItemAsSoldOutHandler,
   MarketDays,
+  OpenStorefrontHandler,
   PlanItemsForMarketDayHandler,
   RegisterMarketScheduleHandler,
   RegisterVendorHandler,
   RetireItemHandler,
   SetStorefrontCoverPhotoHandler,
+  StorefrontOpener,
   Storefronts,
   UnplanItemFromMarketDayHandler,
   Vendors,
@@ -55,6 +57,16 @@ const readModel = [
   },
 ];
 
+// Reacts to VendorRegistered by dispatching OpenStorefront; discovered and
+// driven (with continuation context) by the ConsumerRunner.
+const processors = [
+  {
+    provide: StorefrontOpener,
+    useFactory: (dispatcher: CommandDispatcher) => new StorefrontOpener(dispatcher),
+    inject: [CommandDispatcher],
+  },
+];
+
 const commandHandlers = [
   RegisterVendorHandler,
   AddItemToCatalogueHandler,
@@ -66,6 +78,7 @@ const commandHandlers = [
   MarkItemAsSoldOutHandler,
   EditStorefrontInformationHandler,
   SetStorefrontCoverPhotoHandler,
+  OpenStorefrontHandler,
 ];
 
 @Module({
@@ -76,6 +89,7 @@ const commandHandlers = [
     MessageContextMiddleware,
     ...repositories,
     ...readModel,
+    ...processors,
     ...commandHandlers,
   ],
 })

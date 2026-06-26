@@ -1,8 +1,8 @@
 import { Body, Controller, Put, UseGuards } from '@nestjs/common';
 import { CurrentVendor, JwtAuthGuard } from '@market-monster/auth-nestjs';
 import { VerifiedVendor } from '@market-monster/auth';
+import { CommandDispatcher } from '@market-monster/event-sourcing';
 import { EditStorefrontInformation } from '@market-monster/market-days';
-import { CommandDispatcher } from './command-dispatcher';
 
 @Controller('storefront')
 export class StorefrontController {

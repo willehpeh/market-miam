@@ -1,7 +1,8 @@
-import { CommandDispatcher, Processor, StoredEvent } from '@market-monster/event-sourcing';
+import { CheckpointedProcessor, CommandDispatcher, Processor, StoredEvent } from '@market-monster/event-sourcing';
 import { vendorIdFrom } from '@market-monster/shared-kernel';
 import { OpenStorefront } from '../open-storefront';
 
+@CheckpointedProcessor('storefront-opener')
 export class StorefrontOpener implements Processor {
   constructor(private readonly commands: CommandDispatcher) {}
 

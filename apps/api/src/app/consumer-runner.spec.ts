@@ -6,6 +6,7 @@ import {
   CheckpointedProjection,
   EventHandler,
   Events,
+  MessageContext,
   StoredEvent,
 } from '@market-monster/event-sourcing';
 import { ConsumerRunner, POLLING_ENABLED } from './consumer-runner';
@@ -53,6 +54,7 @@ describe('ConsumerRunner', () => {
       imports: [DiscoveryModule],
       providers: [
         ConsumerRunner,
+        MessageContext,
         StorefrontProjection,
         CollidingProjection,
         { provide: Events, useValue: noEvents },
@@ -61,7 +63,7 @@ describe('ConsumerRunner', () => {
     }).compile();
 
     await expect(moduleRef.createNestApplication().init()).rejects.toThrow(
-      "Duplicate projection checkpoint 'storefront'",
+      "Duplicate checkpoint 'storefront'",
     );
   });
 
@@ -79,6 +81,7 @@ describe('ConsumerRunner', () => {
       imports: [DiscoveryModule],
       providers: [
         ConsumerRunner,
+        MessageContext,
         StorefrontProjection,
         { provide: Events, useValue: countingEvents },
         { provide: POLLING_ENABLED, useValue: true },
@@ -113,6 +116,7 @@ describe('ConsumerRunner', () => {
       imports: [DiscoveryModule],
       providers: [
         ConsumerRunner,
+        MessageContext,
         StorefrontProjection,
         { provide: Events, useValue: flakyEvents },
         { provide: POLLING_ENABLED, useValue: true },

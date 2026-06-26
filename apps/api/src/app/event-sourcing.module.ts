@@ -3,6 +3,7 @@ import { Module } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
 import { DiscoveryModule } from '@nestjs/core';
 import {
+  CommandDispatcher,
   Events,
   EventStore,
   InMemoryEventStore,
@@ -10,7 +11,7 @@ import {
   MessageContextDispatcher,
   MessageContextEventStore,
 } from '@market-monster/event-sourcing';
-import { CommandDispatcher } from './command-dispatcher';
+import { TracingCommandDispatcher } from './tracing.command-dispatcher';
 import { ConsumerRunner, POLLING_ENABLED } from './consumer-runner';
 import { TracingEventStore } from './tracing.event-store';
 
@@ -49,7 +50,8 @@ const eventStore = [
   providers: [
     ...messageContext,
     ...eventStore,
-    CommandDispatcher,
+    TracingCommandDispatcher,
+    { provide: CommandDispatcher, useExisting: TracingCommandDispatcher },
     { provide: POLLING_ENABLED, useValue: true },
     ConsumerRunner,
   ],

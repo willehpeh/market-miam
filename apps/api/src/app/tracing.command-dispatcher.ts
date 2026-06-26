@@ -1,18 +1,18 @@
 import { Injectable } from '@nestjs/common';
 import { Command, CommandBus } from '@nestjs/cqrs';
 import { SpanStatusCode, trace } from '@opentelemetry/api';
-import { MessageContext } from '@market-monster/event-sourcing';
+import { CommandDispatcher, MessageContext } from '@market-monster/event-sourcing';
 
 const tracer = trace.getTracer('command-dispatcher');
 
 // The one seam through which commands are dispatched, so every command is
-// uniformly traced regardless of origin (HTTP today, processors later). It
+// uniformly traced regardless of origin (HTTP and processors alike). It
 // decorates the real CommandBus rather than replacing it: handlers register on
 // the framework's own bus, this only wraps execute(). The span is payload-blind
 // — it reads the command's constructor name and the ambient MessageContext,
 // never the command's fields (see O11Y-PLAN.md attribute policy).
 @Injectable()
-export class CommandDispatcher {
+export class TracingCommandDispatcher implements CommandDispatcher {
   constructor(
     private readonly commandBus: CommandBus,
     private readonly context: MessageContext,
