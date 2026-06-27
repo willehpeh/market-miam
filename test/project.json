@@ -17,6 +17,12 @@
       "options": {
         "cwd": "test"
       }
+    },
+    "mutation": {
+      "command": "stryker run",
+      "options": {
+        "cwd": "{workspaceRoot}"
+      }
     }
   }
 }

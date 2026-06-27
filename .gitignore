@@ -24,6 +24,10 @@ node_modules
 !.vscode/launch.json
 !.vscode/extensions.json
 
+# Stryker mutation testing
+/reports/mutation
+.stryker-tmp
+
 # misc
 /.sass-cache
 /connect.lock
