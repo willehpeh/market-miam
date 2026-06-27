@@ -10,13 +10,14 @@ export default {
   coverageAnalysis: 'perTest',
   reporters: ['html', 'clear-text', 'progress'],
   concurrency: 8,
-  // Mutate the production code under packages/, never the spec/test sources
-  // (those live in the `test` project and are the *killers*, not the targets).
-  // This mirrors the coverage `include` in test/vitest.config.mts.
+  // Mutate the production code under packages/. The specs that kill these
+  // mutants live in the `test` project, not under packages/, so there are no
+  // spec/test files here to exclude.
   mutate: [
     'packages/**/src/**/*.ts',
     '!packages/**/src/index.ts',
-    '!packages/**/*.spec.ts',
-    '!packages/**/*.test.ts',
+    // Error classes are trivial message holders; tests assert the error *type*,
+    // not the message text, so their string mutants are noise by design.
+    '!packages/**/*.error.ts',
   ],
 };
