@@ -3,11 +3,9 @@ import { SpanStatusCode } from '@opentelemetry/api';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { EventStore, InMemoryEventStore, StoredEvent } from '@market-monster/event-sourcing';
-import { apiTestModule, bootApiTestApp, fixedClock, startApp } from './testing/api-test-app';
-import { registerSpanCapture } from './testing/span-capture';
+import { apiTestModule, bootApiTestApp, fixedClock, startApp } from '../testing/api-test-app';
+import { registerSpanCapture } from '../testing/span-capture';
 
-// A persistence boundary that rehydrates empty but fails to persist, so the
-// command handler throws and the failure propagates through the dispatcher.
 class FailingEventStore extends EventStore {
   append(): Promise<void> {
     return Promise.reject(new Error('append unavailable'));

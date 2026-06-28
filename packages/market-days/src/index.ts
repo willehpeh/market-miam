@@ -24,3 +24,4 @@ export * from './edit-storefront-information';
 export * from './open-storefront';
 export * from './storefront-opener';
 export * from './vendor-storefront-view';
+export * from './vendor-scoped-events';

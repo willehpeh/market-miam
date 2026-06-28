@@ -1,4 +1,5 @@
 import { InMemoryEventStore } from '@market-monster/event-sourcing';
+import { VendorScopedEvents } from '@market-monster/market-days';
 import {
   AddItemToCatalogueHandler,
   ChangeItemPrice,
@@ -8,6 +9,7 @@ import {
   Catalogues
 } from '@market-monster/market-days';
 import { TestAddItemToCatalogue } from '../add-item-to-catalogue/test-data';
+import { expectVendorScopedEvents } from '../../shared-kernel';
 
 describe('Change Item Price', () => {
   let store: InMemoryEventStore;
@@ -16,7 +18,7 @@ describe('Change Item Price', () => {
 
   beforeEach(() => {
     store = new InMemoryEventStore();
-    catalogues = new Catalogues(store);
+    catalogues = new Catalogues(new VendorScopedEvents(store));
     handler = new ChangeItemPriceHandler(catalogues);
   });
 
@@ -36,6 +38,14 @@ describe('Change Item Price', () => {
       }
     };
     expect(actual).toEqual(expect.objectContaining(expected));
+  });
+
+  it('stamps the vendor id into the event metadata', async () => {
+    const baseItem = TestAddItemToCatalogue.valid();
+    await new AddItemToCatalogueHandler(catalogues).execute(baseItem);
+    await handler.execute(new ChangeItemPrice(baseItem.itemId, baseItem.price + 20, baseItem.vendorId));
+
+    expectVendorScopedEvents(store.newEvents(), 'vendor-id');
   });
 
   it('should change the price multiple times', async () => {

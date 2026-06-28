@@ -18,17 +18,12 @@ import {
   Subscription,
 } from '@market-monster/event-sourcing';
 import { TracingEventHandler } from './tracing.event-handler';
-import { ContinuationContextHandler } from './continuation-context.handler';
+import { ContinuationContextHandler } from '../message-context/continuation-context.handler';
 
 export const POLLING_ENABLED = Symbol('POLLING_ENABLED');
 
 const POLL_INTERVAL_MS = 1000;
 
-// Discovers @CheckpointedProjection / @CheckpointedProcessor handlers across the
-// app, builds a checkpoint-driven, instrumented subscription for each, and — in
-// production — drives them on independent polling streams (each isolated from
-// the others' failures). Processors additionally get the continuation
-// message-context wrapping. Tests pump drain() deterministically.
 @Injectable()
 export class ConsumerRunner implements OnApplicationBootstrap, OnApplicationShutdown {
   private readonly stopped = new Subject<void>();
@@ -54,9 +49,6 @@ export class ConsumerRunner implements OnApplicationBootstrap, OnApplicationShut
     this.stopped.complete();
   }
 
-  // Deterministic seam for tests. A processor's output feeds another subscription
-  // (its event lands in a view projection), so one pass per subscription drains
-  // the whole chain to quiescence.
   async drain(): Promise<void> {
     for (let i = 0; i < this.subscriptions.length; i++) {
       await Promise.all(this.subscriptions.map((subscription) => subscription.poll()));

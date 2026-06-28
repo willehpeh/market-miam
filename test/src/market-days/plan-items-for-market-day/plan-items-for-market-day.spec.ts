@@ -1,4 +1,5 @@
 import { InMemoryEventStore } from '@market-monster/event-sourcing';
+import { VendorScopedEvents } from '@market-monster/market-days';
 import { TestPlanItemsForMarketDay } from './test-data';
 import {
   Catalogues,
@@ -10,6 +11,7 @@ import {
 import { StoredEvent } from '@market-monster/event-sourcing';
 import { EmptyValueError, Instant, LocalDate } from '@market-monster/common';
 import { seedCatalogue } from '../../seed-catalogue';
+import { expectVendorScopedEvents } from '../../shared-kernel';
 
 describe('Plan Items For Market Day', () => {
   let store: InMemoryEventStore;
@@ -19,11 +21,11 @@ describe('Plan Items For Market Day', () => {
 
   beforeEach(() => {
     store = new InMemoryEventStore();
-    marketDays = new MarketDays(store, {
+    marketDays = new MarketDays(new VendorScopedEvents(store), {
       today: () => LocalDate.today(),
       now: () => new Instant('2026-06-19T09:00:00.000Z'),
     });
-    catalogues = new Catalogues(store);
+    catalogues = new Catalogues(new VendorScopedEvents(store));
     seedCatalogue(store, 'vendor-1', 'item-1', 'item-2', 'item-3', 'item-4');
     handler = new PlanItemsForMarketDayHandler(marketDays, catalogues);
   });
@@ -45,6 +47,12 @@ describe('Plan Items For Market Day', () => {
           date: command.date
         }
       })]);
+  });
+
+  it('stamps the vendor id into the event metadata', async () => {
+    await handler.execute(TestPlanItemsForMarketDay.withDefaults());
+
+    expectVendorScopedEvents(store.newEvents(), 'vendor-1');
   });
 
   it('should plan extra items for a pre-existing market day', async () => {

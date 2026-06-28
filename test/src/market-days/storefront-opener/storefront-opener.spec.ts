@@ -1,3 +1,4 @@
+import { VendorScopedEvents } from '@market-monster/market-days';
 import {
   CommandDispatcher,
   InMemoryCheckpoint,
@@ -30,7 +31,7 @@ describe('StorefrontOpener', () => {
 
   beforeEach(() => {
     store = new InMemoryEventStore();
-    vendors = new Vendors(store);
+    vendors = new Vendors(new VendorScopedEvents(store));
     dispatcher = new RecordingCommandDispatcher();
     subscription = new InMemorySubscription(
       store,

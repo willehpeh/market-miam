@@ -1,23 +1,18 @@
-import { EventStore } from '@market-monster/event-sourcing';
 import { VendorId } from '@market-monster/shared-kernel';
 import { Storefront } from './storefront';
+import { VendorScopedEvents } from '../vendor-scoped-events';
 
 export class Storefronts {
-  constructor(private readonly store: EventStore) {
+  constructor(private readonly vendorEvents: VendorScopedEvents) {
   }
 
   async forVendor(vendorId: VendorId) {
-    const events = await this.store.load(this.streamIdFor(vendorId));
+    const events = await this.vendorEvents.load(this.streamIdFor(vendorId));
     return new Storefront().rehydrate(events);
   }
 
   async save(storefront: Storefront, vendorId: VendorId) {
-    await this.store.append(
-      this.streamIdFor(vendorId),
-      storefront.raisedEvents(),
-      storefront.currentStreamPosition(),
-      { vendorId: vendorId.value() }
-    );
+    await this.vendorEvents.save(this.streamIdFor(vendorId), storefront, vendorId);
   }
 
   private streamIdFor(vendorId: VendorId) {

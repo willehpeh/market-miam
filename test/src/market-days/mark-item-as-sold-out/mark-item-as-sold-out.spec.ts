@@ -1,4 +1,5 @@
 import { InMemoryEventStore } from '@market-monster/event-sourcing';
+import { VendorScopedEvents } from '@market-monster/market-days';
 import {
   Catalogues, MarketDays, PlanItemsForMarketDayHandler, MarkItemAsSoldOutHandler, MarkItemAsSoldOut,
   ItemNotPlannedError, UnplanItemFromMarketDayHandler, UnplanItemFromMarketDay
@@ -6,6 +7,7 @@ import {
 import { TestPlanItemsForMarketDay } from '../plan-items-for-market-day/test-data';
 import { Instant, LocalDate } from '@market-monster/common';
 import { seedCatalogue } from '../../seed-catalogue';
+import { expectVendorScopedEvents } from '../../shared-kernel';
 
 describe('Mark Item As Sold Out', () => {
   let store: InMemoryEventStore;
@@ -18,7 +20,7 @@ describe('Mark Item As Sold Out', () => {
 
   beforeEach(() => {
     store = new InMemoryEventStore();
-    marketDays = new MarketDays(store, {
+    marketDays = new MarketDays(new VendorScopedEvents(store), {
       today: () => new LocalDate(TEST_TODAY),
       now: () => new Instant(`${TEST_TODAY}T09:00:00.000Z`),
     });
@@ -32,7 +34,7 @@ describe('Mark Item As Sold Out', () => {
       date
     });
     seedCatalogue(store, previousCommand.vendorId, itemId);
-    const planItemsHandler = new PlanItemsForMarketDayHandler(marketDays, new Catalogues(store));
+    const planItemsHandler = new PlanItemsForMarketDayHandler(marketDays, new Catalogues(new VendorScopedEvents(store)));
     await planItemsHandler.execute(previousCommand);
     return { itemId, previousCommand };
   }
@@ -56,6 +58,13 @@ describe('Mark Item As Sold Out', () => {
         }
       })
     ]);
+  });
+
+  it('stamps the vendor id into the event metadata', async () => {
+    const { itemId, previousCommand } = await addItemToCatalogueAndPlanIt(TEST_TODAY);
+    await handler.execute(new MarkItemAsSoldOut(previousCommand.vendorId, itemId, previousCommand.marketId, TEST_TODAY, '10:00'));
+
+    expectVendorScopedEvents(store.newEvents(), 'vendor-1');
   });
 
   it('should reject marking an item not available today as sold out', async () => {

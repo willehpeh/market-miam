@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { SpanStatusCode, trace } from '@opentelemetry/api';
 import { EventHandler, StoredEvent } from '@market-monster/event-sourcing';
 import { TracingEventHandler } from './tracing.event-handler';
-import { registerSpanCapture } from './testing/span-capture';
+import { registerSpanCapture } from '../testing/span-capture';
 
 const exporter = registerSpanCapture();
 const tracer = trace.getTracer('test');

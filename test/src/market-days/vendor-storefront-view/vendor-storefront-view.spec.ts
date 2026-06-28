@@ -1,3 +1,4 @@
+import { VendorScopedEvents } from '@market-monster/market-days';
 import {
   InMemoryCheckpoint,
   InMemoryEventStore,
@@ -24,7 +25,7 @@ describe('VendorStorefrontView', () => {
   beforeEach(() => {
     store = new InMemoryEventStore();
     views = new InMemoryVendorStorefrontViews();
-    storefronts = new Storefronts(store);
+    storefronts = new Storefronts(new VendorScopedEvents(store));
     subscription = new InMemorySubscription(store, new VendorStorefrontViewProjection(views), new InMemoryCheckpoint('vendor-storefront-view'));
   });
 

@@ -24,7 +24,7 @@ export default [
     },
   },
   {
-    files: ['src/app/tracing.command-dispatcher.ts'],
+    files: ['src/app/event-sourcing/tracing.command-dispatcher.ts'],
     rules: {
       'no-restricted-imports': 'off',
     },

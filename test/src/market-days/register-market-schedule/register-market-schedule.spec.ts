@@ -1,4 +1,5 @@
 import { InMemoryEventStore } from '@market-monster/event-sourcing';
+import { VendorScopedEvents } from '@market-monster/market-days';
 import { TestRegisterMarketSchedule } from './test-data';
 import {
   Calendars,
@@ -6,6 +7,7 @@ import {
   RegisterMarketScheduleHandler
 } from '@market-monster/market-days';
 import { EmptyValueError } from '@market-monster/common';
+import { expectVendorScopedEvents } from '../../shared-kernel';
 
 describe('Register Market Schedule', () => {
   let store: InMemoryEventStore;
@@ -14,7 +16,7 @@ describe('Register Market Schedule', () => {
 
   beforeEach(() => {
     store = new InMemoryEventStore();
-    calendars = new Calendars(store);
+    calendars = new Calendars(new VendorScopedEvents(store));
     handler = new RegisterMarketScheduleHandler(calendars);
   });
 
@@ -37,6 +39,12 @@ describe('Register Market Schedule', () => {
         frequency: command.frequency ?? { weeks: 1 }
       })
     })]);
+  });
+
+  it('stamps the vendor id into the event metadata', async () => {
+    await handler.execute(TestRegisterMarketSchedule.simple());
+
+    expectVendorScopedEvents(store.newEvents(), 'vendor-id');
   });
 
   it.each([

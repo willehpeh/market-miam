@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { INestApplication } from '@nestjs/common';
-import { bootApiTestApp, openStorefrontFor } from './testing/api-test-app';
-import { registerSpanCapture } from './testing/span-capture';
+import { bootApiTestApp, openStorefrontFor } from '../testing/api-test-app';
+import { registerSpanCapture } from '../testing/span-capture';
 import { ConsumerRunner } from './consumer-runner';
 
 const exporter = registerSpanCapture();

@@ -5,12 +5,6 @@ import { CommandDispatcher, MessageContext } from '@market-monster/event-sourcin
 
 const tracer = trace.getTracer('command-dispatcher');
 
-// The one seam through which commands are dispatched, so every command is
-// uniformly traced regardless of origin (HTTP and processors alike). It
-// decorates the real CommandBus rather than replacing it: handlers register on
-// the framework's own bus, this only wraps execute(). The span is payload-blind
-// — it reads the command's constructor name and the ambient MessageContext,
-// never the command's fields (see O11Y-PLAN.md attribute policy).
 @Injectable()
 export class TracingCommandDispatcher implements CommandDispatcher {
   constructor(

@@ -1,4 +1,5 @@
 import { InMemoryEventStore } from '@market-monster/event-sourcing';
+import { VendorScopedEvents } from '@market-monster/market-days';
 import {
   MarketDayInThePastError,
   MarketDays,
@@ -6,6 +7,7 @@ import {
   UnplanItemFromMarketDayHandler
 } from '@market-monster/market-days';
 import { Instant, LocalDate } from '@market-monster/common';
+import { expectVendorScopedEvents } from '../../shared-kernel';
 
 describe('Unplan Item From Market Day', () => {
   let store: InMemoryEventStore;
@@ -18,7 +20,7 @@ describe('Unplan Item From Market Day', () => {
 
   beforeEach(() => {
     store = new InMemoryEventStore();
-    marketDays = new MarketDays(store, {
+    marketDays = new MarketDays(new VendorScopedEvents(store), {
       today: () => new LocalDate(TEST_TODAY),
       now: () => new Instant(`${TEST_TODAY}T09:00:00.000Z`),
     });
@@ -39,6 +41,12 @@ describe('Unplan Item From Market Day', () => {
         payload: { itemId: 'item-1', marketId: 'market-1', date }
       })
     ]);
+  });
+
+  it('stamps the vendor id into the event metadata', async () => {
+    await handler.execute(new UnplanItemFromMarketDay('vendor-1', 'item-1', 'market-1', TEST_TODAY));
+
+    expectVendorScopedEvents(store.newEvents(), 'vendor-1');
   });
 
   it('should reject unplanning an item from a market day before today', async () => {

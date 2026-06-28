@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthModule } from '@market-monster/auth-nestjs';
 import { Auth0TokenVerifier } from '@market-monster/auth';
-import { MarketDaysModule } from './market-days.module';
+import { MarketDaysModule } from './market-days/market-days.module';
 
 @Module({
   imports: [

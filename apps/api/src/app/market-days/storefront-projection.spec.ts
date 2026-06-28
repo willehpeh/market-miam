@@ -2,8 +2,8 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { VendorStorefrontViews } from '@market-monster/market-days';
-import { bootApiTestApp, openStorefrontFor } from './testing/api-test-app';
-import { ConsumerRunner } from './consumer-runner';
+import { bootApiTestApp, openStorefrontFor } from '../testing/api-test-app';
+import { ConsumerRunner } from '../event-sourcing/consumer-runner';
 
 describe('Storefront view projection', () => {
   let app: INestApplication;

@@ -1,4 +1,4 @@
-import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { CommandDispatcher, EventStore } from '@market-monster/event-sourcing';
 import { Clock, DateClock } from '@market-monster/common';
 import {
@@ -20,32 +20,30 @@ import {
   Storefronts,
   UnplanItemFromMarketDayHandler,
   Vendors,
+  VendorScopedEvents,
   VendorStorefrontViewProjection,
   VendorStorefrontViews,
   VendorStorefrontViewStore,
 } from '@market-monster/market-days';
-import { EventSourcingModule } from './event-sourcing.module';
-import { MessageContextMiddleware } from './message-context.middleware';
+import { EventSourcingModule } from '../event-sourcing/event-sourcing.module';
 import { VendorsController } from './vendors.controller';
 import { StorefrontController } from './storefront.controller';
 
 const clock = [{ provide: Clock, useClass: DateClock }];
 
 const repositories = [
-  { provide: Vendors, useFactory: (store: EventStore) => new Vendors(store), inject: [EventStore] },
-  { provide: Catalogues, useFactory: (store: EventStore) => new Catalogues(store), inject: [EventStore] },
-  { provide: Calendars, useFactory: (store: EventStore) => new Calendars(store), inject: [EventStore] },
-  { provide: Storefronts, useFactory: (store: EventStore) => new Storefronts(store), inject: [EventStore] },
+  { provide: VendorScopedEvents, useFactory: (store: EventStore) => new VendorScopedEvents(store), inject: [EventStore] },
+  { provide: Vendors, useFactory: (events: VendorScopedEvents) => new Vendors(events), inject: [VendorScopedEvents] },
+  { provide: Catalogues, useFactory: (events: VendorScopedEvents) => new Catalogues(events), inject: [VendorScopedEvents] },
+  { provide: Calendars, useFactory: (events: VendorScopedEvents) => new Calendars(events), inject: [VendorScopedEvents] },
+  { provide: Storefronts, useFactory: (events: VendorScopedEvents) => new Storefronts(events), inject: [VendorScopedEvents] },
   {
     provide: MarketDays,
-    useFactory: (store: EventStore, appClock: Clock) => new MarketDays(store, appClock),
-    inject: [EventStore, Clock],
+    useFactory: (events: VendorScopedEvents, appClock: Clock) => new MarketDays(events, appClock),
+    inject: [VendorScopedEvents, Clock],
   },
 ];
 
-// The storefront read model: one in-memory store serves both the projection's
-// write surface and the query read surface. The @Projects-decorated projection
-// is discovered and driven by the ConsumerRunner (in EventSourcingModule).
 const readModel = [
   InMemoryVendorStorefrontViews,
   { provide: VendorStorefrontViews, useExisting: InMemoryVendorStorefrontViews },
@@ -57,8 +55,6 @@ const readModel = [
   },
 ];
 
-// Reacts to VendorRegistered by dispatching OpenStorefront; discovered and
-// driven (with continuation context) by the ConsumerRunner.
 const processors = [
   {
     provide: StorefrontOpener,
@@ -86,15 +82,10 @@ const commandHandlers = [
   controllers: [VendorsController, StorefrontController],
   providers: [
     ...clock,
-    MessageContextMiddleware,
     ...repositories,
     ...readModel,
     ...processors,
     ...commandHandlers,
   ],
 })
-export class MarketDaysModule implements NestModule {
-  configure(consumer: MiddlewareConsumer): void {
-    consumer.apply(MessageContextMiddleware).forRoutes(VendorsController, StorefrontController);
-  }
-}
+export class MarketDaysModule {}

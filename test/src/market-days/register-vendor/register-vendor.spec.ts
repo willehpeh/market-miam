@@ -1,6 +1,8 @@
 import { InMemoryEventStore } from '@market-monster/event-sourcing';
+import { VendorScopedEvents } from '@market-monster/market-days';
 import { RegisterVendor, RegisterVendorHandler, VendorRegistered, Vendors } from '@market-monster/market-days';
 import { TestRegisterVendor } from './test-data';
+import { expectVendorScopedEvents } from '../../shared-kernel';
 
 describe('Register Vendor', () => {
   let handler: RegisterVendorHandler;
@@ -9,7 +11,7 @@ describe('Register Vendor', () => {
 
   beforeEach(() => {
     store = new InMemoryEventStore();
-    vendors = new Vendors(store);
+    vendors = new Vendors(new VendorScopedEvents(store));
     handler = new RegisterVendorHandler(vendors);
   });
 
@@ -18,6 +20,12 @@ describe('Register Vendor', () => {
     await handler.execute(command);
 
     expectSingleEventFrom(command);
+  });
+
+  it('stamps the vendor id into the event metadata', async () => {
+    await handler.execute(TestRegisterVendor.valid());
+
+    expectVendorScopedEvents(store.newEvents(), 'vendor-id');
   });
 
   it.each([

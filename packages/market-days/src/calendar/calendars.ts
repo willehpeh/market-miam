@@ -1,23 +1,18 @@
 import { Calendar } from './index';
-import { EventStore } from '@market-monster/event-sourcing';
 import { VendorId } from '@market-monster/shared-kernel';
+import { VendorScopedEvents } from '../vendor-scoped-events';
 
 export class Calendars {
-  constructor(private readonly store: EventStore) {
+  constructor(private readonly vendorEvents: VendorScopedEvents) {
   }
 
   async forVendor(vendorId: VendorId): Promise<Calendar> {
-    const events = await this.store.load(this.streamIdFor(vendorId));
+    const events = await this.vendorEvents.load(this.streamIdFor(vendorId));
     return new Calendar().rehydrate(events);
   }
 
   async save(calendar: Calendar, vendorId: VendorId) {
-    await this.store.append(
-      this.streamIdFor(vendorId),
-      calendar.raisedEvents(),
-      calendar.currentStreamPosition(),
-      { vendorId: vendorId.value() },
-    );
+    await this.vendorEvents.save(this.streamIdFor(vendorId), calendar, vendorId);
   }
 
   private streamIdFor(vendorId: VendorId) {

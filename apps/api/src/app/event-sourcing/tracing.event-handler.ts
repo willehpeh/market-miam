@@ -3,11 +3,6 @@ import { EventHandler, StoredEvent } from '@market-monster/event-sourcing';
 
 const tracer = trace.getTracer('event-handler');
 
-// Decorates a projection/processor so each consumed event is handled on its
-// OWN new trace (not a child of the producer — keeps traces bounded under
-// processor->command fan-out) with a span link back to the producing span,
-// read from the traceparent the producer persisted. Payload-blind: reads only
-// the event's type, timestamp and metadata. Keeps event-sourcing OTel-free.
 export class TracingEventHandler implements EventHandler {
   constructor(private readonly inner: EventHandler) {}
 

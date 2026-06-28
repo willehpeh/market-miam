@@ -1,3 +1,4 @@
+import { VendorScopedEvents } from '@market-monster/market-days';
 import {
   AddItemToCatalogueHandler,
   Catalogues,
@@ -25,7 +26,7 @@ describe('CatalogueView', () => {
     store = new InMemoryEventStore();
     views = new InMemoryCatalogueViews();
     subscription = new InMemorySubscription(store, new CatalogueViewProjection(views), new InMemoryCheckpoint('catalogue-view'));
-    catalogues = new Catalogues(store);
+    catalogues = new Catalogues(new VendorScopedEvents(store));
   });
 
   it('should return an empty catalogue when none are added', async () => {

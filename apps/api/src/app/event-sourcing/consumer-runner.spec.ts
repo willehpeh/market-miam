@@ -28,9 +28,6 @@ class StorefrontProjection extends NoopHandler implements Projection {}
 @CheckpointedProjection('storefront')
 class CollidingProjection extends NoopHandler implements Projection {}
 
-// A boundary fake for the injected logger: records errors instead of writing
-// them, so failures can be asserted without reaching for a mocking framework.
-// Exposes only error — the one behaviour ConsumerRunner uses.
 class RecordingLogger {
   readonly errors: { message: unknown; params: unknown[] }[] = [];
 
@@ -128,8 +125,8 @@ describe('ConsumerRunner', () => {
     app = moduleRef.createNestApplication();
     await app.init();
 
-    await vi.advanceTimersByTimeAsync(0); // first poll rejects
-    await vi.advanceTimersByTimeAsync(1000); // retry delay elapses, polling resumes
+    await vi.advanceTimersByTimeAsync(0);
+    await vi.advanceTimersByTimeAsync(1000);
 
     expect(polls).toBeGreaterThan(1);
     expect(logger.errors).toContainEqual({

@@ -3,11 +3,13 @@ import {
   InvalidPriceError,
   ItemAddedToCatalogue,
   ItemAlreadyInCatalogueError,
-  Catalogues
+  Catalogues,
+  VendorScopedEvents
 } from '@market-monster/market-days';
 import { EmptyValueError } from '@market-monster/common';
 import { InMemoryEventStore } from '@market-monster/event-sourcing';
 import { TestAddItemToCatalogue } from './test-data';
+import { expectVendorScopedEvents } from '../../shared-kernel';
 
 describe('AddItemToCatalogue', () => {
   let store: InMemoryEventStore;
@@ -16,7 +18,7 @@ describe('AddItemToCatalogue', () => {
 
   beforeEach(() => {
     store = new InMemoryEventStore();
-    catalogues = new Catalogues(store);
+    catalogues = new Catalogues(new VendorScopedEvents(store));
     handler = new AddItemToCatalogueHandler(catalogues);
   });
 
@@ -36,6 +38,12 @@ describe('AddItemToCatalogue', () => {
       },
     };
     expect(store.newEvents()).toEqual([expect.objectContaining(expectedEvent)]);
+  });
+
+  it('stamps the vendor id into the event metadata', async () => {
+    await handler.execute(TestAddItemToCatalogue.valid());
+
+    expectVendorScopedEvents(store.newEvents(), 'vendor-id');
   });
 
   it('should allow free items', async () => {
