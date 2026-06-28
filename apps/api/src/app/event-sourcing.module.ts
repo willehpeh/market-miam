@@ -29,18 +29,15 @@ const messageContext = [
   },
 ];
 
+const decoratedEventStore = (inner: EventStore, context: MessageContext) =>
+  new TracingEventStore(new MessageContextEventStore(inner, context));
+
 const eventStore = [
   InMemoryEventStore,
   {
-    provide: MessageContextEventStore,
-    useFactory: (inner: InMemoryEventStore, context: MessageContext) =>
-      new MessageContextEventStore(inner, context),
-    inject: [InMemoryEventStore, MessageContext],
-  },
-  {
     provide: EventStore,
-    useFactory: (inner: MessageContextEventStore) => new TracingEventStore(inner),
-    inject: [MessageContextEventStore],
+    useFactory: decoratedEventStore,
+    inject: [InMemoryEventStore, MessageContext],
   },
   { provide: Events, useExisting: InMemoryEventStore },
 ];
