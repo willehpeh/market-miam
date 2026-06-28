@@ -1,18 +1,9 @@
 # Mutation Gaps
 
 Stryker (`npx nx run test:mutation`), mutating `packages/**/src`, error files excluded (`stryker.conf.mjs`).
-718 mutants · 644 killed · 69 survived · 89.69%.
+663 mutants · 595 killed · 63 survived · 89.74%.
 
 Each survivor = behaviour no test pins. Notation: `file:line:col [Mutator]`, `original → mutated`.
-
-## A. Schedule multi-day conflict (priority)
-`schedule.ts` `conflictsWith` uses `some` (conflict if any day-pair overlaps). Only single-day schedules are tested, so `some`/`every` are indistinguishable over a one-element array.
-
-| Mutant | Change | Gap |
-|---|---|---|
-| `schedule.ts:50:12` Method | `this._days.some` → `every` | Existing schedule with 2 days, only one overlapping the new schedule, untested. |
-| `schedule.ts:50:40` Method | inner `other._days.some` → `every` | New schedule with 2 days, only one overlapping an existing schedule, untested. |
-
 
 ## C. Stream IDs & event metadata unasserted (priority)
 
@@ -69,6 +60,6 @@ Each survivor = behaviour no test pins. Notation: `file:line:col [Mutator]`, `or
 | `local-date.ts:36:51` String | `padStart(2,'0')` → `padStart(2,"")` | Day zero-padding unverified. |
 
 ## I. Noise (don't chase)
-- **Error-message text** (assert type, not message): `local-date.ts:5–7`, `local-time.ts:4–6`, `url.ts:4–6`, `quantity.ts:2–4`, `schedule-day.ts:10`/`13`/`16`, `schedule-frequency.ts:10`, `schedule.ts:65`, `catalogue.ts:14`/`47`/`67`, `storefront-name.ts:10`.
-- **Equivalent — start-only guards** (`schedule-day.ts:31:9`/`31:53`/`34:9`/`34:53`, `isStartOnly` `43:34`/`44:12`, `hasStartTime` `47:35`): the guards return `false` for start-only days, but the interval check already returns `false` for them (`< undefined`), so removing a guard changes nothing. Redundant-but-explicit; unkillable.
+- **Error-message text** (assert type, not message): `local-date.ts:5–7`, `local-time.ts:4–6`, `url.ts:4–6`, `quantity.ts:2–4`, `schedule-day.ts:11`/`14`, `time-range.ts:9`, `schedule-frequency.ts:10`, `schedule.ts:51`, `catalogue.ts:14`/`47`/`67`, `storefront-name.ts:10`.
+- **Masked by `toEqual`** (`schedule-day.ts:18:20` Conditional + Logical — `_window` built for start-only/whole-day; `29:9` — whole-day `value()` gains `startTime:undefined`): `toEqual` ignores `undefined` keys, so the day value renders identically. Killable only by switching day-value assertions to `toStrictEqual`; low value.
 - **Equivalent — other**: `jwt-auth.guard.ts:9:32` (`VERIFIED_VENDOR` symmetric key); `register-market-schedule.ts:22:53` (static false survivor — command built in `it.each([...])` args, so suite fails to collect, not a test failure).

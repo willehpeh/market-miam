@@ -22,28 +22,6 @@ export class ScheduleDay {
     return !['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'].includes(day);
   }
 
-  overlapsWith(other: ScheduleDay): boolean {
-    if (this.isDifferentDay(other)) {
-      return false;
-    }
-    if (this.isWholeDay() || other.isWholeDay()) {
-      return true;
-    }
-    return this.timeRangesOverlap(other);
-  }
-
-  private isDifferentDay(other: ScheduleDay): boolean {
-    return this._day !== other._day;
-  }
-
-  private isWholeDay(): boolean {
-    return !this._startTime;
-  }
-
-  private timeRangesOverlap(other: ScheduleDay): boolean {
-    return !!this._window && !!other._window && this._window.intersects(other._window);
-  }
-
   value(): { day: string; startTime?: string; endTime?: string } {
     if (this._window) {
       return { day: this._day, ...this._window.value() };
