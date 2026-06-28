@@ -1,17 +1,17 @@
 # Mutation Gaps
 
 Stryker (`npx nx run test:mutation`), mutating `packages/**/src`, error files excluded (`stryker.conf.mjs`).
-663 mutants · 595 killed · 63 survived · 89.74%.
+661 mutants · 595 killed · 61 survived · 90.02%.
 
 Each survivor = behaviour no test pins. Notation: `file:line:col [Mutator]`, `original → mutated`.
 
-## C. Stream IDs & event metadata unasserted (priority)
+## C. Stream IDs unpinned
+vendorId metadata now pinned in `vendor-scoped-events.ts` (killed by the per-use-case `stamps the vendor id` tests).
 
 | Mutant | Change | Gap |
 |---|---|---|
-| `calendars.ts:23:43`/`24:12`, `vendors.ts:26:43`/`27:12` Block/String | `calendar-${id}`/`vendor-${id}` → empty | Stream-id format unpinned. |
-| `calendars.ts:19:7`, `market-days.ts:28:7` ObjectLiteral | `{vendorId: id.value()}` → `{}` | vendorId metadata unasserted. |
-| `vendor-id-from.ts:4:20` OptionalChaining | `metadata?.['vendorId']` → `metadata['vendorId']` | Event missing metadata untested. |
+| `calendars.ts:18:43`/`19:12`, `vendors.ts:18:43`/`19:12` Block/String | `calendar-${id}`/`vendor-${id}` → empty | Stream-id format unpinned (symmetric load/save; only calendar+vendor streams). |
+| `vendor-id-from.ts:4:20` OptionalChaining | `metadata?.['vendorId']` → `metadata['vendorId']` | Event missing metadata untested (defensive). |
 
 ## D. Event-store internals & defensive copies
 
@@ -45,7 +45,6 @@ Each survivor = behaviour no test pins. Notation: `file:line:col [Mutator]`, `or
 | Mutant | Change | Gap |
 |---|---|---|
 | `plan-items-for-market-day.handler.ts:35:24` Conditional | `quantity === undefined ? …` → `false ? …` | Planning without quantity untested. |
-| `vendors.ts:15:9` Conditional / `:15:45` Block | `if(raisedEvents().length===0) return` → bypassed | No-op save (no new events) unasserted. |
 | `cover-photo.ts:17:21` Block | `NoCoverPhoto.sameAs()` `return false` → `{}` | Null-object `NoCoverPhoto.sameAs()` never called. |
 | `auth0-token-verifier.ts:39:12` Conditional | `typeof value==='string' ? …` → `true ? …` | Non-string claim (fallback `''`) untested. |
 | `jwt-auth.guard.ts:32:63` String | `authorization ?? ''` → `?? "…"` | Missing Authorization header untested. |
@@ -62,4 +61,5 @@ Each survivor = behaviour no test pins. Notation: `file:line:col [Mutator]`, `or
 ## I. Noise (don't chase)
 - **Error-message text** (assert type, not message): `local-date.ts:5–7`, `local-time.ts:4–6`, `url.ts:4–6`, `quantity.ts:2–4`, `schedule-day.ts:11`/`14`, `time-range.ts:9`, `schedule-frequency.ts:10`, `schedule.ts:51`, `catalogue.ts:14`/`47`/`67`, `storefront-name.ts:10`.
 - **Masked by `toEqual`** (`schedule-day.ts:18:20` Conditional + Logical — `_window` built for start-only/whole-day; `29:9` — whole-day `value()` gains `startTime:undefined`): `toEqual` ignores `undefined` keys, so the day value renders identically. Killable only by switching day-value assertions to `toStrictEqual`; low value.
+- **Equivalent — empty-events guard** (`vendor-scoped-events.ts:13:9` Conditional / `13:48` Block): skipping append when `raisedEvents()` is empty is an optimization — appending zero events is itself a no-op, so removing the guard changes nothing observable.
 - **Equivalent — other**: `jwt-auth.guard.ts:9:32` (`VERIFIED_VENDOR` symmetric key); `register-market-schedule.ts:22:53` (static false survivor — command built in `it.each([...])` args, so suite fails to collect, not a test failure).
