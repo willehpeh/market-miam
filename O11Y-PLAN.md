@@ -1,107 +1,38 @@
 # Observability Plan (ADR 0026)
 
-Remaining work + standing invariants for event-based observability with
-OpenTelemetry, tracking
-[ADR 0026](docs/adr/0026-event-based-observability-with-opentelemetry.md).
-A span is a wide event; spans are fat, not many thin logs.
+Remaining work + invariants for event-based observability with OpenTelemetry. Tracks [ADR 0026](docs/adr/0026-event-based-observability-with-opentelemetry.md). A span is a wide event — fat spans, not many thin logs.
 
 ## Shipped
-
-Producer steps 1–3 (command dispatch span; event-store append/load spans;
-`traceparent` into event metadata) and consumer steps 5–6 (new-trace-per-handler
-+ span link back to the producer + `processing.lag_ms`) are live. The consumer
-`TracingEventHandler` is applied by the `ConsumerRunner` to every discovered
-projection *and processor*, so instrumentation is uniform without per-projection
-wiring. The first **processor→command fan-out** (the `StorefrontOpener`) is
-bounded as ADR 0026 anticipated: the dispatched command and its appended event
-run on the opener's own consumer trace (a child of the handle span), linked back
-to the request rather than threading the request trace through. Commits
-`1964004`, `bc3f826`, `8fc68e1`, `efbb5ab`, `662b08c`, `d2e4599`, `3b2e26b`,
-`696ba33`, `e481fa2`, `8115c96`, `944c49f`, `74acc02`; see the `*-tracing.spec.ts`
-files in `apps/api`.
+Producer steps 1–3 (command-dispatch span; event-store append/load spans; `traceparent` into event metadata) and consumer steps 5–6 (new-trace-per-handler + span link to producer + `processing.lag_ms`). Consumer `TracingEventHandler` is applied by `ConsumerRunner` to every discovered projection and processor — uniform, no per-projection wiring. First processor→command fan-out (`StorefrontOpener`): the dispatched command and its appended event run on the opener's own consumer trace (child of the handle span), linked back to the request rather than threading the request trace through. Commits `1964004`, `bc3f826`, `8fc68e1`, `efbb5ab`, `662b08c`, `d2e4599`, `3b2e26b`, `696ba33`, `e481fa2`, `8115c96`, `944c49f`, `74acc02`; `*-tracing.spec.ts` in `apps/api`.
 
 ## Remaining
+4. **Per-type intent/outcome attributes** — adapter-side per-type extractors in `apps/api` (allow-list per command/event type; exact-match-tested = PII guard). Dispatch span ← command; append span ← events. No handler span (handlers in `packages/market-days` stay OTel- and telemetry-free). Deferred until the first content-rich command: `RegisterVendor` is content-thin (`vendorId`=identity, `registeredAt`=clock, `email`=PII), so no speculative extractors.
 
-4. **Per-type intent/outcome attributes** — adapter-side per-type extractors in
-   `apps/api` (allow-list per command/event type; exact-match-tested = the PII
-   guard). Dispatch span ← the command (what the user tried to do); append span
-   ← the events (what happened). **No handler span** — handlers live in
-   `packages/market-days`, which stays OTel-free *and* telemetry-free (purity).
-   Deferred until the first content-rich command: `RegisterVendor` is
-   content-thin (`vendorId` = identity → append span; `registeredAt` = clock;
-   `email` = PII), so the generic spans stayed generic — no speculative extractors.
-
-- **`QueryDispatcher` span** — when the read/query surface lands (`GET /storefront`,
-  plan "B" in `PLAN.md`), mirror `CommandDispatcher` (same decorator + ESLint
-  guard) but lighter: span only, no lineage, no append (reads cause nothing).
-  Must follow the Attribute policy below.
+- **`QueryDispatcher` span** — when the read/query surface lands (`GET /storefront`, plan B in `PLAN.md`): mirror `CommandDispatcher` (same decorator + ESLint guard), lighter — span only, no lineage, no append (reads cause nothing). Follows the Attribute policy below.
 
 ## Deferred (per ADR)
+- OTel Collector + tail-based sampling — until volume warrants (`docs/DEFERRED.md`).
 
-- OTel **Collector** and **tail-based sampling** — until volume warrants
-  (`docs/DEFERRED.md`).
+## Testing harness
+Hermetic span capture: test-only `NodeTracerProvider` + `InMemorySpanExporter` + `SimpleSpanProcessor`, registered once (global provider is set-once per process), `exporter.reset()` between tests, no auto-instrumentation — so `getFinishedSpans()` holds only our spans.
 
-## Testing harness (established)
-
-Hermetic span capture: a test-only `NodeTracerProvider` + `InMemorySpanExporter`
-+ `SimpleSpanProcessor`, registered **once** (the global provider is set-once per
-process) with `exporter.reset()` between tests; **no auto-instrumentation**, so
-`getFinishedSpans()` holds only our spans.
-
-**Synthetic for mechanism, real-domain only for content-bearing spans.** The
-generic tracing machinery — new-trace/link/lag, the no-link fallback, failure
-paths — is parametric over event/command type, so it's tested with a **synthetic**
-event at the decorator unit level (`tracing.event-handler.spec.ts`). Coupling it
-to a domain flow only makes it brittle to that domain's rules (an unrelated
-`assert-opened` once broke a consumer tracing test). A **real-domain** social test
-earns its keep only where exact-match attributes are a genuine PII guard — a span
-*handed a content-bearing message*. Today that is the dispatch span proven blind
-to `RegisterVendor`'s `email` (`command-dispatch-tracing.spec.ts`); the deferred
-content-rich handler span will be the next. The consumer path keeps one thin
-**wiring** smoke test (`storefront-consumer-tracing.spec.ts`) — that the
-`ConsumerRunner` wraps a discovered projection — and nothing more. Failure paths
-are driven by a stub whose inner `append`/`handle` throws.
+Synthetic for mechanism, real-domain only for content-bearing spans:
+- Generic machinery (new-trace/link/lag, no-link fallback, failure paths) is parametric over type → tested with a synthetic event at the decorator unit level (`tracing.event-handler.spec.ts`). Coupling to a domain flow only makes it brittle to that domain's rules.
+- Real-domain social test only where exact-match attributes are a genuine PII guard (a span handed a content-bearing message). Today: dispatch span proven blind to `RegisterVendor.email` (`command-dispatch-tracing.spec.ts`); the deferred content-rich handler span is next.
+- Consumer path keeps one thin wiring smoke test (`storefront-consumer-tracing.spec.ts`): `ConsumerRunner` wraps a discovered projection. Failure paths driven by a stub whose `append`/`handle` throws.
 
 ## Attribute policy — default-rich, PII-safe by seam
+Default is rich, not minimal: attach any non-PII context in hand — high-cardinality domain context is what `BubbleUp`/`group by` need. "No speculative surface" is about code surface (facades, methods that rot), not data; span attributes don't transfer.
 
-Wide events are the point: *put on everything you can think of* (Charity Majors)
-— you can't predict which dimension cracks the next unknown-unknown, and
-high-cardinality domain context is exactly what `BubbleUp` / `group by` need. So
-the default is **rich, not minimal**: attach any non-PII context already in hand.
-(Note: "no speculative surface" is a rule about *code surface* — facades, methods
-that rot. A span attribute is *data*, not surface; it doesn't transfer.)
+Two seams keep richness from costing purity or leaking PII:
+- **Bus/store span** — opens the event from ambient `MessageContext` metadata + message constructor name (`command.name`, `event.type`, `vendor.id`, correlation/causation). Structurally blind to message fields → cannot serialize a payload (no `JSON.stringify`, no accidental `email`).
+- **Command handler** — application-layer seam holding command, resulting state, emitted event. Domain attributes added here explicitly, one `setAttribute` at a time. Pure domain packages never import OTel.
 
-Two seams, chosen so richness never costs domain purity or leaks PII:
+No automatic serialization path anywhere: every attribute is a deliberate, reviewable line, default empty, opt-in per field. Prevents accidental bulk leakage (dumping a whole command/event); does not prevent a deliberate mistake (explicitly stamping `email`) — that is caught by review against this policy.
 
-- **Bus / store span** — opens the wide event from *ambient* `MessageContext`
-  metadata + the message's constructor name (`command.name`, `event.type`,
-  `vendor.id`, correlation/causation). It is **structurally blind to the
-  message's fields**, so it cannot serialize a payload — no `JSON.stringify`
-  footgun, no accidental `email`.
-- **Command handler** — the application-layer seam that *does* hold the command,
-  resulting state, and emitted event in scope. Domain attributes (sizes, states,
-  outcomes) are added here, **explicitly, one `setAttribute` at a time**. Pure
-  domain packages still never import OTel.
+Excluded/projected: never put PII on a span (`email`, names, phone). Sensitive-but-useful → derived projection (bucket `amount.bucket`, count, boolean, hash), never raw. Free text (descriptions, blurbs) is unbounded-cardinality and not aggregable — leave off unless a concrete need arises.
 
-Why this is safe: there is **no automatic serialization path** anywhere. Every
-attribute is a deliberate, reviewable line — the default is empty and you opt in
-per field. That structurally prevents *accidental bulk* leakage (dumping a whole
-command/event). It does **not** prevent a deliberate mistake (explicitly stamping
-`email`); that is caught by review against this policy, not by the mechanism.
-
-**Excluded / projected:** never put PII on a span (`email`, personal names,
-phone). Sensitive-but-useful values go on as a **derived projection** — a bucket
-(`amount.bucket`), count, boolean, or hash — never the raw value. Free text
-(business descriptions, blurbs) is unbounded-cardinality and not aggregable:
-leave it off unless a concrete need arises.
-
-**Caveat to revisit:** `vendor.id` rides every span as the high-cardinality key.
-It's a business handle today, which is acceptable. **If the vendor identity
-scheme ever becomes an email or a person's name, this policy breaks** — treat
-that change as a trigger to re-evaluate.
+Caveat: `vendor.id` rides every span as the high-cardinality key — a business handle today, acceptable. If the vendor identity scheme ever becomes an email or person's name, this policy breaks; treat that change as a trigger to re-evaluate.
 
 ## Domain-purity invariant (ADR)
-
-Instrumentation only ever extends the `@nestjs/cqrs` bus and the
-store/subscription **adapters**. The domain packages gain **no** observability
-dependency. Hold this line on every step above.
+Instrumentation only extends the `@nestjs/cqrs` bus and the store/subscription adapters. Domain packages gain no observability dependency. Hold this line on every step above.
