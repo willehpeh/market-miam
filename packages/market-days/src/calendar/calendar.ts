@@ -6,6 +6,7 @@ import { MarketId } from '@market-monster/shared-kernel';
 export class Calendar extends Aggregate {
 
   apply(): void {
+    // no-op for now
   }
 
   registerMarketSchedule(marketId: MarketId, schedule: Schedule): void {
