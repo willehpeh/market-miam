@@ -1,4 +1,4 @@
-import { LocalTime } from '@market-monster/common';
+import { EmptyValueError, LocalTime } from '@market-monster/common';
 
 describe('LocalTime', () => {
   it.each([
@@ -15,7 +15,7 @@ describe('LocalTime', () => {
     '',
     '   ',
   ])('should reject an empty value: "%s"', (value) => {
-    expect(() => new LocalTime(value)).toThrow();
+    expect(() => new LocalTime(value)).toThrow(EmptyValueError);
   });
 
   it.each([

@@ -1,4 +1,4 @@
-import { Url } from '@market-monster/common';
+import { EmptyValueError, Url } from '@market-monster/common';
 
 describe('Url', () => {
   it.each([
@@ -14,7 +14,7 @@ describe('Url', () => {
     '',
     '   ',
   ])('should reject an empty value: "%s"', (value) => {
-    expect(() => new Url(value)).toThrow();
+    expect(() => new Url(value)).toThrow(EmptyValueError);
   });
 
   it.each([

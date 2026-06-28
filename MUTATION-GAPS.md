@@ -18,16 +18,6 @@ Each survivor = behaviour no test pins. Notation: `file:line:col [Mutator]`, `or
 | `schedule.ts:50:12` Method | `_days.some` → `every` | Multi-day where only one day overlaps untested. |
 | `schedule.ts:50:40` Method | inner `.some` → `every` | Same, inner loop. |
 
-## B. trim()/empty guards under-asserted (priority)
-`url.ts`, `local-time.ts`, `local-date.ts`. Empty tests use bare `.toThrow()` (no type), so bypassing the guard still throws something.
-
-| Mutant | Change | Gap |
-|---|---|---|
-| `url.ts:16:21`, `local-time.ts:16:21`, `local-date.ts:22:21` Method | `value.trim()` → `value` | Trimming/normalisation unproven. |
-| `url.ts:17:9`, `local-time.ts:17:9`, `local-date.ts:23:9` Conditional | `if(!trimmed)` → `if(false)` | Empty-after-trim not asserted as `EmptyValueError`. |
-| `url.ts:17:19`, `url.ts:23:13`, `local-time.ts:17:19`, `local-date.ts:23:19` Block | throw-body removed | Same. |
-
-Fix: `.toThrow(EmptyValueError)` + a whitespace case.
 
 ## C. Stream IDs & event metadata unasserted (priority)
 

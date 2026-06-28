@@ -79,6 +79,35 @@ describe('Register Market Schedule', () => {
     })]);
   });
 
+  it('should allow adjacent times when the later range is listed before the earlier one', async () => {
+    const command = TestRegisterMarketSchedule.with({
+      days: [
+        { day: 'SAT', startTime: '14:00', endTime: '20:00' },
+        { day: 'SAT', startTime: '08:00', endTime: '14:00' }
+      ]
+    });
+    await handler.execute(command);
+
+    expect(store.newEvents()).toEqual([expect.objectContaining({
+      type: 'MarketScheduleRegistered',
+      payload: expect.objectContaining({
+        days: command.days
+      })
+    })]);
+  });
+
+  it('should allow a day with a start time but no end time', async () => {
+    const command = TestRegisterMarketSchedule.with({ days: [{ day: 'SAT', startTime: '08:00' }] });
+    await handler.execute(command);
+
+    expect(store.newEvents()).toEqual([expect.objectContaining({
+      type: 'MarketScheduleRegistered',
+      payload: expect.objectContaining({
+        days: command.days
+      })
+    })]);
+  });
+
   it.each([
     {
       scenario: 'identical whole-day entries',
@@ -120,6 +149,124 @@ describe('Register Market Schedule', () => {
     await expect(handler.execute(conflicting)).rejects.toThrow(ConflictingScheduleError);
   });
 
+  it('should allow two start-only days on the same day across markets', async () => {
+    await handler.execute(TestRegisterMarketSchedule.with({
+      scheduleId: 'morning',
+      marketId: 'market-a',
+      scheduleName: 'Morning Market',
+      days: [{ day: 'SAT', startTime: '09:00' }]
+    }));
+
+    const afternoon = TestRegisterMarketSchedule.with({
+      scheduleId: 'afternoon',
+      marketId: 'market-b',
+      scheduleName: 'Afternoon Market',
+      days: [{ day: 'SAT', startTime: '14:00' }]
+    });
+    await handler.execute(afternoon);
+
+    expect(store.newEvents()).toEqual([
+      expect.objectContaining({
+        type: 'MarketScheduleRegistered',
+        payload: expect.objectContaining({ scheduleName: 'Morning Market' })
+      }),
+      expect.objectContaining({
+        type: 'MarketScheduleRegistered',
+        payload: expect.objectContaining({ scheduleName: 'Afternoon Market' })
+      })
+    ]);
+  });
+
+  it('should allow a start-only day registered before a timed day on the same day across markets', async () => {
+    await handler.execute(TestRegisterMarketSchedule.with({
+      scheduleId: 'open-ended',
+      marketId: 'market-a',
+      scheduleName: 'Open-ended Market',
+      days: [{ day: 'SAT', startTime: '09:00' }]
+    }));
+
+    const timed = TestRegisterMarketSchedule.with({
+      scheduleId: 'timed',
+      marketId: 'market-b',
+      scheduleName: 'Timed Market',
+      days: [{ day: 'SAT', startTime: '10:00', endTime: '12:00' }]
+    });
+    await handler.execute(timed);
+
+    expect(store.newEvents()).toEqual([
+      expect.objectContaining({
+        type: 'MarketScheduleRegistered',
+        payload: expect.objectContaining({ scheduleName: 'Open-ended Market' })
+      }),
+      expect.objectContaining({
+        type: 'MarketScheduleRegistered',
+        payload: expect.objectContaining({ scheduleName: 'Timed Market' })
+      })
+    ]);
+  });
+
+  it('should allow a start-only day registered after a timed day on the same day across markets', async () => {
+    await handler.execute(TestRegisterMarketSchedule.with({
+      scheduleId: 'timed',
+      marketId: 'market-a',
+      scheduleName: 'Timed Market',
+      days: [{ day: 'SAT', startTime: '10:00', endTime: '12:00' }]
+    }));
+
+    const openEnded = TestRegisterMarketSchedule.with({
+      scheduleId: 'open-ended',
+      marketId: 'market-b',
+      scheduleName: 'Open-ended Market',
+      days: [{ day: 'SAT', startTime: '09:00' }]
+    });
+    await handler.execute(openEnded);
+
+    expect(store.newEvents()).toEqual([
+      expect.objectContaining({
+        type: 'MarketScheduleRegistered',
+        payload: expect.objectContaining({ scheduleName: 'Timed Market' })
+      }),
+      expect.objectContaining({
+        type: 'MarketScheduleRegistered',
+        payload: expect.objectContaining({ scheduleName: 'Open-ended Market' })
+      })
+    ]);
+  });
+
+  it('should reject a start-only day that conflicts with a previously registered whole-day', async () => {
+    await handler.execute(TestRegisterMarketSchedule.with({
+      scheduleId: 'all-day',
+      marketId: 'market-a',
+      scheduleName: 'All-day Market',
+      days: [{ day: 'SAT' }]
+    }));
+
+    const startOnly = TestRegisterMarketSchedule.with({
+      scheduleId: 'open-ended',
+      marketId: 'market-b',
+      scheduleName: 'Open-ended Market',
+      days: [{ day: 'SAT', startTime: '09:00' }]
+    });
+    await expect(handler.execute(startOnly)).rejects.toThrow(ConflictingScheduleError);
+  });
+
+  it('should reject a whole-day that conflicts with a previously registered start-only day', async () => {
+    await handler.execute(TestRegisterMarketSchedule.with({
+      scheduleId: 'open-ended',
+      marketId: 'market-a',
+      scheduleName: 'Open-ended Market',
+      days: [{ day: 'SAT', startTime: '09:00' }]
+    }));
+
+    const wholeDay = TestRegisterMarketSchedule.with({
+      scheduleId: 'all-day',
+      marketId: 'market-b',
+      scheduleName: 'All-day Market',
+      days: [{ day: 'SAT' }]
+    });
+    await expect(handler.execute(wholeDay)).rejects.toThrow(ConflictingScheduleError);
+  });
+
   it('should reject a schedule with no days', async () => {
     const command = TestRegisterMarketSchedule.with({ days: [] });
     await expect(handler.execute(command)).rejects.toThrow(InvalidScheduleError);
@@ -127,6 +274,11 @@ describe('Register Market Schedule', () => {
 
   it('should reject a schedule with even a single invalid day name', async () => {
     const command = TestRegisterMarketSchedule.with({ days: [{ day: 'MON' }, { day: 'INVALID' }] });
+    await expect(handler.execute(command)).rejects.toThrow(InvalidScheduleError);
+  });
+
+  it('should reject a day with an end time but no start time', async () => {
+    const command = TestRegisterMarketSchedule.with({ days: [{ day: 'SAT', endTime: '14:00' }] });
     await expect(handler.execute(command)).rejects.toThrow(InvalidScheduleError);
   });
 
