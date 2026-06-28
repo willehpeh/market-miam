@@ -1,9 +1,10 @@
 import { InvalidScheduleError } from '../errors/';
+import { TimeRange } from './time-range';
 
 export class ScheduleDay {
   private readonly _day: string;
   private readonly _startTime?: string;
-  private readonly _endTime?: string;
+  private readonly _window?: TimeRange;
 
   constructor(day: string, startTime?: string, endTime?: string) {
     if (this.isValidDay(day)) {
@@ -12,12 +13,9 @@ export class ScheduleDay {
     if (endTime && !startTime) {
       throw new InvalidScheduleError(`Start time is required when an end time is given for day ${ day }`);
     }
-    if (startTime && endTime && !this.endIsAfterStart(startTime, endTime)) {
-      throw new InvalidScheduleError(`End time must be after start time for day ${ day }`);
-    }
     this._day = day;
     this._startTime = startTime;
-    this._endTime = endTime;
+    this._window = startTime && endTime ? new TimeRange(startTime, endTime) : undefined;
   }
 
   private isValidDay(day: string) {
@@ -25,38 +23,34 @@ export class ScheduleDay {
   }
 
   overlapsWith(other: ScheduleDay): boolean {
-    if (this._day !== other._day) {
+    if (this.isDifferentDay(other)) {
       return false;
     }
-    if (this.isStartOnly() && other.hasStartTime()) {
-      return false;
-    }
-    if (other.isStartOnly() && this.hasStartTime()) {
-      return false;
-    }
-    if (!this._startTime || !this._endTime || !other._startTime || !other._endTime) {
+    if (this.isWholeDay() || other.isWholeDay()) {
       return true;
     }
-    return this._startTime < other._endTime && other._startTime < this._endTime;
+    return this.timeRangesOverlap(other);
   }
 
-  private isStartOnly(): boolean {
-    return Boolean(this._startTime) && !this._endTime;
+  private isDifferentDay(other: ScheduleDay): boolean {
+    return this._day !== other._day;
   }
 
-  private hasStartTime(): boolean {
-    return Boolean(this._startTime);
+  private isWholeDay(): boolean {
+    return !this._startTime;
+  }
+
+  private timeRangesOverlap(other: ScheduleDay): boolean {
+    return !!this._window && !!other._window && this._window.intersects(other._window);
   }
 
   value(): { day: string; startTime?: string; endTime?: string } {
-    return {
-      day: this._day,
-      ...this._startTime ? { startTime: this._startTime } : {},
-      ...this._endTime ? { endTime: this._endTime } : {}
-    };
-  }
-
-  private endIsAfterStart(startTime: string, endTime: string): boolean {
-    return startTime < endTime;
+    if (this._window) {
+      return { day: this._day, ...this._window.value() };
+    }
+    if (this._startTime) {
+      return { day: this._day, startTime: this._startTime };
+    }
+    return { day: this._day };
   }
 }

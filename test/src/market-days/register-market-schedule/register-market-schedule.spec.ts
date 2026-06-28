@@ -136,15 +136,37 @@ describe('Register Market Schedule', () => {
     await expect(handler.execute(command)).rejects.toThrow(ConflictingScheduleError);
   });
 
-  it('should reject a schedule that conflicts with a previously registered one', async () => {
+  it.each([
+    {
+      scenario: 'a previously registered single-day schedule',
+      first: [{ day: 'SAT', startTime: '08:00', endTime: '14:00' }],
+      second: [{ day: 'SAT', startTime: '10:00', endTime: '16:00' }]
+    },
+    {
+      scenario: 'one day of a previously registered multi-day schedule',
+      first: [
+        { day: 'SAT', startTime: '08:00', endTime: '12:00' },
+        { day: 'SUN', startTime: '08:00', endTime: '12:00' }
+      ],
+      second: [{ day: 'SAT', startTime: '10:00', endTime: '14:00' }]
+    },
+    {
+      scenario: 'one day of the newly registered multi-day schedule',
+      first: [{ day: 'SAT', startTime: '08:00', endTime: '12:00' }],
+      second: [
+        { day: 'SAT', startTime: '10:00', endTime: '14:00' },
+        { day: 'SUN', startTime: '08:00', endTime: '12:00' }
+      ]
+    }
+  ])('should reject a schedule that conflicts with $scenario', async ({ first, second }) => {
     await handler.execute(TestRegisterMarketSchedule.with({
       scheduleName: 'Saturday Morning Market',
-      days: [{ day: 'SAT', startTime: '08:00', endTime: '14:00' }]
+      days: first
     }));
 
     const conflicting = TestRegisterMarketSchedule.with({
       scheduleName: 'Saturday Afternoon Market',
-      days: [{ day: 'SAT', startTime: '10:00', endTime: '16:00' }]
+      days: second
     });
     await expect(handler.execute(conflicting)).rejects.toThrow(ConflictingScheduleError);
   });
