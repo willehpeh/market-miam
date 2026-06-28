@@ -12,7 +12,6 @@ Each survivor = behaviour no test pins. Notation: `file:line:col [Mutator]`, `or
 |---|---|---|
 | `schedule-day.ts:31:12` Equality | `_startTime < other._endTime` → `<=` | Adjacent/touching ranges (12:00–14:00 then 14:00–16:00) untested. |
 | `schedule-day.ts:31:48` Equality | `other._startTime < this._endTime` → `<=` | Same boundary, other side. |
-| `schedule-day.ts:43:12` Equality | `startTime < endTime` → `<=` | Zero-length interval (start==end) untested in `endIsAfterStart`. |
 | `schedule-day.ts:31:12` Conditional | `… && …` → `true && …` | Left comparison unproven. |
 | `schedule-day.ts:12:9` Logical | `start && end && …` → `start ‖ end && …` | Partial-time day (only start or end) untested. |
 | `schedule-day.ts:28:9` Logical | `!start ‖ !end ‖ …` → `!start && !end ‖ …` | Whole-day vs timed overlap mix untested. |

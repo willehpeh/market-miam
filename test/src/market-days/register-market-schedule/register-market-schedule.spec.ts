@@ -23,7 +23,13 @@ describe('Register Market Schedule', () => {
     TestRegisterMarketSchedule.simple(),
     TestRegisterMarketSchedule.simpleNoTimes(),
     TestRegisterMarketSchedule.everyDay(),
-    TestRegisterMarketSchedule.simpleMonthly()
+    TestRegisterMarketSchedule.simpleMonthly(),
+    TestRegisterMarketSchedule.with({
+      days: [
+        { day: 'MON', startTime: '09:00', endTime: '14:00' },
+        { day: 'MON', startTime: '14:00', endTime: '20:00' }
+      ]
+    })
   ])('should register a market schedule, defaulting to weekly', async command => {
     await handler.execute(command);
 
@@ -128,6 +134,11 @@ describe('Register Market Schedule', () => {
     const command = TestRegisterMarketSchedule.with({ days: [{ day: 'SAT', startTime: '14:00', endTime: '12:00' }] });
     await expect(handler.execute(command)).rejects.toThrow(InvalidScheduleError);
   });
+
+  it('should reject a schedule containing a day where start and end time are the same', async () => {
+    const command = TestRegisterMarketSchedule.with({ days: [{ day: 'MON', startTime: '14:00', endTime: '14:00' }] });
+    await expect(handler.execute(command)).rejects.toThrow(InvalidScheduleError);
+  })
 
   it.each([
     [0], [-1]
