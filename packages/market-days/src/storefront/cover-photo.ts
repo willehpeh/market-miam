@@ -14,7 +14,7 @@ export class SetCoverPhoto implements CoverPhoto {
 }
 
 export class NoCoverPhoto implements CoverPhoto {
-  sameAs(_imageReference: ImageReference): boolean {
+  sameAs(): boolean {
     return false;
   }
 }
