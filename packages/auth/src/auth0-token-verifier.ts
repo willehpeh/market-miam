@@ -35,7 +35,6 @@ export class Auth0TokenVerifier implements TokenVerifier {
   }
 
   private claim(payload: JWTPayload, name: string): string {
-    const value = payload[name];
-    return typeof value === 'string' ? value : '';
+    return payload[name] as string;
   }
 }

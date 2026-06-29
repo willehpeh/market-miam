@@ -9,7 +9,7 @@ import {
   PlanItemsForMarketDayHandler
 } from '@market-monster/market-days';
 import { StoredEvent } from '@market-monster/event-sourcing';
-import { EmptyValueError, Instant, LocalDate } from '@market-monster/common';
+import { DateClock, EmptyValueError, Instant } from '@market-monster/common';
 import { seedCatalogue } from '../../seed-catalogue';
 import { expectVendorScopedEvents } from '../../shared-kernel';
 
@@ -22,7 +22,7 @@ describe('Plan Items For Market Day', () => {
   beforeEach(() => {
     store = new InMemoryEventStore();
     marketDays = new MarketDays(new VendorScopedEvents(store), {
-      today: () => LocalDate.today(),
+      today: () => new DateClock().today(),
       now: () => new Instant('2026-06-19T09:00:00.000Z'),
     });
     catalogues = new Catalogues(new VendorScopedEvents(store));
@@ -47,6 +47,9 @@ describe('Plan Items For Market Day', () => {
           date: command.date
         }
       })]);
+
+    const event = store.newEvents()[0] as unknown as ItemsPlannedForMarketDay;
+    expect(event.payload.items[1]).not.toHaveProperty('quantity');
   });
 
   it('stamps the vendor id into the event metadata', async () => {

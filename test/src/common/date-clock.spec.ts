@@ -1,14 +1,24 @@
-import { describe, expect, it } from 'vitest';
-import { DateClock, Instant, LocalDate } from '@market-monster/common';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { DateClock, Instant } from '@market-monster/common';
 
-// The production Clock adapter (market-days wires it in prod; tests use a fixed
-// clock). Reading through it proves it builds well-formed value objects from the
-// system clock — a malformed instant/date would throw in their constructors.
 describe('DateClock', () => {
   const clock = new DateClock();
 
-  it("reads today's date from the system clock", () => {
-    expect(clock.today().value()).toBe(LocalDate.today().value());
+  describe('today', () => {
+    beforeEach(() => vi.useFakeTimers());
+    afterEach(() => vi.useRealTimers());
+
+    it('reads the calendar date in local time, not UTC', () => {
+      vi.setSystemTime(new Date('2026-06-24T02:00:00.000Z'));
+
+      expect(clock.today().value()).toBe('2026-06-23');
+    });
+
+    it('zero-pads single-digit months and days', () => {
+      vi.setSystemTime(new Date('2026-05-09T13:00:00.000Z'));
+
+      expect(clock.today().value()).toBe('2026-05-09');
+    });
   });
 
   it('reads the current instant from the system clock', () => {
