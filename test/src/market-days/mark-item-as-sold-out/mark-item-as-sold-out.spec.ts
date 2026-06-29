@@ -2,7 +2,7 @@ import { InMemoryEventStore } from '@market-monster/event-sourcing';
 import { VendorScopedEvents } from '@market-monster/market-days';
 import {
   Catalogues, MarketDays, PlanItemsForMarketDayHandler, MarkItemAsSoldOutHandler, MarkItemAsSoldOut,
-  ItemNotPlannedError, UnplanItemFromMarketDayHandler, UnplanItemFromMarketDay
+  ItemNotPlannedError, ItemAlreadySoldOutError, UnplanItemFromMarketDayHandler, UnplanItemFromMarketDay
 } from '@market-monster/market-days';
 import { TestPlanItemsForMarketDay } from '../plan-items-for-market-day/test-data';
 import { Instant, LocalDate } from '@market-monster/common';
@@ -65,6 +65,18 @@ describe('Mark Item As Sold Out', () => {
     await handler.execute(new MarkItemAsSoldOut(previousCommand.vendorId, itemId, previousCommand.marketId, TEST_TODAY, '10:00'));
 
     expectVendorScopedEvents(store.newEvents(), 'vendor-1');
+  });
+
+  it('should reject marking an item that is already sold out', async () => {
+    const { itemId, previousCommand } = await addItemToCatalogueAndPlanIt(TEST_TODAY);
+    const command = new MarkItemAsSoldOut(previousCommand.vendorId, itemId, previousCommand.marketId, TEST_TODAY, '10:00');
+    await handler.execute(command);
+
+    await expect(() => handler.execute(command)).rejects.toThrow(ItemAlreadySoldOutError);
+    expect(store.newEvents()).toEqual([
+      expect.objectContaining({ type: 'ItemsPlannedForMarketDay' }),
+      expect.objectContaining({ type: 'ItemMarkedAsSoldOut' })
+    ]);
   });
 
   it('should reject marking an item not available today as sold out', async () => {
