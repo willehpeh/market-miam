@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { ConcurrencyError } from './concurrency.error';
 import { DomainEvent } from './domain-event';
 import { Events } from './events';
 import { EventStore } from './event-store';
@@ -12,7 +13,7 @@ export class InMemoryEventStore implements EventStore, Events {
   append(streamId: string, events: DomainEvent[], expectedStreamPosition: number, metadata?: Record<string, unknown>): Promise<void> {
     const stream = this.allEvents().filter(e => e.streamId === streamId);
     if (stream.length !== expectedStreamPosition) {
-      return Promise.reject(new Error(`Expected stream position ${expectedStreamPosition}, but stream is at ${stream.length}`));
+      return Promise.reject(new ConcurrencyError(expectedStreamPosition, stream.length));
     }
 
     this.appendedEvents.push(...this.toStoredEvents(events, streamId, stream, metadata));

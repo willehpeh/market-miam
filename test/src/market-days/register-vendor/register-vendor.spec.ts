@@ -42,6 +42,18 @@ describe('Register Vendor', () => {
     expectSingleEventFrom(first);
   });
 
+  it('registers different vendors independently', async () => {
+    const first = TestRegisterVendor.valid();
+    const second = TestRegisterVendor.with({ vendorId: 'another-vendor' });
+    await handler.execute(first);
+    await handler.execute(second);
+
+    expect(store.newEvents()).toEqual([
+      expect.objectContaining({ type: 'VendorRegistered', payload: expect.objectContaining({ vendorId: first.vendorId }) }),
+      expect.objectContaining({ type: 'VendorRegistered', payload: expect.objectContaining({ vendorId: second.vendorId }) }),
+    ]);
+  });
+
   function expectSingleEventFrom(command: RegisterVendor) {
     const expectedEvent: VendorRegistered = {
       type: 'VendorRegistered',

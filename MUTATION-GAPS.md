@@ -1,36 +1,34 @@
 # Mutation Gaps
 
 Stryker (`npx nx run test:mutation`), mutating `packages/**/src`, error files excluded (`stryker.conf.mjs`).
-665 mutants · 607 killed · 53 survived · 91.28%.
+664 mutants · 615 killed · 45 survived · 92.62%.
 
 Each survivor = behaviour no test pins. Notation: `file:line:col [Mutator]`, `original → mutated`.
 
 ## C. Stream IDs unpinned
-vendorId metadata now pinned in `vendor-scoped-events.ts` (killed by the per-use-case `stamps the vendor id` tests).
+vendorId metadata now pinned in `vendor-scoped-events.ts` (killed by the per-use-case `stamps the vendor id` tests). The stream-id *format* is an implementation detail, not worth pinning; what matters is per-vendor stream isolation, which is only observable where the aggregate has event-derived state.
 
 | Mutant | Change | Gap |
 |---|---|---|
-| `calendars.ts:18:43`/`19:12`, `vendors.ts:18:43`/`19:12` Block/String | `calendar-${id}`/`vendor-${id}` → empty | Stream-id format unpinned (symmetric load/save; only calendar+vendor streams). |
+| `vendors.ts:18:43`/`19:12` Block/String | `vendor-${id}` → empty | **Killed.** `register-vendor.spec` *"registers different vendors independently"* — register A then B, assert both raise `VendorRegistered`. Under the mutant `register(B)` loads A's stream and no-ops (idempotency guard) → one event. Pins per-vendor isolation without the literal key (verified by applying the mutant). |
 | `vendor-id-from.ts:4:20` OptionalChaining | `metadata?.['vendorId']` → `metadata['vendorId']` | Event missing metadata untested (defensive). |
 
-## D. Event-store internals & defensive copies
+## D. Event-store internals & defensive copies — triaged (noise)
+No domain-behaviour gaps; all noise/equivalent (moved to I), except the concurrency
+message which was eliminated by typing the error.
+- `seedWith` filter (Method / ArrowFn): `seedWith` is a **test-only** seeding seam (no production caller). Its production twin `append` uses the same `filter(e => e.streamId === streamId)` and is fully covered by the EventStore contract (optimistic concurrency + per-stream load), so production isolation is pinned. Multi-stream seed-position isolation is harness correctness — not worth a test.
+- `aggregate.ts` `raisedEvents().slice()` → no copy: a defensive copy no caller violates; killing it needs a speculative "mutate the returned array, assert internals intact" test. Left per no-speculative-surface.
+- `seededEvents = []` ArrayDecl: initial emptiness not observable; near-equivalent.
+- Concurrency message — **eliminated.** Extracted to `ConcurrencyError` (`concurrency.error.ts`, excluded from mutation as `*.error.ts`); `append` throws it and the contract asserts the *type* (`rejects.toThrow(ConcurrencyError)`) — the meaningful contract. The message string is no longer a mutant.
 
-| Mutant | Change | Gap |
-|---|---|---|
-| `in-memory.event-store.ts:27:20` Method | `seedWith` filter → all events | Multi-stream seed isolation untested. |
-| `in-memory.event-store.ts:27:44` ArrowFn | predicate → `() => undefined` | Same path, empty result uncaught. |
-| `aggregate.ts:12:12` Method | `_raisedEvents.slice()` → `_raisedEvents` | `raisedEvents()` copy not proven (caller can mutate internals). |
-| `in-memory.event-store.ts:9:41` ArrayDecl | `seededEvents = []` → `[…]` | Near-equivalent (initial emptiness not observable). |
-| `in-memory.event-store.ts:15:39` String | concurrency message → `` | Message text only. |
-
-## E. Checkpoint processor metadata
-`checkpointed.decorator.ts`. Registered checkpoint metadata unasserted.
-
-| Mutant | Change | Gap |
-|---|---|---|
-| `:18:79`, `:19:22` Block | `CheckpointedProcessor` body/arrow emptied | Processor registration unasserted. |
-| `:20:29` ObjectLiteral | `{name, kind:'processor'}` → `{}` | name+kind unchecked. |
-| `:20:59`, `:14:59` String | `kind:'processor'`/`'projection'` → `""` | kind discriminator unpinned. |
+## E. Checkpoint processor metadata — resolved
+`checkpointed.decorator.ts` is now 100%. The `kind` discriminator is real
+(processors need message-context wrapping and aren't replay-safe), and the existing
+spec asserted only the projection *name* via `projectionCheckpoint`. Extended
+`checkpointed-projection.decorator.spec.ts` to assert `checkpointMetadata` returns the
+full `{ name, kind }` for both decorators — pinning `CheckpointedProcessor`'s existence,
+the metadata shape, and both `kind` values (verified by applying the mutants). No
+speculative surface: `checkpointMetadata` is the public contract the runner uses.
 
 ## F. Market-day reducer & equality — resolved
 All Section F survivors are killed (`market-day.ts` and `item-id.ts` now 100%):
@@ -63,3 +61,4 @@ assertion is deterministic and falsifiable.
   - `jwt-auth.guard.ts:32:63` String (`authorization ?? ''` → junk string): both a missing header and the junk yield a scheme ≠ `'Bearer'` → `UnauthorizedException`. Idiomatic null-guard; equivalence is just JS string handling.
   - `vendor-status.ts:15:29` String (`'unregistered'` → `""`): the only observable is `isRegistered()` (`=== 'registered'`), `false` for both. The `'unregistered'` value carries no testable behaviour (mild value-without-behaviour smell; defensible only if more statuses are coming).
   - `auth.module.ts:21:15` Boolean (`global: true` → `false`): NestJS DI config; near-equivalent, low test value.
+- **Equivalent — stream-id format (ex-Section C)**: `calendars.ts:18:43`/`19:12` Block/String (`calendar-${id}` → empty). `Calendar.apply()` is a no-op and `registerMarketSchedule` raises unconditionally, so a colliding calendar stream is indistinguishable through the API. Only killable by asserting the literal stream key — an implementation detail. (The `vendors.ts` twin is *not* equivalent — see C — because `Vendor` has event-derived state.)

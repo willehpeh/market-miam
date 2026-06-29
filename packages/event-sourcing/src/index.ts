@@ -19,6 +19,7 @@ export { MessageContext, MessageContextData } from './message-context';
 export { MessageContextDispatcher } from './message-context.dispatcher';
 export { MessageContextEventStore } from './message-context.event-store';
 export { InMemoryEventStore } from './in-memory.event-store';
+export { ConcurrencyError } from './concurrency.error';
 export { InMemoryCheckpoint } from './in-memory.checkpoint';
 export { InMemorySubscription } from './in-memory.subscription';
 export * from './event-handler-map';

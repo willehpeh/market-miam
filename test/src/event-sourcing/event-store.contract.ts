@@ -1,4 +1,4 @@
-import { DomainEvent, EventStore } from '@market-monster/event-sourcing';
+import { ConcurrencyError, DomainEvent, EventStore } from '@market-monster/event-sourcing';
 import { describe, it, beforeEach, expect } from 'vitest';
 
 export function eventStoreContract(
@@ -55,7 +55,7 @@ export function eventStoreContract(
 
       await expect(
         store.append('stream-1', [dummyEvent('Stale')], 2),
-      ).rejects.toThrow();
+      ).rejects.toThrow(ConcurrencyError);
 
       const types = (await store.load('stream-1')).map((e) => e.type);
       expect(types).toEqual(['First', 'Second', 'Third']);
@@ -64,7 +64,7 @@ export function eventStoreContract(
     it('requires expectedStreamPosition 0 for the first append to a new stream', async () => {
       await expect(
         store.append('stream-1', [dummyEvent('First')], 1),
-      ).rejects.toThrow();
+      ).rejects.toThrow(ConcurrencyError);
 
       await store.append('stream-2', [dummyEvent('First')], 0);
       expect(await store.load('stream-2')).toHaveLength(1);
