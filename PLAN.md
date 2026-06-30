@@ -184,31 +184,39 @@ not the order you build in):**
 
 Then the read side ("B"): `QueryDispatcher` + `GET /storefront`, then frontend.
 
-## Next overall step — complete the post-login journey
+## Post-login journey — protected dashboard (SHIPPED)
 
-After login, the vendor should land in a protected area (the registration
-already fires on `LoginSuccess`). This also brings back the **deferred auth
-guard**, now that there's a route to protect.
+After login the vendor is redirected to a guarded `/dashboard`. Test-driven end
+to end. The open decisions are resolved:
 
-1. **A protected vendor route + component** (e.g. a vendor home/dashboard) —
-   currently routes are just `''` → public `Landing`.
-2. **Login redirect** — on `LoginSuccess`, navigate from landing into the
-   protected route.
-3. **Auth guard** — protect the vendor route; send unauthenticated users back to
-   landing/login.
+- **Guard**: an `authenticated` `CanActivateFn`, **port/facade-based** — reasons
+  about auth *state*, runs dev+prod, testable via `FakeAuthFacade`. (Not the
+  prod-only Auth0 `authGuardFn`.)
+- **Redirect**: an NgRx **`redirect$` effect** on `LoginSuccess` → `/dashboard`,
+  kept in `AuthEffects` beside the login lifecycle (deliberately **not** split
+  into its own effects class).
+- **Dev story**: port-based, so the guard runs in dev too via the fake facade.
 
-### Open decisions (grill before building)
+**Three-value `AuthStatus`** (`pending | authenticated | anonymous`) is the
+keystone: the guard must *wait* during the Auth0 load window (`pending`), not
+bounce a logged-in user on a hard refresh. `selectAuthStatus` derives it
+(loading ⇒ pending); the facade exposes a single `status: Signal<AuthStatus>`;
+the guard bridges via `toObservable(status)` + `filter(≠ pending)` → admit or
+`UrlTree('/')`.
 
-- **Guard mechanism**: Auth0 `authGuardFn` (built-in, prod-only — consistent
-  with the interceptor decision) **vs** a port/facade-based guard using
-  `AuthFacade.isAuthenticated` (works in dev+prod, testable with `FakeAuth`).
-  Note this differs from the interceptor case: the guard reasons about auth
-  *state* (already abstracted by the facade), not the raw token — so the
-  port-based option is more defensible here. Decide deliberately.
-- **Redirect mechanism**: an NgRx effect on `LoginSuccess` that navigates, vs
-  Auth0 `appState`/redirect-callback targeting.
-- **Dev story**: if the guard is prod-only, dev routes are unprotected (fine,
-  faked); if port-based, the guard runs in dev too via `FakeAuth`.
+- **`AuthFacade` is now a port** (abstract + `StoreAuthFacade` + `FakeAuthFacade`),
+  mirroring the `Auth` port. Consolidated to `status` alone —
+  `isLoading`/`isAuthenticated` and `selectIsAuthenticated` deleted. Layout shows
+  logout iff `authenticated`, Landing shows login iff `anonymous`; `pending` hides
+  both, so the buttons went dumb (no own loading guard).
+- **Test homes by altitude**: `app.spec` owns the terminal-state journeys
+  (anonymous bounced, authenticated admitted) via `FakeAuth`;
+  `authenticated.guard.spec` owns the pending-wait in isolation (`redirect$`
+  co-navigation makes pending indiscriminable in the whole-chain spec); component
+  specs fake the facade.
+
+Loose end: `Dashboard` is a blank stub — the journey lands on nothing. The
+read-side "B" (display the storefront) gives it somewhere to land.
 
 ## Backlog (roughly sequenced)
 
@@ -238,8 +246,9 @@ guard**, now that there's a route to protect.
 
 ## Sequencing note
 
-The post-login journey is the immediate next step (user-signalled, completes the
-registration UX, restores the guard). But **persistence (#1) is the most
-valuable platform step** — it's what makes registration durable and observable.
-Reasonable to do the journey first, then persistence; or persistence first if
-proving real registration matters more than the UX loop.
+The post-login journey is **done** (guard + redirect + three-value status). Next
+is either the storefront **read side** ("B" — `GET /storefront` + display it on
+the now-blank Dashboard), completing the registration UX loop, or **persistence
+(#1)** — the most valuable platform step, making registration durable and
+observable. The read side is the smaller, coherent continuation; persistence is
+the bigger prize.
