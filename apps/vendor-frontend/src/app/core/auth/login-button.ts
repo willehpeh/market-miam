@@ -3,7 +3,7 @@ import { AuthFacade } from './auth.facade';
 
 @Component({
   selector: 'mm-login-button',
-  template: `<button id="login-button" (click)="onClick()">SE CONNECTER</button>`,
+  template: `<button id="login-button" (click)="onClick()">Se connecter</button>`,
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class LoginButton {

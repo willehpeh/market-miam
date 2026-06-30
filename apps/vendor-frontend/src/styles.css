@@ -1,10 +1,6 @@
 /* You can add global styles to this file, and also import other style files */
 @import "tailwindcss" source("..");
-
-@theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-display: "Plus Jakarta Sans", var(--font-sans);
-}
+@import "./assets/miam-theme.css";
 
 @layer base {
   h1,
@@ -13,16 +9,16 @@
   h4,
   h5,
   h6 {
-    @apply font-display font-bold tracking-tight;
+    @apply font-bold tracking-tight;
   }
 
   button,
   input[type="button"],
   input[type="submit"],
   input[type="reset"] {
-    @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors;
-    @apply hover:bg-gray-700 active:bg-gray-800;
-    @apply focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-900;
+    @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors;
+    @apply hover:bg-brand-deep active:bg-brand-deep font-bold;
+    @apply focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand;
     @apply disabled:pointer-events-none disabled:opacity-50;
   }
 }

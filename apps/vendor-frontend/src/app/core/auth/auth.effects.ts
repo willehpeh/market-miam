@@ -34,8 +34,13 @@ export class AuthEffects {
     map(userId => (userId !== null ? LoginSuccess({ userId }) : LogoutSuccess())),
   ));
 
-  readonly redirect$ = createEffect(() => this.actions$.pipe(
+  readonly redirectOnLogin$ = createEffect(() => this.actions$.pipe(
     ofType(LoginSuccess),
     tap(() => this.router.navigate(['dashboard'])),
+  ), { dispatch: false });
+
+  readonly redirectOnLogout$ = createEffect(() => this.actions$.pipe(
+    ofType(LogoutSuccess),
+    tap(() => this.router.navigate([''])),
   ), { dispatch: false });
 }

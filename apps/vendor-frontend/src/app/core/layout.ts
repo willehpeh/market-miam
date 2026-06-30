@@ -7,13 +7,13 @@ import { LogoutButton } from './auth/logout-button';
   selector: 'mm-layout',
   template: `
     <div class="grid min-h-svh grid-rows-[auto_1fr]">
-      <header class="flex h-15 items-center justify-between border-b border-gray-200 px-6">
-        <span class="font-display text-lg font-bold tracking-tight">Market Miam</span>
+      <header class="flex h-15 items-center justify-between px-6 bg-surface">
+        <h1 class="text-xl font-bold font-mono text-brand tracking-tight">MARKET MIAM</h1>
         @if (status() === 'authenticated') {
           <mm-logout-button />
         }
       </header>
-      <main>
+      <main class="px-6 py-3">
         <router-outlet />
       </main>
     </div>
