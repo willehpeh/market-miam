@@ -3,12 +3,14 @@ import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { combineLatest, distinctUntilChanged, filter, map, tap } from 'rxjs';
 import { Auth } from './auth';
 import { AuthLoadingChanged, Login, LoginSuccess, Logout, LogoutSuccess } from './auth.state';
+import { Router } from '@angular/router';
 
 @Injectable()
 export class AuthEffects {
 
   private readonly actions$ = inject(Actions);
   private readonly auth = inject(Auth);
+  private readonly router = inject(Router);
 
   readonly login$ = createEffect(() => this.actions$.pipe(
     ofType(Login),
@@ -31,4 +33,9 @@ export class AuthEffects {
     distinctUntilChanged(),
     map(userId => (userId !== null ? LoginSuccess({ userId }) : LogoutSuccess())),
   ));
+
+  readonly redirect$ = createEffect(() => this.actions$.pipe(
+    ofType(LoginSuccess),
+    tap(() => this.router.navigate(['dashboard'])),
+  ), { dispatch: false });
 }

@@ -26,7 +26,11 @@ export const authFeature = createFeature({
   ),
 });
 
-export const selectIsAuthenticated = createSelector(
+export type AuthStatus = 'pending' | 'authenticated' | 'anonymous';
+
+export const selectAuthStatus = createSelector(
+  authFeature.selectIsLoading,
   authFeature.selectUserId,
-  (userId) => userId !== null,
+  (isLoading, userId): AuthStatus =>
+    isLoading ? 'pending' : userId !== null ? 'authenticated' : 'anonymous',
 );

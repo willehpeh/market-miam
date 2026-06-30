@@ -1,19 +1,10 @@
-import { inject, Injectable } from '@angular/core';
-import { Store } from '@ngrx/store';
-import { authFeature, Login, Logout, selectIsAuthenticated } from './auth.state';
+import { Signal } from '@angular/core';
+import { AuthStatus } from './auth.state';
 
-@Injectable()
-export class AuthFacade {
-  private readonly store = inject(Store);
+export abstract class AuthFacade {
+  abstract readonly status: Signal<AuthStatus>;
 
-  readonly isLoading = this.store.selectSignal(authFeature.selectIsLoading);
-  readonly isAuthenticated = this.store.selectSignal(selectIsAuthenticated);
+  abstract login(): void;
 
-  login(): void {
-    this.store.dispatch(Login());
-  }
-
-  logout(): void {
-    this.store.dispatch(Logout());
-  }
+  abstract logout(): void;
 }

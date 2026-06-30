@@ -7,6 +7,7 @@ import { provideState } from '@ngrx/store';
 import { authFeature } from './auth.state';
 import { provideEffects } from '@ngrx/effects';
 import { AuthFacade } from './auth.facade';
+import { StoreAuthFacade } from './store.auth.facade';
 import { AuthEffects } from './auth.effects';
 import { environment } from '../../../environments/environment';
 
@@ -26,6 +27,6 @@ export function provideAuth(): EnvironmentProviders {
     { provide: Auth, useClass: isDevMode() ? FakeAuth : Auth0Auth },
     provideState(authFeature),
     provideEffects(AuthEffects),
-    AuthFacade,
+    { provide: AuthFacade, useClass: StoreAuthFacade },
   ])
 }

@@ -10,11 +10,13 @@ import { provideEffects } from '@ngrx/effects';
 import { authFeature } from './core/auth/auth.state';
 import { AuthEffects } from './core/auth/auth.effects';
 import { AuthFacade } from './core/auth/auth.facade';
+import { StoreAuthFacade } from './core/auth/store.auth.facade';
 
 describe('App', () => {
 
   let fixture: ComponentFixture<App>;
   let auth: FakeAuth;
+  let router: Router;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
@@ -24,13 +26,14 @@ describe('App', () => {
         provideStore(),
         provideState(authFeature),
         provideEffects(AuthEffects),
-        AuthFacade,
+        { provide: AuthFacade, useClass: StoreAuthFacade },
         { provide: Auth, useClass: FakeAuth }
       ]
     }).compileComponents();
     fixture = TestBed.createComponent(App);
     auth = TestBed.inject(Auth) as FakeAuth;
-    await TestBed.inject(Router).navigate(['/']);
+    router = TestBed.inject(Router);
+    await router.navigate(['/']);
     fixture.detectChanges();
   });
 
@@ -45,5 +48,18 @@ describe('App', () => {
     fixture.detectChanges();
     expect(fixture.debugElement.query(By.css('#login-button'))).toBeTruthy();
     expect(fixture.debugElement.query(By.css('#logout-button'))).toBeNull();
+  });
+
+  it('should redirect the vendor to the dashboard when login succeeds', async () => {
+    auth.login();
+    await fixture.whenStable();
+
+    expect(router.url).toBe('/dashboard');
+  });
+
+  it('should bounce an anonymous visitor away from the dashboard', async () => {
+    await router.navigateByUrl('/dashboard');
+
+    expect(router.url).toBe('/');
   });
 });

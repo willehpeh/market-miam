@@ -6,7 +6,7 @@ import { LoginButton } from '../core/auth/login-button';
   selector: 'mm-landing',
   host: { class: 'grid min-h-full place-items-center' },
   template: `
-    @if (!isAuthenticated()) {
+    @if (status() === 'anonymous') {
       <mm-login-button />
     }
   `,
@@ -15,5 +15,5 @@ import { LoginButton } from '../core/auth/login-button';
 })
 export class Landing {
   private readonly auth = inject(AuthFacade);
-  protected readonly isAuthenticated = this.auth.isAuthenticated;
+  protected readonly status = this.auth.status;
 }

@@ -9,7 +9,7 @@ import { LogoutButton } from './auth/logout-button';
     <div class="grid min-h-svh grid-rows-[auto_1fr]">
       <header class="flex h-15 items-center justify-between border-b border-gray-200 px-6">
         <span class="font-display text-lg font-bold tracking-tight">Market Miam</span>
-        @if (isAuthenticated()) {
+        @if (status() === 'authenticated') {
           <mm-logout-button />
         }
       </header>
@@ -23,5 +23,5 @@ import { LogoutButton } from './auth/logout-button';
 })
 export class Layout {
   private readonly auth = inject(AuthFacade);
-  protected readonly isAuthenticated = this.auth.isAuthenticated;
+  protected readonly status = this.auth.status;
 }
