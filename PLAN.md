@@ -63,8 +63,12 @@ shipped — see the slice above). Read side:
    Returns `404` while unprojected (consistency lag). Built by gradual refactor
    under green off a minimal direct-read spike. Social + tracing specs in
    `apps/api`.
-2. **Frontend** — storefront edit form + display ("something to show"). The
-   only remaining read-side piece.
+2. **Frontend** — **display done**. The Dashboard fetches `GET /api/storefront`
+   through a `storefront/` slice (port → `HttpStorefront` → effects → abstract
+   `StorefrontFacade` → `provideStorefront()`), rendering the view with a bounded
+   **404-retry** (injectable `STOREFRONT_RETRY` knob) that absorbs the
+   registration→projection lag on first login. Remaining: the **edit form**
+   (wired to `PUT /storefront`).
 
 Eventual-consistency note: the projection is async, so after an edit the read
 model updates only once `poll()` runs — the frontend must tolerate that lag
@@ -252,9 +256,9 @@ read-side "B" (display the storefront) gives it somewhere to land.
 
 ## Sequencing note
 
-The post-login journey is **done** (guard + redirect + three-value status), and
-the read side's **`GET /storefront`** now ships (see B.1). Next is either the
-storefront **frontend** (B.2 — display it on the now-blank Dashboard),
-completing the registration UX loop, or **persistence (#1)** — the most valuable
-platform step, making registration durable and observable. The frontend is the
-smaller, coherent continuation; persistence is the bigger prize.
+The post-login journey is **done**, and the read side now ships **`GET /storefront`**
+(B.1) plus its **Dashboard display** (B.2) with lag-absorbing 404-retry. Next is
+either the storefront **edit form** (the last read-side piece, wired to
+`PUT /storefront`), or **persistence (#1)** — the most valuable platform step,
+making registration durable and observable. The edit form is the smaller
+continuation; persistence is the bigger prize.

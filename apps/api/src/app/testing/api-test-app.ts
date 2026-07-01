@@ -4,11 +4,10 @@ import { Clock, Email, Instant, LocalDate } from '@market-monster/common';
 import { VendorId } from '@market-monster/shared-kernel';
 import { EventStore } from '@market-monster/event-sourcing';
 import { StorefrontOpened } from '@market-monster/market-days';
-import { VerifiedVendor } from '@market-monster/auth';
+import { StaticTokenVerifier, VerifiedVendor } from '@market-monster/auth';
 import { AuthModule } from '@market-monster/auth-nestjs';
 import { MarketDaysModule } from '../market-days/market-days.module';
 import { POLLING_ENABLED } from '../event-sourcing/consumer-runner';
-import { FakeTokenVerifier } from './fake-token-verifier';
 
 export const testVendor: VerifiedVendor = {
   vendorId: new VendorId('acme-bakery'),
@@ -31,7 +30,7 @@ export function apiTestModule(options: ApiTestOptions = {}): TestingModuleBuilde
   const { vendor = testVendor, clock } = options;
   const builder = Test.createTestingModule({
     imports: [
-      AuthModule.forRootAsync({ useFactory: () => new FakeTokenVerifier(vendor) }),
+      AuthModule.forRootAsync({ useFactory: () => new StaticTokenVerifier(vendor) }),
       MarketDaysModule,
     ],
   });

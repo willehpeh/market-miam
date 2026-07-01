@@ -1,0 +1,16 @@
+import { inject, Injectable } from '@angular/core';
+import { Store } from '@ngrx/store';
+import { StorefrontFacade } from './storefront.facade';
+import { LoadStorefront, storefrontFeature } from './storefront.state';
+
+@Injectable()
+export class StoreStorefrontFacade implements StorefrontFacade {
+  private readonly store = inject(Store);
+
+  readonly view = this.store.selectSignal(storefrontFeature.selectView);
+  readonly loading = this.store.selectSignal(storefrontFeature.selectLoading);
+
+  load(): void {
+    this.store.dispatch(LoadStorefront());
+  }
+}

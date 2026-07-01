@@ -1,6 +1,6 @@
 import { Injectable, signal } from '@angular/core';
 import { StorefrontFacade } from './storefront.facade';
-import { StorefrontView } from './storefront-view';
+import { StorefrontView } from './storefront';
 
 @Injectable()
 export class FakeStorefrontFacade implements StorefrontFacade {

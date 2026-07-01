@@ -11,6 +11,8 @@ import { authFeature } from './core/auth/auth.state';
 import { AuthEffects } from './core/auth/auth.effects';
 import { AuthFacade } from './core/auth/auth.facade';
 import { StoreAuthFacade } from './core/auth/store.auth.facade';
+import { StorefrontFacade } from './storefront/storefront.facade';
+import { FakeStorefrontFacade } from './storefront/fake.storefront.facade';
 
 describe('App', () => {
 
@@ -27,7 +29,8 @@ describe('App', () => {
         provideState(authFeature),
         provideEffects(AuthEffects),
         { provide: AuthFacade, useClass: StoreAuthFacade },
-        { provide: Auth, useClass: FakeAuth }
+        { provide: Auth, useClass: FakeAuth },
+        { provide: StorefrontFacade, useClass: FakeStorefrontFacade }
       ]
     }).compileComponents();
     fixture = TestBed.createComponent(App);

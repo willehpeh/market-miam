@@ -6,6 +6,8 @@ import { Dashboard } from '../../dashboard/dashboard';
 import { authenticated } from './authenticated.guard';
 import { AuthFacade } from './auth.facade';
 import { FakeAuthFacade } from './fake.auth.facade';
+import { StorefrontFacade } from '../../storefront/storefront.facade';
+import { FakeStorefrontFacade } from '../../storefront/fake.storefront.facade';
 
 describe('authenticated guard', () => {
   let fake: FakeAuthFacade;
@@ -19,6 +21,7 @@ describe('authenticated guard', () => {
           { path: 'dashboard', component: Dashboard, canActivate: [authenticated] },
         ]),
         { provide: AuthFacade, useClass: FakeAuthFacade },
+        { provide: StorefrontFacade, useClass: FakeStorefrontFacade },
       ],
     });
     fake = TestBed.inject(AuthFacade) as FakeAuthFacade;
