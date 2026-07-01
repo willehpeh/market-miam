@@ -24,7 +24,3 @@ export function CheckpointedProcessor(checkpointName: string): ClassDecorator {
 export function checkpointMetadata(target: object): CheckpointMetadata | undefined {
   return checkpoints.get(target);
 }
-
-export function projectionCheckpoint(target: object): string | undefined {
-  return checkpoints.get(target)?.name;
-}

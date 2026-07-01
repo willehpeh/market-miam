@@ -9,7 +9,6 @@ export {
   CheckpointedProjection,
   CheckpointedProcessor,
   checkpointMetadata,
-  projectionCheckpoint,
 } from './checkpointed.decorator';
 export { Processor } from './processor';
 export { CommandDispatcher } from './command-dispatcher';
