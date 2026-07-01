@@ -1,10 +1,10 @@
 import { VendorStorefrontViewStore } from './vendor-storefront-view.store';
-import { CheckpointedProjection, EventHandlerMap, Projection, StoredEvent } from '@market-monster/event-sourcing';
+import { CheckpointedProjection, EventHandlerMap, ProjectionFor, StoredEvent } from '@market-monster/event-sourcing';
 import { vendorIdFrom } from '@market-monster/shared-kernel';
 import { StorefrontCoverPhotoSet, StorefrontEvent, StorefrontInformationEdited } from '../storefront/events';
 
 @CheckpointedProjection('vendor-storefront-view')
-export class VendorStorefrontViewProjection extends Projection<StorefrontEvent> {
+export class VendorStorefrontViewProjection extends ProjectionFor<StorefrontEvent> {
 
   constructor(private readonly store: VendorStorefrontViewStore) {
     super();

@@ -4,15 +4,17 @@ import nx from '@nx/eslint-plugin';
 // @Checkpointed* decorator. A concrete handler missing the decorator silently
 // never runs, and at runtime it's undetectable (handlers relate to their base
 // only structurally, so no reliable instanceof). So enforce base <-> decorator
-// at lint time, keyed on either the `extends` superclass (Projection carries the
-// dispatch machinery) or an `implements` clause (Processor stays a bare marker) —
-// the structural truth, not the class name. Abstract base classes are skipped.
-function checkpointDecoratorRule(interfaceName, decoratorName) {
+// at lint time, matching any of the base names in an `extends` superclass (real
+// projections extend ProjectionFor) or an `implements` clause (Projection and
+// Processor are bare markers) — the structural truth, not the class name.
+// Abstract base classes are skipped.
+function checkpointDecoratorRule(interfaceNames, decoratorName) {
+  const relation = interfaceNames.join(' or ');
   return {
     meta: {
       type: 'problem',
       docs: {
-        description: `Concrete classes implementing ${interfaceName} must carry @${decoratorName}, and vice versa.`,
+        description: `Concrete ${relation} classes must carry @${decoratorName}, and vice versa.`,
       },
       schema: [],
     },
@@ -23,8 +25,8 @@ function checkpointDecoratorRule(interfaceName, decoratorName) {
             return;
           }
           const relatesToBase =
-            node.superClass?.name === interfaceName ||
-            (node.implements ?? []).some((clause) => clause.expression?.name === interfaceName);
+            interfaceNames.includes(node.superClass?.name) ||
+            (node.implements ?? []).some((clause) => interfaceNames.includes(clause.expression?.name));
           const decorated = (node.decorators ?? []).some(
             (decorator) =>
               decorator.expression?.type === 'CallExpression' &&
@@ -33,13 +35,13 @@ function checkpointDecoratorRule(interfaceName, decoratorName) {
           if (relatesToBase && !decorated) {
             context.report({
               node: node.id,
-              message: `A class extending or implementing ${interfaceName} must be annotated with @${decoratorName} so the ConsumerRunner discovers it.`,
+              message: `A class extending or implementing ${relation} must be annotated with @${decoratorName} so the ConsumerRunner discovers it.`,
             });
           }
           if (decorated && !relatesToBase) {
             context.report({
               node: node.id,
-              message: `A @${decoratorName} class must extend or implement ${interfaceName}.`,
+              message: `A @${decoratorName} class must extend or implement ${relation}.`,
             });
           }
         },
@@ -50,8 +52,8 @@ function checkpointDecoratorRule(interfaceName, decoratorName) {
 
 const eventSourcingConventions = {
   rules: {
-    'projection-decorator': checkpointDecoratorRule('Projection', 'CheckpointedProjection'),
-    'processor-decorator': checkpointDecoratorRule('Processor', 'CheckpointedProcessor'),
+    'projection-decorator': checkpointDecoratorRule(['Projection', 'ProjectionFor'], 'CheckpointedProjection'),
+    'processor-decorator': checkpointDecoratorRule(['Processor'], 'CheckpointedProcessor'),
   },
 };
 

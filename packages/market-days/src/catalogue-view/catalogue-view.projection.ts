@@ -1,10 +1,10 @@
 import { CatalogueViewStore } from './catalogue-view.store';
-import { CheckpointedProjection, EventHandlerMap, Projection, StoredEvent } from '@market-monster/event-sourcing';
+import { CheckpointedProjection, EventHandlerMap, ProjectionFor, StoredEvent } from '@market-monster/event-sourcing';
 import { vendorIdFrom } from '@market-monster/shared-kernel';
 import { CatalogueEvent, ItemAddedToCatalogue, ItemPriceChanged, ItemRetired } from '../catalogue/events';
 
 @CheckpointedProjection('catalogue-view')
-export class CatalogueViewProjection extends Projection<CatalogueEvent> {
+export class CatalogueViewProjection extends ProjectionFor<CatalogueEvent> {
 
   constructor(private readonly store: CatalogueViewStore) {
     super();

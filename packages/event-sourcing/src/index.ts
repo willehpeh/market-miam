@@ -5,6 +5,7 @@ export { Aggregate } from './aggregate';
 export { Events } from './events';
 export { EventHandler } from './event-handler';
 export { Projection } from './projection';
+export { ProjectionFor } from './projection-for';
 export {
   CheckpointedProjection,
   CheckpointedProcessor,
