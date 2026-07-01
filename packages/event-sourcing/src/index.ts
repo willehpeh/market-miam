@@ -13,6 +13,7 @@ export {
 } from './checkpointed.decorator';
 export { Processor } from './processor';
 export { CommandDispatcher } from './command-dispatcher';
+export { QueryDispatcher } from './query-dispatcher';
 export { Subscription } from './subscription';
 export { Checkpoint } from './checkpoint';
 export { MessageContext, MessageContextData } from './message-context';

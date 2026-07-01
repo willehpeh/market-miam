@@ -8,9 +8,11 @@ import {
   InMemoryEventStore,
   MessageContext,
   MessageContextEventStore,
+  QueryDispatcher,
 } from '@market-monster/event-sourcing';
 import { MessageContextModule } from '../message-context/message-context.module';
 import { TracingCommandDispatcher } from './tracing.command-dispatcher';
+import { TracingQueryDispatcher } from './tracing.query-dispatcher';
 import { ConsumerRunner, POLLING_ENABLED } from './consumer-runner';
 import { TracingEventStore } from './tracing.event-store';
 
@@ -33,6 +35,8 @@ const eventStore = [
     ...eventStore,
     TracingCommandDispatcher,
     { provide: CommandDispatcher, useExisting: TracingCommandDispatcher },
+    TracingQueryDispatcher,
+    { provide: QueryDispatcher, useExisting: TracingQueryDispatcher },
     { provide: POLLING_ENABLED, useValue: true },
     ConsumerRunner,
   ],
@@ -41,6 +45,7 @@ const eventStore = [
     Events,
     InMemoryEventStore,
     CommandDispatcher,
+    QueryDispatcher,
     ConsumerRunner,
   ],
 })

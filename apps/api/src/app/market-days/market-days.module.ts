@@ -7,6 +7,7 @@ import {
   Catalogues,
   ChangeItemPriceHandler,
   EditStorefrontInformationHandler,
+  FindVendorStorefrontHandler,
   InMemoryVendorStorefrontViews,
   MarkItemAsSoldOutHandler,
   MarketDays,
@@ -77,6 +78,8 @@ const commandHandlers = [
   OpenStorefrontHandler,
 ];
 
+const queryHandlers = [FindVendorStorefrontHandler];
+
 @Module({
   imports: [EventSourcingModule],
   controllers: [VendorsController, StorefrontController],
@@ -86,6 +89,7 @@ const commandHandlers = [
     ...readModel,
     ...processors,
     ...commandHandlers,
+    ...queryHandlers,
   ],
 })
 export class MarketDaysModule {}

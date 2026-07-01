@@ -54,11 +54,17 @@ cross-restart record. Persistence (Postgres) closes this.
 The write side is **done**: registration opens the storefront and edits flow
 through to the view, all traced and driven by the real poller (**B.1
 `ConsumerRunner`** discovers projections *and* processors; the first processor
-shipped — see the slice above). What's left on the read side:
+shipped — see the slice above). Read side:
 
-1. **`GET /storefront` query endpoint** — reads `VendorStorefrontViews`; builds
-   the deferred **`QueryDispatcher`** (span-only — see `O11Y-PLAN.md`).
-2. **Frontend** — storefront edit form + display ("something to show").
+1. **`GET /storefront` query endpoint** — **done**. Routes through a new
+   `QueryDispatcher` port (`event-sourcing`) + `TracingQueryDispatcher` over
+   `@nestjs/cqrs` `QueryBus` (span-only, payload-blind — see `O11Y-PLAN.md`) →
+   `FindVendorStorefront` query + `@QueryHandler` → `VendorStorefrontViews`.
+   Returns `404` while unprojected (consistency lag). Built by gradual refactor
+   under green off a minimal direct-read spike. Social + tracing specs in
+   `apps/api`.
+2. **Frontend** — storefront edit form + display ("something to show"). The
+   only remaining read-side piece.
 
 Eventual-consistency note: the projection is async, so after an edit the read
 model updates only once `poll()` runs — the frontend must tolerate that lag
@@ -246,9 +252,9 @@ read-side "B" (display the storefront) gives it somewhere to land.
 
 ## Sequencing note
 
-The post-login journey is **done** (guard + redirect + three-value status). Next
-is either the storefront **read side** ("B" — `GET /storefront` + display it on
-the now-blank Dashboard), completing the registration UX loop, or **persistence
-(#1)** — the most valuable platform step, making registration durable and
-observable. The read side is the smaller, coherent continuation; persistence is
-the bigger prize.
+The post-login journey is **done** (guard + redirect + three-value status), and
+the read side's **`GET /storefront`** now ships (see B.1). Next is either the
+storefront **frontend** (B.2 — display it on the now-blank Dashboard),
+completing the registration UX loop, or **persistence (#1)** — the most valuable
+platform step, making registration durable and observable. The frontend is the
+smaller, coherent continuation; persistence is the bigger prize.
