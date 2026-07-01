@@ -50,6 +50,10 @@ export class ConsumerRunner implements OnApplicationBootstrap, OnApplicationShut
   }
 
   async drain(): Promise<void> {
+    // ponytail: N rounds where N = subscription count, so a processor's events
+    // reach downstream projections within one drain. The bound is a proxy for
+    // max cascade depth (today: 1). If cascades ever chain deeper than the
+    // subscription count, loop until a round produces no new events instead.
     for (let i = 0; i < this.subscriptions.length; i++) {
       await Promise.all(this.subscriptions.map((subscription) => subscription.poll()));
     }
@@ -64,6 +68,9 @@ export class ConsumerRunner implements OnApplicationBootstrap, OnApplicationShut
       checkpoints.add(name);
       const driven =
         kind === 'processor' ? new ContinuationContextHandler(handler, this.context) : handler;
+      // ponytail: in-memory for now; this is the durability seam. Swap these two
+      // `new`s for durable adapters when checkpoints must survive restart —
+      // contract tests hold any replacement to the Subscription/Checkpoint spec.
       return new InMemorySubscription(
         this.events,
         new TracingEventHandler(driven),
