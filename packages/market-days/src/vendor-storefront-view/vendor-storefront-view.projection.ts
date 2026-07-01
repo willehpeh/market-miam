@@ -4,22 +4,18 @@ import { vendorIdFrom } from '@market-monster/shared-kernel';
 import { StorefrontCoverPhotoSet, StorefrontEvent, StorefrontInformationEdited } from '../storefront/events';
 
 @CheckpointedProjection('vendor-storefront-view')
-export class VendorStorefrontViewProjection implements Projection {
+export class VendorStorefrontViewProjection extends Projection<StorefrontEvent> {
 
-  private readonly _handlers: EventHandlerMap<StorefrontEvent> = {
-    StorefrontOpened: e => this.handleStorefrontOpened(e),
-    StorefrontCoverPhotoSet: e => this.handleStorefrontCoverPhotoSet(e),
-    StorefrontInformationEdited: e => this.handleStorefrontInformationEdited(e)
-  };
-
-  constructor(private readonly store: VendorStorefrontViewStore) {}
-
-  handle(event: StoredEvent): Promise<void> {
-    return this._handlers[event.type as StorefrontEvent['type']](event);
+  constructor(private readonly store: VendorStorefrontViewStore) {
+    super();
   }
 
-  eventTypes(): string[] {
-    return Object.keys(this._handlers);
+  protected handlers(): EventHandlerMap<StorefrontEvent> {
+    return {
+      StorefrontOpened: e => this.handleStorefrontOpened(e),
+      StorefrontCoverPhotoSet: e => this.handleStorefrontCoverPhotoSet(e),
+      StorefrontInformationEdited: e => this.handleStorefrontInformationEdited(e)
+    };
   }
 
   private async handleStorefrontOpened(event: StoredEvent): Promise<void> {

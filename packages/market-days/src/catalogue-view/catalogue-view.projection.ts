@@ -4,22 +4,18 @@ import { vendorIdFrom } from '@market-monster/shared-kernel';
 import { CatalogueEvent, ItemAddedToCatalogue, ItemPriceChanged, ItemRetired } from '../catalogue/events';
 
 @CheckpointedProjection('catalogue-view')
-export class CatalogueViewProjection implements Projection {
+export class CatalogueViewProjection extends Projection<CatalogueEvent> {
 
-  private readonly _handlers: EventHandlerMap<CatalogueEvent> = {
-    ItemAddedToCatalogue: e => this.handleItemAdded(e),
-    ItemPriceChanged: e => this.handleItemPriceChanged(e),
-    ItemRetired: e => this.handleItemRetired(e)
-  };
-
-  constructor(private readonly store: CatalogueViewStore) {}
-
-  eventTypes(): string[] {
-    return Object.keys(this._handlers);
+  constructor(private readonly store: CatalogueViewStore) {
+    super();
   }
 
-  async handle(event: StoredEvent): Promise<void> {
-    return this._handlers[event.type as CatalogueEvent['type']](event);
+  protected handlers(): EventHandlerMap<CatalogueEvent> {
+    return {
+      ItemAddedToCatalogue: e => this.handleItemAdded(e),
+      ItemPriceChanged: e => this.handleItemPriceChanged(e),
+      ItemRetired: e => this.handleItemRetired(e)
+    };
   }
 
   private async handleItemAdded(event: StoredEvent): Promise<void> {

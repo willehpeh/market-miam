@@ -13,13 +13,9 @@ import {
 describe('@CheckpointedProjection', () => {
   it('stamps the name and projection kind on a decorated class', () => {
     @CheckpointedProjection('storefront')
-    class StorefrontProjection implements Projection {
-      eventTypes(): string[] {
-        return [];
-      }
-
-      handle(): Promise<void> {
-        return Promise.resolve();
+    class StorefrontProjection extends Projection {
+      protected handlers() {
+        return {};
       }
     }
 

@@ -2,10 +2,11 @@ import nx from '@nx/eslint-plugin';
 
 // A projection/processor only runs if the ConsumerRunner discovers it by its
 // @Checkpointed* decorator. A concrete handler missing the decorator silently
-// never runs, and at runtime it's undetectable (handlers only `implements` their
-// interface, so no instanceof). So enforce interface <-> decorator at lint time,
-// keyed on the `implements` clause — the structural truth, not the class name.
-// Abstract base classes are skipped; interfaces are never ClassDeclarations.
+// never runs, and at runtime it's undetectable (handlers relate to their base
+// only structurally, so no reliable instanceof). So enforce base <-> decorator
+// at lint time, keyed on either the `extends` superclass (Projection carries the
+// dispatch machinery) or an `implements` clause (Processor stays a bare marker) —
+// the structural truth, not the class name. Abstract base classes are skipped.
 function checkpointDecoratorRule(interfaceName, decoratorName) {
   return {
     meta: {
@@ -21,24 +22,24 @@ function checkpointDecoratorRule(interfaceName, decoratorName) {
           if (node.abstract || !node.id) {
             return;
           }
-          const implementsInterface = (node.implements ?? []).some(
-            (clause) => clause.expression?.name === interfaceName,
-          );
+          const relatesToBase =
+            node.superClass?.name === interfaceName ||
+            (node.implements ?? []).some((clause) => clause.expression?.name === interfaceName);
           const decorated = (node.decorators ?? []).some(
             (decorator) =>
               decorator.expression?.type === 'CallExpression' &&
               decorator.expression.callee?.name === decoratorName,
           );
-          if (implementsInterface && !decorated) {
+          if (relatesToBase && !decorated) {
             context.report({
               node: node.id,
-              message: `A class implementing ${interfaceName} must be annotated with @${decoratorName} so the ConsumerRunner discovers it.`,
+              message: `A class extending or implementing ${interfaceName} must be annotated with @${decoratorName} so the ConsumerRunner discovers it.`,
             });
           }
-          if (decorated && !implementsInterface) {
+          if (decorated && !relatesToBase) {
             context.report({
               node: node.id,
-              message: `A @${decoratorName} class must implement ${interfaceName}.`,
+              message: `A @${decoratorName} class must extend or implement ${interfaceName}.`,
             });
           }
         },
