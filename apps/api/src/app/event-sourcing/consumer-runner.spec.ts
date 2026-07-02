@@ -29,6 +29,22 @@ class StorefrontProjection extends NoopHandler implements Projection {}
 @CheckpointedProjection('storefront')
 class CollidingProjection extends NoopHandler implements Projection {}
 
+class RecordingHandler implements EventHandler {
+  readonly handled: StoredEvent[] = [];
+
+  eventTypes(): string[] {
+    return ['Thing'];
+  }
+
+  handle(event: StoredEvent): Promise<void> {
+    this.handled.push(event);
+    return Promise.resolve();
+  }
+}
+
+@CheckpointedProjection('recorder')
+class Recorder extends RecordingHandler implements Projection {}
+
 class RecordingLogger {
   readonly errors: { message: unknown; params: unknown[] }[] = [];
 
@@ -209,5 +225,38 @@ describe('ConsumerRunner', () => {
       message: 'Subscription poll failed',
       params: [expect.any(Error)],
     });
+  });
+
+  it('drains the whole backlog in a single poll, not just one batch', async () => {
+    const all: StoredEvent[] = Array.from({ length: 250 }, (_, i) => ({
+      id: `e${i + 1}`,
+      type: 'Thing',
+      payload: {},
+      streamId: 'stream',
+      streamPosition: i + 1,
+      globalPosition: i + 1,
+      timestamp: 0,
+    }));
+    const backlog: Events = {
+      loadFrom: (position, limit) =>
+        Promise.resolve(all.filter((event) => event.globalPosition > position).slice(0, limit)),
+    };
+
+    const moduleRef = await Test.createTestingModule({
+      imports: [DiscoveryModule],
+      providers: [
+        ConsumerRunner,
+        MessageContext,
+        Recorder,
+        { provide: Events, useValue: backlog },
+        { provide: POLLING_ENABLED, useValue: false },
+      ],
+    }).compile();
+
+    app = moduleRef.createNestApplication();
+    await app.init();
+    await app.get(ConsumerRunner).drain();
+
+    expect(app.get(Recorder).handled).toHaveLength(250);
   });
 });
