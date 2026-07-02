@@ -33,8 +33,8 @@ async function renderApp() {
   return { view, auth, router };
 }
 
-const loginButton = () => screen.queryByRole('button', { name: 'Se connecter' });
-const logoutButton = () => screen.queryByRole('button', { name: 'Se déconnecter' });
+const LOGIN = { name: 'Se connecter' };
+const LOGOUT = { name: 'Se déconnecter' };
 
 describe('App', () => {
   it('smoke', async () => {
@@ -48,10 +48,10 @@ describe('App', () => {
     auth.login();
     view.detectChanges();
 
-    fireEvent.click(logoutButton()!);
+    fireEvent.click(screen.getByRole('button', LOGOUT));
 
-    expect(loginButton()).toBeInTheDocument();
-    expect(logoutButton()).not.toBeInTheDocument();
+    expect(screen.getByRole('button', LOGIN)).toBeVisible();
+    expect(screen.queryByRole('button', LOGOUT)).not.toBeInTheDocument();
   });
 
   it('should redirect the vendor to the dashboard when login succeeds', async () => {
