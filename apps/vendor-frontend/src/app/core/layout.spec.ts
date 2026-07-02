@@ -1,49 +1,49 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
+import { render, screen, fireEvent } from '@testing-library/angular';
 import { Layout } from './layout';
-import { DebugElement } from '@angular/core';
-import { By } from '@angular/platform-browser';
 import { AuthFacade } from './auth/auth.facade';
 import { FakeAuthFacade } from './auth/fake.auth.facade';
 
+async function renderLayout() {
+  const view = await render(Layout, {
+    providers: [{ provide: AuthFacade, useClass: FakeAuthFacade }],
+  });
+  const auth = TestBed.inject(AuthFacade) as FakeAuthFacade;
+  return { view, auth };
+}
+
+const logoutButton = () => screen.queryByRole('button', { name: 'Se déconnecter' });
+
 describe('Layout', () => {
+  it('should not display the logout button if the user is not authenticated', async () => {
+    await renderLayout();
 
-  let fixture: ComponentFixture<Layout>;
-  let debugElement: DebugElement;
-  let auth: FakeAuthFacade;
-
-  beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      imports: [Layout],
-      providers: [
-        { provide: AuthFacade, useClass: FakeAuthFacade },
-      ]
-    }).compileComponents();
-    fixture = TestBed.createComponent(Layout);
-    debugElement = fixture.debugElement;
-    auth = TestBed.inject(AuthFacade) as FakeAuthFacade;
-    fixture.detectChanges();
+    expect(logoutButton()).not.toBeInTheDocument();
   });
 
-  it('should not display the logout button if the user is not authenticated', () => {
-    expect(debugElement.query(By.css('#logout-button'))).toBeNull();
-  });
-
-  it('should display the logout button if the user is authenticated', () => {
+  it('should display the logout button if the user is authenticated', async () => {
+    const { view, auth } = await renderLayout();
     auth.status.set('authenticated');
-    fixture.detectChanges();
-    expect(debugElement.query(By.css('#logout-button'))).toBeTruthy();
+    view.detectChanges();
+
+    expect(logoutButton()).toBeInTheDocument();
   });
 
-  it('should not display the logout button while the auth status is pending', () => {
+  it('should not display the logout button while the auth status is pending', async () => {
+    const { view, auth } = await renderLayout();
     auth.status.set('pending');
-    fixture.detectChanges();
-    expect(debugElement.query(By.css('#logout-button'))).toBeNull();
+    view.detectChanges();
+
+    expect(logoutButton()).not.toBeInTheDocument();
   });
 
-  it('should logout when clicked', () => {
+  it('should logout when clicked', async () => {
+    const { view, auth } = await renderLayout();
     auth.status.set('authenticated');
-    fixture.detectChanges();
-    debugElement.query(By.css('#logout-button')).triggerEventHandler('click', null);
+    view.detectChanges();
+
+    fireEvent.click(logoutButton()!);
+
     expect(auth.loggedOut).toBe(true);
   });
 });

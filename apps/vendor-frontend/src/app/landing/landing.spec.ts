@@ -1,47 +1,47 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
+import { render, screen, fireEvent } from '@testing-library/angular';
 import { Landing } from './landing';
-import { DebugElement } from '@angular/core';
-import { By } from '@angular/platform-browser';
 import { AuthFacade } from '../core/auth/auth.facade';
 import { FakeAuthFacade } from '../core/auth/fake.auth.facade';
 
+async function renderLanding() {
+  const view = await render(Landing, {
+    providers: [{ provide: AuthFacade, useClass: FakeAuthFacade }],
+  });
+  const auth = TestBed.inject(AuthFacade) as FakeAuthFacade;
+  return { view, auth };
+}
+
+const loginButton = () => screen.queryByRole('button', { name: 'Se connecter' });
+
 describe('Landing', () => {
+  it('should display the login button if the user is anonymous', async () => {
+    await renderLanding();
 
-  let fixture: ComponentFixture<Landing>;
-  let debugElement: DebugElement;
-  let auth: FakeAuthFacade;
-
-  beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      imports: [Landing],
-      providers: [
-        { provide: AuthFacade, useClass: FakeAuthFacade },
-      ]
-    }).compileComponents();
-    fixture = TestBed.createComponent(Landing);
-    debugElement = fixture.debugElement;
-    auth = TestBed.inject(AuthFacade) as FakeAuthFacade;
-    fixture.detectChanges();
+    expect(loginButton()).toBeInTheDocument();
   });
 
-  it('should display the login button if the user is anonymous', () => {
-    expect(debugElement.query(By.css('#login-button'))).toBeTruthy();
-  });
-
-  it('should not display the login button while the auth status is pending', () => {
+  it('should not display the login button while the auth status is pending', async () => {
+    const { view, auth } = await renderLanding();
     auth.status.set('pending');
-    fixture.detectChanges();
-    expect(debugElement.query(By.css('#login-button'))).toBeNull();
+    view.detectChanges();
+
+    expect(loginButton()).not.toBeInTheDocument();
   });
 
-  it('should not display the login button if the user is authenticated', () => {
+  it('should not display the login button if the user is authenticated', async () => {
+    const { view, auth } = await renderLanding();
     auth.status.set('authenticated');
-    fixture.detectChanges();
-    expect(debugElement.query(By.css('#login-button'))).toBeNull();
+    view.detectChanges();
+
+    expect(loginButton()).not.toBeInTheDocument();
   });
 
-  it('should start login when clicked', () => {
-    debugElement.query(By.css('#login-button')).triggerEventHandler('click', null);
+  it('should start login when clicked', async () => {
+    const { auth } = await renderLanding();
+
+    fireEvent.click(loginButton()!);
+
     expect(auth.loggedIn).toBe(true);
   });
 });
