@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { INestApplication, Logger } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { DiscoveryModule } from '@nestjs/core';
+import { Subject } from 'rxjs';
 import {
   CheckpointedProjection,
   EventHandler,
@@ -10,7 +11,7 @@ import {
   Projection,
   StoredEvent,
 } from '@market-monster/event-sourcing';
-import { ConsumerRunner, POLLING_ENABLED } from './consumer-runner';
+import { ConsumerRunner, EVENT_NOTIFICATIONS, POLLING_ENABLED } from './consumer-runner';
 
 class NoopHandler implements EventHandler {
   eventTypes(): string[] {
@@ -97,6 +98,81 @@ describe('ConsumerRunner', () => {
     expect(polls).toBeGreaterThan(afterStart);
   });
 
+  it('polls when notified, without waiting for the interval', async () => {
+    vi.useFakeTimers();
+    let polls = 0;
+    const countingEvents: Events = {
+      loadFrom: () => {
+        polls++;
+        return Promise.resolve([] as StoredEvent[]);
+      },
+    };
+    const notifications = new Subject<void>();
+
+    const moduleRef = await Test.createTestingModule({
+      imports: [DiscoveryModule],
+      providers: [
+        ConsumerRunner,
+        MessageContext,
+        StorefrontProjection,
+        { provide: Events, useValue: countingEvents },
+        { provide: POLLING_ENABLED, useValue: true },
+        { provide: EVENT_NOTIFICATIONS, useValue: notifications },
+      ],
+    }).compile();
+
+    app = moduleRef.createNestApplication();
+    await app.init();
+
+    await vi.advanceTimersByTimeAsync(0);
+    const afterStart = polls;
+
+    notifications.next();
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(polls).toBeGreaterThan(afterStart);
+  });
+
+  it('backs off exponentially between failed polls', async () => {
+    vi.useFakeTimers();
+    let polls = 0;
+    const alwaysFails: Events = {
+      loadFrom: () => {
+        polls++;
+        return Promise.reject(new Error('boom'));
+      },
+    };
+
+    const moduleRef = await Test.createTestingModule({
+      imports: [DiscoveryModule],
+      providers: [
+        ConsumerRunner,
+        MessageContext,
+        StorefrontProjection,
+        { provide: Events, useValue: alwaysFails },
+        { provide: POLLING_ENABLED, useValue: true },
+        { provide: Logger, useValue: new RecordingLogger() },
+      ],
+    }).compile();
+
+    app = moduleRef.createNestApplication();
+    await app.init();
+
+    await vi.advanceTimersByTimeAsync(0);
+    expect(polls).toBe(1);
+
+    await vi.advanceTimersByTimeAsync(1500);
+    expect(polls).toBe(2);
+
+    // second backoff is 2000ms, so no third attempt yet — a fixed 1s backoff
+    // would have polled again at t=2000.
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(polls).toBe(2);
+
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(polls).toBe(3);
+  });
+
   it('logs the failure and keeps polling when a subscription poll throws', async () => {
     vi.useFakeTimers();
     const logger = new RecordingLogger();
@@ -126,7 +202,7 @@ describe('ConsumerRunner', () => {
     await app.init();
 
     await vi.advanceTimersByTimeAsync(0);
-    await vi.advanceTimersByTimeAsync(1000);
+    await vi.advanceTimersByTimeAsync(2000);
 
     expect(polls).toBeGreaterThan(1);
     expect(logger.errors).toContainEqual({

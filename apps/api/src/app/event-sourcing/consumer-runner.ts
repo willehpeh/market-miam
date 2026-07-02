@@ -1,13 +1,6 @@
-import {
-  Inject,
-  Injectable,
-  Logger,
-  OnApplicationBootstrap,
-  OnApplicationShutdown,
-  Optional,
-} from '@nestjs/common';
+import { Inject, Injectable, Logger, OnApplicationBootstrap, OnApplicationShutdown, Optional } from '@nestjs/common';
 import { DiscoveryService } from '@nestjs/core';
-import { defer, merge, repeat, retry, Subject, takeUntil, timer } from 'rxjs';
+import { EMPTY, exhaustMap, from, mergeMap, Observable, retry, Subject, takeUntil, timer } from 'rxjs';
 import {
   checkpointMetadata,
   EventHandler,
@@ -15,14 +8,22 @@ import {
   InMemoryCheckpoint,
   InMemorySubscription,
   MessageContext,
-  Subscription,
+  Subscription
 } from '@market-monster/event-sourcing';
 import { TracingEventHandler } from './tracing.event-handler';
 import { ContinuationContextHandler } from '../message-context/continuation-context.handler';
+import { pollSchedule } from './poll-schedule';
 
 export const POLLING_ENABLED = Symbol('POLLING_ENABLED');
 
-const POLL_INTERVAL_MS = 1000;
+// ponytail: a stream of pokes that ask the runner to poll now. Default is EMPTY —
+// pollSchedule's timer is the whole drive today. Provide a real source (Postgres
+// LISTEN) to cut latency and idle poll load; the runner is otherwise unchanged
+// and pollSchedule's interval becomes a safety net you can lengthen.
+export const EVENT_NOTIFICATIONS = Symbol('EVENT_NOTIFICATIONS');
+
+const RETRY_BACKOFF_MS = 1000;
+const MAX_RETRY_BACKOFF_MS = 30_000;
 
 @Injectable()
 export class ConsumerRunner implements OnApplicationBootstrap, OnApplicationShutdown {
@@ -34,6 +35,7 @@ export class ConsumerRunner implements OnApplicationBootstrap, OnApplicationShut
     private readonly events: Events,
     private readonly context: MessageContext,
     @Inject(POLLING_ENABLED) private readonly pollingEnabled: boolean,
+    @Optional() @Inject(EVENT_NOTIFICATIONS) private readonly notifications: Observable<void> = EMPTY,
     @Optional() private readonly logger: Logger = new Logger(ConsumerRunner.name),
   ) {}
 
@@ -91,21 +93,30 @@ export class ConsumerRunner implements OnApplicationBootstrap, OnApplicationShut
   }
 
   private startPolling(): void {
-    merge(
-      ...this.subscriptions.map((subscription) =>
-        defer(() => subscription.poll()).pipe(
-          repeat({ delay: () => timer(POLL_INTERVAL_MS) }),
-          retry({
-            delay: (error) => {
-              this.logger.error('Subscription poll failed', error);
-              return timer(POLL_INTERVAL_MS);
-            },
-          }),
-        ),
-      ),
-    )
-      .pipe(takeUntil(this.stopped))
+    from(this.subscriptions)
+      .pipe(
+        mergeMap(this.wakeSubscription()),
+        takeUntil(this.stopped),
+      )
       .subscribe();
+  }
+
+  private wakeSubscription() {
+    return (subscription: Subscription) => pollSchedule(this.notifications).pipe(
+      exhaustMap(() => subscription.poll()),
+      // ponytail: exponential backoff, capped, reset once a poll succeeds. Infinite
+      // retries are deliberate — a transient store outage should recover, not kill
+      // the consumer. A poison event (handler throws on the same event every time)
+      // still replays forever; skipping it needs per-event dead-lettering inside
+      // poll(), which is a durable-store concern — deferred until Postgres.
+      retry({
+        resetOnSuccess: true,
+        delay: (error, retryCount) => {
+          this.logger.error('Subscription poll failed', error);
+          return timer(Math.min(RETRY_BACKOFF_MS * 2 ** (retryCount - 1), MAX_RETRY_BACKOFF_MS));
+        },
+      }),
+    );
   }
 }
 
