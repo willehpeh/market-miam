@@ -8,7 +8,7 @@ import { LogoutButton } from './auth/logout-button';
   template: `
     <div class="grid min-h-svh grid-rows-[auto_1fr]">
       <header class="flex h-15 items-center justify-between px-6 bg-surface">
-        <h1 class="text-xl font-bold font-mono text-brand tracking-tight">MARKET MIAM</h1>
+        <img src="assets/logo-transparent.png" alt="Market Miam" class="h-6 w-auto rounded-2xl">
         @if (status() === 'authenticated') {
           <mm-logout-button />
         }

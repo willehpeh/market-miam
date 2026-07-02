@@ -18,6 +18,11 @@
           {
             "glob": "**/*",
             "input": "apps/vendor-frontend/public"
+          },
+          {
+            "glob": "**/*",
+            "input": "apps/vendor-frontend/src/assets",
+            "output": "assets"
           }
         ],
         "styles": ["apps/vendor-frontend/src/styles.css"]
