@@ -83,6 +83,7 @@
       "options": {
         "buildTarget": "vendor-frontend:build:testing",
         "watch": false,
+        "setupFiles": ["apps/vendor-frontend/src/test-setup.ts"],
         "coverage": true,
         "coverageInclude": ["src/**/*.ts"],
         "coverageExclude": [

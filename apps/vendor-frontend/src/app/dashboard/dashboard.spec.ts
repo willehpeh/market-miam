@@ -1,44 +1,37 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { DebugElement } from '@angular/core';
-import { By } from '@angular/platform-browser';
+import { TestBed } from '@angular/core/testing';
+import { render, screen } from '@testing-library/angular';
 import { Dashboard } from './dashboard';
 import { StorefrontFacade } from '../storefront/storefront.facade';
 import { FakeStorefrontFacade } from '../storefront/fake.storefront.facade';
 
+async function renderDashboard() {
+  const view = await render(Dashboard, {
+    providers: [{ provide: StorefrontFacade, useClass: FakeStorefrontFacade }],
+  });
+  const storefront = TestBed.inject(StorefrontFacade) as FakeStorefrontFacade;
+  return { view, storefront };
+}
+
 describe('Dashboard', () => {
-  let fixture: ComponentFixture<Dashboard>;
-  let debugElement: DebugElement;
-  let storefront: FakeStorefrontFacade;
-
-  beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      imports: [Dashboard],
-      providers: [{ provide: StorefrontFacade, useClass: FakeStorefrontFacade }],
-    }).compileComponents();
-    fixture = TestBed.createComponent(Dashboard);
-    debugElement = fixture.debugElement;
-    storefront = TestBed.inject(StorefrontFacade) as FakeStorefrontFacade;
-    fixture.detectChanges();
-  });
-
-  it('displays the storefront name and description once loaded', () => {
+  it('displays the storefront name and description once loaded', async () => {
+    const { view, storefront } = await renderDashboard();
     storefront.view.set({ name: 'Acme Bakery', description: 'Fresh bread daily', imageReference: '' });
-    fixture.detectChanges();
+    view.detectChanges();
 
-    expect(debugElement.query(By.css('#storefront-name')).nativeElement.textContent).toContain('Acme Bakery');
-    expect(debugElement.query(By.css('#storefront-description')).nativeElement.textContent).toContain(
-      'Fresh bread daily',
-    );
+    expect(screen.getByText('Acme Bakery')).toBeInTheDocument();
+    expect(screen.getByText('Fresh bread daily')).toBeInTheDocument();
   });
 
-  it('shows a setting-up state while loading', () => {
+  it('shows a setting-up state while loading', async () => {
+    const { view, storefront } = await renderDashboard();
     storefront.loading.set(true);
-    fixture.detectChanges();
+    view.detectChanges();
 
-    expect(debugElement.query(By.css('#storefront-loading'))).toBeTruthy();
+    expect(screen.getByText('Nous préparons votre stand…')).toBeVisible();
   });
 
-  it('asks the facade to load on init', () => {
+  it('asks the facade to load on init', async () => {
+    const { storefront } = await renderDashboard();
     expect(storefront.loaded).toBe(true);
   });
 });
