@@ -24,7 +24,7 @@ In production, a shared `checkpoints` table in Postgres keyed by subscription na
 
 In PostgreSQL, concurrent writers can cause gaps in the global position sequence. Transaction A gets position 5, transaction B gets position 6, B commits first — the subscription sees 6 but not 5. If it advances the checkpoint to 6, event 5 is permanently skipped when A commits. Rolled-back transactions also create permanent gaps. The `InMemoryEventStore` doesn't have this problem (single-threaded, no concurrent writes).
 
-Strategy: retry with exponential backoff, accept the gap as permanent after 5 seconds, log when a gap is accepted. This is a Postgres-specific concern — don't bake it into the abstract `Subscription`. A decorator or wrapper around the `Events` port can handle gap detection and retries, returning only contiguous sequences. The production `Subscription` implementation stays simple, `InMemoryEventStore` is used unwrapped, and only the Postgres adapter gets wrapped in production wiring.
+**Resolution: serialize appends (ADR 0028).** A global `pg_advisory_xact_lock` held to commit makes position order == commit order, so the single-`bigint` checkpoint cursor stays correct and rollback gaps are safe to skip. The gap-detection-with-timeout strategy sketched here was rejected — it needs a background frontier detector and a skip heuristic that risks dropping slow-but-committed events. **Upgrade path** if append throughput bottlenecks: batch events per append, partition the lock per stream-category, or move to a `pg_snapshot_xmin` composite `(transactionId, position)` cursor (widens the `Checkpoint`/`Events` ports).
 
 ## Distinguishing Projection from Processor
 
