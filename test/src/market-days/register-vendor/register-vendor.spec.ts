@@ -61,7 +61,8 @@ describe('Register Vendor', () => {
         vendorId: command.vendorId,
         registeredAt: command.registeredAt,
         email: command.email
-      }
+      },
+      version: 1
     };
 
     expect(store.newEvents()).toEqual([expect.objectContaining(expectedEvent)]);

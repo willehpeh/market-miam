@@ -29,7 +29,8 @@ export class Storefront extends Aggregate {
     }
     const event: StorefrontOpened = {
       type: 'StorefrontOpened',
-      payload: { vendorId: vendorId.value() }
+      payload: { vendorId: vendorId.value() },
+      version: 1
     };
     this.raise(event);
   }
@@ -41,7 +42,8 @@ export class Storefront extends Aggregate {
     }
     const event: StorefrontCoverPhotoSet = {
       type: 'StorefrontCoverPhotoSet',
-      payload: { imageReference: imageReference.value() }
+      payload: { imageReference: imageReference.value() },
+      version: 1
     };
     this.raise(event);
   }
@@ -53,7 +55,8 @@ export class Storefront extends Aggregate {
       payload: {
         name: name.value(),
         description: description.value()
-      }
+      },
+      version: 1
     };
     this.raise(event);
   }

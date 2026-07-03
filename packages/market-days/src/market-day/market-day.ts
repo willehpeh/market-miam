@@ -46,7 +46,8 @@ export class MarketDay extends Aggregate {
         items: items.map(item => item.value()),
         marketId: this._marketId.value(),
         date: this._date.value()
-      }
+      },
+      version: 1
     };
     this.raise(event);
   }
@@ -72,7 +73,8 @@ export class MarketDay extends Aggregate {
         marketId: this._marketId.value(),
         date: this._date.value(),
         time: time.value()
-      }
+      },
+      version: 1
     };
     this.raise(event);
   }
@@ -90,7 +92,8 @@ export class MarketDay extends Aggregate {
         itemId: itemId.value(),
         marketId: this._marketId.value(),
         date: this._date.value()
-      }
+      },
+      version: 1
     };
     this.raise(event);
   }

@@ -10,7 +10,8 @@ export function seedCatalogue(store: InMemoryEventStore, vendorId: string, ...it
       description: '',
       price: 500,
       imageReference: 'market-monster/items/item-photo'
-    }
+    },
+    version: 1
   }));
   store.seedWith(`catalogue-${vendorId}`, events, { vendorId });
 }

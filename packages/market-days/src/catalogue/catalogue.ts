@@ -22,7 +22,8 @@ export class Catalogue extends Aggregate {
         description: item.description().value(),
         price: item.price().value(),
         imageReference: item.imageReference().value()
-      }
+      },
+      version: 1
     };
     this.raise(event);
   }
@@ -57,7 +58,8 @@ export class Catalogue extends Aggregate {
       payload: {
         itemId: item.itemId().value(),
         price: item.price().value()
-      }
+      },
+      version: 1
     };
     this.raise(event);
   }
@@ -70,7 +72,8 @@ export class Catalogue extends Aggregate {
       type: 'ItemRetired',
       payload: {
         itemId: itemId.value()
-      }
+      },
+      version: 1
     };
     this.raise(event);
   }

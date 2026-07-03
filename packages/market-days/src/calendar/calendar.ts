@@ -20,7 +20,8 @@ export class Calendar extends Aggregate {
         startDate,
         days,
         frequency
-      }
+      },
+      version: 1
     };
     this.raise(event);
   }

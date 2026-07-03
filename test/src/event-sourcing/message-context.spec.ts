@@ -17,7 +17,7 @@ describe('Message context propagation', () => {
     await dispatcher.dispatch(async () => {
       await contextualStore.append(
         'stream-1',
-        [{ type: 'First', payload: {} }],
+        [{ type: 'First', payload: {}, version: 1 }],
         0,
         { vendorId: 'v1' },
       );

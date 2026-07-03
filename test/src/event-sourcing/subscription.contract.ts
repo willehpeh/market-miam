@@ -96,5 +96,5 @@ export class RecordingHandler implements EventHandler {
 }
 
 function dummyEvent(type: string): DomainEvent {
-  return { type, payload: {} };
+  return { type, payload: {}, version: 1 };
 }

@@ -22,7 +22,8 @@ export class Vendor extends Aggregate {
         vendorId: this._id.value(),
         registeredAt: registeredAt.value(),
         email: email.value()
-      }
+      },
+      version: 1
     };
     this.raise(event);
   }

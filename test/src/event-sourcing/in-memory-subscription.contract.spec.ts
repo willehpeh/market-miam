@@ -25,7 +25,7 @@ describe('InMemorySubscription checkpoint advancement', () => {
       checkpoint,
     );
 
-    await store.append('stream-1', [{ type: 'Ignored', payload: {} }], 0);
+    await store.append('stream-1', [{ type: 'Ignored', payload: {}, version: 1 }], 0);
     await subscription.poll();
 
     const [ignored] = await store.load('stream-1');

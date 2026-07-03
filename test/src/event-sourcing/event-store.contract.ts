@@ -23,11 +23,19 @@ export function eventStoreContract(
         tags: ['fresh', 'local'],
       };
 
-      await store.append('stream-1', [{ type: 'ItemAddedToCatalogue', payload }], 0);
+      await store.append('stream-1', [{ type: 'ItemAddedToCatalogue', payload, version: 1 }], 0);
 
       expect(await store.load('stream-1')).toEqual([
         expect.objectContaining({ type: 'ItemAddedToCatalogue', payload }),
       ]);
+    });
+
+    it('preserves an events schema version through append and load', async () => {
+      await store.append('stream-1', [{ type: 'Evolved', payload: {}, version: 2 }], 0);
+
+      const [event] = await store.load('stream-1');
+
+      expect(event.version).toBe(2);
     });
 
     it('preserves append order within a stream', async () => {
@@ -190,5 +198,5 @@ export function eventStoreContract(
 }
 
 function dummyEvent(type: string): DomainEvent {
-  return { type, payload: {} };
+  return { type, payload: {}, version: 1 };
 }

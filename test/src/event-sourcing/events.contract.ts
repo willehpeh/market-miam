@@ -65,5 +65,5 @@ export function eventsContract(
 }
 
 function dummyEvent(type: string): DomainEvent {
-  return { type, payload: {} };
+  return { type, payload: {}, version: 1 };
 }

@@ -68,6 +68,6 @@ describe('Edit Storefront Information', () => {
   });
 
   function openStorefront() {
-    store.seedWith('storefront-vendor-id', [{ type: 'StorefrontOpened', payload: { vendorId: 'vendor-id' } }], { vendorId: 'vendor-id' });
+    store.seedWith('storefront-vendor-id', [{ type: 'StorefrontOpened', payload: { vendorId: 'vendor-id' }, version: 1 }], { vendorId: 'vendor-id' });
   }
 });

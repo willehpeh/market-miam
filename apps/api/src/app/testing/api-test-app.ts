@@ -52,6 +52,6 @@ export function bootApiTestApp(options: ApiTestOptions = {}): Promise<INestAppli
 }
 
 export async function openStorefrontFor(app: INestApplication, vendorId: string): Promise<void> {
-  const opened: StorefrontOpened = { type: 'StorefrontOpened', payload: { vendorId } };
+  const opened: StorefrontOpened = { type: 'StorefrontOpened', payload: { vendorId }, version: 1 };
   await app.get(EventStore).append(`storefront-${vendorId}`, [opened], 0, { vendorId });
 }

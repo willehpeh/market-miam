@@ -232,6 +232,7 @@ describe('ConsumerRunner', () => {
       id: `e${i + 1}`,
       type: 'Thing',
       payload: {},
+      version: 1,
       streamId: 'stream',
       streamPosition: i + 1,
       globalPosition: i + 1,

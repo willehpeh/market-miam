@@ -35,7 +35,8 @@ describe('Change Item Price', () => {
       payload: {
         itemId: baseItem.itemId,
         price: baseItem.price + 20
-      }
+      },
+      version: 1
     };
     expect(actual).toEqual(expect.objectContaining(expected));
   });
@@ -64,7 +65,8 @@ describe('Change Item Price', () => {
       payload: {
         itemId: baseItem.itemId,
         price: baseItem.price + 40
-      }
+      },
+      version: 1
     };
     expect(actual).toEqual(expect.objectContaining(expected));
   });

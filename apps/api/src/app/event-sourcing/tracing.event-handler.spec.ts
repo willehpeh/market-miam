@@ -25,6 +25,7 @@ function storedEvent(metadata?: Record<string, unknown>): StoredEvent {
     streamId: 'test-stream',
     type: 'TestEvent',
     payload: {},
+    version: 1,
     streamPosition: 1,
     globalPosition: 1,
     timestamp: Date.now(),
