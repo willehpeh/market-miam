@@ -233,8 +233,8 @@ read-side "B" (display the storefront) gives it somewhere to land.
 1. **Persistent store (Postgres)** — the biggest gap; prod loses data on restart.
    Drop-in behind the `EventStore`/`Events`/`Checkpoint` ports; held to the
    existing contract suites (sibling specs). Gap-handling (MVCC global-position
-   gaps) is Postgres integration-test territory, not the shared contract — see
-   `docs/DEFERRED.md`. Closing this also closes the verification gap above.
+   gaps) resolved — serialize appends (ADR 0028). Closing this also closes the
+   verification gap above. Decisions + step plan: `POSTGRES-PLAN.md`.
 2. **Processor continuation context** (ADR 0026) — **done** with the
    **StorefrontOpener** slice above (the platform's first processor). The
    `ConsumerRunner` wraps a discovered `@CheckpointedProcessor` with a

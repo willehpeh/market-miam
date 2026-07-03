@@ -92,4 +92,16 @@ describe('Storefront', () => {
     expect(facade.loading()).toBe(false);
     expect(facade.view()).toBeUndefined();
   });
+
+  it('sends the edited storefront information', () => {
+    facade.save('La Table de Margaux', 'Cuisine de marché, mijotée maison.');
+
+    const req = httpCtrl.expectOne('/api/storefront');
+    expect(req.request.method).toBe('PUT');
+    expect(req.request.body).toEqual({
+      name: 'La Table de Margaux',
+      description: 'Cuisine de marché, mijotée maison.',
+    });
+    req.flush(null);
+  });
 });

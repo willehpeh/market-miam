@@ -3,7 +3,14 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { catchError, map, of, retry, switchMap, throwError, timer } from 'rxjs';
 import { Storefront } from './storefront';
-import { LoadStorefront, LoadStorefrontFailure, LoadStorefrontSuccess } from './storefront.state';
+import {
+  EditStorefront,
+  EditStorefrontFailure,
+  EditStorefrontSuccess,
+  LoadStorefront,
+  LoadStorefrontFailure,
+  LoadStorefrontSuccess,
+} from './storefront.state';
 
 export interface StorefrontRetry {
   delayMs: number;
@@ -35,6 +42,20 @@ export class StorefrontEffects {
           }),
           map((view) => LoadStorefrontSuccess({ view })),
           catchError(() => of(LoadStorefrontFailure())),
+        ),
+      ),
+    ),
+  );
+
+  // ponytail: success/failure are emitted but unreduced — no save UX yet.
+  // Wire a "saved"/error banner into the reducer when the flow needs feedback.
+  editStorefront$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(EditStorefront),
+      switchMap(({ name, description }) =>
+        this.storefront.edit(name, description).pipe(
+          map(() => EditStorefrontSuccess()),
+          catchError(() => of(EditStorefrontFailure())),
         ),
       ),
     ),

@@ -11,4 +11,8 @@ export class HttpStorefront implements Storefront {
   view(): Observable<StorefrontView> {
     return this.http.get<StorefrontView>(`${environment.apiBaseUrl}/api/storefront`);
   }
+
+  edit(name: string, description: string): Observable<void> {
+    return this.http.put<void>(`${environment.apiBaseUrl}/api/storefront`, { name, description });
+  }
 }

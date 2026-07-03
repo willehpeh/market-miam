@@ -8,6 +8,13 @@ export const LoadStorefrontSuccess = createAction(
 );
 export const LoadStorefrontFailure = createAction('[Storefront] Load Storefront Failure');
 
+export const EditStorefront = createAction(
+  '[Storefront] Edit Storefront',
+  props<{ name: string; description: string }>(),
+);
+export const EditStorefrontSuccess = createAction('[Storefront] Edit Storefront Success');
+export const EditStorefrontFailure = createAction('[Storefront] Edit Storefront Failure');
+
 export interface StorefrontState {
   loading: boolean;
   view: StorefrontView | undefined;

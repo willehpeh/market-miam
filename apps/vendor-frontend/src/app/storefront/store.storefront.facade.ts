@@ -1,7 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { StorefrontFacade } from './storefront.facade';
-import { LoadStorefront, storefrontFeature } from './storefront.state';
+import { EditStorefront, LoadStorefront, storefrontFeature } from './storefront.state';
 
 @Injectable()
 export class StoreStorefrontFacade implements StorefrontFacade {
@@ -12,5 +12,9 @@ export class StoreStorefrontFacade implements StorefrontFacade {
 
   load(): void {
     this.store.dispatch(LoadStorefront());
+  }
+
+  save(name: string, description: string): void {
+    this.store.dispatch(EditStorefront({ name, description }));
   }
 }

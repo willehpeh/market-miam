@@ -8,4 +8,5 @@ export interface StorefrontView {
 
 export abstract class Storefront {
   abstract view(): Observable<StorefrontView>;
+  abstract edit(name: string, description: string): Observable<void>;
 }
