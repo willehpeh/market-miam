@@ -24,7 +24,8 @@
 
   input[type="text"],
   input[type="tel"] {
-    @apply w-full rounded-field border border-line bg-surface px-3.5 py-2.5 text-sm text-ink;
+    /* text-base (16px) keeps iOS Safari from auto-zooming the field on focus */
+    @apply w-full rounded-field border border-line bg-surface px-3.5 py-2.5 text-base text-ink;
     @apply placeholder:text-muted;
     @apply focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-brand;
     @apply disabled:cursor-not-allowed disabled:opacity-50;
