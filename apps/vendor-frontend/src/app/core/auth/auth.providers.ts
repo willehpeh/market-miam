@@ -16,6 +16,7 @@ export function provideAuth(): EnvironmentProviders {
     provideAuth0({
       domain: "willalexander.eu.auth0.com",
       clientId: "8Aotn34QyliBSeJbDSK9VMuZOiwM7WuY",
+      cacheLocation: 'localstorage',
       authorizationParams: {
         redirect_uri: window.location.origin,
         audience: 'https://api.marketmiam.fr'
