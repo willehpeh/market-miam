@@ -38,7 +38,7 @@ Landing reads it via `OnboardingFacade` (`preparing`, `errorCode`, `retry()`).
 ```ts
 { path: 'onboarding', canActivateChild: [authenticated], children: [
   { path: '', component: Welcome },              // empty
-  { path: 'storefront', component: VitrineForm },// has-info
+  { path: 'storefront', component: StorefrontForm },// has-info
 ]},
 { path: 'dashboard', component: Dashboard, canActivate: [authenticated] },
 { path: '', component: Landing },
@@ -59,17 +59,17 @@ Mirrors the `storefront`/`vendor` feature shape.
 - `dashboard.ts` — drop `ngOnInit`/`OnInit`/`load()`; dumb reader of `view`.
 - `landing.ts` — add `preparing` spinner + `failed` error(code)+`Réessayer`; depends on `OnboardingFacade` + `AuthFacade`.
 - `auth.effects.ts` — **delete `redirectOnLogin$`** (navigation now happens on storefront-loaded, not on login). `redirectOnLogout$` stays.
-- Delete combined `onboarding/onboarding.ts` + `onboarding.spec.ts` → split into `Welcome` + `VitrineForm`.
+- Delete combined `onboarding/onboarding.ts` + `onboarding.spec.ts` → split into `Welcome` + `StorefrontForm`.
 
 ## Components (all dumb — no lifecycle hooks)
 Convention: **no lifecycle hooks anywhere.** A genuine init-time load goes in the **constructor**, never `ngOnInit`. Here nothing self-loads.
 - `Welcome` — static intro + `routerLink="/onboarding/storefront"` on "Créer ma vitrine". (Welcome copy/feature-list from the prior combined component.)
-- `VitrineForm` — the form from the prior component minus welcome/loading branches and `creating`/`ngOnInit`. Prefill via `linkedSignal(() => storefront.view()?.name ?? '')` etc.; `save()` on submit. All 5 fields; photo/ville/téléphone disabled ("bientôt").
+- `StorefrontForm` — the form from the prior component minus welcome/loading branches and `creating`/`ngOnInit`. Prefill via `linkedSignal(() => storefront.view()?.name ?? '')` etc.; `save()` on submit. All 5 fields; photo/ville/téléphone disabled ("bientôt").
 
 ## Tests (facade is the pivot)
 **Component layer — real component vs fake facade:**
 - `landing.spec` — vs `FakeOnboardingFacade`+`FakeAuthFacade`: anonymous→login button; `preparing`→spinner; `failed`+`errorCode`→error text incl. code, `Réessayer`→`facade.retry()`.
-- `vitrine-form.spec` — vs `FakeStorefrontFacade`: prefill from `view`, `save()` on submit, ville/téléphone disabled (adapt existing `onboarding.spec`).
+- `storefront-form.spec` — vs `FakeStorefrontFacade`: prefill from `view`, `save()` on submit, ville/téléphone disabled (adapt existing `onboarding.spec`).
 - `welcome.spec` — routerLink target.
 
 **Integration layer — real facades+store+effects+services → `HttpTestingController`, fake only Auth0 port (`FakeAuth`):**

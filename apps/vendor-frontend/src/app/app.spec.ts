@@ -13,6 +13,8 @@ import { AuthFacade } from './core/auth/auth.facade';
 import { StoreAuthFacade } from './core/auth/store.auth.facade';
 import { StorefrontFacade } from './storefront/storefront.facade';
 import { FakeStorefrontFacade } from './storefront/fake.storefront.facade';
+import { OnboardingFacade } from './onboarding/onboarding.facade';
+import { FakeOnboardingFacade } from './onboarding/fake.onboarding.facade';
 
 async function renderApp() {
   const view = await render(App, {
@@ -24,6 +26,7 @@ async function renderApp() {
       { provide: AuthFacade, useClass: StoreAuthFacade },
       { provide: Auth, useClass: FakeAuth },
       { provide: StorefrontFacade, useClass: FakeStorefrontFacade },
+      { provide: OnboardingFacade, useClass: FakeOnboardingFacade },
     ],
   });
   const auth = TestBed.inject(Auth) as FakeAuth;
@@ -52,14 +55,6 @@ describe('App', () => {
 
     expect(screen.getByRole('button', LOGIN)).toBeVisible();
     expect(screen.queryByRole('button', LOGOUT)).not.toBeInTheDocument();
-  });
-
-  it('should redirect the vendor to the dashboard when login succeeds', async () => {
-    const { view, auth, router } = await renderApp();
-    auth.login();
-    await view.fixture.whenStable();
-
-    expect(router.url).toBe('/dashboard');
   });
 
   it('should bounce an anonymous visitor away from the dashboard', async () => {

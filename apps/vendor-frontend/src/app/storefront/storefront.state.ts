@@ -6,7 +6,10 @@ export const LoadStorefrontSuccess = createAction(
   '[Storefront] Load Storefront Success',
   props<{ view: StorefrontView }>(),
 );
-export const LoadStorefrontFailure = createAction('[Storefront] Load Storefront Failure');
+export const LoadStorefrontFailure = createAction(
+  '[Storefront] Load Storefront Failure',
+  props<{ status: number }>(),
+);
 
 export const EditStorefront = createAction(
   '[Storefront] Edit Storefront',

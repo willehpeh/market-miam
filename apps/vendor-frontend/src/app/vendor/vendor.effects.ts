@@ -1,4 +1,5 @@
 import { inject, Injectable } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { catchError, map, of, switchMap } from 'rxjs';
 import { LoginSuccess } from '../core/auth/auth.state';
@@ -19,7 +20,7 @@ export class VendorEffects {
     ofType(RegisterVendor),
     switchMap(() => this.vendor.register().pipe(
       map(() => RegisterVendorSuccess()),
-      catchError(() => of(RegisterVendorFailure())),
+      catchError((error: HttpErrorResponse) => of(RegisterVendorFailure({ status: error.status }))),
     )),
   ));
 }

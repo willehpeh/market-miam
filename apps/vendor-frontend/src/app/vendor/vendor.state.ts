@@ -1,8 +1,11 @@
-import { createAction, createFeature, createReducer, on } from '@ngrx/store';
+import { createAction, createFeature, createReducer, on, props } from '@ngrx/store';
 
 export const RegisterVendor = createAction('[Vendor] Register Vendor');
 export const RegisterVendorSuccess = createAction('[Vendor] Register Vendor Success');
-export const RegisterVendorFailure = createAction('[Vendor] Register Vendor Failure');
+export const RegisterVendorFailure = createAction(
+  '[Vendor] Register Vendor Failure',
+  props<{ status: number }>(),
+);
 
 export interface VendorState {
   loading: boolean;

@@ -3,15 +3,22 @@ import { render, screen, fireEvent } from '@testing-library/angular';
 import { Landing } from './landing';
 import { AuthFacade } from '../core/auth/auth.facade';
 import { FakeAuthFacade } from '../core/auth/fake.auth.facade';
+import { OnboardingFacade } from '../onboarding/onboarding.facade';
+import { FakeOnboardingFacade } from '../onboarding/fake.onboarding.facade';
 
 const LOGIN = { name: 'Se connecter' };
+const RETRY = { name: 'Réessayer' };
 
 async function renderLanding() {
   const view = await render(Landing, {
-    providers: [{ provide: AuthFacade, useClass: FakeAuthFacade }],
+    providers: [
+      { provide: AuthFacade, useClass: FakeAuthFacade },
+      { provide: OnboardingFacade, useClass: FakeOnboardingFacade },
+    ],
   });
   const auth = TestBed.inject(AuthFacade) as FakeAuthFacade;
-  return { view, auth };
+  const onboarding = TestBed.inject(OnboardingFacade) as FakeOnboardingFacade;
+  return { view, auth, onboarding };
 }
 
 describe('Landing', () => {
@@ -43,5 +50,34 @@ describe('Landing', () => {
     fireEvent.click(screen.getByRole('button', LOGIN));
 
     expect(auth.loggedIn).toBe(true);
+  });
+
+  it('shows a preparing state once authenticated while the storefront is readied', async () => {
+    const { view, auth } = await renderLanding();
+    auth.status.set('authenticated');
+    view.detectChanges();
+
+    expect(screen.getByText('Nous préparons votre stand…')).toBeVisible();
+  });
+
+  it('shows the error with its code when preparation fails', async () => {
+    const { view, auth, onboarding } = await renderLanding();
+    auth.status.set('authenticated');
+    onboarding.errorCode.set(503);
+    view.detectChanges();
+
+    expect(screen.getByText(/code 503/i)).toBeVisible();
+    expect(screen.queryByText('Nous préparons votre stand…')).not.toBeInTheDocument();
+  });
+
+  it('retries preparation when the vendor clicks Réessayer', async () => {
+    const { view, auth, onboarding } = await renderLanding();
+    auth.status.set('authenticated');
+    onboarding.errorCode.set(500);
+    view.detectChanges();
+
+    fireEvent.click(screen.getByRole('button', RETRY));
+
+    expect(onboarding.retried).toBe(true);
   });
 });

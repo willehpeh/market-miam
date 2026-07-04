@@ -41,7 +41,7 @@ export class StorefrontEffects {
                 : throwError(() => error),
           }),
           map((view) => LoadStorefrontSuccess({ view })),
-          catchError(() => of(LoadStorefrontFailure())),
+          catchError((error: HttpErrorResponse) => of(LoadStorefrontFailure({ status: error.status }))),
         ),
       ),
     ),
