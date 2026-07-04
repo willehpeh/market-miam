@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { INestApplication } from '@nestjs/common';
 import { bootApiTestApp, openStorefrontFor } from '../testing/api-test-app';
 import { registerSpanCapture } from '../testing/span-capture';
-import { ConsumerRunner } from './consumer-runner';
+import { Subscriptions } from './subscriptions';
 
 const exporter = registerSpanCapture();
 
@@ -20,7 +20,7 @@ describe('Storefront consumer tracing', () => {
 
   it('wraps a discovered projection so its event handling is traced', async () => {
     await openStorefrontFor(app, 'acme-bakery');
-    await app.get(ConsumerRunner).drain();
+    await app.get(Subscriptions).drain();
 
     const handled = exporter
       .getFinishedSpans()

@@ -11,7 +11,7 @@ import {
   Projection,
   StoredEvent,
 } from '@market-monster/event-sourcing';
-import { ConsumerRunner, EVENT_NOTIFICATIONS, POLLING_ENABLED } from './consumer-runner';
+import { Subscriptions, EVENT_NOTIFICATIONS, POLLING_ENABLED } from './subscriptions';
 
 class NoopHandler implements EventHandler {
   eventTypes(): string[] {
@@ -55,7 +55,7 @@ class RecordingLogger {
 
 const noEvents: Events = { loadFrom: () => Promise.resolve([] as StoredEvent[]) };
 
-describe('ConsumerRunner', () => {
+describe('Subscriptions', () => {
   let app: INestApplication | undefined;
 
   afterEach(async () => {
@@ -68,7 +68,7 @@ describe('ConsumerRunner', () => {
     const moduleRef = await Test.createTestingModule({
       imports: [DiscoveryModule],
       providers: [
-        ConsumerRunner,
+        Subscriptions,
         MessageContext,
         StorefrontProjection,
         CollidingProjection,
@@ -95,7 +95,7 @@ describe('ConsumerRunner', () => {
     const moduleRef = await Test.createTestingModule({
       imports: [DiscoveryModule],
       providers: [
-        ConsumerRunner,
+        Subscriptions,
         MessageContext,
         StorefrontProjection,
         { provide: Events, useValue: countingEvents },
@@ -128,7 +128,7 @@ describe('ConsumerRunner', () => {
     const moduleRef = await Test.createTestingModule({
       imports: [DiscoveryModule],
       providers: [
-        ConsumerRunner,
+        Subscriptions,
         MessageContext,
         StorefrontProjection,
         { provide: Events, useValue: countingEvents },
@@ -162,7 +162,7 @@ describe('ConsumerRunner', () => {
     const moduleRef = await Test.createTestingModule({
       imports: [DiscoveryModule],
       providers: [
-        ConsumerRunner,
+        Subscriptions,
         MessageContext,
         StorefrontProjection,
         { provide: Events, useValue: alwaysFails },
@@ -205,7 +205,7 @@ describe('ConsumerRunner', () => {
     const moduleRef = await Test.createTestingModule({
       imports: [DiscoveryModule],
       providers: [
-        ConsumerRunner,
+        Subscriptions,
         MessageContext,
         StorefrontProjection,
         { provide: Events, useValue: flakyEvents },
@@ -246,7 +246,7 @@ describe('ConsumerRunner', () => {
     const moduleRef = await Test.createTestingModule({
       imports: [DiscoveryModule],
       providers: [
-        ConsumerRunner,
+        Subscriptions,
         MessageContext,
         Recorder,
         { provide: Events, useValue: backlog },
@@ -256,7 +256,7 @@ describe('ConsumerRunner', () => {
 
     app = moduleRef.createNestApplication();
     await app.init();
-    await app.get(ConsumerRunner).drain();
+    await app.get(Subscriptions).drain();
 
     expect(app.get(Recorder).handled).toHaveLength(250);
   });

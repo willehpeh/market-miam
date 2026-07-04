@@ -3,7 +3,7 @@ import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { VendorStorefrontViews } from '@market-monster/market-days';
 import { bootApiTestApp, openStorefrontFor } from '../testing/api-test-app';
-import { ConsumerRunner } from '../event-sourcing/consumer-runner';
+import { Subscriptions } from '../event-sourcing/subscriptions';
 
 describe('Storefront view projection', () => {
   let app: INestApplication;
@@ -25,7 +25,7 @@ describe('Storefront view projection', () => {
       .send({ name: 'Acme Bakery', description: 'Fresh bread daily' })
       .expect(200);
 
-    await app.get(ConsumerRunner).drain();
+    await app.get(Subscriptions).drain();
 
     const view = await app.get(VendorStorefrontViews).findByVendor('acme-bakery');
 

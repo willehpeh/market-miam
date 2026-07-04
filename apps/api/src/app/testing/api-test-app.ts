@@ -7,7 +7,7 @@ import { StorefrontOpened } from '@market-monster/market-days';
 import { StaticTokenVerifier, VerifiedVendor } from '@market-monster/auth';
 import { AuthModule } from '@market-monster/auth-nestjs';
 import { MarketDaysModule } from '../market-days/market-days.module';
-import { POLLING_ENABLED } from '../event-sourcing/consumer-runner';
+import { POLLING_ENABLED } from '../event-sourcing/subscriptions';
 
 export const testVendor: VerifiedVendor = {
   vendorId: new VendorId('acme-bakery'),
