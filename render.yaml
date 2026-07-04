@@ -49,6 +49,10 @@ projects:
             repo: https://github.com/willehpeh/market-monster
             buildCommand: npm ci && npx nx run vendor-frontend:build
             staticPublishPath: ./dist/apps/vendor-frontend/browser
+            routes:
+              - type: rewrite
+                source: /*
+                destination: /index.html
             domains:
               - app.marketmiam.fr
             autoDeployTrigger: checksPass
