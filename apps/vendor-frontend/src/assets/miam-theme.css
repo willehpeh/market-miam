@@ -27,7 +27,7 @@
   /* ---- ink + lines ---- */
   --color-ink:          #2a241e;
   --color-ink-soft:     #5c544a;
-  --color-muted:        #8f857a;
+  --color-muted:        #6f665c;  /* darkened to clear WCAG AA 4.5:1 on light surfaces */
   --color-line:         #e7e1d6;
   --color-line-strong:  #d8d1c4;
 
@@ -107,7 +107,7 @@
   /* uppercase field label */
   .field-label {
     font-family: var(--font-mono);
-    font-size: 0.66rem;
+    font-size: 0.75rem;
     font-weight: 700;
     letter-spacing: var(--tracking-label);
     text-transform: uppercase;
