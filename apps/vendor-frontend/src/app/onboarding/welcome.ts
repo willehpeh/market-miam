@@ -1,13 +1,13 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { Card } from '../core/card';
 
 @Component({
   selector: 'mm-welcome',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { class: 'block w-full max-w-sm mx-auto py-4' },
-  imports: [RouterLink],
+  imports: [RouterLink, Card],
   template: `
-    <section class="rounded-card bg-surface p-6 shadow-frame">
+    <mm-card>
       <div class="mb-5 grid size-9 place-items-center rounded-field bg-brand">
         <span class="block size-4 rounded-full bg-white/90"></span>
       </div>
@@ -32,7 +32,7 @@ import { RouterLink } from '@angular/router';
       </ul>
 
       <button type="button" class="mt-6 w-full" routerLink="/onboarding/storefront">Créer ma vitrine →</button>
-    </section>
+    </mm-card>
   `,
 })
 export class Welcome {
