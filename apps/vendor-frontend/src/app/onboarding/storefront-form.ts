@@ -22,7 +22,7 @@ import { Card } from '../core/card';
             <button type="button" disabled>Prendre</button>
             <button type="button" disabled>Galerie</button>
           </div>
-          <p class="mt-2 text-[0.6rem] font-mono uppercase tracking-widest text-muted">Bientôt</p>
+          <p class="mt-2 text-xs font-mono uppercase tracking-widest text-muted">Bientôt</p>
         </div>
 
         <div class="mt-5 space-y-4">
