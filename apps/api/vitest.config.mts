@@ -1,4 +1,4 @@
-import { defineConfig } from 'vitest/config';
+import { defineConfig, configDefaults } from 'vitest/config';
 import swc from 'unplugin-swc';
 import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin';
 
@@ -23,6 +23,8 @@ export default defineConfig(() => ({
     globals: true,
     environment: 'node',
     include: ['src/**/*.spec.ts'],
+    // Testcontainers specs need Docker + are slow — run them via `test:container`, not here.
+    exclude: [...configDefaults.exclude, '**/*.container.spec.*'],
     setupFiles: ['reflect-metadata'],
     reporters: ['default'],
     coverage: {

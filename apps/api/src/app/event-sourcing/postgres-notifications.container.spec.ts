@@ -2,8 +2,8 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from
 import { Client, type PoolClient } from 'pg';
 import type { Logger } from '@nestjs/common';
 import { DomainEvent, PostgresEventStore } from '@market-monster/event-sourcing';
-import { PostgresNotifications } from '../../../../apps/api/src/app/event-sourcing/postgres-notifications';
-import { PostgresHarness, startPostgres } from './testcontainer';
+import { PostgresHarness, startPostgres } from '@market-monster/testing';
+import { PostgresNotifications } from './postgres-notifications';
 
 let pg: PostgresHarness;
 
@@ -106,7 +106,7 @@ describe('PostgresNotifications', () => {
   });
 });
 
-const silentLogger = { log() {}, error() {} } as unknown as Logger;
+const silentLogger = { log() { /* no-op */ }, error() { /* no-op */ } } as unknown as Logger;
 
 const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
 const settle = (): Promise<void> => sleep(300);
