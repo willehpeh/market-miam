@@ -18,7 +18,7 @@ Next: **Step 1a** — schema/migration DDL for review + update ADR 0005.
 | Global ordering | Serialize appends with a global `pg_advisory_xact_lock` held to commit → single-`bigint` cursor stays gap-free. Ceiling ~300–1000 appends/s (managed pg), far above load. Rejected: `pg_snapshot_xmin` composite cursor, Marten high-water-mark. | ADR 0028 |
 | Packaging | Adapters in the existing `@market-monster/event-sourcing` package barrel; `pg` becomes a package dep (zero-dep-core deliberately given up; no Nx boundary enforcement). | — |
 | ORM | None. Raw `pg` (node-postgres) + hand SQL (~6 static queries). Kysely (query builder, not ORM) only *maybe* on the read side later. | — |
-| Migrations | `node-pg-migrate`. ONE pipeline for events + checkpoints + read models, run identically in Testcontainers `beforeAll` and prod boot. | — |
+| Migrations | `node-pg-migrate`, one pipeline in **`database/migrations/`** (repo root — the DB is shared by `api` and the future `admin-api`, owned by neither app). Events + checkpoints + read models, run identically in Testcontainers `beforeAll` and prod. Who runs them (a dedicated `database:migrate` job vs on-boot) is a 1b concern; node-pg-migrate's advisory lock makes concurrent runners safe as a backstop. | — |
 | Testing | Bind existing contract suites (`test/src/event-sourcing/{event-store,events,checkpoint,subscription}.contract.ts`) to pg impls under Testcontainers. pg-mem rejected (false-greens concurrency + LISTEN/NOTIFY). Add a concurrent-append contract test — trivially green in-memory, drives the advisory lock in pg. | — |
 | Subscription | No Postgres `Subscription`. Reuse `InMemorySubscription` (rename → `PollingSubscription`) over pg `Events` + pg `Checkpoint`. | — |
 | Time | `events.created_at bigint` epoch-ms = `StoredEvent.timestamp` (zoneless instant). Vendor-local domain times live in `jsonb` payload verbatim. Ops timestamps (`checkpoints.updated_at`) use `timestamptz`. | — |
@@ -63,7 +63,7 @@ Minimal indexes only: `(stream_id, stream_position)` unique doubles as `load(str
 
 - [x] `version` prerequisite (committed)
 - [ ] **1a** — schema/migration DDL review + update ADR 0005 ← NEXT
-- [ ] 1b — add deps (`pg`, `@types/pg`, `node-pg-migrate`, `@testcontainers/postgresql`) + Testcontainers harness + migration smoke test
+- [ ] 1b — add deps (`pg`, `@types/pg`, `node-pg-migrate`, `@testcontainers/postgresql`); write the migration in `database/migrations/`; Testcontainers harness + migration smoke test; decide who runs migrations (`database:migrate` job)
 - [ ] 2 — `PostgresEventStore` + `event-store`/`events` contract bindings + concurrent-append test
 - [ ] 3 — `PostgresCheckpoint` + `checkpoint` binding; rename `InMemorySubscription` → `PollingSubscription`; `subscription` binding
 - [ ] 4 — NOTIFY/LISTEN → `EVENT_NOTIFICATIONS` provider; wire `EventSourcingModule` to pg, drop the `EMPTY` default; lengthen `pollSchedule` interval to a safety net
