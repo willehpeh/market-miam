@@ -10,7 +10,7 @@ import {
 import {
   InMemoryCheckpoint,
   InMemoryEventStore,
-  InMemorySubscription,
+  PollingSubscription,
 } from '@market-monster/event-sourcing';
 import { TestAddItemToCatalogue } from '../add-item-to-catalogue/test-data';
 import { InMemoryCatalogueViews } from './in-memory-catalogue.views';
@@ -20,12 +20,12 @@ describe('CatalogueView', () => {
   let store: InMemoryEventStore;
   let views: InMemoryCatalogueViews;
   let catalogues: Catalogues;
-  let subscription: InMemorySubscription;
+  let subscription: PollingSubscription;
 
   beforeEach(() => {
     store = new InMemoryEventStore();
     views = new InMemoryCatalogueViews();
-    subscription = new InMemorySubscription(store, new CatalogueViewProjection(views), new InMemoryCheckpoint('catalogue-view'));
+    subscription = new PollingSubscription(store, new CatalogueViewProjection(views), new InMemoryCheckpoint('catalogue-view'));
     catalogues = new Catalogues(new VendorScopedEvents(store));
   });
 

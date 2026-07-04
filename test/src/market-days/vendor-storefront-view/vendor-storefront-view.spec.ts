@@ -2,7 +2,7 @@ import { VendorScopedEvents } from '@market-monster/market-days';
 import {
   InMemoryCheckpoint,
   InMemoryEventStore,
-  InMemorySubscription,
+  PollingSubscription,
 } from '@market-monster/event-sourcing';
 import {
   EditStorefrontInformationHandler,
@@ -20,13 +20,13 @@ describe('VendorStorefrontView', () => {
   let store: InMemoryEventStore;
   let views: InMemoryVendorStorefrontViews;
   let storefronts: Storefronts;
-  let subscription: InMemorySubscription;
+  let subscription: PollingSubscription;
 
   beforeEach(() => {
     store = new InMemoryEventStore();
     views = new InMemoryVendorStorefrontViews();
     storefronts = new Storefronts(new VendorScopedEvents(store));
-    subscription = new InMemorySubscription(store, new VendorStorefrontViewProjection(views), new InMemoryCheckpoint('vendor-storefront-view'));
+    subscription = new PollingSubscription(store, new VendorStorefrontViewProjection(views), new InMemoryCheckpoint('vendor-storefront-view'));
   });
 
   it('has no view for a vendor whose storefront has not opened', async () => {
