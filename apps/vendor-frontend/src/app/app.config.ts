@@ -7,6 +7,7 @@ import { devAuthInterceptor } from './core/auth/dev-auth.interceptor';
 import { provideAuth } from './core/auth/auth.providers';
 import { provideVendor } from './vendor/vendor.providers';
 import { provideStorefront } from './storefront/storefront.providers';
+import { provideOnboarding } from './onboarding/onboarding.providers';
 import { provideNgrx } from './core/ngrx.providers';
 
 export const appConfig: ApplicationConfig = {
@@ -19,6 +20,7 @@ export const appConfig: ApplicationConfig = {
     provideAuth(),
     provideVendor(),
     provideStorefront(),
+    provideOnboarding(),
     provideNgrx()
   ],
 };

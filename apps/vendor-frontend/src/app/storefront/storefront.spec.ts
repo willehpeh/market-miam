@@ -1,10 +1,10 @@
 import { TestBed } from '@angular/core/testing';
-import { provideState, provideStore } from '@ngrx/store';
+import { provideState, provideStore, Store } from '@ngrx/store';
 import { provideEffects } from '@ngrx/effects';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { Storefront } from './storefront';
 import { HttpStorefront } from './http.storefront';
-import { storefrontFeature } from './storefront.state';
+import { LoadStorefront, storefrontFeature } from './storefront.state';
 import { StorefrontEffects, STOREFRONT_RETRY } from './storefront.effects';
 import { StorefrontFacade } from './storefront.facade';
 import { StoreStorefrontFacade } from './store.storefront.facade';
@@ -16,6 +16,7 @@ const notFound = { status: 404, statusText: 'Not Found' };
 const macrotask = () => new Promise((resolve) => setTimeout(resolve, 5));
 
 describe('Storefront', () => {
+  let store: Store;
   let facade: StorefrontFacade;
   let httpCtrl: HttpTestingController;
 
@@ -31,6 +32,7 @@ describe('Storefront', () => {
         { provide: STOREFRONT_RETRY, useValue: { delayMs: 0, maxAttempts: 1 } },
       ],
     });
+    store = TestBed.inject(Store);
     facade = TestBed.inject(StorefrontFacade);
     httpCtrl = TestBed.inject(HttpTestingController);
   });
@@ -40,21 +42,21 @@ describe('Storefront', () => {
   });
 
   it('requests the storefront view when asked to load', () => {
-    facade.load();
+    store.dispatch(LoadStorefront());
 
     const req = httpCtrl.expectOne('/api/storefront');
     expect(req.request.method).toBe('GET');
   });
 
   it('shows as loading until the view arrives', () => {
-    facade.load();
+    store.dispatch(LoadStorefront());
 
     httpCtrl.expectOne('/api/storefront');
     expect(facade.loading()).toBe(true);
   });
 
   it('exposes the view once loaded', () => {
-    facade.load();
+    store.dispatch(LoadStorefront());
 
     httpCtrl.expectOne('/api/storefront').flush(ACME);
 
@@ -63,7 +65,7 @@ describe('Storefront', () => {
   });
 
   it('retries after a 404 and loads once the storefront is projected', async () => {
-    facade.load();
+    store.dispatch(LoadStorefront());
 
     httpCtrl.expectOne('/api/storefront').flush(null, notFound);
     await macrotask();
@@ -74,7 +76,7 @@ describe('Storefront', () => {
   });
 
   it('gives up and reports no view once retries are exhausted', async () => {
-    facade.load();
+    store.dispatch(LoadStorefront());
 
     httpCtrl.expectOne('/api/storefront').flush(null, notFound);
     await macrotask();
@@ -85,7 +87,7 @@ describe('Storefront', () => {
   });
 
   it('stops loading without retrying on a non-404 error', () => {
-    facade.load();
+    store.dispatch(LoadStorefront());
 
     httpCtrl.expectOne('/api/storefront').flush(null, { status: 500, statusText: 'Server Error' });
 
