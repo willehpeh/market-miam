@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject, linkedSignal } from '@angular/core';
-import { form, FormField } from '@angular/forms/signals';
+import { form, FormField, required } from '@angular/forms/signals';
 import { StorefrontFacade } from '../storefront/storefront.facade';
 import { Card } from '../core/card';
 
@@ -29,6 +29,9 @@ import { Card } from '../core/card';
           <div>
             <label for="name" class="field-label">Nom du stand</label>
             <input id="name" type="text" class="mt-1" [formField]="fields.name" placeholder="La Table de Margaux" />
+            @if (fields.name().touched() && fields.name().invalid()) {
+              <p class="mt-1 text-xs text-danger">Le nom du stand est requis.</p>
+            }
           </div>
           <div>
             <label for="slogan" class="field-label">Slogan · optionnel</label>
@@ -46,7 +49,7 @@ import { Card } from '../core/card';
           </div>
         </div>
 
-        <button type="submit" class="mt-6 flex w-full max-w-xs mx-auto">Continuer →</button>
+        <button type="submit" class="mt-6 flex w-full max-w-xs mx-auto" [disabled]="fields().invalid()">Continuer →</button>
       </form>
     </mm-card>
   `,
@@ -63,7 +66,9 @@ export class StorefrontForm {
     };
   });
 
-  protected readonly fields = form(this.model);
+  protected readonly fields = form(this.model, (path) => {
+    required(path.name);
+  });
 
   protected submit(event: Event): void {
     event.preventDefault();

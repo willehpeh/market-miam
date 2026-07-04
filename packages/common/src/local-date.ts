@@ -1,7 +1,7 @@
-import { EmptyValueError } from './errors';
+import { DomainError, EmptyValueError } from './errors';
 import { Instant } from './instant';
 
-export class InvalidDateError extends Error {
+export class InvalidDateError extends DomainError {
   constructor() {
     super('Date must be in YYYY-MM-DD format');
     this.name = 'InvalidDateError';

@@ -1,4 +1,5 @@
 import { INestApplication } from '@nestjs/common';
+import { APP_FILTER } from '@nestjs/core';
 import { Test, TestingModuleBuilder } from '@nestjs/testing';
 import { Clock, Email, Instant, LocalDate } from '@market-monster/common';
 import { VendorId } from '@market-monster/shared-kernel';
@@ -7,6 +8,7 @@ import { StorefrontOpened } from '@market-monster/market-days';
 import { StaticTokenVerifier, VerifiedVendor } from '@market-monster/auth';
 import { AuthModule } from '@market-monster/auth-nestjs';
 import { MarketDaysModule } from '../market-days/market-days.module';
+import { DomainErrorFilter } from '../domain-error.filter';
 import { POLLING_ENABLED } from '../event-sourcing/subscriptions';
 
 export const testVendor: VerifiedVendor = {
@@ -33,6 +35,7 @@ export function apiTestModule(options: ApiTestOptions = {}): TestingModuleBuilde
       AuthModule.forRootAsync({ useFactory: () => new StaticTokenVerifier(vendor) }),
       MarketDaysModule,
     ],
+    providers: [{ provide: APP_FILTER, useClass: DomainErrorFilter }],
   });
   builder.overrideProvider(POLLING_ENABLED).useValue(false);
   if (clock) {
