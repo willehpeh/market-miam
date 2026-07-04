@@ -1,5 +1,5 @@
 import { Aggregate } from '@market-monster/event-sourcing';
-import { ImageReference } from '@market-monster/common';
+import { ImageReference, PhoneNumber } from '@market-monster/common';
 import { VendorId } from '@market-monster/shared-kernel';
 import { StorefrontCoverPhotoSet, StorefrontEvent, StorefrontInformationEdited, StorefrontOpened } from './events';
 import { CoverPhoto, NoCoverPhoto, SetCoverPhoto } from './cover-photo';
@@ -48,13 +48,14 @@ export class Storefront extends Aggregate {
     this.raise(event);
   }
 
-  editInformation(name: StorefrontName, description: StorefrontDescription) {
+  editInformation(name: StorefrontName, description: StorefrontDescription, phone: PhoneNumber) {
     this.assertOpen();
     const event: StorefrontInformationEdited = {
       type: 'StorefrontInformationEdited',
       payload: {
         name: name.value(),
-        description: description.value()
+        description: description.value(),
+        phone: phone.value()
       },
       version: 1
     };

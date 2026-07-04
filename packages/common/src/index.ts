@@ -5,4 +5,5 @@ export * from './url';
 export * from './instant';
 export * from './date-clock';
 export * from './email';
+export * from './phone-number';
 export * from './image-reference';

@@ -1,7 +1,8 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
+import { PhoneNumber } from '@market-monster/common';
 import { VendorId } from '@market-monster/shared-kernel';
 import { EditStorefrontInformation } from './edit-storefront-information';
-import { Storefronts, StorefrontName, StorefrontDescription } from '../storefront';
+import { StorefrontDescription, StorefrontName, Storefronts } from '../storefront';
 
 @CommandHandler(EditStorefrontInformation)
 export class EditStorefrontInformationHandler implements ICommandHandler<EditStorefrontInformation> {
@@ -11,7 +12,11 @@ export class EditStorefrontInformationHandler implements ICommandHandler<EditSto
   async execute(command: EditStorefrontInformation): Promise<void> {
     const vendorId = new VendorId(command.vendorId);
     const storefront = await this.storefronts.forVendor(vendorId);
-    storefront.editInformation(new StorefrontName(command.name), new StorefrontDescription(command.description));
+    storefront.editInformation(
+      new StorefrontName(command.name),
+      new StorefrontDescription(command.description),
+      new PhoneNumber(command.phone),
+    );
     await this.storefronts.save(storefront, vendorId);
   }
 }

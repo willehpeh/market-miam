@@ -6,6 +6,7 @@ export class TestEditStorefrontInformation {
       'vendor-id',
       'Jimmy\'s Sandwiches',
       'The best you ever had',
+      '01234 567890',
     );
   }
 
@@ -15,6 +16,7 @@ export class TestEditStorefrontInformation {
       overrides.vendorId ?? defaults.vendorId,
       overrides.name ?? defaults.name,
       overrides.description ?? defaults.description,
+      overrides.phone ?? defaults.phone,
     );
   }
 }

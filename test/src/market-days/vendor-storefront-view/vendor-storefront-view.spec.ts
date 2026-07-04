@@ -40,6 +40,7 @@ describe('VendorStorefrontView', () => {
     expect(await views.findByVendor('vendor-id')).toEqual({
       name: '',
       description: '',
+      phone: '',
       imageReference: ''
     });
   });
@@ -55,6 +56,7 @@ describe('VendorStorefrontView', () => {
     expect(await views.findByVendor(vendorId)).toEqual({
       name: infoCommand.name,
       description: infoCommand.description,
+      phone: infoCommand.phone,
       imageReference: photoCommand.imageReference
     });
   });

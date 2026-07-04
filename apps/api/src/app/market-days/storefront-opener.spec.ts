@@ -27,6 +27,7 @@ describe('Opening a storefront on registration', () => {
     expect(await app.get(VendorStorefrontViews).findByVendor('acme-bakery')).toEqual({
       name: '',
       description: '',
+      phone: '',
       imageReference: '',
     });
   });

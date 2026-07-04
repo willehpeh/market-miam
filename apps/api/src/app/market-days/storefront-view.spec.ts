@@ -31,6 +31,7 @@ describe('Viewing a storefront over HTTP', () => {
     expect(response.body).toEqual({
       name: '',
       description: '',
+      phone: '',
       imageReference: '',
     });
   });

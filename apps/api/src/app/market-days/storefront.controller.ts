@@ -27,10 +27,10 @@ export class StorefrontController {
   @UseGuards(JwtAuthGuard)
   async edit(
     @CurrentVendor() vendor: VerifiedVendor,
-    @Body() body: { name: string; description: string },
+    @Body() body: { name: string; description: string; phone?: string },
   ): Promise<void> {
     await this.commands.execute(
-      new EditStorefrontInformation(vendor.vendorId.value(), body.name, body.description),
+      new EditStorefrontInformation(vendor.vendorId.value(), body.name, body.description, body.phone ?? ''),
     );
   }
 }
