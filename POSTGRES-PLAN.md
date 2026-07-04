@@ -64,7 +64,7 @@ Minimal indexes only: `(stream_id, stream_position)` unique doubles as `load(str
 - [x] `version` prerequisite (committed)
 - [x] 1a — schema/migration DDL review + update ADR 0005
 - [x] 1b — deps added; migration `database/migrations/0001_events_and_checkpoints.sql`; Testcontainers harness (`test/src/event-sourcing/postgres/testcontainer.ts`) + smoke test via a new **`test:container`** target (`*.container.spec.ts`, Docker-gated, excluded from the fast suite). Test tsconfig → `module: esnext` + `moduleResolution: bundler`. **TODO:** prod `database:migrate` deploy job (harness migrates programmatically; deploy job unbuilt).
-- [ ] 2 — `PostgresEventStore` + `event-store`/`events` contract bindings (as `*.container.spec.ts`, reusing the harness) + concurrent-append test
+- [x] 2 — `PostgresEventStore` (barrel; `import type { Pool }` keeps pg runtime-free — only `apps/api` loads pg to build the pool). Passes `event-store` + `events` contracts under Testcontainers + a real-concurrency test (one append wins, one `ConcurrencyError`). append = txn + advisory lock (ADR 0028) + count-check concurrency + insert; `23505` → `ConcurrencyError` fallback; `created_at` = `Date.now()` (parity w/ in-memory; Clock-routing deferred). NOTE: the lock's global-ordering guarantee is by-design, not race-tested (deterministic reproduction needs white-box txn timing).
 - [ ] 3 — `PostgresCheckpoint` + `checkpoint` binding; rename `InMemorySubscription` → `PollingSubscription`; `subscription` binding
 - [ ] 4 — NOTIFY/LISTEN → `EVENT_NOTIFICATIONS` provider; wire `EventSourcingModule` to pg, drop the `EMPTY` default; lengthen `pollSchedule` interval to a safety net
 
