@@ -9,7 +9,7 @@ import { StorefrontEffects, STOREFRONT_RETRY } from './storefront.effects';
 import { StorefrontFacade } from './storefront.facade';
 import { StoreStorefrontFacade } from './store.storefront.facade';
 
-const ACME = { name: 'Acme Bakery', description: 'Fresh bread daily', imageReference: '' };
+const ACME = { name: 'Acme Bakery', description: 'Fresh bread daily', phone: '', imageReference: '' };
 
 const notFound = { status: 404, statusText: 'Not Found' };
 
@@ -96,13 +96,14 @@ describe('Storefront', () => {
   });
 
   it('sends the edited storefront information', () => {
-    facade.save('La Table de Margaux', 'Cuisine de marché, mijotée maison.');
+    facade.save('La Table de Margaux', 'Cuisine de marché, mijotée maison.', '06 12 34 56 78');
 
     const req = httpCtrl.expectOne('/api/storefront');
     expect(req.request.method).toBe('PUT');
     expect(req.request.body).toEqual({
       name: 'La Table de Margaux',
       description: 'Cuisine de marché, mijotée maison.',
+      phone: '06 12 34 56 78',
     });
     req.flush(null);
   });

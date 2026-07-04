@@ -10,7 +10,7 @@ export class StoreStorefrontFacade implements StorefrontFacade {
   readonly view = this.store.selectSignal(storefrontFeature.selectView);
   readonly loading = this.store.selectSignal(storefrontFeature.selectLoading);
 
-  save(name: string, description: string): void {
-    this.store.dispatch(EditStorefront({ name, description }));
+  save(name: string, description: string, phone: string): void {
+    this.store.dispatch(EditStorefront({ name, description, phone }));
   }
 }

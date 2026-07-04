@@ -13,7 +13,7 @@ export const LoadStorefrontFailure = createAction(
 
 export const EditStorefront = createAction(
   '[Storefront] Edit Storefront',
-  props<{ name: string; description: string }>(),
+  props<{ name: string; description: string; phone: string }>(),
 );
 export const EditStorefrontSuccess = createAction('[Storefront] Edit Storefront Success');
 export const EditStorefrontFailure = createAction('[Storefront] Edit Storefront Failure');

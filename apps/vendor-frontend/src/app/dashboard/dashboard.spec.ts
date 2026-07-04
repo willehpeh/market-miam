@@ -15,7 +15,7 @@ async function renderDashboard() {
 describe('Dashboard', () => {
   it('displays the storefront name and description', async () => {
     const { view, storefront } = await renderDashboard();
-    storefront.view.set({ name: 'Acme Bakery', description: 'Fresh bread daily', imageReference: '' });
+    storefront.view.set({ name: 'Acme Bakery', description: 'Fresh bread daily', phone: '', imageReference: '' });
     view.detectChanges();
 
     expect(screen.getByText('Acme Bakery')).toBeInTheDocument();

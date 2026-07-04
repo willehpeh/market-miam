@@ -12,7 +12,7 @@ export class HttpStorefront implements Storefront {
     return this.http.get<StorefrontView>(`${environment.apiBaseUrl}/api/storefront`);
   }
 
-  edit(name: string, description: string): Observable<void> {
-    return this.http.put<void>(`${environment.apiBaseUrl}/api/storefront`, { name, description });
+  edit(name: string, description: string, phone: string): Observable<void> {
+    return this.http.put<void>(`${environment.apiBaseUrl}/api/storefront`, { name, description, phone });
   }
 }

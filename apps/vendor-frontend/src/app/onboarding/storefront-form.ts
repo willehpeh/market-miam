@@ -1,11 +1,12 @@
 import { ChangeDetectionStrategy, Component, inject, linkedSignal } from '@angular/core';
+import { form, FormField } from '@angular/forms/signals';
 import { StorefrontFacade } from '../storefront/storefront.facade';
 import { Card } from '../core/card';
 
 @Component({
   selector: 'mm-storefront-form',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [Card],
+  imports: [Card, FormField],
   template: `
     <mm-card>
       <form (submit)="submit($event)">
@@ -27,14 +28,7 @@ import { Card } from '../core/card';
         <div class="mt-5 space-y-4">
           <div>
             <label for="name" class="field-label">Nom du stand</label>
-            <input
-              id="name"
-              type="text"
-              class="mt-1"
-              [value]="name()"
-              (input)="name.set($any($event.target).value)"
-              placeholder="La Table de Margaux"
-            />
+            <input id="name" type="text" class="mt-1" [formField]="fields.name" placeholder="La Table de Margaux" />
           </div>
           <div>
             <label for="slogan" class="field-label">Slogan · optionnel</label>
@@ -42,14 +36,13 @@ import { Card } from '../core/card';
               id="slogan"
               type="text"
               class="mt-1"
-              [value]="description()"
-              (input)="description.set($any($event.target).value)"
+              [formField]="fields.description"
               placeholder="Cuisine de marché, mijotée maison."
             />
           </div>
           <div>
-            <label for="phone" class="field-label">Téléphone · bientôt</label>
-            <input id="phone" type="tel" class="mt-1" disabled />
+            <label for="phone" class="field-label">Téléphone · optionnel</label>
+            <input id="phone" type="tel" class="mt-1" [formField]="fields.phone" placeholder="06 12 34 56 78" />
           </div>
         </div>
 
@@ -61,11 +54,20 @@ import { Card } from '../core/card';
 export class StorefrontForm {
   private readonly storefront = inject(StorefrontFacade);
 
-  protected readonly name = linkedSignal(() => this.storefront.view()?.name ?? '');
-  protected readonly description = linkedSignal(() => this.storefront.view()?.description ?? '');
+  private readonly model = linkedSignal(() => {
+    const view = this.storefront.view();
+    return {
+      name: view?.name ?? '',
+      description: view?.description ?? '',
+      phone: view?.phone ?? '',
+    };
+  });
+
+  protected readonly fields = form(this.model);
 
   protected submit(event: Event): void {
     event.preventDefault();
-    this.storefront.save(this.name(), this.description());
+    const { name, description, phone } = this.fields().value();
+    this.storefront.save(name, description, phone);
   }
 }

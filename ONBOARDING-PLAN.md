@@ -89,4 +89,4 @@ Convention: **no lifecycle hooks anywhere.** A genuine init-time load goes in th
 - **Deep-link / manual `/` while already authenticated** (no fresh `LoginSuccess`) → spinner with no trigger. Rare; fix is a "resume session" path. Not now.
 - **`published` flag** → `/dashboard` as a login destination.
 - **Multi-step wizard** (design steps 2–4: catalogue, etc.) + parent shell component.
-- **Photo / ville / téléphone** persistence (no API; `imageReference` not settable via `PUT`).
+- **Photo** persistence — design-only; `imageReference` not settable via `PUT`. (Phone shipped: real optional field via Signal Forms + `PUT`; ville dropped from the form.)
