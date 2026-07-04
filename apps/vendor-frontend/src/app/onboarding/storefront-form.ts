@@ -58,7 +58,7 @@ import { Card } from '../core/card';
           </div>
         </div>
 
-        <button type="submit" class="mt-6 w-full">Continuer →</button>
+        <button type="submit" class="mt-6 flex w-full max-w-xs mx-auto">Continuer →</button>
       </form>
     </mm-card>
   `,

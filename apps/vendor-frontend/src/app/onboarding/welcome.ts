@@ -31,7 +31,7 @@ import { Card } from '../core/card';
         }
       </ul>
 
-      <button type="button" class="mt-6 w-full" routerLink="/onboarding/storefront">Créer ma vitrine →</button>
+      <button type="button" class="mt-6 flex w-full max-w-xs mx-auto" routerLink="/onboarding/storefront">Créer ma vitrine →</button>
     </mm-card>
   `,
 })
