@@ -52,4 +52,23 @@ describe('StorefrontForm', () => {
     expect(screen.getByLabelText(/téléphone/i)).toBeEnabled();
     expect(storefront.saved).toEqual({ name: 'La Table de Margaux', description: '', phone: '' });
   });
+
+  it('will not let the vendor continue without a stand name', async () => {
+    await renderForm();
+
+    expect(screen.getByRole('button', { name: /continuer/i })).toBeDisabled();
+
+    fireEvent.input(screen.getByLabelText(/nom du stand/i), { target: { value: 'La Table de Margaux' } });
+
+    expect(screen.getByRole('button', { name: /continuer/i })).toBeEnabled();
+  });
+
+  it('flags the name as required once the vendor leaves it blank', async () => {
+    await renderForm();
+
+    fireEvent.focus(screen.getByLabelText(/nom du stand/i));
+    fireEvent.blur(screen.getByLabelText(/nom du stand/i));
+
+    expect(screen.getByText(/nom du stand est requis/i)).toBeVisible();
+  });
 });

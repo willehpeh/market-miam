@@ -1,6 +1,6 @@
-import { EmptyValueError } from './errors';
+import { DomainError, EmptyValueError } from './errors';
 
-export class InvalidUrlError extends Error {
+export class InvalidUrlError extends DomainError {
   constructor() {
     super('URL must be a valid http or https URL');
     this.name = 'InvalidUrlError';
