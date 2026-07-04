@@ -1,4 +1,4 @@
-import { defineConfig } from 'vitest/config';
+import { defineConfig, configDefaults } from 'vitest/config';
 import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin';
 import { nxCopyAssetsPlugin } from '@nx/vite/plugins/nx-copy-assets.plugin';
 
@@ -16,6 +16,8 @@ export default defineConfig(() => ({
     globals: true,
     environment: 'node',
     include: ['test/{src,tests}/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
+    // Testcontainers specs need Docker + are slow — run them via `test:container`, not here.
+    exclude: [...configDefaults.exclude, '**/*.container.spec.*'],
     reporters: ['default'],
     coverage: {
       reportsDirectory: 'coverage/test',

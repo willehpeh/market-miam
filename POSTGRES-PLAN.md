@@ -62,9 +62,9 @@ Minimal indexes only: `(stream_id, stream_position)` unique doubles as `load(str
 ## Steps
 
 - [x] `version` prerequisite (committed)
-- [ ] **1a** — schema/migration DDL review + update ADR 0005 ← NEXT
-- [ ] 1b — add deps (`pg`, `@types/pg`, `node-pg-migrate`, `@testcontainers/postgresql`); write the migration in `database/migrations/`; Testcontainers harness + migration smoke test; decide who runs migrations (`database:migrate` job)
-- [ ] 2 — `PostgresEventStore` + `event-store`/`events` contract bindings + concurrent-append test
+- [x] 1a — schema/migration DDL review + update ADR 0005
+- [x] 1b — deps added; migration `database/migrations/0001_events_and_checkpoints.sql`; Testcontainers harness (`test/src/event-sourcing/postgres/testcontainer.ts`) + smoke test via a new **`test:container`** target (`*.container.spec.ts`, Docker-gated, excluded from the fast suite). Test tsconfig → `module: esnext` + `moduleResolution: bundler`. **TODO:** prod `database:migrate` deploy job (harness migrates programmatically; deploy job unbuilt).
+- [ ] 2 — `PostgresEventStore` + `event-store`/`events` contract bindings (as `*.container.spec.ts`, reusing the harness) + concurrent-append test
 - [ ] 3 — `PostgresCheckpoint` + `checkpoint` binding; rename `InMemorySubscription` → `PollingSubscription`; `subscription` binding
 - [ ] 4 — NOTIFY/LISTEN → `EVENT_NOTIFICATIONS` provider; wire `EventSourcingModule` to pg, drop the `EMPTY` default; lengthen `pollSchedule` interval to a safety net
 
