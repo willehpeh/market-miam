@@ -12,12 +12,12 @@ import { Card } from '../core/card';
         <span class="block size-4 rounded-full bg-white/90"></span>
       </div>
       <p class="kicker">Bienvenue sur Market Miam</p>
-      <h1 class="mt-2 text-2xl leading-tight">Votre stand de marché,<br />en ligne en 10 minutes.</h1>
+      <h1 class="mt-2 text-2xl leading-tight">Votre stand de marché, en ligne en 10 minutes.</h1>
       <p class="mt-3 text-sm text-ink-soft">
         Depuis votre téléphone — on vous guide pas à pas, photo après photo.
       </p>
 
-      <ul class="mt-6 divide-y divide-line">
+      <ul class="mt-6 divide-y divide-line max-w-lg mx-auto">
         @for (feature of features; track feature.title) {
           <li class="flex gap-3 py-3">
             <span class="mt-0.5 grid size-8 shrink-0 place-items-center rounded-field bg-brand-soft">

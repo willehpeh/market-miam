@@ -32,10 +32,9 @@ describe('StorefrontForm', () => {
     expect(storefront.saved).toEqual({ name: 'La Table de Margaux', description: 'Cuisine de marché' });
   });
 
-  it('keeps ville and téléphone disabled until the API supports them', async () => {
+  it('keeps téléphone disabled until the API supports them', async () => {
     await renderForm();
 
-    expect(screen.getByLabelText(/ville/i)).toBeDisabled();
     expect(screen.getByLabelText(/téléphone/i)).toBeDisabled();
   });
 });

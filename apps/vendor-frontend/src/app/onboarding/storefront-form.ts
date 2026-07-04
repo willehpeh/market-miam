@@ -19,8 +19,7 @@ import { Card } from '../core/card';
           <p class="mt-2 text-sm font-bold text-ink">Photo de votre stand</p>
           <p class="text-xs text-muted">Une belle photo donne envie de s'arrêter.</p>
           <div class="mt-3 flex justify-center gap-2">
-            <button type="button" disabled>Prendre</button>
-            <button type="button" disabled>Galerie</button>
+            <button type="button" disabled>Ajouter photo</button>
           </div>
           <p class="mt-2 text-xs font-mono uppercase tracking-widest text-muted">Bientôt</p>
         </div>
@@ -47,10 +46,6 @@ import { Card } from '../core/card';
               (input)="description.set($any($event.target).value)"
               placeholder="Cuisine de marché, mijotée maison."
             />
-          </div>
-          <div>
-            <label for="ville" class="field-label">Ville · bientôt</label>
-            <input id="ville" type="text" class="mt-1" placeholder="Lyon" disabled />
           </div>
           <div>
             <label for="phone" class="field-label">Téléphone · bientôt</label>
