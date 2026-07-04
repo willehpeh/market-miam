@@ -8,7 +8,7 @@ import {
 } from '@market-monster/event-sourcing';
 
 // Pins the decorator's contract at the package boundary, independent of the
-// consumer-runner discovery that exercises it in the app's outer loop — that
+// Subscriptions discovery that exercises it in the app's outer loop — that
 // wiring could refactor away from the decorator and silently orphan it.
 describe('@CheckpointedProjection', () => {
   it('stamps the name and projection kind on a decorated class', () => {

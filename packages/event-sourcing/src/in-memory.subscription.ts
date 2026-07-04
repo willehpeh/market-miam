@@ -20,7 +20,7 @@ export class InMemorySubscription implements Subscription {
       batch = await this.events.loadFrom(position, BATCH_SIZE);
       for (const event of batch) {
         // ponytail: dead-letter seam. A throw here never advances the checkpoint, so
-        // a poison event replays forever (the runner's backoff only slows it). With a
+        // a poison event replays forever (Subscriptions' backoff only slows it). With a
         // durable store, wrap this handle: retry the event K times, then dead-letter
         // it and write the checkpoint past it so the stream keeps moving. Needs a
         // durable per-event attempt count, so it lands with Postgres, not in-memory.
