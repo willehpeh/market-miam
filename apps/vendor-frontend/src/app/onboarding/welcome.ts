@@ -11,10 +11,10 @@ import { Card } from '../core/card';
       <div class="mb-5 grid size-9 place-items-center rounded-field bg-brand">
         <span class="block size-4 rounded-full bg-white/90"></span>
       </div>
-      <p class="kicker">Bienvenue sur Miam</p>
+      <p class="kicker">Bienvenue sur Market Miam</p>
       <h1 class="mt-2 text-2xl leading-tight">Votre stand de marché,<br />en ligne en 10 minutes.</h1>
       <p class="mt-3 text-sm text-ink-soft">
-        Sortez votre téléphone — on vous guide pas à pas, photo après photo.
+        Depuis votre téléphone — on vous guide pas à pas, photo après photo.
       </p>
 
       <ul class="mt-6 divide-y divide-line">
@@ -37,8 +37,8 @@ import { Card } from '../core/card';
 })
 export class Welcome {
   protected readonly features = [
-    { icon: '📷', title: 'Photographiez vos plats', detail: 'Vos photos depuis votre téléphone, recadrées automatiquement.' },
-    { icon: '🔗', title: 'Une vitrine en ligne', detail: 'Partageable par lien, QR code ou Instagram.' },
-    { icon: '📅', title: 'Votre calendrier de marchés', detail: 'Vos clients savent toujours où vous trouver.' },
+    { icon: '📷', title: 'Photographiez vos plats', detail: 'Vos clients mangent d\'abord avec les yeux.' },
+    { icon: '🔗', title: 'Une vitrine en ligne', detail: 'Partageable par lien ou QR code.' },
+    { icon: '📅', title: 'Votre calendrier de marchés', detail: 'Vos clients sauront toujours où vous trouver.' },
   ];
 }
