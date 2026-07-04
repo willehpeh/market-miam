@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import type { Pool } from 'pg';
+import type { Pool, PoolClient, QueryResult } from 'pg';
 import { ConcurrencyError } from './concurrency.error';
 import { DomainEvent } from './domain-event';
 import { EventStore } from './event-store';
@@ -22,6 +22,61 @@ interface EventRow {
   created_at: string;
 }
 
+class AppendTransaction {
+
+  private currentStreamPosition = 0;
+
+  constructor(private readonly client: PoolClient,
+              private readonly streamId: string) {
+  }
+
+  async open(): Promise<void> {
+    await this.client.query('BEGIN');
+    await this.client.query('SELECT pg_advisory_xact_lock($1)', [APPEND_LOCK_KEY]);
+  }
+
+  async append(
+    events: DomainEvent[],
+    expectedStreamPosition: number,
+    metadata?: Record<string, unknown>,
+  ): Promise<void> {
+    await this.performConcurrencyCheck(expectedStreamPosition);
+    events.forEach((event) => this.appendEvent(event, metadata));
+  }
+
+  private async appendEvent(event: DomainEvent, metadata: Record<string, unknown> | undefined) {
+    await this.client.query(
+      `INSERT INTO events
+             (id, stream_id, stream_position, event_type, payload, metadata, version, created_at)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+      [randomUUID(), this.streamId, ++this.currentStreamPosition, event.type, event.payload, metadata ?? null, event.version, Date.now()]
+    );
+  }
+
+  private async performConcurrencyCheck(expectedStreamPosition: number): Promise<void> {
+    const { rows } = await this.client.query<{ len: number }>(
+      'SELECT count(*)::int AS len FROM events WHERE stream_id = $1',
+      [this.streamId],
+    );
+    this.currentStreamPosition = rows[0].len;
+    if (this.currentStreamPosition !== expectedStreamPosition) {
+      throw new ConcurrencyError(expectedStreamPosition, this.currentStreamPosition);
+    }
+  }
+
+  async commit(): Promise<QueryResult> {
+    return this.client.query('COMMIT');
+  }
+
+  async rollback(): Promise<QueryResult | undefined> {
+    return this.client.query('ROLLBACK').catch(() => undefined);
+  }
+
+  release(): void {
+    this.client.release();
+  }
+}
+
 export class PostgresEventStore implements EventStore, Events {
   constructor(private readonly pool: Pool) {}
 
@@ -32,36 +87,16 @@ export class PostgresEventStore implements EventStore, Events {
     metadata?: Record<string, unknown>,
   ): Promise<void> {
     const client = await this.pool.connect();
+    const txn = new AppendTransaction(client, streamId);
     try {
-      await client.query('BEGIN');
-      await client.query('SELECT pg_advisory_xact_lock($1)', [APPEND_LOCK_KEY]);
-
-      const { rows } = await client.query<{ len: number }>(
-        'SELECT count(*)::int AS len FROM events WHERE stream_id = $1',
-        [streamId],
-      );
-      const len = rows[0].len;
-      if (len !== expectedStreamPosition) {
-        throw new ConcurrencyError(expectedStreamPosition, len);
-      }
-
-      const timestamp = Date.now();
-      for (let i = 0; i < events.length; i++) {
-        const event = events[i];
-        await client.query(
-          `INSERT INTO events
-             (id, stream_id, stream_position, event_type, payload, metadata, version, created_at)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-          [randomUUID(), streamId, len + i + 1, event.type, event.payload, metadata ?? null, event.version, timestamp],
-        );
-      }
-
-      await client.query('COMMIT');
+      await txn.open();
+      await txn.append(events, expectedStreamPosition, metadata);
+      await txn.commit();
     } catch (error) {
-      await client.query('ROLLBACK').catch(() => undefined);
-      throw asConcurrencyError(error, expectedStreamPosition);
+      await txn.rollback();
+      throw error;
     } finally {
-      client.release();
+      txn.release();
     }
   }
 
@@ -97,14 +132,4 @@ function toStoredEvent(row: EventRow): StoredEvent {
     event.metadata = row.metadata;
   }
   return event;
-}
-
-function asConcurrencyError(error: unknown, expected: number): Error {
-  if (error instanceof ConcurrencyError) {
-    return error;
-  }
-  if (typeof error === 'object' && error !== null && (error as { code?: string }).code === '23505') {
-    return new ConcurrencyError(expected, expected);
-  }
-  return error as Error;
 }
