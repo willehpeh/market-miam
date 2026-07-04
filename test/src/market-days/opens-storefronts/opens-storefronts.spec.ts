@@ -9,7 +9,7 @@ import { Command } from '@nestjs/cqrs';
 import {
   OpenStorefront,
   RegisterVendorHandler,
-  StorefrontOpener,
+  OpensStorefronts,
   Vendors,
 } from '@market-monster/market-days';
 import { TestRegisterVendor } from '../register-vendor/test-data';
@@ -23,7 +23,7 @@ class RecordingCommandDispatcher extends CommandDispatcher {
   }
 }
 
-describe('StorefrontOpener', () => {
+describe('Opens Storefronts', () => {
   let store: InMemoryEventStore;
   let vendors: Vendors;
   let dispatcher: RecordingCommandDispatcher;
@@ -35,7 +35,7 @@ describe('StorefrontOpener', () => {
     dispatcher = new RecordingCommandDispatcher();
     subscription = new InMemorySubscription(
       store,
-      new StorefrontOpener(dispatcher),
+      new OpensStorefronts(dispatcher),
       new InMemoryCheckpoint('storefront-opener'),
     );
   });
