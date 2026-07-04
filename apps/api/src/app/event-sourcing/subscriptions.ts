@@ -16,9 +16,9 @@ import { pollSchedule } from './poll-schedule';
 
 export const POLLING_ENABLED = Symbol('POLLING_ENABLED');
 
-// ponytail: a stream of pokes that ask the runner to poll now. Default is EMPTY —
+// ponytail: a stream of pokes that ask Subscriptions to poll now. Default is EMPTY —
 // pollSchedule's timer is the whole drive today. Provide a real source (Postgres
-// LISTEN) to cut latency and idle poll load; the runner is otherwise unchanged
+// LISTEN) to cut latency and idle poll load; Subscriptions is otherwise unchanged
 // and pollSchedule's interval becomes a safety net you can lengthen.
 export const EVENT_NOTIFICATIONS = Symbol('EVENT_NOTIFICATIONS');
 
@@ -26,7 +26,7 @@ const RETRY_BACKOFF_MS = 1000;
 const MAX_RETRY_BACKOFF_MS = 30_000;
 
 @Injectable()
-export class ConsumerRunner implements OnApplicationBootstrap, OnApplicationShutdown {
+export class Subscriptions implements OnApplicationBootstrap, OnApplicationShutdown {
   private readonly stopped = new Subject<void>();
   private subscriptions: Subscription[] = [];
 
@@ -36,7 +36,7 @@ export class ConsumerRunner implements OnApplicationBootstrap, OnApplicationShut
     private readonly context: MessageContext,
     @Inject(POLLING_ENABLED) private readonly pollingEnabled: boolean,
     @Optional() @Inject(EVENT_NOTIFICATIONS) private readonly notifications: Observable<void> = EMPTY,
-    @Optional() private readonly logger: Logger = new Logger(ConsumerRunner.name),
+    @Optional() private readonly logger: Logger = new Logger(Subscriptions.name),
   ) {}
 
   onApplicationBootstrap(): void {

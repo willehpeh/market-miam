@@ -14,7 +14,7 @@ import {
 import { MessageContextModule } from '../message-context/message-context.module';
 import { TracingCommandDispatcher } from './tracing.command-dispatcher';
 import { TracingQueryDispatcher } from './tracing.query-dispatcher';
-import { ConsumerRunner, EVENT_NOTIFICATIONS, POLLING_ENABLED } from './consumer-runner';
+import { Subscriptions, EVENT_NOTIFICATIONS, POLLING_ENABLED } from './subscriptions';
 import { TracingEventStore } from './tracing.event-store';
 
 const decoratedEventStore = (inner: EventStore, context: MessageContext) =>
@@ -41,7 +41,7 @@ const eventStore = [
     { provide: POLLING_ENABLED, useValue: true },
     // Swap for a Postgres LISTEN observable when pg lands; nothing else changes.
     { provide: EVENT_NOTIFICATIONS, useValue: EMPTY },
-    ConsumerRunner,
+    Subscriptions,
   ],
   exports: [
     EventStore,
@@ -49,7 +49,7 @@ const eventStore = [
     InMemoryEventStore,
     CommandDispatcher,
     QueryDispatcher,
-    ConsumerRunner,
+    Subscriptions,
   ],
 })
 export class EventSourcingModule {}
