@@ -12,6 +12,12 @@
         "cwd": "test"
       }
     },
+    "test:container": {
+      "command": "vitest run --config vitest.container.config.mts",
+      "options": {
+        "cwd": "test"
+      }
+    },
     "test:watch": {
       "command": "vitest run --watch",
       "options": {
