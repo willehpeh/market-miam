@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { bootApiTestApp } from '../testing/api-test-app';
-import { ConsumerRunner } from '../event-sourcing/consumer-runner';
+import { Subscriptions } from '../event-sourcing/subscriptions';
 
 describe('Viewing a storefront over HTTP', () => {
   let app: INestApplication;
@@ -21,7 +21,7 @@ describe('Viewing a storefront over HTTP', () => {
       .set('Authorization', 'Bearer any-token')
       .expect(201);
 
-    await app.get(ConsumerRunner).drain();
+    await app.get(Subscriptions).drain();
 
     const response = await request(app.getHttpServer())
       .get('/storefront')

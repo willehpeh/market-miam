@@ -1,6 +1,6 @@
 import nx from '@nx/eslint-plugin';
 
-// A projection/processor only runs if the ConsumerRunner discovers it by its
+// A projection/processor only runs if Subscriptions discovers it by its
 // @Checkpointed* decorator. A concrete handler missing the decorator silently
 // never runs, and at runtime it's undetectable (handlers relate to their base
 // only structurally, so no reliable instanceof). So enforce base <-> decorator
@@ -35,7 +35,7 @@ function checkpointDecoratorRule(interfaceNames, decoratorName) {
           if (relatesToBase && !decorated) {
             context.report({
               node: node.id,
-              message: `A class extending or implementing ${relation} must be annotated with @${decoratorName} so the ConsumerRunner discovers it.`,
+              message: `A class extending or implementing ${relation} must be annotated with @${decoratorName} so Subscriptions discovers it.`,
             });
           }
           if (decorated && !relatesToBase) {

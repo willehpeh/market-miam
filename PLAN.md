@@ -28,14 +28,14 @@ The vendor registration path is wired **end to end**:
   `VendorRegistered` and dispatches `OpenStorefront` → `StorefrontOpened`; the
   `VendorStorefrontViewProjection` (`@CheckpointedProjection('vendor-storefront-view')`)
   materialises the view. Edits (`PUT /storefront`) assert the storefront is open.
-  Both handlers are **discovered and driven by the `ConsumerRunner`** — a
+  Both handlers are **discovered and driven by the `Subscriptions`** — a
   background RxJS poller (`merge`→`repeat`/`retry`, per-subscription isolation)
   over checkpoint-driven, instrumented subscriptions, gated by `POLLING_ENABLED`
   (off in tests, which pump `drain()` to quiescence). A lint rule enforces the
   `implements` ⇔ decorator correspondence for every concrete projection and
   processor. Remaining: `GET` query endpoint, frontend.
 - **Module structure**: the generic event-sourcing infra (message context,
-  decorated store, `Events`, `CommandDispatcher`, the `ConsumerRunner`) now lives
+  decorated store, `Events`, `CommandDispatcher`, the `Subscriptions`) now lives
   in **`EventSourcingModule`**, extracted from the `MarketDaysModule` god-module;
   `MarketDaysModule` imports it and holds only domain wiring.
 - **Observability** (ADR 0026): producer + consumer tracing are live end to end
@@ -53,7 +53,7 @@ cross-restart record. Persistence (Postgres) closes this.
 
 The write side is **done**: registration opens the storefront and edits flow
 through to the view, all traced and driven by the real poller (**B.1
-`ConsumerRunner`** discovers projections *and* processors; the first processor
+`Subscriptions`** discovers projections *and* processors; the first processor
 shipped — see the slice above). Read side:
 
 1. **`GET /storefront` query endpoint** — **done**. Routes through a new
@@ -79,7 +79,7 @@ model updates only once `poll()` runs — the frontend must tolerate that lag
 **Shipped end to end** (commits `a237759`, `8e978ba`, `615c58e`, `c28094d`;
 test-tidy `7b2c8e9`, `27e2ed3`). Registering a vendor now opens their storefront
 for real: the `StorefrontOpener` (`@CheckpointedProcessor`) is discovered and
-driven by the `ConsumerRunner` with continuation context + bounded-fan-out
+driven by the `Subscriptions` with continuation context + bounded-fan-out
 tracing, dispatching `OpenStorefront` → `StorefrontOpened` → the view. The
 read-side (`GET`, frontend) is what remains of "B". The design notes below are
 kept as the rationale record.
@@ -182,7 +182,7 @@ not the order you build in):**
    (idempotent) + `apply(StorefrontOpened)` setting `_opened`; edits assert-opened.
 3. **`StorefrontOpener`** (`market-days`, `implements Processor`,
    `@CheckpointedProcessor('storefront-opener')`) → dispatches `OpenStorefront`.
-4. **`ConsumerRunner`**: discover processors; wrap with continuation-context
+4. **`Subscriptions`**: discover processors; wrap with continuation-context
    (inherited correlation, causation = event id) + tracing. (Pin the
    wrapper/tracing layering — the command span under the consumer trace — per
    ADR 0026's "bounded processor→command fan-out".)
@@ -237,7 +237,7 @@ read-side "B" (display the storefront) gives it somewhere to land.
    verification gap above. Decisions + step plan: `POSTGRES-PLAN.md`.
 2. **Processor continuation context** (ADR 0026) — **done** with the
    **StorefrontOpener** slice above (the platform's first processor). The
-   `ConsumerRunner` wraps a discovered `@CheckpointedProcessor` with a
+   `Subscriptions` wraps a discovered `@CheckpointedProcessor` with a
    `ContinuationContextHandler` (inside the tracing wrapper) that establishes a
    new message context with `correlationId` inherited from the consumed event and
    `causationId` = the consumed event's id; the dispatched command and its event

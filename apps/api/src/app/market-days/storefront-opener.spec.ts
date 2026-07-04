@@ -4,7 +4,7 @@ import request from 'supertest';
 import { EventStore } from '@market-monster/event-sourcing';
 import { VendorStorefrontViews } from '@market-monster/market-days';
 import { bootApiTestApp } from '../testing/api-test-app';
-import { ConsumerRunner } from '../event-sourcing/consumer-runner';
+import { Subscriptions } from '../event-sourcing/subscriptions';
 
 describe('Opening a storefront on registration', () => {
   let app: INestApplication;
@@ -22,7 +22,7 @@ describe('Opening a storefront on registration', () => {
 
   it('opens an empty storefront for a newly registered vendor', async () => {
     await register();
-    await app.get(ConsumerRunner).drain();
+    await app.get(Subscriptions).drain();
 
     expect(await app.get(VendorStorefrontViews).findByVendor('acme-bakery')).toEqual({
       name: '',
@@ -33,7 +33,7 @@ describe('Opening a storefront on registration', () => {
 
   it('opens in the registration\'s correlation, caused by the VendorRegistered event', async () => {
     await register();
-    await app.get(ConsumerRunner).drain();
+    await app.get(Subscriptions).drain();
 
     const [registered] = await app.get(EventStore).load('vendor-acme-bakery');
     const [opened] = await app.get(EventStore).load('storefront-acme-bakery');
