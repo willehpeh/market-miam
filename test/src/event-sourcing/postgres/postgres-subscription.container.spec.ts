@@ -1,6 +1,11 @@
 import { afterAll, beforeAll, beforeEach } from 'vitest';
-import { PostgresCheckpoint } from '@market-monster/event-sourcing';
+import {
+  PollingSubscription,
+  PostgresCheckpoint,
+  PostgresEventStore,
+} from '@market-monster/event-sourcing';
 import { checkpointContract } from '../checkpoint.contract';
+import { subscriptionContract } from '../subscription.contract';
 import { PostgresHarness, startPostgres } from './testcontainer';
 
 let pg: PostgresHarness;
@@ -18,3 +23,12 @@ beforeEach(async () => {
 });
 
 checkpointContract('PostgresCheckpoint', () => new PostgresCheckpoint(pg.pool, 'test'));
+
+subscriptionContract('PollingSubscription over Postgres', () => {
+  const store = new PostgresEventStore(pg.pool);
+  return {
+    writer: store,
+    subscribe: (handler) =>
+      new PollingSubscription(store, handler, new PostgresCheckpoint(pg.pool, 'sub-1')),
+  };
+});
