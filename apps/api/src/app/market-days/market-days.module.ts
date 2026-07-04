@@ -17,7 +17,7 @@ import {
   RegisterVendorHandler,
   RetireItemHandler,
   SetStorefrontCoverPhotoHandler,
-  StorefrontOpener,
+  OpensStorefronts,
   Storefronts,
   UnplanItemFromMarketDayHandler,
   Vendors,
@@ -58,8 +58,8 @@ const readModel = [
 
 const processors = [
   {
-    provide: StorefrontOpener,
-    useFactory: (dispatcher: CommandDispatcher) => new StorefrontOpener(dispatcher),
+    provide: OpensStorefronts,
+    useFactory: (dispatcher: CommandDispatcher) => new OpensStorefronts(dispatcher),
     inject: [CommandDispatcher],
   },
 ];

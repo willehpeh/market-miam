@@ -2,8 +2,8 @@ import { CheckpointedProcessor, CommandDispatcher, Processor, StoredEvent } from
 import { vendorIdFrom } from '@market-monster/shared-kernel';
 import { OpenStorefront } from '../open-storefront';
 
-@CheckpointedProcessor('storefront-opener')
-export class StorefrontOpener implements Processor {
+@CheckpointedProcessor('opens-storefronts')
+export class OpensStorefronts implements Processor {
   constructor(private readonly commands: CommandDispatcher) {}
 
   async handle(event: StoredEvent): Promise<void> {
