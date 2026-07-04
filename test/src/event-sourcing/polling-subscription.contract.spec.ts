@@ -3,23 +3,23 @@ import { RecordingHandler, subscriptionContract } from './subscription.contract'
 import {
   InMemoryCheckpoint,
   InMemoryEventStore,
-  InMemorySubscription,
+  PollingSubscription,
 } from '@market-monster/event-sourcing';
 
-subscriptionContract('InMemorySubscription', () => {
+subscriptionContract('PollingSubscription', () => {
   const store = new InMemoryEventStore();
   return {
     writer: store,
     subscribe: (handler) =>
-      new InMemorySubscription(store, handler, new InMemoryCheckpoint('sub-1')),
+      new PollingSubscription(store, handler, new InMemoryCheckpoint('sub-1')),
   };
 });
 
-describe('InMemorySubscription checkpoint advancement', () => {
+describe('PollingSubscription checkpoint advancement', () => {
   it('advances the checkpoint past a non-matching event', async () => {
     const store = new InMemoryEventStore();
     const checkpoint = new InMemoryCheckpoint('sub-1');
-    const subscription = new InMemorySubscription(
+    const subscription = new PollingSubscription(
       store,
       new RecordingHandler(['Wanted']),
       checkpoint,

@@ -3,7 +3,7 @@ import {
   CommandDispatcher,
   InMemoryCheckpoint,
   InMemoryEventStore,
-  InMemorySubscription,
+  PollingSubscription,
 } from '@market-monster/event-sourcing';
 import { Command } from '@nestjs/cqrs';
 import {
@@ -27,13 +27,13 @@ describe('Opens Storefronts', () => {
   let store: InMemoryEventStore;
   let vendors: Vendors;
   let dispatcher: RecordingCommandDispatcher;
-  let subscription: InMemorySubscription;
+  let subscription: PollingSubscription;
 
   beforeEach(() => {
     store = new InMemoryEventStore();
     vendors = new Vendors(new VendorScopedEvents(store));
     dispatcher = new RecordingCommandDispatcher();
-    subscription = new InMemorySubscription(
+    subscription = new PollingSubscription(
       store,
       new OpensStorefronts(dispatcher),
       new InMemoryCheckpoint('storefront-opener'),

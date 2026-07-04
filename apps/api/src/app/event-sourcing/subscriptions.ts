@@ -6,8 +6,8 @@ import {
   EventHandler,
   Events,
   InMemoryCheckpoint,
-  InMemorySubscription,
   MessageContext,
+  PollingSubscription,
   Subscription
 } from '@market-monster/event-sourcing';
 import { TracingEventHandler } from './tracing.event-handler';
@@ -73,7 +73,7 @@ export class Subscriptions implements OnApplicationBootstrap, OnApplicationShutd
       // ponytail: in-memory for now; this is the durability seam. Swap these two
       // `new`s for durable adapters when checkpoints must survive restart —
       // contract tests hold any replacement to the Subscription/Checkpoint spec.
-      return new InMemorySubscription(
+      return new PollingSubscription(
         this.events,
         new TracingEventHandler(driven),
         new InMemoryCheckpoint(name),

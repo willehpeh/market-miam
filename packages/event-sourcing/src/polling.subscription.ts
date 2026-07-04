@@ -6,7 +6,7 @@ import { Subscription } from './subscription';
 
 const BATCH_SIZE = 100;
 
-export class InMemorySubscription implements Subscription {
+export class PollingSubscription implements Subscription {
   constructor(
     private readonly events: Events,
     private readonly handler: EventHandler,

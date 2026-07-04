@@ -23,5 +23,5 @@ export { InMemoryEventStore } from './in-memory.event-store';
 export { PostgresEventStore } from './postgres/postgres.event-store';
 export { ConcurrencyError } from './concurrency.error';
 export { InMemoryCheckpoint } from './in-memory.checkpoint';
-export { InMemorySubscription } from './in-memory.subscription';
+export { PollingSubscription } from './polling.subscription';
 export * from './event-handler-map';
