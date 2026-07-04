@@ -6,9 +6,9 @@ import { StorefrontView } from './storefront';
 export class FakeStorefrontFacade implements StorefrontFacade {
   readonly view = signal<StorefrontView | undefined>(undefined);
   readonly loading = signal(false);
-  saved: { name: string; description: string } | undefined;
+  saved: { name: string; description: string; phone: string } | undefined;
 
-  save(name: string, description: string): void {
-    this.saved = { name, description };
+  save(name: string, description: string, phone: string): void {
+    this.saved = { name, description, phone };
   }
 }

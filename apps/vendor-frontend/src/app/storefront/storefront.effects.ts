@@ -52,8 +52,8 @@ export class StorefrontEffects {
   editStorefront$ = createEffect(() =>
     this.actions$.pipe(
       ofType(EditStorefront),
-      switchMap(({ name, description }) =>
-        this.storefront.edit(name, description).pipe(
+      switchMap(({ name, description, phone }) =>
+        this.storefront.edit(name, description, phone).pipe(
           map(() => EditStorefrontSuccess()),
           catchError(() => of(EditStorefrontFailure())),
         ),

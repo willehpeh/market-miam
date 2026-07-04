@@ -28,8 +28,8 @@ import { OnboardingEffects } from './onboarding.effects';
 import { OnboardingFacade } from './onboarding.facade';
 import { StoreOnboardingFacade } from './store.onboarding.facade';
 
-const EMPTY = { name: '', description: '', imageReference: '' };
-const NAMED = { name: 'La Table de Margaux', description: 'Cuisine de marché', imageReference: '' };
+const EMPTY = { name: '', description: '', phone: '', imageReference: '' };
+const NAMED = { name: 'La Table de Margaux', description: 'Cuisine de marché', phone: '', imageReference: '' };
 
 describe('Onboarding launch', () => {
   let httpCtrl: HttpTestingController;
