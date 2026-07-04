@@ -8,9 +8,6 @@ import { Card } from '../core/card';
   imports: [RouterLink, Card],
   template: `
     <mm-card>
-      <div class="mb-5 grid size-9 place-items-center rounded-field bg-brand">
-        <span class="block size-4 rounded-full bg-white/90"></span>
-      </div>
       <p class="kicker">Bienvenue sur Market Miam</p>
       <h1 class="mt-2 text-2xl leading-tight">Votre stand de marché, en ligne en 10 minutes.</h1>
       <p class="mt-3 text-sm text-ink-soft">
