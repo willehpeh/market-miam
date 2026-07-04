@@ -1,6 +1,8 @@
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import type { PoolClient } from 'pg';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { Client, type PoolClient } from 'pg';
+import type { Logger } from '@nestjs/common';
 import { DomainEvent, PostgresEventStore } from '@market-monster/event-sourcing';
+import { PostgresNotifications } from '../../../../apps/api/src/app/event-sourcing/postgres-notifications';
 import { PostgresHarness, startPostgres } from './testcontainer';
 
 let pg: PostgresHarness;
@@ -24,7 +26,7 @@ describe('events NOTIFY trigger', () => {
       await listener.query('LISTEN events');
       const notified = nextNotification(listener);
 
-      await new PostgresEventStore(pg.pool).append('stream-1', [dummyEvent('Thing')], 0);
+      await append('Thing');
 
       expect((await notified).channel).toBe('events');
     } finally {
@@ -32,6 +34,103 @@ describe('events NOTIFY trigger', () => {
     }
   });
 });
+
+describe('PostgresNotifications', () => {
+  let notifications: PostgresNotifications;
+  let pokes: number;
+  let subscription: { unsubscribe(): void };
+
+  beforeEach(async () => {
+    pokes = 0;
+    notifications = new PostgresNotifications(
+      () => new Client({ connectionString: pg.connectionString }),
+      silentLogger,
+      50,
+    );
+    subscription = notifications.notifications().subscribe(() => {
+      pokes++;
+    });
+    await notifications.start();
+  });
+
+  afterEach(async () => {
+    subscription.unsubscribe();
+    await notifications.stop();
+  });
+
+  it('pokes when an event is appended', async () => {
+    await append('Thing');
+
+    await waitUntil(() => pokes >= 1);
+    expect(pokes).toBe(1);
+  });
+
+  it('re-establishes LISTEN after the connection is terminated', async () => {
+    await terminateListener();
+    await waitUntil(() => pokes >= 1); // the catch-up poke signals the reconnect landed
+    const afterReconnect = pokes;
+
+    await append('Thing');
+
+    await waitUntil(() => pokes > afterReconnect);
+    expect(pokes).toBeGreaterThan(afterReconnect);
+  });
+
+  it('emits exactly one poke per append after a reconnect (no listener stacking)', async () => {
+    await terminateListener();
+    await waitUntil(() => pokes >= 1); // reconnected
+    const baseline = pokes;
+
+    await append('Thing');
+    await settle();
+
+    expect(pokes - baseline).toBe(1);
+  });
+
+  it('emits a catch-up poke on reconnect without any append', async () => {
+    expect(pokes).toBe(0); // the first connect does not poke
+
+    await terminateListener();
+    await waitUntil(() => pokes >= 1);
+
+    expect(pokes).toBe(1); // solely from the reconnect
+  });
+
+  it('stops emitting after shutdown', async () => {
+    await notifications.stop();
+
+    await append('Thing');
+    await settle();
+
+    expect(pokes).toBe(0);
+  });
+});
+
+const silentLogger = { log() {}, error() {} } as unknown as Logger;
+
+const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
+const settle = (): Promise<void> => sleep(300);
+
+async function waitUntil(predicate: () => boolean, timeoutMs = 10_000): Promise<void> {
+  const deadline = Date.now() + timeoutMs;
+  while (!predicate()) {
+    if (Date.now() > deadline) {
+      throw new Error('waitUntil timed out');
+    }
+    await sleep(25);
+  }
+}
+
+function terminateListener(): Promise<unknown> {
+  return pg.pool.query(
+    `SELECT pg_terminate_backend(pid) FROM pg_stat_activity
+       WHERE datname = current_database() AND query = 'LISTEN events' AND pid <> pg_backend_pid()`,
+  );
+}
+
+function append(type: string): Promise<void> {
+  return new PostgresEventStore(pg.pool).append('stream-1', [dummyEvent(type)], 0);
+}
 
 function nextNotification(client: PoolClient): Promise<{ channel: string }> {
   return new Promise((resolve, reject) => {

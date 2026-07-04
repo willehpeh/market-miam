@@ -7,6 +7,7 @@ const MIGRATIONS_DIR = fileURLToPath(new URL('../../../../database/migrations', 
 
 export interface PostgresHarness {
   pool: Pool;
+  connectionString: string;
   reset(): Promise<void>;
   stop(): Promise<void>;
 }
@@ -30,6 +31,7 @@ export async function startPostgres(): Promise<PostgresHarness> {
 
   return {
     pool,
+    connectionString: databaseUrl,
     reset: async () => {
       await pool.query('TRUNCATE events, checkpoints RESTART IDENTITY');
     },
