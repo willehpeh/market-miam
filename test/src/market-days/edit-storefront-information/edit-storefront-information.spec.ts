@@ -30,7 +30,25 @@ describe('Edit Storefront Information', () => {
         type: 'StorefrontInformationEdited',
         payload: {
           name: command.name,
-          description: command.description
+          description: command.description,
+          phone: command.phone
+        }
+      })
+    ]);
+  });
+
+  it('allows an absent phone number', async () => {
+    openStorefront();
+    const command = TestEditStorefrontInformation.with({ phone: '' });
+    await handler.execute(command);
+
+    expect(store.newEvents()).toEqual([
+      expect.objectContaining({
+        type: 'StorefrontInformationEdited',
+        payload: {
+          name: command.name,
+          description: command.description,
+          phone: ''
         }
       })
     ]);
@@ -61,7 +79,8 @@ describe('Edit Storefront Information', () => {
         type: 'StorefrontInformationEdited',
         payload: {
           name: 'Thai Fried Chicken',
-          description: 'Better than KFC'
+          description: 'Better than KFC',
+          phone: command.phone
         }
       })
     ]);

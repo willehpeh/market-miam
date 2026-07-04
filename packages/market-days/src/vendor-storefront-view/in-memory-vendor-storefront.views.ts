@@ -18,7 +18,7 @@ export class InMemoryVendorStorefrontViews implements VendorStorefrontViews, Ven
     this._storefronts.set(vendorId, { ...this.viewFor(vendorId), imageReference });
   }
 
-  async editInformation(vendorId: string, information: { name: string; description: string }): Promise<void> {
+  async editInformation(vendorId: string, information: { name: string; description: string; phone: string }): Promise<void> {
     this._storefronts.set(vendorId, { ...this.viewFor(vendorId), ...information });
   }
 
@@ -27,7 +27,7 @@ export class InMemoryVendorStorefrontViews implements VendorStorefrontViews, Ven
     if (existing) {
       return existing;
     }
-    const created = { name: '', description: '', imageReference: '' };
+    const created = { name: '', description: '', phone: '', imageReference: '' };
     this._storefronts.set(vendorId, created);
     return created;
   }

@@ -32,6 +32,7 @@ describe('Storefront view projection', () => {
     expect(view).toEqual({
       name: 'Acme Bakery',
       description: 'Fresh bread daily',
+      phone: '',
       imageReference: '',
     });
   });
