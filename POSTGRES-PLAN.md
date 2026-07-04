@@ -9,7 +9,7 @@ Done (committed):
 - ADR 0028 serialize-appends ordering decision — `e2e1ca2`.
 - Prior session (already on `main`): RxJS polling refactor, `pollSchedule`, drain-until-short-batch loop, `EVENT_NOTIFICATIONS` seam (default `EMPTY`), exponential backoff + `resetOnSuccess`, dead-letter marker in `InMemorySubscription.poll`.
 
-Next: **Step 1a** — schema/migration DDL for review + update ADR 0005.
+Next: **Step 3** — `PostgresCheckpoint` + `PollingSubscription` rename + `subscription` binding. (`version`, 1a, 1b, 2 are committed — see the Steps checklist for what each landed.) Runner note: `ConsumerRunner` has been renamed `Subscriptions`.
 
 ## Decisions (locked)
 
@@ -30,9 +30,9 @@ Next: **Step 1a** — schema/migration DDL for review + update ADR 0005.
 - `PostgresCheckpoint` implements `Checkpoint` — shared `checkpoints` table keyed by subscription name.
 - NOTIFY-on-append + one LISTEN connection → the `EVENT_NOTIFICATIONS` observable.
 
-Mapping gotchas (adapter, not schema): `23505` unique violation on `(stream_id, stream_position)` → `ConcurrencyError`; `metadata IS NULL` → omit the key (contract asserts `not.toHaveProperty('metadata')`); checkpoint with no row → `read()` returns `0`.
+Mapping gotchas (adapter, not schema): the count-check throws `ConcurrencyError`, which propagates untouched — **no `23505` mapping**. Under the advisory lock a unique-violation is unreachable; if one ever escapes, the lock invariant broke, so let it blow up loudly (the `UNIQUE (stream_id, stream_position)` constraint is the DB integrity backstop). `metadata IS NULL` → omit the key (contract asserts `not.toHaveProperty('metadata')`); checkpoint with no row → `read()` returns `0`.
 
-## Schema draft (for Step 1a review)
+## Schema (built — `database/migrations/0001_events_and_checkpoints.sql`)
 
 ```sql
 CREATE TABLE events (
@@ -64,9 +64,15 @@ Minimal indexes only: `(stream_id, stream_position)` unique doubles as `load(str
 - [x] `version` prerequisite (committed)
 - [x] 1a — schema/migration DDL review + update ADR 0005
 - [x] 1b — deps added; migration `database/migrations/0001_events_and_checkpoints.sql`; Testcontainers harness (`test/src/event-sourcing/postgres/testcontainer.ts`) + smoke test via a new **`test:container`** target (`*.container.spec.ts`, Docker-gated, excluded from the fast suite). Test tsconfig → `module: esnext` + `moduleResolution: bundler`. **TODO:** prod `database:migrate` deploy job (harness migrates programmatically; deploy job unbuilt).
-- [x] 2 — `PostgresEventStore` (barrel; `import type { Pool }` keeps pg runtime-free — only `apps/api` loads pg to build the pool). Passes `event-store` + `events` contracts under Testcontainers + a real-concurrency test (one append wins, one `ConcurrencyError`). append = txn + advisory lock (ADR 0028) + count-check concurrency + insert; `23505` → `ConcurrencyError` fallback; `created_at` = `Date.now()` (parity w/ in-memory; Clock-routing deferred). NOTE: the lock's global-ordering guarantee is by-design, not race-tested (deterministic reproduction needs white-box txn timing).
-- [ ] 3 — `PostgresCheckpoint` + `checkpoint` binding; rename `InMemorySubscription` → `PollingSubscription`; `subscription` binding
-- [ ] 4 — NOTIFY/LISTEN → `EVENT_NOTIFICATIONS` provider; wire `EventSourcingModule` to pg, drop the `EMPTY` default; lengthen `pollSchedule` interval to a safety net
+- [x] 2 — `PostgresEventStore` (barrel; `import type { Pool }` keeps pg runtime-free — only `apps/api` loads pg to build the pool). Passes `event-store` + `events` contracts under Testcontainers + a real-concurrency test (one append wins, one `ConcurrencyError`). append delegates to a per-call `AppendTransaction` object (owns open/append/commit/rollback/release — the safe "client as a field" shape; the store is a Nest singleton, so a shared `client` field would cross connections): open (BEGIN + advisory lock) → `AppendTransaction.append` (encapsulates the count-check `ConcurrencyError`, then inserts) → commit; `catch → rollback + rethrow`, no error mapping; `created_at` = `Date.now()` (parity w/ in-memory; Clock-routing deferred). NOTE: the lock's global-ordering guarantee is by-design, not race-tested.
+- [ ] 3 —
+  1. **`PostgresCheckpoint`** (barrel, `import type { Pool }`) `implements Checkpoint`, constructed `(pool, subscriptionName)`: `read()` = `SELECT position FROM checkpoints WHERE subscription_name=$1` → `Number(row?.position) ?? 0` (no row → `0`); `write(pos)` = `INSERT INTO checkpoints(subscription_name, position) VALUES($1,$2) ON CONFLICT (subscription_name) DO UPDATE SET position=$2, updated_at=now()`. Bind `checkpointContract('PostgresCheckpoint', () => new PostgresCheckpoint(pg.pool, 'test'))` as a `*.container.spec.ts` (reset truncates `checkpoints`).
+  2. **Rename** `InMemorySubscription` → `PollingSubscription`: rename the file + class, the barrel export, the `in-memory-subscription.contract.spec.ts` binding, and its use in the `Subscriptions` runner. Behaviour is identical — it was never in-memory, it only depends on the `Events`+`Checkpoint` ports (that's the whole point; do not create a second subscription class). Fast + container suites stay green.
+  3. **Bind `subscriptionContract` over pg** (new `*.container.spec.ts`): `writer = new PostgresEventStore(pg.pool)`; `subscribe = h => new PollingSubscription(store, h, new PostgresCheckpoint(pg.pool, name))`. Proves the whole pg stack (store + checkpoint + polling) end-to-end.
+- [ ] 4 —
+  1. **NOTIFY**: new migration `database/migrations/0002_*.sql` — `AFTER INSERT ON events` trigger calling `pg_notify('events','')` (fires on commit, decoupled from `append` code).
+  2. **LISTEN**: a `PostgresNotifications` holding one dedicated long-lived pg client that runs `LISTEN events` and exposes `Observable<void>` emitting per notification. Reconnect + re-`LISTEN` on connection drop is the risky part — get it right, and don't lengthen the safety interval until it's trusted (a broken LISTEN is invisible behind a long timer).
+  3. **Wire** `apps/api` `EventSourcingModule`: provide a real `pg.Pool`; swap `EventStore`/`Events` to `PostgresEventStore(pool)`; the `Subscriptions` runner builds `new PostgresCheckpoint(pool, name)` instead of `InMemoryCheckpoint`; provide `EVENT_NOTIFICATIONS` = the LISTEN observable (drop the `EMPTY` default); lengthen `pollSchedule`'s interval to a ~30s safety net. Land the deferred `database:migrate` job here too.
 
 ## Deferred (this build's tail)
 
