@@ -15,6 +15,13 @@ projects:
                 sync: false
               - key: AUTH0_AUDIENCE
                 sync: false
+              # Cloudinary signed uploads (vendor photo uploads); set all three in the dashboard
+              - key: CLOUDINARY_CLOUD_NAME
+                sync: false
+              - key: CLOUDINARY_API_KEY
+                sync: false
+              - key: CLOUDINARY_API_SECRET
+                sync: false
               - key: DATABASE_CONNECTION_STRING
                 fromDatabase:
                   name: event-store
