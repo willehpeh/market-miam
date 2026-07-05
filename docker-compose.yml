@@ -1,0 +1,24 @@
+# Local dev Postgres for the event store. Mirrors the Render `event-store`
+# (pg 18, db/user `marketmiam`). Point apps/api/.env at it:
+#   DATABASE_CONNECTION_STRING=postgres://marketmiam:marketmiam@localhost:5432/marketmiam
+# Bring up:  docker compose up -d   |   Reset:  docker compose down -v
+services:
+  event-store:
+    image: postgres:18
+    environment:
+      POSTGRES_USER: marketmiam
+      POSTGRES_PASSWORD: marketmiam
+      POSTGRES_DB: marketmiam
+    ports:
+      - '5432:5432'
+    volumes:
+      # pg 18+ expects the mount at /var/lib/postgresql (data goes in a subdir).
+      - event-store-data:/var/lib/postgresql
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U marketmiam']
+      interval: 2s
+      timeout: 5s
+      retries: 15
+
+volumes:
+  event-store-data:
