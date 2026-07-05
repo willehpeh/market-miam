@@ -9,7 +9,7 @@ projects:
             name: api
             runtime: node
             repo: https://github.com/willehpeh/market-monster
-            plan: free
+            plan: starter
             envVars:
               - key: AUTH0_ISSUER
                 sync: false
