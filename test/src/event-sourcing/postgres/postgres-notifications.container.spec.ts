@@ -1,9 +1,7 @@
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { Client, type PoolClient } from 'pg';
-import type { Logger } from '@nestjs/common';
-import { DomainEvent, PostgresEventStore } from '@market-monster/event-sourcing';
-import { PostgresHarness, startPostgres } from '@market-monster/testing';
-import { PostgresNotifications } from './postgres-notifications';
+import { DomainEvent, PostgresEventStore, PostgresNotifications } from '@market-monster/event-sourcing';
+import { PostgresHarness, startPostgres } from './testcontainer';
 
 let pg: PostgresHarness;
 
@@ -44,7 +42,6 @@ describe('PostgresNotifications', () => {
     pokes = 0;
     notifications = new PostgresNotifications(
       () => new Client({ connectionString: pg.connectionString }),
-      silentLogger,
       50,
     );
     subscription = notifications.notifications().subscribe(() => {
@@ -105,8 +102,6 @@ describe('PostgresNotifications', () => {
     expect(pokes).toBe(0);
   });
 });
-
-const silentLogger = { log() { /* no-op */ }, error() { /* no-op */ } } as unknown as Logger;
 
 const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
 const settle = (): Promise<void> => sleep(300);

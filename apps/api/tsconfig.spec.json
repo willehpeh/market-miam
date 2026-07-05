@@ -2,12 +2,10 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "outDir": "../../dist/out-tsc",
-    "module": "esnext",
     "types": ["node", "vitest/globals"],
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
-    "target": "es2021",
-    "moduleResolution": "bundler"
+    "target": "es2021"
   },
   "include": ["src/**/*.spec.ts", "src/**/testing/**/*.ts", "vitest.config.mts"]
 }
