@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { CommandDispatcher, EventStore } from '@market-monster/event-sourcing';
 import { Clock, DateClock } from '@market-monster/common';
 import {
@@ -27,10 +28,15 @@ import {
   VendorStorefrontViewStore,
 } from '@market-monster/market-days';
 import { EventSourcingModule } from '../event-sourcing/event-sourcing.module';
+import { SignedUploads, signedUploadsFor } from '../signed-uploads';
 import { VendorsController } from './vendors.controller';
 import { StorefrontController } from './storefront.controller';
 
 const clock = [{ provide: Clock, useClass: DateClock }];
+
+const signedUploads = [
+  { provide: SignedUploads, useFactory: signedUploadsFor, inject: [ConfigService, Clock] },
+];
 
 const repositories = [
   { provide: VendorScopedEvents, useFactory: (store: EventStore) => new VendorScopedEvents(store), inject: [EventStore] },
@@ -85,6 +91,7 @@ const queryHandlers = [FindVendorStorefrontHandler];
   controllers: [VendorsController, StorefrontController],
   providers: [
     ...clock,
+    ...signedUploads,
     ...repositories,
     ...readModel,
     ...processors,
