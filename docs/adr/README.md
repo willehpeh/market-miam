@@ -34,3 +34,5 @@ deferred decisions in `docs/DEFERRED.md` (see ADR 0017).
 | [0026](0026-event-based-observability-with-opentelemetry.md) | Event-based observability with OpenTelemetry | 2026-06-21 |
 | [0027](0027-market-day-in-vendor-local-time.md) | Market day is the vendor's local calendar date | 2026-06-29 |
 | [0028](0028-serialized-appends-global-ordering.md) | Gap-free global ordering via serialized appends | 2026-07-03 |
+| [0029](0029-postgres-persistence-adapters.md) | Postgres persistence adapters: raw pg, no ORM, migrate-on-boot | 2026-07-05 |
+| [0030](0030-listen-notify-poke-poller.md) | LISTEN/NOTIFY to poke the poller | 2026-07-05 |

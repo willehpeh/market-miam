@@ -11,7 +11,7 @@ Prioritised: **read models can't be deferred; crypto-shredding needed very soon.
 `PostgresNotifications` + `TracingPostgresNotifications` (LISTEN/NOTIFY), migrate-on-boot,
 `EventSourcingModule.forRoot('postgres' | 'memory')`. Schema: `events` + `checkpoints`
 (migrations `0001`, `0002`). Proven live on real pg 18: `POST /api/vendors` →
-`VendorRegistered` → (processor) `StorefrontOpened`, checkpoints advancing, LISTEN connected.
+`VendorRegistered` → (processor) `StorefrontOpened`, checkpoints advancing, LISTEN connected. Durable decision records: ADR 0029 (persistence stack), ADR 0030 (LISTEN/NOTIFY).
 
 ## Conventions carried forward (locked)
 
@@ -23,9 +23,19 @@ Prioritised: **read models can't be deferred; crypto-shredding needed very soon.
 
 ## Suggested order
 
-`1` (read models) → `2a` (shredding decorator + DataKeys) → `5` (replay) → `2b` (erasure flow, needs 1+5) → `3` → `4` → `6`.
+`0` (prod cutover) → `1` (read models) → `2a` (shredding decorator + DataKeys) → `5` (replay) → `2b` (erasure flow, needs 1+5) → `3` → `4` → `6`.
 
 ---
+
+## 0. Prod cutover — ship what's built  — the durability payoff, do first
+
+Everything under "Already done" is proven **locally** (Docker pg 18); it isn't
+durable in prod until deployed and verified against the Render `event-store`.
+
+- **Deploy + verify:** merge to `main` → Render auto-deploys `api`; migrate-on-boot creates the schema on the Render DB. Confirm a command → event **survives an app restart** in prod.
+- **SSL:** the Pool is `new Pool({ connectionString })` with no `ssl`. Render's *internal* connection string may connect fine — confirm; an external / `sslmode=require` string needs `ssl` config or the first query fails on boot.
+- **Connection budget:** the Pool (default `max` 10) + the dedicated LISTEN client + the migrate connection all draw on `basic-256mb`'s cap. Set `Pool({ max })` explicitly, sized under the instance limit.
+- **Backup / PITR:** the event log is the source of truth — confirm Render's backup/retention covers it before real data lands.
 
 ## 1. PG read-model adapters + transactional projection↔checkpoint  — NEXT
 
@@ -38,6 +48,7 @@ the projection's view write and `checkpoint.write` are **non-atomic** (`DEFERRED
 - **Transactional projection↔checkpoint (the hard part):** the view write and `checkpoint.write` must commit in **one pg transaction**. Resolution (`DEFERRED.md`): an ambient **unit-of-work** — a per-poll pg transaction (AsyncLocalStorage) that the pg view-store *and* pg checkpoint both enlist in; `PollingSubscription` wraps `handle` + `checkpoint.write` in the UoW **for projections**. Processors are already at-least-once-safe (idempotent aggregate), so the tx boundary is a projection concern — decide whether to also wrap processor checkpoints. Rejected alt: idempotent upserts make reprocessing safe but leave the checkpoint-skip window → prefer the tx. Likely widens the `Subscription`/`Checkpoint` contract to carry a tx context.
 - **Wire apps/api:** `forRoot('postgres')` provides the pg view-store; `'memory'` keeps `InMemoryVendorStorefrontViews`.
 - **Test:** crash-between simulation (throw after view write, before checkpoint) → no double-apply, no skip.
+- **CatalogueView is half-built** (decide before generalising the pg view-store): `CatalogueViewProjection` + store + `clear()` exist in `packages/market-days` but are **not wired/discovered** in `MarketDaysModule` (only the storefront view is). Either wire it (adds a `catalogue_view` table + adapter here) or mark it explicitly deferred — today it's ambiguous dead-ish code.
 
 ## 2. Crypto-shredding — `ShreddingEventStore` + `DataKeys`  — SOON (ADR 0025)
 
