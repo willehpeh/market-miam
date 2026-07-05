@@ -20,9 +20,11 @@ The vendor registration path is wired **end to end**:
   establishes the root **message context** so the appended `VendorRegistered`
   event carries `correlationId` + `causationId`. CORS enabled for the frontend
   origins (live as of this deploy).
-- **Store**: in-memory only (`InMemoryEventStore`) — events do **not** survive a
-  restart. All four ports (`EventStore`, `Events`, `Checkpoint`, `Subscription`)
-  have adapter-agnostic contract tests.
+- **Store**: Postgres in production (`forRoot('postgres')` → `PostgresEventStore`
+  + `PostgresCheckpoint` + LISTEN/NOTIFY, migrate-on-boot), in-memory in tests —
+  proven live end to end. All four ports (`EventStore`, `Events`, `Checkpoint`,
+  `Subscription`) have adapter-agnostic contract tests. Remaining database work
+  (read models, crypto-shredding, ops) is in `POSTGRES-PLAN.md`.
 - **Storefront slice**: registering a vendor **opens their storefront** — the
   `StorefrontOpener` (`@CheckpointedProcessor('storefront-opener')`) reacts to
   `VendorRegistered` and dispatches `OpenStorefront` → `StorefrontOpened`; the
@@ -44,10 +46,10 @@ The vendor registration path is wired **end to end**:
 
 ## Verification gap (read before trusting "it works")
 
-Tracing now shows the command **and** its append on a trace (Layer 2 is live),
-so a request is observable beyond its 2xx. The remaining gap is **durability**:
-the store is in-memory, so events are lost on restart and there is no
-cross-restart record. Persistence (Postgres) closes this.
+Tracing shows the command **and** its append on a trace (Layer 2 is live), and
+**durability is now closed** — Postgres persistence is live and proven end to end,
+events survive restart. What's left on the database is read-model persistence and
+crypto-shredding — see `POSTGRES-PLAN.md`.
 
 ## Storefront slice — remaining ("B")
 
@@ -230,11 +232,11 @@ read-side "B" (display the storefront) gives it somewhere to land.
 
 ## Backlog (roughly sequenced)
 
-1. **Persistent store (Postgres)** — the biggest gap; prod loses data on restart.
-   Drop-in behind the `EventStore`/`Events`/`Checkpoint` ports; held to the
-   existing contract suites (sibling specs). Gap-handling (MVCC global-position
-   gaps) resolved — serialize appends (ADR 0028). Closing this also closes the
-   verification gap above. Decisions + step plan: `POSTGRES-PLAN.md`.
+1. **Persistent store (Postgres)** — **done and proven live.** `PostgresEventStore`
+   + `PostgresCheckpoint` + LISTEN/NOTIFY, migrate-on-boot, the `EventSourcingModule.forRoot`
+   persistence seam; global-position gaps resolved by serialised appends (ADR 0028).
+   Closed the durability verification gap. **Remaining database work** (read models,
+   crypto-shredding, ops safety nets): `POSTGRES-PLAN.md`.
 2. **Processor continuation context** (ADR 0026) — **done** with the
    **StorefrontOpener** slice above (the platform's first processor). The
    `Subscriptions` wraps a discovered `@CheckpointedProcessor` with a
@@ -247,18 +249,17 @@ read-side "B" (display the storefront) gives it somewhere to land.
    `traceparent` in event metadata, consumer new-trace + link +
    `processing.lag_ms`). Only per-type attribute extractors remain deferred. See
    `O11Y-PLAN.md`.
-4. Remaining `docs/DEFERRED.md` items — the polling loop and the
-   `@CheckpointedProcessor` + continuation context are now built; still open:
-   checkpoint/views txn boundary, poison events, Postgres global-position gaps,
-   discovery-time orphan-checkpoint detection, processor **replay safety**
-   (re-dispatching commands re-runs side effects), client-supplied idempotency,
-   replay strategy.
+4. Remaining `docs/DEFERRED.md` items — polling loop, `@CheckpointedProcessor` +
+   continuation context, and global-position gaps are built/resolved. The
+   **database-related** leftovers (checkpoint/views txn boundary, poison events,
+   orphan-checkpoint detection, processor **replay safety**, replay strategy,
+   `pg_snapshot_xmin` upgrade) now live in `POSTGRES-PLAN.md`. Still in `DEFERRED.md`:
+   `vendorIdFrom` validation, client-supplied idempotency.
 
 ## Sequencing note
 
-The post-login journey is **done**, and the read side now ships **`GET /storefront`**
-(B.1) plus its **Dashboard display** (B.2) with lag-absorbing 404-retry. Next is
-either the storefront **edit form** (the last read-side piece, wired to
-`PUT /storefront`), or **persistence (#1)** — the most valuable platform step,
-making registration durable and observable. The edit form is the smaller
-continuation; persistence is the bigger prize.
+The post-login journey is **done**, and the read side ships **`GET /storefront`**
+(B.1) plus its **Dashboard display** (B.2) with lag-absorbing 404-retry.
+**Persistence (#1) is done** — Postgres is live and proven. Next is either the
+storefront **edit form** (the last read-side piece, wired to `PUT /storefront`) or
+the priority database work — **PG read models** (`POSTGRES-PLAN.md` #1).
