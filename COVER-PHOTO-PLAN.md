@@ -95,7 +95,9 @@ Green: full `npx nx test api` (36 tests) + `npx nx typecheck api`. Added barrel 
 
 **Gate:** `npx nx test api` fully green (existing tests must still pass — the harness override is what protects them).
 
-### Slice 3 — Cloudinary config/env
+### ✅ Slice 3 DONE — Cloudinary config/env
+
+Added `CLOUDINARY_CLOUD_NAME/API_KEY/API_SECRET` to `apps/api/.env.example` (documented) and `render.yaml` api service (all three `sync: false`, set in Render dashboard). Local `apps/api/.env` needs the real values or the API won't boot (`getOrThrow`).
 
 **Files:** `apps/api/.env.example`, `render.yaml`.
 - `.env.example`: add `CLOUDINARY_CLOUD_NAME=`, `CLOUDINARY_API_KEY=`, `CLOUDINARY_API_SECRET=` with a one-line comment.
