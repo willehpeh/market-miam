@@ -1,5 +1,5 @@
 import type { Client } from 'pg';
-import { Observable, Subject } from 'rxjs';
+import { Observable, ReplaySubject, Subject } from 'rxjs';
 
 const CHANNEL = 'events';
 const INITIAL_BACKOFF_MS = 1000;
@@ -27,7 +27,10 @@ export interface ListenStatus {
 // reach for it only if this grows past reconnect + a single channel.
 export class PostgresNotifications {
   private readonly pokes = new Subject<void>();
-  private readonly statuses = new Subject<ListenStatus>();
+  // ReplaySubject(1), not Subject: a host that subscribes after start() still gets
+  // the current status (no seed value to invent, unlike BehaviorSubject). Pokes stay
+  // a plain Subject — a stale "poll now" must not replay to a late subscriber.
+  private readonly statuses = new ReplaySubject<ListenStatus>(1);
   private client?: Client;
   private stopped = false;
   private reconnecting = false;
