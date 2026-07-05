@@ -145,7 +145,11 @@ Green: `npx nx test vendor-frontend` (44 tests). Actions `UploadCoverPhoto{file}
 - Tests: effect test (signature→upload→persist→success; failure path) using fakes; reducer test for uploading/imageReference transitions.
 - Gate: `npx nx test vendor-frontend`.
 
-### Slice 7 — Un-stub `storefront-form.ts` + env cloudName + component test
+### ✅ Slice 7 DONE — Un-stub `storefront-form.ts` + component test
+
+Green: `npx nx test vendor-frontend` (49 tests). Replaced the disabled "Bientôt" block with a hidden `<input type="file" accept="image/*">` triggered by the button, a 10 Mo client-side size guard (`tooLarge` signal), spinner/"Envoi…" while `coverPhotoUploading()`, preview `<img>` via `cloudinaryUrl` when `imageReference` is set, and inline errors for oversize + upload failure. Removed the line-17 ponytail stub. 5 component tests via `FakeStorefrontFacade` (pick, size-reject, uploading state, preview src, error). (env cloudName already done in Slice 4.)
+
+### Slice 7 (original notes) — Un-stub `storefront-form.ts` + env cloudName + component test
 
 **Files:** `apps/vendor-frontend/src/app/onboarding/storefront-form.ts` (+ spec), `src/environments/environment{,.development,.testing}.ts`.
 - Add `cloudinary: { cloudName: '...' }` to the three environment files (public value; testing a stub like `'test-cloud'`).

@@ -12,6 +12,12 @@ async function renderForm() {
   return { view, storefront };
 }
 
+function selectFile(container: Element, file: File) {
+  const input = container.querySelector('input[type="file"]') as HTMLInputElement;
+  Object.defineProperty(input, 'files', { value: [file], configurable: true });
+  fireEvent.change(input);
+}
+
 describe('StorefrontForm', () => {
   it('prefills the form from the current storefront', async () => {
     const { view, storefront } = await renderForm();
@@ -70,5 +76,52 @@ describe('StorefrontForm', () => {
     fireEvent.blur(screen.getByLabelText(/nom du stand/i));
 
     expect(screen.getByText(/nom du stand est requis/i)).toBeVisible();
+  });
+
+  it('uploads the photo the vendor picks', async () => {
+    const { view, storefront } = await renderForm();
+    const file = new File(['bytes'], 'stand.jpg', { type: 'image/jpeg' });
+
+    selectFile(view.container, file);
+
+    expect(storefront.uploadedFile).toBe(file);
+  });
+
+  it('rejects a photo larger than 10 Mo without uploading it', async () => {
+    const { view, storefront } = await renderForm();
+    const big = new File(['x'], 'huge.jpg', { type: 'image/jpeg' });
+    Object.defineProperty(big, 'size', { value: 11 * 1024 * 1024 });
+
+    selectFile(view.container, big);
+
+    expect(storefront.uploadedFile).toBeUndefined();
+    expect(screen.getByText(/10 Mo/i)).toBeVisible();
+  });
+
+  it('shows an uploading state while the photo is sent', async () => {
+    const { view, storefront } = await renderForm();
+    storefront.coverPhotoUploading.set(true);
+    view.detectChanges();
+
+    expect(screen.getByRole('button', { name: /envoi/i })).toBeDisabled();
+  });
+
+  it('previews the stored cover photo', async () => {
+    const { view, storefront } = await renderForm();
+    storefront.view.set({ name: '', description: '', phone: '', imageReference: 'storefronts/acme/cover-photo' });
+    view.detectChanges();
+
+    expect(screen.getByAltText(/photo de votre stand/i)).toHaveAttribute(
+      'src',
+      'https://res.cloudinary.com/test-cloud/image/upload/c_fill,w_400,h_300/storefronts/acme/cover-photo',
+    );
+  });
+
+  it('shows an error when the photo upload fails', async () => {
+    const { view, storefront } = await renderForm();
+    storefront.coverPhotoError.set(true);
+    view.detectChanges();
+
+    expect(screen.getByText(/échoué/i)).toBeVisible();
   });
 });
