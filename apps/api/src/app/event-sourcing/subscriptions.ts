@@ -2,6 +2,7 @@ import { Inject, Injectable, Logger, OnApplicationBootstrap, OnApplicationShutdo
 import { DiscoveryService } from '@nestjs/core';
 import { EMPTY, exhaustMap, from, mergeMap, Observable, retry, Subject, takeUntil, timer } from 'rxjs';
 import {
+  Checkpoint,
   checkpointMetadata,
   EventHandler,
   Events,
@@ -22,6 +23,12 @@ export const POLLING_ENABLED = Symbol('POLLING_ENABLED');
 // and pollSchedule's interval becomes a safety net you can lengthen.
 export const EVENT_NOTIFICATIONS = Symbol('EVENT_NOTIFICATIONS');
 
+// The durability seam. Default builds in-memory checkpoints; provide a factory that
+// returns PostgresCheckpoint to make checkpoints survive restart. The runner depends
+// only on this factory, never on a Pool.
+export const CHECKPOINT_FACTORY = Symbol('CHECKPOINT_FACTORY');
+export type CheckpointFactory = (name: string) => Checkpoint;
+
 const RETRY_BACKOFF_MS = 1000;
 const MAX_RETRY_BACKOFF_MS = 30_000;
 
@@ -36,6 +43,7 @@ export class Subscriptions implements OnApplicationBootstrap, OnApplicationShutd
     private readonly context: MessageContext,
     @Inject(POLLING_ENABLED) private readonly pollingEnabled: boolean,
     @Optional() @Inject(EVENT_NOTIFICATIONS) private readonly notifications: Observable<void> = EMPTY,
+    @Optional() @Inject(CHECKPOINT_FACTORY) private readonly checkpointFor: CheckpointFactory = (name) => new InMemoryCheckpoint(name),
     @Optional() private readonly logger: Logger = new Logger(Subscriptions.name),
   ) {}
 
@@ -70,13 +78,10 @@ export class Subscriptions implements OnApplicationBootstrap, OnApplicationShutd
       checkpoints.add(name);
       const driven =
         kind === 'processor' ? new ContinuationContextHandler(handler, this.context) : handler;
-      // ponytail: in-memory for now; this is the durability seam. Swap these two
-      // `new`s for durable adapters when checkpoints must survive restart —
-      // contract tests hold any replacement to the Subscription/Checkpoint spec.
       return new PollingSubscription(
         this.events,
         new TracingEventHandler(driven),
-        new InMemoryCheckpoint(name),
+        this.checkpointFor(name),
       );
     });
   }

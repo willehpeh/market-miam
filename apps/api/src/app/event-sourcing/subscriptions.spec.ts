@@ -7,11 +7,17 @@ import {
   CheckpointedProjection,
   EventHandler,
   Events,
+  InMemoryCheckpoint,
   MessageContext,
   Projection,
   StoredEvent,
 } from '@market-monster/event-sourcing';
-import { Subscriptions, EVENT_NOTIFICATIONS, POLLING_ENABLED } from './subscriptions';
+import {
+  Subscriptions,
+  CHECKPOINT_FACTORY,
+  EVENT_NOTIFICATIONS,
+  POLLING_ENABLED,
+} from './subscriptions';
 
 class NoopHandler implements EventHandler {
   eventTypes(): string[] {
@@ -259,5 +265,32 @@ describe('Subscriptions', () => {
     await app.get(Subscriptions).drain();
 
     expect(app.get(Recorder).handled).toHaveLength(250);
+  });
+
+  it('builds every checkpoint through CHECKPOINT_FACTORY', async () => {
+    const names: string[] = [];
+    const moduleRef = await Test.createTestingModule({
+      imports: [DiscoveryModule],
+      providers: [
+        Subscriptions,
+        MessageContext,
+        StorefrontProjection,
+        Recorder,
+        { provide: Events, useValue: noEvents },
+        { provide: POLLING_ENABLED, useValue: false },
+        {
+          provide: CHECKPOINT_FACTORY,
+          useValue: (name: string) => {
+            names.push(name);
+            return new InMemoryCheckpoint(name);
+          },
+        },
+      ],
+    }).compile();
+
+    app = moduleRef.createNestApplication();
+    await app.init();
+
+    expect([...names].sort()).toEqual(['recorder', 'storefront']);
   });
 });
