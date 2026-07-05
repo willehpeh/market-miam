@@ -58,7 +58,7 @@ Storefront is **open** by the time the form renders (opened by the `opens-storef
 - NgRx: `storefront.state.ts` (actions + `createFeature` reducer), `storefront.effects.ts` (class-based `StorefrontEffects`), facade `storefront.facade.ts` (abstract) + `StoreStorefrontFacade` (`store.storefront.facade.ts`) + `FakeStorefrontFacade` (`fake.storefront.facade.ts`).
 - `StorefrontView` already has `imageReference`.
 - Environments (`src/environments/environment{,.development,.testing}.ts`) export only `apiBaseUrl`. Prod `https://api.marketmiam.fr`, dev `http://localhost:3000`, testing `''`.
-- Global Auth0 HttpClient interceptor → **Cloudinary upload must use `fetch`** (do NOT leak the Auth0 bearer to Cloudinary).
+- Cloudinary upload uses an **interceptor-free `HttpClient` built from `HttpBackend`** (`new HttpClient(inject(HttpBackend))`) — NOT `fetch`. (Prod Auth0 interceptor has an allowedList scoped to our API so it never touches Cloudinary; dev interceptor blindly adds a harmless `Bearer dev` which Cloudinary ignores. `HttpBackend` keeps the third-party call cleanly interceptor-free AND testable via `HttpTestingController`, which `fetch` is not.)
 - Dashboard render: `apps/vendor-frontend/src/app/dashboard/dashboard.ts` has `<img [src]="storefront.imageReference">`.
 
 ## STATUS
@@ -116,12 +116,16 @@ Green: `npx nx test vendor-frontend` (40 tests). `CloudinaryUrlPipe` in `core/cl
 - Update dashboard `<img>` to `[src]="storefront.imageReference | cloudinaryUrl:'c_fill,w_1200,h_600'"` (import the pipe into the component's `imports`).
 - Gate: `npx nx test vendor-frontend -- cloudinary-url`.
 
-### Slice 5 — Frontend upload port + `Storefront` port extension
+### ✅ Slice 5 DONE — Frontend upload port + `Storefront` port extension
+
+Green: `npx nx test vendor-frontend` (41 tests). Added `signed-upload.ts` (type), `PhotoUploads` port + `CloudinaryPhotoUploads` adapter (`new HttpClient(inject(HttpBackend))`, boundary-tested via HttpTestingController) + `FakePhotoUploads`; extended `Storefront` port with `coverPhotoSignature()`/`setCoverPhoto()` in `HttpStorefront`; bound `PhotoUploads` in `storefront.providers.ts`. **Coverage note:** `HttpStorefront.coverPhotoSignature/setCoverPhoto` and `FakePhotoUploads.upload` are uncovered until Slice 6's social effect test drives them (deliberate slice boundary — port built before its consumer).
+
+### Slice 5 (original notes) — Frontend upload port + `Storefront` port extension
 
 **Files:** `apps/vendor-frontend/src/app/storefront/` — new `photo-uploads.ts` (port), `cloudinary.photo-uploads.ts` (adapter), `fake.photo-uploads.ts` (fake); edit `storefront.ts`, `http.storefront.ts`, `storefront.providers.ts`.
 - Frontend `SignedUpload` type mirroring the backend response (cloudName, apiKey, signature, params{...}). Define in `storefront.ts` (or a shared file).
 - `PhotoUploads` port (generic, matches backend generalization): `abstract upload(file: File, signed: SignedUpload): Observable<{ publicId: string; secureUrl: string; version: number }>`. *(Naming: `PhotoUploads` suggested; confirm with user — parallels backend `SignedUploads`.)*
-- `CloudinaryPhotoUploads` adapter: build `FormData` (`file`, `api_key`, `signature`, + every `params` entry), POST to `https://api.cloudinary.com/v1_1/<cloudName>/image/upload` via **`fetch`** (bypasses Auth0 interceptor), map response `{ public_id, secure_url, version }`. Wrap in `from(...)`/`defer` for the Observable.
+- `CloudinaryPhotoUploads` adapter: build `FormData` (`file`, `api_key`, `signature`, + every `params` entry), POST to `https://api.cloudinary.com/v1_1/<cloudName>/image/upload` via an **interceptor-free `HttpClient` from `HttpBackend`** (`new HttpClient(inject(HttpBackend))`), map response `{ public_id, secure_url, version }`. Returns an Observable natively; test with `HttpTestingController`.
 - `FakePhotoUploads` for tests.
 - Extend `Storefront` port: `coverPhotoSignature(): Observable<SignedUpload>` (POST our API `/api/storefront/cover-photo/signature`), `setCoverPhoto(): Observable<void>` (PUT our API `/api/storefront/cover-photo`, body-less). Implement in `HttpStorefront`. Bind `PhotoUploads → CloudinaryPhotoUploads` in `storefront.providers.ts`.
 - Tests: adapter FormData/URL shape can be asserted with a fake fetch; `HttpStorefront` new methods via `HttpTestingController`.

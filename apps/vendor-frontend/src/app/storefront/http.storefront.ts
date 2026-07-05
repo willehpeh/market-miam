@@ -2,6 +2,7 @@ import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Storefront, StorefrontView } from './storefront';
+import { SignedUpload } from './signed-upload';
 import { environment } from '../../environments/environment';
 
 @Injectable()
@@ -14,5 +15,13 @@ export class HttpStorefront implements Storefront {
 
   edit(name: string, description: string, phone: string): Observable<void> {
     return this.http.put<void>(`${environment.apiBaseUrl}/api/storefront`, { name, description, phone });
+  }
+
+  coverPhotoSignature(): Observable<SignedUpload> {
+    return this.http.post<SignedUpload>(`${environment.apiBaseUrl}/api/storefront/cover-photo/signature`, {});
+  }
+
+  setCoverPhoto(): Observable<void> {
+    return this.http.put<void>(`${environment.apiBaseUrl}/api/storefront/cover-photo`, {});
   }
 }
