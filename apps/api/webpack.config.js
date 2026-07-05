@@ -15,7 +15,12 @@ module.exports = {
       compiler: 'tsc',
       main: './src/main.ts',
       tsConfig: './tsconfig.app.json',
-      assets: ['./src/assets'],
+      assets: [
+        './src/assets',
+        // Ship the shared migration pipeline inside the bundle — Render deploys
+        // only dist, so `database/migrations/` can't be read from the repo root.
+        { input: '../../database/migrations', glob: '**/*.sql', output: 'migrations' },
+      ],
       optimization: false,
       outputHashing: 'none',
       generatePackageJson: true,
