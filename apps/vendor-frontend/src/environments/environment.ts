@@ -4,4 +4,5 @@
 //   testing     -> environment.testing.ts
 export const environment = {
   apiBaseUrl: 'https://api.marketmiam.fr',
+  cloudinary: { cloudName: 'du7bhdijj' },
 };
