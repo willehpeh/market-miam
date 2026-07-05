@@ -104,7 +104,11 @@ Added `CLOUDINARY_CLOUD_NAME/API_KEY/API_SECRET` to `apps/api/.env.example` (doc
 - `render.yaml`: add the three under the api service env; `CLOUDINARY_API_KEY` + `CLOUDINARY_API_SECRET` as `sync: false` (dashboard secrets), `CLOUDINARY_CLOUD_NAME` may be plain.
 - No test (config only). Gate: quick review.
 
-### Slice 4 — `cloudinaryUrl` pipe + dashboard render
+### ✅ Slice 4 DONE — `cloudinaryUrl` pipe + dashboard render
+
+Green: `npx nx test vendor-frontend` (40 tests). `CloudinaryUrlPipe` in `core/cloudinary-url.pipe.ts` (empty publicId → `''`); dashboard `<img>` uses `| cloudinaryUrl: 'c_fill,w_1200,h_600'` + `[alt]="storefront.name"`. **Pulled `cloudinary: { cloudName }` forward into all 3 environment files** (prod/dev `du7bhdijj`, testing `test-cloud`) — so Slice 7 no longer needs the env change.
+
+### Slice 4 (original notes) — `cloudinaryUrl` pipe + dashboard render
 
 **Files:** new `apps/vendor-frontend/src/app/core/cloudinary-url.pipe.ts` (+ `.spec.ts`), `apps/vendor-frontend/src/app/dashboard/dashboard.ts`.
 - Standalone pipe `cloudinaryUrl`: `transform(publicId: string, options: string): string`. Empty/falsy publicId → `''` (avoids broken `<img>`). Else `https://res.cloudinary.com/<cloudName>/image/upload/<options>/<publicId>` using `environment.cloudinary.cloudName` (added in Slice 7).
