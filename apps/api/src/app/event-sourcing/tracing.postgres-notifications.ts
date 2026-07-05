@@ -22,7 +22,8 @@ export class TracingPostgresNotifications implements OnApplicationBootstrap, OnA
   }
 
   async onApplicationBootstrap(): Promise<void> {
-    // Subscribe before start() so the initial `connected` transition isn't missed.
+    // status() is a ReplaySubject(1), so subscribe/start order doesn't matter — a
+    // subscriber always sees the latest transition.
     this.statusSubscription = this.inner.status().subscribe((status) => this.mark(status));
     await this.inner.start();
   }
