@@ -1,5 +1,5 @@
 import { TokenVerifier } from './token-verifier';
-import { VerifiedVendor } from './verified-vendor';
+import type { VerifiedVendor } from './verified-vendor';
 
 /**
  * A verifier that trusts a preset vendor regardless of the token. Used for the

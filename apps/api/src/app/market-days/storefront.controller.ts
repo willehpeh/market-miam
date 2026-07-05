@@ -1,6 +1,6 @@
 import { Body, Controller, Get, NotFoundException, Post, Put, UseGuards } from '@nestjs/common';
 import { CurrentVendor, JwtAuthGuard } from '@market-monster/auth-nestjs';
-import { VerifiedVendor } from '@market-monster/auth';
+import type { VerifiedVendor } from '@market-monster/auth';
 import { CommandDispatcher, QueryDispatcher } from '@market-monster/event-sourcing';
 import {
   EditStorefrontInformation,

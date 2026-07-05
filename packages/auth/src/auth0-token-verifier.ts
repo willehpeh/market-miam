@@ -3,7 +3,7 @@ import type { JWTPayload, JWTVerifyGetKey } from 'jose';
 import { Email } from '@market-monster/common';
 import { VendorId } from '@market-monster/shared-kernel';
 import { TokenVerifier } from './token-verifier';
-import { VerifiedVendor } from './verified-vendor';
+import type { VerifiedVendor } from './verified-vendor';
 import { InvalidTokenError } from './invalid-token.error';
 
 const VENDOR_ID_CLAIM = 'https://marketmiam/vendorId';

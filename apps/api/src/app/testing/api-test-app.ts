@@ -5,7 +5,7 @@ import { Clock, Email, Instant, LocalDate } from '@market-monster/common';
 import { VendorId } from '@market-monster/shared-kernel';
 import { EventStore } from '@market-monster/event-sourcing';
 import { StorefrontOpened } from '@market-monster/market-days';
-import { StaticTokenVerifier, VerifiedVendor } from '@market-monster/auth';
+import { StaticTokenVerifier, type VerifiedVendor } from '@market-monster/auth';
 import { AuthModule } from '@market-monster/auth-nestjs';
 import { MarketDaysModule } from '../market-days/market-days.module';
 import { EventSourcingModule } from '../event-sourcing/event-sourcing.module';
