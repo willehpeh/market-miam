@@ -1,6 +1,11 @@
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { Client, type PoolClient } from 'pg';
-import { DomainEvent, PostgresEventStore, PostgresNotifications } from '@market-monster/event-sourcing';
+import {
+  DomainEvent,
+  ListenStatus,
+  PostgresEventStore,
+  PostgresNotifications,
+} from '@market-monster/event-sourcing';
 import { PostgresHarness, startPostgres } from './testcontainer';
 
 let pg: PostgresHarness;
@@ -100,6 +105,17 @@ describe('PostgresNotifications', () => {
     await settle();
 
     expect(pokes).toBe(0);
+  });
+
+  it('publishes connected → dropped → reconnected on status() as a real connection drops', async () => {
+    const statuses: ListenStatus[] = [];
+    notifications.status().subscribe((status) => statuses.push(status));
+
+    await terminateListener();
+    await waitUntil(() => statuses.some((status) => status.state === 'reconnected'));
+
+    expect(statuses.map((status) => status.state)).toEqual(['connected', 'dropped', 'reconnected']);
+    expect(statuses.find((status) => status.state === 'reconnected')?.attempt).toBe(1);
   });
 });
 
