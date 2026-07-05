@@ -1,18 +1,25 @@
-import { Body, Controller, Get, NotFoundException, Put, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, NotFoundException, Post, Put, UseGuards } from '@nestjs/common';
 import { CurrentVendor, JwtAuthGuard } from '@market-monster/auth-nestjs';
 import { VerifiedVendor } from '@market-monster/auth';
 import { CommandDispatcher, QueryDispatcher } from '@market-monster/event-sourcing';
 import {
   EditStorefrontInformation,
   FindVendorStorefront,
+  SetStorefrontCoverPhoto,
   VendorStorefrontView,
 } from '@market-monster/market-days';
+import { SignedUpload, SignedUploads } from '../signed-uploads';
+
+function coverPhotoPublicId(vendorId: string): string {
+  return `storefronts/${vendorId}/cover-photo`;
+}
 
 @Controller('storefront')
 export class StorefrontController {
   constructor(
     private readonly commands: CommandDispatcher,
     private readonly queries: QueryDispatcher,
+    private readonly signedUploads: SignedUploads,
   ) {}
 
   @Get()
@@ -32,5 +39,18 @@ export class StorefrontController {
     await this.commands.execute(
       new EditStorefrontInformation(vendor.vendorId.value(), body.name, body.description, body.phone ?? ''),
     );
+  }
+
+  @Post('cover-photo/signature')
+  @UseGuards(JwtAuthGuard)
+  signCoverPhotoUpload(@CurrentVendor() vendor: VerifiedVendor): SignedUpload {
+    return this.signedUploads.for(coverPhotoPublicId(vendor.vendorId.value()));
+  }
+
+  @Put('cover-photo')
+  @UseGuards(JwtAuthGuard)
+  async setCoverPhoto(@CurrentVendor() vendor: VerifiedVendor): Promise<void> {
+    const vendorId = vendor.vendorId.value();
+    await this.commands.execute(new SetStorefrontCoverPhoto(vendorId, coverPhotoPublicId(vendorId)));
   }
 }

@@ -76,7 +76,9 @@ Deviation from original plan, accepted: no dev→fake branch; module wiring defe
 
 ## REMAINING SLICES
 
-### Slice 2 — Controller routes + wiring + harness override
+### ✅ Slice 2 DONE — Controller routes + wiring + harness override
+
+Green: full `npx nx test api` (36 tests) + `npx nx typecheck api`. Added barrel `apps/api/src/app/signed-uploads/index.ts`; wired `{ provide: SignedUploads, useFactory: signedUploadsFor, inject: [ConfigService, Clock] }`; harness `ApiTestOptions.signer?` defaulting to `FakeSignedUploads` (unconditional override protects all api tests); `coverPhotoPublicId` helper; `POST /storefront/cover-photo/signature` + body-less `PUT /storefront/cover-photo`; 2 social specs.
 
 **Files:** `apps/api/src/app/market-days/storefront.controller.ts`, `apps/api/src/app/market-days/market-days.module.ts`, `apps/api/src/app/testing/api-test-app.ts`, + 2 new spec files.
 

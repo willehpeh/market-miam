@@ -10,6 +10,7 @@ import { AuthModule } from '@market-monster/auth-nestjs';
 import { MarketDaysModule } from '../market-days/market-days.module';
 import { DomainErrorFilter } from '../domain-error.filter';
 import { POLLING_ENABLED } from '../event-sourcing/subscriptions';
+import { FakeSignedUploads, SignedUploads } from '../signed-uploads';
 
 export const testVendor: VerifiedVendor = {
   vendorId: new VendorId('acme-bakery'),
@@ -26,10 +27,11 @@ export const fixedClock: Clock = {
 export interface ApiTestOptions {
   vendor?: VerifiedVendor;
   clock?: Clock;
+  signer?: SignedUploads;
 }
 
 export function apiTestModule(options: ApiTestOptions = {}): TestingModuleBuilder {
-  const { vendor = testVendor, clock } = options;
+  const { vendor = testVendor, clock, signer = new FakeSignedUploads() } = options;
   const builder = Test.createTestingModule({
     imports: [
       AuthModule.forRootAsync({ useFactory: () => new StaticTokenVerifier(vendor) }),
@@ -38,6 +40,7 @@ export function apiTestModule(options: ApiTestOptions = {}): TestingModuleBuilde
     providers: [{ provide: APP_FILTER, useClass: DomainErrorFilter }],
   });
   builder.overrideProvider(POLLING_ENABLED).useValue(false);
+  builder.overrideProvider(SignedUploads).useValue(signer);
   if (clock) {
     builder.overrideProvider(Clock).useValue(clock);
   }
