@@ -39,7 +39,9 @@ const eventStore = [
     TracingQueryDispatcher,
     { provide: QueryDispatcher, useExisting: TracingQueryDispatcher },
     { provide: POLLING_ENABLED, useValue: true },
-    // Swap for a Postgres LISTEN observable when pg lands; nothing else changes.
+    // When pg lands: provide PostgresNotifications (a `newClient` factory built from
+    // config) + TracingPostgresNotifications, and point this at its notifications().
+    // Nothing else changes.
     { provide: EVENT_NOTIFICATIONS, useValue: EMPTY },
     Subscriptions,
   ],
