@@ -131,7 +131,11 @@ Green: `npx nx test vendor-frontend` (41 tests). Added `signed-upload.ts` (type)
 - Tests: adapter FormData/URL shape can be asserted with a fake fetch; `HttpStorefront` new methods via `HttpTestingController`.
 - Gate: `npx nx test vendor-frontend`.
 
-### Slice 6 — Frontend upload state / effect / facade
+### ✅ Slice 6 DONE — Frontend upload state / effect / facade
+
+Green: `npx nx test vendor-frontend` (44 tests). Actions `UploadCoverPhoto{file}`/`Success{imageReference}`/`Failure`; reducer adds `coverPhotoUploading`+`coverPhotoError` and reduces `view.imageReference` on success (strict reduce-on-success, no optimistic). `uploadCoverPhoto$` effect chains signature→upload→persist with a single `catchError`. Facade gains `uploadCoverPhoto(file)` + `coverPhotoUploading`/`coverPhotoError` signals (store + fake). Three social tests (happy + both failure entry points) via `HttpTestingController` + `FakePhotoUploads` — **closes the Slice 5 coverage gap** on `HttpStorefront.coverPhotoSignature/setCoverPhoto` and `FakePhotoUploads.upload`. Also added `PhotoUploads` provider to `onboarding.launch.spec.ts` (StorefrontEffects now depends on it).
+
+### Slice 6 (original notes) — Frontend upload state / effect / facade
 
 **Files:** `storefront.state.ts`, `storefront.effects.ts`, `storefront.facade.ts`, `store.storefront.facade.ts`, `fake.storefront.facade.ts`.
 - Actions: `UploadCoverPhoto({ file })`, `UploadCoverPhotoSuccess({ imageReference })`, `UploadCoverPhotoFailure`.

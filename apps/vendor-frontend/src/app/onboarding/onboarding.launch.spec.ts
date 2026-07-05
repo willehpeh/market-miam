@@ -19,6 +19,8 @@ import { VendorEffects } from '../vendor/vendor.effects';
 import { VendorFacade } from '../vendor/vendor.facade';
 import { Storefront } from '../storefront/storefront';
 import { HttpStorefront } from '../storefront/http.storefront';
+import { PhotoUploads } from '../storefront/photo-uploads';
+import { FakePhotoUploads } from '../storefront/fake.photo-uploads';
 import { storefrontFeature } from '../storefront/storefront.state';
 import { StorefrontEffects, STOREFRONT_RETRY } from '../storefront/storefront.effects';
 import { StorefrontFacade } from '../storefront/storefront.facade';
@@ -47,6 +49,7 @@ describe('Onboarding launch', () => {
         { provide: Auth, useClass: FakeAuth },
         { provide: Vendor, useClass: HttpVendor },
         { provide: Storefront, useClass: HttpStorefront },
+        { provide: PhotoUploads, useClass: FakePhotoUploads },
         { provide: AuthFacade, useClass: StoreAuthFacade },
         VendorFacade,
         { provide: StorefrontFacade, useClass: StoreStorefrontFacade },

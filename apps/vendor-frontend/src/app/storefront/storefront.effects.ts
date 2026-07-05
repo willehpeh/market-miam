@@ -3,6 +3,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { catchError, map, of, retry, switchMap, throwError, timer } from 'rxjs';
 import { Storefront } from './storefront';
+import { PhotoUploads } from './photo-uploads';
 import {
   EditStorefront,
   EditStorefrontFailure,
@@ -10,6 +11,9 @@ import {
   LoadStorefront,
   LoadStorefrontFailure,
   LoadStorefrontSuccess,
+  UploadCoverPhoto,
+  UploadCoverPhotoFailure,
+  UploadCoverPhotoSuccess,
 } from './storefront.state';
 
 export interface StorefrontRetry {
@@ -27,6 +31,7 @@ export const STOREFRONT_RETRY = new InjectionToken<StorefrontRetry>('storefront.
 export class StorefrontEffects {
   private readonly actions$ = inject(Actions);
   private readonly storefront = inject(Storefront);
+  private readonly photoUploads = inject(PhotoUploads);
   private readonly retry = inject(STOREFRONT_RETRY);
 
   loadStorefront$ = createEffect(() =>
@@ -56,6 +61,23 @@ export class StorefrontEffects {
         this.storefront.edit(name, description, phone).pipe(
           map(() => EditStorefrontSuccess()),
           catchError(() => of(EditStorefrontFailure())),
+        ),
+      ),
+    ),
+  );
+
+  uploadCoverPhoto$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(UploadCoverPhoto),
+      switchMap(({ file }) =>
+        this.storefront.coverPhotoSignature().pipe(
+          switchMap((signed) =>
+            this.photoUploads.upload(file, signed).pipe(
+              switchMap(() => this.storefront.setCoverPhoto()),
+              map(() => UploadCoverPhotoSuccess({ imageReference: signed.params.public_id })),
+            ),
+          ),
+          catchError(() => of(UploadCoverPhotoFailure())),
         ),
       ),
     ),

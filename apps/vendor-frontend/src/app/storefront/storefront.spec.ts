@@ -8,10 +8,31 @@ import { LoadStorefront, storefrontFeature } from './storefront.state';
 import { StorefrontEffects, STOREFRONT_RETRY } from './storefront.effects';
 import { StorefrontFacade } from './storefront.facade';
 import { StoreStorefrontFacade } from './store.storefront.facade';
+import { PhotoUploads } from './photo-uploads';
+import { FakePhotoUploads } from './fake.photo-uploads';
+import { SignedUpload } from './signed-upload';
 
 const ACME = { name: 'Acme Bakery', description: 'Fresh bread daily', phone: '', imageReference: '' };
 
 const notFound = { status: 404, statusText: 'Not Found' };
+
+const serverError = { status: 500, statusText: 'Server Error' };
+
+const SIGNED: SignedUpload = {
+  cloudName: 'test-cloud',
+  apiKey: 'test-key',
+  signature: 'sig-123',
+  params: {
+    timestamp: 1_700_000_000,
+    public_id: 'storefronts/acme/cover-photo',
+    overwrite: true,
+    invalidate: true,
+    allowed_formats: 'jpg,png,webp',
+    transformation: 'c_limit,w_2000',
+  },
+};
+
+const anImage = () => new File(['bytes'], 'stand.jpg', { type: 'image/jpeg' });
 
 const macrotask = () => new Promise((resolve) => setTimeout(resolve, 5));
 
@@ -24,6 +45,7 @@ describe('Storefront', () => {
     TestBed.configureTestingModule({
       providers: [
         { provide: Storefront, useClass: HttpStorefront },
+        { provide: PhotoUploads, useClass: FakePhotoUploads },
         provideStore(),
         provideState(storefrontFeature),
         provideEffects(StorefrontEffects),
@@ -106,5 +128,43 @@ describe('Storefront', () => {
       phone: '06 12 34 56 78',
     });
     req.flush(null);
+  });
+
+  it('uploads a cover photo by signing, uploading to Cloudinary, then persisting the reference', () => {
+    store.dispatch(LoadStorefront());
+    httpCtrl.expectOne('/api/storefront').flush(ACME);
+
+    facade.uploadCoverPhoto(anImage());
+
+    const signature = httpCtrl.expectOne('/api/storefront/cover-photo/signature');
+    expect(signature.request.method).toBe('POST');
+    expect(facade.coverPhotoUploading()).toBe(true);
+    signature.flush(SIGNED);
+
+    const persist = httpCtrl.expectOne('/api/storefront/cover-photo');
+    expect(persist.request.method).toBe('PUT');
+    persist.flush(null);
+
+    expect(facade.coverPhotoUploading()).toBe(false);
+    expect(facade.view()?.imageReference).toBe('storefronts/acme/cover-photo');
+  });
+
+  it('flags an error and stops uploading when signing fails', () => {
+    facade.uploadCoverPhoto(anImage());
+
+    httpCtrl.expectOne('/api/storefront/cover-photo/signature').flush(null, serverError);
+
+    expect(facade.coverPhotoUploading()).toBe(false);
+    expect(facade.coverPhotoError()).toBe(true);
+  });
+
+  it('flags an error when persisting the uploaded reference fails', () => {
+    facade.uploadCoverPhoto(anImage());
+
+    httpCtrl.expectOne('/api/storefront/cover-photo/signature').flush(SIGNED);
+    httpCtrl.expectOne('/api/storefront/cover-photo').flush(null, serverError);
+
+    expect(facade.coverPhotoUploading()).toBe(false);
+    expect(facade.coverPhotoError()).toBe(true);
   });
 });
