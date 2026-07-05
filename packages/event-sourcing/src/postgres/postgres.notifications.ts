@@ -1,26 +1,33 @@
-import { Injectable, Logger, OnApplicationBootstrap, OnApplicationShutdown } from '@nestjs/common';
 import type { Client } from 'pg';
 import { Observable, Subject } from 'rxjs';
-import { trace } from '@opentelemetry/api';
-
-const tracer = trace.getTracer('pg-notifications');
 
 const CHANNEL = 'events';
 const INITIAL_BACKOFF_MS = 1000;
 const MAX_BACKOFF_MS = 30_000;
 
-type ListenState = 'connected' | 'dropped' | 'reconnected';
+export type ListenState = 'connected' | 'dropped' | 'reconnected';
+
+export interface ListenStatus {
+  state: ListenState;
+  attempt: number;
+  error?: unknown;
+}
 
 // One long-lived pg connection running `LISTEN events`, exposed as a poke stream.
 // A poke means "poll now"; the runner's timer is the backstop for any poke missed
-// while this is reconnecting — so the LISTEN-down window is what we watch (marker
-// spans), not individual events.
+// while this is reconnecting — so the LISTEN-down window is what we watch (via the
+// status stream), not individual events.
+//
+// Framework-free by design: the connection lifecycle is driven by start()/stop(),
+// and state transitions are published on status() rather than logged/traced here.
+// A host wraps this to add lifecycle wiring, logging, and tracing (see apps/api's
+// TracingPostgresNotifications).
 //
 // ponytail: hand-rolled LISTEN + reconnect. `pg-listen` covers the same ground;
 // reach for it only if this grows past reconnect + a single channel.
-@Injectable()
-export class PostgresNotifications implements OnApplicationBootstrap, OnApplicationShutdown {
+export class PostgresNotifications {
   private readonly pokes = new Subject<void>();
+  private readonly statuses = new Subject<ListenStatus>();
   private client?: Client;
   private stopped = false;
   private reconnecting = false;
@@ -29,7 +36,6 @@ export class PostgresNotifications implements OnApplicationBootstrap, OnApplicat
 
   constructor(
     private readonly newClient: () => Client,
-    private readonly logger: Logger = new Logger(PostgresNotifications.name),
     private readonly initialBackoffMs: number = INITIAL_BACKOFF_MS,
   ) {}
 
@@ -37,12 +43,8 @@ export class PostgresNotifications implements OnApplicationBootstrap, OnApplicat
     return this.pokes.asObservable();
   }
 
-  onApplicationBootstrap(): Promise<void> {
-    return this.start();
-  }
-
-  onApplicationShutdown(): Promise<void> {
-    return this.stop();
+  status(): Observable<ListenStatus> {
+    return this.statuses.asObservable();
   }
 
   async start(): Promise<void> {
@@ -114,17 +116,6 @@ export class PostgresNotifications implements OnApplicationBootstrap, OnApplicat
   }
 
   private mark(state: ListenState, error?: unknown): void {
-    const span = tracer.startSpan(`pg-listen ${state}`);
-    span.setAttribute('listen.state', state);
-    span.setAttribute('reconnect.attempt', this.attempt);
-    if (error !== undefined) {
-      span.setAttribute('error.message', error instanceof Error ? error.message : String(error));
-    }
-    span.end();
-    if (state === 'dropped') {
-      this.logger.error(`LISTEN ${state}`, error);
-    } else {
-      this.logger.log(`LISTEN ${state}`);
-    }
+    this.statuses.next({ state, attempt: this.attempt, error });
   }
 }

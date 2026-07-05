@@ -13,12 +13,6 @@
         "cwd": "apps/api"
       }
     },
-    "test:container": {
-      "command": "vitest run --config vitest.container.config.mts",
-      "options": {
-        "cwd": "apps/api"
-      }
-    },
     "build": {
       "executor": "nx:run-commands",
       "options": {

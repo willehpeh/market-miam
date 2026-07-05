@@ -22,6 +22,7 @@ export { MessageContextEventStore } from './message-context.event-store';
 export { InMemoryEventStore } from './in-memory.event-store';
 export { PostgresEventStore } from './postgres/postgres.event-store';
 export { PostgresCheckpoint } from './postgres/postgres.checkpoint';
+export { PostgresNotifications, ListenState, ListenStatus } from './postgres/postgres.notifications';
 export { ConcurrencyError } from './concurrency.error';
 export { InMemoryCheckpoint } from './in-memory.checkpoint';
 export { PollingSubscription } from './polling.subscription';
