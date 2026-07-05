@@ -8,6 +8,7 @@ import { StorefrontOpened } from '@market-monster/market-days';
 import { StaticTokenVerifier, VerifiedVendor } from '@market-monster/auth';
 import { AuthModule } from '@market-monster/auth-nestjs';
 import { MarketDaysModule } from '../market-days/market-days.module';
+import { EventSourcingModule } from '../event-sourcing/event-sourcing.module';
 import { DomainErrorFilter } from '../domain-error.filter';
 import { POLLING_ENABLED } from '../event-sourcing/subscriptions';
 import { FakeSignedUploads, SignedUploads } from '../signed-uploads';
@@ -35,6 +36,7 @@ export function apiTestModule(options: ApiTestOptions = {}): TestingModuleBuilde
   const builder = Test.createTestingModule({
     imports: [
       AuthModule.forRootAsync({ useFactory: () => new StaticTokenVerifier(vendor) }),
+      EventSourcingModule.forRoot('memory'),
       MarketDaysModule,
     ],
     providers: [{ provide: APP_FILTER, useClass: DomainErrorFilter }],

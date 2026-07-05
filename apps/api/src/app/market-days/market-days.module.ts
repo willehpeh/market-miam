@@ -27,7 +27,6 @@ import {
   VendorStorefrontViews,
   VendorStorefrontViewStore,
 } from '@market-monster/market-days';
-import { EventSourcingModule } from '../event-sourcing/event-sourcing.module';
 import { SignedUploads, signedUploadsFor } from '../signed-uploads';
 import { VendorsController } from './vendors.controller';
 import { StorefrontController } from './storefront.controller';
@@ -87,7 +86,8 @@ const commandHandlers = [
 const queryHandlers = [FindVendorStorefrontHandler];
 
 @Module({
-  imports: [EventSourcingModule],
+  // EventStore / CommandDispatcher / QueryDispatcher come from the global
+  // EventSourcingModule.forRoot(...) imported at the composition root.
   controllers: [VendorsController, StorefrontController],
   providers: [
     ...clock,
