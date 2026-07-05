@@ -1,265 +1,30 @@
 # Plan
 
-Living plan for the vendor registration vertical slice and the surrounding
-platform work (ADR 0026 observability, persistence). Updated as steps land.
+Living plan for the vendor-registration vertical slice + platform work
+(persistence, observability). Sub-plans: `POSTGRES-PLAN.md`, `O11Y-PLAN.md`,
+`docs/DEFERRED.md`. Shipped design rationale lives in the commits, code, and ADRs.
 
 ## Where we are
 
-The vendor registration path is wired **end to end**:
+Vendor registration is wired end to end and **durable**:
 
-- **Frontend** (`vendor-frontend`, static SPA): `HttpVendor.register()` posts to
-  `${environment.apiBaseUrl}/api/vendors` (per-environment build-time URLs:
-  prod `https://api.marketmiam.fr`, dev `localhost:3000`, testing relative).
-  Registration fires reactively on `LoginSuccess`.
-- **Auth0**: configured (`provideAuth0`, audience = the API). Access-token
-  interceptor (`authHttpInterceptorFn`) attaches the bearer token to API calls
-  **in production only** (`isDevMode()` gate); dev is fully faked (`FakeAuth`).
-- **API** (`apps/api`): `POST /api/vendors` is auth-guarded (`JwtAuthGuard` +
-  `@CurrentVendor()`); `vendorId`/`email` come from the verified vendor,
-  `registeredAt` from the server `Clock` (`DateClock`). A global middleware
-  establishes the root **message context** so the appended `VendorRegistered`
-  event carries `correlationId` + `causationId`. CORS enabled for the frontend
-  origins (live as of this deploy).
-- **Store**: Postgres in production (`forRoot('postgres')` → `PostgresEventStore`
-  + `PostgresCheckpoint` + LISTEN/NOTIFY, migrate-on-boot), in-memory in tests —
-  proven live end to end. All four ports (`EventStore`, `Events`, `Checkpoint`,
-  `Subscription`) have adapter-agnostic contract tests. Remaining database work
-  (read models, crypto-shredding, ops) is in `POSTGRES-PLAN.md`.
-- **Storefront slice**: registering a vendor **opens their storefront** — the
-  `StorefrontOpener` (`@CheckpointedProcessor('storefront-opener')`) reacts to
-  `VendorRegistered` and dispatches `OpenStorefront` → `StorefrontOpened`; the
-  `VendorStorefrontViewProjection` (`@CheckpointedProjection('vendor-storefront-view')`)
-  materialises the view. Edits (`PUT /storefront`) assert the storefront is open.
-  Both handlers are **discovered and driven by the `Subscriptions`** — a
-  background RxJS poller (`merge`→`repeat`/`retry`, per-subscription isolation)
-  over checkpoint-driven, instrumented subscriptions, gated by `POLLING_ENABLED`
-  (off in tests, which pump `drain()` to quiescence). A lint rule enforces the
-  `implements` ⇔ decorator correspondence for every concrete projection and
-  processor. Remaining: `GET` query endpoint, frontend.
-- **Module structure**: the generic event-sourcing infra (message context,
-  decorated store, `Events`, `CommandDispatcher`, the `Subscriptions`) now lives
-  in **`EventSourcingModule`**, extracted from the `MarketDaysModule` god-module;
-  `MarketDaysModule` imports it and holds only domain wiring.
-- **Observability** (ADR 0026): producer + consumer tracing are live end to end
-  (dispatch / append / load spans, `traceparent` in event metadata, consumer
-  new-trace + link + `processing.lag_ms`). See `O11Y-PLAN.md`.
+- **Frontend** (`vendor-frontend`): `register()` → `POST /api/vendors`, fires on `LoginSuccess`; Auth0 (bearer in prod, faked in dev); guarded `/dashboard` after login (port/facade guard over a three-value `AuthStatus`). Dashboard renders the storefront via `GET /api/storefront` with a bounded 404-retry that absorbs projection lag.
+- **API** (`apps/api`): auth-guarded `POST /api/vendors`, `PUT /storefront`, `GET /storefront`; a root message context stamps `correlationId`/`causationId` on appended events.
+- **Store**: **Postgres in prod, in-memory in tests** — `EventSourcingModule.forRoot('postgres' | 'memory')`; `PostgresEventStore` + `PostgresCheckpoint` + LISTEN/NOTIFY + migrate-on-boot, proven live. The four ports (`EventStore`/`Events`/`Checkpoint`/`Subscription`) have adapter-agnostic contract tests.
+- **Storefront slice**: registering a vendor opens their storefront — `StorefrontOpener` (`@CheckpointedProcessor`) reacts to `VendorRegistered` → `OpenStorefront` → `StorefrontOpened` → `VendorStorefrontViewProjection` materialises the view. Discovered and driven by the `Subscriptions` background poller (`POLLING_ENABLED`-gated; tests pump `drain()`); a lint rule enforces `implements` ⇔ decorator.
+- **Observability** (ADR 0026): producer + consumer tracing live end to end — `O11Y-PLAN.md`.
 
-## Verification gap (read before trusting "it works")
+## Load-bearing decisions (still in force)
 
-Tracing shows the command **and** its append on a trace (Layer 2 is live), and
-**durability is now closed** — Postgres persistence is live and proven end to end,
-events survive restart. What's left on the database is read-model persistence and
-crypto-shredding — see `POSTGRES-PLAN.md`.
+- **Storefront = a facet of the vendor**: one-to-one, born at registration, `storefront-${vendorId}`-keyed. Multiplicity is deferred and *additive* (`storefrontId` + `OpenAdditionalStorefront`), not a rewrite.
+- **Processor idempotency lives in the aggregate** (`Storefront.open()` no-ops if already opened) so redelivery/replay is harmless; **edits assert-opened** (fail-loud, on the synchronous command path).
+- **Continuation context**: a processor inherits `correlationId` from the consumed event and sets `causationId` = that event's id.
+- **Read surface is pure**: `findByVendor` returns `undefined` for "not projected yet"; the empty view is materialised by `StorefrontOpened`, never synthesised on read. **Lag is the frontend's job** — no server-side `GET` retry.
+- **Instrumentation only wraps the bus + store/subscription adapters**; domain packages stay OTel-free (ADR 0026).
 
-## Storefront slice — remaining ("B")
+## Remaining
 
-The write side is **done**: registration opens the storefront and edits flow
-through to the view, all traced and driven by the real poller (**B.1
-`Subscriptions`** discovers projections *and* processors; the first processor
-shipped — see the slice above). Read side:
-
-1. **`GET /storefront` query endpoint** — **done**. Routes through a new
-   `QueryDispatcher` port (`event-sourcing`) + `TracingQueryDispatcher` over
-   `@nestjs/cqrs` `QueryBus` (span-only, payload-blind — see `O11Y-PLAN.md`) →
-   `FindVendorStorefront` query + `@QueryHandler` → `VendorStorefrontViews`.
-   Returns `404` while unprojected (consistency lag). Built by gradual refactor
-   under green off a minimal direct-read spike. Social + tracing specs in
-   `apps/api`.
-2. **Frontend** — **display done**. The Dashboard fetches `GET /api/storefront`
-   through a `storefront/` slice (port → `HttpStorefront` → effects → abstract
-   `StorefrontFacade` → `provideStorefront()`), rendering the view with a bounded
-   **404-retry** (injectable `STOREFRONT_RETRY` knob) that absorbs the
-   registration→projection lag on first login. Remaining: the **edit form**
-   (wired to `PUT /storefront`).
-
-Eventual-consistency note: the projection is async, so after an edit the read
-model updates only once `poll()` runs — the frontend must tolerate that lag
-(refetch / optimistic update). Decide when building the frontend.
-
-## Storefront opening — the first processor (SHIPPED)
-
-**Shipped end to end** (commits `a237759`, `8e978ba`, `615c58e`, `c28094d`;
-test-tidy `7b2c8e9`, `27e2ed3`). Registering a vendor now opens their storefront
-for real: the `StorefrontOpener` (`@CheckpointedProcessor`) is discovered and
-driven by the `Subscriptions` with continuation context + bounded-fan-out
-tracing, dispatching `OpenStorefront` → `StorefrontOpened` → the view. The
-read-side (`GET`, frontend) is what remains of "B". The design notes below are
-kept as the rationale record.
-
-This was the write-side prerequisite to "B": it makes "every vendor has a
-storefront" a **fact in the event log** and lands the platform's first
-**processor** (backlog #2).
-
-**Domain decision.** A storefront is a facet of the vendor: one-to-one, born at
-registration, no independent lifecycle (you don't close a storefront while
-keeping the vendor). Multiple-storefronts-per-vendor is *theoretical* and
-**deferred** — we stay vendorId-keyed (`storefront-${vendorId}`, single
-storefront). If multiplicity ever becomes real it's *additive* (introduce
-`storefrontId` + an `OpenAdditionalStorefront` command), not a rewrite, because
-we'll already have a real `StorefrontOpened` event to evolve.
-
-**Shape.** Creation is an explicit event — not a projection-fold, not a
-synchronous step inside registration:
-
-```
-VendorRegistered → [StorefrontOpener] → OpenStorefront → StorefrontOpened
-                                                   → [projection creates the empty view]
-```
-
-The processor crosses streams (vendor → storefront); the projection stays
-storefront-only (`StorefrontOpened`, `StorefrontInformationEdited`,
-`StorefrontCoverPhotoSet`) and no longer needs to know about `VendorRegistered`.
-
-**Decisions:**
-
-- **Dispatch, don't reach into the repo.** The processor dispatches
-  `OpenStorefront` (one-event-per-command); `OpenStorefrontHandler` drives the
-  `Storefront` aggregate. Requires a new **abstract command-dispatch port** in
-  `event-sourcing` so the `market-days` processor stays OTel-free; the existing
-  `apps/api` `CommandDispatcher` becomes that port's instrumented adapter
-  (mirrors the `EventStore`/`Events`/`Checkpoint` port pattern).
-- **Idempotency lives in the aggregate.** `Storefront.open()` is a no-op if
-  already opened (like `setCoverPhoto`'s `sameAs` guard) — `expectedStreamPosition`
-  alone can't stop a *logical* duplicate, so a redelivered `VendorRegistered`
-  must be absorbed by the aggregate. Makes processor redelivery/replay harmless.
-- **Edits assert-opened.** `editInformation`/`setCoverPhoto` throw if the
-  storefront isn't opened (fail-loud; protects "every storefront is born by
-  `StorefrontOpened`"). Safe because edits run on the synchronous command path —
-  a throw fails one request, it can't jam the shared poller. The registration→open
-  lag can't bite the edit UX because read-before-edit gates it: the form needs
-  the loaded view, which only exists after `StorefrontOpened` is projected.
-- **Continuation context** (resolves backlog #2's open question): the processor
-  establishes a new `MessageContext` with `correlationId` **inherited** from the
-  consumed event's metadata and `causationId` = the **consumed event's id**
-  (`event.id`). The transient command has no id in the lineage. (This is the
-  `DEFERRED.md` answer; the "command id vs event id" question is closed.)
-- **Read surface goes pure.** `VendorStorefrontViews` exposes
-  `findByVendor(vendorId): Promise<VendorStorefrontView | undefined>` — no side
-  effect. `findOrCreateForVendor` leaves the read interface (it was a write-path
-  upsert in a read's clothes); the empty view is *materialized* by
-  `StorefrontOpened`, not synthesized on read. `undefined` means "not projected
-  yet" (consistency lag), never "this vendor has none."
-- **Lag is the frontend's job.** No server-side `GET` retry — it'd be prod-only,
-  untestable under the `drain()` harness, and would couple read latency to
-  consumer health. Frontend refetches for the registration window and uses
-  optimistic update for the more-frequent edit window.
-- **Naming:** `OpenStorefront` / `StorefrontOpened` / `StorefrontOpener`
-  (checkpoint `'storefront-opener'`) — one concept, three grammatical forms.
-
-**Discovery + lint.** Handlers are detected by the **`implements` clause**, not
-the name suffix: `implements Projection` / `implements Processor` is the
-structural truth (the existing rule's own comment already notes projections only
-`implements Projection`). Refactor `event-sourcing/projection-decorator` to key
-on `node.implements?.some(i => i.expression?.name === 'Projection')` instead of
-`node.id.name.endsWith('Projection')`, and add a sibling `processor-decorator`
-rule (`implements Processor` ⇔ `@CheckpointedProcessor`). Abstract bases stay
-skipped (`node.abstract`). The name suffixes remain as convention but are no
-longer load-bearing for the lint.
-
-**How it's driven (outside-in).** You don't test-drive the port — it has no
-behaviour of its own, it's a seam extracted under green. The slice is driven by
-one required behaviour: *registering a vendor opens an empty storefront.* The red
-test is social — `POST /api/vendors`, `drain()`, assert `findByVendor(vendorId)`
-returns the empty view — and making it pass forces the whole chain
-(`StorefrontOpener` → `OpenStorefront` + handler → `StorefrontOpened` → projection
-creates the view). The **abstract port appears only when the implementation hits
-the purity wall** (the `market-days` processor must dispatch but must not import
-the OTel-coupled `apps/api` dispatcher); it's a refactor, validated by the
-*existing* dispatcher tests + typecheck + the module-boundary lint, not by a new
-red test. Lineage (`correlationId` inherited, `causationId` = the
-`VendorRegistered` id) is asserted on the stored `StorefrontOpened` metadata in
-the same social test, so the continuation-context wrapper is covered by
-observable outcome, not in isolation. Idempotency (`open()` no-op) and
-assert-opened are pure-aggregate behaviours with their own direct tests (no
-mocks). The chain is **two-hop async** (`VendorRegistered` → processor →
-`StorefrontOpened` → projection), so `drain()` must pump to a **fixpoint** across
-both subscriptions; the driving test surfaces it immediately if it doesn't.
-
-**End-state pieces (dependency order — what exists once the behaviours are green,
-not the order you build in):**
-
-1. **Abstract command-dispatch port** (`event-sourcing`); `apps/api` dispatcher
-   implements it.
-2. **`OpenStorefront` + handler + `StorefrontOpened`**; `Storefront.open()`
-   (idempotent) + `apply(StorefrontOpened)` setting `_opened`; edits assert-opened.
-3. **`StorefrontOpener`** (`market-days`, `implements Processor`,
-   `@CheckpointedProcessor('storefront-opener')`) → dispatches `OpenStorefront`.
-4. **`Subscriptions`**: discover processors; wrap with continuation-context
-   (inherited correlation, causation = event id) + tracing. (Pin the
-   wrapper/tracing layering — the command span under the consumer trace — per
-   ADR 0026's "bounded processor→command fan-out".)
-5. **`VendorStorefrontViewProjection`**: handle `StorefrontOpened` → create the
-   empty view; switch the read surface to pure `findByVendor`.
-6. **Lint refactor** (both rules key on `implements`) + the new processor rule.
-7. **Docs**: close backlog #2's open question; update `DEFERRED.md` (a processor
-   now exists) and `O11Y-PLAN.md` (continuation context live).
-
-Then the read side ("B"): `QueryDispatcher` + `GET /storefront`, then frontend.
-
-## Post-login journey — protected dashboard (SHIPPED)
-
-After login the vendor is redirected to a guarded `/dashboard`. Test-driven end
-to end. The open decisions are resolved:
-
-- **Guard**: an `authenticated` `CanActivateFn`, **port/facade-based** — reasons
-  about auth *state*, runs dev+prod, testable via `FakeAuthFacade`. (Not the
-  prod-only Auth0 `authGuardFn`.)
-- **Redirect**: an NgRx **`redirect$` effect** on `LoginSuccess` → `/dashboard`,
-  kept in `AuthEffects` beside the login lifecycle (deliberately **not** split
-  into its own effects class).
-- **Dev story**: port-based, so the guard runs in dev too via the fake facade.
-
-**Three-value `AuthStatus`** (`pending | authenticated | anonymous`) is the
-keystone: the guard must *wait* during the Auth0 load window (`pending`), not
-bounce a logged-in user on a hard refresh. `selectAuthStatus` derives it
-(loading ⇒ pending); the facade exposes a single `status: Signal<AuthStatus>`;
-the guard bridges via `toObservable(status)` + `filter(≠ pending)` → admit or
-`UrlTree('/')`.
-
-- **`AuthFacade` is now a port** (abstract + `StoreAuthFacade` + `FakeAuthFacade`),
-  mirroring the `Auth` port. Consolidated to `status` alone —
-  `isLoading`/`isAuthenticated` and `selectIsAuthenticated` deleted. Layout shows
-  logout iff `authenticated`, Landing shows login iff `anonymous`; `pending` hides
-  both, so the buttons went dumb (no own loading guard).
-- **Test homes by altitude**: `app.spec` owns the terminal-state journeys
-  (anonymous bounced, authenticated admitted) via `FakeAuth`;
-  `authenticated.guard.spec` owns the pending-wait in isolation (`redirect$`
-  co-navigation makes pending indiscriminable in the whole-chain spec); component
-  specs fake the facade.
-
-Loose end: `Dashboard` is a blank stub — the journey lands on nothing. The
-read-side "B" (display the storefront) gives it somewhere to land.
-
-## Backlog (roughly sequenced)
-
-1. **Persistent store (Postgres)** — **done and proven live.** `PostgresEventStore`
-   + `PostgresCheckpoint` + LISTEN/NOTIFY, migrate-on-boot, the `EventSourcingModule.forRoot`
-   persistence seam; global-position gaps resolved by serialised appends (ADR 0028).
-   Closed the durability verification gap. **Remaining database work** (read models,
-   crypto-shredding, ops safety nets): `POSTGRES-PLAN.md`.
-2. **Processor continuation context** (ADR 0026) — **done** with the
-   **StorefrontOpener** slice above (the platform's first processor). The
-   `Subscriptions` wraps a discovered `@CheckpointedProcessor` with a
-   `ContinuationContextHandler` (inside the tracing wrapper) that establishes a
-   new message context with `correlationId` inherited from the consumed event and
-   `causationId` = the consumed event's id; the dispatched command and its event
-   land on the opener's own trace, linked back to the request. The "transient
-   command id vs triggering event id" question is resolved: the event id.
-3. **Layer 2 — OTel spans** — **done** (dispatch / append / load spans,
-   `traceparent` in event metadata, consumer new-trace + link +
-   `processing.lag_ms`). Only per-type attribute extractors remain deferred. See
-   `O11Y-PLAN.md`.
-4. Remaining `docs/DEFERRED.md` items — polling loop, `@CheckpointedProcessor` +
-   continuation context, and global-position gaps are built/resolved. The
-   **database-related** leftovers (checkpoint/views txn boundary, poison events,
-   orphan-checkpoint detection, processor **replay safety**, replay strategy,
-   `pg_snapshot_xmin` upgrade) now live in `POSTGRES-PLAN.md`. Still in `DEFERRED.md`:
-   `vendorIdFrom` validation, client-supplied idempotency.
-
-## Sequencing note
-
-The post-login journey is **done**, and the read side ships **`GET /storefront`**
-(B.1) plus its **Dashboard display** (B.2) with lag-absorbing 404-retry.
-**Persistence (#1) is done** — Postgres is live and proven. Next is either the
-storefront **edit form** (the last read-side piece, wired to `PUT /storefront`) or
-the priority database work — **PG read models** (`POSTGRES-PLAN.md` #1).
+- **Storefront edit form** — the last read-side piece, wired to `PUT /storefront` (tolerate projection lag: refetch / optimistic update).
+- **Database** (biggest) — PG read models (priority), crypto-shredding (soon), ops safety nets → `POSTGRES-PLAN.md`.
+- **Observability** — per-type intent/outcome attributes, deferred until a safe-payload command dispatches in prod → `O11Y-PLAN.md`.
+- **Open decisions** — `vendorIdFrom` validation, client-supplied idempotency → `docs/DEFERRED.md`.
