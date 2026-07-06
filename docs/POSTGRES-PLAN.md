@@ -16,14 +16,14 @@ Prioritised: **read models can't be deferred; crypto-shredding needed very soon.
 ## Conventions carried forward (locked)
 
 - Raw `pg` + hand SQL, no ORM (Kysely *maybe* on the read side).
-- Migrations: `node-pg-migrate` in `database/migrations/` (next free number: **`0003`**), copied into the `dist` bundle, applied on boot.
+- Migrations: `node-pg-migrate` in `database/migrations/` (next free number: **`0004`** — `0003` = `data_keys`), copied into the `dist` bundle, applied on boot.
 - Tests: adapter **contract suites under Testcontainers**, one `nx test:container test` target; the fast suite stays in-memory via `forRoot('memory')`.
 - Append-only trigger is **events-only** — read-model and `data_keys` tables allow mutation/DELETE.
 - Persistence swap lives at the composition root: `forRoot('postgres')` wires pg adapters, `'memory'` wires in-memory. No test overrides.
 
 ## Suggested order
 
-`0` (prod cutover) → `1` (read models) → `2a` (shredding decorator + DataKeys) → `5` (replay) → `2b` (erasure flow, needs 1+5) → `3` → `4` → `6`.
+`0` (prod cutover) → **`2a` ✓** (shredding + DataKeys, done ahead of read models) → `1` (read models, **NEXT**) → `5` (replay) → `2b` (erasure flow, needs 1+5) → `3` → `4` → `6`.
 
 ---
 
@@ -50,15 +50,16 @@ the projection's view write and `checkpoint.write` are **non-atomic** (`DEFERRED
 - **Test:** crash-between simulation (throw after view write, before checkpoint) → no double-apply, no skip.
 - **CatalogueView is half-built** (decide before generalising the pg view-store): `CatalogueViewProjection` + store + `clear()` exist in `packages/market-days` but are **not wired/discovered** in `MarketDaysModule` (only the storefront view is). Either wire it (adds a `catalogue_view` table + adapter here) or mark it explicitly deferred — today it's ambiguous dead-ish code.
 
-## 2. Crypto-shredding — `ShreddingEventStore` + `DataKeys`  — SOON (ADR 0025)
+## 2. Crypto-shredding — `ShreddingEventStore` + `DataKeys`  — **2a DONE**, 2b pending (ADR 0025)
 
 Encrypt registered PII fields with a per-vendor data key held outside the log; erase by
 deleting the key. Full design: ADR 0025 + `docs/VENDOR_REGISTRATION_AND_PII.md`.
 
-**2a — encrypt/decrypt (standalone, can land first):**
-- **`DataKeys` port + pg adapter** (`data_keys` table, migration `0004`): per-vendor key, envelope-encrypted (env master key now, KMS later). DELETE-able, **not** under the append-only trigger — `shred(vendorId)` deletes the key. (The `0001` comment already anticipated "`data_keys` must allow DELETE".)
-- **`ShreddingEventStore` decorator** around `EventStore`/`Events`, driven by a **declarative per-event PII field registry** — the domain stays encryption-unaware. AES-256-GCM (Node `crypto`). Encrypt registered fields on append (mint the vendor key on first use); decrypt on load; a shredded key → fields read back **`null`**. Subject = `vendorId`-from-metadata.
-- **Decoration order:** shredding sits closest to the store (encrypt just before persist / decrypt just after load), inside `MessageContext`/`Tracing`; add to the `forRoot('postgres')` chain.
+**2a — encrypt/decrypt — DONE** (both `memory` and `postgres` profiles wired; encryption live in prod):
+- **`DataKeys` port + pg adapter** (`data_keys` table, migration **`0003`**): per-vendor key, envelope-encrypted under a master key held outside the DB — Render **Secret File** `/etc/secrets/.env`, read off disk (not `process.env`) so env-scraping can't lift it with the DB creds; KMS later. DELETE-able, **not** under the append-only trigger — `shred(vendorId)` deletes the key. Ports: `getOrCreateKeyFor`/`findKeyFor`/`shred`. Testcontainers contract + envelope-at-rest tests.
+- **`ShreddingEventStore` decorator** around `EventStore`/`Events`, driven by a **declarative per-event PII field registry** (`vendorPiiFields = { VendorRegistered: ['email'] }`) — the domain stays encryption-unaware. AES-256-GCM (Node `crypto`), AAD = streamId+eventType+fieldName. Encrypt registered fields on append (mint the vendor key on first use); decrypt on load/loadFrom; a shredded key → fields read back **`null`**; tampered ciphertext → throws. Subject = `vendorId`-from-metadata.
+- **Decoration order:** `ApplicationEventStore` composes the chain in its constructor — `Tracing(MessageContext(Shredding(leaf)))`, shredding closest to the store. Both `EventStore` and `Events` resolve through the one instance (Tracing/MessageContext widened to implement `Events` so `loadFrom` decrypts too). Identical in both profiles.
+- **Read-model decryption boundary** (deferred to first PII-projecting view): decrypt-on-`loadFrom` means projections receive plaintext; whether a view *persists* it is a per-projection call, leaning **B** (ciphertext-at-rest / decrypt-at-egress) for the storefront view. See `VENDOR_REGISTRATION_AND_PII.md`.
 - **Shredded streams stay loadable:** keep PII out of aggregate `apply` where possible; where it must rebuild in `apply`/a projection, tolerate `null` — a narrow exception to ADR 0007's fail-loud rule, shreddable fields only.
 
 **2b — erasure flow (depends on 1 + 5):** `DataKeys.shred(vendorId)` + **rebuild projections** (replay, item 5, against the pg read-model adapters, item 1) + delete the Auth0 user. Read models purge for free via replay.
