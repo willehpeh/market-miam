@@ -6,16 +6,20 @@ import { EMPTY } from 'rxjs';
 import { Client, Pool } from 'pg';
 import {
   CommandDispatcher,
+  DataKeys,
   Events,
   EventStore,
+  InMemoryDataKeys,
   InMemoryEventStore,
   MessageContext,
   MessageContextEventStore,
+  PiiFields,
   PostgresCheckpoint,
   PostgresEventStore,
   PostgresNotifications,
   QueryDispatcher,
 } from '@market-monster/event-sourcing';
+import { ApplicationEventStore } from './application.event-store';
 import { MessageContextModule } from '../message-context/message-context.module';
 import { TracingCommandDispatcher } from './tracing.command-dispatcher';
 import { TracingQueryDispatcher } from './tracing.query-dispatcher';
@@ -30,13 +34,23 @@ import { TracingPostgresNotifications } from './tracing.postgres-notifications';
 
 export type Persistence = 'postgres' | 'memory';
 
-const decoratedEventStore = (inner: EventStore, context: MessageContext) =>
+const decoratedEventStore = (inner: EventStore & Events, context: MessageContext) =>
   new TracingEventStore(new MessageContextEventStore(inner, context));
 
-const inMemoryPersistence: Provider[] = [
+// ponytail: postgres profile is NOT shredding-wired yet — that needs PostgresDataKeys
+// (durable keys), which is step 2a-ii. Encrypting prod events under the in-memory key
+// store would make them unreadable after a restart. Memory profile only for now.
+const inMemoryPersistence = (piiFields: PiiFields): Provider[] => [
   InMemoryEventStore,
-  { provide: EventStore, useFactory: decoratedEventStore, inject: [InMemoryEventStore, MessageContext] },
-  { provide: Events, useExisting: InMemoryEventStore },
+  InMemoryDataKeys,
+  { provide: DataKeys, useExisting: InMemoryDataKeys },
+  {
+    provide: EventStore,
+    useFactory: (inner: InMemoryEventStore, keys: DataKeys, context: MessageContext) =>
+      new ApplicationEventStore(inner, keys, piiFields, context),
+    inject: [InMemoryEventStore, DataKeys, MessageContext],
+  },
+  { provide: Events, useExisting: EventStore },
   // No CHECKPOINT_FACTORY → Subscriptions falls back to its in-memory default.
   { provide: EVENT_NOTIFICATIONS, useValue: EMPTY },
 ];
@@ -89,8 +103,8 @@ const core: Provider[] = [
 export class EventSourcingModule implements OnApplicationShutdown {
   constructor(@Optional() @Inject(Pool) private readonly pool?: Pool) {}
 
-  static forRoot(persistence: Persistence): DynamicModule {
-    const adapters = persistence === 'postgres' ? postgresPersistence : inMemoryPersistence;
+  static forRoot(persistence: Persistence, piiFields: PiiFields = {}): DynamicModule {
+    const adapters = persistence === 'postgres' ? postgresPersistence : inMemoryPersistence(piiFields);
     return {
       module: EventSourcingModule,
       global: true,

@@ -4,7 +4,7 @@ import { Test, TestingModuleBuilder } from '@nestjs/testing';
 import { Clock, Email, Instant, LocalDate } from '@market-monster/common';
 import { VendorId } from '@market-monster/shared-kernel';
 import { EventStore } from '@market-monster/event-sourcing';
-import { StorefrontOpened } from '@market-monster/market-days';
+import { StorefrontOpened, vendorPiiFields } from '@market-monster/market-days';
 import { StaticTokenVerifier, type VerifiedVendor } from '@market-monster/auth';
 import { AuthModule } from '@market-monster/auth-nestjs';
 import { MarketDaysModule } from '../market-days/market-days.module';
@@ -36,7 +36,7 @@ export function apiTestModule(options: ApiTestOptions = {}): TestingModuleBuilde
   const builder = Test.createTestingModule({
     imports: [
       AuthModule.forRootAsync({ useFactory: () => new StaticTokenVerifier(vendor) }),
-      EventSourcingModule.forRoot('memory'),
+      EventSourcingModule.forRoot('memory', vendorPiiFields),
       MarketDaysModule,
     ],
     providers: [{ provide: APP_FILTER, useClass: DomainErrorFilter }],

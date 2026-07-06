@@ -1,5 +1,5 @@
 import { Span, SpanStatusCode, trace } from '@opentelemetry/api';
-import { DomainEvent, EventStore, StoredEvent } from '@market-monster/event-sourcing';
+import { DomainEvent, Events, EventStore, StoredEvent } from '@market-monster/event-sourcing';
 
 const tracer = trace.getTracer('event-store');
 
@@ -8,8 +8,8 @@ function traceparentOf(span: Span): string {
   return `00-${traceId}-${spanId}-${traceFlags.toString(16).padStart(2, '0')}`;
 }
 
-export class TracingEventStore extends EventStore {
-  constructor(private readonly inner: EventStore) {
+export class TracingEventStore extends EventStore implements Events {
+  constructor(private readonly inner: EventStore & Events) {
     super();
   }
 
@@ -53,5 +53,9 @@ export class TracingEventStore extends EventStore {
         span.end();
       }
     });
+  }
+
+  loadFrom(globalPosition: number, limit: number): Promise<StoredEvent[]> {
+    return this.inner.loadFrom(globalPosition, limit);
   }
 }
