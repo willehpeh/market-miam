@@ -143,10 +143,11 @@ describe('Storefront', () => {
 
     const persist = httpCtrl.expectOne('/api/storefront/cover-photo');
     expect(persist.request.method).toBe('PUT');
+    expect(persist.request.body).toEqual({ version: 1 });
     persist.flush(null);
 
     expect(facade.coverPhotoUploading()).toBe(false);
-    expect(facade.view()?.imageReference).toBe('storefronts/acme/cover-photo');
+    expect(facade.view()?.imageReference).toBe('v1/storefronts/acme/cover-photo');
   });
 
   it('flags an error and stops uploading when signing fails', () => {

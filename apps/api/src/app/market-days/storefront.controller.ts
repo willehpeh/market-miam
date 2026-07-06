@@ -49,8 +49,13 @@ export class StorefrontController {
 
   @Put('cover-photo')
   @UseGuards(JwtAuthGuard)
-  async setCoverPhoto(@CurrentVendor() vendor: VerifiedVendor): Promise<void> {
+  async setCoverPhoto(
+    @CurrentVendor() vendor: VerifiedVendor,
+    @Body() body: { version: number },
+  ): Promise<void> {
     const vendorId = vendor.vendorId.value();
-    await this.commands.execute(new SetStorefrontCoverPhoto(vendorId, coverPhotoPublicId(vendorId)));
+    await this.commands.execute(
+      new SetStorefrontCoverPhoto(vendorId, `v${body.version}/${coverPhotoPublicId(vendorId)}`),
+    );
   }
 }

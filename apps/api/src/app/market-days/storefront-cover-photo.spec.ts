@@ -15,12 +15,13 @@ describe('Setting a storefront cover photo over HTTP', () => {
     await app.close();
   });
 
-  it('records the deterministic cover photo reference for the authenticated vendor', async () => {
+  it('records the versioned cover photo reference for the authenticated vendor', async () => {
     await openStorefrontFor(app, 'acme-bakery');
 
     await request(app.getHttpServer())
       .put('/storefront/cover-photo')
       .set('Authorization', 'Bearer any-token')
+      .send({ version: 7 })
       .expect(200);
 
     const events = await app.get(EventStore).load('storefront-acme-bakery');
@@ -28,7 +29,7 @@ describe('Setting a storefront cover photo over HTTP', () => {
       expect.objectContaining({ type: 'StorefrontOpened' }),
       expect.objectContaining({
         type: 'StorefrontCoverPhotoSet',
-        payload: { imageReference: 'storefronts/acme-bakery/cover-photo' },
+        payload: { imageReference: 'v7/storefronts/acme-bakery/cover-photo' },
       }),
     ]);
   });
