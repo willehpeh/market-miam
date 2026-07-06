@@ -83,8 +83,8 @@ Unlisted fields stay plaintext, so non-personal data (stall descriptions, prices
 
 ```ts
 export abstract class DataKeys {
-  abstract keyFor(subjectId: string): Promise<Buffer>;                // get-or-create (append path)
-  abstract existingKeyFor(subjectId: string): Promise<Buffer | null>; // read path
+  abstract getOrCreateKeyFor(subjectId: string): Promise<Buffer>;     // append path — mints if absent
+  abstract findKeyFor(subjectId: string): Promise<Buffer | null>;     // read path — null if absent/shredded
   abstract shred(subjectId: string): Promise<void>;                   // the erasure act
 }
 ```
@@ -119,13 +119,14 @@ The shredding subject is keyed off metadata already carried on every append (`ve
 - Each listed field's value is encrypted into a self-describing, versioned string: `enc:v1:<iv>:<authTag>:<ciphertext>` (base64 segments). Stored events remain valid JSON.
 - When `existingKeyFor` returns `null` (shredded), the decorator replaces each PII field with `null` (single convention — decide once). Aggregates keep PII out of `apply` wherever possible, so a shredded stream rehydrates untouched; where PII genuinely must be rebuilt in `apply` or a projection, that code must tolerate `null` (a `fromSnapshot` that admits `null` for shreddable fields — a narrow, deliberate exception to ADR 0007's re-validate-and-fail-loudly rule).
 - **Erasure flow**: `keys.shred(vendorId)` → rebuild projections (clear views, reset checkpoint to 0, replay — purges decrypted PII from read models for free) → delete the Auth0 user (they hold email/password).
+- **Read-model decryption boundary** (deferred, decided at the first PII-projecting view): the decorator decrypts on both `load` and `loadFrom`, staying a faithful port, so any projection that *reads* a PII field receives plaintext. Whether it *persists* that plaintext is a per-projection choice — (A) let the view hold plaintext and rely on the replay-after-shred flow above, or (B) keep PII out of the view / decrypt at query egress so `shred` alone erases it with no replay. Today no projection reads a PII field, so no read model holds PII; the choice is made when profile editing lands, leaning **B** for the storefront view (fetched by id, PII never a query predicate).
 
 ### Cryptography
 
 Roll the orchestration layer; do **not** roll the crypto:
 
 - **Orchestration (registry + decorator + key table): build it.** No mature Node crypto-shredding library exists; ~150–200 lines plus tests.
-- **Primitives: Node built-in `crypto`.** AES-256-GCM, `randomBytes(32)` keys, fresh 12-byte IV per encryption. Pass streamId + event type as GCM additional authenticated data so ciphertext can't be transplanted between events.
+- **Primitives: Node built-in `crypto`.** AES-256-GCM, `randomBytes(32)` keys, fresh 12-byte IV per encryption. Pass streamId + event type + field name as GCM additional authenticated data so ciphertext can't be transplanted between events, streams, or fields.
 - **Master key management: env secret now, AWS/GCP KMS when deployed** (rotation + audit logs). Behind the `DataKeys` port, so the swap touches one adapter.
 
 ### Known extension points & constraints
@@ -141,3 +142,5 @@ Roll the orchestration layer; do **not** roll the crypto:
 - Decrypts on `load` and `loadFrom`.
 - Returns nulls for PII fields after shredding.
 - Rejects appends with no vendorId in metadata when the event type has PII fields.
+- Rejects encrypting a registered PII field whose value is not a string.
+- Throws on load when a ciphertext is tampered (GCM auth-tag mismatch) — distinct from the shredded null.
