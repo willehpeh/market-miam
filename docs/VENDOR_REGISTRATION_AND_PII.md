@@ -46,7 +46,7 @@ exports.onExecutePostLogin = async (event, api) => {
 
 Vendors can explore the app before filling in their details.
 
-- `UpdateVendorProfile` command → `VendorProfileUpdated` event (one event per command). The `...Updated` name is honest here because the user-facing action genuinely is "edit my profile form".
+- `UpdateVendorProfile` command → `VendorProfileUpdated` event (one event per command). The `...Updated` name is honest here because the user-facing action genuinely is "edit my profile form". **Shipped today as** `EditStorefrontInformation` → `StorefrontInformationEdited` (`name`, `description`, `phone`) — the storefront edit *is* the profile surface for now; a distinct profile event carrying address/postcode is still future.
 - **Splitting heuristic**: carve a field into its own command/event when the business *reacts* to it differently — e.g. if completing certain fields unlocks publishing listings, that milestone deserves its own event (or a processor watching profile state) rather than being inferred by every consumer from a generic update. Splitting along domain lines is under consideration; the profile contains name, email, business address, and more.
 - **Payload shape**: the event carries the **complete resulting profile**, not a field diff. Projections never fold partial diffs; replay stays trivial. Duplication cost is negligible at profile-edit frequency.
 
@@ -72,12 +72,14 @@ Crypto-shredding is a **decorator around the `EventStore`/`Events` ports** (`pac
 export type PiiFields = Record<string, string[]>; // eventType -> payload field names
 
 const vendorPiiFields: PiiFields = {
-  VendorRegistered: ['email'], // registered-with email snapshot
-  VendorProfileUpdated: ['name', 'email', 'addressLine1', 'addressLine2', 'postcode', 'phone'],
+  VendorRegistered: ['email'],                                   // registered-with email snapshot
+  StorefrontInformationEdited: ['name', 'description', 'phone'], // sole-trader identity (published, still shreddable)
 };
+// Address/postcode aren't captured by any event yet — add them when a profile
+// event carries them (see "Progressive profile completion").
 ```
 
-Unlisted fields stay plaintext, so non-personal data (stall descriptions, prices) remains inspectable in the database.
+Unlisted fields stay plaintext, so non-personal *product* data (dish names, prices) remains inspectable in the database. The stall **description** is encrypted, though — it's free text, a PII magnet for a sole trader.
 
 **2. `DataKeys` port** — one data key per *subject* (vendor), not per event:
 
