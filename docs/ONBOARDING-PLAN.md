@@ -1,6 +1,6 @@
 # Onboarding Launch Plan
 
-Post-login launch flow for new vendors. On login we prepare the vendor's storefront, then route by its state: empty → welcome, any info → the vitrine form. Landing holds a loading state during preparation and an error+retry on failure. Design from [`docs/design/Miam Espace vendeur.pdf`](docs/design/Miam%20Espace%20vendeur.pdf) p1 (screens 1–2); theme already in `apps/vendor-frontend/src/assets/miam-theme.css`.
+Post-login launch flow for new vendors. On login we prepare the vendor's storefront, then route by its state: empty → welcome, any info → the vitrine form. Landing holds a loading state during preparation and an error+retry on failure. Design from [`docs/design/Miam Espace vendeur.pdf`](design/Miam Espace vendeur.pdf) p1 (screens 1–2); theme already in `apps/vendor-frontend/src/assets/miam-theme.css`.
 
 **Status:** designed (grill complete), *not started*. Pausing before first red. Storefront edit surface (`Storefront.edit` / `StorefrontFacade.save` / `PUT /api/storefront`) + a combined `Onboarding` component already landed in a prior step and get **split/reworked** below.
 
