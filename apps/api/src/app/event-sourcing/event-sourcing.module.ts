@@ -12,14 +12,15 @@ import {
   InMemoryDataKeys,
   InMemoryEventStore,
   MessageContext,
-  MessageContextEventStore,
   PiiFields,
   PostgresCheckpoint,
+  PostgresDataKeys,
   PostgresEventStore,
   PostgresNotifications,
   QueryDispatcher,
 } from '@market-monster/event-sourcing';
 import { ApplicationEventStore } from './application.event-store';
+import { masterKey } from './master-key';
 import { MessageContextModule } from '../message-context/message-context.module';
 import { TracingCommandDispatcher } from './tracing.command-dispatcher';
 import { TracingQueryDispatcher } from './tracing.query-dispatcher';
@@ -29,17 +30,10 @@ import {
   EVENT_NOTIFICATIONS,
   POLLING_ENABLED,
 } from './subscriptions';
-import { TracingEventStore } from './tracing.event-store';
 import { TracingPostgresNotifications } from './tracing.postgres-notifications';
 
 export type Persistence = 'postgres' | 'memory';
 
-const decoratedEventStore = (inner: EventStore & Events, context: MessageContext) =>
-  new TracingEventStore(new MessageContextEventStore(inner, context));
-
-// ponytail: postgres profile is NOT shredding-wired yet — that needs PostgresDataKeys
-// (durable keys), which is step 2a-ii. Encrypting prod events under the in-memory key
-// store would make them unreadable after a restart. Memory profile only for now.
 const inMemoryPersistence = (piiFields: PiiFields): Provider[] => [
   InMemoryEventStore,
   InMemoryDataKeys,
@@ -55,7 +49,7 @@ const inMemoryPersistence = (piiFields: PiiFields): Provider[] => [
   { provide: EVENT_NOTIFICATIONS, useValue: EMPTY },
 ];
 
-const postgresPersistence: Provider[] = [
+const postgresPersistence = (piiFields: PiiFields): Provider[] => [
   {
     provide: Pool,
     useFactory: (config: ConfigService) =>
@@ -63,8 +57,19 @@ const postgresPersistence: Provider[] = [
     inject: [ConfigService],
   },
   { provide: PostgresEventStore, useFactory: (pool: Pool) => new PostgresEventStore(pool), inject: [Pool] },
-  { provide: EventStore, useFactory: decoratedEventStore, inject: [PostgresEventStore, MessageContext] },
-  { provide: Events, useExisting: PostgresEventStore },
+  {
+    provide: PostgresDataKeys,
+    useFactory: (pool: Pool, config: ConfigService) => new PostgresDataKeys(pool, masterKey(config)),
+    inject: [Pool, ConfigService],
+  },
+  { provide: DataKeys, useExisting: PostgresDataKeys },
+  {
+    provide: EventStore,
+    useFactory: (inner: PostgresEventStore, keys: DataKeys, context: MessageContext) =>
+      new ApplicationEventStore(inner, keys, piiFields, context),
+    inject: [PostgresEventStore, DataKeys, MessageContext],
+  },
+  { provide: Events, useExisting: EventStore },
   {
     provide: CHECKPOINT_FACTORY,
     useFactory: (pool: Pool) => (name: string) => new PostgresCheckpoint(pool, name),
@@ -104,7 +109,7 @@ export class EventSourcingModule implements OnApplicationShutdown {
   constructor(@Optional() @Inject(Pool) private readonly pool?: Pool) {}
 
   static forRoot(persistence: Persistence, piiFields: PiiFields = {}): DynamicModule {
-    const adapters = persistence === 'postgres' ? postgresPersistence : inMemoryPersistence(piiFields);
+    const adapters = persistence === 'postgres' ? postgresPersistence(piiFields) : inMemoryPersistence(piiFields);
     return {
       module: EventSourcingModule,
       global: true,
