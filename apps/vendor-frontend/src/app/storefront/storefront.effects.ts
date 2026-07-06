@@ -73,8 +73,15 @@ export class StorefrontEffects {
         this.storefront.coverPhotoSignature().pipe(
           switchMap((signed) =>
             this.photoUploads.upload(file, signed).pipe(
-              switchMap(() => this.storefront.setCoverPhoto()),
-              map(() => UploadCoverPhotoSuccess({ imageReference: signed.params.public_id })),
+              switchMap((uploaded) =>
+                this.storefront.setCoverPhoto(uploaded.version).pipe(
+                  map(() =>
+                    UploadCoverPhotoSuccess({
+                      imageReference: `v${uploaded.version}/${uploaded.publicId}`,
+                    }),
+                  ),
+                ),
+              ),
             ),
           ),
           catchError(() => of(UploadCoverPhotoFailure())),

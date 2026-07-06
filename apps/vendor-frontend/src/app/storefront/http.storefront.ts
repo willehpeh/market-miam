@@ -21,7 +21,7 @@ export class HttpStorefront implements Storefront {
     return this.http.post<SignedUpload>(`${environment.apiBaseUrl}/api/storefront/cover-photo/signature`, {});
   }
 
-  setCoverPhoto(): Observable<void> {
-    return this.http.put<void>(`${environment.apiBaseUrl}/api/storefront/cover-photo`, {});
+  setCoverPhoto(version: number): Observable<void> {
+    return this.http.put<void>(`${environment.apiBaseUrl}/api/storefront/cover-photo`, { version });
   }
 }
