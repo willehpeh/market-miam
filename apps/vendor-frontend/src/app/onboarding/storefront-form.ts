@@ -27,12 +27,12 @@ const MAX_PHOTO_BYTES = 10 * 1024 * 1024;
           } @else {
             <div class="mx-auto grid size-11 place-items-center rounded-full bg-brand-soft text-lg">📷</div>
           }
-          <p class="mt-2 text-sm font-bold text-ink">Photo de votre stand</p>
-          <p class="text-xs text-muted">Une belle photo donne envie de s'arrêter.</p>
+          <p class="mt-2 font-bold text-ink">Image de votre stand</p>
+          <p class="text-sm text-muted">Une photo de votre activité ou votre logo</p>
           <input #photoInput type="file" accept="image/*" hidden (change)="selectPhoto($event)" />
           <div class="mt-3 flex justify-center gap-2">
             <button type="button" (click)="photoInput.click()" [disabled]="uploading()">
-              {{ uploading() ? 'Envoi…' : (view()?.imageReference ? 'Changer la photo' : 'Ajouter photo') }}
+              {{ uploading() ? 'Envoi…' : (view()?.imageReference ? 'Changer la photo' : 'Ajouter image') }}
             </button>
           </div>
           @if (tooLarge()) {
