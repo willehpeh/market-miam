@@ -1,11 +1,12 @@
 import { DomainEvent } from './domain-event';
+import { Events } from './events';
 import { EventStore } from './event-store';
 import { MessageContext } from './message-context';
 import { StoredEvent } from './stored-event';
 
-export class MessageContextEventStore extends EventStore {
+export class MessageContextEventStore extends EventStore implements Events {
   constructor(
-    private readonly inner: EventStore,
+    private readonly inner: EventStore & Events,
     private readonly context: MessageContext,
   ) {
     super();
@@ -27,5 +28,9 @@ export class MessageContextEventStore extends EventStore {
 
   load(streamId: string): Promise<StoredEvent[]> {
     return this.inner.load(streamId);
+  }
+
+  loadFrom(globalPosition: number, limit: number): Promise<StoredEvent[]> {
+    return this.inner.loadFrom(globalPosition, limit);
   }
 }
