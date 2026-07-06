@@ -1,6 +1,6 @@
 # Observability Plan (ADR 0026)
 
-Remaining work + invariants for event-based observability with OpenTelemetry. Tracks [ADR 0026](docs/adr/0026-event-based-observability-with-opentelemetry.md). A span is a wide event — fat spans, not many thin logs.
+Remaining work + invariants for event-based observability with OpenTelemetry. Tracks [ADR 0026](adr/0026-event-based-observability-with-opentelemetry.md). A span is a wide event — fat spans, not many thin logs.
 
 ## Shipped
 Producer steps 1–3 (command-dispatch span; event-store append/load spans; `traceparent` into event metadata) and consumer steps 5–6 (new-trace-per-handler + span link to producer + `processing.lag_ms`). Consumer `TracingEventHandler` is applied by `Subscriptions` to every discovered projection and processor — uniform, no per-projection wiring. First processor→command fan-out (`StorefrontOpener`): the dispatched command and its appended event run on the opener's own consumer trace (child of the handle span), linked back to the request rather than threading the request trace through. Commits `1964004`, `bc3f826`, `8fc68e1`, `efbb5ab`, `662b08c`, `d2e4599`, `3b2e26b`, `696ba33`, `e481fa2`, `8115c96`, `944c49f`, `74acc02`; `*-tracing.spec.ts` in `apps/api`.
