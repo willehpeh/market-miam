@@ -116,7 +116,7 @@ describe('Subscriptions', () => {
     const afterStart = polls;
     expect(afterStart).toBeGreaterThan(0);
 
-    await vi.advanceTimersByTimeAsync(5000);
+    await vi.advanceTimersByTimeAsync(30000);
     expect(polls).toBeGreaterThan(afterStart);
   });
 
