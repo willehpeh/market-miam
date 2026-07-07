@@ -1,4 +1,4 @@
-import { DynamicModule, Inject, Module, OnApplicationShutdown, Optional, Provider } from '@nestjs/common';
+import { DynamicModule, Inject, Module, OnApplicationShutdown, Optional, Provider, Type } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { CqrsModule } from '@nestjs/cqrs';
 import { DiscoveryModule } from '@nestjs/core';
@@ -36,50 +36,37 @@ import { TracingPostgresNotifications } from './tracing.postgres-notifications';
 
 export type Persistence = 'postgres' | 'memory';
 
-const inMemoryPersistence = (piiFields: PiiFields): Provider[] => [
-  InMemoryEventStore,
-  InMemoryDataKeys,
-  { provide: DataKeys, useExisting: InMemoryDataKeys },
+// Same in every profile: wrap the given store + data keys in the application event
+// store and expose it as both the write port (EventStore) and read port (Events).
+// Only the leaves — the store, DataKeys, UnitOfWork — vary per profile.
+const applicationEventStore = (piiFields: PiiFields, store: Type<EventStore & Events>): Provider[] => [
   {
     provide: EventStore,
-    useFactory: (inner: InMemoryEventStore, keys: DataKeys, context: MessageContext) =>
+    useFactory: (inner: EventStore & Events, keys: DataKeys, context: MessageContext) =>
       new ApplicationEventStore(inner, keys, piiFields, context),
-    inject: [InMemoryEventStore, DataKeys, MessageContext],
+    inject: [store, DataKeys, MessageContext],
   },
   { provide: Events, useExisting: EventStore },
-  { provide: UnitOfWork, useValue: UnitOfWork.none() },
-  // No CHECKPOINT_FACTORY → Subscriptions falls back to its in-memory default.
-  { provide: EVENT_NOTIFICATIONS, useValue: EMPTY },
 ];
 
-const postgresPersistence = (piiFields: PiiFields): Provider[] => [
-  {
-    provide: Pool,
-    useFactory: (config: ConfigService) =>
-      new Pool({ connectionString: config.getOrThrow<string>('DATABASE_CONNECTION_STRING') }),
-    inject: [ConfigService],
-  },
-  { provide: PostgresEventStore, useFactory: (pool: Pool) => new PostgresEventStore(pool), inject: [Pool] },
-  { provide: PostgresUnitOfWork, useFactory: (pool: Pool) => new PostgresUnitOfWork(pool), inject: [Pool] },
-  { provide: UnitOfWork, useExisting: PostgresUnitOfWork },
-  {
-    provide: PostgresDataKeys,
-    useFactory: (pool: Pool, config: ConfigService) => new PostgresDataKeys(pool, masterKey(config)),
-    inject: [Pool, ConfigService],
-  },
-  { provide: DataKeys, useExisting: PostgresDataKeys },
-  {
-    provide: EventStore,
-    useFactory: (inner: PostgresEventStore, keys: DataKeys, context: MessageContext) =>
-      new ApplicationEventStore(inner, keys, piiFields, context),
-    inject: [PostgresEventStore, DataKeys, MessageContext],
-  },
-  { provide: Events, useExisting: EventStore },
-  {
-    provide: CHECKPOINT_FACTORY,
-    useFactory: (uow: PostgresUnitOfWork) => (name: string) => new PostgresCheckpoint(uow, name),
-    inject: [PostgresUnitOfWork],
-  },
+const inMemoryPersistence = (piiFields: PiiFields): Provider[] => [
+  InMemoryEventStore,
+  { provide: DataKeys, useClass: InMemoryDataKeys },
+  { provide: UnitOfWork, useValue: UnitOfWork.none() },
+  { provide: EVENT_NOTIFICATIONS, useValue: EMPTY },
+  // No CHECKPOINT_FACTORY → Subscriptions falls back to its in-memory default.
+  ...applicationEventStore(piiFields, InMemoryEventStore),
+];
+
+const pool: Provider = {
+  provide: Pool,
+  useFactory: (config: ConfigService) =>
+    new Pool({ connectionString: config.getOrThrow<string>('DATABASE_CONNECTION_STRING') }),
+  inject: [ConfigService],
+};
+
+// LISTEN/NOTIFY pokes (their own dedicated pg client) → EVENT_NOTIFICATIONS.
+const postgresNotifications: Provider[] = [
   {
     provide: PostgresNotifications,
     useFactory: (config: ConfigService) =>
@@ -98,6 +85,25 @@ const postgresPersistence = (piiFields: PiiFields): Provider[] => [
     useFactory: (notifications: TracingPostgresNotifications) => notifications.notifications(),
     inject: [TracingPostgresNotifications],
   },
+];
+
+const postgresPersistence = (piiFields: PiiFields): Provider[] => [
+  pool,
+  { provide: PostgresEventStore, useFactory: (p: Pool) => new PostgresEventStore(p), inject: [Pool] },
+  {
+    provide: DataKeys,
+    useFactory: (p: Pool, config: ConfigService) => new PostgresDataKeys(p, masterKey(config)),
+    inject: [Pool, ConfigService],
+  },
+  { provide: PostgresUnitOfWork, useFactory: (p: Pool) => new PostgresUnitOfWork(p), inject: [Pool] },
+  { provide: UnitOfWork, useExisting: PostgresUnitOfWork },
+  {
+    provide: CHECKPOINT_FACTORY,
+    useFactory: (uow: PostgresUnitOfWork) => (name: string) => new PostgresCheckpoint(uow, name),
+    inject: [PostgresUnitOfWork],
+  },
+  ...applicationEventStore(piiFields, PostgresEventStore),
+  ...postgresNotifications,
 ];
 
 const core: Provider[] = [
