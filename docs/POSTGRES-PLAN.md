@@ -23,7 +23,7 @@ Prioritised: **read models can't be deferred; crypto-shredding needed very soon.
 
 ## Suggested order
 
-`0` (prod cutover) → **`2a` ✓** (shredding + DataKeys, done ahead of read models) → `1` (read models, **NEXT**) → `5` (replay) → `2b` (erasure flow, needs 1+5) → `3` → `4` → `6`.
+`0` (prod cutover) → **`2a` ✓** (shredding + DataKeys) → **`1` ✓** (read models — code-complete; local-verify + deploy pending) → `5` (replay, **NEXT**) → `2b` (erasure flow, needs 1+5) → `3` → `4` → `6`.
 
 ---
 
@@ -37,7 +37,14 @@ durable in prod until deployed and verified against the Render `event-store`.
 - **Connection budget:** the Pool (default `max` 10) + the dedicated LISTEN client + the migrate connection all draw on `basic-256mb`'s cap. Set `Pool({ max })` explicitly, sized under the instance limit.
 - **Backup / PITR:** the event log is the source of truth — confirm Render's backup/retention covers it before real data lands.
 
-## 1. PG read-model adapters + transactional projection↔checkpoint  — NEXT (designed)
+## 1. PG read-model adapters + transactional projection↔checkpoint  — **DONE** (code-complete; local-verify + deploy pending)
+
+**Shipped** (commits `66a902d` sentinel → `5f108c7`): everything below — `PostgresVendorStorefrontViews`
++ migration `0004`, `clear()` on the port + both adapters, the `UnitOfWork` port + `PostgresUnitOfWork`
++ `Queryable`, `PostgresCheckpoint` on `Queryable`, `MarketDaysModule.forRoot(persistence)`, and the
+Testcontainers social test proving atomic `handle`+`checkpoint`. Fast 270 + container 58 green.
+**Remaining (ops, not code):** local verify (`docker compose up -d`, serve, register + edit a storefront,
+restart, confirm the view survives) and deploy (Render runs `0004` on boot). Design as-built:
 
 Read models are in-memory (`InMemoryVendorStorefrontViews`) → lost on restart; the projection's
 view write and `checkpoint.write` are two separate pg transactions. The per-event loop (`handle`
@@ -127,7 +134,12 @@ advances the checkpoint → replays forever (backoff only slows it). Resolution
 and advance the checkpoint past it. Fail-loud until then; the DLQ **needs monitoring**
 (silent DLQ = silent data loss). Deferred until there's evidence of a real poison event.
 
-## 5. Replay mechanism + processor replay-safety  — dependency of crypto erasure
+## 5. Replay mechanism + processor replay-safety  — **NEXT** (dependency of crypto erasure)
+
+Building blocks now exist from item 1: `VendorStorefrontViewStore.clear()` (both adapters),
+`Checkpoint.write(0)` for reset, and the `UnitOfWork` — so a rebuild can wrap `clear()` +
+`checkpoint.write(0)` in `uow.transaction(...)` (atomic reset, crash-safe). Still to build: the
+ops entry point that runs it per projection, plus the processor-replay guard below.
 
 Rebuild a projection = **`clear()` its view store, reset its checkpoint to 0, let the poller
 replay** (`DEFERRED.md` "Replay strategy"; projection logic is append-only, so replay starts
