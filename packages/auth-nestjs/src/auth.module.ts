@@ -1,5 +1,5 @@
 import { DynamicModule, FactoryProvider, Module } from '@nestjs/common';
-import { TokenVerifier } from '@market-monster/auth';
+import { TokenVerifier } from '@market-miam/auth';
 import { JwtAuthGuard } from './jwt-auth.guard';
 
 export interface AuthModuleAsyncOptions {

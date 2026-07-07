@@ -1,6 +1,6 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { Email, Instant } from '@market-monster/common';
-import { VendorId } from '@market-monster/shared-kernel';
+import { Email, Instant } from '@market-miam/common';
+import { VendorId } from '@market-miam/shared-kernel';
 import { RegisterVendor } from './register-vendor';
 import { Vendors } from '../vendor';
 

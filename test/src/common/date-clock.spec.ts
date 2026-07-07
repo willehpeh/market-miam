@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { DateClock, Instant } from '@market-monster/common';
+import { DateClock, Instant } from '@market-miam/common';
 
 describe('DateClock', () => {
   const clock = new DateClock();

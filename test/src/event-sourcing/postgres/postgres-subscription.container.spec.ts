@@ -3,7 +3,7 @@ import {
   PollingSubscription,
   PostgresCheckpoint,
   PostgresEventStore,
-} from '@market-monster/event-sourcing';
+} from '@market-miam/event-sourcing';
 import { checkpointContract } from '../checkpoint.contract';
 import { subscriptionContract } from '../subscription.contract';
 import { PostgresHarness, startPostgres } from './testcontainer';

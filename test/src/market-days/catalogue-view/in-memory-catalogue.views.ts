@@ -1,4 +1,4 @@
-import { CatalogueView, CatalogueViewItem, CatalogueViews, CatalogueViewStore } from '@market-monster/market-days';
+import { CatalogueView, CatalogueViewItem, CatalogueViews, CatalogueViewStore } from '@market-miam/market-days';
 
 export class InMemoryCatalogueViews implements CatalogueViews, CatalogueViewStore {
   private readonly items = new Map<string, CatalogueViewItem[]>();

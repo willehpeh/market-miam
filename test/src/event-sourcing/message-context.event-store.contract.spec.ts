@@ -3,7 +3,7 @@ import {
   InMemoryEventStore,
   MessageContext,
   MessageContextEventStore,
-} from '@market-monster/event-sourcing';
+} from '@market-miam/event-sourcing';
 
 // The context-stamping decorator must remain a faithful EventStore: outside a
 // dispatch it has no context to add, so it upholds the full contract — including

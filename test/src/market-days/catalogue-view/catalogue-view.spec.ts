@@ -1,4 +1,4 @@
-import { VendorScopedEvents } from '@market-monster/market-days';
+import { VendorScopedEvents } from '@market-miam/market-days';
 import {
   AddItemToCatalogueHandler,
   Catalogues,
@@ -6,12 +6,12 @@ import {
   ChangeItemPrice,
   ChangeItemPriceHandler,
   RetireItemHandler
-} from '@market-monster/market-days';
+} from '@market-miam/market-days';
 import {
   InMemoryCheckpoint,
   InMemoryEventStore,
   PollingSubscription,
-} from '@market-monster/event-sourcing';
+} from '@market-miam/event-sourcing';
 import { TestAddItemToCatalogue } from '../add-item-to-catalogue/test-data';
 import { InMemoryCatalogueViews } from './in-memory-catalogue.views';
 

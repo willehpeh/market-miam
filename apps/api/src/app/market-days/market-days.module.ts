@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { CommandDispatcher, EventStore } from '@market-monster/event-sourcing';
-import { Clock, DateClock } from '@market-monster/common';
+import { CommandDispatcher, EventStore } from '@market-miam/event-sourcing';
+import { Clock, DateClock } from '@market-miam/common';
 import {
   AddItemToCatalogueHandler,
   Calendars,
@@ -26,7 +26,7 @@ import {
   VendorStorefrontViewProjection,
   VendorStorefrontViews,
   VendorStorefrontViewStore,
-} from '@market-monster/market-days';
+} from '@market-miam/market-days';
 import { SignedUploads, signedUploadsFor } from '../signed-uploads';
 import { VendorsController } from './vendors.controller';
 import { StorefrontController } from './storefront.controller';

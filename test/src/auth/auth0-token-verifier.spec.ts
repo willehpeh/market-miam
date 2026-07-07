@@ -1,6 +1,6 @@
-import { Auth0TokenVerifier, InvalidTokenError } from '@market-monster/auth';
-import { VendorId } from '@market-monster/shared-kernel';
-import { Email } from '@market-monster/common';
+import { Auth0TokenVerifier, InvalidTokenError } from '@market-miam/auth';
+import { VendorId } from '@market-miam/shared-kernel';
+import { Email } from '@market-miam/common';
 import { SigningKey } from './signing-key';
 import { AUDIENCE, EMAIL, ISSUER, TestAccessToken, VENDOR_ID } from './test-access-token';
 

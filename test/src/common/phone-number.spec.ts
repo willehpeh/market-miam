@@ -1,4 +1,4 @@
-import { PhoneNumber } from '@market-monster/common';
+import { PhoneNumber } from '@market-miam/common';
 
 describe('PhoneNumber', () => {
   it('keeps a provided phone number', () => {

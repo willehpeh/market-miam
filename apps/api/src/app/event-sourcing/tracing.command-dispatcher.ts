@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Command, CommandBus } from '@nestjs/cqrs';
 import { SpanStatusCode, trace } from '@opentelemetry/api';
-import { CommandDispatcher, MessageContext } from '@market-monster/event-sourcing';
+import { CommandDispatcher, MessageContext } from '@market-miam/event-sourcing';
 
 const tracer = trace.getTracer('command-dispatcher');
 

@@ -2,7 +2,7 @@ import { ItemId } from './item-id';
 import { ItemName } from './item-name';
 import { ItemDescription } from './item-description';
 import { ItemPrice } from './item-price';
-import { ImageReference } from '@market-monster/common';
+import { ImageReference } from '@market-miam/common';
 
 export class Item {
   constructor(

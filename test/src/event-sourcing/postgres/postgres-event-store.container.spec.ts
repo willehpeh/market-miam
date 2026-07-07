@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { ConcurrencyError, DomainEvent, PostgresEventStore } from '@market-monster/event-sourcing';
+import { ConcurrencyError, DomainEvent, PostgresEventStore } from '@market-miam/event-sourcing';
 import { eventStoreContract } from '../event-store.contract';
 import { eventsContract } from '../events.contract';
 import { PostgresHarness, startPostgres } from './testcontainer';

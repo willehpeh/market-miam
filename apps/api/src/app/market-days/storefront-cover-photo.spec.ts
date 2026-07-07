@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import { EventStore } from '@market-monster/event-sourcing';
+import { EventStore } from '@market-miam/event-sourcing';
 import { bootApiTestApp, openStorefrontFor } from '../testing/api-test-app';
 
 describe('Setting a storefront cover photo over HTTP', () => {

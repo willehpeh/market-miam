@@ -6,7 +6,7 @@ import {
   MessageContextEventStore,
   PiiFields,
   ShreddingEventStore,
-} from '@market-monster/event-sourcing';
+} from '@market-miam/event-sourcing';
 import { TracingEventStore } from './tracing.event-store';
 
 // The event store the application is wired to: a leaf adapter (in-memory or

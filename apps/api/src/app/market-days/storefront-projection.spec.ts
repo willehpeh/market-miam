@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import { VendorStorefrontViews } from '@market-monster/market-days';
+import { VendorStorefrontViews } from '@market-miam/market-days';
 import { bootApiTestApp, openStorefrontFor } from '../testing/api-test-app';
 import { Subscriptions } from '../event-sourcing/subscriptions';
 

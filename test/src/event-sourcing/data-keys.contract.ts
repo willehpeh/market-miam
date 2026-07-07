@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { DataKeys } from '@market-monster/event-sourcing';
+import { DataKeys } from '@market-miam/event-sourcing';
 
 export function dataKeysContract(name: string, create: () => DataKeys): void {
   describe(`DataKeys contract: ${name}`, () => {

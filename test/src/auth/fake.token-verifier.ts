@@ -1,4 +1,4 @@
-import { InvalidTokenError, TokenVerifier, VerifiedVendor } from '@market-monster/auth';
+import { InvalidTokenError, TokenVerifier, VerifiedVendor } from '@market-miam/auth';
 
 export class FakeTokenVerifier extends TokenVerifier {
   readonly verified: string[] = [];

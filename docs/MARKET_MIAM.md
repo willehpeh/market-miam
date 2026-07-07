@@ -1,4 +1,4 @@
-# Market Monster — Product Design Summary
+# Market Miam — Product Design Summary
 
 ## The Problem
 
@@ -117,7 +117,7 @@ Subscription-based (monthly fee) rather than transaction-based (commission per o
 
 ## Trademark Note
 
-The name “Market Monster” carries a minor risk from Monster Beverage Corporation, which has filed over 1,000 trademark cases (including forcing Ubisoft to rename “Gods & Monsters”). The risk is low given the different industry and geography (France), but worth a formal check on INPI and EUIPO before committing to the name.
+The original name “Market Monster” carried a minor risk from Monster Beverage Corporation, which has filed over 1,000 trademark cases (including forcing Ubisoft to rename “Gods & Monsters”). The project was renamed to “Market Miam” to sidestep this; a formal check on INPI and EUIPO is still worthwhile before committing to the new name.
 
 ## Open Items
 

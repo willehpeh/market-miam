@@ -4,7 +4,7 @@ import {
   InMemoryCheckpoint,
   InMemoryEventStore,
   PollingSubscription,
-} from '@market-monster/event-sourcing';
+} from '@market-miam/event-sourcing';
 
 subscriptionContract('PollingSubscription', () => {
   const store = new InMemoryEventStore();

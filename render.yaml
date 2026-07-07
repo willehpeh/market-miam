@@ -8,7 +8,7 @@ projects:
           - type: web
             name: api
             runtime: node
-            repo: https://github.com/willehpeh/market-monster
+            repo: https://github.com/willehpeh/market-miam
             plan: starter
             envVars:
               - key: AUTH0_ISSUER
@@ -53,7 +53,7 @@ projects:
           - type: web
             name: vendor-frontend
             runtime: static
-            repo: https://github.com/willehpeh/market-monster
+            repo: https://github.com/willehpeh/market-miam
             buildCommand: npm ci && npx nx run vendor-frontend:build
             staticPublishPath: ./dist/apps/vendor-frontend/browser
             routes:
@@ -75,7 +75,7 @@ projects:
           - type: web
             name: customer-frontend
             runtime: node
-            repo: https://github.com/willehpeh/market-monster
+            repo: https://github.com/willehpeh/market-miam
             plan: free
             region: frankfurt
             buildCommand: npm ci && npx nx run customer-frontend:build
@@ -94,7 +94,7 @@ projects:
           - type: web
             name: website
             runtime: static
-            repo: https://github.com/willehpeh/market-monster
+            repo: https://github.com/willehpeh/market-miam
             buildCommand: npm ci && npx nx build website
             staticPublishPath: ./dist/apps/website
             domains:

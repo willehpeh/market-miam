@@ -1,8 +1,8 @@
-import { ImageReference } from '@market-monster/common';
+import { ImageReference } from '@market-miam/common';
 
 describe('ImageReference', () => {
   it.each([
-    'market-monster/items/item-photo',
+    'market-miam/items/item-photo',
     'storefronts/vendor-123/abc123def',
     'a',
   ])('should accept a non-empty reference: "%s"', (value) => {
@@ -10,7 +10,7 @@ describe('ImageReference', () => {
   });
 
   it('should trim surrounding whitespace', () => {
-    expect(new ImageReference('  market-monster/items/photo  ').value()).toBe('market-monster/items/photo');
+    expect(new ImageReference('  market-miam/items/photo  ').value()).toBe('market-miam/items/photo');
   });
 
   it.each([

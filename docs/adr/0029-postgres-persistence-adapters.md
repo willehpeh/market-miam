@@ -33,7 +33,7 @@ stays Docker-free.
 ## Consequences
 
 - Zero-dependency core is deliberately given up: `pg` (and `rxjs`) become
-  `@market-monster/event-sourcing` package deps. Accepted — the store/checkpoint
+  `@market-miam/event-sourcing` package deps. Accepted — the store/checkpoint
   adapters use `import type` for `pg`, so only the app that builds the pool loads
   it at runtime.
 - Migrations run identically in tests (Testcontainers `beforeAll`) and prod (on

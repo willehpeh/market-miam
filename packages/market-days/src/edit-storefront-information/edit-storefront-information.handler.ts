@@ -1,6 +1,6 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { PhoneNumber } from '@market-monster/common';
-import { VendorId } from '@market-monster/shared-kernel';
+import { PhoneNumber } from '@market-miam/common';
+import { VendorId } from '@market-miam/shared-kernel';
 import { EditStorefrontInformation } from './edit-storefront-information';
 import { StorefrontDescription, StorefrontName, Storefronts } from '../storefront';
 

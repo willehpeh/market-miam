@@ -4,7 +4,7 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-import { TokenVerifier, type VerifiedVendor } from '@market-monster/auth';
+import { TokenVerifier, type VerifiedVendor } from '@market-miam/auth';
 
 export const VERIFIED_VENDOR = 'verifiedVendor';
 

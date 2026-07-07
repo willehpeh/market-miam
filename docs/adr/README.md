@@ -1,7 +1,7 @@
 # Architecture Decision Records
 
 Ordered chronologically by when each decision entered the codebase.
-Product-level decisions live in `docs/MARKET_MONSTER.md`; deliberately
+Product-level decisions live in `docs/MARKET_MIAM.md`; deliberately
 deferred decisions in `docs/DEFERRED.md` (see ADR 0017).
 
 | # | Title | Date |

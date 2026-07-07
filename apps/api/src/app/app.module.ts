@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
 import { APP_FILTER } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { AuthModule } from '@market-monster/auth-nestjs';
-import { vendorPiiFields } from '@market-monster/market-days';
+import { AuthModule } from '@market-miam/auth-nestjs';
+import { vendorPiiFields } from '@market-miam/market-days';
 import { MarketDaysModule } from './market-days/market-days.module';
 import { EventSourcingModule } from './event-sourcing/event-sourcing.module';
 import { DomainErrorFilter } from './domain-error.filter';

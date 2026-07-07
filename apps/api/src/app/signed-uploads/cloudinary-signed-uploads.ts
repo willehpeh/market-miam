@@ -1,4 +1,4 @@
-import { Clock } from '@market-monster/common';
+import { Clock } from '@market-miam/common';
 import { cloudinarySignature } from './cloudinary-signature';
 import { SignedParams, SignedUpload, SignedUploads } from './signed-uploads';
 

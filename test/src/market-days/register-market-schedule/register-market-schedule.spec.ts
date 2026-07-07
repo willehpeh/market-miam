@@ -1,12 +1,12 @@
-import { InMemoryEventStore } from '@market-monster/event-sourcing';
-import { VendorScopedEvents } from '@market-monster/market-days';
+import { InMemoryEventStore } from '@market-miam/event-sourcing';
+import { VendorScopedEvents } from '@market-miam/market-days';
 import { TestRegisterMarketSchedule } from './test-data';
 import {
   Calendars,
   InvalidScheduleError,
   RegisterMarketScheduleHandler
-} from '@market-monster/market-days';
-import { EmptyValueError } from '@market-monster/common';
+} from '@market-miam/market-days';
+import { EmptyValueError } from '@market-miam/common';
 import { expectVendorScopedEvents } from '../../shared-kernel';
 
 describe('Register Market Schedule', () => {

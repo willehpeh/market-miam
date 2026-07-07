@@ -1,6 +1,6 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { ImageReference } from '@market-monster/common';
-import { VendorId } from '@market-monster/shared-kernel';
+import { ImageReference } from '@market-miam/common';
+import { VendorId } from '@market-miam/shared-kernel';
 import { AddItemToCatalogue } from './add-item-to-catalogue';
 import { Catalogues, ItemDescription, ItemId, ItemName, ItemPrice } from '../catalogue';
 

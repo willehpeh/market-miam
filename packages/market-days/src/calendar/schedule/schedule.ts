@@ -3,7 +3,7 @@ import { ScheduleDay } from './schedule-day';
 import { ScheduleFrequency } from './schedule-frequency';
 import { InvalidScheduleError } from '../errors';
 import { ScheduleId } from './schedule-id';
-import { LocalDate } from '@market-monster/common';
+import { LocalDate } from '@market-miam/common';
 
 type ScheduleSnapshot = {
   scheduleId: string;

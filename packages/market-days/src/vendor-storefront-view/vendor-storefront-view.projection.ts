@@ -1,6 +1,6 @@
 import { VendorStorefrontViewStore } from './vendor-storefront-view.store';
-import { CheckpointedProjection, EventHandlerMap, ProjectionFor, StoredEvent } from '@market-monster/event-sourcing';
-import { vendorIdFrom } from '@market-monster/shared-kernel';
+import { CheckpointedProjection, EventHandlerMap, ProjectionFor, StoredEvent } from '@market-miam/event-sourcing';
+import { vendorIdFrom } from '@market-miam/shared-kernel';
 import { StorefrontCoverPhotoSet, StorefrontEvent, StorefrontInformationEdited } from '../storefront/events';
 
 @CheckpointedProjection('vendor-storefront-view')

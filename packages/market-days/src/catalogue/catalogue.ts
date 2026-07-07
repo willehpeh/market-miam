@@ -1,6 +1,6 @@
 import { ItemAddedToCatalogue, ItemPriceChanged, ItemRetired, CatalogueEvent } from './events';
-import { Aggregate } from '@market-monster/event-sourcing';
-import { ImageReference } from '@market-monster/common';
+import { Aggregate } from '@market-miam/event-sourcing';
+import { ImageReference } from '@market-miam/common';
 import { Item, ItemDescription, ItemId, ItemName, ItemPrice } from './item';
 import { NoSuchItemError } from './errors/no-such-item.error';
 import { ItemAlreadyInCatalogueError } from './errors/item-already-in-catalogue.error';

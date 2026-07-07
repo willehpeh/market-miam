@@ -1,7 +1,7 @@
 import { Injectable, Logger, OnApplicationBootstrap, OnApplicationShutdown } from '@nestjs/common';
 import { trace } from '@opentelemetry/api';
 import { Observable, Subscription } from 'rxjs';
-import { ListenStatus, PostgresNotifications } from '@market-monster/event-sourcing';
+import { ListenStatus, PostgresNotifications } from '@market-miam/event-sourcing';
 
 const tracer = trace.getTracer('pg-notifications');
 

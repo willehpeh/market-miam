@@ -1,9 +1,9 @@
-import { VendorScopedEvents } from '@market-monster/market-days';
+import { VendorScopedEvents } from '@market-miam/market-days';
 import {
   InMemoryCheckpoint,
   InMemoryEventStore,
   PollingSubscription,
-} from '@market-monster/event-sourcing';
+} from '@market-miam/event-sourcing';
 import {
   EditStorefrontInformationHandler,
   InMemoryVendorStorefrontViews,
@@ -11,7 +11,7 @@ import {
   SetStorefrontCoverPhotoHandler,
   Storefronts,
   VendorStorefrontViewProjection
-} from '@market-monster/market-days';
+} from '@market-miam/market-days';
 import { TestOpenStorefront } from '../open-storefront/test-data';
 import { TestEditStorefrontInformation } from '../edit-storefront-information/test-data';
 import { TestSetStorefrontCoverPhoto } from '../set-storefront-cover-photo/test-data';

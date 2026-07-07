@@ -1,5 +1,5 @@
 import { eventsContract } from './events.contract';
-import { InMemoryEventStore } from '@market-monster/event-sourcing';
+import { InMemoryEventStore } from '@market-miam/event-sourcing';
 
 eventsContract('InMemoryEventStore', () => {
   const store = new InMemoryEventStore();

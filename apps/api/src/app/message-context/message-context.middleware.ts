@@ -1,5 +1,5 @@
 import { Injectable, NestMiddleware } from '@nestjs/common';
-import { MessageContextDispatcher } from '@market-monster/event-sourcing';
+import { MessageContextDispatcher } from '@market-miam/event-sourcing';
 
 @Injectable()
 export class MessageContextMiddleware implements NestMiddleware {

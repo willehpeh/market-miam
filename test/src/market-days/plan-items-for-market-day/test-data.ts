@@ -1,4 +1,4 @@
-import { PlanItemsForMarketDay } from '@market-monster/market-days';
+import { PlanItemsForMarketDay } from '@market-miam/market-days';
 
 export class TestPlanItemsForMarketDay {
   static withDefaults(): PlanItemsForMarketDay {

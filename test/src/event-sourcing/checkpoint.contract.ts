@@ -1,4 +1,4 @@
-import { Checkpoint } from '@market-monster/event-sourcing';
+import { Checkpoint } from '@market-miam/event-sourcing';
 import { describe, it, beforeEach, expect } from 'vitest';
 
 export function checkpointContract(

@@ -1,5 +1,5 @@
 import { ConfigService } from '@nestjs/config';
-import { Clock } from '@market-monster/common';
+import { Clock } from '@market-miam/common';
 import { CloudinarySignedUploads } from './cloudinary-signed-uploads';
 import { SignedUploads } from './signed-uploads';
 

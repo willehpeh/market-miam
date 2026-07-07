@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { SpanStatusCode } from '@opentelemetry/api';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import { EventStore, InMemoryEventStore, StoredEvent } from '@market-monster/event-sourcing';
+import { EventStore, InMemoryEventStore, StoredEvent } from '@market-miam/event-sourcing';
 import { apiTestModule, bootApiTestApp, fixedClock, startApp } from '../testing/api-test-app';
 import { registerSpanCapture } from '../testing/span-capture';
 

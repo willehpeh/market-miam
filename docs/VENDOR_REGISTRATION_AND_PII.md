@@ -25,12 +25,12 @@ exports.onExecutePostLogin = async (event, api) => {
     api.user.setAppMetadata('vendorId', vendorId);
   }
 
-  api.accessToken.setCustomClaim('https://market-monster/vendorId', vendorId);
+  api.accessToken.setCustomClaim('https://market-miam/vendorId', vendorId);
 };
 ```
 
 - Mints once per user (persisted to `app_metadata`), stamps the claim on every login. Existing users are backfilled on next login.
-- The API reads the claim from the **verified** token payload: `payload['https://market-monster/vendorId']`. Tokens are signed JWTs (JWS, RS256) — encoded, not encrypted. Never trust without verifying signature, `iss`, `aud`, `exp` against the tenant JWKS.
+- The API reads the claim from the **verified** token payload: `payload['https://market-miam/vendorId']`. Tokens are signed JWTs (JWS, RS256) — encoded, not encrypted. Never trust without verifying signature, `iss`, `aud`, `exp` against the tenant JWKS.
 - The frontend Auth0 SDK must pass an `audience` (the API identifier) or Auth0 issues an opaque token instead of a JWT.
 - Token verification is pure adapter concern: the HTTP adapter verifies and extracts the claim; the domain only sees a `VendorId` value object and never knows JWTs exist.
 - If teammates-per-vendor arrives later, the Action evolves to look up a shared vendorId instead of minting; the API and event streams never know the difference.

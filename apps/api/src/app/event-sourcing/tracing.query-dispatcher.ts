@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Query, QueryBus } from '@nestjs/cqrs';
 import { SpanStatusCode, trace } from '@opentelemetry/api';
-import { QueryDispatcher } from '@market-monster/event-sourcing';
+import { QueryDispatcher } from '@market-miam/event-sourcing';
 
 const tracer = trace.getTracer('query-dispatcher');
 

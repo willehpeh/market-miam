@@ -18,25 +18,25 @@
     "skipDefaultLibCheck": true,
     "baseUrl": ".",
     "paths": {
-      "@market-monster/market-days": [
+      "@market-miam/market-days": [
         "packages/market-days/src/index.ts"
       ],
-      "@market-monster/event-sourcing": [
+      "@market-miam/event-sourcing": [
         "packages/event-sourcing/src/index.ts"
       ],
-      "@market-monster/testing": [
+      "@market-miam/testing": [
         "test/src/index.ts"
       ],
-      "@market-monster/common": [
+      "@market-miam/common": [
         "packages/common/src/index.ts"
       ],
-      "@market-monster/shared-kernel": [
+      "@market-miam/shared-kernel": [
         "packages/shared-kernel/src/index.ts"
       ],
-      "@market-monster/auth": [
+      "@market-miam/auth": [
         "packages/auth/src/index.ts"
       ],
-      "@market-monster/auth-nestjs": [
+      "@market-miam/auth-nestjs": [
         "packages/auth-nestjs/src/index.ts"
       ]
     }

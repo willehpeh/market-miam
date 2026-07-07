@@ -1,9 +1,9 @@
 import { Controller, Post, UseGuards } from '@nestjs/common';
-import { Clock } from '@market-monster/common';
-import { CurrentVendor, JwtAuthGuard } from '@market-monster/auth-nestjs';
-import type { VerifiedVendor } from '@market-monster/auth';
-import { CommandDispatcher } from '@market-monster/event-sourcing';
-import { RegisterVendor } from '@market-monster/market-days';
+import { Clock } from '@market-miam/common';
+import { CurrentVendor, JwtAuthGuard } from '@market-miam/auth-nestjs';
+import type { VerifiedVendor } from '@market-miam/auth';
+import { CommandDispatcher } from '@market-miam/event-sourcing';
+import { RegisterVendor } from '@market-miam/market-days';
 
 @Controller('vendors')
 export class VendorsController {

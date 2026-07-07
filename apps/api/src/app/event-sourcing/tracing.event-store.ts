@@ -1,5 +1,5 @@
 import { Span, SpanStatusCode, trace } from '@opentelemetry/api';
-import { DomainEvent, Events, EventStore, StoredEvent } from '@market-monster/event-sourcing';
+import { DomainEvent, Events, EventStore, StoredEvent } from '@market-miam/event-sourcing';
 
 const tracer = trace.getTracer('event-store');
 

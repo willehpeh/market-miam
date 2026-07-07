@@ -4,7 +4,7 @@ Date: 2026-05-01 · Status: Accepted
 
 ## Context
 
-Market Monster spans several deliverables — a backend API, vendor and customer
+Market Miam spans several deliverables — a backend API, vendor and customer
 frontends, a marketing website — that share a domain model and supporting
 libraries. Separate repositories would mean versioning and publishing shared
 packages; a single-framework workspace would force one stack onto every
@@ -14,7 +14,7 @@ deliverable.
 
 Use a single Nx workspace containing all apps (`apps/`) and shared libraries
 (`packages/`), each framework free to differ per app. Shared code is imported
-via `@market-monster/*` path aliases, and the `@nx/enforce-module-boundaries`
+via `@market-miam/*` path aliases, and the `@nx/enforce-module-boundaries`
 lint rule enforces dependency constraints between projects.
 
 ## Consequences

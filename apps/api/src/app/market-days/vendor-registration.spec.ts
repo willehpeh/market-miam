@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import { EventStore } from '@market-monster/event-sourcing';
+import { EventStore } from '@market-miam/event-sourcing';
 import { bootApiTestApp, fixedClock, FIXED_NOW } from '../testing/api-test-app';
 
 describe('Vendor registration over HTTP', () => {
