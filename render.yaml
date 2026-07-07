@@ -117,6 +117,3 @@ projects:
             plan: basic-256mb
             region: frankfurt
             postgresMajorVersion: "18"
-            ipAllowList: [
-              {source: "REDACTED", description: "Me"}
-            ]
