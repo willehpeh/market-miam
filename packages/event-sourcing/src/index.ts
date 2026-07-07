@@ -30,4 +30,5 @@ export { PostgresNotifications, ListenState, ListenStatus } from './postgres/pos
 export { ConcurrencyError } from './concurrency.error';
 export { InMemoryCheckpoint } from './in-memory.checkpoint';
 export { PollingSubscription } from './polling.subscription';
+export { UnitOfWork } from './unit-of-work';
 export * from './event-handler-map';
