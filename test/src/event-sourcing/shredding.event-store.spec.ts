@@ -4,6 +4,7 @@ import {
   InMemoryDataKeys,
   InMemoryEventStore,
   PiiFields,
+  SHREDDED,
   ShreddingEventStore,
 } from '@market-miam/event-sourcing';
 
@@ -67,7 +68,7 @@ describe('ShreddingEventStore', () => {
     expect(atRest.payload).toEqual({ vendorId: 'v1' });
   });
 
-  it('reads shredded PII fields back as null', async () => {
+  it('reads shredded PII fields back as the SHREDDED sentinel', async () => {
     const { store, keys } = shreddingOver();
     await store.append('vendor-v1', [registered('vendor@example.com')], 0, v1);
 
@@ -77,7 +78,7 @@ describe('ShreddingEventStore', () => {
     expect(loaded.payload).toEqual({
       vendorId: 'v1',
       registeredAt: '2026-07-06T00:00:00Z',
-      email: null,
+      email: SHREDDED,
     });
   });
 

@@ -23,7 +23,7 @@ export { InMemoryEventStore } from './in-memory.event-store';
 export { DataKeys } from './data-keys';
 export { InMemoryDataKeys } from './in-memory.data-keys';
 export { PostgresDataKeys } from './postgres/postgres.data-keys';
-export { ShreddingEventStore, PiiFields } from './shredding.event-store';
+export { ShreddingEventStore, PiiFields, SHREDDED } from './shredding.event-store';
 export { PostgresEventStore } from './postgres/postgres.event-store';
 export { PostgresCheckpoint } from './postgres/postgres.checkpoint';
 export { PostgresNotifications, ListenState, ListenStatus } from './postgres/postgres.notifications';

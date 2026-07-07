@@ -119,9 +119,9 @@ The shredding subject is keyed off metadata already carried on every append (`ve
 **4. Ciphertext format & shredded-read semantics**
 
 - Each listed field's value is encrypted into a self-describing, versioned string: `enc:v1:<iv>:<authTag>:<ciphertext>` (base64 segments). Stored events remain valid JSON.
-- When `existingKeyFor` returns `null` (shredded), the decorator replaces each PII field with `null` (single convention — decide once). Aggregates keep PII out of `apply` wherever possible, so a shredded stream rehydrates untouched; where PII genuinely must be rebuilt in `apply` or a projection, that code must tolerate `null` (a `fromSnapshot` that admits `null` for shreddable fields — a narrow, deliberate exception to ADR 0007's re-validate-and-fail-loudly rule).
+- When `findKeyFor` returns `null` (shredded), the decorator replaces each PII field with the **`SHREDDED` sentinel** (`'<shredded>'`), not `null` — so read-model columns stay `NOT NULL` and value objects never sit on the `null` path. Verified that `Vendor.apply`/`Storefront.apply` never reconstruct PII value objects (the info lives only in the read model as raw strings), so a shredded stream rehydrates untouched — no VO ever sees the sentinel. A base class making string VOs *accept* the sentinel was rejected: it weakens every PII VO's invariant for a path that doesn't occur (and strict VOs like `Email` reject the sentinel anyway). If a VO ever must be built from a shreddable field, handle the sentinel at that one site.
 - **Erasure flow**: `keys.shred(vendorId)` → rebuild projections (clear views, reset checkpoint to 0, replay — purges decrypted PII from read models for free) → delete the Auth0 user (they hold email/password).
-- **Read-model decryption boundary** (deferred, decided at the first PII-projecting view): the decorator decrypts on both `load` and `loadFrom`, staying a faithful port, so any projection that *reads* a PII field receives plaintext. Whether it *persists* that plaintext is a per-projection choice — (A) let the view hold plaintext and rely on the replay-after-shred flow above, or (B) keep PII out of the view / decrypt at query egress so `shred` alone erases it with no replay. Today no projection reads a PII field, so no read model holds PII; the choice is made when profile editing lands, leaning **B** for the storefront view (fetched by id, PII never a query predicate).
+- **Read-model decryption boundary — resolved as model A** (storefront view; `POSTGRES-PLAN.md` item 1): the decorator decrypts on both `load` and `loadFrom`, so the projection receives plaintext and the view holds plaintext PII at rest. Erasure is the replay-after-shred flow above — replay rewrites the view with the `SHREDDED` sentinel. B (ciphertext-at-rest / decrypt-at-egress) was set aside: it would need the projection to see ciphertext, which decrypt-on-`loadFrom` rules out without redesigning the decorator.
 
 ### Cryptography
 
@@ -134,7 +134,7 @@ Roll the orchestration layer; do **not** roll the crypto:
 ### Known extension points & constraints
 
 - **Subject resolution**: today subject = vendorId from metadata. The day customer PII lands in a vendor's stream, the registry must also say *whose* data a field is. Don't build now; known extension point.
-- **Aggregate logic**: a shredded stream still replays, with nulls in PII fields. Keep PII fields out of `when()` logic that drives state decisions so shredded aggregates rehydrate coherently.
+- **Aggregate logic**: a shredded stream still replays, with the `SHREDDED` sentinel in PII fields. Keep PII fields out of `apply()` logic that drives state decisions so shredded aggregates rehydrate coherently (verified today: no aggregate reconstructs PII).
 - **Never log decrypted payloads.**
 
 ### Test list (outside-in, fakes at boundaries)
@@ -142,7 +142,7 @@ Roll the orchestration layer; do **not** roll the crypto:
 - Round-trips plaintext for event types not in the registry.
 - Stores listed fields unreadable in the inner store.
 - Decrypts on `load` and `loadFrom`.
-- Returns nulls for PII fields after shredding.
+- Returns the `SHREDDED` sentinel for PII fields after shredding.
 - Rejects appends with no vendorId in metadata when the event type has PII fields.
 - Rejects encrypting a registered PII field whose value is not a string.
-- Throws on load when a ciphertext is tampered (GCM auth-tag mismatch) — distinct from the shredded null.
+- Throws on load when a ciphertext is tampered (GCM auth-tag mismatch) — distinct from the shredded sentinel.

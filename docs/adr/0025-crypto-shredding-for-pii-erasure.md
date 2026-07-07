@@ -1,6 +1,6 @@
 # 0025. Crypto-shredding for GDPR erasure of PII
 
-Date: 2026-06-10 · Status: Accepted
+Date: 2026-06-10 · Status: Accepted · Amended 2026-07-07 — shredded-read representation changed from `null` to the `SHREDDED` sentinel
 
 ## Context
 
@@ -20,8 +20,10 @@ around the `EventStore`/`Events` ports, driven by a declarative per-event
 PII field registry — the domain never learns encryption exists. AES-256-GCM
 via Node's built-in `crypto` (orchestration is built in-house; primitives
 are not), with envelope-encrypted keys (env master key now, KMS later).
-Shredded fields read back as `null`; erasure also rebuilds projections and
-deletes the Auth0 user. Full design: `docs/VENDOR_REGISTRATION_AND_PII.md`.
+Shredded fields read back as the `SHREDDED` sentinel (`'<shredded>'`, not
+`null` — keeps read-model columns `NOT NULL` and value objects off the null
+path); erasure also rebuilds projections and deletes the Auth0 user. Full
+design: `docs/VENDOR_REGISTRATION_AND_PII.md`.
 
 ## Consequences
 
@@ -30,12 +32,13 @@ deletes the Auth0 user. Full design: `docs/VENDOR_REGISTRATION_AND_PII.md`.
 - Adopted now, while zero production events exist; retrofitting encryption
   onto live streams would be far costlier.
 - Shredded streams must stay loadable. PII is kept out of aggregate `apply`
-  wherever possible, so a shredded stream rehydrates untouched; where PII
-  absolutely must be rebuilt in `apply` (or a projection), that logic must
-  accept shredded streams — tolerating `null` PII fields rather than failing.
-  This is a narrow, deliberate exception to ADR 0007's re-validate-and-fail-
-  loudly rule, limited to shreddable fields; non-PII rehydration still
-  re-validates and fails loudly.
+  (verified: `Vendor.apply`/`Storefront.apply` reconstruct no PII value
+  objects — the profile lives only in the read model as raw strings), so a
+  shredded stream rehydrates untouched and no value object ever sees the
+  sentinel. Making string VOs *accept* `SHREDDED` was rejected — it weakens
+  every PII VO's invariant for a path that doesn't occur, and strict VOs like
+  `Email` reject the sentinel anyway. If a VO ever must be built from a
+  shreddable field, handle the sentinel at that site.
 - Subject resolution is vendorId-from-metadata for now; per-field subject
   mapping is a known extension point if customer PII ever lands in vendor
   streams.
