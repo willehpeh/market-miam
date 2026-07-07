@@ -17,16 +17,18 @@ export class Url {
     if (!trimmed) {
       throw new EmptyValueError();
     }
-    let parsed: URL;
-    try {
-      parsed = new URL(trimmed);
-    } catch {
-      throw new InvalidUrlError();
-    }
-    if (!Url.ALLOWED_SCHEMES.includes(parsed.protocol)) {
+    if (this.notUrl(trimmed) || this.notHttpOrHttps(trimmed)) {
       throw new InvalidUrlError();
     }
     this._value = trimmed;
+  }
+
+  private notHttpOrHttps(trimmed: string): boolean {
+    return !Url.ALLOWED_SCHEMES.includes(new URL(trimmed).protocol);
+  }
+
+  private notUrl(trimmed: string): boolean {
+    return !URL.canParse(trimmed);
   }
 
   value(): string {
