@@ -1,7 +1,8 @@
 # test
 
 The social test suite. Following outside-in TDD, the domain packages
-(`market-days`, `event-sourcing`, `common`, `shared-kernel`, `auth`) are driven
+(`market-days`, `event-sourcing`, `common`, `shared-kernel`, `auth`,
+`auth-nestjs`) are driven
 from here through their public surface — use cases, projections, processors, and
 shared port contracts — rather than unit-testing internals in isolation. Fakes
 live only at the boundaries.

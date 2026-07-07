@@ -15,6 +15,13 @@ in-memory adapters, and the `Aggregate` base. Framework-agnostic apart from the
   (→ `Projection` / `Processor`), `CommandDispatcher`, `MessageContext`.
 - **In-memory adapters** — `InMemoryEventStore`, `InMemoryCheckpoint`,
   `InMemorySubscription`. Used in tests and, for now, at runtime.
+- **Postgres adapters** (over a `pg` `Pool`/`Client`) — `PostgresEventStore`
+  (`EventStore` + `Events`; append in a transaction, load by stream / global
+  position), `PostgresCheckpoint`, `PostgresNotifications` (long-lived
+  `LISTEN events` connection exposed as a poke stream with reconnect/backoff),
+  and `PostgresDataKeys` (AES-256-GCM keys envelope-encrypted under a master
+  key, for crypto-shredding). In flight — exported and contract-tested, but not
+  yet the runtime default; the app still wires the in-memory adapters.
 - **Decorators / wrappers** — `@CheckpointedProjection` / `@CheckpointedProcessor`
   (discovery + checkpoint name), `MessageContextEventStore`,
   `MessageContextDispatcher`.
