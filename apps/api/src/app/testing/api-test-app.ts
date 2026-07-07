@@ -37,7 +37,7 @@ export function apiTestModule(options: ApiTestOptions = {}): TestingModuleBuilde
     imports: [
       AuthModule.forRootAsync({ useFactory: () => new StaticTokenVerifier(vendor) }),
       EventSourcingModule.forRoot('memory', vendorPiiFields),
-      MarketDaysModule,
+      MarketDaysModule.forRoot('memory'),
     ],
     providers: [{ provide: APP_FILTER, useClass: DomainErrorFilter }],
   });

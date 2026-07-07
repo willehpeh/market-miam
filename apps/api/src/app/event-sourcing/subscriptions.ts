@@ -9,7 +9,8 @@ import {
   InMemoryCheckpoint,
   MessageContext,
   PollingSubscription,
-  Subscription
+  Subscription,
+  UnitOfWork
 } from '@market-miam/event-sourcing';
 import { TracingEventHandler } from './tracing.event-handler';
 import { ContinuationContextHandler } from '../message-context/continuation-context.handler';
@@ -44,6 +45,7 @@ export class Subscriptions implements OnApplicationBootstrap, OnApplicationShutd
     @Inject(POLLING_ENABLED) private readonly pollingEnabled: boolean,
     @Optional() @Inject(EVENT_NOTIFICATIONS) private readonly notifications: Observable<void> = EMPTY,
     @Optional() @Inject(CHECKPOINT_FACTORY) private readonly checkpointFor: CheckpointFactory = (name) => new InMemoryCheckpoint(name),
+    @Optional() @Inject(UnitOfWork) private readonly unitOfWork: UnitOfWork = UnitOfWork.none(),
     @Optional() private readonly logger: Logger = new Logger(Subscriptions.name),
   ) {}
 
@@ -82,6 +84,7 @@ export class Subscriptions implements OnApplicationBootstrap, OnApplicationShutd
         this.events,
         new TracingEventHandler(driven),
         this.checkpointFor(name),
+        this.unitOfWork,
       );
     });
   }

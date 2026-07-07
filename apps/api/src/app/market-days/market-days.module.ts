@@ -1,6 +1,6 @@
-import { Module } from '@nestjs/common';
+import { DynamicModule, Module, Provider } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { CommandDispatcher, EventStore } from '@market-miam/event-sourcing';
+import { CommandDispatcher, EventStore, PostgresUnitOfWork } from '@market-miam/event-sourcing';
 import { Clock, DateClock } from '@market-miam/common';
 import {
   AddItemToCatalogueHandler,
@@ -14,6 +14,7 @@ import {
   MarketDays,
   OpenStorefrontHandler,
   PlanItemsForMarketDayHandler,
+  PostgresVendorStorefrontViews,
   RegisterMarketScheduleHandler,
   RegisterVendorHandler,
   RetireItemHandler,
@@ -28,6 +29,7 @@ import {
   VendorStorefrontViewStore,
 } from '@market-miam/market-days';
 import { SignedUploads, signedUploadsFor } from '../signed-uploads';
+import { Persistence } from '../event-sourcing/event-sourcing.module';
 import { VendorsController } from './vendors.controller';
 import { StorefrontController } from './storefront.controller';
 
@@ -50,16 +52,32 @@ const repositories = [
   },
 ];
 
-const readModel = [
-  InMemoryVendorStorefrontViews,
-  { provide: VendorStorefrontViews, useExisting: InMemoryVendorStorefrontViews },
-  { provide: VendorStorefrontViewStore, useExisting: InMemoryVendorStorefrontViews },
-  {
-    provide: VendorStorefrontViewProjection,
-    useFactory: (store: VendorStorefrontViewStore) => new VendorStorefrontViewProjection(store),
-    inject: [VendorStorefrontViewStore],
-  },
-];
+const readModel = (persistence: Persistence): Provider[] => {
+  const views: Provider[] =
+    persistence === 'postgres'
+      ? [
+          {
+            provide: PostgresVendorStorefrontViews,
+            useFactory: (uow: PostgresUnitOfWork) => new PostgresVendorStorefrontViews(uow),
+            inject: [PostgresUnitOfWork],
+          },
+          { provide: VendorStorefrontViews, useExisting: PostgresVendorStorefrontViews },
+          { provide: VendorStorefrontViewStore, useExisting: PostgresVendorStorefrontViews },
+        ]
+      : [
+          InMemoryVendorStorefrontViews,
+          { provide: VendorStorefrontViews, useExisting: InMemoryVendorStorefrontViews },
+          { provide: VendorStorefrontViewStore, useExisting: InMemoryVendorStorefrontViews },
+        ];
+  return [
+    ...views,
+    {
+      provide: VendorStorefrontViewProjection,
+      useFactory: (store: VendorStorefrontViewStore) => new VendorStorefrontViewProjection(store),
+      inject: [VendorStorefrontViewStore],
+    },
+  ];
+};
 
 const processors = [
   {
@@ -85,18 +103,24 @@ const commandHandlers = [
 
 const queryHandlers = [FindVendorStorefrontHandler];
 
-@Module({
-  // EventStore / CommandDispatcher / QueryDispatcher come from the global
-  // EventSourcingModule.forRoot(...) imported at the composition root.
-  controllers: [VendorsController, StorefrontController],
-  providers: [
-    ...clock,
-    ...signedUploads,
-    ...repositories,
-    ...readModel,
-    ...processors,
-    ...commandHandlers,
-    ...queryHandlers,
-  ],
-})
-export class MarketDaysModule {}
+// EventStore / CommandDispatcher / QueryDispatcher (and the pg UnitOfWork) come from
+// the global EventSourcingModule.forRoot(...) at the composition root. persistence
+// swaps only the read-model store: pg-backed views vs in-memory.
+@Module({})
+export class MarketDaysModule {
+  static forRoot(persistence: Persistence): DynamicModule {
+    return {
+      module: MarketDaysModule,
+      controllers: [VendorsController, StorefrontController],
+      providers: [
+        ...clock,
+        ...signedUploads,
+        ...repositories,
+        ...readModel(persistence),
+        ...processors,
+        ...commandHandlers,
+        ...queryHandlers,
+      ],
+    };
+  }
+}

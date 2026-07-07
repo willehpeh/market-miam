@@ -20,7 +20,7 @@ import { Migrations } from './database/migrations';
       useFactory: tokenVerifierFor,
     }),
     EventSourcingModule.forRoot('postgres', vendorPiiFields),
-    MarketDaysModule,
+    MarketDaysModule.forRoot('postgres'),
   ],
   providers: [Migrations, { provide: APP_FILTER, useClass: DomainErrorFilter }],
 })

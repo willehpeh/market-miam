@@ -17,7 +17,9 @@ import {
   PostgresDataKeys,
   PostgresEventStore,
   PostgresNotifications,
+  PostgresUnitOfWork,
   QueryDispatcher,
+  UnitOfWork,
 } from '@market-miam/event-sourcing';
 import { ApplicationEventStore } from './application.event-store';
 import { masterKey } from './master-key';
@@ -45,6 +47,7 @@ const inMemoryPersistence = (piiFields: PiiFields): Provider[] => [
     inject: [InMemoryEventStore, DataKeys, MessageContext],
   },
   { provide: Events, useExisting: EventStore },
+  { provide: UnitOfWork, useValue: UnitOfWork.none() },
   // No CHECKPOINT_FACTORY → Subscriptions falls back to its in-memory default.
   { provide: EVENT_NOTIFICATIONS, useValue: EMPTY },
 ];
@@ -57,6 +60,8 @@ const postgresPersistence = (piiFields: PiiFields): Provider[] => [
     inject: [ConfigService],
   },
   { provide: PostgresEventStore, useFactory: (pool: Pool) => new PostgresEventStore(pool), inject: [Pool] },
+  { provide: PostgresUnitOfWork, useFactory: (pool: Pool) => new PostgresUnitOfWork(pool), inject: [Pool] },
+  { provide: UnitOfWork, useExisting: PostgresUnitOfWork },
   {
     provide: PostgresDataKeys,
     useFactory: (pool: Pool, config: ConfigService) => new PostgresDataKeys(pool, masterKey(config)),
@@ -72,8 +77,8 @@ const postgresPersistence = (piiFields: PiiFields): Provider[] => [
   { provide: Events, useExisting: EventStore },
   {
     provide: CHECKPOINT_FACTORY,
-    useFactory: (pool: Pool) => (name: string) => new PostgresCheckpoint(pool, name),
-    inject: [Pool],
+    useFactory: (uow: PostgresUnitOfWork) => (name: string) => new PostgresCheckpoint(uow, name),
+    inject: [PostgresUnitOfWork],
   },
   {
     provide: PostgresNotifications,
@@ -110,12 +115,16 @@ export class EventSourcingModule implements OnApplicationShutdown {
 
   static forRoot(persistence: Persistence, piiFields: PiiFields = {}): DynamicModule {
     const adapters = persistence === 'postgres' ? postgresPersistence(piiFields) : inMemoryPersistence(piiFields);
+    const exported = [EventStore, Events, UnitOfWork, CommandDispatcher, QueryDispatcher, Subscriptions];
     return {
       module: EventSourcingModule,
       global: true,
       imports: [CqrsModule, DiscoveryModule, MessageContextModule],
       providers: [...adapters, ...core],
-      exports: [EventStore, Events, CommandDispatcher, QueryDispatcher, Subscriptions],
+      // PostgresUnitOfWork is provided (and needed by MarketDaysModule's pg view-store)
+      // only on the postgres profile — exporting it on 'memory' would reference an
+      // unprovided token.
+      exports: persistence === 'postgres' ? [...exported, PostgresUnitOfWork] : exported,
     };
   }
 
