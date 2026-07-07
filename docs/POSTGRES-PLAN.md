@@ -37,18 +37,63 @@ durable in prod until deployed and verified against the Render `event-store`.
 - **Connection budget:** the Pool (default `max` 10) + the dedicated LISTEN client + the migrate connection all draw on `basic-256mb`'s cap. Set `Pool({ max })` explicitly, sized under the instance limit.
 - **Backup / PITR:** the event log is the source of truth — confirm Render's backup/retention covers it before real data lands.
 
-## 1. PG read-model adapters + transactional projection↔checkpoint  — NEXT
+## 1. PG read-model adapters + transactional projection↔checkpoint  — NEXT (designed)
 
-Read models are still in-memory (`InMemoryVendorStorefrontViews`) → lost on restart, and
-the projection's view write and `checkpoint.write` are **non-atomic** (`DEFERRED.md`
-"Checkpoint/views transaction boundary": a crash between them duplicates or skips the event).
+Read models are in-memory (`InMemoryVendorStorefrontViews`) → lost on restart; the projection's
+view write and `checkpoint.write` are two separate pg transactions. The per-event loop (`handle`
+then `checkpoint.write`) can only *duplicate*-apply on a crash between them (never skip —
+checkpoint always follows handle), which last-write-wins upserts absorb. But a future
+non-idempotent projection (a running total) would double-count → make the pair atomic.
 
-- **Schema (`0003`):** view table(s) — `vendor_storefront_views` (`vendor_id` PK, `name`/`description`/`phone`/`image_reference`). Generalise per read model (`catalogue_view` too, once its projection is wired). Mutable.
-- **PG view-store adapter** implementing `VendorStorefrontViewStore` (write: `open`/`setCoverPhoto`/`editInformation` as upserts) + `VendorStorefrontViews` (read: `findByVendor`). **Add `clear()` to `VendorStorefrontViewStore`** (needed by replay/erasure; `catalogue-view.store` already has it). Contract-test both surfaces under Testcontainers.
-- **Transactional projection↔checkpoint (the hard part):** the view write and `checkpoint.write` must commit in **one pg transaction**. Resolution (`DEFERRED.md`): an ambient **unit-of-work** — a per-poll pg transaction (AsyncLocalStorage) that the pg view-store *and* pg checkpoint both enlist in; `PollingSubscription` wraps `handle` + `checkpoint.write` in the UoW **for projections**. Processors are already at-least-once-safe (idempotent aggregate), so the tx boundary is a projection concern — decide whether to also wrap processor checkpoints. Rejected alt: idempotent upserts make reprocessing safe but leave the checkpoint-skip window → prefer the tx. Likely widens the `Subscription`/`Checkpoint` contract to carry a tx context.
-- **Wire apps/api:** `forRoot('postgres')` provides the pg view-store; `'memory'` keeps `InMemoryVendorStorefrontViews`.
-- **Test:** crash-between simulation (throw after view write, before checkpoint) → no double-apply, no skip.
-- **CatalogueView is half-built** (decide before generalising the pg view-store): `CatalogueViewProjection` + store + `clear()` exist in `packages/market-days` but are **not wired/discovered** in `MarketDaysModule` (only the storefront view is). Either wire it (adds a `catalogue_view` table + adapter here) or mark it explicitly deferred — today it's ambiguous dead-ish code.
+**Transaction via a minimal ambient UoW** (a transaction boundary + shared connection, *not* the
+full change-tracking pattern):
+- `UnitOfWork` port (`transaction(fn)` only) + `UnitOfWork.none()` no-op, in `event-sourcing`.
+  `PollingSubscription` gains a **defaulted** 4th param and wraps each event's `handle +
+  checkpoint.write` in `uow.transaction(...)`. Defaulted no-op → all existing 3-arg constructions
+  and tests unchanged; in-memory behaviour byte-identical.
+- `PostgresUnitOfWork(pool)` is **both** the `UnitOfWork` (BEGIN/COMMIT, stashes the client in
+  `AsyncLocalStorage`) **and** a `Queryable` (`query` → ALS client inside a tx, else the pool).
+  One shared singleton → same ALS → one tx spans `handle` + `checkpoint.write`.
+- Adapters depend on `Queryable` (`{ query }`), which **`Pool` already satisfies** → existing
+  pg-adapter tests keep passing. `PostgresCheckpoint` ctor `Pool → Queryable` (field rename).
+  `PostgresEventStore` **untouched** (its `loadFrom`/`read` run before the tx; `append` owns its
+  advisory-lock tx).
+
+**Schema (`0004`) + view-store:**
+- `vendor_storefront_views`: `vendor_id` PK; `name`/`description`/`phone`/`image_reference` all
+  `text NOT NULL DEFAULT ''`. `NOT NULL` is safe — shredded fields read back as the `SHREDDED`
+  sentinel (a string), not `null` (see 2a). Mutable, no append-only trigger.
+- **One concrete `PostgresVendorStorefrontViews`** (both read + write ports), hand-rolled SQL:
+  `open`/`setCoverPhoto`/`editInformation` as partial upserts (`ON CONFLICT (vendor_id) DO UPDATE
+  SET <own cols> = EXCLUDED…`), `findByVendor`, `clear()` (`DELETE`). **No base class** — catalogue
+  is 1:many collection-management, storefront 1:1 row-upsert; only `clear()` overlaps, not worth
+  abstracting.
+- Add `clear()` to the `VendorStorefrontViewStore` port + `InMemoryVendorStorefrontViews`
+  (`Map.clear`) now — view-only; item 5 pairs it with `checkpoint.write(0)` for replay.
+- **CatalogueView: explicitly deferred.** Its projection/store exist but aren't wired in
+  `MarketDaysModule` — leave a marker so it stops reading as dead code. When wired it gets its own
+  concrete `PostgresCatalogueViews`.
+
+**Wiring:** `EventSourcingModule` provides + exports the one `PostgresUnitOfWork` (pg) /
+`UnitOfWork.none()` (memory); `Subscriptions` injects it → each `PollingSubscription`;
+`CHECKPOINT_FACTORY` (pg) → `PostgresCheckpoint(uow, name)`. `MarketDaysModule.forRoot(persistence)`
+(newly dynamic) swaps the view-store: pg → `PostgresVendorStorefrontViews(uow)`, memory →
+in-memory. `app.module` → `forRoot('postgres')`, `api-test-app` → `forRoot('memory')`.
+
+**Read-model PII = model A** (supersedes the earlier "leaning B"): the shipped decorator decrypts
+on `loadFrom`, so the projection gets plaintext and the view holds **plaintext PII at rest**. B
+(ciphertext-at-rest) is off the table without redesigning the decorator. Erasure = replay-after-
+shred (item 5), which rewrites the view with `SHREDDED`. Cost: plaintext PII in the view + backups
+until rebuilt — fine while there are no real vendors, and item 5 follows immediately.
+
+**Tests:** (a) `vendorStorefrontViewsContract` against **both** adapters (fast in-memory +
+Testcontainers pg) — open/upsert/find/clear + last-write-wins idempotency; (b) a Testcontainers
+**social test** of atomic `handle`+`checkpoint` — a failure after the view write rolls **both**
+back (view unchanged, checkpoint not advanced), clean retry re-applies once. That social test is
+the UoW's only coverage (no isolated UoW unit test; reentrant guard dropped — nothing nests).
+
+**Build order:** 0 sentinel (2a tweak) → 1 UoW seam (inert) → 2 `PostgresUnitOfWork`+`Queryable`
+(inert) → 3 migration + view-store + contract → 4 wiring (turns pg on) → 5 social test + local verify.
 
 ## 2. Crypto-shredding — `ShreddingEventStore` + `DataKeys`  — **2a DONE**, 2b pending (ADR 0025)
 
@@ -57,10 +102,10 @@ deleting the key. Full design: ADR 0025 + `docs/VENDOR_REGISTRATION_AND_PII.md`.
 
 **2a — encrypt/decrypt — DONE** (both `memory` and `postgres` profiles wired; encryption live in prod):
 - **`DataKeys` port + pg adapter** (`data_keys` table, migration **`0003`**): per-vendor key, envelope-encrypted under a master key held outside the DB — Render **Secret File** `/etc/secrets/.env`, read off disk (not `process.env`) so env-scraping can't lift it with the DB creds; KMS later. DELETE-able, **not** under the append-only trigger — `shred(vendorId)` deletes the key. Ports: `getOrCreateKeyFor`/`findKeyFor`/`shred`. Testcontainers contract + envelope-at-rest tests.
-- **`ShreddingEventStore` decorator** around `EventStore`/`Events`, driven by a **declarative per-event PII field registry** (`vendorPiiFields`: `VendorRegistered.email` + `StorefrontInformationEdited.{name,description,phone}` — sole-trader identity) — the domain stays encryption-unaware. AES-256-GCM (Node `crypto`), AAD = streamId+eventType+fieldName. Encrypt registered fields on append (mint the vendor key on first use); decrypt on load/loadFrom; a shredded key → fields read back **`null`**; tampered ciphertext → throws. Subject = `vendorId`-from-metadata.
+- **`ShreddingEventStore` decorator** around `EventStore`/`Events`, driven by a **declarative per-event PII field registry** (`vendorPiiFields`: `VendorRegistered.email` + `StorefrontInformationEdited.{name,description,phone}` — sole-trader identity) — the domain stays encryption-unaware. AES-256-GCM (Node `crypto`), AAD = streamId+eventType+fieldName. Encrypt registered fields on append (mint the vendor key on first use); decrypt on load/loadFrom; a shredded key → fields read back the **`SHREDDED` sentinel** (`'<shredded>'`, a string — keeps read-model columns `NOT NULL` and value objects off the `null` path); tampered ciphertext → throws. Subject = `vendorId`-from-metadata.
 - **Decoration order:** `ApplicationEventStore` composes the chain in its constructor — `Tracing(MessageContext(Shredding(leaf)))`, shredding closest to the store. Both `EventStore` and `Events` resolve through the one instance (Tracing/MessageContext widened to implement `Events` so `loadFrom` decrypts too). Identical in both profiles.
-- **Read-model decryption boundary** (deferred to first PII-projecting view): decrypt-on-`loadFrom` means projections receive plaintext; whether a view *persists* it is a per-projection call, leaning **B** (ciphertext-at-rest / decrypt-at-egress) for the storefront view. See `VENDOR_REGISTRATION_AND_PII.md`.
-- **Shredded streams stay loadable:** keep PII out of aggregate `apply` where possible; where it must rebuild in `apply`/a projection, tolerate `null` — a narrow exception to ADR 0007's fail-loud rule, shreddable fields only.
+- **Read-model decryption boundary — resolved in item 1 as model A** (supersedes the earlier "leaning B"): decrypt-on-`loadFrom` gives the projection plaintext, so the storefront view holds plaintext PII at rest; erasure is replay-after-shred (item 5), which rewrites the view with `SHREDDED`. B (ciphertext-at-rest) would need the projection to see ciphertext, which the decrypt-on-`loadFrom` decorator rules out.
+- **Shredded streams stay loadable:** verified that `Vendor.apply`/`Storefront.apply` never reconstruct PII value objects (the info lives only in the read model as raw strings), so a shredded stream rehydrates untouched — no VO ever sees the sentinel. A base class making string VOs *accept* `SHREDDED` was rejected: it'd weaken every PII VO's invariant for a path that doesn't occur (and strict VOs like `Email` reject the sentinel anyway). If a VO ever must be built from a shreddable field, handle the sentinel at that one site.
 
 **2b — erasure flow (depends on 1 + 5):** `DataKeys.shred(vendorId)` + **rebuild projections** (replay, item 5, against the pg read-model adapters, item 1) + delete the Auth0 user. Read models purge for free via replay.
 
