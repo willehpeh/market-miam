@@ -5,9 +5,9 @@ import {
   ItemAlreadyInCatalogueError,
   Catalogues,
   VendorScopedEvents
-} from '@market-monster/market-days';
-import { EmptyValueError } from '@market-monster/common';
-import { InMemoryEventStore } from '@market-monster/event-sourcing';
+} from '@market-miam/market-days';
+import { EmptyValueError } from '@market-miam/common';
+import { InMemoryEventStore } from '@market-miam/event-sourcing';
 import { TestAddItemToCatalogue } from './test-data';
 import { expectVendorScopedEvents } from '../../shared-kernel';
 

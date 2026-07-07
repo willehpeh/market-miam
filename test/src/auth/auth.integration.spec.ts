@@ -1,10 +1,10 @@
 import { Controller, Get, INestApplication, UseGuards } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
-import { AuthModule, CurrentVendor, JwtAuthGuard } from '@market-monster/auth-nestjs';
-import { InvalidTokenError, TokenVerifier, VerifiedVendor } from '@market-monster/auth';
-import { VendorId } from '@market-monster/shared-kernel';
-import { Email } from '@market-monster/common';
+import { AuthModule, CurrentVendor, JwtAuthGuard } from '@market-miam/auth-nestjs';
+import { InvalidTokenError, TokenVerifier, VerifiedVendor } from '@market-miam/auth';
+import { VendorId } from '@market-miam/shared-kernel';
+import { Email } from '@market-miam/common';
 import { FakeTokenVerifier } from './fake.token-verifier';
 
 const VENDOR: VerifiedVendor = {

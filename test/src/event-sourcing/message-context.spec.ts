@@ -4,7 +4,7 @@ import {
   MessageContext,
   MessageContextDispatcher,
   MessageContextEventStore
-} from '@market-monster/event-sourcing';
+} from '@market-miam/event-sourcing';
 
 describe('Message context propagation', () => {
   it('stamps a fresh correlationId and causationId onto events appended during a root dispatch', async () => {

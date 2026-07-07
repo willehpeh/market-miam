@@ -1,4 +1,4 @@
-import { SetStorefrontCoverPhoto } from '@market-monster/market-days';
+import { SetStorefrontCoverPhoto } from '@market-miam/market-days';
 
 export class TestSetStorefrontCoverPhoto {
   static valid(): SetStorefrontCoverPhoto {

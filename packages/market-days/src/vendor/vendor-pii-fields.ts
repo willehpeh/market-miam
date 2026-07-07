@@ -1,4 +1,4 @@
-import { PiiFields } from '@market-monster/event-sourcing';
+import { PiiFields } from '@market-miam/event-sourcing';
 
 export const vendorPiiFields: PiiFields = {
   VendorRegistered: ['email'],

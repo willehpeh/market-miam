@@ -5,9 +5,9 @@ import { ScheduleName } from '../calendar/schedule/schedule-name';
 import { ScheduleDay } from '../calendar/schedule/schedule-day';
 import { ScheduleFrequency } from '../calendar/schedule/schedule-frequency';
 import { Schedule } from '../calendar/schedule/schedule';
-import { MarketId, VendorId } from '@market-monster/shared-kernel';
+import { MarketId, VendorId } from '@market-miam/shared-kernel';
 import { ScheduleId } from '../calendar/schedule/schedule-id';
-import { LocalDate } from '@market-monster/common';
+import { LocalDate } from '@market-miam/common';
 
 @CommandHandler(RegisterMarketSchedule)
 export class RegisterMarketScheduleHandler implements ICommandHandler<RegisterMarketSchedule> {

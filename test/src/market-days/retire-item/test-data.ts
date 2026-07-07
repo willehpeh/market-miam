@@ -1,4 +1,4 @@
-import { RetireItem } from '@market-monster/market-days';
+import { RetireItem } from '@market-miam/market-days';
 
 export class TestRetireItem {
   static valid(): RetireItem {

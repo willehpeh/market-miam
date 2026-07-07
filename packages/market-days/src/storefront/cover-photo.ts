@@ -1,4 +1,4 @@
-import { ImageReference } from '@market-monster/common';
+import { ImageReference } from '@market-miam/common';
 
 export abstract class CoverPhoto {
   abstract sameAs(imageReference: ImageReference): boolean;

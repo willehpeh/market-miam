@@ -1,5 +1,5 @@
-import { MarketId, VendorId } from '@market-monster/shared-kernel';
-import { Clock, LocalDate } from '@market-monster/common';
+import { MarketId, VendorId } from '@market-miam/shared-kernel';
+import { Clock, LocalDate } from '@market-miam/common';
 import { MarketDay } from './market-day';
 import { VendorScopedEvents } from '../vendor-scoped-events';
 

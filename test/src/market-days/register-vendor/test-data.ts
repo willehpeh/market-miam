@@ -1,4 +1,4 @@
-import { RegisterVendor } from '@market-monster/market-days';
+import { RegisterVendor } from '@market-miam/market-days';
 
 export class TestRegisterVendor {
   static valid(): RegisterVendor {

@@ -1,5 +1,5 @@
-import { CheckpointedProcessor, CommandDispatcher, Processor, StoredEvent } from '@market-monster/event-sourcing';
-import { vendorIdFrom } from '@market-monster/shared-kernel';
+import { CheckpointedProcessor, CommandDispatcher, Processor, StoredEvent } from '@market-miam/event-sourcing';
+import { vendorIdFrom } from '@market-miam/shared-kernel';
 import { OpenStorefront } from '../open-storefront';
 
 @CheckpointedProcessor('opens-storefronts')

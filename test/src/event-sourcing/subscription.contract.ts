@@ -4,7 +4,7 @@ import {
   EventStore,
   StoredEvent,
   Subscription,
-} from '@market-monster/event-sourcing';
+} from '@market-miam/event-sourcing';
 import { describe, it, beforeEach, expect } from 'vitest';
 
 export function subscriptionContract(

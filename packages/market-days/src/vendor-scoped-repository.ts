@@ -1,5 +1,5 @@
-import { Aggregate } from '@market-monster/event-sourcing';
-import { VendorId } from '@market-monster/shared-kernel';
+import { Aggregate } from '@market-miam/event-sourcing';
+import { VendorId } from '@market-miam/shared-kernel';
 import { VendorScopedEvents } from './vendor-scoped-events';
 
 export abstract class VendorScopedRepository<A extends Aggregate> {

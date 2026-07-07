@@ -11,7 +11,7 @@ import {
   MessageContext,
   Projection,
   StoredEvent,
-} from '@market-monster/event-sourcing';
+} from '@market-miam/event-sourcing';
 import {
   Subscriptions,
   CHECKPOINT_FACTORY,

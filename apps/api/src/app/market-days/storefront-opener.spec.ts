@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import { EventStore } from '@market-monster/event-sourcing';
-import { VendorStorefrontViews } from '@market-monster/market-days';
+import { EventStore } from '@market-miam/event-sourcing';
+import { VendorStorefrontViews } from '@market-miam/market-days';
 import { bootApiTestApp } from '../testing/api-test-app';
 import { Subscriptions } from '../event-sourcing/subscriptions';
 

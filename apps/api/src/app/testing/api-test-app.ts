@@ -1,12 +1,12 @@
 import { INestApplication } from '@nestjs/common';
 import { APP_FILTER } from '@nestjs/core';
 import { Test, TestingModuleBuilder } from '@nestjs/testing';
-import { Clock, Email, Instant, LocalDate } from '@market-monster/common';
-import { VendorId } from '@market-monster/shared-kernel';
-import { EventStore } from '@market-monster/event-sourcing';
-import { StorefrontOpened, vendorPiiFields } from '@market-monster/market-days';
-import { StaticTokenVerifier, type VerifiedVendor } from '@market-monster/auth';
-import { AuthModule } from '@market-monster/auth-nestjs';
+import { Clock, Email, Instant, LocalDate } from '@market-miam/common';
+import { VendorId } from '@market-miam/shared-kernel';
+import { EventStore } from '@market-miam/event-sourcing';
+import { StorefrontOpened, vendorPiiFields } from '@market-miam/market-days';
+import { StaticTokenVerifier, type VerifiedVendor } from '@market-miam/auth';
+import { AuthModule } from '@market-miam/auth-nestjs';
 import { MarketDaysModule } from '../market-days/market-days.module';
 import { EventSourcingModule } from '../event-sourcing/event-sourcing.module';
 import { DomainErrorFilter } from '../domain-error.filter';

@@ -1,5 +1,5 @@
-import { Email } from '@market-monster/common';
-import { VendorId } from '@market-monster/shared-kernel';
+import { Email } from '@market-miam/common';
+import { VendorId } from '@market-miam/shared-kernel';
 
 export interface VerifiedVendor {
   readonly vendorId: VendorId;

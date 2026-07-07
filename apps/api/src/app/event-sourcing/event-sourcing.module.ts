@@ -18,7 +18,7 @@ import {
   PostgresEventStore,
   PostgresNotifications,
   QueryDispatcher,
-} from '@market-monster/event-sourcing';
+} from '@market-miam/event-sourcing';
 import { ApplicationEventStore } from './application.event-store';
 import { masterKey } from './master-key';
 import { MessageContextModule } from '../message-context/message-context.module';

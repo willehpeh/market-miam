@@ -1,5 +1,5 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
-import type { VerifiedVendor } from '@market-monster/auth';
+import type { VerifiedVendor } from '@market-miam/auth';
 import { AuthenticatedRequest, VERIFIED_VENDOR } from './jwt-auth.guard';
 
 export function currentVendor(

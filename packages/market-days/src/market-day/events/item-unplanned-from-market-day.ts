@@ -1,4 +1,4 @@
-import { DomainEvent } from '@market-monster/event-sourcing';
+import { DomainEvent } from '@market-miam/event-sourcing';
 
 export type ItemUnplannedFromMarketDay = DomainEvent<'ItemUnplannedFromMarketDay', {
   itemId: string,

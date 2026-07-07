@@ -4,8 +4,8 @@ import {
   InMemoryDataKeys,
   InMemoryEventStore,
   ShreddingEventStore,
-} from '@market-monster/event-sourcing';
-import { vendorPiiFields } from '@market-monster/market-days';
+} from '@market-miam/event-sourcing';
+import { vendorPiiFields } from '@market-miam/market-days';
 
 // Guards the real registry against a silent typo: a mis-named field or event type
 // would leave PII plaintext at rest, and a plain round-trip test wouldn't notice

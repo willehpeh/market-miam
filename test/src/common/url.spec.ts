@@ -1,4 +1,4 @@
-import { EmptyValueError, Url } from '@market-monster/common';
+import { EmptyValueError, Url } from '@market-miam/common';
 
 describe('Url', () => {
   it.each([

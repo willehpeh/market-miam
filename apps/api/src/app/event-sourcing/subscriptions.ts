@@ -10,7 +10,7 @@ import {
   MessageContext,
   PollingSubscription,
   Subscription
-} from '@market-monster/event-sourcing';
+} from '@market-miam/event-sourcing';
 import { TracingEventHandler } from './tracing.event-handler';
 import { ContinuationContextHandler } from '../message-context/continuation-context.handler';
 import { pollSchedule } from './poll-schedule';

@@ -1,6 +1,6 @@
-import { InMemoryEventStore } from '@market-monster/event-sourcing';
-import { VendorScopedEvents } from '@market-monster/market-days';
-import { RegisterVendor, RegisterVendorHandler, VendorRegistered, Vendors } from '@market-monster/market-days';
+import { InMemoryEventStore } from '@market-miam/event-sourcing';
+import { VendorScopedEvents } from '@market-miam/market-days';
+import { RegisterVendor, RegisterVendorHandler, VendorRegistered, Vendors } from '@market-miam/market-days';
 import { TestRegisterVendor } from './test-data';
 import { expectVendorScopedEvents } from '../../shared-kernel';
 

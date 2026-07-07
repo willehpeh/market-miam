@@ -1,5 +1,5 @@
-import { InMemoryEventStore } from '@market-monster/event-sourcing';
-import { VendorScopedEvents } from '@market-monster/market-days';
+import { InMemoryEventStore } from '@market-miam/event-sourcing';
+import { VendorScopedEvents } from '@market-miam/market-days';
 import { TestPlanItemsForMarketDay } from './test-data';
 import {
   Catalogues,
@@ -7,9 +7,9 @@ import {
   MarketDays,
   NoSuchItemError,
   PlanItemsForMarketDayHandler
-} from '@market-monster/market-days';
-import { StoredEvent } from '@market-monster/event-sourcing';
-import { DateClock, EmptyValueError, Instant } from '@market-monster/common';
+} from '@market-miam/market-days';
+import { StoredEvent } from '@market-miam/event-sourcing';
+import { DateClock, EmptyValueError, Instant } from '@market-miam/common';
 import { seedCatalogue } from '../../seed-catalogue';
 import { expectVendorScopedEvents } from '../../shared-kernel';
 

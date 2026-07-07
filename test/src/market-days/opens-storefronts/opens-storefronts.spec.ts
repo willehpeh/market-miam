@@ -1,17 +1,17 @@
-import { VendorScopedEvents } from '@market-monster/market-days';
+import { VendorScopedEvents } from '@market-miam/market-days';
 import {
   CommandDispatcher,
   InMemoryCheckpoint,
   InMemoryEventStore,
   PollingSubscription,
-} from '@market-monster/event-sourcing';
+} from '@market-miam/event-sourcing';
 import { Command } from '@nestjs/cqrs';
 import {
   OpenStorefront,
   RegisterVendorHandler,
   OpensStorefronts,
   Vendors,
-} from '@market-monster/market-days';
+} from '@market-miam/market-days';
 import { TestRegisterVendor } from '../register-vendor/test-data';
 
 class RecordingCommandDispatcher extends CommandDispatcher {

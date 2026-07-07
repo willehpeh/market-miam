@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ConfigService } from '@nestjs/config';
-import { Auth0TokenVerifier, StaticTokenVerifier } from '@market-monster/auth';
+import { Auth0TokenVerifier, StaticTokenVerifier } from '@market-miam/auth';
 import { tokenVerifierFor } from './token-verifier.factory';
 
 const configWith = (values: Record<string, string | undefined>): ConfigService =>

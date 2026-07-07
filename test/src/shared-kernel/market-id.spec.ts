@@ -1,5 +1,5 @@
-import { MarketId } from '@market-monster/shared-kernel';
-import { EmptyValueError } from '@market-monster/common';
+import { MarketId } from '@market-miam/shared-kernel';
+import { EmptyValueError } from '@market-miam/common';
 
 describe('MarketId', () => {
   it('should accept a valid market ID', () => {

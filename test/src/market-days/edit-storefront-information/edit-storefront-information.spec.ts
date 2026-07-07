@@ -1,7 +1,7 @@
-import { InMemoryEventStore } from '@market-monster/event-sourcing';
-import { VendorScopedEvents } from '@market-monster/market-days';
-import { EditStorefrontInformationHandler, StorefrontNotOpenError, Storefronts } from '@market-monster/market-days';
-import { EmptyValueError } from '@market-monster/common';
+import { InMemoryEventStore } from '@market-miam/event-sourcing';
+import { VendorScopedEvents } from '@market-miam/market-days';
+import { EditStorefrontInformationHandler, StorefrontNotOpenError, Storefronts } from '@market-miam/market-days';
+import { EmptyValueError } from '@market-miam/common';
 import { TestEditStorefrontInformation } from './test-data';
 import { expectVendorScopedEvents } from '../../shared-kernel';
 

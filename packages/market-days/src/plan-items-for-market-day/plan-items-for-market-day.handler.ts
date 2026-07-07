@@ -2,8 +2,8 @@ import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { PlanItemsForMarketDay } from './plan-items-for-market-day';
 import { MarketDays, PlannedItem, Quantity } from '../market-day';
 import { Catalogues, ItemId } from '../catalogue';
-import { MarketId, VendorId } from '@market-monster/shared-kernel';
-import { LocalDate } from '@market-monster/common';
+import { MarketId, VendorId } from '@market-miam/shared-kernel';
+import { LocalDate } from '@market-miam/common';
 
 @CommandHandler(PlanItemsForMarketDay)
 export class PlanItemsForMarketDayHandler implements ICommandHandler<PlanItemsForMarketDay> {

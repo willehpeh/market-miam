@@ -1,7 +1,14 @@
 # common
 
-This library was generated with [Nx](https://nx.dev).
+Reusable value objects and primitives, validated in their constructors:
+`LocalDate`, `LocalTime`, `Instant`, `Email`, `PhoneNumber`, `Url`,
+`ImageReference`, plus a `Clock` abstraction (`DateClock`) and the `DomainError`
+base that a global filter maps to HTTP 400.
 
-## Running unit tests
+Framework-agnostic; used across the domain and apps.
 
-Run `nx test common` to execute the unit tests via [Vitest](https://vitest.dev/).
+## Testing
+
+```sh
+npx nx test common
+```

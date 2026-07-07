@@ -1,4 +1,4 @@
-import { Instant, InvalidInstantError } from '@market-monster/common';
+import { Instant, InvalidInstantError } from '@market-miam/common';
 
 describe('Instant', () => {
   it('should create with a valid ISO string', () => {

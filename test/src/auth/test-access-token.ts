@@ -1,5 +1,5 @@
 export const ISSUER = 'https://marketmiam.eu.auth0.com/';
-export const AUDIENCE = 'https://api.market-monster';
+export const AUDIENCE = 'https://api.market-miam';
 export const VENDOR_ID = 'b8c9d0e1-2f34-4a56-8b90-1c2d3e4f5a6b';
 export const EMAIL = 'vendor@domain.com';
 

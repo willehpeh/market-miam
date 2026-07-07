@@ -1,5 +1,5 @@
 import { expect } from 'vitest';
-import { StoredEvent } from '@market-monster/event-sourcing';
+import { StoredEvent } from '@market-miam/event-sourcing';
 
 export function expectVendorScopedEvents(events: StoredEvent[], vendorId: string): void {
   expect(events).not.toHaveLength(0);

@@ -5,7 +5,7 @@ import {
   ListenStatus,
   PostgresEventStore,
   PostgresNotifications,
-} from '@market-monster/event-sourcing';
+} from '@market-miam/event-sourcing';
 import { PostgresHarness, startPostgres } from './testcontainer';
 
 let pg: PostgresHarness;

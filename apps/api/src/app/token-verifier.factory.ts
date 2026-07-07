@@ -1,7 +1,7 @@
 import { ConfigService } from '@nestjs/config';
-import { Auth0TokenVerifier, StaticTokenVerifier, TokenVerifier } from '@market-monster/auth';
-import { Email } from '@market-monster/common';
-import { VendorId } from '@market-monster/shared-kernel';
+import { Auth0TokenVerifier, StaticTokenVerifier, TokenVerifier } from '@market-miam/auth';
+import { Email } from '@market-miam/common';
+import { VendorId } from '@market-miam/shared-kernel';
 
 /**
  * Chooses the token verifier for the running API. Development fakes auth to a

@@ -1,5 +1,5 @@
-import { VendorId } from '@market-monster/shared-kernel';
-import { EmptyValueError } from '@market-monster/common';
+import { VendorId } from '@market-miam/shared-kernel';
+import { EmptyValueError } from '@market-miam/common';
 
 describe('VendorId', () => {
   it('should accept a valid vendor ID', () => {

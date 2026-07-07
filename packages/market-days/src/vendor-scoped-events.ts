@@ -1,5 +1,5 @@
-import { Aggregate, EventStore, StoredEvent } from '@market-monster/event-sourcing';
-import { VendorId } from '@market-monster/shared-kernel';
+import { Aggregate, EventStore, StoredEvent } from '@market-miam/event-sourcing';
+import { VendorId } from '@market-miam/shared-kernel';
 
 export class VendorScopedEvents {
   constructor(private readonly store: EventStore) {

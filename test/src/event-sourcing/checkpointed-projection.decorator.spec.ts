@@ -5,7 +5,7 @@ import {
   checkpointMetadata,
   Processor,
   Projection,
-} from '@market-monster/event-sourcing';
+} from '@market-miam/event-sourcing';
 
 // Pins the decorator's contract at the package boundary, independent of the
 // Subscriptions discovery that exercises it in the app's outer loop — that

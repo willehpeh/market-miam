@@ -1,6 +1,6 @@
-import { Aggregate } from '@market-monster/event-sourcing';
-import { LocalDate, LocalTime } from '@market-monster/common';
-import { MarketId } from '@market-monster/shared-kernel';
+import { Aggregate } from '@market-miam/event-sourcing';
+import { LocalDate, LocalTime } from '@market-miam/common';
+import { MarketId } from '@market-miam/shared-kernel';
 import { ItemMarkedAsSoldOut, ItemsPlannedForMarketDay, ItemUnplannedFromMarketDay, MarketDayEvent } from './events';
 import { PlannedItem } from './planned-item';
 import { ItemAlreadySoldOutError, ItemNotPlannedError, MarketDayInThePastError } from './errors';

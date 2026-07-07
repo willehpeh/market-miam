@@ -1,4 +1,4 @@
-import { ConcurrencyError, DomainEvent, EventStore } from '@market-monster/event-sourcing';
+import { ConcurrencyError, DomainEvent, EventStore } from '@market-miam/event-sourcing';
 import { describe, it, beforeEach, expect } from 'vitest';
 
 export function eventStoreContract(

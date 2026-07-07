@@ -1,4 +1,4 @@
-import { RegisterMarketSchedule } from '@market-monster/market-days';
+import { RegisterMarketSchedule } from '@market-miam/market-days';
 
 export class TestRegisterMarketSchedule {
   static simple(): RegisterMarketSchedule {

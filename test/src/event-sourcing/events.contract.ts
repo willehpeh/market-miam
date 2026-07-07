@@ -1,4 +1,4 @@
-import { DomainEvent, Events, EventStore } from '@market-monster/event-sourcing';
+import { DomainEvent, Events, EventStore } from '@market-miam/event-sourcing';
 import { describe, it, beforeEach, expect } from 'vitest';
 
 const PAGE = 100;

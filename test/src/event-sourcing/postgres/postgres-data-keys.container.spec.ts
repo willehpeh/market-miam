@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { randomBytes } from 'node:crypto';
-import { PostgresDataKeys } from '@market-monster/event-sourcing';
+import { PostgresDataKeys } from '@market-miam/event-sourcing';
 import { dataKeysContract } from '../data-keys.contract';
 import { PostgresHarness, startPostgres } from './testcontainer';
 

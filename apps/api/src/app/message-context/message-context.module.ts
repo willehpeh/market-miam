@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
-import { MessageContext, MessageContextDispatcher } from '@market-monster/event-sourcing';
+import { MessageContext, MessageContextDispatcher } from '@market-miam/event-sourcing';
 import { MessageContextMiddleware } from './message-context.middleware';
 
 @Module({

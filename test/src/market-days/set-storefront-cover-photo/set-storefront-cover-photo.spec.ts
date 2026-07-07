@@ -1,6 +1,6 @@
-import { InMemoryEventStore } from '@market-monster/event-sourcing';
-import { VendorScopedEvents } from '@market-monster/market-days';
-import { SetStorefrontCoverPhotoHandler, StorefrontNotOpenError, Storefronts } from '@market-monster/market-days';
+import { InMemoryEventStore } from '@market-miam/event-sourcing';
+import { VendorScopedEvents } from '@market-miam/market-days';
+import { SetStorefrontCoverPhotoHandler, StorefrontNotOpenError, Storefronts } from '@market-miam/market-days';
 import { TestSetStorefrontCoverPhoto } from './test-data';
 import { expectVendorScopedEvents } from '../../shared-kernel';
 

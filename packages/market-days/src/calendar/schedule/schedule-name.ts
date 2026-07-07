@@ -1,4 +1,4 @@
-import { EmptyValueError } from '@market-monster/common';
+import { EmptyValueError } from '@market-miam/common';
 
 export class ScheduleName {
   private readonly _value: string;

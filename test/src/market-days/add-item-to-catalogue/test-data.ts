@@ -1,4 +1,4 @@
-import { AddItemToCatalogue } from '@market-monster/market-days';
+import { AddItemToCatalogue } from '@market-miam/market-days';
 
 export class TestAddItemToCatalogue {
   static valid(): AddItemToCatalogue {
@@ -8,7 +8,7 @@ export class TestAddItemToCatalogue {
       'Item Name',
       'Item Description',
       500,
-      'market-monster/items/item-photo',
+      'market-miam/items/item-photo',
     );
   }
 

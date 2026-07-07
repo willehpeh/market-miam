@@ -1,4 +1,4 @@
-import { Email, InvalidEmailError } from '@market-monster/common';
+import { Email, InvalidEmailError } from '@market-miam/common';
 
 describe('Email', () => {
   it.each([

@@ -1,6 +1,6 @@
-import { Aggregate } from '@market-monster/event-sourcing';
-import { VendorId } from '@market-monster/shared-kernel';
-import { Email, Instant } from '@market-monster/common';
+import { Aggregate } from '@market-miam/event-sourcing';
+import { VendorId } from '@market-miam/shared-kernel';
+import { Email, Instant } from '@market-miam/common';
 import { VendorEvent, VendorRegistered } from './events';
 import { VendorStatus } from './vendor-status';
 

@@ -1,4 +1,4 @@
-import { EventHandler, MessageContext, StoredEvent } from '@market-monster/event-sourcing';
+import { EventHandler, MessageContext, StoredEvent } from '@market-miam/event-sourcing';
 
 export class ContinuationContextHandler implements EventHandler {
   constructor(

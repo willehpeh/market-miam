@@ -1,6 +1,6 @@
-import { Aggregate } from '@market-monster/event-sourcing';
-import { ImageReference, PhoneNumber } from '@market-monster/common';
-import { VendorId } from '@market-monster/shared-kernel';
+import { Aggregate } from '@market-miam/event-sourcing';
+import { ImageReference, PhoneNumber } from '@market-miam/common';
+import { VendorId } from '@market-miam/shared-kernel';
 import { StorefrontCoverPhotoSet, StorefrontEvent, StorefrontInformationEdited, StorefrontOpened } from './events';
 import { CoverPhoto, NoCoverPhoto, SetCoverPhoto } from './cover-photo';
 import { StorefrontName } from './storefront-name';

@@ -1,4 +1,4 @@
-import { OpenStorefront } from '@market-monster/market-days';
+import { OpenStorefront } from '@market-miam/market-days';
 
 export class TestOpenStorefront {
   static valid(): OpenStorefront {

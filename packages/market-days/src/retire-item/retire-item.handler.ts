@@ -1,5 +1,5 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { VendorId } from '@market-monster/shared-kernel';
+import { VendorId } from '@market-miam/shared-kernel';
 import { RetireItem } from './retire-item';
 import { Catalogues, ItemId } from '../catalogue';
 

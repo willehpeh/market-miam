@@ -1,6 +1,6 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { VendorId } from '@market-monster/shared-kernel';
-import { ImageReference } from '@market-monster/common';
+import { VendorId } from '@market-miam/shared-kernel';
+import { ImageReference } from '@market-miam/common';
 import { SetStorefrontCoverPhoto } from './set-storefront-cover-photo';
 import { Storefronts } from '../storefront';
 

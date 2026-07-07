@@ -1,4 +1,4 @@
-import { EmptyValueError, LocalDate } from '@market-monster/common';
+import { EmptyValueError, LocalDate } from '@market-miam/common';
 
 describe('LocalDate', () => {
   it.each([

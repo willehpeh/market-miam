@@ -5,7 +5,7 @@ import {
   InMemoryEventStore,
   PiiFields,
   ShreddingEventStore,
-} from '@market-monster/event-sourcing';
+} from '@market-miam/event-sourcing';
 
 const vendorPii: PiiFields = { VendorRegistered: ['email'] };
 const v1 = { vendorId: 'v1' };

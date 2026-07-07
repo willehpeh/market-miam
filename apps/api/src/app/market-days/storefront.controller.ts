@@ -1,13 +1,13 @@
 import { Body, Controller, Get, NotFoundException, Post, Put, UseGuards } from '@nestjs/common';
-import { CurrentVendor, JwtAuthGuard } from '@market-monster/auth-nestjs';
-import type { VerifiedVendor } from '@market-monster/auth';
-import { CommandDispatcher, QueryDispatcher } from '@market-monster/event-sourcing';
+import { CurrentVendor, JwtAuthGuard } from '@market-miam/auth-nestjs';
+import type { VerifiedVendor } from '@market-miam/auth';
+import { CommandDispatcher, QueryDispatcher } from '@market-miam/event-sourcing';
 import {
   EditStorefrontInformation,
   FindVendorStorefront,
   SetStorefrontCoverPhoto,
   VendorStorefrontView,
-} from '@market-monster/market-days';
+} from '@market-miam/market-days';
 import { SignedUpload, SignedUploads } from '../signed-uploads';
 
 function coverPhotoPublicId(vendorId: string): string {

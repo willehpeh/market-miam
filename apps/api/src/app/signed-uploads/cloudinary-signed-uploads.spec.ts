@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { Clock, Instant, LocalDate } from '@market-monster/common';
+import { Clock, Instant, LocalDate } from '@market-miam/common';
 import { cloudinarySignature } from './cloudinary-signature';
 import { CloudinarySignedUploads } from './cloudinary-signed-uploads';
 

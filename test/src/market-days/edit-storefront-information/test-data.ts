@@ -1,4 +1,4 @@
-import { EditStorefrontInformation } from '@market-monster/market-days';
+import { EditStorefrontInformation } from '@market-miam/market-days';
 
 export class TestEditStorefrontInformation {
   static valid(): EditStorefrontInformation {
