@@ -33,7 +33,7 @@ export async function startPostgres(): Promise<PostgresHarness> {
     pool,
     connectionString: databaseUrl,
     reset: async () => {
-      await pool.query('TRUNCATE events, checkpoints, data_keys RESTART IDENTITY');
+      await pool.query('TRUNCATE events, checkpoints, data_keys, vendor_storefront_views RESTART IDENTITY');
     },
     stop: async () => {
       await pool.end();

@@ -22,6 +22,10 @@ export class InMemoryVendorStorefrontViews implements VendorStorefrontViews, Ven
     this._storefronts.set(vendorId, { ...this.viewFor(vendorId), ...information });
   }
 
+  async clear(): Promise<void> {
+    this._storefronts.clear();
+  }
+
   private viewFor(vendorId: string): VendorStorefrontView {
     const existing = this._storefronts.get(vendorId);
     if (existing) {
