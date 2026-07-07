@@ -17,13 +17,13 @@ export class Url {
     if (!trimmed) {
       throw new EmptyValueError();
     }
-    if (this.notUrl(trimmed) || this.notHttpOrHttps(trimmed)) {
+    if (this.notUrl(trimmed) || this.notAllowedProtocol(trimmed)) {
       throw new InvalidUrlError();
     }
     this._value = trimmed;
   }
 
-  private notHttpOrHttps(trimmed: string): boolean {
+  private notAllowedProtocol(trimmed: string): boolean {
     return !Url.ALLOWED_SCHEMES.includes(new URL(trimmed).protocol);
   }
 
