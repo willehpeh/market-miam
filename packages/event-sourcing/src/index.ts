@@ -31,4 +31,6 @@ export { ConcurrencyError } from './concurrency.error';
 export { InMemoryCheckpoint } from './in-memory.checkpoint';
 export { PollingSubscription } from './polling.subscription';
 export { UnitOfWork } from './unit-of-work';
+export { PostgresUnitOfWork } from './postgres/postgres.unit-of-work';
+export { Queryable } from './postgres/queryable';
 export * from './event-handler-map';

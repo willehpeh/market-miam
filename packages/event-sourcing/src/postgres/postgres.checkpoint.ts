@@ -1,14 +1,14 @@
-import type { Pool } from 'pg';
 import { Checkpoint } from '../checkpoint';
+import { Queryable } from './queryable';
 
 export class PostgresCheckpoint implements Checkpoint {
   constructor(
-    private readonly pool: Pool,
+    private readonly db: Queryable,
     private readonly subscriptionName: string,
   ) {}
 
   async read(): Promise<number> {
-    const { rows } = await this.pool.query<{ position: string }>(
+    const { rows } = await this.db.query<{ position: string }>(
       'SELECT position FROM checkpoints WHERE subscription_name = $1',
       [this.subscriptionName],
     );
@@ -17,7 +17,7 @@ export class PostgresCheckpoint implements Checkpoint {
   }
 
   async write(position: number): Promise<void> {
-    await this.pool.query(
+    await this.db.query(
       `INSERT INTO checkpoints (subscription_name, position)
              VALUES ($1, $2)
         ON CONFLICT (subscription_name)
