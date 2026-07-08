@@ -34,7 +34,7 @@ describe('Dashboard', () => {
 
     expect(screen.getByAltText('Acme Bakery')).toHaveAttribute(
       'src',
-      expect.stringContaining('c_fill,w_1200,h_600/v42/storefronts/acme/cover-photo'),
+      expect.stringContaining('c_fill,w_1200,h_600,q_auto,f_webp/v42/storefronts/acme/cover-photo'),
     );
   });
 });
