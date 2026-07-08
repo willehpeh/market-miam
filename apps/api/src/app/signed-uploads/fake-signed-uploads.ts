@@ -13,6 +13,7 @@ export class FakeSignedUploads extends SignedUploads {
         invalidate: true,
         allowed_formats: 'jpg,png,webp',
         transformation: 'c_limit,w_2000',
+        eager: 'c_fill,w_1200,h_600',
       },
     };
   }

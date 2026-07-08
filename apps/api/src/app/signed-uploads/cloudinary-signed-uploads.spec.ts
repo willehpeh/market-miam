@@ -18,6 +18,11 @@ describe('CloudinarySignedUploads', () => {
     expect(signed.params.public_id).toBe('storefronts/acme-bakery/cover-photo');
   });
 
+  it('eagerly generates the display rendition so it exists before the storefront requests it', () => {
+    const signed = signedUploads.for('storefronts/acme-bakery/cover-photo');
+    expect(signed.params.eager).toBe('c_fill,w_1200,h_600');
+  });
+
   it('signs exactly the params it returns, so the browser upload verifies', () => {
     const signed = signedUploads.for('storefronts/acme-bakery/cover-photo');
     expect(signed.signature).toBe(cloudinarySignature({ ...signed.params }, 'a-secret'));

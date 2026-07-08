@@ -15,6 +15,7 @@ const SIGNED: SignedUpload = {
     invalidate: true,
     allowed_formats: 'jpg,png,webp',
     transformation: 'c_limit,w_2000',
+    eager: 'c_fill,w_1200,h_600',
   },
 };
 
@@ -50,6 +51,7 @@ describe('CloudinaryPhotoUploads', () => {
     expect(body.get('public_id')).toBe('storefronts/acme/cover-photo');
     expect(body.get('timestamp')).toBe('1700000000');
     expect(body.get('overwrite')).toBe('true');
+    expect(body.get('eager')).toBe('c_fill,w_1200,h_600');
 
     req.flush({
       public_id: 'storefronts/acme/cover-photo',

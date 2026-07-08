@@ -21,4 +21,20 @@ describe('Dashboard', () => {
     expect(screen.getByText('Acme Bakery')).toBeInTheDocument();
     expect(screen.getByText('Fresh bread daily')).toBeInTheDocument();
   });
+
+  it('renders the cover photo with the eagerly-generated rendition', async () => {
+    const { view, storefront } = await renderDashboard();
+    storefront.view.set({
+      name: 'Acme Bakery',
+      description: 'Fresh bread daily',
+      phone: '',
+      imageReference: 'v42/storefronts/acme/cover-photo',
+    });
+    view.detectChanges();
+
+    expect(screen.getByAltText('Acme Bakery')).toHaveAttribute(
+      'src',
+      expect.stringContaining('c_fill,w_1200,h_600/v42/storefronts/acme/cover-photo'),
+    );
+  });
 });
