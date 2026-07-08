@@ -9,6 +9,11 @@
     "build": {
       "executor": "@angular/build:application",
       "outputs": ["{options.outputPath}"],
+      "inputs": [
+        "production",
+        "^production",
+        "{workspaceRoot}/packages/design-system/**/*"
+      ],
       "options": {
         "outputPath": "dist/apps/vendor-frontend",
         "browser": "apps/vendor-frontend/src/main.ts",

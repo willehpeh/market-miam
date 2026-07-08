@@ -1,0 +1,128 @@
+/* ============================================================================
+   Miam — shared design system · Tailwind v4 theme
+   Consumed by vendor-frontend and customer-frontend.
+   Usage (in each app's styles.css):
+     @import "tailwindcss" source("..");
+     @import "../../../packages/design-system/theme.css";
+   Then use utilities: bg-brand, text-ink, rounded-card, font-mono, shadow-frame…
+
+   Brand values (colors, fonts) live in tokens.css as var(--mm-*); this file
+   maps them into Tailwind's @theme so utilities generate. Plain-CSS consumers
+   (Astro website) import tokens.css directly.
+
+   Fonts (Hanken Grotesk + Space Mono) must be loaded in each app's index.html.
+
+   Switch density:  <html data-density="dense">
+   ============================================================================ */
+
+@import "./tokens.css";
+
+@theme {
+  /* ---- brand + surfaces + ink + sidebar + status: sourced from tokens.css - */
+  --color-brand:        var(--mm-brand);
+  --color-brand-deep:   var(--mm-brand-deep);
+  --color-brand-soft:   var(--mm-brand-soft);
+
+  --color-canvas:       var(--mm-canvas);
+  --color-surface:      var(--mm-surface);
+  --color-surface-sunk: var(--mm-surface-sunk);
+
+  --color-ink:          var(--mm-ink);
+  --color-ink-soft:     var(--mm-ink-soft);
+  --color-muted:        var(--mm-muted);
+  --color-line:         var(--mm-line);
+  --color-line-strong:  var(--mm-line-strong);
+
+  --color-sidebar:        var(--mm-sidebar);
+  --color-sidebar-ink:    var(--mm-sidebar-ink);
+  --color-sidebar-muted:  var(--mm-sidebar-muted);
+  --color-sidebar-line:   var(--mm-sidebar-line);
+
+  --color-success:       var(--mm-success);
+  --color-success-soft:  var(--mm-success-soft);
+  --color-warn:          var(--mm-warn);
+  --color-warn-soft:     var(--mm-warn-soft);
+  --color-danger:        var(--mm-danger);
+  --color-danger-soft:   var(--mm-danger-soft);
+
+  --font-sans: var(--mm-font-sans);
+  --font-mono: var(--mm-font-mono);
+
+  /* ---- Tailwind-only knobs (no plain-CSS consumer) ---- */
+  /* mono is used for kickers / labels / data — small + tracked */
+  --tracking-kicker: 0.14em;
+  --tracking-label:  0.10em;
+
+  --radius-field: 9px;   /* inputs, buttons          */
+  --radius-card:  11px;  /* cards, panels            */
+  --radius-pill:  100px;
+
+  --shadow-soft:  0 1px 2px rgb(40 30 18 / 0.12);
+  --shadow-frame: 0 2px 4px rgb(40 30 18 / 0.05), 0 24px 60px -20px rgb(40 30 18 / 0.28);
+}
+
+/* ---- density: dense tightens radii (pair with smaller padding utilities) - */
+[data-density="dense"] {
+  --radius-field: 6px;
+  --radius-card:  8px;
+}
+
+/* ---- base layer ---------------------------------------------------------- */
+@layer base {
+  body {
+    background-color: var(--color-canvas);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-bold tracking-tight;
+  }
+
+  button,
+  input[type="button"],
+  input[type="submit"],
+  input[type="reset"] {
+    @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors;
+    @apply hover:bg-brand-deep active:bg-brand-deep font-bold;
+    @apply focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand;
+    @apply disabled:pointer-events-none disabled:opacity-50;
+  }
+
+  input[type="text"],
+  input[type="tel"] {
+    /* text-base (16px) keeps iOS Safari from auto-zooming the field on focus */
+    @apply w-full rounded-field border border-line bg-surface px-3.5 py-2.5 text-base text-ink;
+    @apply placeholder:text-muted;
+    @apply focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-brand;
+    @apply disabled:cursor-not-allowed disabled:opacity-50;
+  }
+}
+
+/* ---- a few opinionated component shortcuts (optional) -------------------- */
+@layer components {
+  /* mono kicker / eyebrow */
+  .kicker {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: var(--tracking-kicker);
+    text-transform: uppercase;
+    color: var(--color-brand);
+  }
+  /* uppercase field label */
+  .field-label {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
+    color: var(--color-ink-soft);
+  }
+}

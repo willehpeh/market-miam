@@ -1,0 +1,60 @@
+/* ============================================================================
+   Miam — design tokens (framework-agnostic, plain CSS)
+   Raw brand values as custom properties. Consumed two ways:
+     - Tailwind apps map these into @theme (see theme.css) to generate utilities.
+     - Plain-CSS apps (Astro website) @import this and use var(--mm-*) directly.
+   Change a brand value here → it changes everywhere.
+
+   Switch accent at runtime:  <html data-theme="olive">  (terracotta|olive|amber|plum)
+   ============================================================================ */
+
+:root {
+  /* ---- brand (the accent triad, themeable) ---- */
+  --mm-brand:        #c0562f;
+  --mm-brand-deep:   #7a3320;
+  --mm-brand-soft:   #f4e3d8;
+
+  /* ---- surfaces ---- */
+  --mm-canvas:       #f1ede5;  /* working surface behind panels (body)   */
+  --mm-surface:      #ffffff;  /* cards, bars                             */
+  --mm-surface-sunk: #faf7f1;  /* subtle inset panel                      */
+
+  /* ---- ink + lines ---- */
+  --mm-ink:          #2a241e;
+  --mm-ink-soft:     #5c544a;
+  --mm-muted:        #6f665c;  /* darkened to clear WCAG AA 4.5:1 on light surfaces */
+  --mm-line:         #e7e1d6;
+  --mm-line-strong:  #d8d1c4;
+
+  /* ---- dark sidebar / rail ---- */
+  --mm-sidebar:        #221d18;
+  --mm-sidebar-ink:    #c8bfb2;
+  --mm-sidebar-muted:  #8c8275;
+  --mm-sidebar-line:   #3a332b;
+
+  /* ---- semantic status ---- */
+  --mm-success:       #4a6b3a;
+  --mm-success-soft:  #e8efdf;
+  --mm-warn:          #a06a16;
+  --mm-warn-soft:     #f6ead1;
+  --mm-danger:        #b23b2e;
+  --mm-danger-soft:   #f6e1dc;
+
+  /* ---- type ---- */
+  --mm-font-sans: "Hanken Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --mm-font-mono: "Space Mono", ui-monospace, monospace;
+}
+
+/* ---- accent themes (override only the brand triad) ---------------------- */
+[data-theme="terracotta"] {
+  --mm-brand: #c0562f; --mm-brand-deep: #7a3320; --mm-brand-soft: #f4e3d8;
+}
+[data-theme="olive"] {
+  --mm-brand: #6e7a3b; --mm-brand-deep: #414a20; --mm-brand-soft: #eaedda;
+}
+[data-theme="amber"] {
+  --mm-brand: #c0892c; --mm-brand-deep: #7a5616; --mm-brand-soft: #f6ead1;
+}
+[data-theme="plum"] {
+  --mm-brand: #834d6f; --mm-brand-deep: #4d2b43; --mm-brand-soft: #efe0ea;
+}
