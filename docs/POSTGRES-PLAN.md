@@ -23,7 +23,7 @@ Prioritised: **read models can't be deferred; crypto-shredding needed very soon.
 
 ## Suggested order
 
-`0` (prod cutover) → **`2a` ✓** (shredding + DataKeys) → **`1` ✓** (read models — local-verify done; deploy pending) → `5` (replay, **NEXT**) → `2b` (erasure flow, needs 1+5) → `3` → `4` → `6`.
+`0` (prod cutover) → **`2a` ✓** (shredding + DataKeys) → **`1` ✓** (read models — local-verify done; deploy pending) → **`5` ✓** (replay) → `2b` (erasure flow, needs 1+5, **NEXT**) → `3` → `4` → `6`.
 
 ---
 
@@ -134,19 +134,25 @@ advances the checkpoint → replays forever (backoff only slows it). Resolution
 and advance the checkpoint past it. Fail-loud until then; the DLQ **needs monitoring**
 (silent DLQ = silent data loss). Deferred until there's evidence of a real poison event.
 
-## 5. Replay mechanism + processor replay-safety  — **NEXT** (dependency of crypto erasure)
+## 5. Replay mechanism + processor replay-safety  — **DONE** (transport deferred)
 
-Building blocks now exist from item 1: `VendorStorefrontViewStore.clear()` (both adapters),
-`Checkpoint.write(0)` for reset, and the `UnitOfWork` — so a rebuild can wrap `clear()` +
-`checkpoint.write(0)` in `uow.transaction(...)` (atomic reset, crash-safe). Still to build: the
-ops entry point that runs it per projection, plus the processor-replay guard below.
+**Shipped:** `Subscriptions.rebuild(name)` rebuilds a projection = **`clear()` its view store +
+reset its checkpoint to 0, atomically in `uow.transaction(...)`, then replay-poll**. A new
+`Projection.reset()` seam (default no-op; a projection tears down its own read model) —
+`VendorStorefrontViewProjection.reset()` → `store.clear()`. To reach the same checkpoint instance
++ unwrapped projection, `Subscriptions` keeps a `CheckpointedConsumer` per handler
+(name/kind/handler/checkpoint/subscription). **Guard:** `rebuild` refuses `kind !== 'projection'`
+— replaying a processor re-dispatches its commands, re-running side effects.
 
-Rebuild a projection = **`clear()` its view store, reset its checkpoint to 0, let the poller
-replay** (`DEFERRED.md` "Replay strategy"; projection logic is append-only, so replay starts
-clean). **Guard:** processors are **not** replay-safe — re-dispatching commands re-runs side
-effects — so the runner must **refuse replay for `kind === 'processor'`** (`DEFERRED.md`
-"distinguishing…", still-deferred replay-safety). An ops operation over pg checkpoints + view
-tables. Pulled up because **crypto erasure (2b) rebuilds projections through it.**
+**Tests:** in-memory social tests (rebuild clears+replays, processor refused, unknown rejected) +
+an api social test (register→edit→seed-orphan→rebuild → view rebuilt, orphan gone) + a
+Testcontainers pair proving the `clear()`+`checkpoint.write(0)` reset commits/rolls-back atomically
+on real pg (the no-op UoW can't prove it).
+
+**Deferred — ops transport:** `rebuild` is a programmatic entry point only; 2b's erasure flow calls
+it server-side. An HTTP/CLI trigger for an operator waits until there's an ops surface to hang it on.
+**ponytail:** `rebuild` leaves the background poller running — safe only because projections upsert
+idempotently; pause polling here if a non-idempotent projection ever lands.
 
 ## 6. `pg_snapshot_xmin` composite cursor  — only if throughput bottlenecks
 

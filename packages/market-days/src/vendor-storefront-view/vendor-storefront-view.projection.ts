@@ -18,6 +18,10 @@ export class VendorStorefrontViewProjection extends ProjectionFor<StorefrontEven
     };
   }
 
+  override reset(): Promise<void> {
+    return this.store.clear();
+  }
+
   private async handleStorefrontOpened(event: StoredEvent): Promise<void> {
     return this.store.open(vendorIdFrom(event));
   }
