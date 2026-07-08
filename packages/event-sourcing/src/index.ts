@@ -12,8 +12,8 @@ export {
   checkpointMetadata,
 } from './checkpointed.decorator';
 export { Processor } from './processor';
-export { CommandDispatcher } from './command-dispatcher';
-export { QueryDispatcher } from './query-dispatcher';
+export { CommandGateway } from './command-gateway';
+export { QueryGateway } from './query-gateway';
 export { Subscription } from './subscription';
 export { Checkpoint } from './checkpoint';
 export { MessageContext, MessageContextData } from './message-context';

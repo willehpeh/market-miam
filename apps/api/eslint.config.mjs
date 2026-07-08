@@ -3,7 +3,7 @@ import baseConfig from '../../eslint.config.mjs';
 export default [
   ...baseConfig,
   {
-    // Commands must be dispatched through CommandDispatcher, so every command
+    // Commands must be dispatched through CommandGateway, so every command
     // is uniformly traced. Importing the raw bus anywhere else bypasses the
     // span — make that a build error rather than a review concern.
     files: ['**/*.ts'],
@@ -16,7 +16,7 @@ export default [
               name: '@nestjs/cqrs',
               importNames: ['CommandBus'],
               message:
-                'Dispatch commands through CommandDispatcher; only tracing.command-dispatcher.ts may import CommandBus.',
+                'Dispatch commands through CommandGateway; only tracing.command-gateway.ts may import CommandBus.',
             },
           ],
         },
@@ -24,7 +24,7 @@ export default [
     },
   },
   {
-    files: ['src/app/event-sourcing/tracing.command-dispatcher.ts'],
+    files: ['src/app/event-sourcing/tracing.command-gateway.ts'],
     rules: {
       'no-restricted-imports': 'off',
     },

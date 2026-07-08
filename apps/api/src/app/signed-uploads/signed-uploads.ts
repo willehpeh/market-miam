@@ -5,6 +5,7 @@ export interface SignedParams {
   invalidate: boolean;
   allowed_formats: string;
   transformation: string;
+  eager: string;
 }
 
 export interface SignedUpload {

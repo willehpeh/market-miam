@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { Command, CommandBus } from '@nestjs/cqrs';
 import { SpanStatusCode, trace } from '@opentelemetry/api';
-import { CommandDispatcher, MessageContext } from '@market-miam/event-sourcing';
+import { CommandGateway, MessageContext } from '@market-miam/event-sourcing';
 
-const tracer = trace.getTracer('command-dispatcher');
+const tracer = trace.getTracer('command-gateway');
 
 @Injectable()
-export class TracingCommandDispatcher implements CommandDispatcher {
+export class TracingCommandGateway implements CommandGateway {
   constructor(
     private readonly commandBus: CommandBus,
     private readonly context: MessageContext,

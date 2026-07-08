@@ -1,6 +1,6 @@
 import { DynamicModule, Module, Provider } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { CommandDispatcher, EventStore, PostgresUnitOfWork } from '@market-miam/event-sourcing';
+import { CommandGateway, EventStore, PostgresUnitOfWork } from '@market-miam/event-sourcing';
 import { Clock, DateClock } from '@market-miam/common';
 import {
   AddItemToCatalogueHandler,
@@ -83,8 +83,8 @@ const readModel = (persistence: Persistence): Provider[] => {
 const processors = [
   {
     provide: OpensStorefronts,
-    useFactory: (dispatcher: CommandDispatcher) => new OpensStorefronts(dispatcher),
-    inject: [CommandDispatcher],
+    useFactory: (gateway: CommandGateway) => new OpensStorefronts(gateway),
+    inject: [CommandGateway],
   },
 ];
 
@@ -104,7 +104,7 @@ const commandHandlers = [
 
 const queryHandlers = [FindVendorStorefrontHandler];
 
-// EventStore / CommandDispatcher / QueryDispatcher (and the pg UnitOfWork) come from
+// EventStore / CommandGateway / QueryGateway (and the pg UnitOfWork) come from
 // the global EventSourcingModule.forRoot(...) at the composition root. persistence
 // swaps only the read-model store: pg-backed views vs in-memory.
 @Module({})
