@@ -30,8 +30,12 @@ export class OnboardingEffects {
       this.actions$.pipe(
         ofType(LoadStorefrontSuccess),
         tap(({ view }) => {
-          const hasInfo = !!(view.name || view.description || view.imageReference);
-          this.router.navigate(hasInfo ? ['/onboarding/storefront'] : ['/onboarding']);
+          const destination = view.name
+            ? '/dashboard'
+            : view.imageReference
+              ? '/onboarding/storefront'
+              : '/onboarding';
+          this.router.navigate([destination]);
         }),
       ),
     { dispatch: false },

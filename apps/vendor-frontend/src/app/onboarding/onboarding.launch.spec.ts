@@ -31,6 +31,7 @@ import { OnboardingFacade } from './onboarding.facade';
 import { StoreOnboardingFacade } from './store.onboarding.facade';
 
 const EMPTY = { name: '', description: '', phone: '', imageReference: '' };
+const PHOTO_ONLY = { name: '', description: '', phone: '', imageReference: 'v1/storefronts/acme/cover-photo' };
 const NAMED = { name: 'La Table de Margaux', description: 'Cuisine de marché', phone: '', imageReference: '' };
 
 describe('Onboarding launch', () => {
@@ -80,12 +81,23 @@ describe('Onboarding launch', () => {
     expect(router.url).toBe('/onboarding');
   });
 
-  it('sends a vendor with storefront information to the form', async () => {
+  it('sends a vendor who has named their storefront to the dashboard', async () => {
     const { view, auth, router } = await launch();
     auth.login();
 
     httpCtrl.expectOne('/api/vendors').flush(null);
     httpCtrl.expectOne('/api/storefront').flush(NAMED);
+    await view.fixture.whenStable();
+
+    expect(router.url).toBe('/dashboard');
+  });
+
+  it('sends a vendor who has only added a photo to the form', async () => {
+    const { view, auth, router } = await launch();
+    auth.login();
+
+    httpCtrl.expectOne('/api/vendors').flush(null);
+    httpCtrl.expectOne('/api/storefront').flush(PHOTO_ONLY);
     await view.fixture.whenStable();
 
     expect(router.url).toBe('/onboarding/storefront');
