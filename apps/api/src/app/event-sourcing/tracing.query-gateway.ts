@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { Query, QueryBus } from '@nestjs/cqrs';
 import { SpanStatusCode, trace } from '@opentelemetry/api';
-import { QueryDispatcher } from '@market-miam/event-sourcing';
+import { QueryGateway } from '@market-miam/event-sourcing';
 
-const tracer = trace.getTracer('query-dispatcher');
+const tracer = trace.getTracer('query-gateway');
 
 @Injectable()
-export class TracingQueryDispatcher implements QueryDispatcher {
+export class TracingQueryGateway implements QueryGateway {
   constructor(private readonly queryBus: QueryBus) {}
 
   execute<R>(query: Query<R>): Promise<R> {

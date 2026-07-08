@@ -2,13 +2,13 @@ import { Controller, Post, UseGuards } from '@nestjs/common';
 import { Clock } from '@market-miam/common';
 import { CurrentVendor, JwtAuthGuard } from '@market-miam/auth-nestjs';
 import type { VerifiedVendor } from '@market-miam/auth';
-import { CommandDispatcher } from '@market-miam/event-sourcing';
+import { CommandGateway } from '@market-miam/event-sourcing';
 import { RegisterVendor } from '@market-miam/market-days';
 
 @Controller('vendors')
 export class VendorsController {
   constructor(
-    private readonly commands: CommandDispatcher,
+    private readonly commands: CommandGateway,
     private readonly clock: Clock,
   ) {}
 

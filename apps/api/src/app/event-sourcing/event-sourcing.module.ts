@@ -5,7 +5,7 @@ import { DiscoveryModule } from '@nestjs/core';
 import { EMPTY } from 'rxjs';
 import { Client, Pool } from 'pg';
 import {
-  CommandDispatcher,
+  CommandGateway,
   DataKeys,
   Events,
   EventStore,
@@ -18,14 +18,14 @@ import {
   PostgresEventStore,
   PostgresNotifications,
   PostgresUnitOfWork,
-  QueryDispatcher,
+  QueryGateway,
   UnitOfWork,
 } from '@market-miam/event-sourcing';
 import { ApplicationEventStore } from './application.event-store';
 import { masterKey } from './master-key';
 import { MessageContextModule } from '../message-context/message-context.module';
-import { TracingCommandDispatcher } from './tracing.command-dispatcher';
-import { TracingQueryDispatcher } from './tracing.query-dispatcher';
+import { TracingCommandGateway } from './tracing.command-gateway';
+import { TracingQueryGateway } from './tracing.query-gateway';
 import {
   Subscriptions,
   CHECKPOINT_FACTORY,
@@ -107,10 +107,10 @@ const postgresPersistence = (piiFields: PiiFields): Provider[] => [
 ];
 
 const core: Provider[] = [
-  TracingCommandDispatcher,
-  { provide: CommandDispatcher, useExisting: TracingCommandDispatcher },
-  TracingQueryDispatcher,
-  { provide: QueryDispatcher, useExisting: TracingQueryDispatcher },
+  TracingCommandGateway,
+  { provide: CommandGateway, useExisting: TracingCommandGateway },
+  TracingQueryGateway,
+  { provide: QueryGateway, useExisting: TracingQueryGateway },
   { provide: POLLING_ENABLED, useValue: true },
   Subscriptions,
 ];
@@ -121,7 +121,7 @@ export class EventSourcingModule implements OnApplicationShutdown {
 
   static forRoot(persistence: Persistence, piiFields: PiiFields = {}): DynamicModule {
     const adapters = persistence === 'postgres' ? postgresPersistence(piiFields) : inMemoryPersistence(piiFields);
-    const exported = [EventStore, Events, UnitOfWork, CommandDispatcher, QueryDispatcher, Subscriptions];
+    const exported = [EventStore, Events, UnitOfWork, CommandGateway, QueryGateway, Subscriptions];
     return {
       module: EventSourcingModule,
       global: true,

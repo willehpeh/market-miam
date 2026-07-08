@@ -1,6 +1,6 @@
 import { VendorScopedEvents } from '@market-miam/market-days';
 import {
-  CommandDispatcher,
+  CommandGateway,
   InMemoryCheckpoint,
   InMemoryEventStore,
   PollingSubscription,
@@ -14,7 +14,7 @@ import {
 } from '@market-miam/market-days';
 import { TestRegisterVendor } from '../register-vendor/test-data';
 
-class RecordingCommandDispatcher extends CommandDispatcher {
+class RecordingCommandGateway extends CommandGateway {
   readonly dispatched: Command<unknown>[] = [];
 
   async execute<R>(command: Command<R>): Promise<R> {
@@ -26,16 +26,16 @@ class RecordingCommandDispatcher extends CommandDispatcher {
 describe('Opens Storefronts', () => {
   let store: InMemoryEventStore;
   let vendors: Vendors;
-  let dispatcher: RecordingCommandDispatcher;
+  let gateway: RecordingCommandGateway;
   let subscription: PollingSubscription;
 
   beforeEach(() => {
     store = new InMemoryEventStore();
     vendors = new Vendors(new VendorScopedEvents(store));
-    dispatcher = new RecordingCommandDispatcher();
+    gateway = new RecordingCommandGateway();
     subscription = new PollingSubscription(
       store,
-      new OpensStorefronts(dispatcher),
+      new OpensStorefronts(gateway),
       new InMemoryCheckpoint('storefront-opener'),
     );
   });
@@ -46,6 +46,6 @@ describe('Opens Storefronts', () => {
 
     await subscription.poll();
 
-    expect(dispatcher.dispatched).toEqual([new OpenStorefront(command.vendorId)]);
+    expect(gateway.dispatched).toEqual([new OpenStorefront(command.vendorId)]);
   });
 });
