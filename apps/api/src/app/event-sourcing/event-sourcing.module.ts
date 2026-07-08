@@ -5,7 +5,7 @@ import { DiscoveryModule } from '@nestjs/core';
 import { EMPTY } from 'rxjs';
 import { Client, Pool } from 'pg';
 import {
-  CommandDispatcher,
+  CommandGateway,
   DataKeys,
   Events,
   EventStore,
@@ -24,7 +24,7 @@ import {
 import { ApplicationEventStore } from './application.event-store';
 import { masterKey } from './master-key';
 import { MessageContextModule } from '../message-context/message-context.module';
-import { TracingCommandDispatcher } from './tracing.command-dispatcher';
+import { TracingCommandGateway } from './tracing.command-gateway';
 import { TracingQueryDispatcher } from './tracing.query-dispatcher';
 import {
   Subscriptions,
@@ -107,8 +107,8 @@ const postgresPersistence = (piiFields: PiiFields): Provider[] => [
 ];
 
 const core: Provider[] = [
-  TracingCommandDispatcher,
-  { provide: CommandDispatcher, useExisting: TracingCommandDispatcher },
+  TracingCommandGateway,
+  { provide: CommandGateway, useExisting: TracingCommandGateway },
   TracingQueryDispatcher,
   { provide: QueryDispatcher, useExisting: TracingQueryDispatcher },
   { provide: POLLING_ENABLED, useValue: true },
@@ -121,7 +121,7 @@ export class EventSourcingModule implements OnApplicationShutdown {
 
   static forRoot(persistence: Persistence, piiFields: PiiFields = {}): DynamicModule {
     const adapters = persistence === 'postgres' ? postgresPersistence(piiFields) : inMemoryPersistence(piiFields);
-    const exported = [EventStore, Events, UnitOfWork, CommandDispatcher, QueryDispatcher, Subscriptions];
+    const exported = [EventStore, Events, UnitOfWork, CommandGateway, QueryDispatcher, Subscriptions];
     return {
       module: EventSourcingModule,
       global: true,

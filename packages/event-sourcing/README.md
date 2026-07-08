@@ -2,7 +2,7 @@
 
 A small event-sourcing kernel: ports (abstract classes used as DI tokens),
 in-memory adapters, and the `Aggregate` base. Framework-agnostic apart from the
-`CommandDispatcher` port, which types over `@nestjs/cqrs`.
+`CommandGateway` port, which types over `@nestjs/cqrs`.
 
 ## What's here
 
@@ -12,7 +12,7 @@ in-memory adapters, and the `Aggregate` base. Framework-agnostic apart from the
   (id, positions, timestamp, metadata).
 - **Ports** — `EventStore` (write + load a stream), `Events` (global `loadFrom`
   for subscriptions), `Checkpoint`, `Subscription`, `EventHandler`
-  (→ `Projection` / `Processor`), `CommandDispatcher`, `MessageContext`.
+  (→ `Projection` / `Processor`), `CommandGateway`, `MessageContext`.
 - **In-memory adapters** — `InMemoryEventStore`, `InMemoryCheckpoint`,
   `InMemorySubscription`. Used in tests and, for now, at runtime.
 - **Postgres adapters** (over a `pg` `Pool`/`Client`) — `PostgresEventStore`

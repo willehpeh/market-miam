@@ -12,7 +12,7 @@ export {
   checkpointMetadata,
 } from './checkpointed.decorator';
 export { Processor } from './processor';
-export { CommandDispatcher } from './command-dispatcher';
+export { CommandGateway } from './command-gateway';
 export { QueryDispatcher } from './query-dispatcher';
 export { Subscription } from './subscription';
 export { Checkpoint } from './checkpoint';
