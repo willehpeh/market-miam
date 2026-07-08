@@ -23,7 +23,7 @@ Prioritised: **read models can't be deferred; crypto-shredding needed very soon.
 
 ## Suggested order
 
-`0` (prod cutover) → **`2a` ✓** (shredding + DataKeys) → **`1` ✓** (read models — local-verify done; deploy pending) → **`5` ✓** (replay) → `2b` (erasure flow, needs 1+5, **NEXT**) → `3` → `4` → `6`.
+`0` (prod cutover) → **`2a` ✓** (shredding + DataKeys) → **`1` ✓** (read models — local-verify done; deploy pending) → **`5` ✓** (replay) → **`2b` ✓** (erasure flow) → `3` (**NEXT**) → `4` → `6`.
 
 ---
 
@@ -102,7 +102,7 @@ the UoW's only coverage (no isolated UoW unit test; reentrant guard dropped — 
 **Build order:** 0 sentinel (2a tweak) → 1 UoW seam (inert) → 2 `PostgresUnitOfWork`+`Queryable`
 (inert) → 3 migration + view-store + contract → 4 wiring (turns pg on) → 5 social test + local verify.
 
-## 2. Crypto-shredding — `ShreddingEventStore` + `DataKeys`  — **2a DONE**, 2b pending (ADR 0025)
+## 2. Crypto-shredding — `ShreddingEventStore` + `DataKeys`  — **2a DONE, 2b DONE** (ADR 0025)
 
 Encrypt registered PII fields with a per-vendor data key held outside the log; erase by
 deleting the key. Full design: ADR 0025 + `docs/VENDOR_REGISTRATION_AND_PII.md`.
@@ -114,7 +114,18 @@ deleting the key. Full design: ADR 0025 + `docs/VENDOR_REGISTRATION_AND_PII.md`.
 - **Read-model decryption boundary — resolved in item 1 as model A** (supersedes the earlier "leaning B"): decrypt-on-`loadFrom` gives the projection plaintext, so the storefront view holds plaintext PII at rest; erasure is replay-after-shred (item 5), which rewrites the view with `SHREDDED`. B (ciphertext-at-rest) would need the projection to see ciphertext, which the decrypt-on-`loadFrom` decorator rules out.
 - **Shredded streams stay loadable:** verified that `Vendor.apply`/`Storefront.apply` never reconstruct PII value objects (the info lives only in the read model as raw strings), so a shredded stream rehydrates untouched — no VO ever sees the sentinel. A base class making string VOs *accept* `SHREDDED` was rejected: it'd weaken every PII VO's invariant for a path that doesn't occur (and strict VOs like `Email` reject the sentinel anyway). If a VO ever must be built from a shreddable field, handle the sentinel at that one site.
 
-**2b — erasure flow (depends on 1 + 5):** `DataKeys.shred(vendorId)` + **rebuild projections** (replay, item 5, against the pg read-model adapters, item 1) + delete the Auth0 user. Read models purge for free via replay.
+**2b — erasure flow — DONE** (needed 1 + 5): `VendorErasure.erase(vendorId)` (apps/api, provided by
+`MarketDaysModule`) = `DataKeys.shred(vendorId)` → `Subscriptions.rebuild('vendor-storefront-view')`.
+Shred deletes the key → the vendor's PII decrypts to `SHREDDED`; the replay rewrites the plaintext-at-rest
+read model (model A) with the sentinel. Both steps idempotent → `erase` is retry-safe (shred-then-crash
+leaves plaintext only until re-run). Proven by an in-memory api social test (register→edit→erase → key
+`null`, view reads `SHREDDED`). `DataKeys` now exported from `EventSourcingModule`.
+
+- **Deferred — Auth0 user delete: manual/out-of-band for now** (no Management API client built). The vendor's
+  Auth0 login survives erasure until an operator deletes it by hand.
+- **Deferred — trigger transport:** `erase` is programmatic-only (same posture as `rebuild`); no HTTP/CLI.
+  An ops surface wires the trigger later. **ponytail:** rebuilds only the one PII-bearing projection; add
+  others in `VendorErasure` if a future projection caches vendor PII.
 
 ## 3. Discovery-time orphan-checkpoint detection  — safety net
 

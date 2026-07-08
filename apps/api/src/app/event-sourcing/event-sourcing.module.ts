@@ -121,7 +121,7 @@ export class EventSourcingModule implements OnApplicationShutdown {
 
   static forRoot(persistence: Persistence, piiFields: PiiFields = {}): DynamicModule {
     const adapters = persistence === 'postgres' ? postgresPersistence(piiFields) : inMemoryPersistence(piiFields);
-    const exported = [EventStore, Events, UnitOfWork, CommandDispatcher, QueryDispatcher, Subscriptions];
+    const exported = [EventStore, Events, DataKeys, UnitOfWork, CommandDispatcher, QueryDispatcher, Subscriptions];
     return {
       module: EventSourcingModule,
       global: true,

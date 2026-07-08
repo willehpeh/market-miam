@@ -32,6 +32,7 @@ import { SignedUploads, signedUploadsFor } from '../signed-uploads';
 import { Persistence } from '../event-sourcing/event-sourcing.module';
 import { VendorsController } from './vendors.controller';
 import { StorefrontController } from './storefront.controller';
+import { VendorErasure } from './vendor-erasure';
 
 const clock = [{ provide: Clock, useClass: DateClock }];
 
@@ -120,6 +121,7 @@ export class MarketDaysModule {
         ...processors,
         ...commandHandlers,
         ...queryHandlers,
+        VendorErasure,
       ],
     };
   }
