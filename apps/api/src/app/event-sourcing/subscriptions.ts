@@ -9,6 +9,7 @@ import {
   InMemoryCheckpoint,
   MessageContext,
   PollingSubscription,
+  Projection,
   Subscription,
   UnitOfWork
 } from '@market-miam/event-sourcing';
@@ -33,10 +34,18 @@ export type CheckpointFactory = (name: string) => Checkpoint;
 const RETRY_BACKOFF_MS = 1000;
 const MAX_RETRY_BACKOFF_MS = 30_000;
 
+interface CheckpointedConsumer {
+  readonly name: string;
+  readonly kind: string;
+  readonly handler: EventHandler;
+  readonly checkpoint: Checkpoint;
+  readonly subscription: Subscription;
+}
+
 @Injectable()
 export class Subscriptions implements OnApplicationBootstrap, OnApplicationShutdown {
   private readonly stopped = new Subject<void>();
-  private subscriptions: Subscription[] = [];
+  private consumers: CheckpointedConsumer[] = [];
 
   constructor(
     private readonly discovery: DiscoveryService,
@@ -50,7 +59,7 @@ export class Subscriptions implements OnApplicationBootstrap, OnApplicationShutd
   ) {}
 
   onApplicationBootstrap(): void {
-    this.subscriptions = this.buildSubscriptions();
+    this.consumers = this.buildConsumers();
     if (this.pollingEnabled) {
       this.startPolling();
     }
@@ -66,26 +75,49 @@ export class Subscriptions implements OnApplicationBootstrap, OnApplicationShutd
     // reach downstream projections within one drain. The bound is a proxy for
     // max cascade depth (today: 1). If cascades ever chain deeper than the
     // subscription count, loop until a round produces no new events instead.
-    for (let i = 0; i < this.subscriptions.length; i++) {
-      await Promise.all(this.subscriptions.map((subscription) => subscription.poll()));
+    for (let i = 0; i < this.consumers.length; i++) {
+      await Promise.all(this.consumers.map((consumer) => consumer.subscription.poll()));
     }
   }
 
-  private buildSubscriptions(): Subscription[] {
+  // Rebuild a projection from zero: clear its read model and reset its checkpoint
+  // atomically, then replay. Refused for processors — replaying a processor
+  // re-dispatches its commands, re-running side effects (not replay-safe).
+  // ponytail: leaves the background poller running; a concurrent replay from 0 is
+  // safe only because projections upsert idempotently. Pause polling here if a
+  // non-idempotent projection ever lands.
+  async rebuild(name: string): Promise<void> {
+    const consumer = this.consumers.find((candidate) => candidate.name === name);
+    if (!consumer) {
+      throw new Error(`No subscription '${name}' to rebuild`);
+    }
+    if (consumer.kind !== 'projection') {
+      throw new Error(`Refusing to replay '${name}': a ${consumer.kind} re-runs its side effects`);
+    }
+    await this.unitOfWork.transaction(async () => {
+      await (consumer.handler as Projection).reset();
+      await consumer.checkpoint.write(0);
+    });
+    await consumer.subscription.poll();
+  }
+
+  private buildConsumers(): CheckpointedConsumer[] {
     const checkpoints = new Set<string>();
     return this.handlers().map(({ handler, name, kind }) => {
       if (checkpoints.has(name)) {
         throw new Error(`Duplicate checkpoint '${name}'`);
       }
       checkpoints.add(name);
+      const checkpoint = this.checkpointFor(name);
       const driven =
         kind === 'processor' ? new ContinuationContextHandler(handler, this.context) : handler;
-      return new PollingSubscription(
+      const subscription = new PollingSubscription(
         this.events,
         new TracingEventHandler(driven),
-        this.checkpointFor(name),
+        checkpoint,
         this.unitOfWork,
       );
+      return { name, kind, handler, checkpoint, subscription };
     });
   }
 
@@ -101,7 +133,7 @@ export class Subscriptions implements OnApplicationBootstrap, OnApplicationShutd
   }
 
   private startPolling(): void {
-    from(this.subscriptions)
+    from(this.consumers.map((consumer) => consumer.subscription))
       .pipe(
         mergeMap(this.wakeSubscription()),
         takeUntil(this.stopped),

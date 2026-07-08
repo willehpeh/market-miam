@@ -4,11 +4,13 @@ import { Test } from '@nestjs/testing';
 import { DiscoveryModule } from '@nestjs/core';
 import { Subject } from 'rxjs';
 import {
+  CheckpointedProcessor,
   CheckpointedProjection,
   EventHandler,
   Events,
   InMemoryCheckpoint,
   MessageContext,
+  Processor,
   Projection,
   StoredEvent,
 } from '@market-miam/event-sourcing';
@@ -25,6 +27,10 @@ class NoopHandler implements EventHandler {
   }
 
   handle(): Promise<void> {
+    return Promise.resolve();
+  }
+
+  reset(): Promise<void> {
     return Promise.resolve();
   }
 }
@@ -46,10 +52,31 @@ class RecordingHandler implements EventHandler {
     this.handled.push(event);
     return Promise.resolve();
   }
+
+  reset(): Promise<void> {
+    this.handled.length = 0;
+    return Promise.resolve();
+  }
 }
 
 @CheckpointedProjection('recorder')
 class Recorder extends RecordingHandler implements Projection {}
+
+class SideEffect implements EventHandler {
+  runs = 0;
+
+  eventTypes(): string[] {
+    return ['Thing'];
+  }
+
+  handle(): Promise<void> {
+    this.runs++;
+    return Promise.resolve();
+  }
+}
+
+@CheckpointedProcessor('side-effect')
+class SideEffectProcessor extends SideEffect implements Processor {}
 
 class RecordingLogger {
   readonly errors: { message: unknown; params: unknown[] }[] = [];
@@ -265,6 +292,104 @@ describe('Subscriptions', () => {
     await app.get(Subscriptions).drain();
 
     expect(app.get(Recorder).handled).toHaveLength(250);
+  });
+
+  it('rebuilds a projection: clears its read model and replays from zero', async () => {
+    const events: StoredEvent[] = Array.from({ length: 3 }, (_, i) => ({
+      id: `e${i + 1}`,
+      type: 'Thing',
+      payload: {},
+      version: 1,
+      streamId: 'stream',
+      streamPosition: i + 1,
+      globalPosition: i + 1,
+      timestamp: 0,
+    }));
+    const backlog: Events = {
+      loadFrom: (position, limit) =>
+        Promise.resolve(events.filter((event) => event.globalPosition > position).slice(0, limit)),
+    };
+
+    const moduleRef = await Test.createTestingModule({
+      imports: [DiscoveryModule],
+      providers: [
+        Subscriptions,
+        MessageContext,
+        Recorder,
+        { provide: Events, useValue: backlog },
+        { provide: POLLING_ENABLED, useValue: false },
+      ],
+    }).compile();
+
+    app = moduleRef.createNestApplication();
+    await app.init();
+    const subscriptions = app.get(Subscriptions);
+    await subscriptions.drain();
+
+    const recorder = app.get(Recorder);
+    recorder.handle({ ...events[0], id: 'stale' });
+    expect(recorder.handled).toHaveLength(4);
+
+    await subscriptions.rebuild('recorder');
+
+    expect(recorder.handled.map((event) => event.id)).toEqual(['e1', 'e2', 'e3']);
+  });
+
+  it('refuses to replay a processor — re-running commands would duplicate side effects', async () => {
+    const events: StoredEvent[] = [
+      {
+        id: 'e1',
+        type: 'Thing',
+        payload: {},
+        version: 1,
+        streamId: 'stream',
+        streamPosition: 1,
+        globalPosition: 1,
+        timestamp: 0,
+      },
+    ];
+    const backlog: Events = {
+      loadFrom: (position, limit) =>
+        Promise.resolve(events.filter((event) => event.globalPosition > position).slice(0, limit)),
+    };
+
+    const moduleRef = await Test.createTestingModule({
+      imports: [DiscoveryModule],
+      providers: [
+        Subscriptions,
+        MessageContext,
+        SideEffectProcessor,
+        { provide: Events, useValue: backlog },
+        { provide: POLLING_ENABLED, useValue: false },
+      ],
+    }).compile();
+
+    app = moduleRef.createNestApplication();
+    await app.init();
+    const subscriptions = app.get(Subscriptions);
+    await subscriptions.drain();
+    expect(app.get(SideEffectProcessor).runs).toBe(1);
+
+    await expect(subscriptions.rebuild('side-effect')).rejects.toThrow(/processor/);
+    expect(app.get(SideEffectProcessor).runs).toBe(1);
+  });
+
+  it('rejects a rebuild of an unknown subscription', async () => {
+    const moduleRef = await Test.createTestingModule({
+      imports: [DiscoveryModule],
+      providers: [
+        Subscriptions,
+        MessageContext,
+        Recorder,
+        { provide: Events, useValue: noEvents },
+        { provide: POLLING_ENABLED, useValue: false },
+      ],
+    }).compile();
+
+    app = moduleRef.createNestApplication();
+    await app.init();
+
+    await expect(app.get(Subscriptions).rebuild('nope')).rejects.toThrow("No subscription 'nope'");
   });
 
   it('builds every checkpoint through CHECKPOINT_FACTORY', async () => {

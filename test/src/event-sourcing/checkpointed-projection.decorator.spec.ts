@@ -21,6 +21,10 @@ describe('@CheckpointedProjection', () => {
       handle(): Promise<void> {
         return Promise.resolve();
       }
+
+      reset(): Promise<void> {
+        return Promise.resolve();
+      }
     }
 
     expect(checkpointMetadata(StorefrontProjection)).toEqual({ name: 'storefront', kind: 'projection' });
