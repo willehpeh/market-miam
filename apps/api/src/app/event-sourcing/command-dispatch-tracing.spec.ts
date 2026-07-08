@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { SpanStatusCode } from '@opentelemetry/api';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
+import { EMPTY, Observable } from 'rxjs';
 import { EventStore, InMemoryEventStore, StoredEvent } from '@market-miam/event-sourcing';
 import { apiTestModule, bootApiTestApp, fixedClock, startApp } from '../testing/api-test-app';
 import { registerSpanCapture } from '../testing/span-capture';
@@ -13,6 +14,10 @@ class FailingEventStore extends EventStore {
 
   load(): Promise<StoredEvent[]> {
     return Promise.resolve([]);
+  }
+
+  notifications(): Observable<void> {
+    return EMPTY;
   }
 }
 

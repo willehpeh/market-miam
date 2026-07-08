@@ -2,7 +2,6 @@ import { DynamicModule, Inject, Module, OnApplicationShutdown, Optional, Provide
 import { ConfigService } from '@nestjs/config';
 import { CqrsModule } from '@nestjs/cqrs';
 import { DiscoveryModule } from '@nestjs/core';
-import { EMPTY } from 'rxjs';
 import { Client, Pool } from 'pg';
 import {
   CommandGateway,
@@ -30,6 +29,7 @@ import {
   Subscriptions,
   CHECKPOINT_FACTORY,
   EVENT_NOTIFICATIONS,
+  POLL_INTERVAL,
   POLLING_ENABLED,
 } from './subscriptions';
 import { TracingPostgresNotifications } from './tracing.postgres-notifications';
@@ -53,7 +53,11 @@ const inMemoryPersistence = (piiFields: PiiFields): Provider[] => [
   InMemoryEventStore,
   { provide: DataKeys, useClass: InMemoryDataKeys },
   { provide: UnitOfWork, useValue: UnitOfWork.none() },
-  { provide: EVENT_NOTIFICATIONS, useValue: EMPTY },
+  // Poke the poller on every append (no LISTEN/NOTIFY here) so read-after-write is
+  // instant in dev; the poll timer stays the backstop. Tests disable polling and
+  // drain() directly, so no one subscribes to this there.
+  { provide: EVENT_NOTIFICATIONS, useFactory: (store: InMemoryEventStore) => store.notifications(), inject: [InMemoryEventStore] },
+  { provide: POLL_INTERVAL, useValue: 1000 },
   // No CHECKPOINT_FACTORY → Subscriptions falls back to its in-memory default.
   ...applicationEventStore(piiFields, InMemoryEventStore),
 ];

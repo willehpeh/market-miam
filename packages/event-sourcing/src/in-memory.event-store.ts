@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { Observable, Subject } from 'rxjs';
 import { ConcurrencyError } from './concurrency.error';
 import { DomainEvent } from './domain-event';
 import { Events } from './events';
@@ -9,6 +10,9 @@ export class InMemoryEventStore implements EventStore, Events {
 
   private seededEvents: StoredEvent[] = [];
   private appendedEvents: StoredEvent[] = [];
+  // Mirrors PostgresNotifications' poke stream: fires "poll now" on every append so
+  // subscriptions get read-after-write latency instead of waiting for the timer.
+  private readonly pokes = new Subject<void>();
 
   append(streamId: string, events: DomainEvent[], expectedStreamPosition: number, metadata?: Record<string, unknown>): Promise<void> {
     const stream = this.allEvents().filter(e => e.streamId === streamId);
@@ -17,7 +21,12 @@ export class InMemoryEventStore implements EventStore, Events {
     }
 
     this.appendedEvents.push(...this.toStoredEvents(events, streamId, stream, metadata));
+    this.pokes.next();
     return Promise.resolve();
+  }
+
+  notifications(): Observable<void> {
+    return this.pokes.asObservable();
   }
 
   load(streamId: string): Promise<StoredEvent[]> {

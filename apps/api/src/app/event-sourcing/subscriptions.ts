@@ -19,6 +19,10 @@ import { pollSchedule } from './poll-schedule';
 
 export const POLLING_ENABLED = Symbol('POLLING_ENABLED');
 
+// Poll interval override (ms). Unprovided → pollSchedule's default. Dev shortens it
+// so the timer backstop is tight when there's no LISTEN/NOTIFY to poke the poller.
+export const POLL_INTERVAL = Symbol('POLL_INTERVAL');
+
 // ponytail: a stream of pokes that ask Subscriptions to poll now. Default is EMPTY —
 // pollSchedule's timer is the whole drive today. Provide a real source (Postgres
 // LISTEN) to cut latency and idle poll load; Subscriptions is otherwise unchanged
@@ -52,6 +56,7 @@ export class Subscriptions implements OnApplicationBootstrap, OnApplicationShutd
     private readonly events: Events,
     private readonly context: MessageContext,
     @Inject(POLLING_ENABLED) private readonly pollingEnabled: boolean,
+    @Optional() @Inject(POLL_INTERVAL) private readonly pollIntervalMs?: number,
     @Optional() @Inject(EVENT_NOTIFICATIONS) private readonly notifications: Observable<void> = EMPTY,
     @Optional() @Inject(CHECKPOINT_FACTORY) private readonly checkpointFor: CheckpointFactory = (name) => new InMemoryCheckpoint(name),
     @Optional() @Inject(UnitOfWork) private readonly unitOfWork: UnitOfWork = UnitOfWork.none(),
@@ -142,7 +147,7 @@ export class Subscriptions implements OnApplicationBootstrap, OnApplicationShutd
   }
 
   private wakeSubscription() {
-    return (subscription: Subscription) => pollSchedule(this.notifications).pipe(
+    return (subscription: Subscription) => pollSchedule(this.notifications, this.pollIntervalMs).pipe(
       exhaustMap(() => subscription.poll()),
       // ponytail: exponential backoff, capped, reset once a poll succeeds. Infinite
       // retries are deliberate — a transient store outage should recover, not kill
