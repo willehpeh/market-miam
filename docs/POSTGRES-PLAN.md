@@ -23,22 +23,21 @@ Prioritised: **read models can't be deferred; crypto-shredding needed very soon.
 
 ## Suggested order
 
-**`0` ✓** (prod cutover — deployed) → **`2a` ✓** (shredding + DataKeys) → **`1` ✓** (read models — deployed) → **`5` ✓** (replay) → **`2b` ✓** (erasure flow). **All remaining work is deferred/conditional:** `3` (orphan detection — deferred), `4` (dead-lettering; near-term value is the stuck-subscription alert, specced in O11Y-PLAN — deferred), `6` (composite cursor — only if throughput bottlenecks). Open non-feature confirms: item 0's connection-budget sizing + backup/PITR.
+**`0` ✓** (prod cutover — deployed) → **`2a` ✓** (shredding + DataKeys) → **`1` ✓** (read models — deployed) → **`5` ✓** (replay) → **`2b` ✓** (erasure flow). **All remaining work is deferred/conditional:** `3` (orphan detection — deferred), `4` (dead-lettering; near-term value is the stuck-subscription alert, specced in O11Y-PLAN — deferred), `6` (composite cursor — only if throughput bottlenecks).
 
 ---
 
-## 0. Prod cutover — ship what's built  — **DONE** (deployed + functional; two hardening confirms open)
+## 0. Prod cutover — ship what's built  — **DONE** (deployed + functional)
 
 Deployed to Render and functional — the built stack (event store + 2a + read models `1` +
 replay `5` + erasure `2b`, migrations through `0004`) runs against the Render `event-store`.
 
 - **Deploy + verify — DONE:** Render auto-deploys `api`; migrate-on-boot applied the schema.
 - **SSL — OK:** it boots and queries, so the (no-`ssl`) `Pool` connects over Render's connection string.
-- **Connection budget — CONFIRM:** "functional" at low traffic doesn't prove it. The `Pool` (default
-  `max` 10) + LISTEN client + migrate connection all draw on `basic-256mb`'s cap — set `Pool({ max })`
-  explicitly under the limit before load, or connections exhaust under concurrency.
-- **Backup / PITR — CONFIRM:** the event log is the source of truth — confirm Render's backup/retention
-  covers it before real data lands.
+- **Connection budget — DONE:** `Pool({ max })` is now explicit (default `10`, tunable via
+  `DATABASE_POOL_MAX` without a code deploy). Steady state per instance ≈ `max` + 1 (LISTEN client);
+  10 is safe for a handful of instances on `basic-256mb` (~97 conns).
+- **Backup / PITR — CONFIRMED:** Render's backup/point-in-time recovery covers the `event-store`.
 
 ## 1. PG read-model adapters + transactional projection↔checkpoint  — **DONE** (deployed)
 

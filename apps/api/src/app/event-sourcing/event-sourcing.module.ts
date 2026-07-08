@@ -61,7 +61,14 @@ const inMemoryPersistence = (piiFields: PiiFields): Provider[] => [
 const pool: Provider = {
   provide: Pool,
   useFactory: (config: ConfigService) =>
-    new Pool({ connectionString: config.getOrThrow<string>('DATABASE_CONNECTION_STRING') }),
+    new Pool({
+      connectionString: config.getOrThrow<string>('DATABASE_CONNECTION_STRING'),
+      // ponytail: explicit, sized under the DB connection cap. Steady state per api
+      // instance ≈ max + 1 (the dedicated LISTEN client); migrate-on-boot adds one
+      // transiently. 10 is safe for a handful of instances on basic-256mb (~97 conns);
+      // set DATABASE_POOL_MAX to retune per plan / instance count without a code deploy.
+      max: Number(config.get<string>('DATABASE_POOL_MAX')) || 10,
+    }),
   inject: [ConfigService],
 };
 
