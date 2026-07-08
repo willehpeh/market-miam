@@ -29,6 +29,7 @@ const SIGNED: SignedUpload = {
     invalidate: true,
     allowed_formats: 'jpg,png,webp',
     transformation: 'c_limit,w_2000',
+    eager: 'c_fill,w_1200,h_600,q_auto,f_webp',
   },
 };
 
