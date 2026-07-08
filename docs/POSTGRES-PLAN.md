@@ -127,7 +127,7 @@ leaves plaintext only until re-run). Proven by an in-memory api social test (reg
   An ops surface wires the trigger later. **ponytail:** rebuilds only the one PII-bearing projection; add
   others in `VendorErasure` if a future projection caches vendor PII.
 
-## 3. Discovery-time orphan-checkpoint detection  — safety net
+## 3. Discovery-time orphan-checkpoint detection  — safety net (**NEXT**)
 
 A renamed `@Checkpointed('<name>')` silently orphans the old checkpoint and replays from
 zero. Now detectable against the pg `checkpoints` table: at bootstrap, diff **persisted
