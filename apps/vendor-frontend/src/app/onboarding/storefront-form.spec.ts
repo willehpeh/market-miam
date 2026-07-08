@@ -42,7 +42,7 @@ describe('StorefrontForm', () => {
     fireEvent.input(screen.getByLabelText(/téléphone/i), { target: { value: '06 12 34 56 78' } });
     fireEvent.click(screen.getByRole('button', { name: /continuer/i }));
 
-    expect(storefront.saved).toEqual({
+    expect(storefront.savedInfo).toEqual({
       name: 'La Table de Margaux',
       description: 'Cuisine de marché',
       phone: '06 12 34 56 78',
@@ -56,7 +56,7 @@ describe('StorefrontForm', () => {
     fireEvent.click(screen.getByRole('button', { name: /continuer/i }));
 
     expect(screen.getByLabelText(/téléphone/i)).toBeEnabled();
-    expect(storefront.saved).toEqual({ name: 'La Table de Margaux', description: '', phone: '' });
+    expect(storefront.savedInfo).toEqual({ name: 'La Table de Margaux', description: '', phone: '' });
   });
 
   it('will not let the vendor continue without a stand name', async () => {
@@ -115,6 +115,15 @@ describe('StorefrontForm', () => {
       'src',
       'https://res.cloudinary.com/test-cloud/image/upload/c_fill,w_400,h_300/storefronts/acme/cover-photo',
     );
+  });
+
+  it('confirms the save with a modal', async () => {
+    const { view, storefront } = await renderForm();
+    storefront.saved.set(true);
+    view.detectChanges();
+    await view.fixture.whenStable();
+
+    expect(screen.getByText(/informations sauvegardées/i)).toBeVisible();
   });
 
   it('shows an error when the photo upload fails', async () => {

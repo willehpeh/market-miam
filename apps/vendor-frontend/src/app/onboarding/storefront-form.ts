@@ -70,12 +70,18 @@ const MAX_PHOTO_BYTES = 10 * 1024 * 1024;
         <button type="submit" class="mt-6 flex w-full max-w-xs mx-auto" [disabled]="fields().invalid()">Continuer →</button>
       </form>
     </mm-card>
+
+    <dialog [open]="saved()" class="fixed inset-0 m-auto h-fit w-fit rounded-card bg-surface p-6 text-center shadow-frame">
+      <div class="mx-auto grid size-11 place-items-center rounded-full bg-brand-soft text-lg">✓</div>
+      <p class="mt-3 font-bold text-ink">Informations sauvegardées</p>
+    </dialog>
   `,
 })
 export class StorefrontForm {
   private readonly storefront = inject(StorefrontFacade);
 
   protected readonly view = this.storefront.view;
+  protected readonly saved = this.storefront.saved;
   protected readonly uploading = this.storefront.coverPhotoUploading;
   protected readonly uploadError = this.storefront.coverPhotoError;
   protected readonly tooLarge = signal(false);

@@ -131,6 +131,22 @@ describe('Storefront', () => {
     req.flush(null);
   });
 
+  it('reflects the saved information optimistically without re-fetching, keeping the photo', () => {
+    store.dispatch(LoadStorefront());
+    httpCtrl.expectOne('/api/storefront').flush({ ...ACME, imageReference: 'v1/acme/cover' });
+
+    facade.save('La Table de Margaux', 'Cuisine de marché', '06 12 34 56 78');
+    httpCtrl.expectOne('/api/storefront').flush(null);
+
+    expect(facade.view()).toEqual({
+      name: 'La Table de Margaux',
+      description: 'Cuisine de marché',
+      phone: '06 12 34 56 78',
+      imageReference: 'v1/acme/cover',
+    });
+    expect(facade.saved()).toBe(true);
+  });
+
   it('uploads a cover photo by signing, uploading to Cloudinary, then persisting the reference', () => {
     store.dispatch(LoadStorefront());
     httpCtrl.expectOne('/api/storefront').flush(ACME);

@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { render, screen, fireEvent } from '@testing-library/angular';
+import { render, screen, fireEvent, waitFor } from '@testing-library/angular';
 import { provideRouter, Router } from '@angular/router';
 import { provideState, provideStore } from '@ngrx/store';
 import { provideEffects } from '@ngrx/effects';
@@ -26,7 +26,7 @@ import { StorefrontEffects, STOREFRONT_RETRY } from '../storefront/storefront.ef
 import { StorefrontFacade } from '../storefront/storefront.facade';
 import { StoreStorefrontFacade } from '../storefront/store.storefront.facade';
 import { onboardingFeature } from './onboarding.state';
-import { OnboardingEffects } from './onboarding.effects';
+import { OnboardingEffects, SAVED_REDIRECT_DELAY } from './onboarding.effects';
 import { OnboardingFacade } from './onboarding.facade';
 import { StoreOnboardingFacade } from './store.onboarding.facade';
 
@@ -57,6 +57,7 @@ describe('Onboarding launch', () => {
         { provide: OnboardingFacade, useClass: StoreOnboardingFacade },
         provideHttpClientTesting(),
         { provide: STOREFRONT_RETRY, useValue: { delayMs: 0, maxAttempts: 1 } },
+        { provide: SAVED_REDIRECT_DELAY, useValue: 0 },
       ],
     });
     const auth = TestBed.inject(Auth) as FakeAuth;
@@ -101,6 +102,26 @@ describe('Onboarding launch', () => {
     await view.fixture.whenStable();
 
     expect(router.url).toBe('/onboarding/storefront');
+  });
+
+  it('sends the vendor to the dashboard once they confirm their storefront', async () => {
+    const { view, auth, router } = await launch();
+    auth.login();
+
+    httpCtrl.expectOne('/api/vendors').flush(null);
+    httpCtrl.expectOne('/api/storefront').flush(EMPTY);
+    await view.fixture.whenStable();
+    expect(router.url).toBe('/onboarding');
+
+    fireEvent.click(screen.getByRole('button', { name: /créer ma vitrine/i }));
+    await view.fixture.whenStable();
+    expect(router.url).toBe('/onboarding/storefront');
+
+    fireEvent.input(screen.getByLabelText(/nom du stand/i), { target: { value: 'La Table de Margaux' } });
+    fireEvent.click(screen.getByRole('button', { name: /continuer/i }));
+    httpCtrl.expectOne('/api/storefront').flush(null);
+
+    await waitFor(() => expect(router.url).toBe('/dashboard'));
   });
 
   it('surfaces the load error code and stays on the landing page', async () => {

@@ -9,6 +9,7 @@ export class StoreStorefrontFacade implements StorefrontFacade {
 
   readonly view = this.store.selectSignal(storefrontFeature.selectView);
   readonly loading = this.store.selectSignal(storefrontFeature.selectLoading);
+  readonly saved = this.store.selectSignal(storefrontFeature.selectSaved);
   readonly coverPhotoUploading = this.store.selectSignal(storefrontFeature.selectCoverPhotoUploading);
   readonly coverPhotoError = this.store.selectSignal(storefrontFeature.selectCoverPhotoError);
 

@@ -52,14 +52,14 @@ export class StorefrontEffects {
     ),
   );
 
-  // ponytail: success/failure are emitted but unreduced — no save UX yet.
-  // Wire a "saved"/error banner into the reducer when the flow needs feedback.
+  // ponytail: EditStorefrontFailure is emitted but unreduced — no error UX yet.
+  // Wire an error banner into the reducer when the flow needs it.
   editStorefront$ = createEffect(() =>
     this.actions$.pipe(
       ofType(EditStorefront),
       switchMap(({ name, description, phone }) =>
         this.storefront.edit(name, description, phone).pipe(
-          map(() => EditStorefrontSuccess()),
+          map(() => EditStorefrontSuccess({ name, description, phone })),
           catchError(() => of(EditStorefrontFailure())),
         ),
       ),
