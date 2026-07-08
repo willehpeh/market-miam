@@ -14,6 +14,36 @@ Read side — `QueryGateway` span: `QueryGateway` port (`event-sourcing`) mirror
 
    **Ready design** (pick-up-and-go when the trigger fires): two new files in `apps/api/src/app/event-sourcing/` — `command-attributes.ts` + `event-attributes.ts`, each a `Record<string, (msg) => Record<string, AttributeValue>>`, default empty, opt-in per type (`registry[key]?.(msg)` → missing key adds nothing, baseline unchanged). Spread the lookup into the existing `setAttributes` at `tracing.command-gateway.ts:18` (key `command.constructor.name`) and `tracing.event-store.ts:23` append (key `events[0].type`, read `events[0].payload`). May import domain types from `@market-miam/market-days`; never import `@opentelemetry/*` into `packages/*` (ADR-0026). Rules: raw value OK for non-PII public data (`item.price` raw — list price, not sensitive revenue); free-text → derived scalars only (`*.has_image`, `schedule.day_count`, `plan.total_quantity`), never raw text. Guard: extend the exact-match `toEqual({...})` assertions in `command-dispatch-tracing.spec.ts`; each instrumented command gets a social test through its real production entry point (no entry point ⇒ not ready). Optional later: ESLint `no-restricted-imports` banning `@opentelemetry/*` in `packages/*` (matches the `projection-decorator` / `processor-decorator` custom-rule pattern; today the invariant is structural/ADR only).
 
+5. **Stuck-subscription alert** — page when a subscription (esp. a **processor**) stops making
+   forward progress. Motivation + kind-awareness: **POSTGRES-PLAN item 4**.
+
+   **Deferred — evidence-gated.** Detection already works today: each failed poll emits a
+   `logger.error` (Render logs) **and** a `TracingEventHandler` error span in Honeycomb
+   (`exception.slug: 'event-handler-failed'`, `event.type`, `vendor.id`, status ERROR). With the
+   current **1:1 event-type→consumer** mapping, `event.type` already identifies the stuck consumer,
+   and repetition shows it isn't recovering. So the sharpening below only earns its keep once one of:
+   (a) real vendors / launch — a silent stuck processor breaks onboarding and nobody's tailing logs;
+   (b) two consumers handle the same event type — breaks the 1:1 identifiability; (c) the first real
+   stuck-subscription incident.
+
+   **Ready design** (pick-up-and-go). OTel approach = a **span, not a metric** (the exporter is
+   `exporter-trace-otlp-proto` — traces only; a metric would need a whole metrics pipeline). Emit a
+   zero-duration error span from the retry handler, which is the only seam that knows recovery depth:
+   - `startPolling` iterates `this.consumers` (not `.map(c => c.subscription)`) so `wakeSubscription`
+     closes over `name` + `kind`.
+   - In the `retry({ delay: (error, retryCount) => … })` callback (`resetOnSuccess: true`, so
+     `retryCount` = consecutive-failure depth), alongside the existing `logger.error`, emit
+     `trace.getTracer('subscriptions').startSpan('subscription poll failed')` with attributes
+     `subscription.name`, `subscription.kind`, `subscription.retry_count`,
+     `exception.slug: 'subscription-poll-failed'`; `recordException`; status ERROR; `end()`.
+     `startSpan` (not `startActiveSpan`) — standalone wide event, no children.
+   - Code stays kind-agnostic (just tags `kind`); **Honeycomb owns the policy**: Trigger on
+     `MAX(subscription.retry_count) WHERE subscription.kind = "processor"` grouped by
+     `subscription.name`, ~10-min window, `> 5` → page. Softer warn on `projection` optional.
+   - Test: `InMemorySpanExporter` harness + a throwing stub handler + fake timers → assert a finished
+     `subscription poll failed` span with `subscription.kind: 'processor'`, `retry_count ≥ 1`, ERROR.
+     The existing "logs the failure and keeps polling" test still passes (`logger.error` kept).
+
 ## Deferred (per ADR)
 - OTel Collector + tail-based sampling — until volume warrants (`docs/DEFERRED.md`).
 

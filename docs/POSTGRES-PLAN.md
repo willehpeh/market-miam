@@ -23,27 +23,30 @@ Prioritised: **read models can't be deferred; crypto-shredding needed very soon.
 
 ## Suggested order
 
-`0` (prod cutover) → **`2a` ✓** (shredding + DataKeys) → **`1` ✓** (read models — local-verify done; deploy pending) → **`5` ✓** (replay) → **`2b` ✓** (erasure flow) → `3` (**NEXT**) → `4` → `6`.
+**`0` ✓** (prod cutover — deployed) → **`2a` ✓** (shredding + DataKeys) → **`1` ✓** (read models — deployed) → **`5` ✓** (replay) → **`2b` ✓** (erasure flow). **All remaining work is deferred/conditional:** `3` (orphan detection — deferred), `4` (dead-lettering; near-term value is the stuck-subscription alert, specced in O11Y-PLAN — deferred), `6` (composite cursor — only if throughput bottlenecks). Open non-feature confirms: item 0's connection-budget sizing + backup/PITR.
 
 ---
 
-## 0. Prod cutover — ship what's built  — the durability payoff, do first
+## 0. Prod cutover — ship what's built  — **DONE** (deployed + functional; two hardening confirms open)
 
-Everything under "Already done" is proven **locally** (Docker pg 18); it isn't
-durable in prod until deployed and verified against the Render `event-store`.
+Deployed to Render and functional — the built stack (event store + 2a + read models `1` +
+replay `5` + erasure `2b`, migrations through `0004`) runs against the Render `event-store`.
 
-- **Deploy + verify:** merge to `main` → Render auto-deploys `api`; migrate-on-boot creates the schema on the Render DB. Confirm a command → event **survives an app restart** in prod.
-- **SSL:** the Pool is `new Pool({ connectionString })` with no `ssl`. Render's *internal* connection string may connect fine — confirm; an external / `sslmode=require` string needs `ssl` config or the first query fails on boot.
-- **Connection budget:** the Pool (default `max` 10) + the dedicated LISTEN client + the migrate connection all draw on `basic-256mb`'s cap. Set `Pool({ max })` explicitly, sized under the instance limit.
-- **Backup / PITR:** the event log is the source of truth — confirm Render's backup/retention covers it before real data lands.
+- **Deploy + verify — DONE:** Render auto-deploys `api`; migrate-on-boot applied the schema.
+- **SSL — OK:** it boots and queries, so the (no-`ssl`) `Pool` connects over Render's connection string.
+- **Connection budget — CONFIRM:** "functional" at low traffic doesn't prove it. The `Pool` (default
+  `max` 10) + LISTEN client + migrate connection all draw on `basic-256mb`'s cap — set `Pool({ max })`
+  explicitly under the limit before load, or connections exhaust under concurrency.
+- **Backup / PITR — CONFIRM:** the event log is the source of truth — confirm Render's backup/retention
+  covers it before real data lands.
 
-## 1. PG read-model adapters + transactional projection↔checkpoint  — **DONE** (local-verify done; deploy pending)
+## 1. PG read-model adapters + transactional projection↔checkpoint  — **DONE** (deployed)
 
 **Shipped** (commits `66a902d` sentinel → `5f108c7`): everything below — `PostgresVendorStorefrontViews`
 + migration `0004`, `clear()` on the port + both adapters, the `UnitOfWork` port + `PostgresUnitOfWork`
 + `Queryable`, `PostgresCheckpoint` on `Queryable`, `MarketDaysModule.forRoot(persistence)`, and the
 Testcontainers social test proving atomic `handle`+`checkpoint`. Fast 270 + container 58 green.
-**Remaining (ops, not code):** deploy (Render runs `0004` on boot). Local verify **done** —
+**Deployed** (Render ran `0004` on boot; live and functional). Local verify was done first —
 register + edit a storefront, restart, view survived. Design as-built:
 
 Read models are in-memory (`InMemoryVendorStorefrontViews`) → lost on restart; the projection's
@@ -127,7 +130,14 @@ leaves plaintext only until re-run). Proven by an in-memory api social test (reg
   An ops surface wires the trigger later. **ponytail:** rebuilds only the one PII-bearing projection; add
   others in `VendorErasure` if a future projection caches vendor PII.
 
-## 3. Discovery-time orphan-checkpoint detection  — safety net (**NEXT**)
+## 3. Discovery-time orphan-checkpoint detection  — safety net (**DEFERRED**)
+
+**Deferred — evidence-gated.** Warn-only, so it prevents nothing (the replay-from-zero has already
+happened by the time it logs); the trigger (renaming a `@Checkpointed` name) is rare; and the common
+case (a renamed *projection* replaying from zero) is harmless — idempotent rebuild. The one dangerous
+variant (a renamed *processor* silently auto-replaying from zero at boot, re-running side effects) this
+feature wouldn't stop anyway — it only warns about the orphaned *old* name. Revisit if a checkpoint is
+ever actually renamed, or if the processor-auto-replay gap becomes worth a real guard.
 
 A renamed `@Checkpointed('<name>')` silently orphans the old checkpoint and replays from
 zero. Now detectable against the pg `checkpoints` table: at bootstrap, diff **persisted
@@ -144,6 +154,18 @@ advances the checkpoint → replays forever (backoff only slows it). Resolution
 **dead-letter table** (`global_position`/`id` + attempt count + error, migration ~`0005`)
 and advance the checkpoint past it. Fail-loud until then; the DLQ **needs monitoring**
 (silent DLQ = silent data loss). Deferred until there's evidence of a real poison event.
+
+**Kind-aware, when built.** A stuck *projection* is stale reads, recoverable via `rebuild` (item 5) —
+skip-and-advance is safe. A stuck *processor* halts real workflow and cascades (a wedged
+`OpensStorefronts` means new vendors never get a storefront), and **can't be replay-recovered**
+(the item-5 guard refuses processor replay). So auto-skip is **wrong for processors** — it silently
+drops a business command with no safe recovery; freeze-and-alert is the safer behaviour there. The
+DLQ's skip path is a projection convenience; processors want the alert, not the skip.
+
+**Near-term value is the alert, not the table.** Detection already works (each failed poll emits a
+`logger.error` + a `TracingEventHandler` error span in Honeycomb; today's 1:1 event-type→consumer
+mapping means `event.type` identifies the stuck consumer). The push-alert + span enrichment is
+specced but evidence-gated — see **O11Y-PLAN "Stuck-subscription alert"**.
 
 ## 5. Replay mechanism + processor replay-safety  — **DONE** (transport deferred)
 
