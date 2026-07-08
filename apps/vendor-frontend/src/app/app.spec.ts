@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { render, screen, fireEvent } from '@testing-library/angular';
+import { render, screen, fireEvent, RenderResult } from '@testing-library/angular';
 import { provideRouter, Router } from '@angular/router';
 import { provideState, provideStore } from '@ngrx/store';
 import { provideEffects } from '@ngrx/effects';
@@ -40,27 +40,62 @@ const LOGIN = { name: 'Se connecter' };
 const LOGOUT = { name: 'Se déconnecter' };
 
 describe('App', () => {
-  it('smoke', async () => {
-    const { view } = await renderApp();
+  let _view: RenderResult<App, App>;
+  let _auth: FakeAuth;
+  let _router: Router;
 
-    expect(view.fixture.componentInstance).toBeTruthy();
+  beforeEach(async () => {
+    const { view, auth, router } = await renderApp();
+    _view = view;
+    _auth = auth;
+    _router = router;
+  })
+
+  it('smoke', async () => {
+    expect(_view.fixture.componentInstance).toBeTruthy();
   });
 
-  it('should offer the user the chance to log in again once they have logged out', async () => {
-    const { view, auth } = await renderApp();
-    auth.login();
-    view.detectChanges();
+  it('should offer the vendor the chance to log in again once they have logged out', async () => {
+    await givenVendorIsLoggedIn();
 
-    fireEvent.click(screen.getByRole('button', LOGOUT));
+    clickLogoutButton();
 
-    expect(screen.getByRole('button', LOGIN)).toBeVisible();
-    expect(screen.queryByRole('button', LOGOUT)).not.toBeInTheDocument();
+    expectLoginButtonVisible();
+    expectLogoutButtonNotInDocument();
   });
 
   it('should bounce an anonymous visitor away from the dashboard', async () => {
-    const { router } = await renderApp();
-    await router.navigateByUrl('/dashboard');
-
-    expect(router.url).toBe('/');
+    givenUserIsAnonymous();
+    await tryToGoToDashboard();
+    expectRouteToBeRoot();
   });
+
+  function givenUserIsAnonymous(): void {
+    // no-op
+  }
+
+  async function tryToGoToDashboard() {
+    await _router.navigateByUrl('/dashboard');
+  }
+
+  function expectRouteToBeRoot() {
+    expect(_router.url).toBe('/');
+  }
+
+  async function givenVendorIsLoggedIn() {
+    _auth.login();
+    _view.detectChanges();
+  }
+
+  function clickLogoutButton() {
+    fireEvent.click(screen.getByRole('button', LOGOUT));
+  }
+
+  function expectLoginButtonVisible() {
+    expect(screen.getByRole('button', LOGIN)).toBeVisible();
+  }
+
+  function expectLogoutButtonNotInDocument() {
+    expect(screen.queryByRole('button', LOGOUT)).not.toBeInTheDocument();
+  }
 });
