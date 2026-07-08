@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { render, screen, fireEvent } from '@testing-library/angular';
+import { vi } from 'vitest';
 import { StorefrontForm } from './storefront-form';
 import { StorefrontFacade } from '../storefront/storefront.facade';
 import { FakeStorefrontFacade } from '../storefront/fake.storefront.facade';
@@ -85,6 +86,27 @@ describe('StorefrontForm', () => {
     selectFile(view.container, file);
 
     expect(storefront.uploadedFile).toBe(file);
+  });
+
+  it('refetches a cover photo that fails to load, until its derivation is ready', async () => {
+    const { view, storefront } = await renderForm();
+    storefront.view.set({ name: '', description: '', phone: '', imageReference: 'v1/storefronts/acme/cover-photo' });
+    view.detectChanges();
+
+    const img = screen.getByAltText(/photo de votre stand/i);
+    const original = img.getAttribute('src');
+    expect(original).toBe(
+      'https://res.cloudinary.com/test-cloud/image/upload/c_fill,w_400,h_300/v1/storefronts/acme/cover-photo',
+    );
+
+    vi.useFakeTimers();
+    fireEvent.error(img);
+    vi.advanceTimersByTime(1000);
+    vi.useRealTimers();
+    view.detectChanges();
+
+    // Same underlying transformation, cache-busted so the browser re-requests it.
+    expect(img.getAttribute('src')).toBe(`${original}?retry=1`);
   });
 
   it('rejects a photo larger than 10 Mo without uploading it', async () => {
