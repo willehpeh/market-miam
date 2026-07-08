@@ -33,7 +33,7 @@ class FailingCheckpoint extends Checkpoint {
   read(): Promise<number> {
     return Promise.resolve(0);
   }
-  write(): Promise<void> {
+  write(_position: number): Promise<void> {
     return Promise.reject(new Error('checkpoint write failed'));
   }
 }
