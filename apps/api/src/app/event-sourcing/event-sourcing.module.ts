@@ -18,14 +18,14 @@ import {
   PostgresEventStore,
   PostgresNotifications,
   PostgresUnitOfWork,
-  QueryDispatcher,
+  QueryGateway,
   UnitOfWork,
 } from '@market-miam/event-sourcing';
 import { ApplicationEventStore } from './application.event-store';
 import { masterKey } from './master-key';
 import { MessageContextModule } from '../message-context/message-context.module';
 import { TracingCommandGateway } from './tracing.command-gateway';
-import { TracingQueryDispatcher } from './tracing.query-dispatcher';
+import { TracingQueryGateway } from './tracing.query-gateway';
 import {
   Subscriptions,
   CHECKPOINT_FACTORY,
@@ -109,8 +109,8 @@ const postgresPersistence = (piiFields: PiiFields): Provider[] => [
 const core: Provider[] = [
   TracingCommandGateway,
   { provide: CommandGateway, useExisting: TracingCommandGateway },
-  TracingQueryDispatcher,
-  { provide: QueryDispatcher, useExisting: TracingQueryDispatcher },
+  TracingQueryGateway,
+  { provide: QueryGateway, useExisting: TracingQueryGateway },
   { provide: POLLING_ENABLED, useValue: true },
   Subscriptions,
 ];
@@ -121,7 +121,7 @@ export class EventSourcingModule implements OnApplicationShutdown {
 
   static forRoot(persistence: Persistence, piiFields: PiiFields = {}): DynamicModule {
     const adapters = persistence === 'postgres' ? postgresPersistence(piiFields) : inMemoryPersistence(piiFields);
-    const exported = [EventStore, Events, UnitOfWork, CommandGateway, QueryDispatcher, Subscriptions];
+    const exported = [EventStore, Events, UnitOfWork, CommandGateway, QueryGateway, Subscriptions];
     return {
       module: EventSourcingModule,
       global: true,

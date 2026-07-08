@@ -1,7 +1,7 @@
 import { Body, Controller, Get, NotFoundException, Post, Put, UseGuards } from '@nestjs/common';
 import { CurrentVendor, JwtAuthGuard } from '@market-miam/auth-nestjs';
 import type { VerifiedVendor } from '@market-miam/auth';
-import { CommandGateway, QueryDispatcher } from '@market-miam/event-sourcing';
+import { CommandGateway, QueryGateway } from '@market-miam/event-sourcing';
 import {
   EditStorefrontInformation,
   FindVendorStorefront,
@@ -18,7 +18,7 @@ function coverPhotoPublicId(vendorId: string): string {
 export class StorefrontController {
   constructor(
     private readonly commands: CommandGateway,
-    private readonly queries: QueryDispatcher,
+    private readonly queries: QueryGateway,
     private readonly signedUploads: SignedUploads,
   ) {}
 

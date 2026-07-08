@@ -103,7 +103,7 @@ const commandHandlers = [
 
 const queryHandlers = [FindVendorStorefrontHandler];
 
-// EventStore / CommandGateway / QueryDispatcher (and the pg UnitOfWork) come from
+// EventStore / CommandGateway / QueryGateway (and the pg UnitOfWork) come from
 // the global EventSourcingModule.forRoot(...) at the composition root. persistence
 // swaps only the read-model store: pg-backed views vs in-memory.
 @Module({})

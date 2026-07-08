@@ -13,7 +13,7 @@ export {
 } from './checkpointed.decorator';
 export { Processor } from './processor';
 export { CommandGateway } from './command-gateway';
-export { QueryDispatcher } from './query-dispatcher';
+export { QueryGateway } from './query-gateway';
 export { Subscription } from './subscription';
 export { Checkpoint } from './checkpoint';
 export { MessageContext, MessageContextData } from './message-context';
