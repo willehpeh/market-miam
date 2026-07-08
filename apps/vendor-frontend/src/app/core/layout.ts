@@ -13,7 +13,7 @@ import { LogoutButton } from './auth/logout-button';
           <mm-logout-button />
         }
       </header>
-      <main class="px-6 py-3">
+      <main class="px-6 py-3 bg-canvas">
         <router-outlet />
       </main>
     </div>

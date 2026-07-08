@@ -70,7 +70,7 @@
 /* ---- base layer ---------------------------------------------------------- */
 @layer base {
   body {
-    background-color: var(--color-canvas);
+    background-color: var(--color-surface);
     color: var(--color-ink);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
