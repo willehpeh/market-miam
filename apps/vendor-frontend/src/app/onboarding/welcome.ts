@@ -17,7 +17,7 @@ import { Card } from '../core/card';
       <ul class="mt-6 divide-y divide-line max-w-lg mx-auto">
         @for (feature of features; track feature.title) {
           <li class="flex gap-3 py-3">
-            <span class="mt-0.5 grid size-8 shrink-0 place-items-center rounded-field bg-brand-soft">
+            <span aria-hidden="true" class="mt-0.5 grid size-8 shrink-0 place-items-center rounded-field bg-brand-soft">
               {{ feature.icon }}
             </span>
             <div>

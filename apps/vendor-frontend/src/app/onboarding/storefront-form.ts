@@ -25,7 +25,7 @@ const MAX_PHOTO_BYTES = 10 * 1024 * 1024;
               class="mx-auto h-32 w-full max-w-xs rounded-card object-cover"
             />
           } @else {
-            <div class="mx-auto grid size-11 place-items-center rounded-full bg-brand-soft text-lg">📷</div>
+            <div aria-hidden="true" class="mx-auto grid size-11 place-items-center rounded-full bg-brand-soft text-lg">📷</div>
           }
           <p class="mt-2 font-bold text-ink">Image de votre stand</p>
           <p class="text-sm text-muted">Une photo de votre activité ou votre logo</p>
@@ -36,19 +36,27 @@ const MAX_PHOTO_BYTES = 10 * 1024 * 1024;
             </button>
           </div>
           @if (tooLarge()) {
-            <p class="mt-2 text-xs text-danger">La photo dépasse 10 Mo. Choisissez-en une plus légère.</p>
+            <p role="alert" class="mt-2 text-xs text-danger">La photo dépasse 10 Mo. Choisissez-en une plus légère.</p>
           }
           @if (uploadError()) {
-            <p class="mt-2 text-xs text-danger">L'envoi de la photo a échoué. Réessayez.</p>
+            <p role="alert" class="mt-2 text-xs text-danger">L'envoi de la photo a échoué. Réessayez.</p>
           }
         </div>
 
         <div class="mt-5 space-y-4">
           <div>
             <label for="name" class="field-label">Nom du stand</label>
-            <input id="name" type="text" class="mt-1" [formField]="fields.name" placeholder="La Table de Margaux" />
+            <input
+              id="name"
+              type="text"
+              class="mt-1"
+              [formField]="fields.name"
+              [attr.aria-invalid]="fields.name().touched() && fields.name().invalid()"
+              [attr.aria-describedby]="fields.name().touched() && fields.name().invalid() ? 'name-error' : null"
+              placeholder="La Table de Margaux"
+            />
             @if (fields.name().touched() && fields.name().invalid()) {
-              <p class="mt-1 text-xs text-danger">Le nom du stand est requis.</p>
+              <p id="name-error" role="alert" class="mt-1 text-xs text-danger">Le nom du stand est requis.</p>
             }
           </div>
           <div>
@@ -71,10 +79,12 @@ const MAX_PHOTO_BYTES = 10 * 1024 * 1024;
       </form>
     </mm-card>
 
-    <dialog [open]="saved()" class="fixed inset-0 m-auto h-fit w-fit rounded-card bg-surface p-6 text-center shadow-frame">
-      <div class="mx-auto grid size-11 place-items-center rounded-full bg-brand-soft text-lg">✓</div>
-      <p class="mt-3 font-bold text-ink">Informations sauvegardées</p>
-    </dialog>
+    @if (saved()) {
+      <div role="status" class="fixed inset-0 m-auto h-fit w-fit rounded-card bg-surface p-6 text-center shadow-frame">
+        <div aria-hidden="true" class="mx-auto grid size-11 place-items-center rounded-full bg-brand-soft text-lg">✓</div>
+        <p class="mt-3 font-bold text-ink">Informations sauvegardées</p>
+      </div>
+    }
   `,
 })
 export class StorefrontForm {

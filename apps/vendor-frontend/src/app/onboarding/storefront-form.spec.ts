@@ -117,13 +117,13 @@ describe('StorefrontForm', () => {
     );
   });
 
-  it('confirms the save with a modal', async () => {
+  it('confirms the save with a status message', async () => {
     const { view, storefront } = await renderForm();
     storefront.saved.set(true);
     view.detectChanges();
     await view.fixture.whenStable();
 
-    expect(screen.getByText(/informations sauvegardées/i)).toBeVisible();
+    expect(screen.getByRole('status')).toHaveTextContent(/informations sauvegardées/i);
   });
 
   it('shows an error when the photo upload fails', async () => {
