@@ -101,6 +101,11 @@ describe('AddItemToCatalogue', () => {
       expect(store.newEvents()).toEqual([]);
     });
 
+    it('should reject a fractional price (cents are whole numbers)', async () => {
+      await expect(handler.execute(TestAddItemToCatalogue.with({ price: 12.5 }))).rejects.toThrow(InvalidPriceError);
+      expect(store.newEvents()).toEqual([]);
+    });
+
     it.each([
       '',
       '   ',
