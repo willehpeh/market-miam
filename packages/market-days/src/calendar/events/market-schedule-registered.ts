@@ -4,7 +4,7 @@ export type MarketScheduleRegistered = DomainEvent<'MarketScheduleRegistered', {
   market: {
     id: string;
     name: string;
-    streetAddress: string;
+    streetAddress?: string;
     codePostal: string;
     town: string;
     pitch?: string;

@@ -42,6 +42,10 @@ export class TestRegisterMarketSchedule {
     });
   }
 
+  static withMarket(overrides: Partial<RegisterMarketSchedule['market']>): RegisterMarketSchedule {
+    return this.with({ market: { ...market(), ...overrides } });
+  }
+
   static everyDay(): RegisterMarketSchedule {
     return this.with({
       days: [

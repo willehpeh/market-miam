@@ -8,7 +8,7 @@ import { Pitch } from './pitch';
 type MarketSnapshot = {
   id: string;
   name: string;
-  streetAddress: string;
+  streetAddress?: string;
   codePostal: string;
   town: string;
   pitch?: string;
@@ -17,7 +17,7 @@ type MarketSnapshot = {
 type MarketParams = {
   id: MarketId;
   name: MarketName;
-  streetAddress: StreetAddress;
+  streetAddress?: StreetAddress;
   postalCode: PostalCode;
   town: Town;
   pitch?: Pitch;
@@ -26,7 +26,7 @@ type MarketParams = {
 export class Market {
   private readonly _id: MarketId;
   private readonly _name: MarketName;
-  private readonly _streetAddress: StreetAddress;
+  private readonly _streetAddress?: StreetAddress;
   private readonly _postalCode: PostalCode;
   private readonly _town: Town;
   private readonly _pitch?: Pitch;
@@ -44,7 +44,7 @@ export class Market {
     return {
       id: this._id.value(),
       name: this._name.value(),
-      streetAddress: this._streetAddress.value(),
+      ...(this._streetAddress ? { streetAddress: this._streetAddress.value() } : {}),
       codePostal: this._postalCode.value(),
       town: this._town.value(),
       ...(this._pitch ? { pitch: this._pitch.value() } : {}),

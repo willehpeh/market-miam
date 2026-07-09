@@ -3,7 +3,7 @@ import { Command } from '@nestjs/cqrs';
 type MarketDetails = {
   id: string;
   name: string;
-  streetAddress: string;
+  streetAddress?: string;
   codePostal: string;
   town: string;
   pitch?: string;

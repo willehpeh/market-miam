@@ -41,10 +41,60 @@ describe('Register Market Schedule', () => {
     })]);
   });
 
+  it('omits the pitch when the market has none', async () => {
+    const market = {
+      id: 'market-id',
+      name: 'Belleville Market',
+      streetAddress: '20 rue du Marché',
+      codePostal: '75020',
+      town: 'Paris',
+    };
+    const command = TestRegisterMarketSchedule.with({ market });
+    await handler.execute(command);
+
+    expect(store.newEvents()).toEqual([expect.objectContaining({
+      type: 'MarketScheduleRegistered',
+      payload: expect.objectContaining({ market })
+    })]);
+  });
+
+  it('allows a market with no street address', async () => {
+    const market = {
+      id: 'market-id',
+      name: 'Belleville Market',
+      codePostal: '75020',
+      town: 'Paris',
+      pitch: 'Stall 42',
+    };
+    const command = TestRegisterMarketSchedule.with({ market });
+    await handler.execute(command);
+
+    expect(store.newEvents()).toEqual([expect.objectContaining({
+      type: 'MarketScheduleRegistered',
+      payload: expect.objectContaining({ market })
+    })]);
+  });
+
   it('stamps the vendor id into the event metadata', async () => {
     await handler.execute(TestRegisterMarketSchedule.simple());
 
     expectVendorScopedEvents(store.newEvents(), 'vendor-id');
+  });
+
+  it.each([
+    ' ',
+    ''
+  ])('should not allow a market with an empty name', async name => {
+    const command = TestRegisterMarketSchedule.withMarket({ name });
+    await expect(handler.execute(command)).rejects.toThrow(EmptyValueError);
+  });
+
+  it.each([
+    ' ',
+    ''
+  ])('should not allow a market with an empty town', async town => {
+    const command = TestRegisterMarketSchedule.withMarket({ town });
+    await expect(handler.execute(command)).rejects.toThrow(EmptyValueError);
   });
 
   it.each([

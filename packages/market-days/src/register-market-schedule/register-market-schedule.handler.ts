@@ -32,7 +32,7 @@ export class RegisterMarketScheduleHandler implements ICommandHandler<RegisterMa
     return new Market({
       id: new MarketId(id),
       name: new MarketName(name),
-      streetAddress: new StreetAddress(streetAddress),
+      streetAddress: streetAddress ? new StreetAddress(streetAddress) : undefined,
       postalCode: new PostalCode(codePostal),
       town: new Town(town),
       pitch: pitch ? new Pitch(pitch) : undefined,
