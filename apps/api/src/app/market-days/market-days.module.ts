@@ -6,9 +6,14 @@ import {
   AddItemToCatalogueHandler,
   Calendars,
   Catalogues,
+  CatalogueViewProjection,
+  CatalogueViews,
+  CatalogueViewStore,
   ChangeItemPriceHandler,
   EditStorefrontInformationHandler,
+  FindVendorCatalogueHandler,
   FindVendorStorefrontHandler,
+  InMemoryCatalogueViews,
   InMemoryVendorStorefrontViews,
   MarkItemAsSoldOutHandler,
   MarketDays,
@@ -20,6 +25,7 @@ import {
   RetireItemHandler,
   SetStorefrontCoverPhotoHandler,
   OpensStorefronts,
+  PostgresCatalogueViews,
   Storefronts,
   UnplanItemFromMarketDayHandler,
   Vendors,
@@ -32,6 +38,7 @@ import { SignedUploads, signedUploadsFor } from '../signed-uploads';
 import { Persistence } from '../event-sourcing/event-sourcing.module';
 import { VendorsController } from './vendors.controller';
 import { StorefrontController } from './storefront.controller';
+import { CatalogueController } from './catalogue.controller';
 import { VendorErasure } from './vendor-erasure';
 
 const clock = [{ provide: Clock, useClass: DateClock }];
@@ -64,11 +71,21 @@ const readModel = (persistence: Persistence): Provider[] => {
           },
           { provide: VendorStorefrontViews, useExisting: PostgresVendorStorefrontViews },
           { provide: VendorStorefrontViewStore, useExisting: PostgresVendorStorefrontViews },
+          {
+            provide: PostgresCatalogueViews,
+            useFactory: (uow: PostgresUnitOfWork) => new PostgresCatalogueViews(uow),
+            inject: [PostgresUnitOfWork],
+          },
+          { provide: CatalogueViews, useExisting: PostgresCatalogueViews },
+          { provide: CatalogueViewStore, useExisting: PostgresCatalogueViews },
         ]
       : [
           InMemoryVendorStorefrontViews,
           { provide: VendorStorefrontViews, useExisting: InMemoryVendorStorefrontViews },
           { provide: VendorStorefrontViewStore, useExisting: InMemoryVendorStorefrontViews },
+          InMemoryCatalogueViews,
+          { provide: CatalogueViews, useExisting: InMemoryCatalogueViews },
+          { provide: CatalogueViewStore, useExisting: InMemoryCatalogueViews },
         ];
   return [
     ...views,
@@ -76,6 +93,11 @@ const readModel = (persistence: Persistence): Provider[] => {
       provide: VendorStorefrontViewProjection,
       useFactory: (store: VendorStorefrontViewStore) => new VendorStorefrontViewProjection(store),
       inject: [VendorStorefrontViewStore],
+    },
+    {
+      provide: CatalogueViewProjection,
+      useFactory: (store: CatalogueViewStore) => new CatalogueViewProjection(store),
+      inject: [CatalogueViewStore],
     },
   ];
 };
@@ -102,7 +124,7 @@ const commandHandlers = [
   OpenStorefrontHandler,
 ];
 
-const queryHandlers = [FindVendorStorefrontHandler];
+const queryHandlers = [FindVendorStorefrontHandler, FindVendorCatalogueHandler];
 
 // EventStore / CommandGateway / QueryGateway (and the pg UnitOfWork) come from
 // the global EventSourcingModule.forRoot(...) at the composition root. persistence
@@ -112,7 +134,7 @@ export class MarketDaysModule {
   static forRoot(persistence: Persistence): DynamicModule {
     return {
       module: MarketDaysModule,
-      controllers: [VendorsController, StorefrontController],
+      controllers: [VendorsController, StorefrontController, CatalogueController],
       providers: [
         ...clock,
         ...signedUploads,
