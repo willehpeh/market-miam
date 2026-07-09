@@ -1,9 +1,9 @@
-import { Checkpoint } from './checkpoint';
-import { EventHandler } from './event-handler';
-import { Events } from './events';
-import { StoredEvent } from './stored-event';
-import { Subscription } from './subscription';
-import { UnitOfWork } from './unit-of-work';
+import { Checkpoint } from '../ports/checkpoint';
+import { EventHandler } from '../ports/event-handler';
+import { Events } from '../ports/events';
+import { StoredEvent } from '../domain/stored-event';
+import { Subscription } from '../ports/subscription';
+import { UnitOfWork } from '../ports/unit-of-work';
 
 const BATCH_SIZE = 100;
 

@@ -1,4 +1,4 @@
-import { EventHandler } from './event-handler';
+import { EventHandler } from '../ports/event-handler';
 
 export abstract class Projection extends EventHandler {
   // Tear down this projection's read model so a replay rebuilds it from zero.

@@ -1,8 +1,8 @@
-import { DomainEvent } from './domain-event';
-import { Events } from './events';
-import { EventStore } from './event-store';
-import { MessageContext } from './message-context';
-import { StoredEvent } from './stored-event';
+import { DomainEvent } from '../domain/domain-event';
+import { Events } from '../ports/events';
+import { EventStore } from '../ports/event-store';
+import { MessageContext } from '../ports/message-context';
+import { StoredEvent } from '../domain/stored-event';
 
 export class MessageContextEventStore extends EventStore implements Events {
   constructor(

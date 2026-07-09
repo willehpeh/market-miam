@@ -1,4 +1,4 @@
-import { Checkpoint } from '../checkpoint';
+import { Checkpoint } from '../../ports/checkpoint';
 import { Queryable } from './queryable';
 
 export class PostgresCheckpoint implements Checkpoint {

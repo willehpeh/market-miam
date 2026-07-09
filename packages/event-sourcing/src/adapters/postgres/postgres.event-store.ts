@@ -1,8 +1,8 @@
 import type { Pool } from 'pg';
-import { DomainEvent } from '../domain-event';
-import { EventStore } from '../event-store';
-import { Events } from '../events';
-import { StoredEvent } from '../stored-event';
+import { DomainEvent } from '../../domain/domain-event';
+import { EventStore } from '../../ports/event-store';
+import { Events } from '../../ports/events';
+import { StoredEvent } from '../../domain/stored-event';
 import { EventRow } from './event-row';
 import { AppendTransaction } from './append-transaction';
 

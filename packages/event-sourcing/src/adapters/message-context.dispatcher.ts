@@ -1,4 +1,4 @@
-import { MessageContext } from './message-context';
+import { MessageContext } from '../ports/message-context';
 
 export class MessageContextDispatcher {
   constructor(

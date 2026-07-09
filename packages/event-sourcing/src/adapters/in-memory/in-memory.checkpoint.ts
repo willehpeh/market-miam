@@ -1,4 +1,4 @@
-import { Checkpoint } from './checkpoint';
+import { Checkpoint } from '../../ports/checkpoint';
 
 export class InMemoryCheckpoint implements Checkpoint {
   private position = 0;

@@ -1,5 +1,5 @@
 import { randomBytes } from 'node:crypto';
-import { DataKeys } from './data-keys';
+import { DataKeys } from '../../ports/data-keys';
 
 export class InMemoryDataKeys extends DataKeys {
   private readonly keys = new Map<string, Buffer>();

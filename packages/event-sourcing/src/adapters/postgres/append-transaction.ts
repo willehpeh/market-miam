@@ -1,7 +1,7 @@
 import type { PoolClient, QueryResult } from 'pg';
-import { DomainEvent } from '../domain-event';
+import { DomainEvent } from '../../domain/domain-event';
 import { randomUUID } from 'node:crypto';
-import { ConcurrencyError } from '../concurrency.error';
+import { ConcurrencyError } from '../../domain/concurrency.error';
 
 export class AppendTransaction {
 

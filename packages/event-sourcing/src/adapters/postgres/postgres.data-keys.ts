@@ -1,6 +1,6 @@
 import { createCipheriv, createDecipheriv, randomBytes } from 'node:crypto';
 import type { Pool } from 'pg';
-import { DataKeys } from '../data-keys';
+import { DataKeys } from '../../ports/data-keys';
 
 // Data keys are AES-256-GCM data keys, stored envelope-encrypted under the master
 // key: the row holds `iv(12) || authTag(16) || ciphertext`. The master key never

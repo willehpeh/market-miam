@@ -1,6 +1,6 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 import type { Pool, PoolClient, QueryResult, QueryResultRow } from 'pg';
-import { UnitOfWork } from '../unit-of-work';
+import { UnitOfWork } from '../../ports/unit-of-work';
 import { Queryable } from './queryable';
 
 // A UnitOfWork backed by a real pg transaction, and the Queryable the pg adapters
