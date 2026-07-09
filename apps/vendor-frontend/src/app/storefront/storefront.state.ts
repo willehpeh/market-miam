@@ -30,6 +30,7 @@ export const UploadCoverPhotoSuccess = createAction(
   props<{ imageReference: string }>(),
 );
 export const UploadCoverPhotoFailure = createAction('[Storefront] Upload Cover Photo Failure');
+export const HideSavedModal = createAction('[@Effect navigateHomeOnSaved$] Hide Saved Modal');
 
 export interface StorefrontState {
   loading: boolean;
@@ -67,5 +68,6 @@ export const storefrontFeature = createFeature({
       view: state.view ? { ...state.view, imageReference } : state.view,
     })),
     on(UploadCoverPhotoFailure, (state): StorefrontState => ({ ...state, coverPhotoUploading: false, coverPhotoError: true })),
+    on(HideSavedModal, (state): StorefrontState => ({ ...state, saved: false }))
   ),
 });

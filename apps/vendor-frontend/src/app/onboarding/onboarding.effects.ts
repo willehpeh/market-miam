@@ -3,7 +3,12 @@ import { Router } from '@angular/router';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { delay, map, tap } from 'rxjs';
 import { RegisterVendor, RegisterVendorSuccess } from '../vendor/vendor.state';
-import { EditStorefrontSuccess, LoadStorefront, LoadStorefrontSuccess } from '../storefront/storefront.state';
+import {
+  EditStorefrontSuccess,
+  HideSavedModal,
+  LoadStorefront,
+  LoadStorefrontSuccess
+} from '../storefront/storefront.state';
 import { RetryOnboarding } from './onboarding.state';
 
 // ponytail: how long the "Informations sauvegardées" confirmation shows before redirecting home.
@@ -55,7 +60,7 @@ export class OnboardingEffects {
         tap(() => {
           this.router.navigate(['/dashboard']);
         }),
+        map(() => HideSavedModal())
       ),
-    { dispatch: false },
   );
 }
