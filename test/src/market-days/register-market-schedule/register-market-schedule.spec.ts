@@ -7,6 +7,7 @@ import {
   RegisterMarketScheduleHandler
 } from '@market-miam/market-days';
 import { EmptyValueError } from '@market-miam/common';
+import { InvalidPostalCodeError } from '@market-miam/market-days';
 import { expectVendorScopedEvents } from '../../shared-kernel';
 
 describe('Register Market Schedule', () => {
@@ -95,6 +96,38 @@ describe('Register Market Schedule', () => {
   ])('should not allow a market with an empty town', async town => {
     const command = TestRegisterMarketSchedule.withMarket({ town });
     await expect(handler.execute(command)).rejects.toThrow(EmptyValueError);
+  });
+
+  it.each([
+    ' ',
+    ''
+  ])('should not allow a market with an empty id', async id => {
+    const command = TestRegisterMarketSchedule.withMarket({ id });
+    await expect(handler.execute(command)).rejects.toThrow(EmptyValueError);
+  });
+
+  it.each([
+    'abc',
+    '7500',
+    '750011',
+    '75 01',
+    ' ',
+    ''
+  ])('should not allow a market with an invalid code postal', async codePostal => {
+    const command = TestRegisterMarketSchedule.withMarket({ codePostal });
+    await expect(handler.execute(command)).rejects.toThrow(InvalidPostalCodeError);
+  });
+
+  it('trims a valid code postal', async () => {
+    const command = TestRegisterMarketSchedule.withMarket({ codePostal: ' 75020 ' });
+    await handler.execute(command);
+
+    expect(store.newEvents()).toEqual([expect.objectContaining({
+      type: 'MarketScheduleRegistered',
+      payload: expect.objectContaining({
+        market: expect.objectContaining({ codePostal: '75020' })
+      })
+    })]);
   });
 
   it.each([
