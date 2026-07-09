@@ -34,7 +34,7 @@ describe('Register Market Schedule', () => {
         scheduleId: expect.any(String),
         scheduleName: command.scheduleName,
         startDate: command.startDate,
-        marketId: command.marketId,
+        market: command.market,
         days: command.days,
         frequency: command.frequency ?? { weeks: 1 }
       })

@@ -8,6 +8,7 @@ import { Schedule } from '../calendar/schedule/schedule';
 import { MarketId, VendorId } from '@market-miam/shared-kernel';
 import { ScheduleId } from '../calendar/schedule/schedule-id';
 import { LocalDate } from '@market-miam/common';
+import { Market, MarketName, StreetAddress, PostalCode, Town, Pitch } from '../market';
 
 @CommandHandler(RegisterMarketSchedule)
 export class RegisterMarketScheduleHandler implements ICommandHandler<RegisterMarketSchedule> {
@@ -16,14 +17,26 @@ export class RegisterMarketScheduleHandler implements ICommandHandler<RegisterMa
 
   async execute(registerMarketSchedule: RegisterMarketSchedule): Promise<void> {
     const vendorId = new VendorId(registerMarketSchedule.vendorId);
-    const marketId = new MarketId(registerMarketSchedule.marketId);
+    const market = this.marketFrom(registerMarketSchedule);
     const schedule = this.scheduleFrom(registerMarketSchedule);
     const calendar = await this.calendars.forVendor(vendorId);
     calendar.registerMarketSchedule(
-      marketId,
+      market,
       schedule
     );
     await this.calendars.save(calendar, vendorId);
+  }
+
+  private marketFrom(registerMarketSchedule: RegisterMarketSchedule) {
+    const { id, name, streetAddress, codePostal, town, pitch } = registerMarketSchedule.market;
+    return new Market({
+      id: new MarketId(id),
+      name: new MarketName(name),
+      streetAddress: new StreetAddress(streetAddress),
+      postalCode: new PostalCode(codePostal),
+      town: new Town(town),
+      pitch: pitch ? new Pitch(pitch) : undefined,
+    });
   }
 
   private scheduleFrom(registerMarketSchedule: RegisterMarketSchedule) {

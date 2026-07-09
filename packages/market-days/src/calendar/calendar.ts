@@ -1,7 +1,7 @@
 import { MarketScheduleRegistered } from './events';
 import { Aggregate } from '@market-miam/event-sourcing';
 import { Schedule } from './schedule/schedule';
-import { MarketId } from '@market-miam/shared-kernel';
+import { Market } from '../market';
 
 export class Calendar extends Aggregate {
 
@@ -9,12 +9,12 @@ export class Calendar extends Aggregate {
     // no-op for now
   }
 
-  registerMarketSchedule(marketId: MarketId, schedule: Schedule): void {
+  registerMarketSchedule(market: Market, schedule: Schedule): void {
     const { scheduleId, scheduleName, days, frequency, startDate } = schedule.snapshot();
     const event: MarketScheduleRegistered = {
       type: 'MarketScheduleRegistered',
       payload: {
-        marketId: marketId.value(),
+        market: market.snapshot(),
         scheduleId,
         scheduleName,
         startDate,
