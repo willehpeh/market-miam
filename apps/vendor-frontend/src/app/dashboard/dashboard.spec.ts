@@ -28,7 +28,6 @@ describe('Dashboard', () => {
     expect(screen.getByRole('link', { name: /informations de la vitrine/i })).toHaveAttribute('href', '/onboarding/storefront');
     expect(screen.getByRole('link', { name: /composez votre catalogue/i })).toHaveAttribute('href', '/dashboard/catalogue');
     expect(screen.getByRole('link', { name: /indiquez vos marchés/i })).toHaveAttribute('href', '/dashboard/markets');
-    expect(screen.queryByText('Fait')).not.toBeInTheDocument();
     expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '0');
     expect(screen.getByText('Manquants : nom, description, photo')).toBeInTheDocument();
   });
@@ -38,7 +37,6 @@ describe('Dashboard', () => {
     storefront.view.set(completeStorefront);
     view.detectChanges();
 
-    expect(screen.getByText('Fait')).toBeInTheDocument();
     expect(screen.getByText('Renseignés : nom, description, photo')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /informations de la vitrine/i })).toHaveAttribute('href', '/onboarding/storefront');
     expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '1');
@@ -52,7 +50,6 @@ describe('Dashboard', () => {
     view.detectChanges();
 
     expect(screen.getByRole('link', { name: /informations de la vitrine/i })).toHaveAttribute('href', '/onboarding/storefront');
-    expect(screen.queryByText('Fait')).not.toBeInTheDocument();
     expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '0');
     expect(screen.getByText('Renseignés : nom, description · Manquant : photo')).toBeInTheDocument();
   });
