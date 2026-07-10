@@ -21,6 +21,7 @@ Vendors build a catalogue of dishes, reached from dashboard step 2 (`/dashboard/
 - `e857b69` — swept 8 more market-days domain errors to `DomainError` (infra/auth left: `ConcurrencyError`, `InvalidTokenError`).
 - `6119c27` — `InMemoryCatalogueViews` promoted to the package; `FindVendorCatalogue` query + handler.
 - `9a41ef4` — `CatalogueController`; `PostgresCatalogueViews` + migration `0005_catalogue_view_items`; `CatalogueViewProjection` + query handler wired into `market-days.module.ts` (both branches); HTTP acceptance test; shared `catalogueViewsContract` run against in-memory + a real Postgres container.
+- `20df9b1` — `POST /api/catalogue/photo/signature {itemId}` → `SignedUpload` for `dishes/{vendorId}/{itemId}`. Mirrors `storefront cover-photo/signature`, reuses `SignedUploads` as-is (already in the module — no wiring). Eager rendition is still the cover-photo one (`ponytail:` in the controller) until the form fixes the dish card size.
 
 **Frontend** — read-only list page (`f5bba2f` + slice files swept into `3e5e451`).
 - `apps/vendor-frontend/src/app/catalogue/` — port/facade (abstract+store+fake)/state/http/effects/providers, mirrors the storefront slice.
@@ -39,10 +40,11 @@ Vendors build a catalogue of dishes, reached from dashboard step 2 (`/dashboard/
 
 ## Next / not done
 
-1. **Add-dish form** (`/dashboard/catalogue/new`, currently a stub) + **dish-photo upload**. Photo is mandatory, so this needs the deferred **signature endpoint**:
-   - `POST /api/catalogue/photo/signature {itemId}` → `SignedUpload` for `dishes/{vendorId}/{itemId}` (mirror `storefront cover-photo/signature`).
-   - Flow: client mints `itemId` (UUID) → sign → Cloudinary upload (reuse `PhotoUploads`/`CloudinaryPhotoUploads`/`SignedUpload` **as-is**, add a dish transformation constant) → `POST /api/catalogue` with `imageReference = v{version}/dishes/{vendorId}/{itemId}`.
-   - Form fields this slice: name, price, description, photo (Signal Forms, mirror `storefront-form.ts`). Category/tags still out.
+1. **Add-dish form** (`/dashboard/catalogue/new`, currently a stub). Signature endpoint is shipped (see Done); this is the remaining frontend slice. Signal Forms, mirror `storefront-form.ts`. Design: `docs/design/add-dish.png`.
+   - Fields this slice: photo, name, price (`… EUR`, formatted, stored as cents), description (optional). Category/tags still out (item 2).
+   - Photo is **camera-first** in the design ("photo prise à l'instant" / "Reprendre"). Native path: `<input type="file" accept="image/*" capture="environment">` — camera on mobile, picker on desktop. Not camera-*only*; forcing that isn't worth it.
+   - Submit ("Ajouter à ma carte") flow: mint `itemId` (UUID) → sign → Cloudinary upload (reuse `SignedUpload` **as-is**) → `POST /api/catalogue` with `imageReference = v{version}/dishes/{vendorId}/{itemId}`. "Annuler"/back → `/dashboard/catalogue`.
+   - Dish eager rendition: pick the card size here and pass a dish eager transform to `SignedUploads.for` (currently hardcoded to the cover-photo rendition — see the `ponytail:` in `catalogue.controller.ts`).
 2. **Category + tags** — the v2 domain extension above, then surface on form + list cards.
 3. **Dashboard step 2 → FAIT** when the catalogue has ≥1 dish (dashboard reads the catalogue facade; needs a catalogue load on the dashboard). Currently hardcoded `done: false`.
 
