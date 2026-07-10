@@ -88,16 +88,31 @@ describe('AddDish', () => {
     expect(screen.getByText(/échoué/i)).toBeVisible();
   });
 
-  it('will not submit without a name, a price and a photo', async () => {
-    const { view, catalogue } = await renderForm();
+  it('will not submit without a name and a price, but does not require a photo', async () => {
+    const { view } = await renderForm();
 
     expect(screen.getByRole('button', { name: /ajouter à ma carte/i })).toBeDisabled();
 
     fillForm('Parmentier de canard', '12,00');
-    catalogue.newPhotoReference.set('v1/dishes/acme/coq');
     view.detectChanges();
 
     expect(screen.getByRole('button', { name: /ajouter à ma carte/i })).toBeEnabled();
+  });
+
+  it('adds a dish with no photo, sending no image reference', async () => {
+    const { view, catalogue } = await renderForm();
+    fillForm('Parmentier de canard', '12,00');
+    view.detectChanges();
+
+    fireEvent.click(screen.getByRole('button', { name: /ajouter à ma carte/i }));
+
+    expect(catalogue.addedDish).toEqual({
+      itemId: expect.stringMatching(/.+/),
+      name: 'Parmentier de canard',
+      description: '',
+      price: 1200,
+      imageReference: undefined,
+    });
   });
 
   it('will not submit while a price cannot be read as euros', async () => {

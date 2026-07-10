@@ -51,6 +51,15 @@ describe('CatalogueList', () => {
     );
   });
 
+  it('shows a camera placeholder instead of a broken image for a dish with no photo', async () => {
+    const { view, catalogue } = await renderList();
+    catalogue.items.set([dish({ imageReference: '' })]);
+    view.detectChanges();
+
+    expect(screen.queryByAltText('Bœuf bourguignon')).toBeNull();
+    expect(view.container.querySelector('.fa-camera')).not.toBeNull();
+  });
+
   it('links the add-dish card to the new-dish route', async () => {
     await renderList();
     expect(screen.getByRole('link', { name: /ajouter un plat/i })).toHaveAttribute('href', '/dashboard/catalogue/new');

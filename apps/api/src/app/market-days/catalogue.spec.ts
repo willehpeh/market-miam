@@ -56,7 +56,16 @@ describe('Managing a catalogue over HTTP', () => {
     await post({ ...dish, price: 12.5 }).expect(400);
   });
 
-  it('rejects a dish without a photo as a bad request', async () => {
-    await post({ ...dish, imageReference: '' }).expect(400);
+  it('adds a dish without a photo, listing it back with an empty image reference', async () => {
+    const { ...withoutPhoto } = dish;
+    await post(withoutPhoto).expect(201);
+    await app.get(Subscriptions).drain();
+
+    const response = await request(app.getHttpServer())
+      .get('/catalogue')
+      .set('Authorization', 'Bearer any-token')
+      .expect(200);
+
+    expect(response.body).toEqual({ items: [{ ...withoutPhoto, imageReference: '' }] });
   });
 });

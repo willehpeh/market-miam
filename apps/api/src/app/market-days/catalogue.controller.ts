@@ -39,7 +39,7 @@ export class CatalogueController {
   @UseGuards(JwtAuthGuard)
   async add(
     @CurrentVendor() vendor: VerifiedVendor,
-    @Body() body: { itemId: string; name: string; description: string; price: number; imageReference: string },
+    @Body() body: { itemId: string; name: string; description: string; price: number; imageReference?: string },
   ): Promise<void> {
     await this.commands.execute(
       new AddItemToCatalogue(

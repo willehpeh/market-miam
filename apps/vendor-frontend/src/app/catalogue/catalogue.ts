@@ -18,7 +18,7 @@ export interface NewDish {
   name: string;
   description: string;
   price: number;
-  imageReference: string;
+  imageReference?: string;
 }
 
 export abstract class Catalogue {

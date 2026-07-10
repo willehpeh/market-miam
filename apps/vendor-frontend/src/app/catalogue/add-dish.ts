@@ -32,8 +32,8 @@ const DISH_PREVIEW_TRANSFORMATION = 'c_fill,w_600,h_400,q_auto,f_webp';
           } @else if (photoReference(); as ref) {
             <img [src]="ref | cloudinaryUrl: previewTransformation" alt="Photo du plat" class="h-48 w-full object-cover" />
           } @else {
-            <div class="grid h-48 place-items-center">
-              <div aria-hidden="true" class="grid size-11 place-items-center rounded-full bg-brand-soft text-lg">📷</div>
+            <div class="hatch grid h-48 place-items-center text-3xl text-brand">
+              <i class="fa-solid fa-camera" aria-hidden="true"></i>
             </div>
           }
           <input #photoInput type="file" accept="image/*" capture="environment" hidden (change)="selectPhoto($event)" />
@@ -121,7 +121,7 @@ export class AddDish {
   private readonly priceCents = computed(() => parseEurosToCents(this.fields().value().price));
   protected readonly priceInvalid = computed(() => this.priceCents() === null);
   protected readonly cannotSubmit = computed(
-    () => this.fields().invalid() || this.priceInvalid() || this.uploading() || !this.photoReference(),
+    () => this.fields().invalid() || this.priceInvalid() || this.uploading(),
   );
 
   constructor() {
@@ -145,7 +145,7 @@ export class AddDish {
   protected submit(event: Event): void {
     event.preventDefault();
     const cents = this.priceCents();
-    if (cents === null || !this.photoReference()) {
+    if (cents === null) {
       return;
     }
     const { name, description } = this.fields().value();
@@ -154,7 +154,7 @@ export class AddDish {
       name,
       description,
       price: cents,
-      imageReference: this.photoReference(),
+      imageReference: this.photoReference() || undefined,
     });
   }
 }

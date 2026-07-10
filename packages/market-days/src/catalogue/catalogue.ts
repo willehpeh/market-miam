@@ -9,7 +9,7 @@ export class Catalogue extends Aggregate {
 
   private _items: Item[] = [];
 
-  addItem(id: ItemId, name: ItemName, description: ItemDescription, price: ItemPrice, imageReference: ImageReference) {
+  addItem(id: ItemId, name: ItemName, description: ItemDescription, price: ItemPrice, imageReference?: ImageReference) {
     if (this.hasItem(id)) {
       throw new ItemAlreadyInCatalogueError(`Item already in catalogue with ID ${ id.value() }`);
     }
@@ -21,7 +21,7 @@ export class Catalogue extends Aggregate {
         name: item.name().value(),
         description: item.description().value(),
         price: item.price().value(),
-        imageReference: item.imageReference().value()
+        imageReference: item.imageReference()?.value()
       },
       version: 1
     };
@@ -36,7 +36,7 @@ export class Catalogue extends Aggregate {
           new ItemName(event.payload.name),
           new ItemDescription(event.payload.description),
           new ItemPrice(event.payload.price),
-          new ImageReference(event.payload.imageReference)
+          event.payload.imageReference ? new ImageReference(event.payload.imageReference) : undefined
         ));
         break;
     }

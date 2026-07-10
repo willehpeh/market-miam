@@ -61,6 +61,13 @@ describe('AddItemToCatalogue', () => {
     expect(store.newEvents()[0].payload['description']).toBe('');
   });
 
+  it('should allow an item with no image', async () => {
+    await handler.execute(TestAddItemToCatalogue.with({ imageReference: '' }));
+
+    expect(store.newEvents()).toHaveLength(1);
+    expect(store.newEvents()[0].payload['imageReference']).toBeUndefined();
+  });
+
   it('should add a new item to an existing catalogue', async () => {
     await handler.execute(TestAddItemToCatalogue.valid());
     await handler.execute(TestAddItemToCatalogue.with({ itemId: 'another-item-id', name: 'new-name' }));
@@ -103,14 +110,6 @@ describe('AddItemToCatalogue', () => {
 
     it('should reject a fractional price (cents are whole numbers)', async () => {
       await expect(handler.execute(TestAddItemToCatalogue.with({ price: 12.5 }))).rejects.toThrow(InvalidPriceError);
-      expect(store.newEvents()).toEqual([]);
-    });
-
-    it.each([
-      '',
-      '   ',
-    ])('should reject an empty image reference: "%s"', async (imageReference) => {
-      await expect(handler.execute(TestAddItemToCatalogue.with({ imageReference }))).rejects.toThrow(EmptyValueError);
       expect(store.newEvents()).toEqual([]);
     });
 

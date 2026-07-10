@@ -33,7 +33,9 @@ const MAX_PHOTO_BYTES = 10 * 1024 * 1024;
               class="mx-auto h-32 w-full max-w-xs rounded-card object-cover"
             />
           } @else {
-            <div aria-hidden="true" class="mx-auto grid size-11 place-items-center rounded-full bg-brand-soft text-lg">📷</div>
+            <div class="mx-auto grid size-11 place-items-center rounded-full bg-brand-soft text-lg text-brand">
+              <i class="fa-solid fa-camera" aria-hidden="true"></i>
+            </div>
           }
           <p class="mt-2 font-bold text-ink">Image de votre stand</p>
           <p class="text-sm text-muted">Une photo de votre activité ou votre logo</p>
