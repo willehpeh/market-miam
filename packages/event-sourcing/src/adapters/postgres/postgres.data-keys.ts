@@ -6,6 +6,11 @@ import { DataKeys } from '../../ports/data-keys';
 // key: the row holds `iv(12) || authTag(16) || ciphertext`. The master key never
 // touches the database, so a DB dump alone can't unwrap anything. Subject id is the
 // GCM AAD, binding each wrapped key to its owner.
+//
+// Bound to the Pool, not the ambient Queryable/UnitOfWork, on purpose: a minted key
+// must be durable even if the surrounding append rolls back (it may already have
+// encrypted an event), and shred() is its own commit — sequenced before the
+// read-model rebuild in VendorErasure, deliberately not atomic with it.
 export class PostgresDataKeys extends DataKeys {
   constructor(
     private readonly pool: Pool,
@@ -26,7 +31,13 @@ export class PostgresDataKeys extends DataKeys {
     );
     // A concurrent minter may have won the ON CONFLICT race — re-read so both callers
     // return the one key that actually persisted.
-    return (await this.findKeyFor(subjectId)) as Buffer;
+    const key = await this.findKeyFor(subjectId);
+    if (key === null) {
+      // The row was deleted between INSERT and re-read: a shred() racing this mint.
+      // Fail loudly rather than resurrect an erased key or hand back null-as-Buffer.
+      throw new Error(`PostgresDataKeys: key for "${subjectId}" vanished mid-mint (concurrent shred?)`);
+    }
+    return key;
   }
 
   async findKeyFor(subjectId: string): Promise<Buffer | null> {

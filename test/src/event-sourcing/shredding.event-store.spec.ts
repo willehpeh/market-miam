@@ -13,7 +13,7 @@ const v1 = { vendorId: 'v1' };
 
 function shreddingOver(inner = new InMemoryEventStore()) {
   const keys = new InMemoryDataKeys();
-  return { store: new ShreddingEventStore(inner, keys, vendorPii), inner, keys };
+  return { store: new ShreddingEventStore(inner, keys, vendorPii, 'vendorId'), inner, keys };
 }
 
 const registered = (email: unknown): DomainEvent => ({

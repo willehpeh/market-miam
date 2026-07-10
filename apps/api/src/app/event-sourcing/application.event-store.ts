@@ -15,6 +15,6 @@ import { TracingEventStore } from './tracing.event-store';
 // its constructor so the composition root stays a single `new`.
 export class ApplicationEventStore extends TracingEventStore {
   constructor(inner: EventStore & Events, keys: DataKeys, pii: PiiFields, context: MessageContext) {
-    super(new MessageContextEventStore(new ShreddingEventStore(inner, keys, pii), context));
+    super(new MessageContextEventStore(new ShreddingEventStore(inner, keys, pii, 'vendorId'), context));
   }
 }
