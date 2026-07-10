@@ -35,6 +35,7 @@ import { onboardingFeature } from './onboarding.state';
 import { OnboardingEffects, SAVED_REDIRECT_DELAY } from './onboarding.effects';
 import { OnboardingFacade } from './onboarding.facade';
 import { StoreOnboardingFacade } from './store.onboarding.facade';
+import { provideNotifications } from '../core/notifications/notifications.providers';
 
 const EMPTY = { name: '', description: '', phone: '', imageReference: '' };
 const PHOTO_ONLY = { name: '', description: '', phone: '', imageReference: 'v1/storefronts/acme/cover-photo' };
@@ -64,6 +65,7 @@ describe('Onboarding launch', () => {
         { provide: StorefrontFacade, useClass: StoreStorefrontFacade },
         { provide: CatalogueFacade, useClass: StoreCatalogueFacade },
         { provide: OnboardingFacade, useClass: StoreOnboardingFacade },
+        provideNotifications(),
         provideHttpClientTesting(),
         { provide: STOREFRONT_RETRY, useValue: { delayMs: 0, maxAttempts: 1 } },
         { provide: SAVED_REDIRECT_DELAY, useValue: 0 },

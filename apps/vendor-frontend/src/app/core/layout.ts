@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { AuthFacade } from './auth/auth.facade';
+import { NotificationsFacade } from './notifications/notifications.facade';
 import { LogoutButton } from './auth/logout-button';
 
 @Component({
@@ -14,6 +15,12 @@ import { LogoutButton } from './auth/logout-button';
         }
       </header>
       <main class="px-6 py-3 bg-canvas">
+        @if (errorMessage(); as message) {
+          <div role="alert" class="mb-3 flex items-center justify-between gap-4 rounded-card bg-surface p-4 text-sm shadow-frame">
+            <span>{{ message }}</span>
+            <button type="button" aria-label="Fermer" (click)="dismiss()">×</button>
+          </div>
+        }
         <router-outlet />
       </main>
     </div>
@@ -23,5 +30,12 @@ import { LogoutButton } from './auth/logout-button';
 })
 export class Layout {
   private readonly auth = inject(AuthFacade);
+  private readonly notifications = inject(NotificationsFacade);
+
   protected readonly authenticated = computed(() => this.auth.status() === 'authenticated');
+  protected readonly errorMessage = this.notifications.message;
+
+  protected dismiss(): void {
+    this.notifications.dismiss();
+  }
 }
