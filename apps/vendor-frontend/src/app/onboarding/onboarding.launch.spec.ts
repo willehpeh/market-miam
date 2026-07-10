@@ -25,6 +25,8 @@ import { storefrontFeature } from '../storefront/storefront.state';
 import { StorefrontEffects, STOREFRONT_RETRY } from '../storefront/storefront.effects';
 import { StorefrontFacade } from '../storefront/storefront.facade';
 import { StoreStorefrontFacade } from '../storefront/store.storefront.facade';
+import { CatalogueFacade } from '../catalogue/catalogue.facade';
+import { FakeCatalogueFacade } from '../catalogue/fake.catalogue.facade';
 import { onboardingFeature } from './onboarding.state';
 import { OnboardingEffects, SAVED_REDIRECT_DELAY } from './onboarding.effects';
 import { OnboardingFacade } from './onboarding.facade';
@@ -54,6 +56,7 @@ describe('Onboarding launch', () => {
         { provide: AuthFacade, useClass: StoreAuthFacade },
         VendorFacade,
         { provide: StorefrontFacade, useClass: StoreStorefrontFacade },
+        { provide: CatalogueFacade, useClass: FakeCatalogueFacade },
         { provide: OnboardingFacade, useClass: StoreOnboardingFacade },
         provideHttpClientTesting(),
         { provide: STOREFRONT_RETRY, useValue: { delayMs: 0, maxAttempts: 1 } },

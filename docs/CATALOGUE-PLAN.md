@@ -28,6 +28,7 @@ Vendors build a catalogue of dishes, reached from dashboard step 2 (`/dashboard/
 - `catalogue-list.ts` at `/dashboard/catalogue`: loads on init, renders photo + name + price (`cents → "13,00 €"`). "Ajouter un plat" → `/dashboard/catalogue/new`; "Continuer · N plats" → `/dashboard`.
 - `add-dish.ts` at `/dashboard/catalogue/new` (replaced the `ComingSoon` stub). Signal Forms; camera-first photo (`capture="environment"`), name (required), price (text → cents), description (optional). Submit disabled until name+price valid and a photo is uploaded. Mints `itemId` once, reuses it for sign + add. Write path added to the slice: port `photoSignature`/`add`, `UploadDishPhoto`/`AddDish` flows, `navigateOnAdded$` → list. Reuses storefront's `PhotoUploads`/`CloudinaryPhotoUploads` as-is.
 - Two test layers: component (fake facade) + slice integration (real facade+effects+http, Cloudinary boundary faked via `FakePhotoUploads`).
+- `dashboard.ts` step 2 ("Composez votre catalogue") shows FAIT once the catalogue holds ≥1 dish: injects `CatalogueFacade`, `load()`s on arrival (constructor), derives `done` from `items()` (store selector). Launch/guard specs that render the dashboard now provide `FakeCatalogueFacade`.
 
 ## Decisions (don't re-litigate)
 
@@ -44,7 +45,6 @@ Vendors build a catalogue of dishes, reached from dashboard step 2 (`/dashboard/
 1. **Dish eager rendition** — the display transform on the form is `c_fill,w_600,h_400`, but the API still eagerly warms the cover-photo rendition (`ponytail:` in `catalogue.controller.ts`). Pass a dish eager transform to `SignedUploads.for` so the card rendition is pre-generated. Off the happy path (only affects first-paint warmth), so deferred.
 2. **Category + tags** — the v2 domain extension (new VOs + `ItemAddedToCatalogue` v2 payload + read-model columns), then surface on the form (`CATÉGORIE`/`ÉTIQUETTES` in `add-dish.png`) + list cards.
 3. **`AddDishFailure` unreduced** — emitted but no add-error banner (mirrors storefront's `EditStorefrontFailure`). Wire a reducer + UX when the flow needs it.
-4. **Dashboard step 2 → FAIT** when the catalogue has ≥1 dish. Dashboard loads the catalogue facade on arrival and derives `done` from `items()` (store selector). Currently hardcoded `done: false`.
 
 ## Gotchas
 

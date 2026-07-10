@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/c
 import { RouterLink } from '@angular/router';
 import { Card } from '../core/card';
 import { StorefrontFacade } from '../storefront/storefront.facade';
+import { CatalogueFacade } from '../catalogue/catalogue.facade';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -68,6 +69,7 @@ import { StorefrontFacade } from '../storefront/storefront.facade';
 })
 export class Dashboard {
   private readonly storefront = inject(StorefrontFacade);
+  private readonly catalogue = inject(CatalogueFacade);
 
   readonly steps = computed(() => {
     const view = this.storefront.view();
@@ -80,7 +82,7 @@ export class Dashboard {
     const missing = fields.filter((field) => !field.set).map((field) => field.label);
     const steps = [
       { number: 1, title: 'Informations de la vitrine', detail: summarise(present, missing), done: missing.length === 0, link: '/onboarding/storefront' },
-      { number: 2, title: 'Composez votre catalogue', detail: 'Ajoutez au moins un plat à proposer.', done: false, link: '/dashboard/catalogue' },
+      { number: 2, title: 'Composez votre catalogue', detail: 'Ajoutez au moins un plat à proposer.', done: this.catalogue.items().length > 0, link: '/dashboard/catalogue' },
       { number: 3, title: 'Indiquez vos marchés', detail: 'Où et quand vous vendez.', done: false, link: '/dashboard/markets' },
     ];
     const nextIndex = steps.findIndex((step) => !step.done);
@@ -88,6 +90,10 @@ export class Dashboard {
   });
 
   readonly doneCount = computed(() => this.steps().filter((step) => step.done).length);
+
+  constructor() {
+    this.catalogue.load();
+  }
 }
 
 function summarise(present: string[], missing: string[]): string {

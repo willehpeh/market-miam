@@ -1,17 +1,25 @@
 import { TestBed } from '@angular/core/testing';
-import { render, screen } from '@testing-library/angular';
+import { render, screen, within } from '@testing-library/angular';
 import { provideRouter } from '@angular/router';
 import { Dashboard } from './dashboard';
 import { StorefrontFacade } from '../storefront/storefront.facade';
 import { FakeStorefrontFacade } from '../storefront/fake.storefront.facade';
 import { StorefrontView } from '../storefront/storefront';
+import { CatalogueFacade } from '../catalogue/catalogue.facade';
+import { FakeCatalogueFacade } from '../catalogue/fake.catalogue.facade';
+import { CatalogueItemView } from '../catalogue/catalogue';
 
 async function renderDashboard() {
   const view = await render(Dashboard, {
-    providers: [provideRouter([]), { provide: StorefrontFacade, useClass: FakeStorefrontFacade }],
+    providers: [
+      provideRouter([]),
+      { provide: StorefrontFacade, useClass: FakeStorefrontFacade },
+      { provide: CatalogueFacade, useClass: FakeCatalogueFacade },
+    ],
   });
   const storefront = TestBed.inject(StorefrontFacade) as FakeStorefrontFacade;
-  return { view, storefront };
+  const catalogue = TestBed.inject(CatalogueFacade) as FakeCatalogueFacade;
+  return { view, storefront, catalogue };
 }
 
 const completeStorefront: StorefrontView = {
@@ -19,6 +27,14 @@ const completeStorefront: StorefrontView = {
   description: 'Fresh bread daily',
   phone: '',
   imageReference: 'v42/storefronts/acme/cover-photo',
+};
+
+const aDish: CatalogueItemView = {
+  itemId: 'item-1',
+  name: 'Bœuf bourguignon',
+  description: 'Mijoté maison',
+  price: 1300,
+  imageReference: 'v1/dishes/acme/item-1',
 };
 
 describe('Dashboard', () => {
@@ -42,6 +58,28 @@ describe('Dashboard', () => {
     expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '1');
     expect(screen.getByRole('link', { name: /composez votre catalogue/i })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /indiquez vos marchés/i })).toBeInTheDocument();
+  });
+
+  it('loads the catalogue on arrival', async () => {
+    const { catalogue } = await renderDashboard();
+    expect(catalogue.loaded).toBe(true);
+  });
+
+  it('marks the catalogue step done once at least one dish exists', async () => {
+    const { view, catalogue } = await renderDashboard();
+    catalogue.items.set([aDish]);
+    view.detectChanges();
+
+    const step = screen.getByRole('link', { name: /composez votre catalogue/i });
+    expect(within(step).getByText('✓')).toBeInTheDocument();
+    expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '1');
+  });
+
+  it('leaves the catalogue step to do while it holds no dishes', async () => {
+    await renderDashboard();
+
+    const step = screen.getByRole('link', { name: /composez votre catalogue/i });
+    expect(within(step).queryByText('✓')).not.toBeInTheDocument();
   });
 
   it('keeps the storefront step to do while the cover photo is missing', async () => {
