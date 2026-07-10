@@ -42,11 +42,27 @@ Commits: `17fe8a1` (1) · `7de18ff` (2–5) · `3e5e451` (6–7). Spec: 32 tests
 
 ## Next / not done
 
-- **No HTTP controller** dispatches `RegisterMarketSchedule` (was already true before this work). Only registered in `apps/api/src/app/market-days/market-days.module.ts`.
-- **No schedule→market-day materialisation.** Two open decisions, orthogonal to the event shape (event already carries everything either needs):
-  1. **Eager processor vs lazy on-demand.** Today market-days are born lazily — `MarketDays.forVendorAtMarket(...).on(date)` load-or-creates on the first command (`market-day/market-days.ts`). A schedule→market-day processor is a choice, not a requirement; the schedule can just feed a read model of valid dates.
-  2. **Recurrence horizon.** Weekly/monthly schedules imply unbounded days; whoever expands (`startDate` + `days[].day` + `frequency.weeks`) needs a cutoff.
-- A MarketDay needs only `(vendorId, marketId, date)` — it carries no market name/address/times. The descriptive fields are for a read model ("your upcoming market days"), where the nested `market` object copies through cohesively.
+- ~~**No HTTP controller** dispatches `RegisterMarketSchedule`.~~ **Done** — `POST /market-schedules` (`market-schedule.controller.ts`), JWT-auth'd, vendorId from `@CurrentVendor()`. Spec `market-schedule.spec.ts`: 201 + two 400s. No read-back (no query side yet); add GET when the read model lands.
+- **Upcoming market days read model** — next slice, design resolved below. (Reframed: not "schedule→market-day materialisation." No processor, no eager MarketDay events; market-days stay lazily born on `PlanItemsForMarketDay`. The schedule feeds a forward-looking read model; past market days come from actual events, not the schedule.)
+- **Separate later slices:** prepared-state overlay (join market-day events), past view (from actual events), pick-to-prepare HTTP endpoint (`PlanItemsForMarketDay` isn't exposed over HTTP yet).
+
+## Upcoming market days — design (resolved)
+
+Vendor-scoped read model; both frontends read it (customer public, vendor authed — HTTP concern, not data).
+
+| Branch | Decision |
+|--------|----------|
+| Scope | Upcoming read model only. Overlay / past view / pick-to-prepare are separate slices. |
+| Source | Persisted read model mirroring `CatalogueViews` — in-mem + pg adapters, ISP-split read/write surfaces, projection + query handler, subscription registration. |
+| Projection | Consumes `MarketScheduleRegistered`; upsert by `(vendorId, scheduleId)`; re-register replaces. |
+| Query | `FindUpcomingMarketDays(vendorId)`; `Clock` supplies `today`; expand each record at query time; union; sort ascending. |
+| Expansion | Window `[today, today+56]`. Cadence anchored at `startDate`'s week: emit `days[]` where `weeksSinceStart % weeks == 0`, dates `>= startDate`. Absent frequency = one-off (startDate's week only). |
+| Shape | Flat chronological occurrences: `{ scheduleId, marketId, date, startTime?, endTime?, market: {name, town, codePostal, streetAddress?, pitch?} }`. No dedup on collision. |
+| Boundary | `date >= today` inclusive. Past scheduled dates drop out (past = actual events). |
+
+Notes: `HORIZON_DAYS = 56` is a tunable constant. `Calendar.apply()` stays a no-op for this slice. Event payload types `frequency` as required but it can be absent — the expander handles it; fix the type to `frequency?` while there. Follows `FindVendorCatalogue` / `CatalogueViewProjection` patterns.
+
+- A MarketDay needs only `(vendorId, marketId, date)` — no market name/address/times. Descriptive fields live in the read model above, where the nested `market` object copies through cohesively.
 
 ## Gotchas
 
