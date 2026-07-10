@@ -46,6 +46,15 @@ Commits: `17fe8a1` (1) · `7de18ff` (2–5) · `3e5e451` (6–7). Spec: 32 tests
 - **Upcoming market days slice** — design resolved below. Two halves: a **write half** (add cancel + skip so the view can retract — without them it asserts future attendance it can never correct) and a **read half** (forward-looking read model). Reframed away from "schedule→market-day materialisation": no processor, no eager MarketDay events; market-days stay lazily born on `PlanItemsForMarketDay`. Past market days come from actual events, not the schedule.
 - **Separate later slices:** prepared-state overlay (join market-day events), past view (from actual events), pick-to-prepare HTTP endpoint (`PlanItemsForMarketDay` isn't exposed over HTTP yet).
 
+## Rejected: eager MarketDay materialisation
+
+Considered: on `Register`, eagerly emit the next 7–14 days of MarketDays; a nightly cron rolls the horizon to D+14. **Rejected.**
+
+- **Buys planning nothing.** `PlanItemsForMarketDayHandler` loads the stream and rehydrates from `[]` for an untouched day — `planItems` runs on a fresh aggregate. A pre-existing `MarketDayScheduled` event changes zero lines in the handler or aggregate; birth is already transparent. There is no planning code that a materialised day simplifies.
+- **Costs a lot.** A new `MarketDayScheduled` event (the aggregate has no "opened" event — birth is implicit), a processor fanning `Register` out to N streams, a cron owning idempotency + missed-night catch-up, and — the killer — **reconciliation**: cancel/skip/re-register must retract or recompute already-materialised days. Eager materialisation duplicates the schedule as write-side state every mutation must resync.
+- **Query-time expansion has none of that.** One source of truth (the schedule), `[today, today+56]` derived fresh per read; cancel/skip just change the next expansion. No cron, no processor, no drift.
+- **Flip condition:** a MarketDay needing state *before* the vendor touches it — customer pre-orders, day-attached reminders. Not in scope; the stream id is deterministic, so a future day is addressable without materialising. Even the prepared-state overlay left-joins *actual* events onto expanded occurrences — it doesn't want eager days.
+
 ## Upcoming market days — design (resolved)
 
 Vendor-scoped read model; both frontends read it (customer public, vendor authed — HTTP concern, not data).
