@@ -10,7 +10,6 @@ export type MarketScheduleRegistered = DomainEvent<'MarketScheduleRegistered', {
     pitch?: string;
   };
   scheduleId: string;
-  scheduleName: string;
   startDate: string;
   days: {
     day: string;

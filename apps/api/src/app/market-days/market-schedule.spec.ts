@@ -5,7 +5,6 @@ import { bootApiTestApp } from '../testing/api-test-app';
 
 const schedule = {
   scheduleId: 'schedule-1',
-  scheduleName: 'Marché de Belleville',
   startDate: '2026-07-15',
   market: {
     id: 'market-1',

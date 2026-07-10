@@ -1,7 +1,6 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { RegisterMarketSchedule } from './register-market-schedule';
 import { Calendars } from '../calendar';
-import { ScheduleName } from '../calendar/schedule/schedule-name';
 import { ScheduleDay } from '../calendar/schedule/schedule-day';
 import { ScheduleFrequency } from '../calendar/schedule/schedule-frequency';
 import { Schedule } from '../calendar/schedule/schedule';
@@ -42,7 +41,6 @@ export class RegisterMarketScheduleHandler implements ICommandHandler<RegisterMa
   private scheduleFrom(registerMarketSchedule: RegisterMarketSchedule) {
     return new Schedule({
       id: new ScheduleId(registerMarketSchedule.scheduleId),
-      name: new ScheduleName(registerMarketSchedule.scheduleName),
       startDate: new LocalDate(registerMarketSchedule.startDate),
       days: registerMarketSchedule.days.map(d => new ScheduleDay(d.day, d.startTime, d.endTime)),
       frequency: registerMarketSchedule.frequency ? new ScheduleFrequency(registerMarketSchedule.frequency) : undefined,

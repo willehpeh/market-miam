@@ -33,7 +33,6 @@ describe('Register Market Schedule', () => {
       type: 'MarketScheduleRegistered',
       payload: expect.objectContaining({
         scheduleId: expect.any(String),
-        scheduleName: command.scheduleName,
         startDate: command.startDate,
         market: command.market,
         days: command.days,
@@ -128,14 +127,6 @@ describe('Register Market Schedule', () => {
         market: expect.objectContaining({ codePostal: '75020' })
       })
     })]);
-  });
-
-  it.each([
-    ' ',
-    ''
-  ])('should not allow a schedule with an empty name', async scheduleName => {
-    const command = TestRegisterMarketSchedule.with({ scheduleName });
-    await expect(handler.execute(command)).rejects.toThrow(EmptyValueError);
   });
 
   it.each([

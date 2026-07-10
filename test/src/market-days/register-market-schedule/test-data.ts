@@ -14,7 +14,6 @@ export class TestRegisterMarketSchedule {
     return new RegisterMarketSchedule({
       vendorId: 'vendor-id',
       scheduleId: 'schedule-id',
-      scheduleName: 'Saturday Market',
       startDate: '2023-09-08',
       market: market(),
       days: [{ day: 'SAT', startTime: '08:00', endTime: '14:00' }],
@@ -34,7 +33,6 @@ export class TestRegisterMarketSchedule {
     return new RegisterMarketSchedule({
       vendorId: overrides.vendorId ?? defaults.vendorId,
       scheduleId: overrides.scheduleId ?? defaults.scheduleId,
-      scheduleName: overrides.scheduleName ?? defaults.scheduleName,
       startDate: overrides.startDate ?? defaults.startDate,
       market: overrides.market ?? defaults.market,
       days: overrides.days ?? defaults.days,

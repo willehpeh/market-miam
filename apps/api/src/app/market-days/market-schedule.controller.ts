@@ -15,7 +15,6 @@ type MarketBody = {
 
 type ScheduleBody = {
   scheduleId: string;
-  scheduleName: string;
   startDate: string;
   market: MarketBody;
   days: { day: string; startTime?: string; endTime?: string }[];

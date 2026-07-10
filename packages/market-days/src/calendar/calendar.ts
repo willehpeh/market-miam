@@ -10,13 +10,12 @@ export class Calendar extends Aggregate {
   }
 
   registerMarketSchedule(market: Market, schedule: Schedule): void {
-    const { scheduleId, scheduleName, days, frequency, startDate } = schedule.snapshot();
+    const { scheduleId, days, frequency, startDate } = schedule.snapshot();
     const event: MarketScheduleRegistered = {
       type: 'MarketScheduleRegistered',
       payload: {
         market: market.snapshot(),
         scheduleId,
-        scheduleName,
         startDate,
         days,
         frequency

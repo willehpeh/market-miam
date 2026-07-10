@@ -15,7 +15,7 @@ Command / event `market`:
 | `town` | `Town` | non-empty |
 | `pitch?` | `Pitch` | **optional** (= "emplacement"), free text, no validation |
 
-`MarketScheduleRegistered.payload.market` nests all of the above (optional fields omitted when absent); schedule fields (`scheduleId`, `scheduleName`, `startDate`, `days`, `frequency`) unchanged.
+`MarketScheduleRegistered.payload.market` nests all of the above (optional fields omitted when absent); schedule fields (`scheduleId`, `startDate`, `days`, `frequency`) unchanged. `scheduleName` dropped — no consumer (read model surfaces `market.name`); re-add if a UI ever lists schedules by a vendor-chosen label. Multiple recurrences per market per vendor are allowed, so `scheduleId` stays as the addressable retraction handle.
 
 VOs in `packages/market-days/src/market/`. `Market` is a composed VO mirroring `Schedule`, with `snapshot()`. Handler builds it in `register-market-schedule.handler.ts` (`marketFrom`); `Calendar.registerMarketSchedule(market, schedule)` snapshots it into the event.
 
@@ -43,24 +43,39 @@ Commits: `17fe8a1` (1) · `7de18ff` (2–5) · `3e5e451` (6–7). Spec: 32 tests
 ## Next / not done
 
 - ~~**No HTTP controller** dispatches `RegisterMarketSchedule`.~~ **Done** — `POST /market-schedules` (`market-schedule.controller.ts`), JWT-auth'd, vendorId from `@CurrentVendor()`. Spec `market-schedule.spec.ts`: 201 + two 400s. No read-back (no query side yet); add GET when the read model lands.
-- **Upcoming market days read model** — next slice, design resolved below. (Reframed: not "schedule→market-day materialisation." No processor, no eager MarketDay events; market-days stay lazily born on `PlanItemsForMarketDay`. The schedule feeds a forward-looking read model; past market days come from actual events, not the schedule.)
+- **Upcoming market days slice** — design resolved below. Two halves: a **write half** (add cancel + skip so the view can retract — without them it asserts future attendance it can never correct) and a **read half** (forward-looking read model). Reframed away from "schedule→market-day materialisation": no processor, no eager MarketDay events; market-days stay lazily born on `PlanItemsForMarketDay`. Past market days come from actual events, not the schedule.
 - **Separate later slices:** prepared-state overlay (join market-day events), past view (from actual events), pick-to-prepare HTTP endpoint (`PlanItemsForMarketDay` isn't exposed over HTTP yet).
 
 ## Upcoming market days — design (resolved)
 
 Vendor-scoped read model; both frontends read it (customer public, vendor authed — HTTP concern, not data).
 
+### Write half — schedules can now be retracted
+
+Cancel and skip pulled forward: an upcoming view with no way to retract shows attendance that may be false forever (schedules have no end date). `Register` already shipped; add two commands, **one event each** ([[feedback_single_event_per_command]]), both on the Calendar stream:
+
+| Command | Event | Effect |
+|---------|-------|--------|
+| `CancelMarketSchedule(scheduleId)` | `MarketScheduleCancelled` | Whole schedule gone; all future occurrences vanish. |
+| `SkipMarketDay(scheduleId, date)` | `MarketDaySkipped` | One occurrence excluded; schedule keeps recurring. |
+
+- **`Calendar.apply()` is no longer a no-op** (reverses the earlier note). Aggregate tracks active schedules + per-schedule skipped dates; rehydrates from events (`MarketDay` pattern). Enforces: can't cancel/skip an unknown schedule, can't skip a non-occurrence, can't double-skip — all `DomainError` → 400 ([[project_domain_error_to_400]]).
+- **Occurrence logic lives on the `Schedule` VO** (`occursOn(date)`, `occurrencesWithin(from, to)`), shared by the aggregate (skip validation) and the read model (expansion) — no duplicated cadence math.
+- HTTP: `DELETE /market-schedules/:scheduleId` (cancel), `DELETE /market-schedules/:scheduleId/occurrences/:date` (skip).
+- *Open: `MarketDaySkipped` overlaps the `MarketDay` aggregate name (lives on Calendar stream, not a market-day stream); rename to `ScheduledDaySkipped` if preferred.*
+
+### Read half — the read model
+
 | Branch | Decision |
 |--------|----------|
-| Scope | Upcoming read model only. Overlay / past view / pick-to-prepare are separate slices. |
 | Source | Persisted read model mirroring `CatalogueViews` — in-mem + pg adapters, ISP-split read/write surfaces, projection + query handler, subscription registration. |
-| Projection | Consumes `MarketScheduleRegistered`; upsert by `(vendorId, scheduleId)`; re-register replaces. |
-| Query | `FindUpcomingMarketDays(vendorId)`; `Clock` supplies `today`; expand each record at query time; union; sort ascending. |
-| Expansion | Window `[today, today+56]`. Cadence anchored at `startDate`'s week: emit `days[]` where `weeksSinceStart % weeks == 0`, dates `>= startDate`. Absent frequency = one-off (startDate's week only). |
+| Projection | Keyed by `(vendorId, scheduleId)`. `Registered` upserts (re-register replaces); `Cancelled` deletes the row; `Skipped` appends to `skippedDates`. |
+| Query | `FindUpcomingMarketDays(vendorId)`; `Clock` supplies `today`; expand each record via `Schedule.occurrencesWithin`, subtract `skippedDates`; union; sort ascending. |
+| Expansion | Window `[today, today+56]`. Cadence anchored at `startDate`'s week: emit `days[]` where `weeksSinceStart % weeks == 0`, dates `>= startDate`. Absent frequency = one-off (a real requirement): occurs only in `startDate`'s week. |
 | Shape | Flat chronological occurrences: `{ scheduleId, marketId, date, startTime?, endTime?, market: {name, town, codePostal, streetAddress?, pitch?} }`. No dedup on collision. |
-| Boundary | `date >= today` inclusive. Past scheduled dates drop out (past = actual events). |
+| Boundary | `date >= today` inclusive. Past scheduled dates drop out. NB "past = actual events" is not a pure temporal split — a **future** date can also have actual events once prepared; the overlay slice reconciles them. |
 
-Notes: `HORIZON_DAYS = 56` is a tunable constant. `Calendar.apply()` stays a no-op for this slice. Event payload types `frequency` as required but it can be absent — the expander handles it; fix the type to `frequency?` while there. Follows `FindVendorCatalogue` / `CatalogueViewProjection` patterns.
+Notes: `HORIZON_DAYS = 56` is a tunable constant. Event payload types `frequency` as required but one-off is real, so make it `frequency?` (command already is). Define `weeksSinceStart` precisely before coding (per-calendar-week bucket from `startOfWeek(startDate)`) — off-by-one-week trap. Follows `FindVendorCatalogue` / `CatalogueViewProjection` patterns.
 
 - A MarketDay needs only `(vendorId, marketId, date)` — no market name/address/times. Descriptive fields live in the read model above, where the nested `market` object copies through cohesively.
 
