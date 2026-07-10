@@ -21,7 +21,15 @@ const DISH_PREVIEW_TRANSFORMATION = 'c_fill,w_600,h_400,q_auto,f_webp';
         </div>
 
         <div class="mt-4 overflow-hidden rounded-card border border-dashed border-line-strong bg-surface-sunk text-center">
-          @if (photoReference(); as ref) {
+          @if (uploading()) {
+            <div class="grid h-48 place-items-center">
+              <div
+                role="status"
+                aria-label="Envoi de la photo…"
+                class="size-8 animate-spin rounded-full border-4 border-line-strong border-t-brand"
+              ></div>
+            </div>
+          } @else if (photoReference(); as ref) {
             <img [src]="ref | cloudinaryUrl: previewTransformation" alt="Photo du plat" class="h-48 w-full object-cover" />
           } @else {
             <div class="grid h-48 place-items-center">
@@ -31,7 +39,7 @@ const DISH_PREVIEW_TRANSFORMATION = 'c_fill,w_600,h_400,q_auto,f_webp';
           <input #photoInput type="file" accept="image/*" capture="environment" hidden (change)="selectPhoto($event)" />
           <div class="p-3">
             <button type="button" (click)="photoInput.click()" [disabled]="uploading()">
-              {{ uploading() ? 'Envoi…' : (photoReference() ? 'Reprendre' : 'Prendre en photo') }}
+              {{ photoReference() ? 'Reprendre' : 'Prendre en photo' }}
             </button>
           </div>
           @if (tooLarge()) {
