@@ -25,8 +25,12 @@ import { storefrontFeature } from '../storefront/storefront.state';
 import { StorefrontEffects, STOREFRONT_RETRY } from '../storefront/storefront.effects';
 import { StorefrontFacade } from '../storefront/storefront.facade';
 import { StoreStorefrontFacade } from '../storefront/store.storefront.facade';
+import { Catalogue } from '../catalogue/catalogue';
+import { HttpCatalogue } from '../catalogue/http.catalogue';
+import { catalogueFeature } from '../catalogue/catalogue.state';
+import { CatalogueEffects } from '../catalogue/catalogue.effects';
 import { CatalogueFacade } from '../catalogue/catalogue.facade';
-import { FakeCatalogueFacade } from '../catalogue/fake.catalogue.facade';
+import { StoreCatalogueFacade } from '../catalogue/store.catalogue.facade';
 import { onboardingFeature } from './onboarding.state';
 import { OnboardingEffects, SAVED_REDIRECT_DELAY } from './onboarding.effects';
 import { OnboardingFacade } from './onboarding.facade';
@@ -47,16 +51,18 @@ describe('Onboarding launch', () => {
         provideState(authFeature),
         provideState(vendorFeature),
         provideState(storefrontFeature),
+        provideState(catalogueFeature),
         provideState(onboardingFeature),
-        provideEffects(AuthEffects, VendorEffects, StorefrontEffects, OnboardingEffects),
+        provideEffects(AuthEffects, VendorEffects, StorefrontEffects, CatalogueEffects, OnboardingEffects),
         { provide: Auth, useClass: FakeAuth },
         { provide: Vendor, useClass: HttpVendor },
         { provide: Storefront, useClass: HttpStorefront },
+        { provide: Catalogue, useClass: HttpCatalogue },
         { provide: PhotoUploads, useClass: FakePhotoUploads },
         { provide: AuthFacade, useClass: StoreAuthFacade },
         VendorFacade,
         { provide: StorefrontFacade, useClass: StoreStorefrontFacade },
-        { provide: CatalogueFacade, useClass: FakeCatalogueFacade },
+        { provide: CatalogueFacade, useClass: StoreCatalogueFacade },
         { provide: OnboardingFacade, useClass: StoreOnboardingFacade },
         provideHttpClientTesting(),
         { provide: STOREFRONT_RETRY, useValue: { delayMs: 0, maxAttempts: 1 } },
@@ -94,6 +100,7 @@ describe('Onboarding launch', () => {
     await view.fixture.whenStable();
 
     expect(router.url).toBe('/dashboard');
+    httpCtrl.expectOne('/api/catalogue').flush({ items: [] });
   });
 
   it('sends a vendor who has only added a photo to the form', async () => {
@@ -125,6 +132,7 @@ describe('Onboarding launch', () => {
     httpCtrl.expectOne('/api/storefront').flush(null);
 
     await waitFor(() => expect(router.url).toBe('/dashboard'));
+    httpCtrl.expectOne('/api/catalogue').flush({ items: [] });
   });
 
   it('surfaces the load error code and stays on the landing page', async () => {
