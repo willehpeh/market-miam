@@ -103,7 +103,8 @@ describe('StorefrontForm', () => {
     storefront.coverPhotoUploading.set(true);
     view.detectChanges();
 
-    expect(screen.getByRole('button', { name: /envoi/i })).toBeDisabled();
+    expect(screen.getByRole('status', { name: /envoi/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /ajouter image/i })).toBeDisabled();
   });
 
   it('previews the stored cover photo', async () => {

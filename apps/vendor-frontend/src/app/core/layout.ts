@@ -16,7 +16,7 @@ import { LogoutButton } from './auth/logout-button';
       </header>
       <main class="px-6 py-3 bg-canvas">
         @if (errorMessage(); as message) {
-          <div role="alert" class="mb-3 flex items-center justify-between gap-4 rounded-card bg-surface p-4 text-sm shadow-frame">
+          <div role="alert" class="fixed bottom-4 left-1/2 z-50 w-[calc(100%-3rem)] max-w-md -translate-x-1/2 flex items-center justify-between gap-4 rounded-card bg-surface p-4 text-sm shadow-frame">
             <span>{{ message }}</span>
             <button type="button" aria-label="Fermer" (click)="dismiss()">×</button>
           </div>

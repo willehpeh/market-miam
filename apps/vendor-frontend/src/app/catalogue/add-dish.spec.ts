@@ -65,7 +65,8 @@ describe('AddDish', () => {
     catalogue.photoUploading.set(true);
     view.detectChanges();
 
-    expect(screen.getByRole('button', { name: /envoi/i })).toBeDisabled();
+    expect(screen.getByRole('status', { name: /envoi/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /prendre en photo/i })).toBeDisabled();
   });
 
   it('previews the uploaded photo', async () => {
