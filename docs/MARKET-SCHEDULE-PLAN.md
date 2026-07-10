@@ -55,9 +55,34 @@ Considered: on `Register`, eagerly emit the next 7–14 days of MarketDays; a ni
 - **Query-time expansion has none of that.** One source of truth (the schedule), `[today, today+56]` derived fresh per read; cancel/skip just change the next expansion. No cron, no processor, no drift.
 - **Flip condition:** a MarketDay needing state *before* the vendor touches it — customer pre-orders, day-attached reminders. Not in scope; the stream id is deterministic, so a future day is addressable without materialising. Even the prepared-state overlay left-joins *actual* events onto expanded occurrences — it doesn't want eager days.
 
+## Calendar list (Calendrier) — schedules read model (resolved, next slice)
+
+**Distinct from "Upcoming market days" below.** This projects schedules **as-registered** (weekday + times + cadence) — no date expansion, no `Clock`. The mockup (`docs/design/calendar.png`) shows recurring schedules by weekday, never dates (the "PROCHAINE DATE DANS 2 J" header is out of scope). The occurrence model below (flat dated occurrences) is a separate, later read model; the two can coexist.
+
+Decisions:
+
+- **List first**; add form is a later slice. "Ajouter un marché" card → `ComingSoon` at `/dashboard/markets/new` (interim), reroute when the form lands. Replaces the current `ComingSoon` at `/dashboard/markets` (onboarding step 3).
+- **Persisted** read model mirroring `CatalogueViews`: in-mem + pg adapters, ISP read/write surfaces, projection + query handler, subscription. Chosen over on-demand fold — it's the resolved read-half infra and the customer/public frontend reads it later.
+- **Row = full schedule snapshot**: `{ scheduleId, market{id,name,streetAddress?,codePostal,town,pitch?}, startDate, days[], frequency }`. Keyed `(vendorId, scheduleId)`; re-register **upserts**. One card per schedule — no market-level merge (two cadences at one market = two cards).
+- **Projection** consumes `MarketScheduleRegistered` only (cancel/skip don't exist yet). Ordering: as stored.
+- **Recurring only.** Per-card cadence label: `1 → chaque semaine`, `N → toutes les N semaines`. One-off ("date ponctuelle") deferred — not in the domain (absent frequency defaults to weekly) and needs a dated card, not a weekday card.
+- **Empty state** = only the add card + "Continuer" (mirrors `catalogue-list`); no dedicated empty component.
+- **Frontend** mirrors the catalogue slice; suites split at the facade seam (component↔fake-facade; facade↔http via `HttpTestingController`).
+
+Build order — outside-in social TDD, one RED→GREEN per step, review gate each ([[feedback_incremental_steps_review_gates]]):
+
+1. `apps/api` acceptance (RED first): seed via `POST /market-schedules`, then `GET /api/market-schedules` returns it. Red until 2–3 land.
+2. Query + in-mem read model — social spec (mirror `find-vendor-catalogue`): empty → `{ schedules: [] }`; seed via write surface (`recordSchedule`, upsert); vendor-scoped. Drives `FindVendorSchedules` + handler, `InMemoryMarketScheduleViews`, the DTO.
+3. Projection — `MarketScheduleRegistered` → row via write surface. Drives `MarketScheduleViewProjection` + subscription registration (greens step 1).
+4. Contract spec + `PgMarketScheduleViews` — list survives reload.
+5. Component spec (fake facade): `MarketsList` — card per schedule (French weekday + time labels, sorted Mon→Sun), cadence label, empty → add card only, `load()` in constructor. Drives component + abstract `MarketScheduleFacade` + fake.
+6. Store spec (fake HTTP, mirror `catalogue.spec.ts`): `load()` → `GET /api/market-schedules`, loading flag, schedules on flush, error → empty. Drives `StoreMarketScheduleFacade` + state + effects + `HttpMarketSchedules` port + providers.
+
+Naming: query `FindVendorSchedules` → `{ schedules: [] }`; endpoint `GET /api/market-schedules`.
+
 ## Upcoming market days — design (resolved)
 
-Vendor-scoped read model; both frontends read it (customer public, vendor authed — HTTP concern, not data).
+*Separate read model from the Calendar list above — dated occurrences, not as-registered schedules.* Vendor-scoped read model; both frontends read it (customer public, vendor authed — HTTP concern, not data).
 
 ### Write half — schedules can now be retracted
 
