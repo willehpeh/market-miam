@@ -107,7 +107,7 @@ the UoW's only coverage (no isolated UoW unit test; reentrant guard dropped — 
 ## 2. Crypto-shredding — `ShreddingEventStore` + `DataKeys`  — **2a DONE, 2b DONE** (ADR 0025)
 
 Encrypt registered PII fields with a per-vendor data key held outside the log; erase by
-deleting the key. Full design: ADR 0025 + `docs/VENDOR_REGISTRATION_AND_PII.md`.
+deleting the key. Full design: ADR 0025 + `docs/archive/VENDOR_REGISTRATION_AND_PII.md`.
 
 **2a — encrypt/decrypt — DONE** (both `memory` and `postgres` profiles wired; encryption live in prod):
 - **`DataKeys` port + pg adapter** (`data_keys` table, migration **`0003`**): per-vendor key, envelope-encrypted under a master key held outside the DB — Render **Secret File** `/etc/secrets/.env`, read off disk (not `process.env`) so env-scraping can't lift it with the DB creds; KMS later. DELETE-able, **not** under the append-only trigger — `shred(vendorId)` deletes the key. Ports: `getOrCreateKeyFor`/`findKeyFor`/`shred`. Testcontainers contract + envelope-at-rest tests.

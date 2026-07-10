@@ -23,7 +23,7 @@ are not), with envelope-encrypted keys (env master key now, KMS later).
 Shredded fields read back as the `SHREDDED` sentinel (`'<shredded>'`, not
 `null` — keeps read-model columns `NOT NULL` and value objects off the null
 path); erasure also rebuilds projections and deletes the Auth0 user. Full
-design: `docs/VENDOR_REGISTRATION_AND_PII.md`.
+design: `docs/archive/VENDOR_REGISTRATION_AND_PII.md`.
 
 ## Consequences
 

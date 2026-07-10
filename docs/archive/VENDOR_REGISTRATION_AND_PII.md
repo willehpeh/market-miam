@@ -1,5 +1,7 @@
 # Vendor Registration & PII Handling
 
+> **Archived — shipped.** This is a design record, not a backlog. Crypto-shredding is implemented and deployed: `ShreddingEventStore` + `DataKeys` (in-memory & postgres) in `packages/event-sourcing`, `vendor-pii-fields.ts` (`packages/market-days`), erasure in `apps/api/.../vendor-erasure.ts`, plus contract/round-trip tests. See ADR 0025 and POSTGRES-PLAN item 2 (`2a`/`2b` DONE).
+
 Design decisions for vendor identity, registration events, progressive profile completion, and crypto-shredding of personal data. Captured 2026-06-10.
 
 ## Vendor identity
