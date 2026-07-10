@@ -80,9 +80,10 @@ export class Dashboard {
     ];
     const present = fields.filter((field) => field.set).map((field) => field.label);
     const missing = fields.filter((field) => !field.set).map((field) => field.label);
+    const dishCount = this.catalogue.items().length;
     const steps = [
       { number: 1, title: 'Informations de la vitrine', detail: summarise(present, missing), done: missing.length === 0, link: '/onboarding/storefront' },
-      { number: 2, title: 'Composez votre catalogue', detail: 'Ajoutez au moins un plat à proposer.', done: this.catalogue.items().length > 0, link: '/dashboard/catalogue' },
+      { number: 2, title: 'Composez votre catalogue', detail: dishCount ? dishesAdded(dishCount) : 'Ajoutez au moins un plat à proposer.', done: dishCount > 0, link: '/dashboard/catalogue' },
       { number: 3, title: 'Indiquez vos marchés', detail: 'Où et quand vous vendez.', done: false, link: '/dashboard/markets' },
     ];
     const nextIndex = steps.findIndex((step) => !step.done);
@@ -94,6 +95,11 @@ export class Dashboard {
   constructor() {
     this.catalogue.load();
   }
+}
+
+function dishesAdded(count: number): string {
+  const plural = count > 1 ? 's' : '';
+  return `${count} plat${plural} ajouté${plural}`;
 }
 
 function summarise(present: string[], missing: string[]): string {

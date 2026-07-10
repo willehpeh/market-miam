@@ -65,14 +65,24 @@ describe('Dashboard', () => {
     expect(catalogue.loaded).toBe(true);
   });
 
-  it('marks the catalogue step done once at least one dish exists', async () => {
+  it('marks the catalogue step done and shows the dish count once dishes exist', async () => {
     const { view, catalogue } = await renderDashboard();
     catalogue.items.set([aDish]);
     view.detectChanges();
 
     const step = screen.getByRole('link', { name: /composez votre catalogue/i });
     expect(within(step).getByText('✓')).toBeInTheDocument();
+    expect(within(step).getByText('1 plat ajouté')).toBeInTheDocument();
     expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '1');
+  });
+
+  it('pluralises the dish count', async () => {
+    const { view, catalogue } = await renderDashboard();
+    catalogue.items.set([aDish, { ...aDish, itemId: 'item-2' }]);
+    view.detectChanges();
+
+    const step = screen.getByRole('link', { name: /composez votre catalogue/i });
+    expect(within(step).getByText('2 plats ajoutés')).toBeInTheDocument();
   });
 
   it('leaves the catalogue step to do while it holds no dishes', async () => {

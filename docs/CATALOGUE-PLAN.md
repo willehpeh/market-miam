@@ -28,7 +28,7 @@ Vendors build a catalogue of dishes, reached from dashboard step 2 (`/dashboard/
 - `catalogue-list.ts` at `/dashboard/catalogue`: loads on init, renders photo + name + price (`cents → "13,00 €"`). "Ajouter un plat" → `/dashboard/catalogue/new`; "Continuer · N plats" → `/dashboard`.
 - `add-dish.ts` at `/dashboard/catalogue/new` (replaced the `ComingSoon` stub). Signal Forms; camera-first photo (`capture="environment"`), name (required), price (text → cents), description (optional). Submit disabled until name+price valid and a photo is uploaded. Mints `itemId` once, reuses it for sign + add. Write path added to the slice: port `photoSignature`/`add`, `UploadDishPhoto`/`AddDish` flows, `navigateOnAdded$` → list. Reuses storefront's `PhotoUploads`/`CloudinaryPhotoUploads` as-is.
 - Two test layers: component (fake facade) + slice integration (real facade+effects+http, Cloudinary boundary faked via `FakePhotoUploads`).
-- `dashboard.ts` step 2 ("Composez votre catalogue") shows FAIT once the catalogue holds ≥1 dish: injects `CatalogueFacade`, `load()`s on arrival (constructor), derives `done` from `items()` (store selector). Launch/guard specs that render the dashboard now provide `FakeCatalogueFacade`.
+- `dashboard.ts` step 2 ("Composez votre catalogue") shows FAIT once the catalogue holds ≥1 dish, with the dish count as its detail ("N plat(s) ajouté(s)"): injects `CatalogueFacade`, `load()`s on arrival (constructor), derives `done` + count from `items()` (store selector). Guard spec (all-fake facades) provides `FakeCatalogueFacade`; the launch spec (all-real) wires the real catalogue slice and flushes `GET /api/catalogue` on the dashboard-landing tests.
 
 ## Decisions (don't re-litigate)
 
