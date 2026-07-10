@@ -25,8 +25,9 @@ Vendors build a catalogue of dishes, reached from dashboard step 2 (`/dashboard/
 
 **Frontend** — read-only list page (`f5bba2f` + slice files swept into `3e5e451`).
 - `apps/vendor-frontend/src/app/catalogue/` — port/facade (abstract+store+fake)/state/http/effects/providers, mirrors the storefront slice.
-- `catalogue-list.ts` at `/dashboard/catalogue`: loads on init, renders photo + name + price (`cents → "13,00 €"`). "Ajouter un plat" → `/dashboard/catalogue/new` (`ComingSoon` stub); "Continuer · N plats" → `/dashboard`.
-- Two test layers: component (fake facade) + slice integration (real facade+effects+http, HTTP boundary faked).
+- `catalogue-list.ts` at `/dashboard/catalogue`: loads on init, renders photo + name + price (`cents → "13,00 €"`). "Ajouter un plat" → `/dashboard/catalogue/new`; "Continuer · N plats" → `/dashboard`.
+- `add-dish.ts` at `/dashboard/catalogue/new` (replaced the `ComingSoon` stub). Signal Forms; camera-first photo (`capture="environment"`), name (required), price (text → cents), description (optional). Submit disabled until name+price valid and a photo is uploaded. Mints `itemId` once, reuses it for sign + add. Write path added to the slice: port `photoSignature`/`add`, `UploadDishPhoto`/`AddDish` flows, `navigateOnAdded$` → list. Reuses storefront's `PhotoUploads`/`CloudinaryPhotoUploads` as-is.
+- Two test layers: component (fake facade) + slice integration (real facade+effects+http, Cloudinary boundary faked via `FakePhotoUploads`).
 
 ## Decisions (don't re-litigate)
 
@@ -40,13 +41,10 @@ Vendors build a catalogue of dishes, reached from dashboard step 2 (`/dashboard/
 
 ## Next / not done
 
-1. **Add-dish form** (`/dashboard/catalogue/new`, currently a stub). Signature endpoint is shipped (see Done); this is the remaining frontend slice. Signal Forms, mirror `storefront-form.ts`. Design: `docs/design/add-dish.png`.
-   - Fields this slice: photo, name, price (`… EUR`, formatted, stored as cents), description (optional). Category/tags still out (item 2).
-   - Photo is **camera-first** in the design ("photo prise à l'instant" / "Reprendre"). Native path: `<input type="file" accept="image/*" capture="environment">` — camera on mobile, picker on desktop. Not camera-*only*; forcing that isn't worth it.
-   - Submit ("Ajouter à ma carte") flow: mint `itemId` (UUID) → sign → Cloudinary upload (reuse `SignedUpload` **as-is**) → `POST /api/catalogue` with `imageReference = v{version}/dishes/{vendorId}/{itemId}`. "Annuler"/back → `/dashboard/catalogue`.
-   - Dish eager rendition: pick the card size here and pass a dish eager transform to `SignedUploads.for` (currently hardcoded to the cover-photo rendition — see the `ponytail:` in `catalogue.controller.ts`).
-2. **Category + tags** — the v2 domain extension above, then surface on form + list cards.
-3. **Dashboard step 2 → FAIT** when the catalogue has ≥1 dish (dashboard reads the catalogue facade; needs a catalogue load on the dashboard). Currently hardcoded `done: false`.
+1. **Dish eager rendition** — the display transform on the form is `c_fill,w_600,h_400`, but the API still eagerly warms the cover-photo rendition (`ponytail:` in `catalogue.controller.ts`). Pass a dish eager transform to `SignedUploads.for` so the card rendition is pre-generated. Off the happy path (only affects first-paint warmth), so deferred.
+2. **Category + tags** — the v2 domain extension (new VOs + `ItemAddedToCatalogue` v2 payload + read-model columns), then surface on the form (`CATÉGORIE`/`ÉTIQUETTES` in `add-dish.png`) + list cards.
+3. **`AddDishFailure` unreduced** — emitted but no add-error banner (mirrors storefront's `EditStorefrontFailure`). Wire a reducer + UX when the flow needs it.
+4. **Dashboard step 2 → FAIT** when the catalogue has ≥1 dish. Dashboard loads the catalogue facade on arrival and derives `done` from `items()` (store selector). Currently hardcoded `done: false`.
 
 ## Gotchas
 

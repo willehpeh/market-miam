@@ -1,7 +1,8 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Catalogue, CatalogueView } from './catalogue';
+import { Catalogue, CatalogueView, NewDish } from './catalogue';
+import { SignedUpload } from '../storefront/signed-upload';
 import { environment } from '../../environments/environment';
 
 @Injectable()
@@ -10,5 +11,13 @@ export class HttpCatalogue implements Catalogue {
 
   list(): Observable<CatalogueView> {
     return this.http.get<CatalogueView>(`${environment.apiBaseUrl}/api/catalogue`);
+  }
+
+  photoSignature(itemId: string): Observable<SignedUpload> {
+    return this.http.post<SignedUpload>(`${environment.apiBaseUrl}/api/catalogue/photo/signature`, { itemId });
+  }
+
+  add(dish: NewDish): Observable<void> {
+    return this.http.post<void>(`${environment.apiBaseUrl}/api/catalogue`, dish);
   }
 }
