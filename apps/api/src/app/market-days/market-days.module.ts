@@ -39,6 +39,7 @@ import { Persistence } from '../event-sourcing/event-sourcing.module';
 import { VendorsController } from './vendors.controller';
 import { StorefrontController } from './storefront.controller';
 import { CatalogueController } from './catalogue.controller';
+import { MarketScheduleController } from './market-schedule.controller';
 import { VendorErasure } from './vendor-erasure';
 
 const clock = [{ provide: Clock, useClass: DateClock }];
@@ -134,7 +135,7 @@ export class MarketDaysModule {
   static forRoot(persistence: Persistence): DynamicModule {
     return {
       module: MarketDaysModule,
-      controllers: [VendorsController, StorefrontController, CatalogueController],
+      controllers: [VendorsController, StorefrontController, CatalogueController, MarketScheduleController],
       providers: [
         ...clock,
         ...signedUploads,
