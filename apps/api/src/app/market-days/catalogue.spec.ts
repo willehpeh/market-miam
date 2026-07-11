@@ -57,7 +57,7 @@ describe('Managing a catalogue over HTTP', () => {
   });
 
   it('adds a dish without a photo, listing it back with an empty image reference', async () => {
-    const { ...withoutPhoto } = dish;
+    const withoutPhoto = { itemId: dish.itemId, name: dish.name, description: dish.description, price: dish.price };
     await post(withoutPhoto).expect(201);
     await app.get(Subscriptions).drain();
 
