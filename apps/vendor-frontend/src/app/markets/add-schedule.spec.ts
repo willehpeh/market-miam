@@ -54,7 +54,7 @@ describe('AddSchedule', () => {
     const { view } = await renderForm();
     fireEvent.click(screen.getByRole('button', { name: /^mardi$/i }));
     view.detectChanges();
-    fireEvent.click(screen.getByRole('button', { name: /retirer mardi/i }));
+    fireEvent.click(screen.getByRole('button', { name: /^mardi$/i }));
     view.detectChanges();
 
     expect(screen.queryByLabelText(/début mardi/i)).toBeNull();

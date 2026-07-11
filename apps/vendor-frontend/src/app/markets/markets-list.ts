@@ -88,7 +88,11 @@ export class MarketsList {
   });
 
   constructor() {
-    this.markets.load();
+    // ponytail: load only when cold, so an optimistic insert (from adding a schedule)
+    // isn't clobbered by a re-GET while the projection lags. Dashboard warms the store.
+    if (!this.markets.schedules().length) {
+      this.markets.load();
+    }
   }
 }
 

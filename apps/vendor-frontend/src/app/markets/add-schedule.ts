@@ -44,7 +44,7 @@ type DayEntry = { day: string; startTime: string; endTime: string };
             <button
               type="button"
               disabled
-              class="flex-1 rounded-field border border-line px-3 py-2 text-muted opacity-60"
+              class="flex-1 rounded-field border border-line bg-transparent px-3 py-2 text-muted opacity-60"
             >
               <i class="fa-solid fa-location-dot mr-2" aria-hidden="true"></i>Une seule fois
             </button>
@@ -107,16 +107,17 @@ type DayEntry = { day: string; startTime: string; endTime: string };
 
         <div class="mt-5">
           <p class="field-label">Jours de la semaine · un ou plusieurs</p>
-          <div class="mt-1 flex gap-2">
+          <div class="mt-1 flex gap-1.5">
             @for (day of allDays; track day.code) {
               <button
                 type="button"
                 [attr.aria-pressed]="selected(day.code)"
                 [attr.aria-label]="day.label"
                 (click)="toggleDay(day.code)"
-                class="grid size-11 place-items-center rounded-field font-bold"
+                class="h-10 flex-1 rounded-field p-0 text-sm font-bold"
                 [class.bg-brand]="selected(day.code)"
                 [class.text-white]="selected(day.code)"
+                [class.bg-surface]="!selected(day.code)"
                 [class.border]="!selected(day.code)"
                 [class.border-line-strong]="!selected(day.code)"
                 [class.text-ink]="!selected(day.code)"
@@ -149,7 +150,6 @@ type DayEntry = { day: string; startTime: string; endTime: string };
                     [value]="row.endTime"
                     (input)="setTime(row.day, 'endTime', asValue($event))"
                   />
-                  <button type="button" [attr.aria-label]="'Retirer ' + row.label" (click)="toggleDay(row.day)" class="px-1 text-xl text-muted">×</button>
                 </div>
               }
             </div>
