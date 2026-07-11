@@ -33,4 +33,5 @@ export interface NewSchedule {
 
 export abstract class MarketSchedules {
   abstract list(): Observable<MarketSchedulesView>;
+  abstract register(schedule: MarketScheduleView): Observable<void>;
 }
