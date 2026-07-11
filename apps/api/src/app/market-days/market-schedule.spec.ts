@@ -1,7 +1,8 @@
-import { afterEach, beforeEach, describe, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { bootApiTestApp } from '../testing/api-test-app';
+import { Subscriptions } from '../event-sourcing/subscriptions';
 
 const schedule = {
   scheduleId: 'schedule-1',
@@ -18,7 +19,7 @@ const schedule = {
   frequency: { weeks: 1 },
 };
 
-describe('Registering a market schedule over HTTP', () => {
+describe('Managing market schedules over HTTP', () => {
   let app: INestApplication;
 
   beforeEach(async () => {
@@ -36,6 +37,12 @@ describe('Registering a market schedule over HTTP', () => {
       .send(body);
   }
 
+  function list() {
+    return request(app.getHttpServer())
+      .get('/market-schedules')
+      .set('Authorization', 'Bearer any-token');
+  }
+
   it('registers a market schedule for the authenticated vendor', async () => {
     await post(schedule).expect(201);
   });
@@ -46,5 +53,20 @@ describe('Registering a market schedule over HTTP', () => {
 
   it('rejects a malformed code postal as a bad request', async () => {
     await post({ ...schedule, market: { ...schedule.market, codePostal: '750' } }).expect(400);
+  });
+
+  it('lists a registered schedule back for the authenticated vendor', async () => {
+    await post(schedule).expect(201);
+    await app.get(Subscriptions).drain();
+
+    const response = await list().expect(200);
+
+    expect(response.body).toEqual({ schedules: [schedule] });
+  });
+
+  it('returns no schedules for a vendor with none', async () => {
+    const response = await list().expect(200);
+
+    expect(response.body).toEqual({ schedules: [] });
   });
 });

@@ -13,6 +13,7 @@ export * from './plan-items-for-market-day';
 export * from './mark-item-as-sold-out';
 export * from './unplan-item-from-market-day';
 export * from './catalogue-view';
+export * from './market-schedule-view';
 export { ItemPriceChanged } from './catalogue/events';
 export * from './catalogue';
 export * from './register-vendor';

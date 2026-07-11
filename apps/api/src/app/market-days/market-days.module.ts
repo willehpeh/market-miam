@@ -13,12 +13,18 @@ import {
   EditStorefrontInformationHandler,
   FindVendorCatalogueHandler,
   FindVendorStorefrontHandler,
+  FindVendorSchedulesHandler,
   InMemoryCatalogueViews,
+  InMemoryMarketScheduleViews,
   InMemoryVendorStorefrontViews,
+  MarketScheduleViewProjection,
+  MarketScheduleViews,
+  MarketScheduleViewStore,
   MarkItemAsSoldOutHandler,
   MarketDays,
   OpenStorefrontHandler,
   PlanItemsForMarketDayHandler,
+  PostgresMarketScheduleViews,
   PostgresVendorStorefrontViews,
   RegisterMarketScheduleHandler,
   RegisterVendorHandler,
@@ -79,6 +85,13 @@ const readModel = (persistence: Persistence): Provider[] => {
           },
           { provide: CatalogueViews, useExisting: PostgresCatalogueViews },
           { provide: CatalogueViewStore, useExisting: PostgresCatalogueViews },
+          {
+            provide: PostgresMarketScheduleViews,
+            useFactory: (uow: PostgresUnitOfWork) => new PostgresMarketScheduleViews(uow),
+            inject: [PostgresUnitOfWork],
+          },
+          { provide: MarketScheduleViews, useExisting: PostgresMarketScheduleViews },
+          { provide: MarketScheduleViewStore, useExisting: PostgresMarketScheduleViews },
         ]
       : [
           InMemoryVendorStorefrontViews,
@@ -87,6 +100,9 @@ const readModel = (persistence: Persistence): Provider[] => {
           InMemoryCatalogueViews,
           { provide: CatalogueViews, useExisting: InMemoryCatalogueViews },
           { provide: CatalogueViewStore, useExisting: InMemoryCatalogueViews },
+          InMemoryMarketScheduleViews,
+          { provide: MarketScheduleViews, useExisting: InMemoryMarketScheduleViews },
+          { provide: MarketScheduleViewStore, useExisting: InMemoryMarketScheduleViews },
         ];
   return [
     ...views,
@@ -99,6 +115,11 @@ const readModel = (persistence: Persistence): Provider[] => {
       provide: CatalogueViewProjection,
       useFactory: (store: CatalogueViewStore) => new CatalogueViewProjection(store),
       inject: [CatalogueViewStore],
+    },
+    {
+      provide: MarketScheduleViewProjection,
+      useFactory: (store: MarketScheduleViewStore) => new MarketScheduleViewProjection(store),
+      inject: [MarketScheduleViewStore],
     },
   ];
 };
@@ -125,7 +146,7 @@ const commandHandlers = [
   OpenStorefrontHandler,
 ];
 
-const queryHandlers = [FindVendorStorefrontHandler, FindVendorCatalogueHandler];
+const queryHandlers = [FindVendorStorefrontHandler, FindVendorCatalogueHandler, FindVendorSchedulesHandler];
 
 // EventStore / CommandGateway / QueryGateway (and the pg UnitOfWork) come from
 // the global EventSourcingModule.forRoot(...) at the composition root. persistence

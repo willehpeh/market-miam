@@ -1,8 +1,8 @@
-import { Body, Controller, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
 import { CurrentVendor, JwtAuthGuard } from '@market-miam/auth-nestjs';
 import type { VerifiedVendor } from '@market-miam/auth';
-import { CommandGateway } from '@market-miam/event-sourcing';
-import { RegisterMarketSchedule } from '@market-miam/market-days';
+import { CommandGateway, QueryGateway } from '@market-miam/event-sourcing';
+import { FindVendorSchedules, MarketSchedulesView, RegisterMarketSchedule } from '@market-miam/market-days';
 
 type MarketBody = {
   id: string;
@@ -23,7 +23,16 @@ type ScheduleBody = {
 
 @Controller('market-schedules')
 export class MarketScheduleController {
-  constructor(private readonly commands: CommandGateway) {}
+  constructor(
+    private readonly commands: CommandGateway,
+    private readonly queries: QueryGateway,
+  ) {}
+
+  @Get()
+  @UseGuards(JwtAuthGuard)
+  list(@CurrentVendor() vendor: VerifiedVendor): Promise<MarketSchedulesView> {
+    return this.queries.execute(new FindVendorSchedules(vendor.vendorId.value()));
+  }
 
   @Post()
   @UseGuards(JwtAuthGuard)
