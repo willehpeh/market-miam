@@ -37,7 +37,7 @@ overwhelmingly behavioural, boundary-faked, and refactor-resilient. There are
 | Verdict: behavioural / mostly-behavioural | 74 files (95%) |
 | Coupling findings total | 28 (0 high · 5 medium · 23 low) |
 | Files with ≥1 finding | 23 |
-| Overlap clusters identified | 16 (1 redundant-duplicate · 7 partial · 8 layered-intentional) |
+| Overlap clusters identified | 16 (8 partial · 8 layered-intentional; 0 removable duplicates) |
 
 **What's working (keep doing this):**
 - Value objects and the shared kernel are textbook: they assert on `value()`
@@ -55,9 +55,12 @@ overwhelmingly behavioural, boundary-faked, and refactor-resilient. There are
   the template when trimming other container specs.
 
 **Where to invest (in priority order):**
-1. **One redundant duplicate worth fixing now:** the `stamps vendor id into
+1. **One DRY opportunity (not a coverage cut):** the `stamps vendor id into
    event metadata` assertion is copy-pasted across **11** market-days use-case
-   specs. Collapse into one shared/parameterized cross-cutting test. *(§4.1)*
+   specs. It can be consolidated into one **parameterized** test that drives
+   every command handler — but each handler must stay a case, since a single
+   handler bypassing the shared stamping mechanism is only caught per-command.
+   Do not replace it with one isolated wrapper/dispatcher test. *(§4.1)*
 2. **Two thin smoke tests** assert essentially nothing:
    `customer-frontend` `app.spec` (score 2) checks only that a class symbol is
    defined; `admin-frontend` `app.spec` (score 3) renders but asserts no
@@ -69,9 +72,11 @@ overwhelmingly behavioural, boundary-faked, and refactor-resilient. There are
 5. **Tracing & correlation plumbing** is re-asserted 4–5× across specs; extract
    one wrapper contract + one canonical propagation test. *(§4.2)*
 
-Net: roughly **20–30 assertions** could be centralized or removed with **no loss
-of confidence**, almost entirely by turning hand-duplicated contract/plumbing
-checks into shared parameterized suites.
+Net: roughly **20–30 assertions** could be **centralized** (mostly relocated into
+shared parameterized suites, not deleted) with no loss of confidence — provided
+consolidation keeps driving each real handler/adapter as its own case rather than
+collapsing to a single isolated test. See §4.1 for a worked example of that
+distinction.
 
 ---
 
@@ -349,21 +354,47 @@ catching a different class of regression. The map below separates **genuinely
 wasteful** repetition from **intentional layering** (which is called out so it's
 documented, not removed).
 
-### 4.1 Redundant duplication — fix this
+### 4.1 DRY opportunity — *not* dead coverage
 
-**`stamps vendor id into event metadata` — 11 files** *(severity: medium)*
+**`stamps vendor id into event metadata` — 11 files** *(overlap type:
+partial · this was initially over-classified as a removable "redundant
+duplicate"; see the note below)*
 
-The identical cross-cutting plumbing assertion (the command handler stamps
-`vendorId` into event metadata) is hand-repeated at the same domain layer across:
-`add-item-to-catalogue`, `change-item-price`, `mark-item-as-sold-out`,
-`plan-items-for-market-day`, `unplan-item-from-market-day`, `retire-item`,
-`open-storefront`, `edit-storefront-information`, `set-storefront-cover-photo`,
-`register-vendor`, `register-market-schedule`.
+The identical assertion (via the shared `expectVendorScopedEvents` helper) that
+an aggregate's events carry `{ vendorId }` in metadata is hand-repeated across 11
+use-case specs: `add-item-to-catalogue`, `change-item-price`,
+`mark-item-as-sold-out`, `plan-items-for-market-day`,
+`unplan-item-from-market-day`, `retire-item`, `open-storefront`,
+`edit-storefront-information`, `set-storefront-cover-photo`, `register-vendor`,
+`register-market-schedule`.
 
-**Recommendation:** assert `vendorId`-in-metadata **once** as a shared /
-parameterized helper run across all command handlers (or one contract test over
-the dispatcher). Remove the 11 per-command copies; keep each use-case spec
-focused on its own event payload and invariants.
+Mechanically, all 11 stamp through **one shared mechanism** —
+`VendorScopedEvents.save()` writes `{ vendorId }` for every event — and each spec
+wires `new VendorScopedEvents(store)` and asserts identically. That single shared
+code path is what made this look like pure repetition.
+
+**Why it is *not* pure redundancy.** There are two ways stamping can regress, and
+the per-command tests are only redundant for one of them:
+
+- **A — `VendorScopedEvents.save()` stops stamping.** All 11 fail together; one
+  test would catch it. *This* is the redundant part.
+- **B — a single command is refactored to bypass `VendorScopedEvents`** (appends
+  to the store directly, or a new repository that doesn't wrap it). **Only that
+  command's own test catches it.** This is a real per-event behaviour, not
+  plumbing — losing it means a handler could silently stop stamping while the
+  suite stays green.
+
+**Recommendation (revised).** Treat this as a DRY cleanup, not a coverage cut. If
+you consolidate, do it as a **parameterized test that drives every real command
+handler** (each command is a case) — this keeps failure-mode **B** intact while
+removing the copy-paste, and has the useful side-effect that adding a new
+vendor-scoped command forces a new case. Do **not** replace the per-command
+checks with a single isolated `VendorScopedEvents` unit test or a
+dispatcher-level test — that form only covers **A** and drops exactly the
+per-handler protection you want. Keeping the 11 blocks as-is is also a legitimate
+choice: each use-case spec stays self-contained and states its own vendor-scoping
+guarantee. Net win from consolidating is readability/DRY (11 near-identical
+three-line blocks → one table), **not** confidence.
 
 ### 4.2 Partial overlap — trim or centralize
 
@@ -400,8 +431,11 @@ narrowed to their layer's marginal risk.
 
 Ordered by value-to-effort. None are urgent — the suite is healthy.
 
-1. **Collapse the 11-file `vendorId in metadata` duplication** into one shared
-   parameterized test. *(highest value, low effort — §4.1)*
+1. **Optionally DRY up the 11-file `vendorId in metadata` blocks** into one
+   *parameterized* test that still drives every command handler (each a case).
+   This is a readability win, not a coverage gain — keep per-handler cases so a
+   single handler bypassing the shared stamping is still caught. *(low effort,
+   optional — §4.1)*
 2. **Make the two smoke tests real** (`customer-frontend`, `admin-frontend`
    `app.spec`) — render + assert a landmark. *(§3.3)*
 3. **Reword the 5 medium coupling findings** to assert behaviour, not
