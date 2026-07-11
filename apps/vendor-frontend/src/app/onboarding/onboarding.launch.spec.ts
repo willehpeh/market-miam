@@ -31,6 +31,12 @@ import { catalogueFeature } from '../catalogue/catalogue.state';
 import { CatalogueEffects } from '../catalogue/catalogue.effects';
 import { CatalogueFacade } from '../catalogue/catalogue.facade';
 import { StoreCatalogueFacade } from '../catalogue/store.catalogue.facade';
+import { MarketSchedules } from '../markets/market-schedules';
+import { HttpMarketSchedules } from '../markets/http.market-schedules';
+import { marketScheduleFeature } from '../markets/market-schedule.state';
+import { MarketScheduleEffects } from '../markets/market-schedule.effects';
+import { MarketScheduleFacade } from '../markets/market-schedule.facade';
+import { StoreMarketScheduleFacade } from '../markets/store.market-schedule.facade';
 import { onboardingFeature } from './onboarding.state';
 import { OnboardingEffects, SAVED_REDIRECT_DELAY } from './onboarding.effects';
 import { OnboardingFacade } from './onboarding.facade';
@@ -53,17 +59,20 @@ describe('Onboarding launch', () => {
         provideState(vendorFeature),
         provideState(storefrontFeature),
         provideState(catalogueFeature),
+        provideState(marketScheduleFeature),
         provideState(onboardingFeature),
-        provideEffects(AuthEffects, VendorEffects, StorefrontEffects, CatalogueEffects, OnboardingEffects),
+        provideEffects(AuthEffects, VendorEffects, StorefrontEffects, CatalogueEffects, MarketScheduleEffects, OnboardingEffects),
         { provide: Auth, useClass: FakeAuth },
         { provide: Vendor, useClass: HttpVendor },
         { provide: Storefront, useClass: HttpStorefront },
         { provide: Catalogue, useClass: HttpCatalogue },
+        { provide: MarketSchedules, useClass: HttpMarketSchedules },
         { provide: PhotoUploads, useClass: FakePhotoUploads },
         { provide: AuthFacade, useClass: StoreAuthFacade },
         VendorFacade,
         { provide: StorefrontFacade, useClass: StoreStorefrontFacade },
         { provide: CatalogueFacade, useClass: StoreCatalogueFacade },
+        { provide: MarketScheduleFacade, useClass: StoreMarketScheduleFacade },
         { provide: OnboardingFacade, useClass: StoreOnboardingFacade },
         provideNotifications(),
         provideHttpClientTesting(),
@@ -103,6 +112,7 @@ describe('Onboarding launch', () => {
 
     expect(router.url).toBe('/dashboard');
     httpCtrl.expectOne('/api/catalogue').flush({ items: [] });
+    httpCtrl.expectOne('/api/market-schedules').flush({ schedules: [] });
   });
 
   it('sends a vendor who has only added a photo to the form', async () => {
@@ -135,6 +145,7 @@ describe('Onboarding launch', () => {
 
     await waitFor(() => expect(router.url).toBe('/dashboard'));
     httpCtrl.expectOne('/api/catalogue').flush({ items: [] });
+    httpCtrl.expectOne('/api/market-schedules').flush({ schedules: [] });
   });
 
   it('surfaces the load error code and stays on the landing page', async () => {

@@ -8,6 +8,9 @@ import { StorefrontView } from '../storefront/storefront';
 import { CatalogueFacade } from '../catalogue/catalogue.facade';
 import { FakeCatalogueFacade } from '../catalogue/fake.catalogue.facade';
 import { CatalogueItemView } from '../catalogue/catalogue';
+import { MarketScheduleFacade } from '../markets/market-schedule.facade';
+import { FakeMarketScheduleFacade } from '../markets/fake.market-schedule.facade';
+import { MarketScheduleView } from '../markets/market-schedules';
 
 async function renderDashboard() {
   const view = await render(Dashboard, {
@@ -15,11 +18,13 @@ async function renderDashboard() {
       provideRouter([]),
       { provide: StorefrontFacade, useClass: FakeStorefrontFacade },
       { provide: CatalogueFacade, useClass: FakeCatalogueFacade },
+      { provide: MarketScheduleFacade, useClass: FakeMarketScheduleFacade },
     ],
   });
   const storefront = TestBed.inject(StorefrontFacade) as FakeStorefrontFacade;
   const catalogue = TestBed.inject(CatalogueFacade) as FakeCatalogueFacade;
-  return { view, storefront, catalogue };
+  const markets = TestBed.inject(MarketScheduleFacade) as FakeMarketScheduleFacade;
+  return { view, storefront, catalogue, markets };
 }
 
 const completeStorefront: StorefrontView = {
@@ -35,6 +40,14 @@ const aDish: CatalogueItemView = {
   description: 'Mijoté maison',
   price: 1300,
   imageReference: 'v1/dishes/acme/item-1',
+};
+
+const aSchedule: MarketScheduleView = {
+  scheduleId: 'schedule-1',
+  market: { id: 'market-1', name: 'Marché de la Croix-Rousse', codePostal: '69004', town: 'Lyon' },
+  startDate: '2026-07-15',
+  days: [{ day: 'TUE', startTime: '08:00', endTime: '13:00' }],
+  frequency: { weeks: 1 },
 };
 
 describe('Dashboard', () => {
@@ -63,6 +76,31 @@ describe('Dashboard', () => {
   it('loads the catalogue on arrival', async () => {
     const { catalogue } = await renderDashboard();
     expect(catalogue.loaded).toBe(true);
+  });
+
+  it('loads the schedules on arrival', async () => {
+    const { markets } = await renderDashboard();
+    expect(markets.loaded).toBe(true);
+  });
+
+  it('marks the markets step done and shows the count once schedules exist', async () => {
+    const { view, markets } = await renderDashboard();
+    markets.schedules.set([aSchedule]);
+    view.detectChanges();
+
+    const step = screen.getByRole('link', { name: /indiquez vos marchés/i });
+    expect(within(step).getByText('✓')).toBeInTheDocument();
+    expect(within(step).getByText('1 marché ajouté')).toBeInTheDocument();
+    expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '1');
+  });
+
+  it('pluralises the market count', async () => {
+    const { view, markets } = await renderDashboard();
+    markets.schedules.set([aSchedule, { ...aSchedule, scheduleId: 'schedule-2' }]);
+    view.detectChanges();
+
+    const step = screen.getByRole('link', { name: /indiquez vos marchés/i });
+    expect(within(step).getByText('2 marchés ajoutés')).toBeInTheDocument();
   });
 
   it('marks the catalogue step done and shows the dish count once dishes exist', async () => {
