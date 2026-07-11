@@ -19,7 +19,7 @@ export const UploadDishPhotoSuccess = createAction(
 );
 export const UploadDishPhotoFailure = createAction('[Catalogue] Upload Dish Photo Failure');
 export const AddDish = createAction('[Catalogue] Add Dish', props<NewDish>());
-export const AddDishSuccess = createAction('[Catalogue] Add Dish Success');
+export const AddDishSuccess = createAction('[Catalogue] Add Dish Success', props<{ item: CatalogueItemView }>());
 export const AddDishFailure = createAction('[Catalogue] Add Dish Failure');
 
 export interface CatalogueState {
@@ -55,6 +55,8 @@ export const catalogueFeature = createFeature({
     on(UploadDishPhotoFailure, (state): CatalogueState => ({ ...state, photoUploading: false, photoError: true })),
     // ponytail: AddDishFailure is emitted but unreduced — no add-error UX yet. Wire a banner
     // into the reducer when the flow needs it (mirrors storefront's EditStorefrontFailure).
-    on(AddDishSuccess, (state): CatalogueState => ({ ...state, newPhotoReference: '' })),
+    // Optimistic: append on success so the list shows the dish without waiting for the
+    // projection to catch up (CatalogueList loads only when empty).
+    on(AddDishSuccess, (state, { item }): CatalogueState => ({ ...state, items: [...state.items, item], newPhotoReference: '' })),
   ),
 });

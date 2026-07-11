@@ -59,7 +59,7 @@ export class CatalogueEffects {
       ofType(AddDish),
       switchMap(({ itemId, name, description, price, imageReference }) =>
         this.catalogue.add({ itemId, name, description, price, imageReference }).pipe(
-          map(() => AddDishSuccess()),
+          map(() => AddDishSuccess({ item: { itemId, name, description, price, imageReference: imageReference ?? '' } })),
           catchError(() => of(AddDishFailure())),
         ),
       ),

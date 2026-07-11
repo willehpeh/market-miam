@@ -24,9 +24,19 @@ const dish = (overrides: Partial<CatalogueItemView> = {}): CatalogueItemView => 
 });
 
 describe('CatalogueList', () => {
-  it('loads the catalogue on init', async () => {
+  it('loads the catalogue on init when it is empty', async () => {
     const { catalogue } = await renderList();
     expect(catalogue.loaded).toBe(true);
+  });
+
+  it('does not reload when the catalogue is already in the store', async () => {
+    const catalogue = new FakeCatalogueFacade();
+    catalogue.items.set([dish()]);
+    await render(CatalogueList, {
+      providers: [provideRouter([]), { provide: CatalogueFacade, useValue: catalogue }],
+    });
+
+    expect(catalogue.loaded).toBe(false);
   });
 
   it('lists each dish with its name and price in euros', async () => {

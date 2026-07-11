@@ -70,7 +70,11 @@ export class CatalogueList {
   });
 
   constructor() {
-    this.catalogue.load();
+    // ponytail: load only when cold, so an optimistic insert (from adding a dish) isn't
+    // clobbered by a re-GET. Dashboard warms the store.
+    if (!this.catalogue.items().length) {
+      this.catalogue.load();
+    }
   }
 }
 

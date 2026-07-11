@@ -141,4 +141,22 @@ describe('Catalogue', () => {
 
     expect(facade.newPhotoReference()).toBe('');
   });
+
+  it('shows the added dish optimistically on success', () => {
+    facade.addDish({ itemId: 'coq', name: 'Coq au vin', description: 'Mijoté', price: 1500, imageReference: 'v1/dishes/acme/coq' });
+
+    httpCtrl.expectOne('/api/catalogue').flush(null);
+
+    expect(facade.items()).toEqual([
+      { itemId: 'coq', name: 'Coq au vin', description: 'Mijoté', price: 1500, imageReference: 'v1/dishes/acme/coq' },
+    ]);
+  });
+
+  it('defaults the optimistic image reference to empty when there is no photo', () => {
+    facade.addDish({ itemId: 'coq', name: 'Coq au vin', description: '', price: 1500 });
+
+    httpCtrl.expectOne('/api/catalogue').flush(null);
+
+    expect(facade.items()[0].imageReference).toBe('');
+  });
 });
