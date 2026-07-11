@@ -19,6 +19,18 @@ export interface MarketSchedulesView {
   schedules: MarketScheduleView[];
 }
 
+export interface NewSchedule {
+  market: {
+    name: string;
+    streetAddress?: string;
+    codePostal: string;
+    town: string;
+    pitch?: string;
+  };
+  days: { day: string; startTime?: string; endTime?: string }[];
+  frequency: { weeks: number };
+}
+
 export abstract class MarketSchedules {
   abstract list(): Observable<MarketSchedulesView>;
 }
