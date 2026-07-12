@@ -24,8 +24,8 @@ describe('Signing a cover photo upload over HTTP', () => {
       expect.objectContaining({
         cloudName: 'test-cloud',
         apiKey: 'test-key',
-        signature: 'signed(storefronts/acme-bakery/cover-photo)',
-        params: expect.objectContaining({ public_id: 'storefronts/acme-bakery/cover-photo' }),
+        signature: 'signed(vendors/acme-bakery/storefront/cover-photo)',
+        params: expect.objectContaining({ public_id: 'vendors/acme-bakery/storefront/cover-photo' }),
       }),
     );
   });

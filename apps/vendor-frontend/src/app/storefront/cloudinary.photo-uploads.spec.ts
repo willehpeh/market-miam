@@ -10,7 +10,7 @@ const SIGNED: SignedUpload = {
   signature: 'sig-123',
   params: {
     timestamp: 1_700_000_000,
-    public_id: 'storefronts/acme/cover-photo',
+    public_id: 'vendors/acme/storefront/cover-photo',
     overwrite: true,
     invalidate: true,
     allowed_formats: 'jpg,png,webp',
@@ -48,20 +48,20 @@ describe('CloudinaryPhotoUploads', () => {
     expect(body.get('file')).toBe(file);
     expect(body.get('api_key')).toBe('test-key');
     expect(body.get('signature')).toBe('sig-123');
-    expect(body.get('public_id')).toBe('storefronts/acme/cover-photo');
+    expect(body.get('public_id')).toBe('vendors/acme/storefront/cover-photo');
     expect(body.get('timestamp')).toBe('1700000000');
     expect(body.get('overwrite')).toBe('true');
     expect(body.get('eager')).toBe('c_fill,w_1200,h_600,q_auto,f_webp');
 
     req.flush({
-      public_id: 'storefronts/acme/cover-photo',
-      secure_url: 'https://res.cloudinary.com/test-cloud/image/upload/v42/storefronts/acme/cover-photo.jpg',
+      public_id: 'vendors/acme/storefront/cover-photo',
+      secure_url: 'https://res.cloudinary.com/test-cloud/image/upload/v42/vendors/acme/storefront/cover-photo.jpg',
       version: 42,
     });
 
     expect(result).toEqual({
-      publicId: 'storefronts/acme/cover-photo',
-      secureUrl: 'https://res.cloudinary.com/test-cloud/image/upload/v42/storefronts/acme/cover-photo.jpg',
+      publicId: 'vendors/acme/storefront/cover-photo',
+      secureUrl: 'https://res.cloudinary.com/test-cloud/image/upload/v42/vendors/acme/storefront/cover-photo.jpg',
       version: 42,
     });
   });
