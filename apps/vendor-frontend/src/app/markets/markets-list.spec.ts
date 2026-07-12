@@ -85,6 +85,17 @@ describe('MarketsList', () => {
     expect(screen.getByText('toutes les 2 semaines')).toBeInTheDocument();
   });
 
+  it('links each schedule card to its edit route', async () => {
+    const { view, markets } = await renderList();
+    markets.schedules.set([schedule()]);
+    view.detectChanges();
+
+    expect(screen.getByRole('link', { name: /marché de la croix-rousse/i })).toHaveAttribute(
+      'href',
+      '/dashboard/markets/schedule-1/edit',
+    );
+  });
+
   it('links the add-market card to the new-market route', async () => {
     await renderList();
     expect(screen.getByRole('link', { name: /ajouter un marché/i })).toHaveAttribute('href', '/dashboard/markets/new');

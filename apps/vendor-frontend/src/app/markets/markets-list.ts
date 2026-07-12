@@ -30,20 +30,25 @@ type ScheduleCard = { scheduleId: string; marketName: string; cadence: string; d
 
       <ul class="mt-6 space-y-3">
         @for (card of scheduleCards(); track card.scheduleId) {
-          <li class="rounded-card border border-line bg-surface p-3">
-            <div class="flex items-start justify-between gap-3">
-              <h2 class="font-bold text-ink">{{ card.marketName }}</h2>
-              <span aria-hidden="true" class="text-xl leading-none text-muted">›</span>
-            </div>
-            <p class="text-xs text-muted">{{ card.cadence }}</p>
-            <dl class="mt-3 space-y-1.5">
-              @for (day of card.days; track day.day) {
-                <div class="flex items-baseline justify-between gap-4 text-sm">
-                  <dt class="font-bold text-ink">{{ day.label }}</dt>
-                  <dd class="text-muted">{{ day.time }}</dd>
-                </div>
-              }
-            </dl>
+          <li>
+            <a
+              [routerLink]="['/dashboard/markets', card.scheduleId, 'edit']"
+              class="block rounded-card border border-line bg-surface p-3 no-underline"
+            >
+              <div class="flex items-start justify-between gap-3">
+                <h2 class="font-bold text-ink">{{ card.marketName }}</h2>
+                <span aria-hidden="true" class="text-xl leading-none text-muted">›</span>
+              </div>
+              <p class="text-xs text-muted">{{ card.cadence }}</p>
+              <dl class="mt-3 space-y-1.5">
+                @for (day of card.days; track day.day) {
+                  <div class="flex items-baseline justify-between gap-4 text-sm">
+                    <dt class="font-bold text-ink">{{ day.label }}</dt>
+                    <dd class="text-muted">{{ day.time }}</dd>
+                  </div>
+                }
+              </dl>
+            </a>
           </li>
         }
 
