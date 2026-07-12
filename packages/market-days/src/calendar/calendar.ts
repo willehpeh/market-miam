@@ -14,6 +14,9 @@ export class Calendar extends Aggregate {
       case 'MarketScheduleRegistered':
         this._scheduleIds.push(event.payload.scheduleId);
         break;
+      case 'MarketScheduleCancelled':
+        this._scheduleIds = this._scheduleIds.filter(id => id !== event.payload.scheduleId);
+        break;
     }
   }
 

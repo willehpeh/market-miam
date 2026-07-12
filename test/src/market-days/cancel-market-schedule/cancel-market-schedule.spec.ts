@@ -47,4 +47,18 @@ describe('Cancel Market Schedule', () => {
       scheduleId: 'never-registered',
     }))).rejects.toThrow(NoSuchScheduleError);
   });
+
+  it('rejects cancelling a schedule that is already cancelled', async () => {
+    const registered = TestRegisterMarketSchedule.simple();
+    await new RegisterMarketScheduleHandler(calendars).execute(registered);
+    await handler.execute(new CancelMarketSchedule({
+      vendorId: registered.vendorId,
+      scheduleId: registered.scheduleId,
+    }));
+
+    await expect(handler.execute(new CancelMarketSchedule({
+      vendorId: registered.vendorId,
+      scheduleId: registered.scheduleId,
+    }))).rejects.toThrow(NoSuchScheduleError);
+  });
 });
