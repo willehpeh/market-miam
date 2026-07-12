@@ -1,4 +1,4 @@
-import { ItemAddedToCatalogue, ItemPriceChanged, ItemRetired, ItemRevised, CatalogueEvent } from './events';
+import { ItemAddedToCatalogue, ItemPriceChanged, ItemRetired, ItemRevised, ItemPhotoChanged, CatalogueEvent } from './events';
 import { Aggregate } from '@market-miam/event-sourcing';
 import { ImageReference } from '@market-miam/common';
 import { Item, ItemDescription, ItemId, ItemName, ItemPrice } from './item';
@@ -74,6 +74,20 @@ export class Catalogue extends Aggregate {
         name: item.name().value(),
         description: item.description().value(),
         price: item.price().value()
+      },
+      version: 1
+    };
+    this.raise(event);
+  }
+
+  changeItemPhoto(itemId: ItemId, imageReference: ImageReference) {
+    const item = this.itemWithId(itemId);
+    item.changePhoto(imageReference);
+    const event: ItemPhotoChanged = {
+      type: 'ItemPhotoChanged',
+      payload: {
+        itemId: item.itemId().value(),
+        imageReference: imageReference.value()
       },
       version: 1
     };

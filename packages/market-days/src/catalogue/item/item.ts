@@ -47,4 +47,8 @@ export class Item {
     this._description = description;
     this._price = price;
   }
+
+  changePhoto(imageReference: ImageReference): void {
+    this._imageReference = imageReference;
+  }
 }
