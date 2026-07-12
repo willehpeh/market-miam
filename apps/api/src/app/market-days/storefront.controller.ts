@@ -11,7 +11,7 @@ import {
 import { SignedUpload, SignedUploads } from '../signed-uploads';
 
 function coverPhotoPublicId(vendorId: string): string {
-  return `storefronts/${vendorId}/cover-photo`;
+  return `vendors/${vendorId}/storefront/cover-photo`;
 }
 
 @Controller('storefront')
