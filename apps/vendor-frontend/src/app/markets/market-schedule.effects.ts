@@ -5,6 +5,9 @@ import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { catchError, map, of, switchMap, tap } from 'rxjs';
 import { MarketSchedules } from './market-schedules';
 import {
+  AmendMarketSchedule,
+  AmendMarketScheduleFailure,
+  AmendMarketScheduleSuccess,
   LoadMarketSchedules,
   LoadMarketSchedulesFailure,
   LoadMarketSchedulesSuccess,
@@ -43,10 +46,22 @@ export class MarketScheduleEffects {
     ),
   );
 
-  navigateOnRegistered$ = createEffect(
+  amend$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(AmendMarketSchedule),
+      switchMap(({ schedule }) =>
+        this.marketSchedules.amend(schedule.scheduleId, schedule).pipe(
+          map(() => AmendMarketScheduleSuccess({ schedule })),
+          catchError(() => of(AmendMarketScheduleFailure())),
+        ),
+      ),
+    ),
+  );
+
+  navigateToMarkets$ = createEffect(
     () =>
       this.actions$.pipe(
-        ofType(RegisterMarketScheduleSuccess),
+        ofType(RegisterMarketScheduleSuccess, AmendMarketScheduleSuccess),
         tap(() => {
           this.router.navigate(['/dashboard/markets']);
         }),

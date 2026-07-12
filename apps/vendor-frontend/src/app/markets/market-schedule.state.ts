@@ -21,6 +21,16 @@ export const RegisterMarketScheduleSuccess = createAction(
 );
 export const RegisterMarketScheduleFailure = createAction('[Market Schedules] Register Failure');
 
+export const AmendMarketSchedule = createAction(
+  '[Market Schedules] Amend',
+  props<{ schedule: MarketScheduleView }>(),
+);
+export const AmendMarketScheduleSuccess = createAction(
+  '[Market Schedules] Amend Success',
+  props<{ schedule: MarketScheduleView }>(),
+);
+export const AmendMarketScheduleFailure = createAction('[Market Schedules] Amend Failure');
+
 export interface MarketScheduleState {
   loading: boolean;
   schedules: MarketScheduleView[];
@@ -42,5 +52,10 @@ export const marketScheduleFeature = createFeature({
     // without waiting for the projection to catch up. RegisterMarketScheduleFailure is
     // unreduced; the global error interceptor surfaces 5xx/network.
     on(RegisterMarketScheduleSuccess, (state, { schedule }): MarketScheduleState => ({ ...state, schedules: [...state.schedules, schedule] })),
+    // ponytail: optimistic — replace the amended row by id so the edit shows immediately.
+    on(AmendMarketScheduleSuccess, (state, { schedule }): MarketScheduleState => ({
+      ...state,
+      schedules: state.schedules.map((existing) => (existing.scheduleId === schedule.scheduleId ? schedule : existing)),
+    })),
   ),
 });

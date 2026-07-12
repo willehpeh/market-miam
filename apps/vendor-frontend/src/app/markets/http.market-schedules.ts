@@ -15,4 +15,8 @@ export class HttpMarketSchedules implements MarketSchedules {
   register(schedule: MarketScheduleView): Observable<void> {
     return this.http.post<void>(`${environment.apiBaseUrl}/api/market-schedules`, schedule);
   }
+
+  amend(scheduleId: string, schedule: MarketScheduleView): Observable<void> {
+    return this.http.put<void>(`${environment.apiBaseUrl}/api/market-schedules/${scheduleId}`, schedule);
+  }
 }

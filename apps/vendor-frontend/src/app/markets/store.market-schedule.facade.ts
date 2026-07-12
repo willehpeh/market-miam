@@ -2,7 +2,7 @@ import { inject, Injectable } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { MarketScheduleFacade } from './market-schedule.facade';
 import { MarketScheduleView, NewSchedule } from './market-schedules';
-import { LoadMarketSchedules, RegisterMarketSchedule, marketScheduleFeature } from './market-schedule.state';
+import { AmendMarketSchedule, LoadMarketSchedules, RegisterMarketSchedule, marketScheduleFeature } from './market-schedule.state';
 
 @Injectable()
 export class StoreMarketScheduleFacade implements MarketScheduleFacade {
@@ -24,6 +24,21 @@ export class StoreMarketScheduleFacade implements MarketScheduleFacade {
       frequency: schedule.frequency,
     };
     this.store.dispatch(RegisterMarketSchedule({ schedule: body }));
+  }
+
+  amendSchedule(scheduleId: string, schedule: NewSchedule): void {
+    const existing = this.schedules().find((candidate) => candidate.scheduleId === scheduleId);
+    if (!existing) {
+      return;
+    }
+    const body: MarketScheduleView = {
+      scheduleId,
+      market: { id: existing.market.id, ...schedule.market },
+      startDate: existing.startDate,
+      days: schedule.days,
+      frequency: schedule.frequency,
+    };
+    this.store.dispatch(AmendMarketSchedule({ schedule: body }));
   }
 }
 

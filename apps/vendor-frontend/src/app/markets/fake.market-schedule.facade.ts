@@ -8,6 +8,7 @@ export class FakeMarketScheduleFacade implements MarketScheduleFacade {
   readonly loading = signal(false);
   loaded = false;
   registered: NewSchedule | undefined;
+  amended: { scheduleId: string; schedule: NewSchedule } | undefined;
 
   load(): void {
     this.loaded = true;
@@ -15,5 +16,9 @@ export class FakeMarketScheduleFacade implements MarketScheduleFacade {
 
   registerSchedule(schedule: NewSchedule): void {
     this.registered = schedule;
+  }
+
+  amendSchedule(scheduleId: string, schedule: NewSchedule): void {
+    this.amended = { scheduleId, schedule };
   }
 }

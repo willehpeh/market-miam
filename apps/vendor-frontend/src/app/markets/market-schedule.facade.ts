@@ -7,4 +7,5 @@ export abstract class MarketScheduleFacade {
 
   abstract load(): void;
   abstract registerSchedule(schedule: NewSchedule): void;
+  abstract amendSchedule(scheduleId: string, schedule: NewSchedule): void;
 }
