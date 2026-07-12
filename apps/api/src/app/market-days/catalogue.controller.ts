@@ -1,8 +1,8 @@
-import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Put, UseGuards } from '@nestjs/common';
 import { CurrentVendor, JwtAuthGuard } from '@market-miam/auth-nestjs';
 import type { VerifiedVendor } from '@market-miam/auth';
 import { CommandGateway, QueryGateway } from '@market-miam/event-sourcing';
-import { AddItemToCatalogue, CatalogueView, FindVendorCatalogue } from '@market-miam/market-days';
+import { AddItemToCatalogue, CatalogueView, FindVendorCatalogue, ReviseItem } from '@market-miam/market-days';
 import { SignedUpload, SignedUploads } from '../signed-uploads';
 
 function dishPhotoPublicId(vendorId: string, itemId: string): string {
@@ -50,6 +50,18 @@ export class CatalogueController {
         body.price,
         body.imageReference,
       ),
+    );
+  }
+
+  @Put(':itemId')
+  @UseGuards(JwtAuthGuard)
+  async revise(
+    @CurrentVendor() vendor: VerifiedVendor,
+    @Param('itemId') itemId: string,
+    @Body() body: { name: string; description: string; price: number },
+  ): Promise<void> {
+    await this.commands.execute(
+      new ReviseItem(itemId, vendor.vendorId.value(), body.name, body.description, body.price),
     );
   }
 }
