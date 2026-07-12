@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { render, screen, fireEvent } from '@testing-library/angular';
-import { provideRouter } from '@angular/router';
+import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { AddDish } from './add-dish';
 import { CatalogueFacade } from './catalogue.facade';
 import { FakeCatalogueFacade } from './fake.catalogue.facade';
@@ -142,6 +142,62 @@ describe('AddDish', () => {
       description: 'Confit effiloché',
       price: 1250,
       imageReference: 'v1/dishes/acme/coq',
+    });
+  });
+
+  describe('editing an existing dish', () => {
+    const existing = {
+      itemId: 'item-1',
+      name: 'Bœuf bourguignon',
+      description: 'Mijoté maison',
+      price: 1300,
+      imageReference: 'v1/dishes/acme/item-1',
+    };
+
+    async function renderEdit() {
+      const catalogue = new FakeCatalogueFacade();
+      catalogue.items.set([existing]);
+      const view = await render(AddDish, {
+        providers: [
+          provideRouter([]),
+          { provide: CatalogueFacade, useValue: catalogue },
+          { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ itemId: 'item-1' }) } } },
+        ],
+      });
+      return { view, catalogue };
+    }
+
+    it('prefills the form with the existing dish, price back in euros', async () => {
+      await renderEdit();
+
+      expect(screen.getByLabelText(/nom du plat/i)).toHaveValue('Bœuf bourguignon');
+      expect(screen.getByLabelText(/prix/i)).toHaveValue('13,00');
+      expect(screen.getByLabelText(/description/i)).toHaveValue('Mijoté maison');
+    });
+
+    it('shows the current photo', async () => {
+      await renderEdit();
+
+      expect(screen.getByAltText(/photo du plat/i)).toHaveAttribute('src', expect.stringContaining('v1/dishes/acme/item-1'));
+    });
+
+    it('revises the dish on submit rather than adding', async () => {
+      const { view, catalogue } = await renderEdit();
+      fireEvent.input(screen.getByLabelText(/nom du plat/i), { target: { value: 'Bœuf mode' } });
+      fireEvent.input(screen.getByLabelText(/prix/i), { target: { value: '14,00' } });
+      view.detectChanges();
+
+      fireEvent.click(screen.getByRole('button', { name: /enregistrer/i }));
+
+      expect(catalogue.revisedDish).toEqual({ itemId: 'item-1', name: 'Bœuf mode', description: 'Mijoté maison', price: 1400 });
+      expect(catalogue.addedDish).toBeUndefined();
+    });
+
+    it('uploads a newly picked photo under the existing item id', async () => {
+      const { view, catalogue } = await renderEdit();
+      selectFile(view.container, anImage());
+
+      expect(catalogue.uploadedPhoto?.itemId).toBe('item-1');
     });
   });
 });

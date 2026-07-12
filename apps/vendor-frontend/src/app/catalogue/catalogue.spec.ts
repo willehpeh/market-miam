@@ -116,6 +116,29 @@ describe('Catalogue', () => {
     expect(facade.newPhotoReference()).toBe('');
   });
 
+  it('persists an uploaded photo for a dish already in the catalogue, then swaps it optimistically', () => {
+    facade.load();
+    httpCtrl.expectOne('/api/catalogue').flush({ items });
+
+    facade.uploadDishPhoto('item-1', anImage());
+    httpCtrl.expectOne('/api/catalogue/photo/signature').flush(signedFor('vendors/acme/dishes/item-1'));
+
+    const put = httpCtrl.expectOne('/api/catalogue/item-1/photo');
+    expect(put.request.method).toBe('PUT');
+    expect(put.request.body).toEqual({ imageReference: 'v1/vendors/acme/dishes/item-1' });
+    put.flush(null);
+
+    expect(facade.items()[0].imageReference).toBe('v1/vendors/acme/dishes/item-1');
+  });
+
+  it('does not persist an uploaded photo for a dish not yet in the catalogue', () => {
+    facade.uploadDishPhoto('coq', anImage());
+    httpCtrl.expectOne('/api/catalogue/photo/signature').flush(signedFor('vendors/acme/dishes/coq'));
+
+    httpCtrl.expectNone('/api/catalogue/coq/photo');
+    expect(facade.newPhotoReference()).toBe('v1/vendors/acme/dishes/coq');
+  });
+
   it('adds a dish, posting its cents price and photo reference, then clears the staged photo', () => {
     facade.uploadDishPhoto('coq', anImage());
     httpCtrl.expectOne('/api/catalogue/photo/signature').flush(signedFor('vendors/acme/dishes/coq'));

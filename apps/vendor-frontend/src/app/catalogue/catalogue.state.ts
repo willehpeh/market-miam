@@ -15,7 +15,7 @@ export const BeginDish = createAction('[Catalogue] Begin Dish');
 export const UploadDishPhoto = createAction('[Catalogue] Upload Dish Photo', props<{ itemId: string; file: File }>());
 export const UploadDishPhotoSuccess = createAction(
   '[Catalogue] Upload Dish Photo Success',
-  props<{ imageReference: string }>(),
+  props<{ itemId: string; imageReference: string }>(),
 );
 export const UploadDishPhotoFailure = createAction('[Catalogue] Upload Dish Photo Failure');
 export const AddDish = createAction('[Catalogue] Add Dish', props<NewDish>());

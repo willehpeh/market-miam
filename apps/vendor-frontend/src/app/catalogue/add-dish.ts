@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { form, FormField, required } from '@angular/forms/signals';
 import { Card } from '../core/card';
 import { CloudinaryUrlPipe } from '../core/cloudinary-url.pipe';
@@ -16,7 +16,7 @@ const DISH_PREVIEW_TRANSFORMATION = 'c_fill,w_600,h_400,q_auto,f_webp';
     <mm-card>
       <form (submit)="submit($event)">
         <div class="flex items-center justify-between">
-          <p class="kicker">Nouveau plat</p>
+          <p class="kicker">{{ isEditing ? 'Modifier le plat' : 'Nouveau plat' }}</p>
           <a routerLink="/dashboard/catalogue" class="text-sm font-bold text-brand no-underline">Annuler</a>
         </div>
 
@@ -29,7 +29,7 @@ const DISH_PREVIEW_TRANSFORMATION = 'c_fill,w_600,h_400,q_auto,f_webp';
                 class="size-8 animate-spin rounded-full border-4 border-line-strong border-t-brand"
               ></div>
             </div>
-          } @else if (photoReference(); as ref) {
+          } @else if (previewRef(); as ref) {
             <img [src]="ref | cloudinaryUrl: previewTransformation" alt="Photo du plat" class="h-48 w-full object-cover" />
           } @else {
             <div class="hatch grid h-48 place-items-center text-3xl text-brand">
@@ -39,7 +39,7 @@ const DISH_PREVIEW_TRANSFORMATION = 'c_fill,w_600,h_400,q_auto,f_webp';
           <input #photoInput type="file" accept="image/*" capture="environment" hidden (change)="selectPhoto($event)" />
           <div class="p-3">
             <button type="button" (click)="photoInput.click()" [disabled]="uploading()">
-              {{ photoReference() ? 'Reprendre' : 'Prendre en photo' }}
+              {{ previewRef() ? 'Reprendre' : 'Prendre en photo' }}
             </button>
           </div>
           @if (tooLarge()) {
@@ -98,7 +98,7 @@ const DISH_PREVIEW_TRANSFORMATION = 'c_fill,w_600,h_400,q_auto,f_webp';
         </div>
 
         <button type="submit" class="mt-6 flex w-full max-w-xs mx-auto justify-center" [disabled]="cannotSubmit()">
-          Ajouter à ma carte ✓
+          {{ isEditing ? 'Enregistrer' : 'Ajouter à ma carte ✓' }}
         </button>
       </form>
     </mm-card>
@@ -106,17 +106,32 @@ const DISH_PREVIEW_TRANSFORMATION = 'c_fill,w_600,h_400,q_auto,f_webp';
 })
 export class AddDish {
   private readonly catalogue = inject(CatalogueFacade);
-  private readonly itemId = crypto.randomUUID();
+  private readonly route = inject(ActivatedRoute);
+
+  private readonly editing = this.catalogue
+    .items()
+    .find((item) => item.itemId === this.route.snapshot.paramMap.get('itemId'));
+  protected readonly isEditing = this.editing !== undefined;
+  private readonly itemId = this.editing?.itemId ?? crypto.randomUUID();
+  private readonly existingImage = this.editing?.imageReference ?? '';
 
   protected readonly previewTransformation = DISH_PREVIEW_TRANSFORMATION;
   protected readonly photoReference = this.catalogue.newPhotoReference;
+  protected readonly previewRef = computed(() => this.photoReference() || this.existingImage);
   protected readonly uploading = this.catalogue.photoUploading;
   protected readonly uploadError = this.catalogue.photoError;
   protected readonly tooLarge = signal(false);
 
-  protected readonly fields = form(signal({ name: '', price: '', description: '' }), (path) => {
-    required(path.name);
-  });
+  protected readonly fields = form(
+    signal({
+      name: this.editing?.name ?? '',
+      price: this.editing ? centsToEuros(this.editing.price) : '',
+      description: this.editing?.description ?? '',
+    }),
+    (path) => {
+      required(path.name);
+    },
+  );
 
   private readonly priceCents = computed(() => parseEurosToCents(this.fields().value().price));
   protected readonly priceInvalid = computed(() => this.priceCents() === null);
@@ -149,13 +164,17 @@ export class AddDish {
       return;
     }
     const { name, description } = this.fields().value();
-    this.catalogue.addDish({
-      itemId: this.itemId,
-      name,
-      description,
-      price: cents,
-      imageReference: this.photoReference() || undefined,
-    });
+    if (this.isEditing) {
+      this.catalogue.reviseDish({ itemId: this.itemId, name, description, price: cents });
+    } else {
+      this.catalogue.addDish({
+        itemId: this.itemId,
+        name,
+        description,
+        price: cents,
+        imageReference: this.photoReference() || undefined,
+      });
+    }
   }
 }
 
@@ -165,4 +184,8 @@ function parseEurosToCents(text: string): number | null {
     return null;
   }
   return Math.round(parseFloat(normalized) * 100);
+}
+
+function centsToEuros(cents: number): string {
+  return (cents / 100).toFixed(2).replace('.', ',');
 }
