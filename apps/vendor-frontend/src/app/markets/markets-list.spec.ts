@@ -90,17 +90,14 @@ describe('MarketsList', () => {
     expect(screen.getByRole('link', { name: /ajouter un marché/i })).toHaveAttribute('href', '/dashboard/markets/new');
   });
 
-  it('sends the vendor back to the dashboard, showing the market count', async () => {
-    const { view, markets } = await renderList();
-    markets.schedules.set([schedule(), schedule({ scheduleId: 'schedule-2' })]);
-    view.detectChanges();
-
-    expect(screen.getByRole('button', { name: /continuer · 2 marchés/i })).toBeInTheDocument();
+  it('links back to the dashboard', async () => {
+    await renderList();
+    expect(screen.getByRole('link', { name: /retour/i })).toHaveAttribute('href', '/dashboard');
   });
 
   it('shows only the add-market affordance when there are no schedules', async () => {
     await renderList();
     expect(screen.getByRole('link', { name: /ajouter un marché/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /^continuer$/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /retour/i })).toBeInTheDocument();
   });
 });

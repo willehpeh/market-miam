@@ -11,7 +11,10 @@ const DISH_THUMBNAIL_TRANSFORMATION = 'c_fill,w_200,h_200,q_auto,f_webp';
   imports: [RouterLink, Card, CloudinaryUrlPipe],
   template: `
     <mm-card>
-      <p class="kicker">Votre catalogue</p>
+      <a routerLink="/dashboard" class="inline-flex items-center gap-1 text-sm font-bold text-brand no-underline">
+        <span aria-hidden="true">‹</span> Retour
+      </a>
+      <p class="kicker mt-4">Votre catalogue</p>
       <h1 class="mt-2 text-2xl leading-tight">Ajoutez vos plats</h1>
       <p class="mt-3 text-sm text-ink-soft">Constituez votre carte. Chaque plat prend 30 secondes.</p>
 
@@ -50,10 +53,6 @@ const DISH_THUMBNAIL_TRANSFORMATION = 'c_fill,w_200,h_200,q_auto,f_webp';
           </a>
         </li>
       </ul>
-
-      <button type="button" routerLink="/dashboard" class="mt-6 flex w-full max-w-xs mx-auto justify-center">
-        {{ continueLabel() }}
-      </button>
     </mm-card>
   `,
 })
@@ -64,10 +63,6 @@ export class CatalogueList {
   readonly dishes = computed(() =>
     this.catalogue.items().map((item) => ({ ...item, priceLabel: formatEuros(item.price) })),
   );
-  readonly continueLabel = computed(() => {
-    const count = this.dishes().length;
-    return count ? `Continuer · ${count} plat${count > 1 ? 's' : ''}` : 'Continuer';
-  });
 
   constructor() {
     // ponytail: load only when cold, so an optimistic insert (from adding a dish) isn't

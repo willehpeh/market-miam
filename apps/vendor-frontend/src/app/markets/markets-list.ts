@@ -24,46 +24,47 @@ type ScheduleCard = { scheduleId: string; marketName: string; cadence: string; d
   imports: [RouterLink, Card],
   template: `
     <mm-card>
-      <p class="kicker">Votre calendrier</p>
+      <a routerLink="/dashboard" class="inline-flex items-center gap-1 text-sm font-bold text-brand no-underline">
+        <span aria-hidden="true">‹</span> Retour
+      </a>
+      <p class="kicker mt-4">Votre calendrier</p>
       <h1 class="mt-2 text-2xl leading-tight">Vos marchés</h1>
       <p class="mt-3 text-sm text-ink-soft">Où et quand vos clients vous trouvent.</p>
+
+      <ul class="mt-6 space-y-3">
+        @for (card of scheduleCards(); track card.scheduleId) {
+          <li class="rounded-card border border-line bg-surface p-3">
+            <div class="flex items-start justify-between gap-3">
+              <h2 class="font-bold text-ink">{{ card.marketName }}</h2>
+              <span aria-hidden="true" class="text-xl leading-none text-muted">›</span>
+            </div>
+            <p class="text-xs text-muted">{{ card.cadence }}</p>
+            <dl class="mt-3 space-y-1.5">
+              @for (day of card.days; track day.day) {
+                <div class="flex items-baseline justify-between gap-4 text-sm">
+                  <dt class="font-bold text-ink">{{ day.label }}</dt>
+                  <dd class="text-muted">{{ day.time }}</dd>
+                </div>
+              }
+            </dl>
+          </li>
+        }
+
+        <li>
+          <a
+            routerLink="/dashboard/markets/new"
+            class="flex items-center gap-4 rounded-card border border-dashed border-line-strong bg-surface-sunk p-3 no-underline"
+          >
+            <span class="grid size-11 shrink-0 place-items-center rounded-field bg-brand-soft text-xl text-brand">+</span>
+            <div class="flex-1">
+              <p class="font-bold text-ink">Ajouter un marché</p>
+              <p class="text-xs text-muted">Récurrent chaque semaine ou date ponctuelle.</p>
+            </div>
+            <span aria-hidden="true" class="text-2xl leading-none text-muted">›</span>
+          </a>
+        </li>
+      </ul>
     </mm-card>
-
-    <div class="mt-4 space-y-3">
-      @for (card of scheduleCards(); track card.scheduleId) {
-        <mm-card>
-          <div class="flex items-start justify-between gap-3">
-            <h2 class="font-bold text-ink">{{ card.marketName }}</h2>
-            <span aria-hidden="true" class="text-xl leading-none text-muted">›</span>
-          </div>
-          <p class="text-xs text-muted">{{ card.cadence }}</p>
-          <dl class="mt-3 space-y-1.5">
-            @for (day of card.days; track day.day) {
-              <div class="flex items-baseline justify-between gap-4 text-sm">
-                <dt class="font-bold text-ink">{{ day.label }}</dt>
-                <dd class="text-muted">{{ day.time }}</dd>
-              </div>
-            }
-          </dl>
-        </mm-card>
-      }
-
-      <a
-        routerLink="/dashboard/markets/new"
-        class="flex items-center gap-4 rounded-card border border-dashed border-line-strong bg-surface-sunk p-4 no-underline"
-      >
-        <span class="grid size-11 shrink-0 place-items-center rounded-field bg-brand-soft text-xl text-brand">+</span>
-        <div class="flex-1">
-          <p class="font-bold text-ink">Ajouter un marché</p>
-          <p class="text-xs text-muted">Récurrent chaque semaine ou date ponctuelle.</p>
-        </div>
-        <span aria-hidden="true" class="text-2xl leading-none text-muted">›</span>
-      </a>
-    </div>
-
-    <button type="button" routerLink="/dashboard" class="mt-6 flex w-full max-w-xs mx-auto justify-center">
-      {{ continueLabel() }}
-    </button>
   `,
 })
 export class MarketsList {
@@ -81,11 +82,6 @@ export class MarketsList {
       })),
     })),
   );
-
-  readonly continueLabel = computed(() => {
-    const count = this.markets.schedules().length;
-    return count ? `Continuer · ${count} marché${count > 1 ? 's' : ''}` : 'Continuer';
-  });
 
   constructor() {
     // ponytail: load only when cold, so an optimistic insert (from adding a schedule)

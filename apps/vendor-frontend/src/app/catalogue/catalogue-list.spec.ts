@@ -75,17 +75,14 @@ describe('CatalogueList', () => {
     expect(screen.getByRole('link', { name: /ajouter un plat/i })).toHaveAttribute('href', '/dashboard/catalogue/new');
   });
 
-  it('sends the vendor back to the dashboard, showing the dish count', async () => {
-    const { view, catalogue } = await renderList();
-    catalogue.items.set([dish(), dish({ itemId: 'item-2' })]);
-    view.detectChanges();
-
-    expect(screen.getByRole('button', { name: /continuer · 2 plats/i })).toBeInTheDocument();
+  it('links back to the dashboard', async () => {
+    await renderList();
+    expect(screen.getByRole('link', { name: /retour/i })).toHaveAttribute('href', '/dashboard');
   });
 
   it('shows only the add-dish affordance when the catalogue is empty', async () => {
     await renderList();
     expect(screen.getByRole('link', { name: /ajouter un plat/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /^continuer$/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /retour/i })).toBeInTheDocument();
   });
 });
