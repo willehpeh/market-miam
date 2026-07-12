@@ -100,10 +100,10 @@ describe('Catalogue', () => {
     expect(signature.request.method).toBe('POST');
     expect(signature.request.body).toEqual({ itemId: 'coq' });
     expect(facade.photoUploading()).toBe(true);
-    signature.flush(signedFor('dishes/acme/coq'));
+    signature.flush(signedFor('vendors/acme/dishes/coq'));
 
     expect(facade.photoUploading()).toBe(false);
-    expect(facade.newPhotoReference()).toBe('v1/dishes/acme/coq');
+    expect(facade.newPhotoReference()).toBe('v1/vendors/acme/dishes/coq');
   });
 
   it('flags an error and stops uploading when signing fails', () => {
@@ -118,14 +118,14 @@ describe('Catalogue', () => {
 
   it('adds a dish, posting its cents price and photo reference, then clears the staged photo', () => {
     facade.uploadDishPhoto('coq', anImage());
-    httpCtrl.expectOne('/api/catalogue/photo/signature').flush(signedFor('dishes/acme/coq'));
+    httpCtrl.expectOne('/api/catalogue/photo/signature').flush(signedFor('vendors/acme/dishes/coq'));
 
     facade.addDish({
       itemId: 'coq',
       name: 'Coq au vin',
       description: 'Mijoté au vin rouge',
       price: 1500,
-      imageReference: 'v1/dishes/acme/coq',
+      imageReference: 'v1/vendors/acme/dishes/coq',
     });
 
     const req = httpCtrl.expectOne('/api/catalogue');
@@ -135,7 +135,7 @@ describe('Catalogue', () => {
       name: 'Coq au vin',
       description: 'Mijoté au vin rouge',
       price: 1500,
-      imageReference: 'v1/dishes/acme/coq',
+      imageReference: 'v1/vendors/acme/dishes/coq',
     });
     req.flush(null);
 
@@ -143,12 +143,12 @@ describe('Catalogue', () => {
   });
 
   it('shows the added dish optimistically on success', () => {
-    facade.addDish({ itemId: 'coq', name: 'Coq au vin', description: 'Mijoté', price: 1500, imageReference: 'v1/dishes/acme/coq' });
+    facade.addDish({ itemId: 'coq', name: 'Coq au vin', description: 'Mijoté', price: 1500, imageReference: 'v1/vendors/acme/dishes/coq' });
 
     httpCtrl.expectOne('/api/catalogue').flush(null);
 
     expect(facade.items()).toEqual([
-      { itemId: 'coq', name: 'Coq au vin', description: 'Mijoté', price: 1500, imageReference: 'v1/dishes/acme/coq' },
+      { itemId: 'coq', name: 'Coq au vin', description: 'Mijoté', price: 1500, imageReference: 'v1/vendors/acme/dishes/coq' },
     ]);
   });
 

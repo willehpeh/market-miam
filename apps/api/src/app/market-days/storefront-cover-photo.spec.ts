@@ -29,7 +29,7 @@ describe('Setting a storefront cover photo over HTTP', () => {
       expect.objectContaining({ type: 'StorefrontOpened' }),
       expect.objectContaining({
         type: 'StorefrontCoverPhotoSet',
-        payload: { imageReference: 'v7/storefronts/acme-bakery/cover-photo' },
+        payload: { imageReference: 'v7/vendors/acme-bakery/storefront/cover-photo' },
       }),
     ]);
   });

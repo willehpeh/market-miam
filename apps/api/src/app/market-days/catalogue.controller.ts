@@ -6,7 +6,7 @@ import { AddItemToCatalogue, CatalogueView, FindVendorCatalogue } from '@market-
 import { SignedUpload, SignedUploads } from '../signed-uploads';
 
 function dishPhotoPublicId(vendorId: string, itemId: string): string {
-  return `dishes/${vendorId}/${itemId}`;
+  return `vendors/${vendorId}/dishes/${itemId}`;
 }
 
 @Controller('catalogue')

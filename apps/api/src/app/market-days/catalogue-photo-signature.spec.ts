@@ -25,8 +25,8 @@ describe('Signing a dish photo upload over HTTP', () => {
       expect.objectContaining({
         cloudName: 'test-cloud',
         apiKey: 'test-key',
-        signature: 'signed(dishes/acme-bakery/coq-au-vin)',
-        params: expect.objectContaining({ public_id: 'dishes/acme-bakery/coq-au-vin' }),
+        signature: 'signed(vendors/acme-bakery/dishes/coq-au-vin)',
+        params: expect.objectContaining({ public_id: 'vendors/acme-bakery/dishes/coq-au-vin' }),
       }),
     );
   });

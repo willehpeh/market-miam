@@ -24,7 +24,7 @@ const SIGNED: SignedUpload = {
   signature: 'sig-123',
   params: {
     timestamp: 1_700_000_000,
-    public_id: 'storefronts/acme/cover-photo',
+    public_id: 'vendors/acme/storefront/cover-photo',
     overwrite: true,
     invalidate: true,
     allowed_formats: 'jpg,png,webp',
@@ -164,7 +164,7 @@ describe('Storefront', () => {
     persist.flush(null);
 
     expect(facade.coverPhotoUploading()).toBe(false);
-    expect(facade.view()?.imageReference).toBe('v1/storefronts/acme/cover-photo');
+    expect(facade.view()?.imageReference).toBe('v1/vendors/acme/storefront/cover-photo');
   });
 
   it('flags an error and stops uploading when signing fails', () => {
