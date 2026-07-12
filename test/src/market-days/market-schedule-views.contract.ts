@@ -56,6 +56,24 @@ export function marketScheduleViewsContract(name: string, create: () => Store): 
       expect(await store.forVendor('v2')).toEqual({ schedules: [] });
     });
 
+    it('removes a cancelled schedule', async () => {
+      await store.recordSchedule(schedule({ scheduleId: 'a' }), 'v1');
+      await store.recordSchedule(schedule({ scheduleId: 'b' }), 'v1');
+      await store.cancelSchedule('a', 'v1');
+      expect((await store.forVendor('v1')).schedules.map(s => s.scheduleId)).toEqual(['b']);
+    });
+
+    it('appends declared absence ranges to a schedule', async () => {
+      await store.recordSchedule(schedule({ scheduleId: 'a' }), 'v1');
+      await store.recordAbsence('a', 'v1', { from: '2026-07-20', to: '2026-07-27' });
+      await store.recordAbsence('a', 'v1', { from: '2026-08-01', to: '2026-08-01' });
+      const { schedules } = await store.forVendor('v1');
+      expect(schedules[0].absences).toEqual([
+        { from: '2026-07-20', to: '2026-07-27' },
+        { from: '2026-08-01', to: '2026-08-01' },
+      ]);
+    });
+
     it('clears all schedules', async () => {
       await store.recordSchedule(schedule(), 'v1');
       await store.clear();

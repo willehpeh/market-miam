@@ -130,4 +130,15 @@ describe('FindUpcomingMarketDays', () => {
 
     expect(await upcoming('vendor-b')).toEqual({ marketDays: [] });
   });
+
+  it('marks occurrences within a declared absence range as absent', async () => {
+    await views.recordSchedule(scheduleWith({ startDate: '2024-02-05', days: [{ day: 'SAT' }] }), 'vendor-id');
+    await views.recordAbsence('schedule-1', 'vendor-id', { from: '2024-02-15', to: '2024-02-20' });
+
+    expect((await upcoming('vendor-id')).marketDays.map(d => ({ date: d.date, absent: d.absent }))).toEqual([
+      { date: '2024-02-10', absent: false },
+      { date: '2024-02-17', absent: true },
+      { date: '2024-02-24', absent: false },
+    ]);
+  });
 });

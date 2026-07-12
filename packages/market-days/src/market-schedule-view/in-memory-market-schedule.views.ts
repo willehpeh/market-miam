@@ -16,6 +16,18 @@ export class InMemoryMarketScheduleViews implements MarketScheduleViews, MarketS
     this.schedules.set(vendorId, existing);
   }
 
+  async cancelSchedule(scheduleId: string, vendorId: string): Promise<void> {
+    const remaining = (await this.forVendor(vendorId)).schedules.filter(schedule => schedule.scheduleId !== scheduleId);
+    this.schedules.set(vendorId, remaining);
+  }
+
+  async recordAbsence(scheduleId: string, vendorId: string, range: { from: string; to: string }): Promise<void> {
+    const schedule = (await this.forVendor(vendorId)).schedules.find(candidate => candidate.scheduleId === scheduleId);
+    if (schedule) {
+      schedule.absences = [...(schedule.absences ?? []), range];
+    }
+  }
+
   async clear(): Promise<void> {
     this.schedules.clear();
   }

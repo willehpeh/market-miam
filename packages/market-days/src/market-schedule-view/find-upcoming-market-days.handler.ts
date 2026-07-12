@@ -23,6 +23,7 @@ export class FindUpcomingMarketDaysHandler implements IQueryHandler<FindUpcoming
   }
 
   private occurrencesOf(schedule: MarketScheduleView, from: LocalDate, to: LocalDate): MarketDayOccurrence[] {
+    const absences = schedule.absences ?? [];
     return Schedule.fromSnapshot(schedule).occurrencesWithin(from, to).map(occurrence => ({
       scheduleId: occurrence.scheduleId,
       marketId: schedule.market.id,
@@ -30,7 +31,7 @@ export class FindUpcomingMarketDaysHandler implements IQueryHandler<FindUpcoming
       day: occurrence.day,
       startTime: occurrence.startTime,
       endTime: occurrence.endTime,
-      absent: false,
+      absent: absences.some(range => range.from <= occurrence.date && occurrence.date <= range.to),
       market: {
         name: schedule.market.name,
         town: schedule.market.town,

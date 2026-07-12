@@ -1,18 +1,20 @@
 import { MarketScheduleViewStore } from './market-schedule-view.store';
 import { CheckpointedProjection, EventHandlerMap, ProjectionFor, StoredEvent } from '@market-miam/event-sourcing';
 import { vendorIdFrom } from '@market-miam/shared-kernel';
-import { MarketScheduleRegistered } from '../calendar/events';
+import { AbsenceDeclared, CalendarEvent, MarketScheduleCancelled, MarketScheduleRegistered } from '../calendar/events';
 
 @CheckpointedProjection('market-schedule-view')
-export class MarketScheduleViewProjection extends ProjectionFor<MarketScheduleRegistered> {
+export class MarketScheduleViewProjection extends ProjectionFor<CalendarEvent> {
 
   constructor(private readonly store: MarketScheduleViewStore) {
     super();
   }
 
-  protected handlers(): EventHandlerMap<MarketScheduleRegistered> {
+  protected handlers(): EventHandlerMap<CalendarEvent> {
     return {
-      MarketScheduleRegistered: e => this.handleRegistered(e)
+      MarketScheduleRegistered: e => this.handleRegistered(e),
+      MarketScheduleCancelled: e => this.handleCancelled(e),
+      AbsenceDeclared: e => this.handleAbsenceDeclared(e)
     };
   }
 
@@ -25,5 +27,15 @@ export class MarketScheduleViewProjection extends ProjectionFor<MarketScheduleRe
       days: payload.days,
       frequency: payload.frequency
     }, vendorIdFrom(event));
+  }
+
+  private handleCancelled(event: StoredEvent): Promise<void> {
+    const payload = event.payload as MarketScheduleCancelled['payload'];
+    return this.store.cancelSchedule(payload.scheduleId, vendorIdFrom(event));
+  }
+
+  private handleAbsenceDeclared(event: StoredEvent): Promise<void> {
+    const payload = event.payload as AbsenceDeclared['payload'];
+    return this.store.recordAbsence(payload.scheduleId, vendorIdFrom(event), { from: payload.from, to: payload.to });
   }
 }
