@@ -43,6 +43,19 @@ describe('Managing market schedules over HTTP', () => {
       .set('Authorization', 'Bearer any-token');
   }
 
+  function cancel(scheduleId: string) {
+    return request(app.getHttpServer())
+      .delete(`/market-schedules/${scheduleId}`)
+      .set('Authorization', 'Bearer any-token');
+  }
+
+  function declareAbsence(scheduleId: string, body: object) {
+    return request(app.getHttpServer())
+      .post(`/market-schedules/${scheduleId}/absences`)
+      .set('Authorization', 'Bearer any-token')
+      .send(body);
+  }
+
   it('registers a market schedule for the authenticated vendor', async () => {
     await post(schedule).expect(201);
   });
@@ -68,5 +81,27 @@ describe('Managing market schedules over HTTP', () => {
     const response = await list().expect(200);
 
     expect(response.body).toEqual({ schedules: [] });
+  });
+
+  it('cancels a registered schedule for the authenticated vendor', async () => {
+    await post(schedule).expect(201);
+
+    await cancel(schedule.scheduleId).expect(200);
+  });
+
+  it('rejects cancelling an unknown schedule as a bad request', async () => {
+    await cancel('never-registered').expect(400);
+  });
+
+  it('declares an absence range for a registered schedule', async () => {
+    await post(schedule).expect(201);
+
+    await declareAbsence(schedule.scheduleId, { from: '2026-07-21', to: '2026-07-28' }).expect(201);
+  });
+
+  it('rejects an absence range whose end is before its start as a bad request', async () => {
+    await post(schedule).expect(201);
+
+    await declareAbsence(schedule.scheduleId, { from: '2026-07-28', to: '2026-07-21' }).expect(400);
   });
 });

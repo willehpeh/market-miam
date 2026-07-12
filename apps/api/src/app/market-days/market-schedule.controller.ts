@@ -1,8 +1,8 @@
-import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, UseGuards } from '@nestjs/common';
 import { CurrentVendor, JwtAuthGuard } from '@market-miam/auth-nestjs';
 import type { VerifiedVendor } from '@market-miam/auth';
 import { CommandGateway, QueryGateway } from '@market-miam/event-sourcing';
-import { FindVendorSchedules, MarketSchedulesView, RegisterMarketSchedule } from '@market-miam/market-days';
+import { CancelMarketSchedule, DeclareAbsence, FindVendorSchedules, MarketSchedulesView, RegisterMarketSchedule } from '@market-miam/market-days';
 
 type MarketBody = {
   id: string;
@@ -39,6 +39,26 @@ export class MarketScheduleController {
   async register(@CurrentVendor() vendor: VerifiedVendor, @Body() body: ScheduleBody): Promise<void> {
     await this.commands.execute(
       new RegisterMarketSchedule({ vendorId: vendor.vendorId.value(), ...body }),
+    );
+  }
+
+  @Delete(':scheduleId')
+  @UseGuards(JwtAuthGuard)
+  async cancel(@CurrentVendor() vendor: VerifiedVendor, @Param('scheduleId') scheduleId: string): Promise<void> {
+    await this.commands.execute(
+      new CancelMarketSchedule({ vendorId: vendor.vendorId.value(), scheduleId }),
+    );
+  }
+
+  @Post(':scheduleId/absences')
+  @UseGuards(JwtAuthGuard)
+  async declareAbsence(
+    @CurrentVendor() vendor: VerifiedVendor,
+    @Param('scheduleId') scheduleId: string,
+    @Body() body: { from: string; to: string },
+  ): Promise<void> {
+    await this.commands.execute(
+      new DeclareAbsence({ vendorId: vendor.vendorId.value(), scheduleId, ...body }),
     );
   }
 }

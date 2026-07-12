@@ -4,7 +4,9 @@ import { CommandGateway, EventStore, PostgresUnitOfWork } from '@market-miam/eve
 import { Clock, DateClock } from '@market-miam/common';
 import {
   AddItemToCatalogueHandler,
+  CancelMarketScheduleHandler,
   Calendars,
+  DeclareAbsenceHandler,
   Catalogues,
   CatalogueViewProjection,
   CatalogueViews,
@@ -140,6 +142,8 @@ const commandHandlers = [
   RetireItemHandler,
   ReviseItemHandler,
   RegisterMarketScheduleHandler,
+  CancelMarketScheduleHandler,
+  DeclareAbsenceHandler,
   PlanItemsForMarketDayHandler,
   UnplanItemFromMarketDayHandler,
   MarkItemAsSoldOutHandler,
