@@ -1,6 +1,4 @@
 * remove item photo
-* change item photo
-* change item details
 * publish storefront (requires vendor details set somehow?)
 * clear storefront cover photo
 * retiring item doesn't check if it's been planned

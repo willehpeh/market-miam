@@ -12,8 +12,8 @@ import { MarketScheduleFacade } from '../markets/market-schedule.facade';
     <mm-card>
       <div class="flex items-start justify-between gap-4">
         <div>
-          <h2 class="text-2xl font-bold tracking-tight text-ink">Terminez votre installation</h2>
-          <p class="mt-1 text-sm text-muted">Vous pourrez publier votre vitrine dès que ce sera fait.</p>
+          <h2 class="text-2xl font-bold tracking-tight text-ink">{{ title() }}</h2>
+          <p class="mt-1 text-sm text-muted">{{ subtitle() }}</p>
         </div>
         <p aria-hidden="true" class="shrink-0 text-3xl font-bold text-brand">
           {{ doneCount() }}<span class="text-lg font-normal text-muted">/{{ steps().length }}</span>
@@ -65,6 +65,10 @@ import { MarketScheduleFacade } from '../markets/market-schedule.facade';
           </li>
         }
       </ul>
+
+      @if (allDone()) {
+        <button type="button" class="mt-6 flex w-full max-w-xs mx-auto justify-center">Publier</button>
+      }
     </mm-card>
   `,
 })
@@ -94,6 +98,16 @@ export class Dashboard {
   });
 
   readonly doneCount = computed(() => this.steps().filter((step) => step.done).length);
+
+  readonly allDone = computed(() => this.doneCount() === this.steps().length);
+
+  readonly title = computed(() => this.allDone() ? 'Votre vitrine est prête !' : 'Terminez votre installation');
+
+  readonly subtitle = computed(() =>
+    this.allDone()
+      ? 'Si vous êtes satisfait·e de votre configuration, cliquez sur Publier.'
+      : 'Vous pourrez publier votre vitrine dès que ce sera fait.',
+  );
 
   constructor() {
     this.catalogue.load();
