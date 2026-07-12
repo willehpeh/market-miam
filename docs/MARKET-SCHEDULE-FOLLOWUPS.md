@@ -11,12 +11,13 @@ The form's cadence control is static: "Chaque semaine" hardcoded active, "Une se
 - Add a `'once'` case to `cadenceLabel` in `markets-list.ts` ("date ponctuelle").
 - Then editing can **change** cadence, not just preserve it.
 
-## 2. Cold direct-nav resolver for the edit route — small
+## 2. Cold direct-nav guard for the edit routes — small, **built**
 
-`/dashboard/markets/:scheduleId/edit` reached directly (bookmark/refresh) finds an empty store → the form silently falls back to **add mode** (a save registers a new schedule). Normal list→card flow warms the store, so this only bites on direct nav.
+**Status: built** — `editableDish` / `editableSchedule` `CanActivateFn`s wired `canActivate` on both edit routes.
 
-- Route `resolve` on the edit route: dispatch `load`, wait until the store is populated before the component activates (Signal Forms init synchronously → store must be warm at construction).
-- If the schedule still isn't found post-load, redirect to the list.
+Was: `AddSchedule` (`:scheduleId/edit`) and `AddDish` (`:itemId/edit`) both reuse the add-form component and resolve `editing` synchronously in a field initializer from an already-loaded store, neither calling `load()`. On direct-nav (bookmark/refresh) the store was empty → the form silently fell back to **add mode** (schedule → `registerSchedule`; dish → `addDish` with a fresh `crypto.randomUUID()`, each creating a NEW entity). List→card flow warmed the store (list constructors load-if-cold), so it only bit on direct nav.
+
+**Guard, not a resolver** — the form reads the store directly, not `route.data`, so a resolver's return value would go unused; the not-found redirect is a one-line `UrlTree`. Each guard mirrors `authenticated`: warm the store only when cold (preserves an optimistic insert), hold the route on `toObservable(loading)` until the load settles, then admit if the target exists else `parseUrl` back to the list. Specs drive it with `RouterTestingHarness` + an async-filling fake; both guards at 100%.
 
 ## 3. Enforce `marketId` immutability on amend — small, defense-in-depth
 
