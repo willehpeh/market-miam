@@ -1,4 +1,6 @@
-export class InvalidQuantityError extends Error {
+import { DomainError } from '@market-miam/common';
+
+export class InvalidQuantityError extends DomainError {
   constructor() {
     super('Quantity must be positive');
     this.name = 'InvalidQuantityError';

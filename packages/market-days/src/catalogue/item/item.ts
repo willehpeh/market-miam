@@ -10,7 +10,7 @@ export class Item {
     private _name: ItemName,
     private _description: ItemDescription,
     private _price: ItemPrice,
-    private _imageReference: ImageReference
+    private _imageReference?: ImageReference
   ) {
   }
 
@@ -30,7 +30,7 @@ export class Item {
     return this._price;
   }
 
-  imageReference(): ImageReference {
+  imageReference(): ImageReference | undefined {
     return this._imageReference;
   }
 
@@ -40,5 +40,11 @@ export class Item {
 
   changePrice(newPrice: ItemPrice): void {
     this._price = newPrice;
+  }
+
+  revise(name: ItemName, description: ItemDescription, price: ItemPrice): void {
+    this._name = name;
+    this._description = description;
+    this._price = price;
   }
 }

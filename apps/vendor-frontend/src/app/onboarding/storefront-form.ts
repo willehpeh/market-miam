@@ -18,21 +18,31 @@ const MAX_PHOTO_BYTES = 10 * 1024 * 1024;
         <p class="mt-2 text-sm text-ink-soft">C'est ce que vos clients voient en premier.</p>
 
         <div class="mt-5 rounded-card border border-dashed border-line-strong bg-surface-sunk p-4 text-center">
-          @if (view()?.imageReference; as ref) {
+          @if (uploading()) {
+            <div class="mx-auto grid h-32 place-items-center">
+              <div
+                role="status"
+                aria-label="Envoi de la photo…"
+                class="size-8 animate-spin rounded-full border-4 border-line-strong border-t-brand"
+              ></div>
+            </div>
+          } @else if (view()?.imageReference; as ref) {
             <img
               [src]="ref | cloudinaryUrl: 'c_fill,w_400,h_300'"
               alt="Photo de votre stand"
               class="mx-auto h-32 w-full max-w-xs rounded-card object-cover"
             />
           } @else {
-            <div aria-hidden="true" class="mx-auto grid size-11 place-items-center rounded-full bg-brand-soft text-lg">📷</div>
+            <div class="mx-auto grid size-11 place-items-center rounded-full bg-brand-soft text-lg text-brand">
+              <i class="fa-solid fa-camera" aria-hidden="true"></i>
+            </div>
           }
           <p class="mt-2 font-bold text-ink">Image de votre stand</p>
           <p class="text-sm text-muted">Une photo de votre activité ou votre logo</p>
           <input #photoInput type="file" accept="image/*" hidden (change)="selectPhoto($event)" />
           <div class="mt-3 flex justify-center gap-2">
             <button type="button" (click)="photoInput.click()" [disabled]="uploading()">
-              {{ uploading() ? 'Envoi…' : (view()?.imageReference ? 'Changer la photo' : 'Ajouter image') }}
+              {{ view()?.imageReference ? 'Changer la photo' : 'Ajouter image' }}
             </button>
           </div>
           @if (tooLarge()) {

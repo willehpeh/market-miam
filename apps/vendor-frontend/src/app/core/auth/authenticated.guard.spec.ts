@@ -8,6 +8,10 @@ import { AuthFacade } from './auth.facade';
 import { FakeAuthFacade } from './fake.auth.facade';
 import { StorefrontFacade } from '../../storefront/storefront.facade';
 import { FakeStorefrontFacade } from '../../storefront/fake.storefront.facade';
+import { CatalogueFacade } from '../../catalogue/catalogue.facade';
+import { FakeCatalogueFacade } from '../../catalogue/fake.catalogue.facade';
+import { MarketScheduleFacade } from '../../markets/market-schedule.facade';
+import { FakeMarketScheduleFacade } from '../../markets/fake.market-schedule.facade';
 
 describe('authenticated guard', () => {
   let fake: FakeAuthFacade;
@@ -22,6 +26,8 @@ describe('authenticated guard', () => {
         ]),
         { provide: AuthFacade, useClass: FakeAuthFacade },
         { provide: StorefrontFacade, useClass: FakeStorefrontFacade },
+        { provide: CatalogueFacade, useClass: FakeCatalogueFacade },
+        { provide: MarketScheduleFacade, useClass: FakeMarketScheduleFacade },
       ],
     });
     fake = TestBed.inject(AuthFacade) as FakeAuthFacade;

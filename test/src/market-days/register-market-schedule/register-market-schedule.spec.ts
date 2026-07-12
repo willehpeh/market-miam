@@ -4,9 +4,11 @@ import { TestRegisterMarketSchedule } from './test-data';
 import {
   Calendars,
   InvalidScheduleError,
-  RegisterMarketScheduleHandler
+  RegisterMarketScheduleHandler,
+  ScheduleAlreadyRegisteredError
 } from '@market-miam/market-days';
 import { EmptyValueError } from '@market-miam/common';
+import { InvalidPostalCodeError } from '@market-miam/market-days';
 import { expectVendorScopedEvents } from '../../shared-kernel';
 
 describe('Register Market Schedule', () => {
@@ -32,12 +34,45 @@ describe('Register Market Schedule', () => {
       type: 'MarketScheduleRegistered',
       payload: expect.objectContaining({
         scheduleId: expect.any(String),
-        scheduleName: command.scheduleName,
         startDate: command.startDate,
-        marketId: command.marketId,
+        market: command.market,
         days: command.days,
         frequency: command.frequency ?? { weeks: 1 }
       })
+    })]);
+  });
+
+  it('omits the pitch when the market has none', async () => {
+    const market = {
+      id: 'market-id',
+      name: 'Belleville Market',
+      streetAddress: '20 rue du Marché',
+      codePostal: '75020',
+      town: 'Paris',
+    };
+    const command = TestRegisterMarketSchedule.with({ market });
+    await handler.execute(command);
+
+    expect(store.newEvents()).toEqual([expect.objectContaining({
+      type: 'MarketScheduleRegistered',
+      payload: expect.objectContaining({ market })
+    })]);
+  });
+
+  it('allows a market with no street address', async () => {
+    const market = {
+      id: 'market-id',
+      name: 'Belleville Market',
+      codePostal: '75020',
+      town: 'Paris',
+      pitch: 'Stall 42',
+    };
+    const command = TestRegisterMarketSchedule.with({ market });
+    await handler.execute(command);
+
+    expect(store.newEvents()).toEqual([expect.objectContaining({
+      type: 'MarketScheduleRegistered',
+      payload: expect.objectContaining({ market })
     })]);
   });
 
@@ -50,9 +85,49 @@ describe('Register Market Schedule', () => {
   it.each([
     ' ',
     ''
-  ])('should not allow a schedule with an empty name', async scheduleName => {
-    const command = TestRegisterMarketSchedule.with({ scheduleName });
+  ])('should not allow a market with an empty name', async name => {
+    const command = TestRegisterMarketSchedule.withMarket({ name });
     await expect(handler.execute(command)).rejects.toThrow(EmptyValueError);
+  });
+
+  it.each([
+    ' ',
+    ''
+  ])('should not allow a market with an empty town', async town => {
+    const command = TestRegisterMarketSchedule.withMarket({ town });
+    await expect(handler.execute(command)).rejects.toThrow(EmptyValueError);
+  });
+
+  it.each([
+    ' ',
+    ''
+  ])('should not allow a market with an empty id', async id => {
+    const command = TestRegisterMarketSchedule.withMarket({ id });
+    await expect(handler.execute(command)).rejects.toThrow(EmptyValueError);
+  });
+
+  it.each([
+    'abc',
+    '7500',
+    '750011',
+    '75 01',
+    ' ',
+    ''
+  ])('should not allow a market with an invalid code postal', async codePostal => {
+    const command = TestRegisterMarketSchedule.withMarket({ codePostal });
+    await expect(handler.execute(command)).rejects.toThrow(InvalidPostalCodeError);
+  });
+
+  it('trims a valid code postal', async () => {
+    const command = TestRegisterMarketSchedule.withMarket({ codePostal: ' 75020 ' });
+    await handler.execute(command);
+
+    expect(store.newEvents()).toEqual([expect.objectContaining({
+      type: 'MarketScheduleRegistered',
+      payload: expect.objectContaining({
+        market: expect.objectContaining({ codePostal: '75020' })
+      })
+    })]);
   });
 
   it.each([
@@ -61,6 +136,22 @@ describe('Register Market Schedule', () => {
   ])('should not allow a schedule with an empty id', async scheduleId => {
     const command = TestRegisterMarketSchedule.with({ scheduleId });
     await expect(handler.execute(command)).rejects.toThrow(EmptyValueError);
+  });
+
+  it('registers a one-off schedule', async () => {
+    const command = TestRegisterMarketSchedule.with({ frequency: 'once' });
+    await handler.execute(command);
+
+    expect(store.newEvents()).toEqual([expect.objectContaining({
+      type: 'MarketScheduleRegistered',
+      payload: expect.objectContaining({ frequency: 'once' })
+    })]);
+  });
+
+  it('rejects registering a schedule whose id is already registered', async () => {
+    await handler.execute(TestRegisterMarketSchedule.simple());
+
+    await expect(handler.execute(TestRegisterMarketSchedule.simple())).rejects.toThrow(ScheduleAlreadyRegisteredError);
   });
 
   it('should allow a day with a start time but no end time', async () => {

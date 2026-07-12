@@ -15,6 +15,7 @@ export abstract class Clock {
 
 export class LocalDate {
   private static readonly FORMAT = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/;
+  private static readonly DAYS = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
 
   private readonly _value: string;
 
@@ -35,5 +36,19 @@ export class LocalDate {
 
   isBefore(other: LocalDate): boolean {
     return this._value < other._value;
+  }
+
+  dayOfWeek(): string {
+    return LocalDate.DAYS[this.toDate().getUTCDay()];
+  }
+
+  plusDays(days: number): LocalDate {
+    const date = this.toDate();
+    date.setUTCDate(date.getUTCDate() + days);
+    return new LocalDate(date.toISOString().slice(0, 10));
+  }
+
+  private toDate(): Date {
+    return new Date(`${this._value}T00:00:00Z`);
   }
 }

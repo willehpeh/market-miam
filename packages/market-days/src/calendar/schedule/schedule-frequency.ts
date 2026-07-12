@@ -1,18 +1,20 @@
 import { InvalidScheduleError } from '../errors';
 
+type Frequency = { weeks: number } | 'once';
+
 export class ScheduleFrequency {
-  private static readonly WEEKLY: { weeks: number } = { weeks: 1 };
+  private static readonly WEEKLY: Frequency = { weeks: 1 };
 
-  private readonly _value: { weeks: number };
+  private readonly _value: Frequency;
 
-  constructor(frequency?: { weeks: number }) {
-    if (frequency?.weeks !== undefined && frequency.weeks <= 0) {
+  constructor(frequency?: Frequency) {
+    if (frequency !== undefined && frequency !== 'once' && frequency.weeks <= 0) {
       throw new InvalidScheduleError('Frequency must be greater than 0');
     }
     this._value = frequency ?? ScheduleFrequency.WEEKLY;
   }
 
-  value(): { weeks: number } {
-    return { ...this._value };
+  value(): Frequency {
+    return this._value === 'once' ? 'once' : { ...this._value };
   }
 }

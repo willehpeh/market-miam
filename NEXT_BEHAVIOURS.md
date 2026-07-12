@@ -2,7 +2,6 @@
 * change item photo
 * change item details
 * publish storefront (requires vendor details set somehow?)
-* amend market schedule
 * clear storefront cover photo
 * retiring item doesn't check if it's been planned
 * open market day

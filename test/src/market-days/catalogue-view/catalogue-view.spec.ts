@@ -5,6 +5,7 @@ import {
   CatalogueViewProjection,
   ChangeItemPrice,
   ChangeItemPriceHandler,
+  InMemoryCatalogueViews,
   RetireItemHandler
 } from '@market-miam/market-days';
 import {
@@ -13,7 +14,6 @@ import {
   PollingSubscription,
 } from '@market-miam/event-sourcing';
 import { TestAddItemToCatalogue } from '../add-item-to-catalogue/test-data';
-import { InMemoryCatalogueViews } from './in-memory-catalogue.views';
 
 
 describe('CatalogueView', () => {

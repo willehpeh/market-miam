@@ -15,6 +15,8 @@ import { StorefrontFacade } from './storefront/storefront.facade';
 import { FakeStorefrontFacade } from './storefront/fake.storefront.facade';
 import { OnboardingFacade } from './onboarding/onboarding.facade';
 import { FakeOnboardingFacade } from './onboarding/fake.onboarding.facade';
+import { NotificationsFacade } from './core/notifications/notifications.facade';
+import { FakeNotificationsFacade } from './core/notifications/fake.notifications.facade';
 
 async function renderApp() {
   const view = await render(App, {
@@ -27,6 +29,7 @@ async function renderApp() {
       { provide: Auth, useClass: FakeAuth },
       { provide: StorefrontFacade, useClass: FakeStorefrontFacade },
       { provide: OnboardingFacade, useClass: FakeOnboardingFacade },
+      { provide: NotificationsFacade, useClass: FakeNotificationsFacade },
     ],
   });
   const auth = TestBed.inject(Auth) as FakeAuth;

@@ -25,10 +25,23 @@ import { storefrontFeature } from '../storefront/storefront.state';
 import { StorefrontEffects, STOREFRONT_RETRY } from '../storefront/storefront.effects';
 import { StorefrontFacade } from '../storefront/storefront.facade';
 import { StoreStorefrontFacade } from '../storefront/store.storefront.facade';
+import { Catalogue } from '../catalogue/catalogue';
+import { HttpCatalogue } from '../catalogue/http.catalogue';
+import { catalogueFeature } from '../catalogue/catalogue.state';
+import { CatalogueEffects } from '../catalogue/catalogue.effects';
+import { CatalogueFacade } from '../catalogue/catalogue.facade';
+import { StoreCatalogueFacade } from '../catalogue/store.catalogue.facade';
+import { MarketSchedules } from '../markets/market-schedules';
+import { HttpMarketSchedules } from '../markets/http.market-schedules';
+import { marketScheduleFeature } from '../markets/market-schedule.state';
+import { MarketScheduleEffects } from '../markets/market-schedule.effects';
+import { MarketScheduleFacade } from '../markets/market-schedule.facade';
+import { StoreMarketScheduleFacade } from '../markets/store.market-schedule.facade';
 import { onboardingFeature } from './onboarding.state';
 import { OnboardingEffects, SAVED_REDIRECT_DELAY } from './onboarding.effects';
 import { OnboardingFacade } from './onboarding.facade';
 import { StoreOnboardingFacade } from './store.onboarding.facade';
+import { provideNotifications } from '../core/notifications/notifications.providers';
 
 const EMPTY = { name: '', description: '', phone: '', imageReference: '' };
 const PHOTO_ONLY = { name: '', description: '', phone: '', imageReference: 'v1/storefronts/acme/cover-photo' };
@@ -45,16 +58,23 @@ describe('Onboarding launch', () => {
         provideState(authFeature),
         provideState(vendorFeature),
         provideState(storefrontFeature),
+        provideState(catalogueFeature),
+        provideState(marketScheduleFeature),
         provideState(onboardingFeature),
-        provideEffects(AuthEffects, VendorEffects, StorefrontEffects, OnboardingEffects),
+        provideEffects(AuthEffects, VendorEffects, StorefrontEffects, CatalogueEffects, MarketScheduleEffects, OnboardingEffects),
         { provide: Auth, useClass: FakeAuth },
         { provide: Vendor, useClass: HttpVendor },
         { provide: Storefront, useClass: HttpStorefront },
+        { provide: Catalogue, useClass: HttpCatalogue },
+        { provide: MarketSchedules, useClass: HttpMarketSchedules },
         { provide: PhotoUploads, useClass: FakePhotoUploads },
         { provide: AuthFacade, useClass: StoreAuthFacade },
         VendorFacade,
         { provide: StorefrontFacade, useClass: StoreStorefrontFacade },
+        { provide: CatalogueFacade, useClass: StoreCatalogueFacade },
+        { provide: MarketScheduleFacade, useClass: StoreMarketScheduleFacade },
         { provide: OnboardingFacade, useClass: StoreOnboardingFacade },
+        provideNotifications(),
         provideHttpClientTesting(),
         { provide: STOREFRONT_RETRY, useValue: { delayMs: 0, maxAttempts: 1 } },
         { provide: SAVED_REDIRECT_DELAY, useValue: 0 },
@@ -91,6 +111,8 @@ describe('Onboarding launch', () => {
     await view.fixture.whenStable();
 
     expect(router.url).toBe('/dashboard');
+    httpCtrl.expectOne('/api/catalogue').flush({ items: [] });
+    httpCtrl.expectOne('/api/market-schedules').flush({ schedules: [] });
   });
 
   it('sends a vendor who has only added a photo to the form', async () => {
@@ -122,6 +144,8 @@ describe('Onboarding launch', () => {
     httpCtrl.expectOne('/api/storefront').flush(null);
 
     await waitFor(() => expect(router.url).toBe('/dashboard'));
+    httpCtrl.expectOne('/api/catalogue').flush({ items: [] });
+    httpCtrl.expectOne('/api/market-schedules').flush({ schedules: [] });
   });
 
   it('surfaces the load error code and stays on the landing page', async () => {

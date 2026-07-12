@@ -5,5 +5,5 @@ export type ItemAddedToCatalogue = DomainEvent<'ItemAddedToCatalogue', {
   name: string;
   description: string;
   price: number;
-  imageReference: string;
+  imageReference?: string;
 }>

@@ -12,7 +12,7 @@ import { vendorPiiFields } from '@market-miam/market-days';
 // (plaintext in = plaintext out). So assert the ciphertext is actually there.
 function shreddingStore() {
   const inner = new InMemoryEventStore();
-  return { store: new ShreddingEventStore(inner, new InMemoryDataKeys(), vendorPiiFields), inner };
+  return { store: new ShreddingEventStore(inner, new InMemoryDataKeys(), vendorPiiFields, 'vendorId'), inner };
 }
 
 describe('vendorPiiFields', () => {

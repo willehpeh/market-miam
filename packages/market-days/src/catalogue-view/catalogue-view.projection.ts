@@ -25,7 +25,7 @@ export class CatalogueViewProjection extends ProjectionFor<CatalogueEvent> {
       name: payload.name,
       description: payload.description,
       price: payload.price,
-      imageReference: payload.imageReference
+      imageReference: payload.imageReference ?? ''
     }, vendorIdFrom(event));
   }
 

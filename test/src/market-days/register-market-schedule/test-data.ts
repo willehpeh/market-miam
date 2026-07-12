@@ -1,38 +1,31 @@
 import { RegisterMarketSchedule } from '@market-miam/market-days';
 
+const market = () => ({
+  id: 'market-id',
+  name: 'Belleville Market',
+  streetAddress: '20 rue du Marché',
+  codePostal: '75020',
+  town: 'Paris',
+  pitch: 'Stall 42',
+});
+
 export class TestRegisterMarketSchedule {
   static simple(): RegisterMarketSchedule {
     return new RegisterMarketSchedule({
       vendorId: 'vendor-id',
       scheduleId: 'schedule-id',
-      scheduleName: 'Saturday Market',
       startDate: '2023-09-08',
-      marketId: 'market-id',
+      market: market(),
       days: [{ day: 'SAT', startTime: '08:00', endTime: '14:00' }],
     });
   }
 
   static simpleNoTimes(): RegisterMarketSchedule {
-    return new RegisterMarketSchedule({
-      vendorId: 'vendor-id',
-      scheduleId: 'schedule-id',
-      scheduleName: 'Saturday Market',
-      startDate: '2023-09-08',
-      marketId: 'market-id',
-      days: [{ day: 'SAT' }],
-    });
+    return this.with({ days: [{ day: 'SAT' }] });
   }
 
   static simpleMonthly(): RegisterMarketSchedule {
-    return new RegisterMarketSchedule({
-      vendorId: 'vendor-id',
-      scheduleId: 'schedule-id',
-      scheduleName: 'Saturday Market',
-      startDate: '2023-09-08',
-      marketId: 'market-id',
-      days: [{ day: 'SAT', startTime: '08:00', endTime: '14:00' }],
-      frequency: { weeks: 4 },
-    });
+    return this.with({ frequency: { weeks: 4 } });
   }
 
   static with(overrides: Partial<RegisterMarketSchedule>): RegisterMarketSchedule {
@@ -40,12 +33,15 @@ export class TestRegisterMarketSchedule {
     return new RegisterMarketSchedule({
       vendorId: overrides.vendorId ?? defaults.vendorId,
       scheduleId: overrides.scheduleId ?? defaults.scheduleId,
-      scheduleName: overrides.scheduleName ?? defaults.scheduleName,
       startDate: overrides.startDate ?? defaults.startDate,
-      marketId: overrides.marketId ?? defaults.marketId,
+      market: overrides.market ?? defaults.market,
       days: overrides.days ?? defaults.days,
       frequency: overrides.frequency ?? defaults.frequency,
     });
+  }
+
+  static withMarket(overrides: Partial<RegisterMarketSchedule['market']>): RegisterMarketSchedule {
+    return this.with({ market: { ...market(), ...overrides } });
   }
 
   static everyDay(): RegisterMarketSchedule {

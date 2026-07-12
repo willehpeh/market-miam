@@ -1,4 +1,4 @@
-import { ItemAddedToCatalogue, ItemPriceChanged, ItemRetired, CatalogueEvent } from './events';
+import { ItemAddedToCatalogue, ItemPriceChanged, ItemRetired, ItemRevised, CatalogueEvent } from './events';
 import { Aggregate } from '@market-miam/event-sourcing';
 import { ImageReference } from '@market-miam/common';
 import { Item, ItemDescription, ItemId, ItemName, ItemPrice } from './item';
@@ -9,7 +9,7 @@ export class Catalogue extends Aggregate {
 
   private _items: Item[] = [];
 
-  addItem(id: ItemId, name: ItemName, description: ItemDescription, price: ItemPrice, imageReference: ImageReference) {
+  addItem(id: ItemId, name: ItemName, description: ItemDescription, price: ItemPrice, imageReference?: ImageReference) {
     if (this.hasItem(id)) {
       throw new ItemAlreadyInCatalogueError(`Item already in catalogue with ID ${ id.value() }`);
     }
@@ -21,7 +21,7 @@ export class Catalogue extends Aggregate {
         name: item.name().value(),
         description: item.description().value(),
         price: item.price().value(),
-        imageReference: item.imageReference().value()
+        imageReference: item.imageReference()?.value()
       },
       version: 1
     };
@@ -36,7 +36,7 @@ export class Catalogue extends Aggregate {
           new ItemName(event.payload.name),
           new ItemDescription(event.payload.description),
           new ItemPrice(event.payload.price),
-          new ImageReference(event.payload.imageReference)
+          event.payload.imageReference ? new ImageReference(event.payload.imageReference) : undefined
         ));
         break;
     }
@@ -57,6 +57,22 @@ export class Catalogue extends Aggregate {
       type: 'ItemPriceChanged',
       payload: {
         itemId: item.itemId().value(),
+        price: item.price().value()
+      },
+      version: 1
+    };
+    this.raise(event);
+  }
+
+  reviseItem(itemId: ItemId, name: ItemName, description: ItemDescription, price: ItemPrice) {
+    const item = this.itemWithId(itemId);
+    item.revise(name, description, price);
+    const event: ItemRevised = {
+      type: 'ItemRevised',
+      payload: {
+        itemId: item.itemId().value(),
+        name: item.name().value(),
+        description: item.description().value(),
         price: item.price().value()
       },
       version: 1

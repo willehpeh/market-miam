@@ -1,3 +1,14 @@
 /* You can add global styles to this file, and also import other style files */
 @import "tailwindcss" source("..");
 @import "../../../packages/design-system/theme.css";
+
+@layer components {
+  /* diagonal tan hatch — placeholder fill for a dish with no photo */
+  .hatch {
+    background-image: repeating-linear-gradient(
+      -45deg,
+      var(--color-brand-soft) 0 8px,
+      var(--color-surface-sunk) 8px 16px
+    );
+  }
+}
