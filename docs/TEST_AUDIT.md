@@ -1,7 +1,14 @@
 # Test Suite Audit — behaviour, implementation coupling & overlap
 
-Date: 2026-07-09 · Scope: all 78 spec files (403 test cases) across `apps/*`,
-`packages/*` and the shared `test/` package.
+Initial audit: 2026-07-09 (78 spec files). **Re-audit: 2026-07-12** — 38 spec
+files changed since (22 added, 16 modified) from the market-schedule, catalogue,
+and amend/cancel/absence work; the suite is now **100 spec files (583 test
+cases)** across `apps/*`, `packages/*` and the shared `test/` package.
+
+> **Re-audit update (2026-07-12) is in [§6](#6-re-audit--changes-since-the-initial-audit-2026-07-12).**
+> It re-scores the 38 changed files, checks whether prior findings were fixed,
+> and re-maps overlap. §1's metrics reflect the **current full suite**; §3's
+> per-file scorecard is the initial-audit snapshot (see §6 for the changed files).
 
 Rubric: the project's own testing doctrine,
 [ADR 0006 — Outside-in TDD with fakes at boundaries](adr/0006-outside-in-tdd-with-fakes.md).
@@ -26,18 +33,25 @@ Asserting on emitted domain events and substituting a real port with a fake are
 overwhelmingly behavioural, boundary-faked, and refactor-resilient. There are
 **no high-severity coupling defects** anywhere in the suite.
 
-| Metric | Result |
+Metrics below are the **current full suite** (100 files) as of the 2026-07-12
+re-audit. Initial-audit (78-file) figures are shown in parentheses for reference.
+
+| Metric | Result (current) |
 |---|---|
-| Spec files audited | 78 |
-| Test cases | 403 |
-| Score 5 (purely behavioural, refactor-proof) | **56 files (72%)** |
-| Score 4 (behavioural, minor over-specification) | 18 files (23%) |
+| Spec files | 100 *(was 78)* |
+| Test cases | 583 *(was 403)* |
+| Score 5 (purely behavioural, refactor-proof) | **76 files (76%)** *(was 56 / 72%)* |
+| Score 4 (behavioural, minor over-specification) | 20 files (20%) |
 | Score 3 (mixed) | 3 files |
 | Score 2 (a near no-op assertion) | 1 file |
-| Verdict: behavioural / mostly-behavioural | 74 files (95%) |
-| Coupling findings total | 28 (0 high · 5 medium · 23 low) |
-| Files with ≥1 finding | 23 |
-| Overlap clusters identified | 16 (8 partial · 8 layered-intentional; 0 removable duplicates) |
+| Verdict: behavioural / mostly-behavioural | 96 files (96%) |
+| Coupling findings total | 44 (0 high · 6 medium · 38 low) |
+| Files with ≥1 finding | 39 |
+| Overlap clusters identified | 24 total (2 redundant-duplicate · 10 partial · 12 layered-intentional) |
+
+The re-audit found **no high-severity coupling** in any of the 38 changed files,
+none scoring below 4, and one prior finding fixed. The delta held the line on
+quality; see §6 for what it added to overlap.
 
 **What's working (keep doing this):**
 - Value objects and the shared kernel are textbook: they assert on `value()`
@@ -443,7 +457,10 @@ Ordered by value-to-effort. None are urgent — the suite is healthy.
 4. **Introduce shared contract factories** for the event-store and
    storefront-views port contracts to kill hand-copied drift; narrow the
    Postgres/container specs to infrastructure-only risk, using
-   `postgres-data-keys.container.spec.ts` as the template. *(§4.3)*
+   `postgres-data-keys.container.spec.ts` as the template. *(§4.3)* —
+   ✅ **partly done:** the 2026-07-12 work applied exactly this pattern to the new
+   catalogue and market-schedule view contracts (see §6). The original
+   event-store / storefront-views pairs are still hand-copied.
 5. **Extract a tracing-wrapper contract + one correlation-propagation test;**
    thin the per-flow tracing specs to their unique attributes. *(§4.2)*
 6. **Sweep the low findings** as touched: swap envelope-prefix/byte-length pins
@@ -451,10 +468,210 @@ Ordered by value-to-effort. None are urgent — the suite is healthy.
    channel/reject assertions; the one `querySelector('input[type=file]')` →
    `getByLabelText`. *(§3.2)*
 
+## 6. Re-audit — changes since the initial audit (2026-07-12)
+
+Base: the initial audit's tree (`087d03a`). Since then **38 spec files changed**
+(22 added, 16 modified) — the market-schedule feature (register/amend/cancel,
+declare-absence, upcoming-days + schedule views), the catalogue feature
+(revise-item, catalogue views), and their API + vendor-frontend layers. This
+section re-scores those 38 against the same ADR-0006 rubric, checks whether the
+initial audit's findings on the modified files were fixed, and re-maps overlap
+against the full current inventory (the 38 re-audited files + prior behaviours
+for the 62 unchanged files).
+
+### 6.1 Delta verdict
+
+**The new work holds the line.** Of the 38 changed files: **30 score 5, 8 score
+4, none below 4.** 279 test cases across the delta. **Zero high-severity
+coupling.** Two headline observations:
+
+- 🟢 **The shared-contract-factory recommendation (§4.3 / action #4) was
+  adopted.** The new catalogue and market-schedule view contracts
+  (`catalogue-views.contract.ts`, `market-schedule-views.contract.ts`) are single
+  factories that both the in-memory spec and the Postgres container spec delegate
+  to in ~4 lines. Their identical behaviour lists are therefore **not**
+  hand-copied duplication — zero double-maintenance cost. This is the model to
+  retrofit onto the older event-store / storefront-views pairs.
+- 🟡 **One new redundancy pattern appeared:** the new **API HTTP specs**
+  (`market-schedule.spec`, `catalogue.spec`) re-enumerate validation/rejection
+  rules that the domain use-case specs already own exhaustively. The HTTP layer
+  only needs *one* representative `400` to prove error-to-HTTP mapping. Net effect
+  of the batch on suite redundancy: **neutral-to-slightly-worse** — architecture
+  and layering are sound, but this and the continuing `vendorId` copy add
+  low-marginal-confidence duplication.
+
+### 6.2 Prior findings on modified files — fixed vs still present
+
+Of the modified files, 5 carried findings from the initial audit:
+
+| File | Prior finding | Status |
+|---|---|:--:|
+| `dashboard.spec.ts` | exact Cloudinary transform string in `src` | ✅ **fixed** |
+| `storefront-cover-photo-signature.spec.ts:27` | asserts fake's exact `signed(...)` string | ⚠️ still present |
+| `storefront-form.spec.ts:16` | file input via `querySelector('input[type=file]')` | ⚠️ still present |
+| `storefront-form.spec.ts:114` | hard-coded derived Cloudinary preview URL | ⚠️ still present |
+| `shredding.event-store.spec.ts:32` | asserts `enc:v1:` envelope prefix at rest | ⚠️ still present |
+| `shredding.event-store.spec.ts:111` | tamper test parses the 5-part envelope layout | ⚠️ still present *(medium)* |
+| `vendor-pii-fields.spec.ts:34` | asserts `/^enc:v1:/` envelope prefix | ⚠️ still present |
+
+These are all low/medium and were untouched by the feature work (expected — the
+changes were feature-driven, not cleanup). They remain valid §3.1/§3.2 items.
+
+### 6.3 Scorecard — the 38 changed files
+
+`new` = added file · `mod` = modified file · Findings severities: `H`/`M`/`L`.
+
+**market-days/schedule-write**
+
+| Spec | New/Mod | Tests | Score | Findings |
+|---|:--:|--:|:--:|---|
+| `market-days/amend-market-schedule/amend-market-schedule.spec.ts` | new | 2 | 5 | — |
+| `market-days/cancel-market-schedule/cancel-market-schedule.spec.ts` | new | 3 | 5 | — |
+| `market-days/declare-absence/declare-absence.spec.ts` | new | 5 | 5 | — |
+| `market-days/register-market-schedule/register-market-schedule.spec.ts` | mod | 19 | 5 | — |
+
+**market-days/schedule-views**
+
+| Spec | New/Mod | Tests | Score | Findings |
+|---|:--:|--:|:--:|---|
+| `market-days/market-schedule-view/find-upcoming-market-days.spec.ts` | new | 9 | 5 | 1 (L) |
+| `market-days/market-schedule-view/find-vendor-schedules.spec.ts` | new | 3 | 5 | — |
+| `market-days/market-schedule-view/in-memory-market-schedule-views.contract.spec.ts` | new | 10 | 5 | — |
+| `market-days/market-schedule-view/market-schedule-view.spec.ts` | new | 5 | 5 | — |
+| `market-days/postgres/postgres-market-schedule-views.container.spec.ts` | new | 10 | 5 | — |
+
+**market-days/catalogue**
+
+| Spec | New/Mod | Tests | Score | Findings |
+|---|:--:|--:|:--:|---|
+| `market-days/add-item-to-catalogue/add-item-to-catalogue.spec.ts` | mod | 13 | 5 | 1 (L) |
+| `market-days/catalogue-view/catalogue-view.spec.ts` | mod | 4 | 5 | — |
+| `market-days/catalogue-view/find-vendor-catalogue.spec.ts` | new | 3 | 5 | — |
+| `market-days/catalogue-view/in-memory-catalogue-views.contract.spec.ts` | new | 7 | 5 | — |
+| `market-days/postgres/postgres-catalogue-views.container.spec.ts` | new | 7 | 5 | — |
+| `market-days/revise-item/revise-item.spec.ts` | new | 3 | 5 | — |
+
+**api/market-days-http**
+
+| Spec | New/Mod | Tests | Score | Findings |
+|---|:--:|--:|:--:|---|
+| `api/src/app/market-days/catalogue-photo-signature.spec.ts` | new | 1 | 4 | 1 (L) |
+| `api/src/app/market-days/storefront-cover-photo-signature.spec.ts` | mod | 1 | 4 | 1 (L) |
+| `api/src/app/market-days/catalogue.spec.ts` | new | 5 | 5 | — |
+| `api/src/app/market-days/market-schedule.spec.ts` | new | 14 | 5 | 1 (L) |
+| `api/src/app/market-days/storefront-cover-photo.spec.ts` | mod | 1 | 5 | — |
+
+**frontend/catalogue**
+
+| Spec | New/Mod | Tests | Score | Findings |
+|---|:--:|--:|:--:|---|
+| `vendor-frontend/src/app/catalogue/add-dish.spec.ts` | new | 11 | 4 | 4 (LLLL) |
+| `vendor-frontend/src/app/catalogue/catalogue-list.spec.ts` | new | 8 | 4 | 3 (LLM) |
+| `vendor-frontend/src/app/catalogue/catalogue.spec.ts` | new | 9 | 5 | — |
+
+**frontend/markets**
+
+| Spec | New/Mod | Tests | Score | Findings |
+|---|:--:|--:|:--:|---|
+| `vendor-frontend/src/app/markets/add-schedule.spec.ts` | new | 13 | 5 | — |
+| `vendor-frontend/src/app/markets/market-schedule.spec.ts` | new | 12 | 5 | 1 (L) |
+| `vendor-frontend/src/app/markets/markets-list.spec.ts` | new | 10 | 5 | — |
+
+**frontend/core-onboarding-storefront**
+
+| Spec | New/Mod | Tests | Score | Findings |
+|---|:--:|--:|:--:|---|
+| `vendor-frontend/src/app/onboarding/storefront-form.spec.ts` | mod | 11 | 4 | 2 (LL) |
+| `vendor-frontend/src/app/storefront/cloudinary.photo-uploads.spec.ts` | mod | 1 | 4 | 1 (L) |
+| `vendor-frontend/src/app/app.spec.ts` | mod | 3 | 5 | — |
+| `vendor-frontend/src/app/core/auth/authenticated.guard.spec.ts` | mod | 1 | 5 | — |
+| `vendor-frontend/src/app/core/layout.spec.ts` | mod | 7 | 5 | 1 (L) |
+| `vendor-frontend/src/app/core/notifications/error.interceptor.spec.ts` | new | 3 | 5 | — |
+| `vendor-frontend/src/app/dashboard/dashboard.spec.ts` | mod | 11 | 5 | 1 (L) |
+| `vendor-frontend/src/app/onboarding/onboarding.launch.spec.ts` | mod | 7 | 5 | 1 (L) |
+| `vendor-frontend/src/app/storefront/storefront.spec.ts` | mod | 12 | 5 | 1 (L) |
+
+**domain/misc-modified**
+
+| Spec | New/Mod | Tests | Score | Findings |
+|---|:--:|--:|:--:|---|
+| `event-sourcing/shredding.event-store.spec.ts` | mod | 10 | 4 | 2 (LM) |
+| `market-days/vendor-pii-fields.spec.ts` | mod | 1 | 4 | 1 (L) |
+| `common/local-date.spec.ts` | mod | 24 | 5 | — |
+
+### 6.4 New findings in the delta
+
+**Medium (2):**
+
+1. **`shredding.event-store.spec.ts:111`** — the tamper-detection test still
+   reconstructs a corrupted ciphertext by splitting the stored envelope on `:`
+   into `[prefix,version,iv,tag,ct]`. Same medium finding as the initial audit,
+   carried forward. **Fix:** corrupt the stored value opaquely (mutate its last
+   character) rather than parsing its structure.
+2. **`vendor-frontend/src/app/catalogue/catalogue-list.spec.ts:70`** — the
+   no-photo placeholder is asserted via the Font Awesome class selector
+   `.fa-camera`, coupling to the icon library. The icon is `aria-hidden` by
+   design, so assert the behavioural contract instead: **no dish `<img>` is
+   rendered** (`queryByAltText`/`queryByRole('img')` is null).
+
+**Low themes (21)** — the delta repeats the suite's existing low-finding shapes,
+concentrated in the new frontend-catalogue specs:
+
+- **Exact Cloudinary transform strings** in `add-dish:79`, `catalogue-list:60`
+  (and the carried-over `storefront-form:114`, `dashboard` now fixed). Assert
+  `stringContaining` the public id; let `cloudinary-url.pipe.spec` own the recipe.
+- **DOM structural selectors** — `add-dish:17,38` reach the hidden file input via
+  `input[type=file]` / raw `capture`/`accept` attributes. Largely unavoidable for
+  a hidden input, but prefer driving via the visible button where possible.
+- **"Was-called" boolean flags on port fakes** — `add-dish:32` and
+  `catalogue-list:29` assert a fake's `began`/`loaded` boolean rather than an
+  observable outcome. Acceptable as boundary-command checks, but `add-dish:32`'s
+  test name over-promises ("clearing leftover photo state") vs what it asserts.
+- **Exact occurrence-window counts** — `find-upcoming-market-days` and
+  `market-schedule.spec:135` pin exact date-list lengths that encode the private
+  `HORIZON_DAYS=56`. Judged **acceptable** (the window *is* the meaning of
+  "upcoming"), but could assert the property (all dates within `[today, +horizon]`)
+  instead of the exact list.
+- **Exact fake signature string** — `catalogue-photo-signature:28` mirrors the
+  existing `storefront-cover-photo-signature:27` finding.
+
+### 6.5 Overlap introduced by the delta
+
+New / changed overlap clusters (8 involve changed files; full-suite total is now
+24):
+
+| Theme | Type | Files | Recommendation |
+|---|---|---|---|
+| **API HTTP specs re-enumerate domain validation rules** *(NEW pattern, med)* | partial | `api/market-schedule.spec`, `api/catalogue.spec` vs domain `register-market-schedule`/`declare-absence`/`cancel`/`add-item-to-catalogue` | Reduce each API spec to **one representative `400`** proving error-to-HTTP mapping; delete the per-rule re-checks. The exhaustive matrix stays in the domain use-case specs. |
+| **`vendorId in metadata` stamp** *(continuing, low)* | redundant-duplicate | now ~13 specs incl. new `revise-item`, `register-market-schedule` | Same guidance as §4.1 — optional parameterized consolidation, keep each handler a case. The three new copies extend the existing pattern. |
+| **Frontend list re-tests Cloudinary URL primitive** *(low)* | partial | `catalogue-list.spec` vs `cloudinary-url.pipe.spec` | Weaken the list assertion to "image rendered with the item's public id"; let the pipe spec own the exact URL. |
+| **Catalogue read model at 4 layers** *(low)* | layered-intentional | contract / `catalogue-view` projection / `find-vendor-catalogue` query / `api/catalogue` | Keep the layering; trim `catalogue-view.spec` to "projection reacts to each event type" and lean on the contract for exhaustive shape/scoping. |
+| **Market-schedule read model at 4 layers** *(low)* | layered-intentional | contract / `market-schedule-view` / `find-vendor-schedules` / `find-upcoming-market-days` / `api/market-schedule` | Keep `find-upcoming-market-days` (unique domain logic) untouched; drop the empty/scoping cases in `find-vendor-schedules` already owned by the contract. |
+| **Catalogue & market-schedule view contracts** *(WIN)* | layered-intentional | in-memory + Postgres container specs delegating to shared factories | **No action** — the shared-contract-factory pattern is correctly applied; identical behaviour lists carry no maintenance cost. |
+
+### 6.6 Delta action list
+
+1. **Trim the new API validation re-enumeration** (`market-schedule.spec`,
+   `catalogue.spec`) to one representative `400` each. *(highest-value new item —
+   §6.5)*
+2. **Fix the one new medium** — `catalogue-list:70` `.fa-camera` → assert no
+   `<img>` rendered. *(§6.4)*
+3. When touching `shredding.event-store.spec`, address the carried-over medium
+   tamper-envelope finding. *(§6.2)*
+4. Sweep the new low findings (Cloudinary transform strings, file-input
+   selectors) alongside the existing §3.2 sweep — same fixes.
+5. **Retrofit the older event-store / storefront-views contract pairs** onto the
+   now-proven factory pattern used by the new view contracts. *(§6.1)*
+
 ---
 
-*Appendix — method:* 14 analysis agents (one per cohesive test cluster) scored
-every file against ADR 0006 and emitted a normalized behaviour inventory; a
-synthesis pass cross-referenced the full inventory for overlap. Scores and
-findings reflect that automated audit and are a starting point for review, not a
-substitute for team judgement on intentional layering.
+
+*Appendix — method:* the initial audit used 14 analysis agents (one per cohesive
+test cluster) scoring every file against ADR 0006 and emitting a normalized
+behaviour inventory, then a synthesis pass over the full inventory for overlap.
+The 2026-07-12 re-audit (§6) used the same harness scoped to the 38 changed
+files — 8 analysis agents plus a delta-overlap pass run against the full current
+inventory (re-audited files + prior behaviours for unchanged files), and also
+re-checked each prior finding on the modified files for fixed/still-present
+status. Scores and findings reflect that automated audit and are a starting point
+for review, not a substitute for team judgement on intentional layering.
