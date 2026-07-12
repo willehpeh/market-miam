@@ -6,6 +6,8 @@ import {
   ChangeItemPrice,
   ChangeItemPriceHandler,
   InMemoryCatalogueViews,
+  ReviseItem,
+  ReviseItemHandler,
   RetireItemHandler
 } from '@market-miam/market-days';
 import {
@@ -59,6 +61,20 @@ describe('CatalogueView', () => {
     expect(view).toEqual({
       items: [
         { itemId: newItemCommand.itemId, name: newItemCommand.name, description: newItemCommand.description, price: newItemCommand.price + 300, imageReference: newItemCommand.imageReference },
+      ],
+    });
+  });
+
+  it('should revise the item name, description and price, keeping its image', async () => {
+    const newItemCommand = TestAddItemToCatalogue.valid();
+    await new AddItemToCatalogueHandler(catalogues).execute(newItemCommand);
+    await new ReviseItemHandler(catalogues).execute(new ReviseItem(newItemCommand.itemId, newItemCommand.vendorId, 'Revised Name', 'Revised Description', 999));
+
+    await subscription.poll();
+    const view = await views.forVendor(newItemCommand.vendorId);
+    expect(view).toEqual({
+      items: [
+        { itemId: newItemCommand.itemId, name: 'Revised Name', description: 'Revised Description', price: 999, imageReference: newItemCommand.imageReference },
       ],
     });
   });
