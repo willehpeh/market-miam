@@ -1,5 +1,7 @@
 # Add Market Schedule Form — Plan
 
+> **Archived — shipped.** Design record, not a backlog. The form is live at `apps/vendor-frontend/src/app/markets/add-schedule.ts`, routed `markets/new → AddSchedule`, with `market-schedule.{state,effects,facade,http}` + `markets-list.ts`. Extended since with the amend/edit path (`:scheduleId/edit`, `amendSchedule`). See `docs/MARKET-SCHEDULE-FOLLOWUPS.md`.
+
 The form behind "Ajouter un marché" at `/dashboard/markets/new` (currently `ComingSoon`). Weekly recurring only. Dispatches `RegisterMarketSchedule`. **Pure frontend — zero backend changes** (`POST`/`GET /market-schedules` already exist and are acceptance-tested).
 
 Mockups: `docs/design/add-schedule-1.png`, `add-schedule-2.png`. Mirror the built `markets/` slice + `catalogue/add-dish.ts` (form) + catalogue write path (state/effects/store facade). Signal Forms as in add-dish.
