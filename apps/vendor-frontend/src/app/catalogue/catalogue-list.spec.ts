@@ -70,6 +70,14 @@ describe('CatalogueList', () => {
     expect(view.container.querySelector('.fa-camera')).not.toBeNull();
   });
 
+  it('links each dish to its edit route', async () => {
+    const { view, catalogue } = await renderList();
+    catalogue.items.set([dish()]);
+    view.detectChanges();
+
+    expect(screen.getByRole('link', { name: /bœuf bourguignon/i })).toHaveAttribute('href', '/dashboard/catalogue/item-1/edit');
+  });
+
   it('links the add-dish card to the new-dish route', async () => {
     await renderList();
     expect(screen.getByRole('link', { name: /ajouter un plat/i })).toHaveAttribute('href', '/dashboard/catalogue/new');

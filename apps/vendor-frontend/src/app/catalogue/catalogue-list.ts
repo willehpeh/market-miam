@@ -17,20 +17,25 @@ const DISH_THUMBNAIL_TRANSFORMATION = 'c_fill,w_200,h_200,q_auto,f_webp';
 
       <ul class="mt-6 space-y-3">
         @for (dish of dishes(); track dish.itemId) {
-          <li class="flex items-center gap-4 rounded-card border border-line bg-surface p-3">
-            @if (dish.imageReference) {
-              <img
-                class="size-16 shrink-0 rounded-field object-cover"
-                [src]="dish.imageReference | cloudinaryUrl: thumbnailTransformation"
-                [alt]="dish.name"
-              >
-            } @else {
-              <span class="hatch grid size-16 shrink-0 place-items-center rounded-field text-lg text-line-strong">
-                <i class="fa-solid fa-camera" aria-hidden="true"></i>
-              </span>
-            }
-            <p class="flex-1 font-bold text-ink">{{ dish.name }}</p>
-            <p class="shrink-0 font-mono font-bold text-ink">{{ dish.priceLabel }}</p>
+          <li>
+            <a
+              [routerLink]="['/dashboard/catalogue', dish.itemId, 'edit']"
+              class="flex items-center gap-4 rounded-card border border-line bg-surface p-3 no-underline"
+            >
+              @if (dish.imageReference) {
+                <img
+                  class="size-16 shrink-0 rounded-field object-cover"
+                  [src]="dish.imageReference | cloudinaryUrl: thumbnailTransformation"
+                  [alt]="dish.name"
+                >
+              } @else {
+                <span class="hatch grid size-16 shrink-0 place-items-center rounded-field text-lg text-line-strong">
+                  <i class="fa-solid fa-camera" aria-hidden="true"></i>
+                </span>
+              }
+              <p class="flex-1 font-bold text-ink">{{ dish.name }}</p>
+              <p class="shrink-0 font-mono font-bold text-ink">{{ dish.priceLabel }}</p>
+            </a>
           </li>
         }
 

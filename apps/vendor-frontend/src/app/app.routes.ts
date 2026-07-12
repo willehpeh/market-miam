@@ -28,6 +28,7 @@ export const appRoutes: Route[] = [
         children: [
           { path: '', component: CatalogueList },
           { path: 'new', component: AddDish },
+          { path: ':itemId/edit', component: AddDish },
         ],
       },
       {
