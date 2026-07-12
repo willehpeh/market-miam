@@ -54,6 +54,14 @@ export function catalogueViewsContract(name: string, create: () => Store): void 
       });
     });
 
+    it('changes an item photo, keeping its other fields', async () => {
+      await store.addItemToCatalogue(dish(), 'v1');
+      await store.updateItemPhoto('item-1', 'v9/dishes/item-1', 'v1');
+      expect(await store.forVendor('v1')).toEqual({
+        items: [dish({ imageReference: 'v9/dishes/item-1' })],
+      });
+    });
+
     it('retires an item', async () => {
       await store.addItemToCatalogue(dish({ itemId: 'a' }), 'v1');
       await store.addItemToCatalogue(dish({ itemId: 'b' }), 'v1');

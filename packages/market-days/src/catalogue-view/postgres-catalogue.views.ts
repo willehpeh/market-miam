@@ -48,6 +48,13 @@ export class PostgresCatalogueViews implements CatalogueViews, CatalogueViewStor
     );
   }
 
+  async updateItemPhoto(itemId: string, imageReference: string, vendorId: string): Promise<void> {
+    await this.db.query(
+      'UPDATE catalogue_view_items SET image_reference = $3 WHERE vendor_id = $1 AND item_id = $2',
+      [vendorId, itemId, imageReference],
+    );
+  }
+
   async retireItem(itemId: string, vendorId: string): Promise<void> {
     await this.db.query(
       'DELETE FROM catalogue_view_items WHERE vendor_id = $1 AND item_id = $2',

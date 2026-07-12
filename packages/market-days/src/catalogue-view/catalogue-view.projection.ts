@@ -1,7 +1,7 @@
 import { CatalogueViewStore } from './catalogue-view.store';
 import { CheckpointedProjection, EventHandlerMap, ProjectionFor, StoredEvent } from '@market-miam/event-sourcing';
 import { vendorIdFrom } from '@market-miam/shared-kernel';
-import { CatalogueEvent, ItemAddedToCatalogue, ItemPriceChanged, ItemRetired, ItemRevised } from '../catalogue/events';
+import { CatalogueEvent, ItemAddedToCatalogue, ItemPriceChanged, ItemRetired, ItemRevised, ItemPhotoChanged } from '../catalogue/events';
 
 @CheckpointedProjection('catalogue-view')
 export class CatalogueViewProjection extends ProjectionFor<CatalogueEvent> {
@@ -15,7 +15,8 @@ export class CatalogueViewProjection extends ProjectionFor<CatalogueEvent> {
       ItemAddedToCatalogue: e => this.handleItemAdded(e),
       ItemPriceChanged: e => this.handleItemPriceChanged(e),
       ItemRetired: e => this.handleItemRetired(e),
-      ItemRevised: e => this.handleItemRevised(e)
+      ItemRevised: e => this.handleItemRevised(e),
+      ItemPhotoChanged: e => this.handleItemPhotoChanged(e)
     };
   }
 
@@ -47,5 +48,10 @@ export class CatalogueViewProjection extends ProjectionFor<CatalogueEvent> {
       { name: payload.name, description: payload.description, price: payload.price },
       vendorIdFrom(event),
     );
+  }
+
+  private handleItemPhotoChanged(event: StoredEvent): Promise<void> {
+    const payload = event.payload as ItemPhotoChanged['payload'];
+    return this.store.updateItemPhoto(payload.itemId, payload.imageReference, vendorIdFrom(event));
   }
 }

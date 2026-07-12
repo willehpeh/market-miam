@@ -5,6 +5,8 @@ import {
   CatalogueViewProjection,
   ChangeItemPrice,
   ChangeItemPriceHandler,
+  ChangeItemPhoto,
+  ChangeItemPhotoHandler,
   InMemoryCatalogueViews,
   ReviseItem,
   ReviseItemHandler,
@@ -75,6 +77,20 @@ describe('CatalogueView', () => {
     expect(view).toEqual({
       items: [
         { itemId: newItemCommand.itemId, name: 'Revised Name', description: 'Revised Description', price: 999, imageReference: newItemCommand.imageReference },
+      ],
+    });
+  });
+
+  it('should change the item photo, keeping its other fields', async () => {
+    const newItemCommand = TestAddItemToCatalogue.valid();
+    await new AddItemToCatalogueHandler(catalogues).execute(newItemCommand);
+    await new ChangeItemPhotoHandler(catalogues).execute(new ChangeItemPhoto(newItemCommand.itemId, newItemCommand.vendorId, 'v9/dishes/vendor-id/item-id'));
+
+    await subscription.poll();
+    const view = await views.forVendor(newItemCommand.vendorId);
+    expect(view).toEqual({
+      items: [
+        { itemId: newItemCommand.itemId, name: newItemCommand.name, description: newItemCommand.description, price: newItemCommand.price, imageReference: 'v9/dishes/vendor-id/item-id' },
       ],
     });
   });
