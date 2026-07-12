@@ -15,7 +15,7 @@ type RegisterMarketScheduleParams = {
   startDate: string;
   market: MarketDetails;
   days: { day: string; startTime?: string; endTime?: string }[];
-  frequency?: { weeks: number };
+  frequency?: { weeks: number } | 'once';
 }
 
 export class RegisterMarketSchedule extends Command<void> {
@@ -24,7 +24,7 @@ export class RegisterMarketSchedule extends Command<void> {
   readonly startDate: string;
   readonly market: MarketDetails;
   readonly days: { day: string; startTime?: string; endTime?: string }[];
-  readonly frequency?: { weeks: number };
+  readonly frequency?: { weeks: number } | 'once';
 
   constructor(params: RegisterMarketScheduleParams) {
     super();

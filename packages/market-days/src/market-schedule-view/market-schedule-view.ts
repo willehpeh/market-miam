@@ -10,7 +10,7 @@ export type MarketScheduleView = {
   };
   startDate: string;
   days: { day: string; startTime?: string; endTime?: string }[];
-  frequency: { weeks: number };
+  frequency: { weeks: number } | 'once';
 };
 
 export type MarketSchedulesView = {

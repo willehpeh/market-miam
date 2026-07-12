@@ -84,7 +84,7 @@ Naming: query `FindVendorSchedules` → `{ schedules: [] }`; endpoint `GET /api/
 
 ## Upcoming market days — design (resolved)
 
-*Separate read model from the Calendar list above — dated occurrences, not as-registered schedules.* Vendor-scoped read model; both frontends read it (customer public, vendor authed — HTTP concern, not data).
+*Same persisted read model as the Calendar list above, extended and queried differently — dated occurrences vs as-registered schedules.* One store, two queries; both frontends read it (customer public, vendor authed — HTTP concern, not data).
 
 ### Write half — schedules can now be retracted
 
@@ -93,10 +93,10 @@ Cancel and declare-absence pulled forward: an upcoming view with no way to retra
 | Command | Event | Effect |
 |---------|-------|--------|
 | `CancelMarketSchedule(scheduleId)` | `MarketScheduleCancelled` | Whole schedule gone; all future occurrences vanish. |
-| `DeclareAbsence(scheduleId, from, to)` | `AbsenceDeclared` | Vendor absent for a date range; the read model suppresses occurrences within it; schedule keeps recurring. Single day = `from == to`. |
+| `DeclareAbsence(scheduleId, from, to)` | `AbsenceDeclared` | Vendor absent for a date range; the read model marks occurrences within it `absent` (kept, not dropped); schedule keeps recurring. Single day = `from == to`. |
 
 - **`Calendar.apply()` tracks active schedules only** (added on `Registered`, removed on `Cancelled`); **no absence state** — absences are ranges and overlaps are allowed, so the aggregate holds nothing per-absence and `apply` has no `AbsenceDeclared` case. Enforces: can't cancel or declare absence on an unknown/cancelled schedule (`NoSuchScheduleError`); an invalid range (`from > to`) is rejected in the `DateRange` VO constructor (`InvalidDateRangeError`). No occurrence check, no overlap check — all `DomainError` → 400 ([[project_domain_error_to_400]]).
-- **Occurrence/cadence math lives only in the read model** (`Schedule.occurrencesWithin` for expansion). Absences are date *ranges*, not occurrences, so the aggregate needs no cadence math; the read model suppresses any expanded occurrence with `from <= date <= to` for a declared range (ISO strings compare chronologically — no date arithmetic). `occursOn` is unneeded for now.
+- **Occurrence/cadence math lives only in the read model** (`Schedule.occurrencesWithin` for expansion, reconstructing `Schedule` from the stored row). Absences are date *ranges*, not occurrences, so the aggregate needs no cadence math; the read model **marks** any expanded occurrence with `from <= date <= to` as `absent` (kept, not dropped — a known customer sees `Sat 3 Jul — ABSENT`). `occursOn` unneeded; cadence uses `LocalDate.dayOfWeek()`/`plusDays()`.
 - HTTP: `DELETE /market-schedules/:scheduleId` (cancel), `POST /market-schedules/:scheduleId/absences` (declare absence; `{ from, to }` in body, single day = equal). Declaring an absence *creates* state, so POST — not a DELETE on a computed occurrence.
 - *Named `DeclareAbsence`/`AbsenceDeclared` — vendor intent (a trader declaring an absence to the placier), and sidesteps the `MarketDay` aggregate-name collision. Absence = a `DateRange` per schedule (single day = `from == to`); the aggregate keeps no absence state.*
 
@@ -104,14 +104,14 @@ Cancel and declare-absence pulled forward: an upcoming view with no way to retra
 
 | Branch | Decision |
 |--------|----------|
-| Source | Persisted read model mirroring `CatalogueViews` — in-mem + pg adapters, ISP-split read/write surfaces, projection + query handler, subscription registration. |
-| Projection | Keyed by `(vendorId, scheduleId)`. `Registered` upserts (re-register replaces); `Cancelled` deletes the row; `AbsenceDeclared` appends a `{ from, to }` range to `absences`. |
-| Query | `FindUpcomingMarketDays(vendorId)`; `Clock` supplies `today`; expand each record via `Schedule.occurrencesWithin`, drop any occurrence falling within an `absences` range; union; sort ascending. |
-| Expansion | Window `[today, today+56]`. Cadence anchored at `startDate`'s week: emit `days[]` where `weeksSinceStart % weeks == 0`, dates `>= startDate`. Absent frequency = one-off (a real requirement): occurs only in `startDate`'s week. |
-| Shape | Flat chronological occurrences: `{ scheduleId, marketId, date, startTime?, endTime?, market: {name, town, codePostal, streetAddress?, pitch?} }`. No dedup on collision. |
+| Source | **The existing `MarketScheduleViews`, extended** — the row gains `absences: {from,to}[]`; the projection re-widens to all three calendar events. No new store/projection/subscription — a second query over the same rows. |
+| Projection | Keyed by `(vendorId, scheduleId)`. `Registered` upserts (re-register replaces); `Cancelled` deletes the row (also drops it from the Calendrier list — a fix); `AbsenceDeclared` appends a `{ from, to }` range to `absences`. |
+| Query | `FindUpcomingMarketDays(vendorId)` (`GET /market-schedules/upcoming`); `Clock` supplies `today`; expand each record via `Schedule.occurrencesWithin`, flag occurrences within an `absences` range as `absent` (kept); union; sort ascending. |
+| Expansion | Window `[today, today.plusDays(56)]`. **Rule A** (Monday-anchored calendar-week bucket): emit `days[]` where `(mondayOf(date) − mondayOf(startDate)) / 7 % weeks == 0`, dates `>= startDate`. Explicit `'once'` occurs only in `startDate`'s week; **absent frequency defaults to weekly** (not one-off). |
+| Shape | Flat chronological occurrences: `{ scheduleId, marketId, date, day, startTime?, endTime?, absent, market: {name, town, codePostal, streetAddress?, pitch?} }`. One per `(schedule, date)`, per-day times, `day` = weekday token; no dedup on collision. |
 | Boundary | `date >= today` inclusive. Past scheduled dates drop out. NB "past = actual events" is not a pure temporal split — a **future** date can also have actual events once prepared; the overlay slice reconciles them. |
 
-Notes: `HORIZON_DAYS = 56` is a tunable constant. Event payload types `frequency` as required but one-off is real, so make it `frequency?` (command already is). Define `weeksSinceStart` precisely before coding (per-calendar-week bucket from `startOfWeek(startDate)`) — off-by-one-week trap. Follows `FindVendorCatalogue` / `CatalogueViewProjection` patterns.
+Notes: `HORIZON_DAYS = 56` tunable. One-off is explicit: `frequency: { weeks: number } | 'once'` (event stays required, widened; command optional with weekly default preserved). `weeksSinceStart` = Monday-anchored calendar-week bucket (Rule A) — the off-by-one-week trap. Date math (`dayOfWeek`, `plusDays`) lives on `LocalDate`. Follows `FindVendorCatalogue` / `CatalogueViewProjection` patterns.
 
 - A MarketDay needs only `(vendorId, marketId, date)` — no market name/address/times. Descriptive fields live in the read model above, where the nested `market` object copies through cohesively.
 

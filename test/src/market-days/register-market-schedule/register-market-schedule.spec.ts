@@ -137,6 +137,16 @@ describe('Register Market Schedule', () => {
     await expect(handler.execute(command)).rejects.toThrow(EmptyValueError);
   });
 
+  it('registers a one-off schedule', async () => {
+    const command = TestRegisterMarketSchedule.with({ frequency: 'once' });
+    await handler.execute(command);
+
+    expect(store.newEvents()).toEqual([expect.objectContaining({
+      type: 'MarketScheduleRegistered',
+      payload: expect.objectContaining({ frequency: 'once' })
+    })]);
+  });
+
   it('should allow a day with a start time but no end time', async () => {
     const command = TestRegisterMarketSchedule.with({ days: [{ day: 'SAT', startTime: '08:00' }] });
     await handler.execute(command);
