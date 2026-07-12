@@ -84,7 +84,7 @@ Naming: query `FindVendorSchedules` → `{ schedules: [] }`; endpoint `GET /api/
 
 ## Upcoming market days — design (resolved, **built**)
 
-**Status: built** — write half (cancel + declare-absence as ranges) and read half (extended read model, `FindUpcomingMarketDays`, `GET /market-schedules/upcoming`) all shipped. Cadence in `Schedule.occurrencesWithin`; absences marked, not dropped. One-off representable but not yet offered by the frontend.
+**Status: built** — write half (cancel + declare-absence as ranges; amend via `PUT /market-schedules/:scheduleId` preserving absences; register now create-only) and read half (extended read model, `FindUpcomingMarketDays`, `GET /market-schedules/upcoming`) all shipped. Cadence in `Schedule.occurrencesWithin`; absences marked, not dropped. One-off representable but not yet offered by the frontend.
 
 *Same persisted read model as the Calendar list above, extended and queried differently — dated occurrences vs as-registered schedules.* One store, two queries; both frontends read it (customer public, vendor authed — HTTP concern, not data).
 

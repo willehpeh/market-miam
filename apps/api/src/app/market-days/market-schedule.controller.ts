@@ -1,8 +1,8 @@
-import { Body, Controller, Delete, Get, Param, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Put, UseGuards } from '@nestjs/common';
 import { CurrentVendor, JwtAuthGuard } from '@market-miam/auth-nestjs';
 import type { VerifiedVendor } from '@market-miam/auth';
 import { CommandGateway, QueryGateway } from '@market-miam/event-sourcing';
-import { CancelMarketSchedule, DeclareAbsence, FindUpcomingMarketDays, FindVendorSchedules, MarketSchedulesView, RegisterMarketSchedule, UpcomingMarketDaysView } from '@market-miam/market-days';
+import { AmendMarketSchedule, CancelMarketSchedule, DeclareAbsence, FindUpcomingMarketDays, FindVendorSchedules, MarketSchedulesView, RegisterMarketSchedule, UpcomingMarketDaysView } from '@market-miam/market-days';
 
 type MarketBody = {
   id: string;
@@ -18,8 +18,10 @@ type ScheduleBody = {
   startDate: string;
   market: MarketBody;
   days: { day: string; startTime?: string; endTime?: string }[];
-  frequency?: { weeks: number };
+  frequency?: { weeks: number } | 'once';
 };
+
+type AmendBody = Omit<ScheduleBody, 'scheduleId'>;
 
 @Controller('market-schedules')
 export class MarketScheduleController {
@@ -45,6 +47,14 @@ export class MarketScheduleController {
   async register(@CurrentVendor() vendor: VerifiedVendor, @Body() body: ScheduleBody): Promise<void> {
     await this.commands.execute(
       new RegisterMarketSchedule({ vendorId: vendor.vendorId.value(), ...body }),
+    );
+  }
+
+  @Put(':scheduleId')
+  @UseGuards(JwtAuthGuard)
+  async amend(@CurrentVendor() vendor: VerifiedVendor, @Param('scheduleId') scheduleId: string, @Body() body: AmendBody): Promise<void> {
+    await this.commands.execute(
+      new AmendMarketSchedule({ vendorId: vendor.vendorId.value(), scheduleId, ...body }),
     );
   }
 

@@ -62,6 +62,21 @@ describe('Managing market schedules over HTTP', () => {
       .set('Authorization', 'Bearer any-token');
   }
 
+  function amend(scheduleId: string, body: object) {
+    return request(app.getHttpServer())
+      .put(`/market-schedules/${scheduleId}`)
+      .set('Authorization', 'Bearer any-token')
+      .send(body);
+  }
+
+  const amendment = (overrides: object = {}) => ({
+    startDate: schedule.startDate,
+    market: schedule.market,
+    days: [{ day: 'TUE', startTime: '07:00', endTime: '16:00' }],
+    frequency: { weeks: 1 },
+    ...overrides,
+  });
+
   it('registers a market schedule for the authenticated vendor', async () => {
     await post(schedule).expect(201);
   });
@@ -139,6 +154,32 @@ describe('Managing market schedules over HTTP', () => {
 
     const response = await upcoming().expect(200);
 
+    const absent = response.body.marketDays.filter((day: { absent: boolean }) => day.absent);
+    expect(absent.map((day: { date: string }) => day.date)).toEqual(['2026-07-28']);
+  });
+
+  it('amends a registered schedule for the authenticated vendor', async () => {
+    await post(schedule).expect(201);
+
+    await amend(schedule.scheduleId, amendment({ days: [{ day: 'WED', startTime: '09:00', endTime: '13:00' }], frequency: { weeks: 2 } })).expect(200);
+    await app.get(Subscriptions).drain();
+
+    const response = await list().expect(200);
+    expect(response.body.schedules[0].days).toEqual([{ day: 'WED', startTime: '09:00', endTime: '13:00' }]);
+    expect(response.body.schedules[0].frequency).toEqual({ weeks: 2 });
+  });
+
+  it('rejects amending an unknown schedule as a bad request', async () => {
+    await amend('never-registered', amendment()).expect(400);
+  });
+
+  it('preserves declared absences across an amend', async () => {
+    await post(schedule).expect(201);
+    await declareAbsence(schedule.scheduleId, { from: '2026-07-27', to: '2026-07-29' }).expect(201);
+    await amend(schedule.scheduleId, amendment()).expect(200);
+    await app.get(Subscriptions).drain();
+
+    const response = await upcoming().expect(200);
     const absent = response.body.marketDays.filter((day: { absent: boolean }) => day.absent);
     expect(absent.map((day: { date: string }) => day.date)).toEqual(['2026-07-28']);
   });
