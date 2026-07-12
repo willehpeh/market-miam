@@ -15,6 +15,9 @@ import {
   ReviseDish,
   ReviseDishFailure,
   ReviseDishSuccess,
+  ChangeDishPhoto,
+  ChangeDishPhotoFailure,
+  ChangeDishPhotoSuccess,
   UploadDishPhoto,
   UploadDishPhotoFailure,
   UploadDishPhotoSuccess,
@@ -79,6 +82,18 @@ export class CatalogueEffects {
           catchError(() => of(ReviseDishFailure())),
         );
       }),
+    ),
+  );
+
+  changeDishPhoto$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(ChangeDishPhoto),
+      switchMap(({ itemId, imageReference }) =>
+        this.catalogue.changePhoto(itemId, imageReference).pipe(
+          map(() => ChangeDishPhotoSuccess({ itemId, imageReference })),
+          catchError(() => of(ChangeDishPhotoFailure())),
+        ),
+      ),
     ),
   );
 

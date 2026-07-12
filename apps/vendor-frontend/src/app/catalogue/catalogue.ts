@@ -33,4 +33,5 @@ export abstract class Catalogue {
   abstract photoSignature(itemId: string): Observable<SignedUpload>;
   abstract add(dish: NewDish): Observable<void>;
   abstract revise(revision: DishRevision): Observable<void>;
+  abstract changePhoto(itemId: string, imageReference: string): Observable<void>;
 }

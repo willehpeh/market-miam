@@ -24,6 +24,9 @@ export const AddDishFailure = createAction('[Catalogue] Add Dish Failure');
 export const ReviseDish = createAction('[Catalogue] Revise Dish', props<DishRevision>());
 export const ReviseDishSuccess = createAction('[Catalogue] Revise Dish Success', props<DishRevision>());
 export const ReviseDishFailure = createAction('[Catalogue] Revise Dish Failure');
+export const ChangeDishPhoto = createAction('[Catalogue] Change Dish Photo', props<{ itemId: string; imageReference: string }>());
+export const ChangeDishPhotoSuccess = createAction('[Catalogue] Change Dish Photo Success', props<{ itemId: string; imageReference: string }>());
+export const ChangeDishPhotoFailure = createAction('[Catalogue] Change Dish Photo Failure');
 
 export interface CatalogueState {
   loading: boolean;
@@ -66,6 +69,11 @@ export const catalogueFeature = createFeature({
     on(ReviseDishSuccess, (state, { itemId, name, description, price }): CatalogueState => ({
       ...state,
       items: state.items.map(item => item.itemId === itemId ? { ...item, name, description, price } : item),
+    })),
+    // ponytail: ChangeDishPhotoFailure unreduced — same no-error-UX stance.
+    on(ChangeDishPhotoSuccess, (state, { itemId, imageReference }): CatalogueState => ({
+      ...state,
+      items: state.items.map(item => item.itemId === itemId ? { ...item, imageReference } : item),
     })),
   ),
 });

@@ -14,6 +14,7 @@ export class FakeCatalogueFacade implements CatalogueFacade {
   uploadedPhoto: { itemId: string; file: File } | undefined;
   addedDish: NewDish | undefined;
   revisedDish: DishRevision | undefined;
+  changedPhoto: { itemId: string; imageReference: string } | undefined;
 
   load(): void {
     this.loaded = true;
@@ -33,5 +34,9 @@ export class FakeCatalogueFacade implements CatalogueFacade {
 
   reviseDish(revision: DishRevision): void {
     this.revisedDish = revision;
+  }
+
+  changeDishPhoto(itemId: string, imageReference: string): void {
+    this.changedPhoto = { itemId, imageReference };
   }
 }

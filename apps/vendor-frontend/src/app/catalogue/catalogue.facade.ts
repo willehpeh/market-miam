@@ -13,4 +13,5 @@ export abstract class CatalogueFacade {
   abstract uploadDishPhoto(itemId: string, file: File): void;
   abstract addDish(dish: NewDish): void;
   abstract reviseDish(revision: DishRevision): void;
+  abstract changeDishPhoto(itemId: string, imageReference: string): void;
 }

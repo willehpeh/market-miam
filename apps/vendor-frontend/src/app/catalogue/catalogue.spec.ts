@@ -180,4 +180,25 @@ describe('Catalogue', () => {
       { itemId: 'item-1', name: 'Bœuf mode', description: 'Version express', price: 1400, imageReference: 'v1/dishes/acme/item-1' },
     ]);
   });
+
+  it('changes a dish photo, putting the reference to its item id', () => {
+    facade.changeDishPhoto('item-1', 'v3/dishes/acme/item-1');
+
+    const req = httpCtrl.expectOne('/api/catalogue/item-1/photo');
+    expect(req.request.method).toBe('PUT');
+    expect(req.request.body).toEqual({ imageReference: 'v3/dishes/acme/item-1' });
+    req.flush(null);
+  });
+
+  it('swaps the dish image optimistically on success, keeping its other fields', () => {
+    facade.load();
+    httpCtrl.expectOne('/api/catalogue').flush({ items });
+
+    facade.changeDishPhoto('item-1', 'v3/dishes/acme/item-1');
+    httpCtrl.expectOne('/api/catalogue/item-1/photo').flush(null);
+
+    expect(facade.items()).toEqual([
+      { itemId: 'item-1', name: 'Bœuf bourguignon', description: 'Mijoté maison', price: 1300, imageReference: 'v3/dishes/acme/item-1' },
+    ]);
+  });
 });
