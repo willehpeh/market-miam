@@ -1,6 +1,6 @@
 import { Injectable, signal } from '@angular/core';
 import { CatalogueFacade } from './catalogue.facade';
-import { CatalogueItemView, NewDish } from './catalogue';
+import { CatalogueItemView, DishRevision, NewDish } from './catalogue';
 
 @Injectable()
 export class FakeCatalogueFacade implements CatalogueFacade {
@@ -13,6 +13,7 @@ export class FakeCatalogueFacade implements CatalogueFacade {
   began = false;
   uploadedPhoto: { itemId: string; file: File } | undefined;
   addedDish: NewDish | undefined;
+  revisedDish: DishRevision | undefined;
 
   load(): void {
     this.loaded = true;
@@ -28,5 +29,9 @@ export class FakeCatalogueFacade implements CatalogueFacade {
 
   addDish(dish: NewDish): void {
     this.addedDish = dish;
+  }
+
+  reviseDish(revision: DishRevision): void {
+    this.revisedDish = revision;
   }
 }

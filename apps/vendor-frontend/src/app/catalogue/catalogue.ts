@@ -21,8 +21,16 @@ export interface NewDish {
   imageReference?: string;
 }
 
+export interface DishRevision {
+  itemId: string;
+  name: string;
+  description: string;
+  price: number;
+}
+
 export abstract class Catalogue {
   abstract list(): Observable<CatalogueView>;
   abstract photoSignature(itemId: string): Observable<SignedUpload>;
   abstract add(dish: NewDish): Observable<void>;
+  abstract revise(revision: DishRevision): Observable<void>;
 }

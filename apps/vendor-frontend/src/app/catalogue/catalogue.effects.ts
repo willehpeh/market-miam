@@ -12,6 +12,9 @@ import {
   LoadCatalogue,
   LoadCatalogueFailure,
   LoadCatalogueSuccess,
+  ReviseDish,
+  ReviseDishFailure,
+  ReviseDishSuccess,
   UploadDishPhoto,
   UploadDishPhotoFailure,
   UploadDishPhotoSuccess,
@@ -66,10 +69,23 @@ export class CatalogueEffects {
     ),
   );
 
+  reviseDish$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(ReviseDish),
+      switchMap(({ itemId, name, description, price }) => {
+        const revision = { itemId, name, description, price };
+        return this.catalogue.revise(revision).pipe(
+          map(() => ReviseDishSuccess(revision)),
+          catchError(() => of(ReviseDishFailure())),
+        );
+      }),
+    ),
+  );
+
   navigateOnAdded$ = createEffect(
     () =>
       this.actions$.pipe(
-        ofType(AddDishSuccess),
+        ofType(AddDishSuccess, ReviseDishSuccess),
         tap(() => {
           this.router.navigate(['/dashboard/catalogue']);
         }),

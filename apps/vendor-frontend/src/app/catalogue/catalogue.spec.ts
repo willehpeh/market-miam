@@ -159,4 +159,25 @@ describe('Catalogue', () => {
 
     expect(facade.items()[0].imageReference).toBe('');
   });
+
+  it('revises a dish, putting its new fields to its item id', () => {
+    facade.reviseDish({ itemId: 'item-1', name: 'Bœuf mode', description: 'Version express', price: 1400 });
+
+    const req = httpCtrl.expectOne('/api/catalogue/item-1');
+    expect(req.request.method).toBe('PUT');
+    expect(req.request.body).toEqual({ name: 'Bœuf mode', description: 'Version express', price: 1400 });
+    req.flush(null);
+  });
+
+  it('replaces the dish optimistically on success, keeping its image', () => {
+    facade.load();
+    httpCtrl.expectOne('/api/catalogue').flush({ items });
+
+    facade.reviseDish({ itemId: 'item-1', name: 'Bœuf mode', description: 'Version express', price: 1400 });
+    httpCtrl.expectOne('/api/catalogue/item-1').flush(null);
+
+    expect(facade.items()).toEqual([
+      { itemId: 'item-1', name: 'Bœuf mode', description: 'Version express', price: 1400, imageReference: 'v1/dishes/acme/item-1' },
+    ]);
+  });
 });
