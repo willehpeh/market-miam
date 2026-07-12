@@ -1,7 +1,8 @@
-import { CalendarEvent, MarketScheduleRegistered, MarketScheduleCancelled } from './events';
+import { CalendarEvent, MarketScheduleRegistered, MarketScheduleCancelled, AbsenceDeclared } from './events';
 import { Aggregate } from '@market-miam/event-sourcing';
 import { Schedule } from './schedule/schedule';
 import { ScheduleId } from './schedule/schedule-id';
+import { DateRange } from './date-range';
 import { NoSuchScheduleError } from './errors/no-such-schedule.error';
 import { Market } from '../market';
 
@@ -43,6 +44,18 @@ export class Calendar extends Aggregate {
     const event: MarketScheduleCancelled = {
       type: 'MarketScheduleCancelled',
       payload: { scheduleId: scheduleId.value() },
+      version: 1
+    };
+    this.raise(event);
+  }
+
+  declareAbsence(scheduleId: ScheduleId, range: DateRange): void {
+    if (!this.hasSchedule(scheduleId)) {
+      throw new NoSuchScheduleError(`No schedule with ID ${ scheduleId.value() }`);
+    }
+    const event: AbsenceDeclared = {
+      type: 'AbsenceDeclared',
+      payload: { scheduleId: scheduleId.value(), ...range.value() },
       version: 1
     };
     this.raise(event);

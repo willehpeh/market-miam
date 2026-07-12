@@ -93,20 +93,20 @@ Cancel and declare-absence pulled forward: an upcoming view with no way to retra
 | Command | Event | Effect |
 |---------|-------|--------|
 | `CancelMarketSchedule(scheduleId)` | `MarketScheduleCancelled` | Whole schedule gone; all future occurrences vanish. |
-| `DeclareAbsence(scheduleId, date)` | `AbsenceDeclared` | Vendor absent from that occurrence; schedule keeps recurring. |
+| `DeclareAbsence(scheduleId, from, to)` | `AbsenceDeclared` | Vendor absent for a date range; the read model suppresses occurrences within it; schedule keeps recurring. Single day = `from == to`. |
 
-- **`Calendar.apply()` is no longer a no-op** (reverses the earlier note). Aggregate tracks active schedules + per-schedule declared absences; rehydrates from events (`MarketDay` pattern). Enforces: can't cancel or declare absence on an unknown schedule, can't declare absence on a non-occurrence, can't declare the same absence twice — all `DomainError` → 400 ([[project_domain_error_to_400]]).
-- **Occurrence logic lives on the `Schedule` VO** (`occursOn(date)`, `occurrencesWithin(from, to)`), shared by the aggregate (absence validation) and the read model (expansion) — no duplicated cadence math.
-- HTTP: `DELETE /market-schedules/:scheduleId` (cancel), `POST /market-schedules/:scheduleId/absences` (declare absence; date in body). Declaring an absence *creates* state, so POST — not a DELETE on a computed occurrence.
-- *Named `DeclareAbsence`/`AbsenceDeclared` — vendor intent (a trader declaring an absence to the placier), and sidesteps the `MarketDay` aggregate-name collision. Aggregate state: per-schedule declared absences.*
+- **`Calendar.apply()` tracks active schedules only** (added on `Registered`, removed on `Cancelled`); **no absence state** — absences are ranges and overlaps are allowed, so the aggregate holds nothing per-absence and `apply` has no `AbsenceDeclared` case. Enforces: can't cancel or declare absence on an unknown/cancelled schedule (`NoSuchScheduleError`); an invalid range (`from > to`) is rejected in the `DateRange` VO constructor (`InvalidDateRangeError`). No occurrence check, no overlap check — all `DomainError` → 400 ([[project_domain_error_to_400]]).
+- **Occurrence/cadence math lives only in the read model** (`Schedule.occurrencesWithin` for expansion). Absences are date *ranges*, not occurrences, so the aggregate needs no cadence math; the read model suppresses any expanded occurrence with `from <= date <= to` for a declared range (ISO strings compare chronologically — no date arithmetic). `occursOn` is unneeded for now.
+- HTTP: `DELETE /market-schedules/:scheduleId` (cancel), `POST /market-schedules/:scheduleId/absences` (declare absence; `{ from, to }` in body, single day = equal). Declaring an absence *creates* state, so POST — not a DELETE on a computed occurrence.
+- *Named `DeclareAbsence`/`AbsenceDeclared` — vendor intent (a trader declaring an absence to the placier), and sidesteps the `MarketDay` aggregate-name collision. Absence = a `DateRange` per schedule (single day = `from == to`); the aggregate keeps no absence state.*
 
 ### Read half — the read model
 
 | Branch | Decision |
 |--------|----------|
 | Source | Persisted read model mirroring `CatalogueViews` — in-mem + pg adapters, ISP-split read/write surfaces, projection + query handler, subscription registration. |
-| Projection | Keyed by `(vendorId, scheduleId)`. `Registered` upserts (re-register replaces); `Cancelled` deletes the row; `AbsenceDeclared` appends to `absences`. |
-| Query | `FindUpcomingMarketDays(vendorId)`; `Clock` supplies `today`; expand each record via `Schedule.occurrencesWithin`, subtract `absences`; union; sort ascending. |
+| Projection | Keyed by `(vendorId, scheduleId)`. `Registered` upserts (re-register replaces); `Cancelled` deletes the row; `AbsenceDeclared` appends a `{ from, to }` range to `absences`. |
+| Query | `FindUpcomingMarketDays(vendorId)`; `Clock` supplies `today`; expand each record via `Schedule.occurrencesWithin`, drop any occurrence falling within an `absences` range; union; sort ascending. |
 | Expansion | Window `[today, today+56]`. Cadence anchored at `startDate`'s week: emit `days[]` where `weeksSinceStart % weeks == 0`, dates `>= startDate`. Absent frequency = one-off (a real requirement): occurs only in `startDate`'s week. |
 | Shape | Flat chronological occurrences: `{ scheduleId, marketId, date, startTime?, endTime?, market: {name, town, codePostal, streetAddress?, pitch?} }`. No dedup on collision. |
 | Boundary | `date >= today` inclusive. Past scheduled dates drop out. NB "past = actual events" is not a pure temporal split — a **future** date can also have actual events once prepared; the overlay slice reconciles them. |

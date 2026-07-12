@@ -7,6 +7,7 @@ export * from './catalogue/item';
 export * from './catalogue/catalogues';
 export * from './register-market-schedule';
 export * from './cancel-market-schedule';
+export * from './declare-absence';
 export * from './market/invalid-postal-code.error';
 export * from './calendar/events';
 export * from './calendar';
