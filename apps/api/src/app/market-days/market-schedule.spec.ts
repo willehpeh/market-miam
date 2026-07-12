@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import { bootApiTestApp } from '../testing/api-test-app';
+import { bootApiTestApp, fixedClock } from '../testing/api-test-app';
 import { Subscriptions } from '../event-sourcing/subscriptions';
 
 const schedule = {
@@ -23,7 +23,7 @@ describe('Managing market schedules over HTTP', () => {
   let app: INestApplication;
 
   beforeEach(async () => {
-    app = await bootApiTestApp();
+    app = await bootApiTestApp({ clock: fixedClock });
   });
 
   afterEach(async () => {
@@ -54,6 +54,12 @@ describe('Managing market schedules over HTTP', () => {
       .post(`/market-schedules/${scheduleId}/absences`)
       .set('Authorization', 'Bearer any-token')
       .send(body);
+  }
+
+  function upcoming() {
+    return request(app.getHttpServer())
+      .get('/market-schedules/upcoming')
+      .set('Authorization', 'Bearer any-token');
   }
 
   it('registers a market schedule for the authenticated vendor', async () => {
@@ -103,5 +109,37 @@ describe('Managing market schedules over HTTP', () => {
     await post(schedule).expect(201);
 
     await declareAbsence(schedule.scheduleId, { from: '2026-07-28', to: '2026-07-21' }).expect(400);
+  });
+
+  it('lists the upcoming market days for the authenticated vendor', async () => {
+    await post(schedule).expect(201);
+    await app.get(Subscriptions).drain();
+
+    const response = await upcoming().expect(200);
+
+    expect(response.body.marketDays.map((day: { date: string }) => day.date)).toEqual([
+      '2026-07-21', '2026-07-28', '2026-08-04', '2026-08-11', '2026-08-18',
+    ]);
+    expect(response.body.marketDays[0]).toEqual({
+      scheduleId: 'schedule-1',
+      marketId: 'market-1',
+      date: '2026-07-21',
+      day: 'TUE',
+      startTime: '07:00',
+      endTime: '14:30',
+      absent: false,
+      market: { name: 'Marché de Belleville', town: 'Paris', codePostal: '75011', streetAddress: 'Boulevard de Belleville', pitch: 'B12' },
+    });
+  });
+
+  it('marks an occurrence absent after an absence is declared over it', async () => {
+    await post(schedule).expect(201);
+    await declareAbsence(schedule.scheduleId, { from: '2026-07-27', to: '2026-07-29' }).expect(201);
+    await app.get(Subscriptions).drain();
+
+    const response = await upcoming().expect(200);
+
+    const absent = response.body.marketDays.filter((day: { absent: boolean }) => day.absent);
+    expect(absent.map((day: { date: string }) => day.date)).toEqual(['2026-07-28']);
   });
 });

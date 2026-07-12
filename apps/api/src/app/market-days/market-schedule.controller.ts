@@ -2,7 +2,7 @@ import { Body, Controller, Delete, Get, Param, Post, UseGuards } from '@nestjs/c
 import { CurrentVendor, JwtAuthGuard } from '@market-miam/auth-nestjs';
 import type { VerifiedVendor } from '@market-miam/auth';
 import { CommandGateway, QueryGateway } from '@market-miam/event-sourcing';
-import { CancelMarketSchedule, DeclareAbsence, FindVendorSchedules, MarketSchedulesView, RegisterMarketSchedule } from '@market-miam/market-days';
+import { CancelMarketSchedule, DeclareAbsence, FindUpcomingMarketDays, FindVendorSchedules, MarketSchedulesView, RegisterMarketSchedule, UpcomingMarketDaysView } from '@market-miam/market-days';
 
 type MarketBody = {
   id: string;
@@ -32,6 +32,12 @@ export class MarketScheduleController {
   @UseGuards(JwtAuthGuard)
   list(@CurrentVendor() vendor: VerifiedVendor): Promise<MarketSchedulesView> {
     return this.queries.execute(new FindVendorSchedules(vendor.vendorId.value()));
+  }
+
+  @Get('upcoming')
+  @UseGuards(JwtAuthGuard)
+  upcoming(@CurrentVendor() vendor: VerifiedVendor): Promise<UpcomingMarketDaysView> {
+    return this.queries.execute(new FindUpcomingMarketDays(vendor.vendorId.value()));
   }
 
   @Post()

@@ -16,6 +16,7 @@ import {
   FindVendorCatalogueHandler,
   FindVendorStorefrontHandler,
   FindVendorSchedulesHandler,
+  FindUpcomingMarketDaysHandler,
   InMemoryCatalogueViews,
   InMemoryMarketScheduleViews,
   InMemoryVendorStorefrontViews,
@@ -152,7 +153,7 @@ const commandHandlers = [
   OpenStorefrontHandler,
 ];
 
-const queryHandlers = [FindVendorStorefrontHandler, FindVendorCatalogueHandler, FindVendorSchedulesHandler];
+const queryHandlers = [FindVendorStorefrontHandler, FindVendorCatalogueHandler, FindVendorSchedulesHandler, FindUpcomingMarketDaysHandler];
 
 // EventStore / CommandGateway / QueryGateway (and the pg UnitOfWork) come from
 // the global EventSourcingModule.forRoot(...) at the composition root. persistence
