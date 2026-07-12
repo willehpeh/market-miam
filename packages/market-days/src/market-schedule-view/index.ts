@@ -6,3 +6,6 @@ export { InMemoryMarketScheduleViews } from './in-memory-market-schedule.views';
 export { PostgresMarketScheduleViews } from './postgres-market-schedule.views';
 export { FindVendorSchedules } from './find-vendor-schedules';
 export { FindVendorSchedulesHandler } from './find-vendor-schedules.handler';
+export * from './upcoming-market-days-view';
+export { FindUpcomingMarketDays } from './find-upcoming-market-days';
+export { FindUpcomingMarketDaysHandler } from './find-upcoming-market-days.handler';

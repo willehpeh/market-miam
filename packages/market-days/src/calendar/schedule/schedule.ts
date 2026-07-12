@@ -11,6 +11,14 @@ type ScheduleSnapshot = {
   frequency: { weeks: number } | 'once';
 };
 
+export type ScheduleOccurrence = {
+  scheduleId: string;
+  date: string;
+  day: string;
+  startTime?: string;
+  endTime?: string;
+};
+
 type ScheduleParams = {
   id: ScheduleId;
   startDate: LocalDate;
@@ -19,6 +27,8 @@ type ScheduleParams = {
 };
 
 export class Schedule {
+  private static readonly WEEKDAY_INDEX: Record<string, number> = { MON: 0, TUE: 1, WED: 2, THU: 3, FRI: 4, SAT: 5, SUN: 6 };
+
   private readonly _id: ScheduleId;
   private readonly _startDate: LocalDate;
   private readonly _days: ScheduleDay[] = [];
@@ -38,6 +48,49 @@ export class Schedule {
       days: this._days.map(d => d.value()),
       frequency: this._frequency.value()
     };
+  }
+
+  static fromSnapshot(snapshot: ScheduleSnapshot): Schedule {
+    return new Schedule({
+      id: new ScheduleId(snapshot.scheduleId),
+      startDate: new LocalDate(snapshot.startDate),
+      days: snapshot.days.map(d => new ScheduleDay(d.day, d.startTime, d.endTime)),
+      frequency: new ScheduleFrequency(snapshot.frequency),
+    });
+  }
+
+  occurrencesWithin(from: LocalDate, to: LocalDate): ScheduleOccurrence[] {
+    const occurrences: ScheduleOccurrence[] = [];
+    for (let date = this.laterOf(from, this._startDate); !to.isBefore(date); date = date.plusDays(1)) {
+      const scheduleDay = this._days.find(day => day.value().day === date.dayOfWeek());
+      if (scheduleDay && this.recursOn(date)) {
+        occurrences.push({ scheduleId: this._id.value(), date: date.value(), ...scheduleDay.value() });
+      }
+    }
+    return occurrences;
+  }
+
+  private laterOf(a: LocalDate, b: LocalDate): LocalDate {
+    return a.isBefore(b) ? b : a;
+  }
+
+  private recursOn(date: LocalDate): boolean {
+    const frequency = this._frequency.value();
+    if (frequency === 'once') {
+      return this.mondayOf(date).value() === this.mondayOf(this._startDate).value();
+    }
+    if (frequency.weeks === 1) {
+      return true;
+    }
+    let weeks = 0;
+    for (let monday = this.mondayOf(this._startDate); monday.isBefore(this.mondayOf(date)); monday = monday.plusDays(7)) {
+      weeks++;
+    }
+    return weeks % frequency.weeks === 0;
+  }
+
+  private mondayOf(date: LocalDate): LocalDate {
+    return date.plusDays(-Schedule.WEEKDAY_INDEX[date.dayOfWeek()]);
   }
 
   private addDays(days: ScheduleDay[]): void {
