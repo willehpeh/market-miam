@@ -3,6 +3,7 @@ import {
   Calendars,
   CancelMarketSchedule,
   CancelMarketScheduleHandler,
+  NoSuchScheduleError,
   RegisterMarketScheduleHandler,
   VendorScopedEvents
 } from '@market-miam/market-days';
@@ -35,5 +36,15 @@ describe('Cancel Market Schedule', () => {
         payload: { scheduleId: registered.scheduleId },
       }),
     ]);
+  });
+
+  it('rejects cancelling a schedule that was never registered', async () => {
+    const registered = TestRegisterMarketSchedule.simple();
+    await new RegisterMarketScheduleHandler(calendars).execute(registered);
+
+    await expect(handler.execute(new CancelMarketSchedule({
+      vendorId: registered.vendorId,
+      scheduleId: 'never-registered',
+    }))).rejects.toThrow(NoSuchScheduleError);
   });
 });
