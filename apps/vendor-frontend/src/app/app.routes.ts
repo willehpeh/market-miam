@@ -35,6 +35,7 @@ export const appRoutes: Route[] = [
         children: [
           { path: '', component: MarketsList },
           { path: 'new', component: AddSchedule },
+          { path: ':scheduleId/edit', component: AddSchedule },
         ],
       },
     ],

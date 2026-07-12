@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { form, FormField, required } from '@angular/forms/signals';
 import { Card } from '../core/card';
 import { MarketScheduleFacade } from './market-schedule.facade';
@@ -25,7 +25,7 @@ type DayEntry = { day: string; startTime: string; endTime: string };
     <mm-card>
       <form (submit)="submit($event)">
         <div class="flex items-center justify-between">
-          <p class="kicker">Nouveau marché</p>
+          <p class="kicker">{{ isEditing ? 'Modifier le marché' : 'Nouveau marché' }}</p>
           <a routerLink="/dashboard/markets" class="text-sm font-bold text-brand no-underline">Annuler</a>
         </div>
         <h1 class="mt-2 text-2xl leading-tight">Où et quand ?</h1>
@@ -162,7 +162,7 @@ type DayEntry = { day: string; startTime: string; endTime: string };
         </div>
 
         <button type="submit" class="mt-6 flex w-full max-w-xs mx-auto justify-center" [disabled]="cannotSubmit()">
-          Ajouter le marché ✓
+          {{ isEditing ? 'Enregistrer' : 'Ajouter le marché ✓' }}
         </button>
       </form>
     </mm-card>
@@ -170,14 +170,31 @@ type DayEntry = { day: string; startTime: string; endTime: string };
 })
 export class AddSchedule {
   private readonly markets = inject(MarketScheduleFacade);
+  private readonly route = inject(ActivatedRoute);
+
+  private readonly editing = this.markets
+    .schedules()
+    .find((schedule) => schedule.scheduleId === this.route.snapshot.paramMap.get('scheduleId'));
+  protected readonly isEditing = this.editing !== undefined;
 
   protected readonly allDays = DAYS;
-  protected readonly days = signal<DayEntry[]>([]);
+  protected readonly days = signal<DayEntry[]>(
+    this.editing?.days.map((day) => ({ day: day.day, startTime: day.startTime ?? '', endTime: day.endTime ?? '' })) ?? [],
+  );
 
-  protected readonly fields = form(signal({ name: '', streetAddress: '', codePostal: '', town: '', pitch: '' }), (path) => {
-    required(path.name);
-    required(path.town);
-  });
+  protected readonly fields = form(
+    signal({
+      name: this.editing?.market.name ?? '',
+      streetAddress: this.editing?.market.streetAddress ?? '',
+      codePostal: this.editing?.market.codePostal ?? '',
+      town: this.editing?.market.town ?? '',
+      pitch: this.editing?.market.pitch ?? '',
+    }),
+    (path) => {
+      required(path.name);
+      required(path.town);
+    },
+  );
 
   protected readonly rows = computed(() =>
     [...this.days()]
@@ -227,7 +244,7 @@ export class AddSchedule {
       return;
     }
     const { name, streetAddress, codePostal, town, pitch } = this.fields().value();
-    this.markets.registerSchedule({
+    const schedule = {
       market: {
         name: name.trim(),
         streetAddress: streetAddress.trim() || undefined,
@@ -240,7 +257,12 @@ export class AddSchedule {
         startTime: day.startTime || undefined,
         endTime: day.endTime || undefined,
       })),
-      frequency: { weeks: 1 },
-    });
+      frequency: this.editing?.frequency ?? { weeks: 1 },
+    };
+    if (this.editing) {
+      this.markets.amendSchedule(this.editing.scheduleId, schedule);
+    } else {
+      this.markets.registerSchedule(schedule);
+    }
   }
 }
