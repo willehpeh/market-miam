@@ -74,6 +74,17 @@ export function marketScheduleViewsContract(name: string, create: () => Store): 
       ]);
     });
 
+    it('amends a schedule in place, preserving its declared absences', async () => {
+      await store.recordSchedule(schedule({ scheduleId: 'a' }), 'v1');
+      await store.recordAbsence('a', 'v1', { from: '2026-07-20', to: '2026-07-27' });
+      await store.amendSchedule(schedule({ scheduleId: 'a', days: [{ day: 'WED' }], frequency: 'once' }), 'v1');
+
+      const { schedules } = await store.forVendor('v1');
+      expect(schedules[0].days).toEqual([{ day: 'WED' }]);
+      expect(schedules[0].frequency).toEqual('once');
+      expect(schedules[0].absences).toEqual([{ from: '2026-07-20', to: '2026-07-27' }]);
+    });
+
     it('clears all schedules', async () => {
       await store.recordSchedule(schedule(), 'v1');
       await store.clear();

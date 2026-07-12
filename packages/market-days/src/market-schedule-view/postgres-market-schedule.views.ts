@@ -30,6 +30,14 @@ export class PostgresMarketScheduleViews implements MarketScheduleViews, MarketS
     );
   }
 
+  async amendSchedule(schedule: MarketScheduleView, vendorId: string): Promise<void> {
+    await this.db.query(
+      `UPDATE market_schedule_views SET schedule = schedule || $3::jsonb
+       WHERE vendor_id = $1 AND schedule_id = $2`,
+      [vendorId, schedule.scheduleId, JSON.stringify(schedule)],
+    );
+  }
+
   async cancelSchedule(scheduleId: string, vendorId: string): Promise<void> {
     await this.db.query(
       'DELETE FROM market_schedule_views WHERE vendor_id = $1 AND schedule_id = $2',
