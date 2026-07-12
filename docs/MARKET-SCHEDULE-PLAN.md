@@ -43,7 +43,7 @@ Commits: `17fe8a1` (1) · `7de18ff` (2–5) · `3e5e451` (6–7). Spec: 32 tests
 ## Next / not done
 
 - ~~**No HTTP controller** dispatches `RegisterMarketSchedule`.~~ **Done** — `POST /market-schedules` (`market-schedule.controller.ts`), JWT-auth'd, vendorId from `@CurrentVendor()`. Spec `market-schedule.spec.ts`: 201 + two 400s. No read-back (no query side yet); add GET when the read model lands.
-- **Upcoming market days slice** — design resolved below. Two halves: a **write half** (add cancel + skip so the view can retract — without them it asserts future attendance it can never correct) and a **read half** (forward-looking read model). Reframed away from "schedule→market-day materialisation": no processor, no eager MarketDay events; market-days stay lazily born on `PlanItemsForMarketDay`. Past market days come from actual events, not the schedule.
+- **Upcoming market days slice** — design resolved below. Two halves: a **write half** (add cancel + declare-absence so the view can retract — without them it asserts future attendance it can never correct) and a **read half** (forward-looking read model). Reframed away from "schedule→market-day materialisation": no processor, no eager MarketDay events; market-days stay lazily born on `PlanItemsForMarketDay`. Past market days come from actual events, not the schedule.
 - **Separate later slices:** prepared-state overlay (join market-day events), past view (from actual events), pick-to-prepare HTTP endpoint (`PlanItemsForMarketDay` isn't exposed over HTTP yet).
 
 ## Rejected: eager MarketDay materialisation
@@ -55,7 +55,9 @@ Considered: on `Register`, eagerly emit the next 7–14 days of MarketDays; a ni
 - **Query-time expansion has none of that.** One source of truth (the schedule), `[today, today+56]` derived fresh per read; cancel/skip just change the next expansion. No cron, no processor, no drift.
 - **Flip condition:** a MarketDay needing state *before* the vendor touches it — customer pre-orders, day-attached reminders. Not in scope; the stream id is deterministic, so a future day is addressable without materialising. Even the prepared-state overlay left-joins *actual* events onto expanded occurrences — it doesn't want eager days.
 
-## Calendar list (Calendrier) — schedules read model (resolved, next slice)
+## Calendar list (Calendrier) — schedules read model (resolved, **built**)
+
+**Status: built** — all steps below shipped (pg adapter is `PostgresMarketScheduleViews`); build order kept for reference.
 
 **Distinct from "Upcoming market days" below.** This projects schedules **as-registered** (weekday + times + cadence) — no date expansion, no `Clock`. The mockup (`docs/design/calendar.png`) shows recurring schedules by weekday, never dates (the "PROCHAINE DATE DANS 2 J" header is out of scope). The occurrence model below (flat dated occurrences) is a separate, later read model; the two can coexist.
 
@@ -86,25 +88,25 @@ Naming: query `FindVendorSchedules` → `{ schedules: [] }`; endpoint `GET /api/
 
 ### Write half — schedules can now be retracted
 
-Cancel and skip pulled forward: an upcoming view with no way to retract shows attendance that may be false forever (schedules have no end date). `Register` already shipped; add two commands, **one event each** ([[feedback_single_event_per_command]]), both on the Calendar stream:
+Cancel and declare-absence pulled forward: an upcoming view with no way to retract shows attendance that may be false forever (schedules have no end date). `Register` already shipped; add two commands, **one event each** ([[feedback_single_event_per_command]]), both on the Calendar stream:
 
 | Command | Event | Effect |
 |---------|-------|--------|
 | `CancelMarketSchedule(scheduleId)` | `MarketScheduleCancelled` | Whole schedule gone; all future occurrences vanish. |
-| `SkipMarketDay(scheduleId, date)` | `MarketDaySkipped` | One occurrence excluded; schedule keeps recurring. |
+| `DeclareAbsence(scheduleId, date)` | `AbsenceDeclared` | Vendor absent from that occurrence; schedule keeps recurring. |
 
-- **`Calendar.apply()` is no longer a no-op** (reverses the earlier note). Aggregate tracks active schedules + per-schedule skipped dates; rehydrates from events (`MarketDay` pattern). Enforces: can't cancel/skip an unknown schedule, can't skip a non-occurrence, can't double-skip — all `DomainError` → 400 ([[project_domain_error_to_400]]).
-- **Occurrence logic lives on the `Schedule` VO** (`occursOn(date)`, `occurrencesWithin(from, to)`), shared by the aggregate (skip validation) and the read model (expansion) — no duplicated cadence math.
-- HTTP: `DELETE /market-schedules/:scheduleId` (cancel), `DELETE /market-schedules/:scheduleId/occurrences/:date` (skip).
-- *Open: `MarketDaySkipped` overlaps the `MarketDay` aggregate name (lives on Calendar stream, not a market-day stream); rename to `ScheduledDaySkipped` if preferred.*
+- **`Calendar.apply()` is no longer a no-op** (reverses the earlier note). Aggregate tracks active schedules + per-schedule declared absences; rehydrates from events (`MarketDay` pattern). Enforces: can't cancel or declare absence on an unknown schedule, can't declare absence on a non-occurrence, can't declare the same absence twice — all `DomainError` → 400 ([[project_domain_error_to_400]]).
+- **Occurrence logic lives on the `Schedule` VO** (`occursOn(date)`, `occurrencesWithin(from, to)`), shared by the aggregate (absence validation) and the read model (expansion) — no duplicated cadence math.
+- HTTP: `DELETE /market-schedules/:scheduleId` (cancel), `POST /market-schedules/:scheduleId/absences` (declare absence; date in body). Declaring an absence *creates* state, so POST — not a DELETE on a computed occurrence.
+- *Named `DeclareAbsence`/`AbsenceDeclared` — vendor intent (a trader declaring an absence to the placier), and sidesteps the `MarketDay` aggregate-name collision. Aggregate state: per-schedule declared absences.*
 
 ### Read half — the read model
 
 | Branch | Decision |
 |--------|----------|
 | Source | Persisted read model mirroring `CatalogueViews` — in-mem + pg adapters, ISP-split read/write surfaces, projection + query handler, subscription registration. |
-| Projection | Keyed by `(vendorId, scheduleId)`. `Registered` upserts (re-register replaces); `Cancelled` deletes the row; `Skipped` appends to `skippedDates`. |
-| Query | `FindUpcomingMarketDays(vendorId)`; `Clock` supplies `today`; expand each record via `Schedule.occurrencesWithin`, subtract `skippedDates`; union; sort ascending. |
+| Projection | Keyed by `(vendorId, scheduleId)`. `Registered` upserts (re-register replaces); `Cancelled` deletes the row; `AbsenceDeclared` appends to `absences`. |
+| Query | `FindUpcomingMarketDays(vendorId)`; `Clock` supplies `today`; expand each record via `Schedule.occurrencesWithin`, subtract `absences`; union; sort ascending. |
 | Expansion | Window `[today, today+56]`. Cadence anchored at `startDate`'s week: emit `days[]` where `weeksSinceStart % weeks == 0`, dates `>= startDate`. Absent frequency = one-off (a real requirement): occurs only in `startDate`'s week. |
 | Shape | Flat chronological occurrences: `{ scheduleId, marketId, date, startTime?, endTime?, market: {name, town, codePostal, streetAddress?, pitch?} }`. No dedup on collision. |
 | Boundary | `date >= today` inclusive. Past scheduled dates drop out. NB "past = actual events" is not a pure temporal split — a **future** date can also have actual events once prepared; the overlay slice reconciles them. |
