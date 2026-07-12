@@ -5,19 +5,20 @@ import { ScheduleId } from './schedule/schedule-id';
 import { DateRange } from './date-range';
 import { NoSuchScheduleError } from './errors/no-such-schedule.error';
 import { ScheduleAlreadyRegisteredError } from './errors/schedule-already-registered.error';
+import { ImmutableMarketError } from './errors/immutable-market.error';
 import { Market } from '../market';
 
 export class Calendar extends Aggregate {
 
-  private _scheduleIds: string[] = [];
+  private _marketIds = new Map<string, string>();
 
   apply(event: CalendarEvent): void {
     switch (event.type) {
       case 'MarketScheduleRegistered':
-        this._scheduleIds.push(event.payload.scheduleId);
+        this._marketIds.set(event.payload.scheduleId, event.payload.market.id);
         break;
       case 'MarketScheduleCancelled':
-        this._scheduleIds = this._scheduleIds.filter(id => id !== event.payload.scheduleId);
+        this._marketIds.delete(event.payload.scheduleId);
         break;
     }
   }
@@ -46,10 +47,14 @@ export class Calendar extends Aggregate {
     if (!this.hasSchedule(scheduleId)) {
       throw new NoSuchScheduleError(`No schedule with ID ${ scheduleId }`);
     }
+    const marketSnapshot = market.snapshot();
+    if (this._marketIds.get(scheduleId) !== marketSnapshot.id) {
+      throw new ImmutableMarketError(`Cannot change the market of schedule ${ scheduleId }`);
+    }
     const event: MarketScheduleAmended = {
       type: 'MarketScheduleAmended',
       payload: {
-        market: market.snapshot(),
+        market: marketSnapshot,
         scheduleId,
         startDate,
         days,
@@ -85,6 +90,6 @@ export class Calendar extends Aggregate {
   }
 
   private hasSchedule(scheduleId: string): boolean {
-    return this._scheduleIds.includes(scheduleId);
+    return this._marketIds.has(scheduleId);
   }
 }

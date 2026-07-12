@@ -3,6 +3,7 @@ import {
   AmendMarketSchedule,
   AmendMarketScheduleHandler,
   Calendars,
+  ImmutableMarketError,
   NoSuchScheduleError,
   RegisterMarketScheduleHandler,
   VendorScopedEvents
@@ -57,5 +58,14 @@ describe('Amend Market Schedule', () => {
     await new RegisterMarketScheduleHandler(calendars).execute(TestRegisterMarketSchedule.simple());
 
     await expect(handler.execute(amend({ scheduleId: 'never-registered' }))).rejects.toThrow(NoSuchScheduleError);
+  });
+
+  it('rejects repointing the schedule to a different market', async () => {
+    const registered = TestRegisterMarketSchedule.simple();
+    await new RegisterMarketScheduleHandler(calendars).execute(registered);
+
+    await expect(
+      handler.execute(amend({ market: { ...registered.market, id: 'other-market' } })),
+    ).rejects.toThrow(ImmutableMarketError);
   });
 });

@@ -19,12 +19,13 @@ Was: `AddSchedule` (`:scheduleId/edit`) and `AddDish` (`:itemId/edit`) both reus
 
 **Guard, not a resolver** — the form reads the store directly, not `route.data`, so a resolver's return value would go unused; the not-found redirect is a one-line `UrlTree`. Each guard mirrors `authenticated`: warm the store only when cold (preserves an optimistic insert), hold the route on `toObservable(loading)` until the load settles, then admit if the target exists else `parseUrl` back to the list. Specs drive it with `RouterTestingHarness` + an async-filling fake; both guards at 100%.
 
-## 3. Enforce `marketId` immutability on amend — small, defense-in-depth
+## 3. Enforce `marketId` immutability on amend — small, **built**
 
-`AmendMarketSchedule` carries `market.id`; the aggregate uses whatever's sent — immutable **by convention** only. A buggy/rogue client could repoint a schedule's market, breaking the market-day stream key (`market-day-${date}-${vendorId}-${marketId}`).
+**Status: built** — `amendMarketSchedule` rejects a differing market id with `ImmutableMarketError` (→ 400 via the global filter).
 
-- `Calendar.apply()` tracks `scheduleId → marketId` (new case on `Registered`/`Amended`; amend has no `apply` case today).
-- `amendMarketSchedule` rejects a differing id → new `DomainError` → 400.
+Was: `AmendMarketSchedule` carries `market.id`; the aggregate used whatever was sent — immutable by convention only. A rogue/buggy client could repoint a schedule's market, breaking the market-day stream key (`market-day-${date}-${vendorId}-${marketId}`).
+
+`Calendar.apply()` now tracks `scheduleId → marketId` (a `Map`, set on `Registered`, dropped on `Cancelled`); `amendMarketSchedule` compares the incoming id against it and throws on mismatch. **No `Amended` apply-case** (the original sketch suggested one): amend enforces the id can't change, so `Registered` is the sole source — comparing against the birth id is also more robust than trusting a possibly-corrupted amend. calendar.ts + the error at 100%.
 
 ## 4. Customer/public upcoming view — slice, the read half's payoff
 
