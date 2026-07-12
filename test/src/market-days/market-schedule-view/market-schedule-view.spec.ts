@@ -74,21 +74,4 @@ describe('MarketScheduleView', () => {
     ]);
   });
 
-  it('replaces a re-registered schedule, keeping a single row', async () => {
-    const handler = new RegisterMarketScheduleHandler(calendars);
-    await handler.execute(TestRegisterMarketSchedule.simple());
-    await handler.execute(TestRegisterMarketSchedule.with({ days: [{ day: 'WED', startTime: '09:00', endTime: '13:00' }] }));
-
-    await subscription.poll();
-
-    expect(await views.forVendor('vendor-id')).toEqual({
-      schedules: [{
-        scheduleId: 'schedule-id',
-        market: TestRegisterMarketSchedule.simple().market,
-        startDate: '2023-09-08',
-        days: [{ day: 'WED', startTime: '09:00', endTime: '13:00' }],
-        frequency: { weeks: 1 }
-      }]
-    });
-  });
 });

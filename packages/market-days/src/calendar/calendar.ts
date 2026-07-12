@@ -4,6 +4,7 @@ import { Schedule } from './schedule/schedule';
 import { ScheduleId } from './schedule/schedule-id';
 import { DateRange } from './date-range';
 import { NoSuchScheduleError } from './errors/no-such-schedule.error';
+import { ScheduleAlreadyRegisteredError } from './errors/schedule-already-registered.error';
 import { Market } from '../market';
 
 export class Calendar extends Aggregate {
@@ -23,6 +24,9 @@ export class Calendar extends Aggregate {
 
   registerMarketSchedule(market: Market, schedule: Schedule): void {
     const { scheduleId, days, frequency, startDate } = schedule.snapshot();
+    if (this.hasSchedule(scheduleId)) {
+      throw new ScheduleAlreadyRegisteredError(`Schedule already registered with ID ${ scheduleId }`);
+    }
     const event: MarketScheduleRegistered = {
       type: 'MarketScheduleRegistered',
       payload: {
@@ -38,7 +42,7 @@ export class Calendar extends Aggregate {
   }
 
   cancelMarketSchedule(scheduleId: ScheduleId): void {
-    if (!this.hasSchedule(scheduleId)) {
+    if (!this.hasSchedule(scheduleId.value())) {
       throw new NoSuchScheduleError(`No schedule with ID ${ scheduleId.value() }`);
     }
     const event: MarketScheduleCancelled = {
@@ -50,7 +54,7 @@ export class Calendar extends Aggregate {
   }
 
   declareAbsence(scheduleId: ScheduleId, range: DateRange): void {
-    if (!this.hasSchedule(scheduleId)) {
+    if (!this.hasSchedule(scheduleId.value())) {
       throw new NoSuchScheduleError(`No schedule with ID ${ scheduleId.value() }`);
     }
     const event: AbsenceDeclared = {
@@ -61,7 +65,7 @@ export class Calendar extends Aggregate {
     this.raise(event);
   }
 
-  private hasSchedule(scheduleId: ScheduleId): boolean {
-    return this._scheduleIds.includes(scheduleId.value());
+  private hasSchedule(scheduleId: string): boolean {
+    return this._scheduleIds.includes(scheduleId);
   }
 }

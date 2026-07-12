@@ -4,7 +4,8 @@ import { TestRegisterMarketSchedule } from './test-data';
 import {
   Calendars,
   InvalidScheduleError,
-  RegisterMarketScheduleHandler
+  RegisterMarketScheduleHandler,
+  ScheduleAlreadyRegisteredError
 } from '@market-miam/market-days';
 import { EmptyValueError } from '@market-miam/common';
 import { InvalidPostalCodeError } from '@market-miam/market-days';
@@ -145,6 +146,12 @@ describe('Register Market Schedule', () => {
       type: 'MarketScheduleRegistered',
       payload: expect.objectContaining({ frequency: 'once' })
     })]);
+  });
+
+  it('rejects registering a schedule whose id is already registered', async () => {
+    await handler.execute(TestRegisterMarketSchedule.simple());
+
+    await expect(handler.execute(TestRegisterMarketSchedule.simple())).rejects.toThrow(ScheduleAlreadyRegisteredError);
   });
 
   it('should allow a day with a start time but no end time', async () => {
