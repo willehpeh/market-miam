@@ -10,7 +10,7 @@ Per-vendor public storefront at `{subdomain}.votreplateforme.fr`, rendering one 
 |---|---|---|
 | Header/footer — name, tagline, phone, cover | `VendorStorefrontViews.findByVendor` | built, reused — **wired (slice 1)** |
 | NOTRE CARTE — dishes | `CatalogueViews.forVendor` | built, reused (retired items already vanish from the view) |
-| PROCHAIN / PROCHAINS MARCHÉS | `FindUpcomingMarketDays(vendorId)` | **not built** — `docs/MARKET-SCHEDULE-PLAN.md` §"Upcoming market days" |
+| PROCHAIN / PROCHAINS MARCHÉS | `FindUpcomingMarketDays(vendorId)` | **built** (`docs/MARKET-SCHEDULE-PLAN.md` §"Upcoming market days") — vendor-authed route only; public exposure is slice 3 |
 | subdomain → vendorId | `subdomain_registry` table | **built (slice 1)** |
 
 Composition: `GET /public/storefront/:subdomain` (public, no auth) resolves the subdomain, fans out to the three read models, returns one `CustomerStorefront` DTO. SSR fetches a single URL. Read-time compute is confined to the start-time cutoff; everything else is a view read.
@@ -53,7 +53,7 @@ CustomerStorefront {
 
 ## Dependency
 
-Slice 3 (markets) is **blocked on** `docs/MARKET-SCHEDULE-PLAN.md` §"Upcoming market days": write half (`CancelMarketSchedule` / `SkipMarketDay`) + read half (`FindUpcomingMarketDays`). Slices 1–2 (storefront, catalogue) have no such dependency and ship first.
+**Slice 3 (markets) is no longer blocked** (verified 2026-07-15 against the code). The `docs/MARKET-SCHEDULE-PLAN.md` §"Upcoming market days" dependency shipped: read half (`FindUpcomingMarketDays` — real cadence expansion over a 56-day horizon + absence flagging, tested at every layer incl. a Postgres container) and write half (`CancelMarketSchedule` retires a whole schedule; **`DeclareAbsence`** — the plan's provisional "SkipMarketDay" — skips a day or range, single day = `from == to`). What remains is slice 3's own composition, **not** a market-schedule prerequisite: `FindUpcomingMarketDays` is exposed only on the vendor-authed `GET /market-schedules/upcoming`, so the public composite must fold it in (reuse the handler's expansion, don't duplicate). All three slices can now proceed independently.
 
 ## Build order — vertical tracer-bullet slices, outside-in TDD, review gate each
 
@@ -69,8 +69,8 @@ Proves the whole pipe DNS→SSR→api→resolve→view→render, thinnest path.
 5. Extend endpoint/DTO with `CatalogueViews.forVendor` dishes.
 6. Frontend NOTRE CARTE list + dish detail sheet (opened client-side from list data).
 
-**Slice 3 — markets (blocked; see Dependency).**
-7. Extend endpoint/DTO with `FindUpcomingMarketDays`; apply the start-time cutoff; `nextMarket = [0]`.
+**Slice 3 — markets (unblocked; the market-schedule dependency shipped — see Dependency).**
+7. Fold `upcomingMarkets` into the public `CustomerStorefront` (the expansion query is currently vendor-authed only — reuse its expansion, don't duplicate); apply the customer start-time cutoff; `nextMarket = [0]`.
 8. Frontend PROCHAIN MARCHÉ card + PROCHAINS MARCHÉS list (date badge, hours, address).
 
 ## Gotchas / open
@@ -89,7 +89,7 @@ Proves the whole pipe DNS→SSR→api→resolve→view→render, thinnest path.
 
 Possible next steps (unordered):
 - **Slice 2 — catalogue.** `CatalogueViews.forVendor` → DTO `dishes[]`; NOTRE CARTE list + client-side dish sheet. Extend `seedDev` with demo dishes.
-- **Slice 3 — markets.** Blocked on `docs/MARKET-SCHEDULE-PLAN.md` (`FindUpcomingMarketDays` + cancel/skip).
+- **Slice 3 — markets.** **Unblocked** — `FindUpcomingMarketDays` + `CancelMarketSchedule`/`DeclareAbsence` all shipped and tested. Remaining work is composition: expose the (vendor-authed) expansion on the public storefront — fold `upcomingMarkets` into `CustomerStorefront`, apply the customer start-time cutoff, `nextMarket = [0]`, render the cards.
 - **Styling / design pass.** Bring the tracer up to `docs/design/customer-frontend-*.png`; render the cover via `NgOptimizedImage` + Cloudinary loader.
 - **Real-time availability** (roadmap). Live dish sold-out/available (WS/SSE + signals) — introduces client state, likely NgRx per project convention.
 - **Ordering + payment** (later roadmap). Cart, customer auth, checkout, payment — the transactional turn that kept this on Angular.
