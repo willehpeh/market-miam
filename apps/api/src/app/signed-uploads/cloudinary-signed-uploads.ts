@@ -1,6 +1,6 @@
 import { Clock } from '@market-miam/common';
 import { cloudinarySignature } from './cloudinary-signature';
-import { SignedParams, SignedUpload, SignedUploads } from './signed-uploads';
+import { CloudinaryUploadParams, CloudinarySignedUpload, SignedUploads } from './signed-uploads';
 
 // The exact rendition the storefront renders (dashboard `<img>`). Eagerly generating it
 // during the upload materialises the derived asset before the browser requests it, so the
@@ -24,8 +24,8 @@ export class CloudinarySignedUploads extends SignedUploads {
     super();
   }
 
-  for(publicId: string): SignedUpload {
-    const params: SignedParams = {
+  for(publicId: string): CloudinarySignedUpload {
+    const params: CloudinaryUploadParams = {
       timestamp: Math.floor(new Date(this.clock.now().value()).getTime() / 1000),
       public_id: publicId,
       overwrite: true,

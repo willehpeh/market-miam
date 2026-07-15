@@ -3,7 +3,7 @@ import { CurrentVendor, JwtAuthGuard } from '@market-miam/auth-nestjs';
 import type { VerifiedVendor } from '@market-miam/auth';
 import { CommandGateway, QueryGateway } from '@market-miam/event-sourcing';
 import { AddItemToCatalogue, CatalogueView, ChangeItemPhoto, FindVendorCatalogue, ReviseItem } from '@market-miam/market-days';
-import { SignedUpload, SignedUploads } from '../signed-uploads';
+import { CloudinarySignedUpload, SignedUploads } from '../signed-uploads';
 
 function dishPhotoPublicId(vendorId: string, itemId: string): string {
   return `vendors/${vendorId}/dishes/${itemId}`;
@@ -28,7 +28,7 @@ export class CatalogueController {
   signPhotoUpload(
     @CurrentVendor() vendor: VerifiedVendor,
     @Body() body: { itemId: string },
-  ): SignedUpload {
+  ): CloudinarySignedUpload {
     // ponytail: reuses the cover-photo eager rendition. Warms the wrong size for a dish
     // card, so the first paint may race Cloudinary. Add a dish eager transform once the
     // form lands and the card rendition is known.

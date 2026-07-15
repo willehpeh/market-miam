@@ -1,4 +1,4 @@
-export interface SignedParams {
+export interface CloudinaryUploadParams {
   timestamp: number;
   public_id: string;
   overwrite: boolean;
@@ -8,13 +8,13 @@ export interface SignedParams {
   eager: string;
 }
 
-export interface SignedUpload {
+export interface CloudinarySignedUpload {
   cloudName: string;
   apiKey: string;
   signature: string;
-  params: SignedParams;
+  params: CloudinaryUploadParams;
 }
 
 export abstract class SignedUploads {
-  abstract for(publicId: string): SignedUpload;
+  abstract for(publicId: string): CloudinarySignedUpload;
 }

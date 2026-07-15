@@ -1,7 +1,7 @@
-import { SignedUpload, SignedUploads } from './signed-uploads';
+import { CloudinarySignedUpload, SignedUploads } from './signed-uploads';
 
 export class FakeSignedUploads extends SignedUploads {
-  for(publicId: string): SignedUpload {
+  for(publicId: string): CloudinarySignedUpload {
     return {
       cloudName: 'test-cloud',
       apiKey: 'test-key',

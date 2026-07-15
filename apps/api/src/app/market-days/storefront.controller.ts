@@ -8,7 +8,7 @@ import {
   SetStorefrontCoverPhoto,
   VendorStorefrontView,
 } from '@market-miam/market-days';
-import { SignedUpload, SignedUploads } from '../signed-uploads';
+import { CloudinarySignedUpload, SignedUploads } from '../signed-uploads';
 
 function coverPhotoPublicId(vendorId: string): string {
   return `vendors/${vendorId}/storefront/cover-photo`;
@@ -43,7 +43,7 @@ export class StorefrontController {
 
   @Post('cover-photo/signature')
   @UseGuards(JwtAuthGuard)
-  signCoverPhotoUpload(@CurrentVendor() vendor: VerifiedVendor): SignedUpload {
+  signCoverPhotoUpload(@CurrentVendor() vendor: VerifiedVendor): CloudinarySignedUpload {
     return this.signedUploads.for(coverPhotoPublicId(vendor.vendorId.value()));
   }
 
