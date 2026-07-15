@@ -1,15 +1,19 @@
 import { TokenVerifier } from './token-verifier';
 import type { VerifiedVendor } from './verified-vendor';
+import { VendorId } from '@market-miam/shared-kernel';
+import { Email } from '@market-miam/common';
+import { ConfigService } from '@nestjs/config';
 
-/**
- * A verifier that trusts a preset vendor regardless of the token. Used for the
- * dev runtime (fake auth, scoped to a configured vendor) and as a test double.
- * Never wire this in production — real requests must go through a verifier that
- * validates the credential (e.g. {@link Auth0TokenVerifier}).
- */
 export class StaticTokenVerifier extends TokenVerifier {
   constructor(private readonly vendor: VerifiedVendor) {
     super();
+  }
+
+  static forDevelopment(config: ConfigService): StaticTokenVerifier {
+    return new StaticTokenVerifier({
+      vendorId: new VendorId(config.get<string>('DEV_VENDOR_ID') ?? 'dev-vendor'),
+      email: new Email(config.get<string>('DEV_VENDOR_EMAIL') ?? 'dev@local.test')
+    });
   }
 
   verify(): Promise<VerifiedVendor> {
