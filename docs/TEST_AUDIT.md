@@ -126,7 +126,7 @@ Fakes-at-boundaries and event assertions are **not** findings.
 | `event-sourcing/in-memory-data-keys.contract.spec.ts` | 7 | 5 | behavioural | 1 (L) |
 | `event-sourcing/in-memory-event-store.contract.spec.ts` | 17 | 5 | behavioural | — |
 | `event-sourcing/in-memory-events.contract.spec.ts` | 4 | 5 | behavioural | — |
-| `event-sourcing/message-context.event-store.contract.spec.ts` | 17 | 5 | behavioural | — |
+| `event-sourcing/lineage.event-store.contract.spec.ts` | 17 | 5 | behavioural | — |
 | `event-sourcing/polling-subscription.contract.spec.ts` | 6 | 5 | behavioural | 1 (L) |
 
 #### event-sourcing/core
@@ -135,7 +135,7 @@ Fakes-at-boundaries and event assertions are **not** findings.
 |---|---:|:---:|---|---|
 | `event-sourcing/checkpointed-projection.decorator.spec.ts` | 3 | 4 | mostly-behavioural | — |
 | `event-sourcing/shredding.event-store.spec.ts` | 10 | 4 | mostly-behavioural | 2 (LM) |
-| `event-sourcing/message-context.spec.ts` | 1 | 5 | behavioural | — |
+| `event-sourcing/lineage.spec.ts` | 1 | 5 | behavioural | — |
 
 #### event-sourcing/postgres-container
 
@@ -211,7 +211,7 @@ Fakes-at-boundaries and event assertions are **not** findings.
 | Spec | Tests | Score | Verdict | Coupling findings |
 |---|---:|:---:|---|---|
 | `api/src/app/token-verifier.factory.spec.ts` | 2 | 3 | mixed | 2 (LM) |
-| `api/src/app/message-context/message-context.spec.ts` | 1 | 5 | behavioural | — |
+| `api/src/app/lineage/lineage.spec.ts` | 1 | 5 | behavioural | — |
 | `api/src/app/signed-uploads/cloudinary-signature.spec.ts` | 2 | 5 | behavioural | — |
 | `api/src/app/signed-uploads/cloudinary-signed-uploads.spec.ts` | 3 | 5 | behavioural | 1 (L) |
 
@@ -370,7 +370,7 @@ focused on its own event payload and invariants.
 | Theme | Files | Recommendation |
 |---|---|---|
 | **Tracing: payload-blind span + records-exception** *(med)* | `command-dispatch-tracing`, `query-dispatch-tracing`, `tracing.event-handler`, `storefront-consumer-tracing` | Extract the blind-span + records-exception invariants into **one shared tracing-wrapper contract**; each spec asserts only its span name + unique attributes. `storefront-consumer-tracing` shrinks to a "handler is wrapped at all" smoke test. |
-| **Correlation/causation propagation** *(med)* | `event-sourcing/message-context`, `api/message-context`, `command-dispatch-tracing`, `vendor-registration`, `storefront-opener` | Keep the core unit + **one** end-to-end propagation test as canonical. In the per-flow specs keep only the flow-specific causation edge (e.g. opened caused-by registered); drop generic "stamps correlation/causation". |
+| **Correlation/causation propagation** *(med)* | `event-sourcing/lineage`, `api/lineage`, `command-dispatch-tracing`, `vendor-registration`, `storefront-opener` | Keep the core unit + **one** end-to-end propagation test as canonical. In the per-flow specs keep only the flow-specific causation edge (e.g. opened caused-by registered); drop generic "stamps correlation/causation". |
 | **Frontend cover-photo upload flow** *(med)* | `storefront-form`, `storefront`, `cloudinary.photo-uploads` | Layering is defensible (primitive/service/component). Keep the raw POST in `cloudinary.photo-uploads`, orchestration in `storefront` (service); in `storefront-form` keep only component concerns (uploading state, size validation, error surfacing) and stub the service. |
 | **Storefront projection / view read model** *(low)* | `vendor-storefront-view`, `storefront-projection`, `storefront-view` | Keep the API split (projection = write/polling; view = read/404). Trim the domain `vendor-storefront-view` overlap so it proves only projection event-handling. |
 | **Cloudinary signing primitive** *(low)* | `cloudinary-signature`, `cloudinary-signed-uploads`, `storefront-cover-photo-signature` | Keep `cover-photo-signature` on vendor-scoping + event wiring; rely on `cloudinary-signed-uploads` for "signature covers exactly the params". |
@@ -385,7 +385,7 @@ narrowed to their layer's marginal risk.
 
 | Theme | Files | Note |
 |---|---|---|
-| **Event-store port contract** *(med — drift)* | `in-memory-event-store.contract`, `message-context.event-store.contract` | Both assert the **same 17 behaviours verbatim**. Keep the reuse but drive both from a **single shared contract factory** (avoid hand-copied drift); narrow the message-context spec to what the wrapper *adds* (correlation/causation). |
+| **Event-store port contract** *(med — drift)* | `in-memory-event-store.contract`, `lineage.event-store.contract` | Both assert the **same 17 behaviours verbatim**. Keep the reuse but drive both from a **single shared contract factory** (avoid hand-copied drift); narrow the lineage spec to what the wrapper *adds* (correlation/causation). |
 | **Vendor storefront views contract** *(med — drift)* | `in-memory-vendor-storefront-views.contract`, `postgres-vendor-storefront-views.container`, `vendor-storefront-view` | Identical **8-behaviour** set across in-memory + Postgres — enforce a single source. Keep the Postgres run (real SQL/transaction semantics); trim the domain spec to projection-wiring only. |
 | **Subscription polling / dispatch** *(med)* | `polling-subscription.contract`, `postgres-subscription.container`, `api/subscriptions` | In-memory contract owns dispatch/checkpoint semantics. **Trim the Postgres container to Postgres-only risk** (LISTEN/NOTIFY wakeup, real checkpoint persistence); delete re-asserted ordering/redelivery. `api/subscriptions` keeps orchestration (backoff, drain). |
 | **Rebuild clears read model + replays** *(med)* | `api/subscriptions`, `storefront-rebuild`, `transactional-projection.container` | Keep the generic mechanic in `subscriptions`, atomicity in the container spec; narrow `storefront-rebuild` to storefront-specific outcomes (orphan-row removal, final content). |

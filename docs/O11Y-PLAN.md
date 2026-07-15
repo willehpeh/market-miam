@@ -59,7 +59,7 @@ Synthetic for mechanism, real-domain only for content-bearing spans:
 Default is rich, not minimal: attach any non-PII context in hand — high-cardinality domain context is what `BubbleUp`/`group by` need. "No speculative surface" is about code surface (facades, methods that rot), not data; span attributes don't transfer.
 
 Two seams keep richness from costing purity or leaking PII:
-- **Bus/store span** — opens the event from ambient `MessageContext` metadata + message constructor name (`command.name`, `event.type`, `vendor.id`, correlation/causation). Structurally blind to message fields → cannot serialize a payload (no `JSON.stringify`, no accidental `email`).
+- **Bus/store span** — opens the event from ambient `Lineage` metadata + message constructor name (`command.name`, `event.type`, `vendor.id`, correlation/causation). Structurally blind to message fields → cannot serialize a payload (no `JSON.stringify`, no accidental `email`).
 - **Command handler** — application-layer seam holding command, resulting state, emitted event. Domain attributes added here explicitly, one `setAttribute` at a time. Pure domain packages never import OTel.
 
 No automatic serialization path anywhere: every attribute is a deliberate, reviewable line, default empty, opt-in per field. Prevents accidental bulk leakage (dumping a whole command/event); does not prevent a deliberate mistake (explicitly stamping `email`) — that is caught by review against this policy.

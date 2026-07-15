@@ -9,7 +9,7 @@ Living plan for the vendor-registration vertical slice + platform work
 Vendor registration is wired end to end and **durable**:
 
 - **Frontend** (`vendor-frontend`): `register()` → `POST /api/vendors`, fires on `LoginSuccess`; Auth0 (bearer in prod, faked in dev); guarded `/dashboard` after login (port/facade guard over a three-value `AuthStatus`). Dashboard renders the storefront via `GET /api/storefront` with a bounded 404-retry that absorbs projection lag.
-- **API** (`apps/api`): auth-guarded `POST /api/vendors`, `PUT /storefront`, `GET /storefront`; a root message context stamps `correlationId`/`causationId` on appended events.
+- **API** (`apps/api`): auth-guarded `POST /api/vendors`, `PUT /storefront`, `GET /storefront`; a root lineage stamps `correlationId`/`causationId` on appended events.
 - **Store**: **Postgres in prod, in-memory in tests** — `EventSourcingModule.forRoot('postgres' | 'memory')`; `PostgresEventStore` + `PostgresCheckpoint` + LISTEN/NOTIFY + migrate-on-boot, proven live. The four ports (`EventStore`/`Events`/`Checkpoint`/`Subscription`) have adapter-agnostic contract tests.
 - **Storefront slice**: registering a vendor opens their storefront — `StorefrontOpener` (`@CheckpointedProcessor`) reacts to `VendorRegistered` → `OpenStorefront` → `StorefrontOpened` → `VendorStorefrontViewProjection` materialises the view. Discovered and driven by the `Subscriptions` background poller (`POLLING_ENABLED`-gated; tests pump `drain()`); a lint rule enforces `implements` ⇔ decorator.
 - **Observability** (ADR 0026): producer + consumer tracing live end to end — `O11Y-PLAN.md`.

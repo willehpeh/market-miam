@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Command, CommandBus } from '@nestjs/cqrs';
 import { SpanStatusCode, trace } from '@opentelemetry/api';
-import { CommandGateway, MessageContext } from '@market-miam/event-sourcing';
+import { CommandGateway, Lineage } from '@market-miam/event-sourcing';
 
 const tracer = trace.getTracer('command-gateway');
 
@@ -9,17 +9,17 @@ const tracer = trace.getTracer('command-gateway');
 export class TracingCommandGateway implements CommandGateway {
   constructor(
     private readonly commandBus: CommandBus,
-    private readonly context: MessageContext,
+    private readonly lineage: Lineage,
   ) {}
 
   execute<R>(command: Command<R>): Promise<R> {
     return tracer.startActiveSpan(command.constructor.name, async (span) => {
-      const lineage = this.context.current();
+      const ids = this.lineage.current();
       span.setAttributes({
         'command.name': command.constructor.name,
-        ...(lineage && {
-          'app.correlation_id': lineage.correlationId,
-          'app.causation_id': lineage.causationId,
+        ...(ids && {
+          'app.correlation_id': ids.correlationId,
+          'app.causation_id': ids.causationId,
         }),
       });
       try {

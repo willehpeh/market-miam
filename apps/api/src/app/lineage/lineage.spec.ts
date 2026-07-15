@@ -4,7 +4,7 @@ import request from 'supertest';
 import { EventStore } from '@market-miam/event-sourcing';
 import { bootApiTestApp } from '../testing/api-test-app';
 
-describe('Message context through the request pipeline', () => {
+describe('Lineage through the request pipeline', () => {
   let app: INestApplication;
 
   beforeEach(async () => {

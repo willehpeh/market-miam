@@ -6,7 +6,7 @@ polling subscriptions running projections and processors, auth, signed image
 uploads (Cloudinary), and OpenTelemetry tracing.
 
 Key areas under `src/app/`: `event-sourcing` (adapters, subscriptions),
-`market-days` (controllers, projections), `database`, `message-context`
+`market-days` (controllers, projections), `database`, `lineage`
 (correlation/causation), `signed-uploads`.
 
 ```sh

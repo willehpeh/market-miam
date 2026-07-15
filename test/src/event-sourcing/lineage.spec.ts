@@ -1,18 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import {
   InMemoryEventStore,
-  MessageContext,
-  MessageContextDispatcher,
-  MessageContextEventStore
+  Lineage,
+  LineageDispatcher,
+  LineageEventStore
 } from '@market-miam/event-sourcing';
 
-describe('Message context propagation', () => {
+describe('Lineage propagation', () => {
   it('stamps one root id as both correlationId and causationId onto events appended during a root dispatch', async () => {
     const ids = stubIds(['root-1']);
     const store = new InMemoryEventStore();
-    const context = new MessageContext();
-    const contextualStore = new MessageContextEventStore(store, context);
-    const dispatcher = new MessageContextDispatcher(context, ids);
+    const context = new Lineage();
+    const contextualStore = new LineageEventStore(store, context);
+    const dispatcher = new LineageDispatcher(context, ids);
 
     await dispatcher.dispatch(async () => {
       await contextualStore.append(

@@ -10,7 +10,7 @@ import {
   EventStore,
   InMemoryDataKeys,
   InMemoryEventStore,
-  MessageContext,
+  Lineage,
   PiiFields,
   PostgresCheckpoint,
   PostgresDataKeys,
@@ -22,7 +22,7 @@ import {
 } from '@market-miam/event-sourcing';
 import { ApplicationEventStore } from './application.event-store';
 import { masterKey } from './master-key';
-import { MessageContextModule } from '../message-context/message-context.module';
+import { LineageModule } from '../lineage/lineage.module';
 import { TracingCommandGateway } from './tracing.command-gateway';
 import { TracingQueryGateway } from './tracing.query-gateway';
 import {
@@ -42,9 +42,9 @@ export type Persistence = 'postgres' | 'memory';
 const applicationEventStore = (piiFields: PiiFields, store: Type<EventStore & Events>): Provider[] => [
   {
     provide: EventStore,
-    useFactory: (inner: EventStore & Events, keys: DataKeys, context: MessageContext) =>
-      new ApplicationEventStore(inner, keys, piiFields, context),
-    inject: [store, DataKeys, MessageContext],
+    useFactory: (inner: EventStore & Events, keys: DataKeys, lineage: Lineage) =>
+      new ApplicationEventStore(inner, keys, piiFields, lineage),
+    inject: [store, DataKeys, Lineage],
   },
   { provide: Events, useExisting: EventStore },
 ];
@@ -136,7 +136,7 @@ export class EventSourcingModule implements OnApplicationShutdown {
     return {
       module: EventSourcingModule,
       global: true,
-      imports: [CqrsModule, DiscoveryModule, MessageContextModule],
+      imports: [CqrsModule, DiscoveryModule, LineageModule],
       providers: [...adapters, ...core],
       // PostgresUnitOfWork is provided (and needed by MarketDaysModule's pg view-store)
       // only on the postgres profile — exporting it on 'memory' would reference an

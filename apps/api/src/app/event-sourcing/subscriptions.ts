@@ -7,14 +7,14 @@ import {
   EventHandler,
   Events,
   InMemoryCheckpoint,
-  MessageContext,
+  Lineage,
   PollingSubscription,
   Projection,
   Subscription,
   UnitOfWork
 } from '@market-miam/event-sourcing';
 import { TracingEventHandler } from './tracing.event-handler';
-import { ContinuationContextHandler } from '../message-context/continuation-context.handler';
+import { ContinuedLineageHandler } from '../lineage/continued-lineage.handler';
 import { pollSchedule } from './poll-schedule';
 
 export const POLLING_ENABLED = Symbol('POLLING_ENABLED');
@@ -54,7 +54,7 @@ export class Subscriptions implements OnApplicationBootstrap, OnApplicationShutd
   constructor(
     private readonly discovery: DiscoveryService,
     private readonly events: Events,
-    private readonly context: MessageContext,
+    private readonly lineage: Lineage,
     @Inject(POLLING_ENABLED) private readonly pollingEnabled: boolean,
     @Optional() @Inject(POLL_INTERVAL) private readonly pollIntervalMs?: number,
     @Optional() @Inject(EVENT_NOTIFICATIONS) private readonly notifications: Observable<void> = EMPTY,
@@ -115,7 +115,7 @@ export class Subscriptions implements OnApplicationBootstrap, OnApplicationShutd
       checkpoints.add(name);
       const checkpoint = this.checkpointFor(name);
       const driven =
-        kind === 'processor' ? new ContinuationContextHandler(handler, this.context) : handler;
+        kind === 'processor' ? new ContinuedLineageHandler(handler, this.lineage) : handler;
       const subscription = new PollingSubscription(
         this.events,
         new TracingEventHandler(driven),

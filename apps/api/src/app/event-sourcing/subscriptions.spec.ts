@@ -9,7 +9,7 @@ import {
   EventHandler,
   Events,
   InMemoryCheckpoint,
-  MessageContext,
+  Lineage,
   Processor,
   Projection,
   StoredEvent,
@@ -102,7 +102,7 @@ describe('Subscriptions', () => {
       imports: [DiscoveryModule],
       providers: [
         Subscriptions,
-        MessageContext,
+        Lineage,
         StorefrontProjection,
         CollidingProjection,
         { provide: Events, useValue: noEvents },
@@ -129,7 +129,7 @@ describe('Subscriptions', () => {
       imports: [DiscoveryModule],
       providers: [
         Subscriptions,
-        MessageContext,
+        Lineage,
         StorefrontProjection,
         { provide: Events, useValue: countingEvents },
         { provide: POLLING_ENABLED, useValue: true },
@@ -162,7 +162,7 @@ describe('Subscriptions', () => {
       imports: [DiscoveryModule],
       providers: [
         Subscriptions,
-        MessageContext,
+        Lineage,
         StorefrontProjection,
         { provide: Events, useValue: countingEvents },
         { provide: POLLING_ENABLED, useValue: true },
@@ -196,7 +196,7 @@ describe('Subscriptions', () => {
       imports: [DiscoveryModule],
       providers: [
         Subscriptions,
-        MessageContext,
+        Lineage,
         StorefrontProjection,
         { provide: Events, useValue: alwaysFails },
         { provide: POLLING_ENABLED, useValue: true },
@@ -239,7 +239,7 @@ describe('Subscriptions', () => {
       imports: [DiscoveryModule],
       providers: [
         Subscriptions,
-        MessageContext,
+        Lineage,
         StorefrontProjection,
         { provide: Events, useValue: flakyEvents },
         { provide: POLLING_ENABLED, useValue: true },
@@ -280,7 +280,7 @@ describe('Subscriptions', () => {
       imports: [DiscoveryModule],
       providers: [
         Subscriptions,
-        MessageContext,
+        Lineage,
         Recorder,
         { provide: Events, useValue: backlog },
         { provide: POLLING_ENABLED, useValue: false },
@@ -314,7 +314,7 @@ describe('Subscriptions', () => {
       imports: [DiscoveryModule],
       providers: [
         Subscriptions,
-        MessageContext,
+        Lineage,
         Recorder,
         { provide: Events, useValue: backlog },
         { provide: POLLING_ENABLED, useValue: false },
@@ -357,7 +357,7 @@ describe('Subscriptions', () => {
       imports: [DiscoveryModule],
       providers: [
         Subscriptions,
-        MessageContext,
+        Lineage,
         SideEffectProcessor,
         { provide: Events, useValue: backlog },
         { provide: POLLING_ENABLED, useValue: false },
@@ -379,7 +379,7 @@ describe('Subscriptions', () => {
       imports: [DiscoveryModule],
       providers: [
         Subscriptions,
-        MessageContext,
+        Lineage,
         Recorder,
         { provide: Events, useValue: noEvents },
         { provide: POLLING_ENABLED, useValue: false },
@@ -398,7 +398,7 @@ describe('Subscriptions', () => {
       imports: [DiscoveryModule],
       providers: [
         Subscriptions,
-        MessageContext,
+        Lineage,
         StorefrontProjection,
         Recorder,
         { provide: Events, useValue: noEvents },

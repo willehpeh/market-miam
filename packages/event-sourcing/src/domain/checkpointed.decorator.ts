@@ -8,7 +8,7 @@ const checkpoints = new WeakMap<object, CheckpointMetadata>();
 // durable checkpoint name — the subscription's resume key. Keep it stable:
 // renaming orphans the old checkpoint and replays the handler from zero. The
 // kind tells Subscriptions how to drive it: a processor dispatches commands, so it
-// needs the continuation message-context wrapping and is not replay-safe.
+// needs the continuation lineage wrapping and is not replay-safe.
 export function CheckpointedProjection(checkpointName: string): ClassDecorator {
   return (target) => {
     checkpoints.set(target, { name: checkpointName, kind: 'projection' });

@@ -1,13 +1,13 @@
 import { DomainEvent } from '../domain/domain-event';
 import { Events } from '../ports/events';
 import { EventStore } from '../ports/event-store';
-import { MessageContext } from '../ports/message-context';
+import { Lineage } from '../ports/lineage';
 import { StoredEvent } from '../domain/stored-event';
 
-export class MessageContextEventStore extends EventStore implements Events {
+export class LineageEventStore extends EventStore implements Events {
   constructor(
     private readonly inner: EventStore & Events,
-    private readonly context: MessageContext,
+    private readonly lineage: Lineage,
   ) {
     super();
   }
@@ -18,11 +18,11 @@ export class MessageContextEventStore extends EventStore implements Events {
     expectedStreamPosition: number,
     metadata?: Record<string, unknown>,
   ): Promise<void> {
-    // Stamp the active correlation/causation context onto the append. Outside a
-    // dispatch there is no context, so add nothing — staying a faithful
-    // EventStore that fabricates no empty metadata where the base store has none.
-    const context = this.context.current();
-    const merged = metadata || context ? { ...metadata, ...context } : undefined;
+    // Stamp the active lineage onto the append. Outside a dispatch there is no
+    // lineage, so add nothing — staying a faithful EventStore that fabricates
+    // no empty metadata where the base store has none.
+    const ids = this.lineage.current();
+    const merged = metadata || ids ? { ...metadata, ...ids } : undefined;
     return this.inner.append(streamId, events, expectedStreamPosition, merged);
   }
 
