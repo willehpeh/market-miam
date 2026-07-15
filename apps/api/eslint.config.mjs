@@ -16,7 +16,7 @@ export default [
               name: '@nestjs/cqrs',
               importNames: ['CommandBus'],
               message:
-                'Dispatch commands through CommandGateway; only tracing.command-gateway.ts may import CommandBus.',
+                'Dispatch commands through CommandGateway; only tracing/command-gateway.ts may import CommandBus.',
             },
           ],
         },
@@ -24,7 +24,7 @@ export default [
     },
   },
   {
-    files: ['src/app/event-sourcing/tracing.command-gateway.ts'],
+    files: ['src/app/event-sourcing/tracing/command-gateway.ts'],
     rules: {
       'no-restricted-imports': 'off',
     },
