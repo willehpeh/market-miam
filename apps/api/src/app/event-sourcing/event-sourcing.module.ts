@@ -23,8 +23,8 @@ import {
 import { ApplicationEventStore } from './application.event-store';
 import { masterKey } from './master-key';
 import { LineageModule } from '../lineage/lineage.module';
-import { TracingCommandGateway } from './tracing.command-gateway';
-import { TracingQueryGateway } from './tracing.query-gateway';
+import { TracingCommandGateway } from './tracing/command-gateway';
+import { TracingQueryGateway } from './tracing/query-gateway';
 import {
   Subscriptions,
   CHECKPOINT_FACTORY,
@@ -32,7 +32,7 @@ import {
   POLL_INTERVAL,
   POLLING_ENABLED,
 } from './subscriptions';
-import { TracingPostgresNotifications } from './tracing.postgres-notifications';
+import { TracingPostgresNotifications } from './tracing/postgres-notifications';
 
 export type Persistence = 'postgres' | 'memory';
 

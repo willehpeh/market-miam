@@ -3,8 +3,8 @@ import { SpanStatusCode } from '@opentelemetry/api';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { VendorStorefrontView, VendorStorefrontViews } from '@market-miam/market-days';
-import { apiTestModule, bootApiTestApp, startApp } from '../testing/api-test-app';
-import { registerSpanCapture } from '../testing/span-capture';
+import { apiTestModule, bootApiTestApp, startApp } from '../../testing/api-test-app';
+import { registerSpanCapture } from '../../testing/span-capture';
 
 class FailingViews extends VendorStorefrontViews {
   findByVendor(): Promise<VendorStorefrontView | undefined> {

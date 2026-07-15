@@ -7,7 +7,7 @@ import {
   PiiFields,
   ShreddingEventStore,
 } from '@market-miam/event-sourcing';
-import { TracingEventStore } from './tracing.event-store';
+import { TracingEventStore } from './tracing/event-store';
 
 // The event store the application is wired to: a leaf adapter (in-memory or
 // postgres) wrapped in the cross-cutting layers — shredding (PII encryption),

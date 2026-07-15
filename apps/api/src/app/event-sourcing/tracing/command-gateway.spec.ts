@@ -4,8 +4,8 @@ import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { EMPTY, Observable } from 'rxjs';
 import { EventStore, InMemoryEventStore, StoredEvent } from '@market-miam/event-sourcing';
-import { apiTestModule, bootApiTestApp, fixedClock, startApp } from '../testing/api-test-app';
-import { registerSpanCapture } from '../testing/span-capture';
+import { apiTestModule, bootApiTestApp, fixedClock, startApp } from '../../testing/api-test-app';
+import { registerSpanCapture } from '../../testing/span-capture';
 
 class FailingEventStore extends EventStore {
   append(): Promise<void> {

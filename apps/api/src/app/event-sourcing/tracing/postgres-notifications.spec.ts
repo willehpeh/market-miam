@@ -2,8 +2,8 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import type { Client } from 'pg';
 import type { Logger } from '@nestjs/common';
 import { ListenStatus, PostgresNotifications } from '@market-miam/event-sourcing';
-import { TracingPostgresNotifications } from './tracing.postgres-notifications';
-import { registerSpanCapture } from '../testing/span-capture';
+import { TracingPostgresNotifications } from './postgres-notifications';
+import { registerSpanCapture } from '../../testing/span-capture';
 
 const exporter = registerSpanCapture();
 

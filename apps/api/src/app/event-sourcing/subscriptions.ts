@@ -13,7 +13,7 @@ import {
   Subscription,
   UnitOfWork
 } from '@market-miam/event-sourcing';
-import { TracingEventHandler } from './tracing.event-handler';
+import { TracingEventHandler } from './tracing/event-handler';
 import { ContinuedLineageHandler } from '../lineage/continued-lineage.handler';
 import { pollSchedule } from './poll-schedule';
 
