@@ -15,11 +15,13 @@ import {
   ChangeItemPriceHandler,
   ChangeItemPhotoHandler,
   EditStorefrontInformationHandler,
+  FindCustomerStorefrontHandler,
   FindVendorCatalogueHandler,
   FindVendorStorefrontHandler,
   FindVendorSchedulesHandler,
   FindUpcomingMarketDaysHandler,
   InMemoryCatalogueViews,
+  InMemorySubdomainRegistry,
   InMemoryMarketScheduleViews,
   InMemoryVendorStorefrontViews,
   MarketScheduleViewProjection,
@@ -30,6 +32,7 @@ import {
   OpenStorefrontHandler,
   PlanItemsForMarketDayHandler,
   PostgresMarketScheduleViews,
+  PostgresSubdomainRegistry,
   PostgresVendorStorefrontViews,
   RegisterMarketScheduleHandler,
   RegisterVendorHandler,
@@ -42,6 +45,7 @@ import {
   UnplanItemFromMarketDayHandler,
   Vendors,
   VendorScopedEvents,
+  SubdomainRegistry,
   VendorStorefrontViewProjection,
   VendorStorefrontViews,
   VendorStorefrontViewStore,
@@ -52,6 +56,7 @@ import { VendorsController } from './vendors.controller';
 import { StorefrontController } from './storefront.controller';
 import { CatalogueController } from './catalogue.controller';
 import { MarketScheduleController } from './market-schedule.controller';
+import { PublicStorefrontController } from './public-storefront.controller';
 import { VendorErasure } from './vendor-erasure';
 
 const clock = [{ provide: Clock, useClass: DateClock }];
@@ -98,6 +103,12 @@ const readModel = (persistence: Persistence): Provider[] => {
           },
           { provide: MarketScheduleViews, useExisting: PostgresMarketScheduleViews },
           { provide: MarketScheduleViewStore, useExisting: PostgresMarketScheduleViews },
+          {
+            provide: PostgresSubdomainRegistry,
+            useFactory: (uow: PostgresUnitOfWork) => new PostgresSubdomainRegistry(uow),
+            inject: [PostgresUnitOfWork],
+          },
+          { provide: SubdomainRegistry, useExisting: PostgresSubdomainRegistry },
         ]
       : [
           InMemoryVendorStorefrontViews,
@@ -109,6 +120,8 @@ const readModel = (persistence: Persistence): Provider[] => {
           InMemoryMarketScheduleViews,
           { provide: MarketScheduleViews, useExisting: InMemoryMarketScheduleViews },
           { provide: MarketScheduleViewStore, useExisting: InMemoryMarketScheduleViews },
+          InMemorySubdomainRegistry,
+          { provide: SubdomainRegistry, useExisting: InMemorySubdomainRegistry },
         ];
   return [
     ...views,
@@ -157,7 +170,7 @@ const commandHandlers = [
   OpenStorefrontHandler,
 ];
 
-const queryHandlers = [FindVendorStorefrontHandler, FindVendorCatalogueHandler, FindVendorSchedulesHandler, FindUpcomingMarketDaysHandler];
+const queryHandlers = [FindCustomerStorefrontHandler, FindVendorStorefrontHandler, FindVendorCatalogueHandler, FindVendorSchedulesHandler, FindUpcomingMarketDaysHandler];
 
 // EventStore / CommandGateway / QueryGateway (and the pg UnitOfWork) come from
 // the global EventSourcingModule.forRoot(...) at the composition root. persistence
@@ -167,7 +180,7 @@ export class MarketDaysModule {
   static forRoot(persistence: Persistence): DynamicModule {
     return {
       module: MarketDaysModule,
-      controllers: [VendorsController, StorefrontController, CatalogueController, MarketScheduleController],
+      controllers: [VendorsController, StorefrontController, CatalogueController, MarketScheduleController, PublicStorefrontController],
       providers: [
         ...clock,
         ...signedUploads,
