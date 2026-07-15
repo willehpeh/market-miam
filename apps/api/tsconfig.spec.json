@@ -5,7 +5,8 @@
     "types": ["node", "vitest/globals"],
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
-    "target": "es2021"
+    "target": "es2021",
+    "moduleResolution": "bundler"
   },
   "include": ["src/**/*.spec.ts", "src/**/testing/**/*.ts", "vitest.config.mts"]
 }
