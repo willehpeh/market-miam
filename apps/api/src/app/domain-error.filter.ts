@@ -7,7 +7,7 @@ export class DomainErrorFilter implements ExceptionFilter {
   catch(error: DomainError, host: ArgumentsHost): void {
     host.switchToHttp().getResponse<Response>().status(HttpStatus.BAD_REQUEST).json({
       statusCode: HttpStatus.BAD_REQUEST,
-      message: error.message,
+      message: `${error.name} - ${error.message}`,
     });
   }
 }
