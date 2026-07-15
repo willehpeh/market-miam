@@ -37,10 +37,14 @@ describe('PostgresPersistenceModule', () => {
         ConfigModule.forRoot({
           isGlobal: true,
           ignoreEnvFile: true,
+          skipProcessEnv: true,
           load: [
             () => ({
               DATABASE_CONNECTION_STRING: 'postgres://user:password@localhost:5432/nowhere',
               MASTER_KEY: randomBytes(32).toString('base64'),
+              CLOUDINARY_CLOUD_NAME: 'nowhere',
+              CLOUDINARY_API_KEY: 'key',
+              CLOUDINARY_API_SECRET: 'secret',
             }),
           ],
         }),
