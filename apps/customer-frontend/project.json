@@ -54,7 +54,24 @@
         "development": {
           "optimization": false,
           "extractLicenses": false,
-          "sourceMap": true
+          "sourceMap": true,
+          "fileReplacements": [
+            {
+              "replace": "apps/customer-frontend/src/environments/environment.ts",
+              "with": "apps/customer-frontend/src/environments/environment.development.ts"
+            }
+          ]
+        },
+        "testing": {
+          "optimization": false,
+          "extractLicenses": false,
+          "sourceMap": true,
+          "fileReplacements": [
+            {
+              "replace": "apps/customer-frontend/src/environments/environment.ts",
+              "with": "apps/customer-frontend/src/environments/environment.testing.ts"
+            }
+          ]
         }
       },
       "defaultConfiguration": "production"
@@ -77,7 +94,11 @@
     },
     "test": {
       "executor": "@angular/build:unit-test",
-      "options": {}
+      "options": {
+        "buildTarget": "customer-frontend:build:testing",
+        "setupFiles": ["apps/customer-frontend/src/test-setup.ts"],
+        "watch": false
+      }
     },
     "serve-static": {
       "continuous": true,
