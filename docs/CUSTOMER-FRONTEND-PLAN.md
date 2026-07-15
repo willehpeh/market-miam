@@ -1,6 +1,6 @@
 # Customer Frontend — Public Storefront (vitrine)
 
-Per-vendor public storefront at `{subdomain}.votreplateforme.fr`, rendering one vendor's storefront, catalogue, and upcoming markets. App: `apps/customer-frontend` (Angular SSR, currently a bare scaffold). Design: `docs/design/customer-frontend-1.png`, `-2.png`, `-show-dish.png`. Outside-in social TDD, thin vertical slices, backend-first ([[feedback_testing_approach]], [[feedback_incremental_steps_review_gates]]).
+Per-vendor public storefront at `{subdomain}.votreplateforme.fr`, rendering one vendor's storefront, catalogue, and upcoming markets. App: `apps/customer-frontend` (Angular SSR). Design: `docs/design/customer-frontend-1.png`, `-2.png`, `-show-dish.png`. Outside-in social TDD, thin vertical slices, backend-first ([[feedback_testing_approach]], [[feedback_incremental_steps_review_gates]]).
 
 ## Architecture (resolved)
 
@@ -8,10 +8,10 @@ Per-vendor public storefront at `{subdomain}.votreplateforme.fr`, rendering one 
 
 | Screen region | Source | Status |
 |---|---|---|
-| Header/footer — name, tagline, phone, cover | `VendorStorefrontViews.findByVendor` | built, reused |
+| Header/footer — name, tagline, phone, cover | `VendorStorefrontViews.findByVendor` | built, reused — **wired (slice 1)** |
 | NOTRE CARTE — dishes | `CatalogueViews.forVendor` | built, reused (retired items already vanish from the view) |
 | PROCHAIN / PROCHAINS MARCHÉS | `FindUpcomingMarketDays(vendorId)` | **not built** — `docs/MARKET-SCHEDULE-PLAN.md` §"Upcoming market days" |
-| subdomain → vendorId | `subdomain_registry` table | new (this plan) |
+| subdomain → vendorId | `subdomain_registry` table | **built (slice 1)** |
 
 Composition: `GET /public/storefront/:subdomain` (public, no auth) resolves the subdomain, fans out to the three read models, returns one `CustomerStorefront` DTO. SSR fetches a single URL. Read-time compute is confined to the start-time cutoff; everything else is a view read.
 
@@ -49,6 +49,7 @@ CustomerStorefront {
 - **Dish detail modal: no endpoint.** Opens client-side from `dishes[]`; "Disponible les jours de marché…" is static copy, not a data field.
 - **404 on unresolved subdomain.** Empty catalogue/schedule → empty arrays; missing cover → null (frontend renders the "photo du stand" placeholder).
 - **Composite query, thin controller.** One `FindCustomerStorefront(subdomain)` handler injects the `SubdomainRegistry` port + the view ports, resolves then composes the DTO, returns `undefined` on miss; `PublicStorefrontController` is one `execute()` + `null→404`. Subdomain resolution is a plain port method (`vendorFor`), **not** its own CQRS query. Fan-out + the start-time cutoff live in the handler, not the controller.
+- **Angular, not Astro.** Astro — already in the monorepo (`apps/website`) and a better raw fit for a static vitrine — was considered and **rejected**: the near-term roadmap (semi-real-time dish availability, then ordering + payment) makes this a transactional, stateful app, which is Angular's wheelhouse and consistent with `vendor-frontend`'s NgRx/Signal-Forms stack. Astro would need an island framework bolted in and likely a later rewrite. The CSS design system is portable either way, and `render.yaml` already wires the customer SSR node service.
 
 ## Dependency
 
@@ -56,7 +57,7 @@ Slice 3 (markets) is **blocked on** `docs/MARKET-SCHEDULE-PLAN.md` §"Upcoming m
 
 ## Build order — vertical tracer-bullet slices, outside-in TDD, review gate each
 
-**Slice 1 — resolve + storefront (the tracer bullet).**
+**Slice 1 — resolve + storefront (the tracer bullet). ✅ Shipped** — built in order 1 → 2 → 4 → 3, plus a dev seed; five commits (registry · endpoint · erasure · SSR · dev seed). Proven live at `localhost:4200/?subdomain=demo`.
 1. `subdomain_registry` migration (DDL only — empty table, PK + `UNIQUE(vendor_id)`; **no seed**, rows hand-inserted per env) + `SubdomainRegistry` port (`vendorFor`/`removeFor`) with Postgres/InMemory adapters.
 2. `GET /public/storefront/:subdomain` acceptance (RED): 404 on miss → storefront-view fields on hit. Public, exempt from the vendor auth guard.
 3. SSR: Angular resolver injects `REQUEST` → `Host` → subdomain (first-label split; `?subdomain=` fallback on localhost) → fetch → render header/footer. Response → TransferState via `provideClientHydration`; add `customer-frontend` env for `apiBaseUrl`.
@@ -65,12 +66,12 @@ Slice 3 (markets) is **blocked on** `docs/MARKET-SCHEDULE-PLAN.md` §"Upcoming m
 Proves the whole pipe DNS→SSR→api→resolve→view→render, thinnest path.
 
 **Slice 2 — catalogue.**
-4. Extend endpoint/DTO with `CatalogueViews.forVendor` dishes.
-5. Frontend NOTRE CARTE list + dish detail sheet (opened client-side from list data).
+5. Extend endpoint/DTO with `CatalogueViews.forVendor` dishes.
+6. Frontend NOTRE CARTE list + dish detail sheet (opened client-side from list data).
 
 **Slice 3 — markets (blocked; see Dependency).**
-6. Extend endpoint/DTO with `FindUpcomingMarketDays`; apply the start-time cutoff; `nextMarket = [0]`.
-7. Frontend PROCHAIN MARCHÉ card + PROCHAINS MARCHÉS list (date badge, hours, address).
+7. Extend endpoint/DTO with `FindUpcomingMarketDays`; apply the start-time cutoff; `nextMarket = [0]`.
+8. Frontend PROCHAIN MARCHÉ card + PROCHAINS MARCHÉS list (date badge, hours, address).
 
 ## Gotchas / open
 
@@ -79,3 +80,18 @@ Proves the whole pipe DNS→SSR→api→resolve→view→render, thinnest path.
 - **PII on a public surface by design.** storefront-view name/description/phone are shown (phone in the footer). Shredded vendor handled by erasure deleting the subdomain row, not a view guard.
 - **Image URLs.** No server-side URL builder exists (only `vendor-frontend`'s `cloudinary-url.pipe`). The DTO returns raw Cloudinary public-ids (`imageReference`); the customer-frontend builds delivery URLs client-side, mirroring that pipe ([[project_cover_photo_upload]]). Keeps multiple transforms per image (card thumb vs modal) available for slice 2; `cloudName` is public.
 - **Open — read-model overlap.** `FindUpcomingMarketDays` and the Calendrier view store near-identical rows (schedule snapshot keyed `(vendorId, scheduleId)`); a one-model/two-queries consolidation is possible but touches shipped Calendrier code — deferred to `docs/MARKET-SCHEDULE-PLAN.md`.
+- **Dev seed.** `seedDev(app)` (`apps/api/src/app/dev-seed.ts`, `NODE_ENV=development` / memory profile only) opens a `demo-vendor` storefront and registers the `demo` subdomain after `listen`, so `localhost:4200/?subdomain=demo` renders with no manual seeding. Opens the storefront directly (not via `RegisterVendor`) so the `OpensStorefronts` processor never races `drain()` under polling. Never runs on postgres/prod.
+- **Cover image deferred.** Slice-1 storefront renders name/description/phone only; the cover `<img>` is not rendered yet. Styling pass adds it via `NgOptimizedImage` + `provideCloudinaryLoader` (the cover is the LCP image).
+
+## Status & next steps
+
+**Slice 1 shipped** — subdomain registry, public endpoint, erasure row-deletion, SSR storefront tracer, dev seed. Header/footer renders end to end (DNS→SSR→api→resolve→view→render), proven live.
+
+Possible next steps (unordered):
+- **Slice 2 — catalogue.** `CatalogueViews.forVendor` → DTO `dishes[]`; NOTRE CARTE list + client-side dish sheet. Extend `seedDev` with demo dishes.
+- **Slice 3 — markets.** Blocked on `docs/MARKET-SCHEDULE-PLAN.md` (`FindUpcomingMarketDays` + cancel/skip).
+- **Styling / design pass.** Bring the tracer up to `docs/design/customer-frontend-*.png`; render the cover via `NgOptimizedImage` + Cloudinary loader.
+- **Real-time availability** (roadmap). Live dish sold-out/available (WS/SSE + signals) — introduces client state, likely NgRx per project convention.
+- **Ordering + payment** (later roadmap). Cart, customer auth, checkout, payment — the transactional turn that kept this on Angular.
+- **Prod deploy.** `render.yaml` already defines the SSR node service on `*.marketmiam.fr`; needs real wildcard DNS + the first `subdomain_registry` rows inserted by hand per env.
+- **`SubdomainAssigned` command** (v2). When vendors self-select/rename their URL: reservation-on-command writes the table and emits the event together.
