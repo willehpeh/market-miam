@@ -13,5 +13,5 @@ function auth0Verifier(config: ConfigService<Record<string | symbol, unknown>, f
 }
 
 export function tokenVerifierFor(config: ConfigService): TokenVerifier {
-  return developmentMode(config) ? StaticTokenVerifier.forDevelopment(config) : auth0Verifier(config);
+  return developmentMode(config) ? StaticTokenVerifier.forDevelopment() : auth0Verifier(config);
 }
