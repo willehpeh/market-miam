@@ -31,4 +31,5 @@ export * from './edit-storefront-information';
 export * from './open-storefront';
 export * from './opens-storefronts';
 export * from './vendor-storefront-view';
+export * from './subdomain-registry';
 export * from './vendor-scoped-events';
