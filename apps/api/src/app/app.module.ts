@@ -10,12 +10,6 @@ import { PostgresPersistenceModule } from './persistence/postgres-persistence.mo
 import { DomainErrorFilter } from './domain-error.filter';
 import { tokenVerifierFor } from './token-verifier.factory';
 
-// Development runs entirely in memory so local dev needs no running postgres.
-// Only the exact value `development` opts out of postgres;
-// every other environment (and the production build) uses it.
-const persistence =
-  process.env.NODE_ENV === 'development' ? InMemoryPersistenceModule : PostgresPersistenceModule;
-
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -26,7 +20,12 @@ const persistence =
       inject: [ConfigService],
       useFactory: tokenVerifierFor,
     }),
-    persistence,
+    process.env.NODE_ENV === 'development'
+      // Development runs entirely in memory so local dev needs no running postgres.
+      // Only the exact value `development` opts out of postgres;
+      // every other environment (and the production build) uses it.
+      ? InMemoryPersistenceModule
+      : PostgresPersistenceModule,
     EventSourcingModule.forRoot(vendorPiiFields),
     MarketDaysModule,
   ],
