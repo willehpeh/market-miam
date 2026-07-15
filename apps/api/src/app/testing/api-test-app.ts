@@ -9,6 +9,7 @@ import { StaticTokenVerifier, type VerifiedVendor } from '@market-miam/auth';
 import { AuthModule } from '@market-miam/auth-nestjs';
 import { MarketDaysModule } from '../market-days/market-days.module';
 import { EventSourcingModule } from '../event-sourcing/event-sourcing.module';
+import { InMemoryPersistenceModule } from '../persistence/in-memory-persistence.module';
 import { DomainErrorFilter } from '../domain-error.filter';
 import { POLLING_ENABLED } from '../event-sourcing/subscriptions';
 import { FakeSignedUploads, SignedUploads } from '../signed-uploads';
@@ -36,8 +37,9 @@ export function apiTestModule(options: ApiTestOptions = {}): TestingModuleBuilde
   const builder = Test.createTestingModule({
     imports: [
       AuthModule.forRootAsync({ useFactory: () => new StaticTokenVerifier(vendor) }),
-      EventSourcingModule.forRoot('memory', vendorPiiFields),
-      MarketDaysModule.forRoot('memory'),
+      InMemoryPersistenceModule,
+      EventSourcingModule.forRoot(vendorPiiFields),
+      MarketDaysModule,
     ],
     providers: [{ provide: APP_FILTER, useClass: DomainErrorFilter }],
   });

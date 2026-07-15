@@ -4,15 +4,17 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthModule } from '@market-miam/auth-nestjs';
 import { vendorPiiFields } from '@market-miam/market-days';
 import { MarketDaysModule } from './market-days/market-days.module';
-import { EventSourcingModule, Persistence } from './event-sourcing/event-sourcing.module';
+import { EventSourcingModule } from './event-sourcing/event-sourcing.module';
+import { InMemoryPersistenceModule } from './persistence/in-memory-persistence.module';
+import { PostgresPersistenceModule } from './persistence/postgres-persistence.module';
 import { DomainErrorFilter } from './domain-error.filter';
 import { tokenVerifierFor } from './token-verifier.factory';
-import { Migrations } from './database/migrations';
 
 // Development runs entirely in memory so local dev needs no running postgres.
-// Fail-safe like the token verifier: only the exact value `development` opts out
-// of postgres; every other environment (and the production build) uses it.
-const persistence: Persistence = process.env.NODE_ENV === 'development' ? 'memory' : 'postgres';
+// Only the exact value `development` opts out of postgres;
+// every other environment (and the production build) uses it.
+const persistence =
+  process.env.NODE_ENV === 'development' ? InMemoryPersistenceModule : PostgresPersistenceModule;
 
 @Module({
   imports: [
@@ -24,13 +26,10 @@ const persistence: Persistence = process.env.NODE_ENV === 'development' ? 'memor
       inject: [ConfigService],
       useFactory: tokenVerifierFor,
     }),
-    EventSourcingModule.forRoot(persistence, vendorPiiFields),
-    MarketDaysModule.forRoot(persistence),
+    persistence,
+    EventSourcingModule.forRoot(vendorPiiFields),
+    MarketDaysModule,
   ],
-  // Migrations run the pg pipeline on boot — postgres profile only.
-  providers: [
-    ...(persistence === 'postgres' ? [Migrations] : []),
-    { provide: APP_FILTER, useClass: DomainErrorFilter },
-  ],
+  providers: [{ provide: APP_FILTER, useClass: DomainErrorFilter }],
 })
 export class AppModule {}

@@ -1,6 +1,6 @@
-import { DynamicModule, Module, Provider } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { CommandGateway, EventStore, PostgresUnitOfWork } from '@market-miam/event-sourcing';
+import { CommandGateway, EventStore } from '@market-miam/event-sourcing';
 import { Clock, DateClock } from '@market-miam/common';
 import {
   AddItemToCatalogueHandler,
@@ -10,7 +10,6 @@ import {
   DeclareAbsenceHandler,
   Catalogues,
   CatalogueViewProjection,
-  CatalogueViews,
   CatalogueViewStore,
   ChangeItemPriceHandler,
   ChangeItemPhotoHandler,
@@ -20,38 +19,26 @@ import {
   FindVendorStorefrontHandler,
   FindVendorSchedulesHandler,
   FindUpcomingMarketDaysHandler,
-  InMemoryCatalogueViews,
-  InMemorySubdomainRegistry,
-  InMemoryMarketScheduleViews,
-  InMemoryVendorStorefrontViews,
   MarketScheduleViewProjection,
-  MarketScheduleViews,
   MarketScheduleViewStore,
   MarkItemAsSoldOutHandler,
   MarketDays,
   OpenStorefrontHandler,
   PlanItemsForMarketDayHandler,
-  PostgresMarketScheduleViews,
-  PostgresSubdomainRegistry,
-  PostgresVendorStorefrontViews,
   RegisterMarketScheduleHandler,
   RegisterVendorHandler,
   RetireItemHandler,
   ReviseItemHandler,
   SetStorefrontCoverPhotoHandler,
   OpensStorefronts,
-  PostgresCatalogueViews,
   Storefronts,
   UnplanItemFromMarketDayHandler,
   Vendors,
   VendorScopedEvents,
-  SubdomainRegistry,
   VendorStorefrontViewProjection,
-  VendorStorefrontViews,
   VendorStorefrontViewStore,
 } from '@market-miam/market-days';
 import { SignedUploads, signedUploadsFor } from '../signed-uploads';
-import { Persistence } from '../event-sourcing/event-sourcing.module';
 import { VendorsController } from './vendors.controller';
 import { StorefrontController } from './storefront.controller';
 import { CatalogueController } from './catalogue.controller';
@@ -78,70 +65,25 @@ const repositories = [
   },
 ];
 
-const readModel = (persistence: Persistence): Provider[] => {
-  const views: Provider[] =
-    persistence === 'postgres'
-      ? [
-          {
-            provide: PostgresVendorStorefrontViews,
-            useFactory: (uow: PostgresUnitOfWork) => new PostgresVendorStorefrontViews(uow),
-            inject: [PostgresUnitOfWork],
-          },
-          { provide: VendorStorefrontViews, useExisting: PostgresVendorStorefrontViews },
-          { provide: VendorStorefrontViewStore, useExisting: PostgresVendorStorefrontViews },
-          {
-            provide: PostgresCatalogueViews,
-            useFactory: (uow: PostgresUnitOfWork) => new PostgresCatalogueViews(uow),
-            inject: [PostgresUnitOfWork],
-          },
-          { provide: CatalogueViews, useExisting: PostgresCatalogueViews },
-          { provide: CatalogueViewStore, useExisting: PostgresCatalogueViews },
-          {
-            provide: PostgresMarketScheduleViews,
-            useFactory: (uow: PostgresUnitOfWork) => new PostgresMarketScheduleViews(uow),
-            inject: [PostgresUnitOfWork],
-          },
-          { provide: MarketScheduleViews, useExisting: PostgresMarketScheduleViews },
-          { provide: MarketScheduleViewStore, useExisting: PostgresMarketScheduleViews },
-          {
-            provide: PostgresSubdomainRegistry,
-            useFactory: (uow: PostgresUnitOfWork) => new PostgresSubdomainRegistry(uow),
-            inject: [PostgresUnitOfWork],
-          },
-          { provide: SubdomainRegistry, useExisting: PostgresSubdomainRegistry },
-        ]
-      : [
-          InMemoryVendorStorefrontViews,
-          { provide: VendorStorefrontViews, useExisting: InMemoryVendorStorefrontViews },
-          { provide: VendorStorefrontViewStore, useExisting: InMemoryVendorStorefrontViews },
-          InMemoryCatalogueViews,
-          { provide: CatalogueViews, useExisting: InMemoryCatalogueViews },
-          { provide: CatalogueViewStore, useExisting: InMemoryCatalogueViews },
-          InMemoryMarketScheduleViews,
-          { provide: MarketScheduleViews, useExisting: InMemoryMarketScheduleViews },
-          { provide: MarketScheduleViewStore, useExisting: InMemoryMarketScheduleViews },
-          InMemorySubdomainRegistry,
-          { provide: SubdomainRegistry, useExisting: InMemorySubdomainRegistry },
-        ];
-  return [
-    ...views,
-    {
-      provide: VendorStorefrontViewProjection,
-      useFactory: (store: VendorStorefrontViewStore) => new VendorStorefrontViewProjection(store),
-      inject: [VendorStorefrontViewStore],
-    },
-    {
-      provide: CatalogueViewProjection,
-      useFactory: (store: CatalogueViewStore) => new CatalogueViewProjection(store),
-      inject: [CatalogueViewStore],
-    },
-    {
-      provide: MarketScheduleViewProjection,
-      useFactory: (store: MarketScheduleViewStore) => new MarketScheduleViewProjection(store),
-      inject: [MarketScheduleViewStore],
-    },
-  ];
-};
+// The view stores themselves are the profile's business (app/persistence/); these
+// only need whichever *ViewStore answered.
+const projections = [
+  {
+    provide: VendorStorefrontViewProjection,
+    useFactory: (store: VendorStorefrontViewStore) => new VendorStorefrontViewProjection(store),
+    inject: [VendorStorefrontViewStore],
+  },
+  {
+    provide: CatalogueViewProjection,
+    useFactory: (store: CatalogueViewStore) => new CatalogueViewProjection(store),
+    inject: [CatalogueViewStore],
+  },
+  {
+    provide: MarketScheduleViewProjection,
+    useFactory: (store: MarketScheduleViewStore) => new MarketScheduleViewProjection(store),
+    inject: [MarketScheduleViewStore],
+  },
+];
 
 const processors = [
   {
@@ -172,25 +114,20 @@ const commandHandlers = [
 
 const queryHandlers = [FindCustomerStorefrontHandler, FindVendorStorefrontHandler, FindVendorCatalogueHandler, FindVendorSchedulesHandler, FindUpcomingMarketDaysHandler];
 
-// EventStore / CommandGateway / QueryGateway (and the pg UnitOfWork) come from
-// the global EventSourcingModule.forRoot(...) at the composition root. persistence
-// swaps only the read-model store: pg-backed views vs in-memory.
-@Module({})
-export class MarketDaysModule {
-  static forRoot(persistence: Persistence): DynamicModule {
-    return {
-      module: MarketDaysModule,
-      controllers: [VendorsController, StorefrontController, CatalogueController, MarketScheduleController, PublicStorefrontController],
-      providers: [
-        ...clock,
-        ...signedUploads,
-        ...repositories,
-        ...readModel(persistence),
-        ...processors,
-        ...commandHandlers,
-        ...queryHandlers,
-        VendorErasure,
-      ],
-    };
-  }
-}
+// EventStore / CommandGateway / QueryGateway come from the global
+// EventSourcingModule; the view stores from the global persistence module the
+// composition root picked. Nothing here knows which profile is running.
+@Module({
+  controllers: [VendorsController, StorefrontController, CatalogueController, MarketScheduleController, PublicStorefrontController],
+  providers: [
+    ...clock,
+    ...signedUploads,
+    ...repositories,
+    ...projections,
+    ...processors,
+    ...commandHandlers,
+    ...queryHandlers,
+    VendorErasure,
+  ],
+})
+export class MarketDaysModule {}
