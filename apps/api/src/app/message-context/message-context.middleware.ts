@@ -6,9 +6,6 @@ export class MessageContextMiddleware implements NestMiddleware {
   constructor(private readonly dispatcher: MessageContextDispatcher) {}
 
   use(_req: unknown, _res: unknown, next: () => void): void {
-    void this.dispatcher.dispatch(() => {
-      next();
-      return Promise.resolve();
-    });
+    this.dispatcher.dispatch(next);
   }
 }

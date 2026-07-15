@@ -6,9 +6,8 @@ export class MessageContextDispatcher {
     private readonly generateId: () => string,
   ) {}
 
-  dispatch<T>(inner: () => Promise<T>): Promise<T> {
-    const correlationId = this.generateId();
-    const causationId = this.generateId();
-    return this.context.run({ correlationId, causationId }, inner);
+  dispatch<T>(inner: () => T): T {
+    const rootId = this.generateId();
+    return this.context.run({ correlationId: rootId, causationId: rootId }, inner);
   }
 }

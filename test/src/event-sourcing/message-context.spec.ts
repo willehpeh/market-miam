@@ -7,8 +7,8 @@ import {
 } from '@market-miam/event-sourcing';
 
 describe('Message context propagation', () => {
-  it('stamps a fresh correlationId and causationId onto events appended during a root dispatch', async () => {
-    const ids = stubIds(['corr-1', 'caus-1']);
+  it('stamps one root id as both correlationId and causationId onto events appended during a root dispatch', async () => {
+    const ids = stubIds(['root-1']);
     const store = new InMemoryEventStore();
     const context = new MessageContext();
     const contextualStore = new MessageContextEventStore(store, context);
@@ -25,7 +25,7 @@ describe('Message context propagation', () => {
 
     expect(await store.load('stream-1')).toEqual([
       expect.objectContaining({
-        metadata: { vendorId: 'v1', correlationId: 'corr-1', causationId: 'caus-1' },
+        metadata: { vendorId: 'v1', correlationId: 'root-1', causationId: 'root-1' },
       }),
     ]);
   });
