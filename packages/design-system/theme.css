@@ -126,4 +126,12 @@
     text-transform: uppercase;
     color: var(--color-ink-soft);
   }
+  /* diagonal tan hatch — placeholder fill for an image with no photo yet */
+  .hatch {
+    background-image: repeating-linear-gradient(
+      -45deg,
+      var(--color-brand-soft) 0 8px,
+      var(--color-surface-sunk) 8px 16px
+    );
+  }
 }
