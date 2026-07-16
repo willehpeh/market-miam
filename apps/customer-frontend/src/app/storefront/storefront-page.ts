@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { CustomerStorefront } from './customer-storefront';
+import { environment } from '../../environments/environment';
 
 @Component({
   selector: 'app-storefront-page',
@@ -12,9 +13,12 @@ import { CustomerStorefront } from './customer-storefront';
         </header>
 
         <section class="relative">
-          <!-- ponytail: cover <img> + Cloudinary loader lands with a seedable demo cover; placeholder is the demo's real state -->
-          <div class="hatch aspect-[16/10] w-full"></div>
-          <span class="kicker absolute left-5 top-5 rounded-pill bg-surface/85 px-3 py-1">photo du stand</span>
+          @if (storefront.coverPhoto; as cover) {
+            <img [src]="coverUrl(cover)" alt="" class="aspect-[16/10] w-full object-cover" />
+          } @else {
+            <div class="hatch aspect-[16/10] w-full"></div>
+            <span class="kicker absolute left-5 top-5 rounded-pill bg-surface/85 px-3 py-1">photo du stand</span>
+          }
           <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/65 via-black/25 to-transparent px-5 pb-5 pt-16">
             <h1 class="text-4xl font-bold tracking-tight text-white">{{ storefront.name }}</h1>
             <p class="mt-1 text-lg text-white/85">{{ storefront.description }}</p>
@@ -38,4 +42,8 @@ import { CustomerStorefront } from './customer-storefront';
 })
 export class StorefrontPage {
   readonly storefront = input<CustomerStorefront | null>(null);
+
+  protected coverUrl(reference: string): string {
+    return `https://res.cloudinary.com/${environment.cloudinary.cloudName}/image/upload/c_fill,w_1200,h_750,q_auto,f_auto/${reference}`;
+  }
 }

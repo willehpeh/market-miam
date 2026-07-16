@@ -1,10 +1,11 @@
 import { INestApplication } from '@nestjs/common';
 import { CommandGateway } from '@market-miam/event-sourcing';
-import { EditStorefrontInformation, InMemorySubdomainRegistry, OpenStorefront } from '@market-miam/market-days';
+import { EditStorefrontInformation, InMemorySubdomainRegistry, OpenStorefront, SetStorefrontCoverPhoto } from '@market-miam/market-days';
 import { Subscriptions } from './event-sourcing/subscriptions';
 
 const DEMO_VENDOR = 'demo-vendor';
 const DEMO_SUBDOMAIN = 'demo';
+const DEMO_COVER = 'v1784235195/demo-cover_ghvwt5';
 
 // Local-dev convenience: the subdomain registry has no command or UI in v1, so
 // without this there is no in-app way to make the customer storefront return
@@ -21,6 +22,7 @@ export async function seedDev(app: INestApplication): Promise<void> {
   await commands.execute(
     new EditStorefrontInformation(DEMO_VENDOR, 'Chez Demo', 'Cuisine de démonstration maison', '0102030405'),
   );
+  await commands.execute(new SetStorefrontCoverPhoto(DEMO_VENDOR, DEMO_COVER));
   await subscriptions.drain();
   await registry.register(DEMO_SUBDOMAIN, DEMO_VENDOR);
 }
