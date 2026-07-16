@@ -13,7 +13,7 @@ Per-vendor public storefront at `{subdomain}.votreplateforme.fr`, rendering one 
 | PROCHAIN / PROCHAINS MARCHÉS | `FindUpcomingMarketDays(vendorId)` | **built** (`docs/MARKET-SCHEDULE-PLAN.md` §"Upcoming market days") — vendor-authed route only; public exposure is slice 3 |
 | subdomain → vendorId | `subdomain_registry` table | **built (slice 1)** |
 
-Composition: `GET /public/storefront/:subdomain` (public, no auth) resolves the subdomain, fans out to the three read models, returns one `CustomerStorefront` DTO. SSR fetches a single URL. Read-time compute is confined to the start-time cutoff; everything else is a view read.
+Composition: `GET /public/storefront/:subdomain` (public, no auth) resolves the subdomain, fans out to the three read models, returns one `CustomerStorefront` result — **a discriminated union** gated on publication (`published` | `coming-soon`), or 404 (see Publication gate). SSR fetches a single URL. Read-time compute is confined to the start-time cutoff; everything else is a view read.
 
 ## Subdomain resolution
 
@@ -26,18 +26,38 @@ Composition: `GET /public/storefront/:subdomain` (public, no auth) resolves the 
 ## DTO
 
 ```
-CustomerStorefront {
-  name, description, phone,
-  coverPhoto?,                                   // raw Cloudinary public-id — frontend builds the URL (see Image refs gotcha)
-  dishes: [{ id, name, description, price, photo? }],
-  upcomingMarkets: [{ date, weekday, marketName, startTime?, endTime?,
-                      street?, postalCode, town, pitch? }]
-}
+CustomerStorefront =
+  | { status: 'published';
+      name, description, phone,
+      coverPhoto?,                               // raw Cloudinary public-id — frontend builds the URL (see Image refs gotcha)
+      dishes: [{ id, name, description, price, photo? }],
+      upcomingMarkets: [{ date, weekday, marketName, startTime?, endTime?,
+                          street?, postalCode, town, pitch? }] }
+  | { status: 'coming-soon'; name: string | null }   // resolves but unpublished; 404 = unresolved (see Publication gate)
 ```
 
+- Discriminated union on `status`; the frontend branches (published page / coming-soon page / `null`→introuvable). Only `published` carries the rich fields.
 - `nextMarket` (PROCHAIN MARCHÉ) = `upcomingMarkets[0]` — no separate field.
 - `upcomingMarkets` = `FindUpcomingMarketDays` occurrences, minus in-progress (start-time cutoff below), first ~5.
 - Image fields (`coverPhoto`, dish `photo`) are raw Cloudinary public-ids, not URLs — the frontend builds delivery URLs (no server-side builder exists).
+
+## Publication gate (ADR 0031)
+
+A storefront is public only once the vendor **publishes** it — a deliberate go-live, gated on readiness. Full rationale in ADR 0031; the shape:
+
+- **`published` is a state on the `Storefront` aggregate** (`StorefrontPublished`). Vendor intent, not "data happens to exist."
+- **Readiness is a cross-aggregate policy → the stateless `StorefrontPublication` domain service** (not the aggregate reaching across boundaries). Synchronous; an async request/confirm processor was rejected (it would only wrap the same reads). Each aggregate answers neutral self-queries; the service owns the required set + reason words and assembles `missing[]`:
+
+  | Contributor | Query | Reason |
+  |---|---|---|
+  | Storefront | `hasTitle()` / `hasDescription()` / `hasCoverPhoto()` | `title` / `description` / `cover` |
+  | Catalogue | `hasAtLeastOneItem()` | `catalogue` |
+  | Calendar | `hasSchedule()` | `schedule` |
+
+- **`Storefront.publish()` guards only local rules** (open, idempotent) + raises the event; the service gates readiness → `StorefrontNotReadyToPublish(missing)` (extends `DomainError` → 400 with reasons). Thin handler: load storefront/catalogue/calendar, delegate, save the storefront (one aggregate mutated, one event — ADR 0009).
+- **Cover mandatory to publish, not to edit** — consistent with description (`StorefrontDescription` allows empty, so `hasDescription()` checks content, not a fired flag). Readiness ≠ validity; the gate is in the service, never the VOs.
+- **Read gate**: the composite returns the discriminated union — 404 (subdomain unresolved) / coming-soon (resolves, unpublished; title if set, `noindex`) / published — on a `published` flag projected into `vendor-storefront-view`. Erasure already deletes the subdomain row → an erased vendor is 404, not coming-soon (correct).
+- **Subscription** (once charging): one more self-query behind a local entitlement projection — deferred, `docs/DEFERRED.md`.
 
 ## Decisions (don't re-litigate)
 
@@ -47,7 +67,7 @@ CustomerStorefront {
 - **Menu chips per market: cut.** Cards show date/market/hours/address only — no "Menu à venir" placeholder (nothing behind it). The dish↔market-day join is the separate prepared-state overlay slice (`docs/MARKET-SCHEDULE-PLAN.md`).
 - **Categories + tags: cut.** Domain has neither; deferred as `ItemAddedToCatalogue` v2 (`docs/CATALOGUE-PLAN.md`). Dish card + modal show name/description/price/photo only.
 - **Dish detail modal: no endpoint.** Opens client-side from `dishes[]`; "Disponible les jours de marché…" is static copy, not a data field.
-- **404 on unresolved subdomain.** Empty catalogue/schedule → empty arrays; missing cover → null (frontend renders the "photo du stand" placeholder).
+- **404 on unresolved subdomain; coming-soon on unpublished** (see Publication gate). For a *published* storefront: empty catalogue/schedule → empty arrays; missing cover can't happen (cover is a publish requirement).
 - **Composite query, thin controller.** One `FindCustomerStorefront(subdomain)` handler injects the `SubdomainRegistry` port + the view ports, resolves then composes the DTO, returns `undefined` on miss; `PublicStorefrontController` is one `execute()` + `null→404`. Subdomain resolution is a plain port method (`vendorFor`), **not** its own CQRS query. Fan-out + the start-time cutoff live in the handler, not the controller.
 - **Angular, not Astro.** Astro — already in the monorepo (`apps/website`) and a better raw fit for a static vitrine — was considered and **rejected**: the near-term roadmap (semi-real-time dish availability, then ordering + payment) makes this a transactional, stateful app, which is Angular's wheelhouse and consistent with `vendor-frontend`'s NgRx/Signal-Forms stack. Astro would need an island framework bolted in and likely a later rewrite. The CSS design system is portable either way, and `render.yaml` already wires the customer SSR node service.
 
@@ -73,6 +93,14 @@ Proves the whole pipe DNS→SSR→api→resolve→view→render, thinnest path.
 7. Fold `upcomingMarkets` into the public `CustomerStorefront` (the expansion query is currently vendor-authed only — reuse its expansion, don't duplicate); apply the customer start-time cutoff; `nextMarket = [0]`.
 8. Frontend PROCHAIN MARCHÉ card + PROCHAINS MARCHÉS list (date badge, hours, address).
 
+**Slice 4 — publication gate (ADR 0031).** Backend build order 9→13 is independent of slices 2/3; the demo only renders *published* once dishes + schedules are seeded (needs 2/3's seed work).
+9. `Storefront`: store name/description in `apply`; `hasTitle()`/`hasDescription()`/`hasCoverPhoto()`; `publish()` (open + idempotent, raises `StorefrontPublished`). Add `StorefrontDescription.hasContent()`, `CoverPhoto.isSet()`. Aggregate tests.
+10. Sibling readiness: `Catalogue.hasAtLeastOneItem()`, `Calendar.hasSchedule()`. Tests.
+11. `StorefrontPublication` service + `PublishStorefront` command/handler (vendor-authed): assemble `missing`, throw `StorefrontNotReadyToPublish` (→400) or publish. Acceptance test — not-ready → 400 + reasons; ready → `StorefrontPublished`.
+12. Project `StorefrontPublished` → `vendor-storefront-view.published`; `FindCustomerStorefront` returns the discriminated union (404 / coming-soon / published). Extend the public-endpoint acceptance test for all three states.
+13. Frontend: resolver union → `ComingSoonPage` + `StorefrontPage` branch, `noindex` on coming-soon. Render the cover `<img>` (built URL; `NgOptimizedImage` later). Extend `seedDev`: description + cover (`v1784235195/demo-cover_ghvwt5`) + dish + schedule + publish.
+14. (Own slice, later) Vendor-frontend publish button surfacing the missing-reasons.
+
 ## Gotchas / open
 
 - **Public route must bypass the vendor auth guard.** Verify the guard's scoping and confirm `/public/storefront/:subdomain` doesn't collide with existing controller routes when building slice 1.
@@ -80,8 +108,8 @@ Proves the whole pipe DNS→SSR→api→resolve→view→render, thinnest path.
 - **PII on a public surface by design.** storefront-view name/description/phone are shown (phone in the footer). Shredded vendor handled by erasure deleting the subdomain row, not a view guard.
 - **Image URLs.** No server-side URL builder exists (only `vendor-frontend`'s `cloudinary-url.pipe`). The DTO returns raw Cloudinary public-ids (`imageReference`); the customer-frontend builds delivery URLs client-side, mirroring that pipe ([[project_cover_photo_upload]]). Keeps multiple transforms per image (card thumb vs modal) available for slice 2; `cloudName` is public.
 - **Open — read-model overlap.** `FindUpcomingMarketDays` and the Calendrier view store near-identical rows (schedule snapshot keyed `(vendorId, scheduleId)`); a one-model/two-queries consolidation is possible but touches shipped Calendrier code — deferred to `docs/MARKET-SCHEDULE-PLAN.md`.
-- **Dev seed.** `seedDev(app)` (`apps/api/src/app/dev-seed.ts`, `NODE_ENV=development` / memory profile only) opens a `demo-vendor` storefront and registers the `demo` subdomain after `listen`, so `localhost:4200/?subdomain=demo` renders with no manual seeding. Opens the storefront directly (not via `RegisterVendor`) so the `OpensStorefronts` processor never races `drain()` under polling. Never runs on postgres/prod.
-- **Cover image deferred.** Slice-1 storefront renders name/description/phone only; the cover `<img>` is not rendered yet. Styling pass adds it via `NgOptimizedImage` + `provideCloudinaryLoader` (the cover is the LCP image).
+- **Dev seed.** `seedDev(app)` (`apps/api/src/app/dev-seed.ts`, `NODE_ENV=development` / memory profile only) opens a `demo-vendor` storefront and registers the `demo` subdomain after `listen`, so `localhost:4200/?subdomain=demo` renders with no manual seeding. Opens the storefront directly (not via `RegisterVendor`) so the `OpensStorefronts` processor never races `drain()` under polling. Never runs on postgres/prod. **Slice 4:** the publish gate means the demo must also seed a description + cover (`v1784235195/demo-cover_ghvwt5`) + ≥1 dish + ≥1 schedule, then `PublishStorefront` — otherwise `?subdomain=demo` renders coming-soon.
+- **Cover image.** Now a **publish requirement** (ADR 0031), so a published storefront always has one; rendered in slice 4 from the built Cloudinary URL (customer-frontend needs `cloudinary.cloudName` in its env, mirroring vendor-frontend). `NgOptimizedImage` + `provideCloudinaryLoader` is a later LCP refinement.
 
 ## Status & next steps
 
@@ -90,6 +118,7 @@ Proves the whole pipe DNS→SSR→api→resolve→view→render, thinnest path.
 Possible next steps (unordered):
 - **Slice 2 — catalogue.** `CatalogueViews.forVendor` → DTO `dishes[]`; NOTRE CARTE list + client-side dish sheet. Extend `seedDev` with demo dishes.
 - **Slice 3 — markets.** **Unblocked** — `FindUpcomingMarketDays` + `CancelMarketSchedule`/`DeclareAbsence` all shipped and tested. Remaining work is composition: expose the (vendor-authed) expansion on the public storefront — fold `upcomingMarkets` into `CustomerStorefront`, apply the customer start-time cutoff, `nextMarket = [0]`, render the cards.
+- **Slice 4 — publication gate (ADR 0031).** `PublishStorefront` + `StorefrontPublication` readiness service; `published` projection; discriminated-union read gate (404 / coming-soon / published); cover render. Backend is independent of 2/3; the *demo* renders published only once 2/3 seed dishes + schedules. Build order steps 9–14.
 - **Styling / design pass.** Bring the tracer up to `docs/design/customer-frontend-*.png`; render the cover via `NgOptimizedImage` + Cloudinary loader.
 - **Real-time availability** (roadmap). Live dish sold-out/available (WS/SSE + signals) — introduces client state, likely NgRx per project convention.
 - **Ordering + payment** (later roadmap). Cart, customer auth, checkout, payment — the transactional turn that kept this on Angular.

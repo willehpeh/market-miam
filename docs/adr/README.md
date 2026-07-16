@@ -36,3 +36,4 @@ deferred decisions in `docs/DEFERRED.md` (see ADR 0017).
 | [0028](0028-serialized-appends-global-ordering.md) | Gap-free global ordering via serialized appends | 2026-07-03 |
 | [0029](0029-postgres-persistence-adapters.md) | Postgres persistence adapters: raw pg, no ORM, migrate-on-boot | 2026-07-05 |
 | [0030](0030-listen-notify-poke-poller.md) | LISTEN/NOTIFY to poke the poller | 2026-07-05 |
+| [0031](0031-storefront-publication-readiness-domain-service.md) | Storefront publication: readiness as a cross-aggregate domain service | 2026-07-16 |
