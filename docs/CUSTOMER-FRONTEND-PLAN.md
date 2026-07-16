@@ -101,6 +101,16 @@ Proves the whole pipe DNS→SSR→api→resolve→view→render, thinnest path.
 13. Frontend: resolver union → `ComingSoonPage` + `StorefrontPage` branch, `noindex` on coming-soon. Render the cover `<img>` (built URL; `NgOptimizedImage` later). Extend `seedDev`: description + cover (`v1784235195/demo-cover_ghvwt5`) + dish + schedule + publish.
 14. (Own slice, later) Vendor-frontend publish button surfacing the missing-reasons.
 
+**Publish-storefront TDD cycles** — steps 9–11's write side is driven outside-in by one social spec (`test/src/market-days/publish-storefront/publish-storefront.spec.ts`); the aggregate, VO, service and command emerge together, one RED→GREEN per cycle:
+- [x] 1 — not-ready storefront → `StorefrontNotReadyToPublish` (tracer: command/handler/service/`hasTitle()`/error)
+- [ ] 2 — title set, empty description → not ready (`hasDescription()` + `StorefrontDescription.hasContent()` + apply `StorefrontInformationEdited` storing name/description)
+- [ ] 3 — no cover → not ready (`hasCoverPhoto()` + `CoverPhoto.isSet()`)
+- [ ] 4 — no dishes → not ready (handler loads `Catalogue` + `hasAtLeastOneItem()`)
+- [ ] 5 — no schedule → not ready (`Calendar.hasSchedule()`)
+- [ ] 6 — all met → `StorefrontPublished` emitted (`Storefront.publish()`: open + idempotent + raise)
+- [ ] 7 — re-publish → single event (idempotent)
+- [ ] 8 — assert full `missing[]` reasons + vendorId metadata (`expectVendorScopedEvents`)
+
 ## Gotchas / open
 
 - **Public route must bypass the vendor auth guard.** Verify the guard's scoping and confirm `/public/storefront/:subdomain` doesn't collide with existing controller routes when building slice 1.

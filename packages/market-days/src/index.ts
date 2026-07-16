@@ -29,6 +29,7 @@ export * from './storefront';
 export * from './set-storefront-cover-photo';
 export * from './edit-storefront-information';
 export * from './open-storefront';
+export * from './publish-storefront';
 export * from './opens-storefronts';
 export * from './vendor-storefront-view';
 export * from './subdomain-registry';

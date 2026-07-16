@@ -11,6 +11,7 @@ export class Storefront extends Aggregate {
 
   private _opened = false;
   private _coverPhoto: CoverPhoto = new NoCoverPhoto();
+  private _name?: StorefrontName;
 
   apply(event: StorefrontEvent): void {
     switch (event.type) {
@@ -60,6 +61,10 @@ export class Storefront extends Aggregate {
       version: 1
     };
     this.raise(event);
+  }
+
+  hasTitle(): boolean {
+    return this._name !== undefined;
   }
 
   private assertOpen() {
