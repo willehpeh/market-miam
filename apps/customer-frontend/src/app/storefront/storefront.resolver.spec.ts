@@ -7,6 +7,7 @@ import { storefrontResolver } from './storefront.resolver';
 import { CustomerStorefront } from './customer-storefront';
 
 const ACME: CustomerStorefront = {
+  status: 'published',
   name: 'Acme Bakery',
   description: 'Fresh bread daily',
   phone: '0102030405',
