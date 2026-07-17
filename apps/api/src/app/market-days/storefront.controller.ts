@@ -1,10 +1,11 @@
-import { Body, Controller, Get, NotFoundException, Post, Put, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, NotFoundException, Post, Put, UseGuards } from '@nestjs/common';
 import { CurrentVendor, JwtAuthGuard } from '@market-miam/auth-nestjs';
 import type { VerifiedVendor } from '@market-miam/auth';
 import { CommandGateway, QueryGateway } from '@market-miam/event-sourcing';
 import {
   EditStorefrontInformation,
   FindVendorStorefront,
+  PublishStorefront,
   SetStorefrontCoverPhoto,
   VendorStorefrontView,
 } from '@market-miam/market-days';
@@ -28,6 +29,13 @@ export class StorefrontController {
     const view = await this.queries.execute(new FindVendorStorefront(vendor.vendorId.value()));
     if (!view) throw new NotFoundException();
     return view;
+  }
+
+  @Post('publish')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @UseGuards(JwtAuthGuard)
+  async publish(@CurrentVendor() vendor: VerifiedVendor): Promise<void> {
+    await this.commands.execute(new PublishStorefront(vendor.vendorId.value()));
   }
 
   @Put()

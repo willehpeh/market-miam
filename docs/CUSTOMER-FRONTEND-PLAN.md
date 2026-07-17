@@ -111,6 +111,8 @@ Proves the whole pipe DNS→SSR→api→resolve→view→render, thinnest path.
 - [x] 7 — re-publish → single event (idempotent: `_published` applied from `StorefrontPublished`, `publish()` no-ops)
 - [x] 8 — full `missing[]` = `[title, description, cover, catalogue, schedule]` + vendorId metadata (`expectVendorScopedEvents`)
 
+**API surface (step 11) shipped:** `PublishStorefrontHandler` + `StorefrontPublication` registered in `market-days.module.ts`; vendor-authed `POST /storefront/publish` (`@HttpCode 204`) on `storefront.controller.ts`; `StorefrontNotReadyToPublish → 400` via the existing `DomainErrorFilter` (reasons in the message). Acceptance test `storefront-publish.spec.ts` (not-ready → 400 + reasons; ready → 204). **Next: step 12** — project `StorefrontPublished → published`, discriminated-union read gate.
+
 ## Gotchas / open
 
 - **Public route must bypass the vendor auth guard.** Verify the guard's scoping and confirm `/public/storefront/:subdomain` doesn't collide with existing controller routes when building slice 1.

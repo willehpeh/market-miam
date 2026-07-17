@@ -24,6 +24,8 @@ import {
   MarkItemAsSoldOutHandler,
   MarketDays,
   OpenStorefrontHandler,
+  PublishStorefrontHandler,
+  StorefrontPublication,
   PlanItemsForMarketDayHandler,
   RegisterMarketScheduleHandler,
   RegisterVendorHandler,
@@ -110,7 +112,10 @@ const commandHandlers = [
   EditStorefrontInformationHandler,
   SetStorefrontCoverPhotoHandler,
   OpenStorefrontHandler,
+  PublishStorefrontHandler,
 ];
+
+const domainServices = [StorefrontPublication];
 
 const queryHandlers = [FindCustomerStorefrontHandler, FindVendorStorefrontHandler, FindVendorCatalogueHandler, FindVendorSchedulesHandler, FindUpcomingMarketDaysHandler];
 
@@ -125,6 +130,7 @@ const queryHandlers = [FindCustomerStorefrontHandler, FindVendorStorefrontHandle
     ...repositories,
     ...projections,
     ...processors,
+    ...domainServices,
     ...commandHandlers,
     ...queryHandlers,
     VendorErasure,
