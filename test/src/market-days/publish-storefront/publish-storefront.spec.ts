@@ -20,7 +20,28 @@ describe('Publish Storefront', () => {
     await expect(handler.execute(TestPublishStorefront.valid())).rejects.toThrow(StorefrontNotReadyToPublish);
   });
 
+  it('rejects publishing a storefront whose description is empty', async () => {
+    openStorefrontWithInformation({ description: '' });
+
+    const failure = await handler.execute(TestPublishStorefront.valid()).catch((e: unknown) => e);
+
+    expect(failure).toBeInstanceOf(StorefrontNotReadyToPublish);
+    expect((failure as StorefrontNotReadyToPublish).missing).toContain('description');
+    expect((failure as StorefrontNotReadyToPublish).missing).not.toContain('title');
+  });
+
   function openStorefront() {
     store.seedWith('storefront-vendor-id', [{ type: 'StorefrontOpened', payload: { vendorId: 'vendor-id' }, version: 1 }], { vendorId: 'vendor-id' });
+  }
+
+  function openStorefrontWithInformation(overrides: { name?: string; description?: string } = {}) {
+    store.seedWith('storefront-vendor-id', [
+      { type: 'StorefrontOpened', payload: { vendorId: 'vendor-id' }, version: 1 },
+      {
+        type: 'StorefrontInformationEdited',
+        payload: { name: overrides.name ?? 'Chez Demo', description: overrides.description ?? 'Cuisine maison', phone: '0102030405' },
+        version: 1,
+      },
+    ], { vendorId: 'vendor-id' });
   }
 });

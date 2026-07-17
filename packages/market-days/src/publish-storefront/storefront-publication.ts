@@ -5,6 +5,7 @@ export class StorefrontPublication {
   publish(storefront: Storefront): void {
     const missing: string[] = [];
     if (!storefront.hasTitle()) missing.push('title');
+    if (!storefront.hasDescription()) missing.push('description');
     if (missing.length > 0) {
       throw new StorefrontNotReadyToPublish(missing);
     }

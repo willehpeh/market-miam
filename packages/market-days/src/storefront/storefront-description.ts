@@ -10,4 +10,8 @@ export class StorefrontDescription {
     return this._description;
   }
 
+  hasContent(): boolean {
+    return this._description.length > 0;
+  }
+
 }

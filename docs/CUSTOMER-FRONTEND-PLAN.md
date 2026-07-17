@@ -103,7 +103,7 @@ Proves the whole pipe DNS→SSR→api→resolve→view→render, thinnest path.
 
 **Publish-storefront TDD cycles** — steps 9–11's write side is driven outside-in by one social spec (`test/src/market-days/publish-storefront/publish-storefront.spec.ts`); the aggregate, VO, service and command emerge together, one RED→GREEN per cycle:
 - [x] 1 — not-ready storefront → `StorefrontNotReadyToPublish` (tracer: command/handler/service/`hasTitle()`/error)
-- [ ] 2 — title set, empty description → not ready (`hasDescription()` + `StorefrontDescription.hasContent()` + apply `StorefrontInformationEdited` storing name/description)
+- [x] 2 — title set, empty description → not ready (`hasDescription()` + `StorefrontDescription.hasContent()` + apply `StorefrontInformationEdited` storing name/description)
 - [ ] 3 — no cover → not ready (`hasCoverPhoto()` + `CoverPhoto.isSet()`)
 - [ ] 4 — no dishes → not ready (handler loads `Catalogue` + `hasAtLeastOneItem()`)
 - [ ] 5 — no schedule → not ready (`Calendar.hasSchedule()`)
