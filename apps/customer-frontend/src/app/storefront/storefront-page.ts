@@ -1,5 +1,5 @@
-import { ChangeDetectionStrategy, Component, input } from '@angular/core';
-import { StorefrontViewModel } from './storefront-view-model';
+import { ChangeDetectionStrategy, Component, input, signal } from '@angular/core';
+import { DishViewModel, StorefrontViewModel } from './storefront-view-model';
 import { ComingSoonPage } from './coming-soon-page';
 
 @Component({
@@ -28,6 +28,48 @@ import { ComingSoonPage } from './coming-soon-page';
               </div>
             </section>
 
+            <section class="px-5 py-8">
+              <h2 class="kicker">Notre carte</h2>
+              <ul class="mt-4 divide-y divide-line">
+                @for (dish of storefront.dishes; track dish.itemId) {
+                  <li>
+                    <button
+                      type="button"
+                      [attr.data-dish]="dish.itemId"
+                      class="flex w-full items-center gap-4 py-4 text-left"
+                      (click)="selected.set(dish); sheet.showModal()"
+                    >
+                      <span class="min-w-0 flex-1">
+                        <span class="block font-bold text-ink">{{ dish.name }}</span>
+                        <span class="mt-0.5 block truncate text-ink-soft">{{ dish.description }}</span>
+                        <span class="mt-1 block font-bold text-brand">{{ dish.priceLabel }}</span>
+                      </span>
+                      @if (dish.photo; as photo) {
+                        <img [src]="photo.cardUrl" alt="" class="size-20 shrink-0 rounded-lg object-cover" />
+                      }
+                    </button>
+                  </li>
+                }
+              </ul>
+            </section>
+
+            <dialog #sheet class="m-auto w-full max-w-md rounded-xl p-0 backdrop:bg-black/50">
+              @if (selected(); as dish) {
+                @if (dish.photo; as photo) {
+                  <img [src]="photo.sheetUrl" alt="" class="aspect-[4/3] w-full object-cover" />
+                }
+                <div class="p-5">
+                  <h3 class="text-2xl font-bold text-ink">{{ dish.name }}</h3>
+                  <p class="mt-2 text-ink-soft">{{ dish.description }}</p>
+                  <p class="mt-3 text-xl font-bold text-brand">{{ dish.priceLabel }}</p>
+                  <p class="mt-3 text-sm text-ink-soft">Disponible les jours de marché, dans la limite des stocks.</p>
+                  <button type="button" class="mt-5 w-full rounded-pill border border-line py-2 text-ink" (click)="sheet.close()">
+                    Fermer
+                  </button>
+                </div>
+              }
+            </dialog>
+
             <footer class="mt-4 border-t border-line px-5 py-8">
               <p class="text-xl font-bold text-ink">{{ storefront.name }}</p>
               <p class="mt-1 text-ink-soft">
@@ -50,4 +92,5 @@ import { ComingSoonPage } from './coming-soon-page';
 })
 export class StorefrontPage {
   readonly storefront = input<StorefrontViewModel | null>(null);
+  protected readonly selected = signal<DishViewModel | null>(null);
 }
