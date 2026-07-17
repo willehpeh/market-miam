@@ -1,6 +1,5 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
-import { CustomerStorefront } from './customer-storefront';
-import { environment } from '../../environments/environment';
+import { StorefrontViewModel } from './storefront-view-model';
 import { ComingSoonPage } from './coming-soon-page';
 
 @Component({
@@ -17,8 +16,8 @@ import { ComingSoonPage } from './coming-soon-page';
             </header>
 
             <section class="relative">
-              @if (storefront.coverPhoto; as cover) {
-                <img [src]="coverUrl(cover)" alt="" class="aspect-[16/10] w-full object-cover" />
+              @if (storefront.coverUrl; as cover) {
+                <img [src]="cover" alt="" class="aspect-[16/10] w-full object-cover" />
               } @else {
                 <div class="hatch aspect-[16/10] w-full"></div>
                 <span class="kicker absolute left-5 top-5 rounded-pill bg-surface/85 px-3 py-1">photo du stand</span>
@@ -50,9 +49,5 @@ import { ComingSoonPage } from './coming-soon-page';
   `,
 })
 export class StorefrontPage {
-  readonly storefront = input<CustomerStorefront | null>(null);
-
-  protected coverUrl(reference: string): string {
-    return `https://res.cloudinary.com/${environment.cloudinary.cloudName}/image/upload/c_fill,w_1200,h_750,q_auto,f_auto/${reference}`;
-  }
+  readonly storefront = input<StorefrontViewModel | null>(null);
 }

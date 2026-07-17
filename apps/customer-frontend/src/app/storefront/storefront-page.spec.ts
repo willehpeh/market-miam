@@ -1,13 +1,14 @@
 import { TestBed } from '@angular/core/testing';
 import { StorefrontPage } from './storefront-page';
-import { CustomerStorefront } from './customer-storefront';
+import { StorefrontViewModel } from './storefront-view-model';
 
-const ACME: CustomerStorefront = {
+const ACME: StorefrontViewModel = {
   status: 'published',
   name: 'Acme Bakery',
   description: 'Fresh bread daily',
   phone: '0102030405',
-  coverPhoto: null,
+  coverUrl: null,
+  dishes: [],
 };
 
 describe('StorefrontPage', () => {
@@ -23,7 +24,7 @@ describe('StorefrontPage', () => {
 
   it('shows a coming-soon message with the title for an unpublished storefront', () => {
     const fixture = TestBed.createComponent(StorefrontPage);
-    fixture.componentRef.setInput('storefront', { status: 'coming-soon', name: 'Chez Demo' } satisfies CustomerStorefront);
+    fixture.componentRef.setInput('storefront', { status: 'coming-soon', name: 'Chez Demo' } satisfies StorefrontViewModel);
     fixture.detectChanges();
 
     const text = fixture.nativeElement.textContent as string;
