@@ -23,7 +23,7 @@ describe('seedDev', () => {
       name: 'Chez Demo',
       description: 'Cuisine de démonstration maison',
       phone: '0102030405',
-      coverPhoto: null,
+      coverPhoto: 'v1784235195/demo-cover_ghvwt5',
     });
   });
 });
