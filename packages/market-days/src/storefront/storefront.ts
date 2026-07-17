@@ -13,6 +13,7 @@ export class Storefront extends Aggregate {
   private _coverPhoto: CoverPhoto = new NoCoverPhoto();
   private _name?: StorefrontName;
   private _description: StorefrontDescription = new StorefrontDescription('');
+  private _published = false;
 
   apply(event: StorefrontEvent): void {
     switch (event.type) {
@@ -25,6 +26,9 @@ export class Storefront extends Aggregate {
       case 'StorefrontInformationEdited':
         this._name = new StorefrontName(event.payload.name);
         this._description = new StorefrontDescription(event.payload.description);
+        break;
+      case 'StorefrontPublished':
+        this._published = true;
         break;
     }
   }
@@ -69,6 +73,9 @@ export class Storefront extends Aggregate {
   }
 
   publish() {
+    if (this._published) {
+      return;
+    }
     const event: StorefrontPublished = {
       type: 'StorefrontPublished',
       payload: {},

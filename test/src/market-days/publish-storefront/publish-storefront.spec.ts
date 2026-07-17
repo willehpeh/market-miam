@@ -72,6 +72,25 @@ describe('Publish Storefront', () => {
     ]);
   });
 
+  it('is idempotent, raising no new event when the storefront is already published', async () => {
+    publishedStorefront();
+    addDish();
+    addSchedule();
+
+    await handler.execute(TestPublishStorefront.valid());
+
+    expect(store.newEvents()).toEqual([]);
+  });
+
+  function publishedStorefront() {
+    store.seedWith('storefront-vendor-id', [
+      { type: 'StorefrontOpened', payload: { vendorId: 'vendor-id' }, version: 1 },
+      { type: 'StorefrontInformationEdited', payload: { name: 'Chez Demo', description: 'Cuisine maison', phone: '0102030405' }, version: 1 },
+      { type: 'StorefrontCoverPhotoSet', payload: { imageReference: 'v1/cover' }, version: 1 },
+      { type: 'StorefrontPublished', payload: {}, version: 1 },
+    ], { vendorId: 'vendor-id' });
+  }
+
   function addSchedule() {
     store.seedWith('calendar-vendor-id', [
       { type: 'MarketScheduleRegistered', payload: { scheduleId: 'sched-1', market: { id: 'market-1' } }, version: 1 },
