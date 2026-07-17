@@ -15,15 +15,10 @@ describe('seedDev', () => {
     await app.close();
   });
 
-  it('makes a demo storefront reachable by its subdomain', async () => {
+  it('makes a demo storefront reachable by its subdomain, as coming-soon until it is published', async () => {
     await seedDev(app);
 
     const res = await request(app.getHttpServer()).get('/public/storefront/demo').expect(200);
-    expect(res.body).toEqual({
-      name: 'Chez Demo',
-      description: 'Cuisine de démonstration maison',
-      phone: '0102030405',
-      coverPhoto: 'v1784235195/demo-cover_ghvwt5',
-    });
+    expect(res.body).toEqual({ status: 'coming-soon', name: 'Chez Demo' });
   });
 });
