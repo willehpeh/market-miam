@@ -133,7 +133,7 @@ The seed now also registers a weekly demo schedule (Saturday 09:00–13:00, from
 Possible next steps (unordered):
 - **Slice 3 — markets.** **Unblocked** — `FindUpcomingMarketDays` + `CancelMarketSchedule`/`DeclareAbsence` all shipped and tested. Remaining work is composition: expose the (vendor-authed) expansion on the public storefront — fold `upcomingMarkets` into `CustomerStorefront`, apply the customer start-time cutoff, `nextMarket = [0]`, render the cards.
 - **Slice 4 follow-up — vendor publish button (step 14).** Vendor-frontend button calling `POST /storefront/publish`, surfacing the `StorefrontNotReadyToPublish` reasons. The gate itself is shipped.
-- **Styling / design pass.** Bring the tracer up to `docs/design/customer-frontend-*.png`; render the cover via `NgOptimizedImage` + Cloudinary loader.
+- **Styling / design pass.** Header/dish cards/dish sheet match the mockups (done with slice 2). Remaining polish: `NgOptimizedImage` + Cloudinary loader for the cover; sheet slide-up/down animation (deferred — `animate.enter` keys on DOM insertion but the sheet content persists across opens; use `@starting-style` on the dialog's open state instead).
 - **Real-time availability** (roadmap). Live dish sold-out/available (WS/SSE + signals) — introduces client state, likely NgRx per project convention.
 - **Ordering + payment** (later roadmap). Cart, customer auth, checkout, payment — the transactional turn that kept this on Angular.
 - **Prod deploy.** `render.yaml` already defines the SSR node service on `*.marketmiam.fr`; needs real wildcard DNS + the first `subdomain_registry` rows inserted by hand per env.
