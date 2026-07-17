@@ -60,6 +60,24 @@ describe('Publish Storefront', () => {
     expect((failure as StorefrontNotReadyToPublish).missing).not.toContain('catalogue');
   });
 
+  it('publishes a storefront that meets every requirement', async () => {
+    openStorefrontWithCover();
+    addDish();
+    addSchedule();
+
+    await handler.execute(TestPublishStorefront.valid());
+
+    expect(store.newEvents()).toEqual([
+      expect.objectContaining({ type: 'StorefrontPublished' }),
+    ]);
+  });
+
+  function addSchedule() {
+    store.seedWith('calendar-vendor-id', [
+      { type: 'MarketScheduleRegistered', payload: { scheduleId: 'sched-1', market: { id: 'market-1' } }, version: 1 },
+    ], { vendorId: 'vendor-id' });
+  }
+
   function addDish() {
     store.seedWith('catalogue-vendor-id', [
       { type: 'ItemAddedToCatalogue', payload: { itemId: 'dish-1', name: 'Bœuf bourguignon', description: 'Mijoté', price: 1300 }, version: 1 },

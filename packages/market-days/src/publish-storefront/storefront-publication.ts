@@ -14,5 +14,6 @@ export class StorefrontPublication {
     if (missing.length > 0) {
       throw new StorefrontNotReadyToPublish(missing);
     }
+    storefront.publish();
   }
 }
