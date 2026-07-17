@@ -48,6 +48,7 @@ describe('Erasing a vendor', () => {
       description: SHREDDED,
       phone: SHREDDED,
       imageReference: '',
+      published: false,
     });
   });
 

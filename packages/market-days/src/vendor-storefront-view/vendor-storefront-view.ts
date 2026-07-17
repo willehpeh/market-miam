@@ -3,4 +3,5 @@ export type VendorStorefrontView = {
   description: string;
   phone: string;
   imageReference: string;
+  published: boolean;
 };

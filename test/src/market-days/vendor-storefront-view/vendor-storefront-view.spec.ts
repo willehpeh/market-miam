@@ -41,7 +41,8 @@ describe('VendorStorefrontView', () => {
       name: '',
       description: '',
       phone: '',
-      imageReference: ''
+      imageReference: '',
+      published: false
     });
   });
 
@@ -57,7 +58,25 @@ describe('VendorStorefrontView', () => {
       name: infoCommand.name,
       description: infoCommand.description,
       phone: infoCommand.phone,
-      imageReference: photoCommand.imageReference
+      imageReference: photoCommand.imageReference,
+      published: false
+    });
+  });
+
+  it('marks the view published when the storefront is published', async () => {
+    store.seedWith('storefront-vendor-id', [
+      { type: 'StorefrontOpened', payload: { vendorId: 'vendor-id' }, version: 1 },
+      { type: 'StorefrontPublished', payload: {}, version: 1 },
+    ], { vendorId: 'vendor-id' });
+
+    await subscription.poll();
+
+    expect(await views.findByVendor('vendor-id')).toEqual({
+      name: '',
+      description: '',
+      phone: '',
+      imageReference: '',
+      published: true
     });
   });
 });

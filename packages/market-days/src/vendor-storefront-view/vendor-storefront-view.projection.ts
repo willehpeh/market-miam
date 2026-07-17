@@ -14,7 +14,8 @@ export class VendorStorefrontViewProjection extends ProjectionFor<StorefrontEven
     return {
       StorefrontOpened: e => this.handleStorefrontOpened(e),
       StorefrontCoverPhotoSet: e => this.handleStorefrontCoverPhotoSet(e),
-      StorefrontInformationEdited: e => this.handleStorefrontInformationEdited(e)
+      StorefrontInformationEdited: e => this.handleStorefrontInformationEdited(e),
+      StorefrontPublished: e => this.store.publish(vendorIdFrom(e))
     };
   }
 

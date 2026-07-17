@@ -25,7 +25,7 @@ beforeEach(async () => {
 });
 
 const opened: DomainEvent = { type: 'StorefrontOpened', payload: { vendorId: 'v1' }, version: 1 };
-const emptyView = { name: '', description: '', phone: '', imageReference: '' };
+const emptyView = { name: '', description: '', phone: '', imageReference: '', published: false };
 
 // A checkpoint that fails its write — simulates a crash after the view write, inside
 // the per-event transaction.

@@ -50,6 +50,7 @@ describe('Rebuilding the storefront projection', () => {
       description: 'Fresh bread daily',
       phone: '0102030405',
       imageReference: '',
+      published: false,
     });
     expect(await app.get(VendorStorefrontViews).findByVendor('ghost-vendor')).toBeUndefined();
   });

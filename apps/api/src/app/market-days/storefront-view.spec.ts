@@ -33,6 +33,7 @@ describe('Viewing a storefront over HTTP', () => {
       description: '',
       phone: '',
       imageReference: '',
+      published: false,
     });
   });
 

@@ -22,6 +22,10 @@ export class InMemoryVendorStorefrontViews implements VendorStorefrontViews, Ven
     this._storefronts.set(vendorId, { ...this.viewFor(vendorId), ...information });
   }
 
+  async publish(vendorId: string): Promise<void> {
+    this._storefronts.set(vendorId, { ...this.viewFor(vendorId), published: true });
+  }
+
   async clear(): Promise<void> {
     this._storefronts.clear();
   }
@@ -31,7 +35,7 @@ export class InMemoryVendorStorefrontViews implements VendorStorefrontViews, Ven
     if (existing) {
       return existing;
     }
-    const created = { name: '', description: '', phone: '', imageReference: '' };
+    const created = { name: '', description: '', phone: '', imageReference: '', published: false };
     this._storefronts.set(vendorId, created);
     return created;
   }

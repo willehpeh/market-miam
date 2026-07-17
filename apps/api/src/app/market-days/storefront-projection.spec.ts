@@ -34,6 +34,7 @@ describe('Storefront view projection', () => {
       description: 'Fresh bread daily',
       phone: '',
       imageReference: '',
+      published: false,
     });
   });
 });

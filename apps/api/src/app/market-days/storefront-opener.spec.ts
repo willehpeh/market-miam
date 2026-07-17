@@ -29,6 +29,7 @@ describe('Opening a storefront on registration', () => {
       description: '',
       phone: '',
       imageReference: '',
+      published: false,
     });
   });
 
