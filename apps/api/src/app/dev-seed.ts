@@ -1,6 +1,14 @@
 import { INestApplication } from '@nestjs/common';
 import { CommandGateway } from '@market-miam/event-sourcing';
-import { EditStorefrontInformation, InMemorySubdomainRegistry, OpenStorefront, SetStorefrontCoverPhoto } from '@market-miam/market-days';
+import {
+  AddItemToCatalogue,
+  EditStorefrontInformation,
+  InMemorySubdomainRegistry,
+  OpenStorefront,
+  PublishStorefront,
+  RegisterMarketSchedule,
+  SetStorefrontCoverPhoto,
+} from '@market-miam/market-days';
 import { Subscriptions } from './event-sourcing/subscriptions';
 
 const DEMO_VENDOR = 'demo-vendor';
@@ -23,6 +31,18 @@ export async function seedDev(app: INestApplication): Promise<void> {
     new EditStorefrontInformation(DEMO_VENDOR, 'Chez Demo', 'Cuisine de démonstration maison', '0102030405'),
   );
   await commands.execute(new SetStorefrontCoverPhoto(DEMO_VENDOR, DEMO_COVER));
+  await commands.execute(new AddItemToCatalogue('demo-dish-1', DEMO_VENDOR, 'Bœuf bourguignon', 'Mijoté 7 heures au vin rouge', 1300, 'v1784320097/demo-dish1_p1veiv'));
+  await commands.execute(new AddItemToCatalogue('demo-dish-2', DEMO_VENDOR, 'Tarte tatin', 'Aux pommes caramélisées', 600, 'v1784320098/demo-dish2_pmotbl'));
+  await commands.execute(new AddItemToCatalogue('demo-dish-3', DEMO_VENDOR, 'Soupe du jour', 'Selon le marché', 500));
+  await commands.execute(new RegisterMarketSchedule({
+    vendorId: DEMO_VENDOR,
+    scheduleId: 'demo-schedule',
+    startDate: new Date().toISOString().slice(0, 10),
+    market: { id: 'demo-market', name: 'Marché de la Bastille', streetAddress: 'Boulevard Richard-Lenoir', codePostal: '75011', town: 'Paris', pitch: 'Allée centrale' },
+    days: [{ day: 'SAT', startTime: '09:00', endTime: '13:00' }],
+    frequency: { weeks: 1 },
+  }));
+  await commands.execute(new PublishStorefront(DEMO_VENDOR));
   await subscriptions.drain();
   await registry.register(DEMO_SUBDOMAIN, DEMO_VENDOR);
 }

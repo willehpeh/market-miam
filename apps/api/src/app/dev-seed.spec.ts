@@ -15,10 +15,16 @@ describe('seedDev', () => {
     await app.close();
   });
 
-  it('makes a demo storefront reachable by its subdomain, as coming-soon until it is published', async () => {
+  it('makes a published demo storefront with dishes reachable by its subdomain', async () => {
     await seedDev(app);
 
     const res = await request(app.getHttpServer()).get('/public/storefront/demo').expect(200);
-    expect(res.body).toEqual({ status: 'coming-soon', name: 'Chez Demo' });
+    expect(res.body.status).toBe('published');
+    expect(res.body.name).toBe('Chez Demo');
+    expect(res.body.dishes.map((dish: { name: string }) => dish.name)).toEqual([
+      'Bœuf bourguignon',
+      'Tarte tatin',
+      'Soupe du jour',
+    ]);
   });
 });
