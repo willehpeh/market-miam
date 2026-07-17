@@ -28,6 +28,11 @@ describe('Public storefront', () => {
     await app.get(InMemorySubdomainRegistry).register(subdomain, 'acme-bakery');
   }
 
+  async function seedCatalogue(events: object[]): Promise<void> {
+    await app.get(EventStore).append('catalogue-acme-bakery', events, 0, { vendorId: 'acme-bakery' });
+    await app.get(Subscriptions).drain();
+  }
+
   it('returns the published storefront for a resolved subdomain', async () => {
     await seedStorefront([opened, infoEdited, coverSet, published]);
 
@@ -38,7 +43,22 @@ describe('Public storefront', () => {
       description: 'Fresh bread daily',
       phone: '0102030405',
       coverPhoto: 'v7/cover',
+      dishes: [],
     });
+  });
+
+  it('includes the catalogue dishes on a published storefront', async () => {
+    await seedStorefront([opened, infoEdited, coverSet, published]);
+    await seedCatalogue([
+      { type: 'ItemAddedToCatalogue', payload: { itemId: 'dish-1', name: 'Bœuf bourguignon', description: 'Mijoté 7 heures', price: 1300, imageReference: 'v7/dish-1' }, version: 1 },
+      { type: 'ItemAddedToCatalogue', payload: { itemId: 'dish-2', name: 'Tarte tatin', description: 'Aux pommes', price: 600 }, version: 1 },
+    ]);
+
+    const res = await request(app.getHttpServer()).get('/public/storefront/acme').expect(200);
+    expect(res.body.dishes).toEqual([
+      { itemId: 'dish-1', name: 'Bœuf bourguignon', description: 'Mijoté 7 heures', price: 1300, imageReference: 'v7/dish-1' },
+      { itemId: 'dish-2', name: 'Tarte tatin', description: 'Aux pommes', price: 600, imageReference: '' },
+    ]);
   });
 
   it('returns coming-soon, keeping the title, for a resolved but unpublished storefront', async () => {

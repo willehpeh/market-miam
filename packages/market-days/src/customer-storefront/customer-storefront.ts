@@ -1,3 +1,5 @@
+import { CatalogueViewItem } from '../catalogue-view/catalogue-view';
+
 export type CustomerStorefront =
   | {
       status: 'published';
@@ -5,6 +7,7 @@ export type CustomerStorefront =
       description: string;
       phone: string;
       coverPhoto: string | null;
+      dishes: CatalogueViewItem[];
     }
   | {
       status: 'coming-soon';
