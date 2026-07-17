@@ -1,17 +1,16 @@
 import { InMemoryEventStore } from '@market-miam/event-sourcing';
 import { VendorScopedEvents } from '@market-miam/market-days';
-import { PublishStorefrontHandler, StorefrontNotReadyToPublish, StorefrontPublication, Storefronts } from '@market-miam/market-days';
+import { Catalogues, PublishStorefrontHandler, StorefrontNotReadyToPublish, StorefrontPublication, Storefronts } from '@market-miam/market-days';
 import { TestPublishStorefront } from './test-data';
 
 describe('Publish Storefront', () => {
   let store: InMemoryEventStore;
-  let storefronts: Storefronts;
   let handler: PublishStorefrontHandler;
 
   beforeEach(() => {
     store = new InMemoryEventStore();
-    storefronts = new Storefronts(new VendorScopedEvents(store));
-    handler = new PublishStorefrontHandler(storefronts, new StorefrontPublication());
+    const events = new VendorScopedEvents(store);
+    handler = new PublishStorefrontHandler(new Storefronts(events), new Catalogues(events), new StorefrontPublication());
   });
 
   it('rejects publishing a storefront that is not ready', async () => {
@@ -40,6 +39,16 @@ describe('Publish Storefront', () => {
     expect((failure as StorefrontNotReadyToPublish).missing).not.toContain('description');
   });
 
+  it('rejects publishing a storefront with no dishes', async () => {
+    openStorefrontWithCover();
+
+    const failure = await handler.execute(TestPublishStorefront.valid()).catch((e: unknown) => e);
+
+    expect(failure).toBeInstanceOf(StorefrontNotReadyToPublish);
+    expect((failure as StorefrontNotReadyToPublish).missing).toContain('catalogue');
+    expect((failure as StorefrontNotReadyToPublish).missing).not.toContain('cover');
+  });
+
   function openStorefront() {
     store.seedWith('storefront-vendor-id', [{ type: 'StorefrontOpened', payload: { vendorId: 'vendor-id' }, version: 1 }], { vendorId: 'vendor-id' });
   }
@@ -52,6 +61,14 @@ describe('Publish Storefront', () => {
         payload: { name: overrides.name ?? 'Chez Demo', description: overrides.description ?? 'Cuisine maison', phone: '0102030405' },
         version: 1,
       },
+    ], { vendorId: 'vendor-id' });
+  }
+
+  function openStorefrontWithCover() {
+    store.seedWith('storefront-vendor-id', [
+      { type: 'StorefrontOpened', payload: { vendorId: 'vendor-id' }, version: 1 },
+      { type: 'StorefrontInformationEdited', payload: { name: 'Chez Demo', description: 'Cuisine maison', phone: '0102030405' }, version: 1 },
+      { type: 'StorefrontCoverPhotoSet', payload: { imageReference: 'v1/cover' }, version: 1 },
     ], { vendorId: 'vendor-id' });
   }
 });

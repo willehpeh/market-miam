@@ -108,6 +108,13 @@ export class Catalogue extends Aggregate {
     this.raise(event);
   }
 
+  hasAtLeastOneItem(): boolean {
+    // ponytail: apply() ignores ItemRetired, so retired items stay in _items and
+    // an all-retired catalogue still reads non-empty. Make retirement-aware (apply
+    // ItemRetired) if publishing an empty menu becomes a real problem.
+    return this._items.length > 0;
+  }
+
   private hasItem(itemId: ItemId): boolean {
     return this._items.some(item => item.hasId(itemId));
   }

@@ -105,7 +105,7 @@ Proves the whole pipe DNS→SSR→api→resolve→view→render, thinnest path.
 - [x] 1 — not-ready storefront → `StorefrontNotReadyToPublish` (tracer: command/handler/service/`hasTitle()`/error)
 - [x] 2 — title set, empty description → not ready (`hasDescription()` + `StorefrontDescription.hasContent()` + apply `StorefrontInformationEdited` storing name/description)
 - [x] 3 — no cover → not ready (`hasCoverPhoto()` + `CoverPhoto.isSet()`)
-- [ ] 4 — no dishes → not ready (handler loads `Catalogue` + `hasAtLeastOneItem()`)
+- [x] 4 — no dishes → not ready (handler loads `Catalogue` + `hasAtLeastOneItem()`)
 - [ ] 5 — no schedule → not ready (`Calendar.hasSchedule()`)
 - [ ] 6 — all met → `StorefrontPublished` emitted (`Storefront.publish()`: open + idempotent + raise)
 - [ ] 7 — re-publish → single event (idempotent)
