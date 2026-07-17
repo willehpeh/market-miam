@@ -9,7 +9,7 @@ Per-vendor public storefront at `{subdomain}.votreplateforme.fr`, rendering one 
 | Screen region | Source | Status |
 |---|---|---|
 | Header/footer — name, tagline, phone, cover | `VendorStorefrontViews.findByVendor` | built, reused — **wired (slice 1)** |
-| NOTRE CARTE — dishes | `CatalogueViews.forVendor` | built, reused (retired items already vanish from the view) |
+| NOTRE CARTE — dishes | `CatalogueViews.forVendor` | built, reused — **wired (slice 2)** |
 | PROCHAIN / PROCHAINS MARCHÉS | `FindUpcomingMarketDays(vendorId)` | **built** (`docs/MARKET-SCHEDULE-PLAN.md` §"Upcoming market days") — vendor-authed route only; public exposure is slice 3 |
 | subdomain → vendorId | `subdomain_registry` table | **built (slice 1)** |
 
@@ -30,7 +30,7 @@ CustomerStorefront =
   | { status: 'published';
       name, description, phone,
       coverPhoto?,                               // raw Cloudinary public-id — frontend builds the URL (see Image refs gotcha)
-      dishes: [{ id, name, description, price, photo? }],
+      dishes: CatalogueViewItem[],               // passed through verbatim: { itemId, name, description, price (cents), imageReference ('' = none) }
       upcomingMarkets: [{ date, weekday, marketName, startTime?, endTime?,
                           street?, postalCode, town, pitch? }] }
   | { status: 'coming-soon'; name: string | null }   // resolves but unpublished; 404 = unresolved (see Publication gate)
@@ -85,15 +85,16 @@ A storefront is public only once the vendor **publishes** it — a deliberate go
 
 Proves the whole pipe DNS→SSR→api→resolve→view→render, thinnest path.
 
-**Slice 2 — catalogue.**
-5. Extend endpoint/DTO with `CatalogueViews.forVendor` dishes.
-6. Frontend NOTRE CARTE list + dish detail sheet (opened client-side from list data).
+**Slice 2 — catalogue. ✅ Shipped** — four commits (endpoint · resolver view model · dish list + sheet · seed/publish).
+5. Extend endpoint/DTO with `CatalogueViews.forVendor` dishes — passed through verbatim, published branch only.
+6. Frontend: resolver maps the DTO to a view model at the edge (no NgRx in customer-frontend) — built Cloudinary URLs (`photo: { cardUrl, sheetUrl } | null`), `priceLabel` via a copied `formatEuros`. NOTRE CARTE list + dish sheet as a native `<dialog>` opened imperatively in the click handler (`selected.set(dish); sheet.showModal()` — no `effect()`); no-photo dishes render text-only (placeholder deferred to the styling pass). jsdom lacks `<dialog>` methods — two-line `showModal`/`close` polyfill in `test-setup.ts`.
+The seed now also registers a weekly demo schedule (Saturday 09:00–13:00, from today) and publishes — the demo renders the full published storefront; the schedule stays invisible until slice 3.
 
 **Slice 3 — markets (unblocked; the market-schedule dependency shipped — see Dependency).**
 7. Fold `upcomingMarkets` into the public `CustomerStorefront` (the expansion query is currently vendor-authed only — reuse its expansion, don't duplicate); apply the customer start-time cutoff; `nextMarket = [0]`.
 8. Frontend PROCHAIN MARCHÉ card + PROCHAINS MARCHÉS list (date badge, hours, address).
 
-**Slice 4 — publication gate (ADR 0031). ✅ Shipped** (steps 9–13; step 14 pending). Domain (cycles 1–8), API (`POST /storefront/publish`), read gate + `published` projection, and the coming-soon frontend are all live. **Decision:** the demo is left unpublished (coming-soon); seeding it a dish + schedule to publish is deferred to slices 2 & 3.
+**Slice 4 — publication gate (ADR 0031). ✅ Shipped** (steps 9–13; step 14 pending). Domain (cycles 1–8), API (`POST /storefront/publish`), read gate + `published` projection, and the coming-soon frontend are all live. The demo was left unpublished until slice 2, which seeded dishes + a schedule and published it.
 9. `Storefront`: store name/description in `apply`; `hasTitle()`/`hasDescription()`/`hasCoverPhoto()`; `publish()` (open + idempotent, raises `StorefrontPublished`). Add `StorefrontDescription.hasContent()`, `CoverPhoto.isSet()`. Aggregate tests.
 10. Sibling readiness: `Catalogue.hasAtLeastOneItem()`, `Calendar.hasSchedule()`. Tests.
 11. `StorefrontPublication` service + `PublishStorefront` command/handler (vendor-authed): assemble `missing`, throw `StorefrontNotReadyToPublish` (→400) or publish. Acceptance test — not-ready → 400 + reasons; ready → `StorefrontPublished`.
@@ -113,7 +114,7 @@ Proves the whole pipe DNS→SSR→api→resolve→view→render, thinnest path.
 
 **API surface (step 11) shipped:** `PublishStorefrontHandler` + `StorefrontPublication` registered in `market-days.module.ts`; vendor-authed `POST /storefront/publish` (`@HttpCode 204`) on `storefront.controller.ts`; `StorefrontNotReadyToPublish → 400` via the existing `DomainErrorFilter` (reasons in the message). Acceptance test `storefront-publish.spec.ts` (not-ready → 400 + reasons; ready → 204).
 
-**Steps 12–13 shipped:** `StorefrontPublished` projects into `vendor-storefront-view.published` (migration 0008, both adapters); `FindCustomerStorefront` returns the discriminated union (404 / coming-soon / published); frontend renders published shell · `ComingSoonPage` (`noindex`) · introuvable. **The demo is intentionally left unpublished** (coming-soon) — seeding it a dish + schedule to publish is deferred to slices 2 & 3, which wire and seed catalogue/markets. The full published-demo preview returns then. **Next: slice 2 (catalogue) / slice 3 (markets).**
+**Steps 12–13 shipped:** `StorefrontPublished` projects into `vendor-storefront-view.published` (migration 0008, both adapters); `FindCustomerStorefront` returns the discriminated union (404 / coming-soon / published); frontend renders published shell · `ComingSoonPage` (`noindex`) · introuvable. The demo stayed coming-soon until slice 2 published it. **Next: slice 3 (markets).**
 
 ## Gotchas / open
 
@@ -122,15 +123,14 @@ Proves the whole pipe DNS→SSR→api→resolve→view→render, thinnest path.
 - **PII on a public surface by design.** storefront-view name/description/phone are shown (phone in the footer). Shredded vendor handled by erasure deleting the subdomain row, not a view guard.
 - **Image URLs.** No server-side URL builder exists (only `vendor-frontend`'s `cloudinary-url.pipe`). The DTO returns raw Cloudinary public-ids (`imageReference`); the customer-frontend builds delivery URLs client-side, mirroring that pipe ([[project_cover_photo_upload]]). Keeps multiple transforms per image (card thumb vs modal) available for slice 2; `cloudName` is public.
 - **Open — read-model overlap.** `FindUpcomingMarketDays` and the Calendrier view store near-identical rows (schedule snapshot keyed `(vendorId, scheduleId)`); a one-model/two-queries consolidation is possible but touches shipped Calendrier code — deferred to `docs/MARKET-SCHEDULE-PLAN.md`.
-- **Dev seed.** `seedDev(app)` (`apps/api/src/app/dev-seed.ts`, `NODE_ENV=development` / memory profile only) opens a `demo-vendor` storefront and registers the `demo` subdomain after `listen`, so `localhost:4200/?subdomain=demo` renders with no manual seeding. Opens the storefront directly (not via `RegisterVendor`) so the `OpensStorefronts` processor never races `drain()` under polling. Never runs on postgres/prod. **Slice 4:** with the publish gate live, the demo (open + info + cover, no dishes/schedule) resolves to **coming-soon** by design — `?subdomain=demo` shows the coming-soon page. Seeding it a dish + schedule + `PublishStorefront` to show the full storefront is deferred to slices 2 & 3 (don't fabricate catalogue/market seed data before those slices render it).
+- **Dev seed.** `seedDev(app)` (`apps/api/src/app/dev-seed.ts`, `NODE_ENV=development` / memory profile only) opens a `demo-vendor` storefront and registers the `demo` subdomain after `listen`, so `localhost:4200/?subdomain=demo` renders with no manual seeding. Opens the storefront directly (not via `RegisterVendor`) so the `OpensStorefronts` processor never races `drain()` under polling. Never runs on postgres/prod. **Slice 2:** the seed adds 3 dishes (one photoless, proving the no-photo branch), a weekly Saturday schedule (start = boot date, never stale), and `PublishStorefront` — `?subdomain=demo` renders the full published storefront.
 - **Cover image.** Now a **publish requirement** (ADR 0031), so a published storefront always has one; rendered in slice 4 from the built Cloudinary URL (customer-frontend needs `cloudinary.cloudName` in its env, mirroring vendor-frontend). `NgOptimizedImage` + `provideCloudinaryLoader` is a later LCP refinement.
 
 ## Status & next steps
 
-**Slices 1 and 4 shipped.** Slice 1: subdomain registry, public endpoint, erasure row-deletion, SSR storefront tracer, dev seed. Slice 4: the full publication gate (ADR 0031) — readiness domain service, `POST /storefront/publish`, `published` projection, discriminated-union read gate, and the coming-soon page. The demo currently resolves to coming-soon by design (proven live).
+**Slices 1, 2 and 4 shipped.** Slice 1: subdomain registry, public endpoint, erasure row-deletion, SSR storefront tracer, dev seed. Slice 4: the full publication gate (ADR 0031) — readiness domain service, `POST /storefront/publish`, `published` projection, discriminated-union read gate, and the coming-soon page. Slice 2: dishes on the public endpoint, resolver view-model mapping, NOTRE CARTE list + native-dialog dish sheet, and the seed published the demo.
 
 Possible next steps (unordered):
-- **Slice 2 — catalogue.** `CatalogueViews.forVendor` → DTO `dishes[]`; NOTRE CARTE list + client-side dish sheet. Extend `seedDev` with demo dishes (and, with a schedule, this is what lets the demo publish).
 - **Slice 3 — markets.** **Unblocked** — `FindUpcomingMarketDays` + `CancelMarketSchedule`/`DeclareAbsence` all shipped and tested. Remaining work is composition: expose the (vendor-authed) expansion on the public storefront — fold `upcomingMarkets` into `CustomerStorefront`, apply the customer start-time cutoff, `nextMarket = [0]`, render the cards.
 - **Slice 4 follow-up — vendor publish button (step 14).** Vendor-frontend button calling `POST /storefront/publish`, surfacing the `StorefrontNotReadyToPublish` reasons. The gate itself is shipped.
 - **Styling / design pass.** Bring the tracer up to `docs/design/customer-frontend-*.png`; render the cover via `NgOptimizedImage` + Cloudinary loader.
