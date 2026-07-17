@@ -18,12 +18,12 @@ import { ComingSoonPage } from './coming-soon-page';
 
             <section class="relative">
               @if (storefront.coverUrl; as cover) {
-                <img [src]="cover" alt="" class="aspect-[16/10] w-full object-cover" />
+                <img [src]="cover" alt="" class="aspect-16/10 w-full object-cover" />
               } @else {
-                <div class="hatch aspect-[16/10] w-full"></div>
+                <div class="hatch aspect-16/10 w-full"></div>
                 <span class="kicker absolute left-5 top-5 rounded-pill bg-surface/85 px-3 py-1">photo du stand</span>
               }
-              <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/65 via-black/25 to-transparent px-5 pb-5 pt-16">
+              <div class="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/65 via-black/25 to-transparent px-5 pb-5 pt-16">
                 <h1 class="text-4xl font-bold tracking-tight text-white">{{ storefront.name }}</h1>
                 <p class="mt-1 text-lg text-white/85">{{ storefront.description }}</p>
               </div>
@@ -31,7 +31,6 @@ import { ComingSoonPage } from './coming-soon-page';
 
             <section class="px-5 py-8">
               <h2 class="kicker">Notre carte</h2>
-              <p class="mt-3 text-lg text-ink-soft">Tout est cuisiné maison. La sélection change selon le marché et la saison.</p>
               <ul class="mt-5 space-y-4">
                 @for (dish of storefront.dishes; track dish.itemId) {
                   <li>
@@ -71,9 +70,9 @@ import { ComingSoonPage } from './coming-soon-page';
                 <div class="p-5 pt-3">
                   <span class="mx-auto mb-3 block h-1.5 w-10 rounded-pill bg-line-strong"></span>
                   @if (dish.photo; as photo) {
-                    <img [src]="photo.sheetUrl" alt="" class="aspect-[4/3] w-full rounded-card object-cover" />
+                    <img [src]="photo.sheetUrl" alt="" class="aspect-4/3 w-full rounded-card object-cover" />
                   } @else {
-                    <span class="hatch grid aspect-[4/3] w-full place-items-center rounded-card">
+                    <span class="hatch grid aspect-4/3 w-full place-items-center rounded-card">
                       <span class="kicker rounded-pill bg-surface/85 px-3 py-1">photo du plat</span>
                     </span>
                   }
