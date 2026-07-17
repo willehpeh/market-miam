@@ -2,6 +2,7 @@ import { InMemoryEventStore } from '@market-miam/event-sourcing';
 import { VendorScopedEvents } from '@market-miam/market-days';
 import { Calendars, Catalogues, PublishStorefrontHandler, StorefrontNotReadyToPublish, StorefrontPublication, Storefronts } from '@market-miam/market-days';
 import { TestPublishStorefront } from './test-data';
+import { expectVendorScopedEvents } from '../../shared-kernel';
 
 describe('Publish Storefront', () => {
   let store: InMemoryEventStore;
@@ -102,6 +103,25 @@ describe('Publish Storefront', () => {
       { type: 'ItemAddedToCatalogue', payload: { itemId: 'dish-1', name: 'Bœuf bourguignon', description: 'Mijoté', price: 1300 }, version: 1 },
     ], { vendorId: 'vendor-id' });
   }
+
+  it('reports every unmet requirement', async () => {
+    openStorefront();
+
+    const failure = await handler.execute(TestPublishStorefront.valid()).catch((e: unknown) => e);
+
+    expect(failure).toBeInstanceOf(StorefrontNotReadyToPublish);
+    expect((failure as StorefrontNotReadyToPublish).missing).toEqual(['title', 'description', 'cover', 'catalogue', 'schedule']);
+  });
+
+  it('stamps the vendor id into the published event metadata', async () => {
+    openStorefrontWithCover();
+    addDish();
+    addSchedule();
+
+    await handler.execute(TestPublishStorefront.valid());
+
+    expectVendorScopedEvents(store.newEvents(), 'vendor-id');
+  });
 
   function openStorefront() {
     store.seedWith('storefront-vendor-id', [{ type: 'StorefrontOpened', payload: { vendorId: 'vendor-id' }, version: 1 }], { vendorId: 'vendor-id' });

@@ -109,7 +109,7 @@ Proves the whole pipe DNS→SSR→api→resolve→view→render, thinnest path.
 - [x] 5 — no schedule → not ready (`Calendar.hasAtLeastOneSchedule()` — `hasSchedule(id)` was taken)
 - [x] 6 — all met → `StorefrontPublished` emitted (`StorefrontPublication` calls `Storefront.publish()`; empty payload — vendorId is in metadata per the mutation-event convention)
 - [x] 7 — re-publish → single event (idempotent: `_published` applied from `StorefrontPublished`, `publish()` no-ops)
-- [ ] 8 — assert full `missing[]` reasons + vendorId metadata (`expectVendorScopedEvents`)
+- [x] 8 — full `missing[]` = `[title, description, cover, catalogue, schedule]` + vendorId metadata (`expectVendorScopedEvents`)
 
 ## Gotchas / open
 
