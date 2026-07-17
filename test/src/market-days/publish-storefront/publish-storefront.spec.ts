@@ -30,6 +30,16 @@ describe('Publish Storefront', () => {
     expect((failure as StorefrontNotReadyToPublish).missing).not.toContain('title');
   });
 
+  it('rejects publishing a storefront without a cover photo', async () => {
+    openStorefrontWithInformation();
+
+    const failure = await handler.execute(TestPublishStorefront.valid()).catch((e: unknown) => e);
+
+    expect(failure).toBeInstanceOf(StorefrontNotReadyToPublish);
+    expect((failure as StorefrontNotReadyToPublish).missing).toContain('cover');
+    expect((failure as StorefrontNotReadyToPublish).missing).not.toContain('description');
+  });
+
   function openStorefront() {
     store.seedWith('storefront-vendor-id', [{ type: 'StorefrontOpened', payload: { vendorId: 'vendor-id' }, version: 1 }], { vendorId: 'vendor-id' });
   }

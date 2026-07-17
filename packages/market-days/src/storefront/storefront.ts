@@ -76,6 +76,10 @@ export class Storefront extends Aggregate {
     return this._description.hasContent();
   }
 
+  hasCoverPhoto(): boolean {
+    return this._coverPhoto.isSet();
+  }
+
   private assertOpen() {
     if (!this._opened) {
       throw new StorefrontNotOpenError();

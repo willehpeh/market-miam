@@ -6,6 +6,7 @@ export class StorefrontPublication {
     const missing: string[] = [];
     if (!storefront.hasTitle()) missing.push('title');
     if (!storefront.hasDescription()) missing.push('description');
+    if (!storefront.hasCoverPhoto()) missing.push('cover');
     if (missing.length > 0) {
       throw new StorefrontNotReadyToPublish(missing);
     }
