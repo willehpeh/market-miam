@@ -52,7 +52,7 @@ A storefront is public only once the vendor **publishes** it — a deliberate go
   |---|---|---|
   | Storefront | `hasTitle()` / `hasDescription()` / `hasCoverPhoto()` | `title` / `description` / `cover` |
   | Catalogue | `hasAtLeastOneItem()` | `catalogue` |
-  | Calendar | `hasSchedule()` | `schedule` |
+  | Calendar | `hasAtLeastOneSchedule()` | `schedule` |
 
 - **`Storefront.publish()` guards only local rules** (open, idempotent) + raises the event; the service gates readiness → `StorefrontNotReadyToPublish(missing)` (extends `DomainError` → 400 with reasons). Thin handler: load storefront/catalogue/calendar, delegate, save the storefront (one aggregate mutated, one event — ADR 0009).
 - **Cover mandatory to publish, not to edit** — consistent with description (`StorefrontDescription` allows empty, so `hasDescription()` checks content, not a fired flag). Readiness ≠ validity; the gate is in the service, never the VOs.
@@ -93,12 +93,12 @@ Proves the whole pipe DNS→SSR→api→resolve→view→render, thinnest path.
 7. Fold `upcomingMarkets` into the public `CustomerStorefront` (the expansion query is currently vendor-authed only — reuse its expansion, don't duplicate); apply the customer start-time cutoff; `nextMarket = [0]`.
 8. Frontend PROCHAIN MARCHÉ card + PROCHAINS MARCHÉS list (date badge, hours, address).
 
-**Slice 4 — publication gate (ADR 0031).** Backend build order 9→13 is independent of slices 2/3; the demo only renders *published* once dishes + schedules are seeded (needs 2/3's seed work).
+**Slice 4 — publication gate (ADR 0031). ✅ Shipped** (steps 9–13; step 14 pending). Domain (cycles 1–8), API (`POST /storefront/publish`), read gate + `published` projection, and the coming-soon frontend are all live. **Decision:** the demo is left unpublished (coming-soon); seeding it a dish + schedule to publish is deferred to slices 2 & 3.
 9. `Storefront`: store name/description in `apply`; `hasTitle()`/`hasDescription()`/`hasCoverPhoto()`; `publish()` (open + idempotent, raises `StorefrontPublished`). Add `StorefrontDescription.hasContent()`, `CoverPhoto.isSet()`. Aggregate tests.
 10. Sibling readiness: `Catalogue.hasAtLeastOneItem()`, `Calendar.hasSchedule()`. Tests.
 11. `StorefrontPublication` service + `PublishStorefront` command/handler (vendor-authed): assemble `missing`, throw `StorefrontNotReadyToPublish` (→400) or publish. Acceptance test — not-ready → 400 + reasons; ready → `StorefrontPublished`.
 12. Project `StorefrontPublished` → `vendor-storefront-view.published`; `FindCustomerStorefront` returns the discriminated union (404 / coming-soon / published). Extend the public-endpoint acceptance test for all three states.
-13. Frontend: resolver union → `ComingSoonPage` + `StorefrontPage` branch, `noindex` on coming-soon. Render the cover `<img>` (built URL; `NgOptimizedImage` later). Extend `seedDev`: description + cover (`v1784235195/demo-cover_ghvwt5`) + dish + schedule + publish.
+13. Frontend: resolver union → `ComingSoonPage` + `StorefrontPage` branch, `noindex` on coming-soon. Render the cover `<img>` (built URL; `NgOptimizedImage` later). `seedDev` already sets description + cover (`v1784235195/demo-cover_ghvwt5`); the dish + schedule + publish seed is **deferred to slices 2 & 3** (demo stays coming-soon until then).
 14. (Own slice, later) Vendor-frontend publish button surfacing the missing-reasons.
 
 **Publish-storefront TDD cycles** — steps 9–11's write side is driven outside-in by one social spec (`test/src/market-days/publish-storefront/publish-storefront.spec.ts`); the aggregate, VO, service and command emerge together, one RED→GREEN per cycle:
@@ -127,12 +127,12 @@ Proves the whole pipe DNS→SSR→api→resolve→view→render, thinnest path.
 
 ## Status & next steps
 
-**Slice 1 shipped** — subdomain registry, public endpoint, erasure row-deletion, SSR storefront tracer, dev seed. Header/footer renders end to end (DNS→SSR→api→resolve→view→render), proven live.
+**Slices 1 and 4 shipped.** Slice 1: subdomain registry, public endpoint, erasure row-deletion, SSR storefront tracer, dev seed. Slice 4: the full publication gate (ADR 0031) — readiness domain service, `POST /storefront/publish`, `published` projection, discriminated-union read gate, and the coming-soon page. The demo currently resolves to coming-soon by design (proven live).
 
 Possible next steps (unordered):
-- **Slice 2 — catalogue.** `CatalogueViews.forVendor` → DTO `dishes[]`; NOTRE CARTE list + client-side dish sheet. Extend `seedDev` with demo dishes.
+- **Slice 2 — catalogue.** `CatalogueViews.forVendor` → DTO `dishes[]`; NOTRE CARTE list + client-side dish sheet. Extend `seedDev` with demo dishes (and, with a schedule, this is what lets the demo publish).
 - **Slice 3 — markets.** **Unblocked** — `FindUpcomingMarketDays` + `CancelMarketSchedule`/`DeclareAbsence` all shipped and tested. Remaining work is composition: expose the (vendor-authed) expansion on the public storefront — fold `upcomingMarkets` into `CustomerStorefront`, apply the customer start-time cutoff, `nextMarket = [0]`, render the cards.
-- **Slice 4 — publication gate (ADR 0031).** `PublishStorefront` + `StorefrontPublication` readiness service; `published` projection; discriminated-union read gate (404 / coming-soon / published); cover render. Backend is independent of 2/3; the *demo* renders published only once 2/3 seed dishes + schedules. Build order steps 9–14.
+- **Slice 4 follow-up — vendor publish button (step 14).** Vendor-frontend button calling `POST /storefront/publish`, surfacing the `StorefrontNotReadyToPublish` reasons. The gate itself is shipped.
 - **Styling / design pass.** Bring the tracer up to `docs/design/customer-frontend-*.png`; render the cover via `NgOptimizedImage` + Cloudinary loader.
 - **Real-time availability** (roadmap). Live dish sold-out/available (WS/SSE + signals) — introduces client state, likely NgRx per project convention.
 - **Ordering + payment** (later roadmap). Cart, customer auth, checkout, payment — the transactional turn that kept this on Angular.
