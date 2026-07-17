@@ -106,7 +106,7 @@ Proves the whole pipe DNS→SSR→api→resolve→view→render, thinnest path.
 - [x] 2 — title set, empty description → not ready (`hasDescription()` + `StorefrontDescription.hasContent()` + apply `StorefrontInformationEdited` storing name/description)
 - [x] 3 — no cover → not ready (`hasCoverPhoto()` + `CoverPhoto.isSet()`)
 - [x] 4 — no dishes → not ready (handler loads `Catalogue` + `hasAtLeastOneItem()`)
-- [ ] 5 — no schedule → not ready (`Calendar.hasSchedule()`)
+- [x] 5 — no schedule → not ready (`Calendar.hasAtLeastOneSchedule()` — `hasSchedule(id)` was taken)
 - [ ] 6 — all met → `StorefrontPublished` emitted (`Storefront.publish()`: open + idempotent + raise)
 - [ ] 7 — re-publish → single event (idempotent)
 - [ ] 8 — assert full `missing[]` reasons + vendorId metadata (`expectVendorScopedEvents`)

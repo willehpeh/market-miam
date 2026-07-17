@@ -89,6 +89,10 @@ export class Calendar extends Aggregate {
     this.raise(event);
   }
 
+  hasAtLeastOneSchedule(): boolean {
+    return this._marketIds.size > 0;
+  }
+
   private hasSchedule(scheduleId: string): boolean {
     return this._marketIds.has(scheduleId);
   }
