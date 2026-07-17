@@ -61,6 +61,7 @@ import { ComingSoonPage } from './coming-soon-page';
               </ul>
             </section>
 
+            <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -- native dialog closes on Escape; click is backdrop-dismiss only -->
             <dialog
               #sheet
               class="mx-auto mb-0 mt-auto w-full max-w-xl rounded-t-3xl bg-canvas p-0 backdrop:bg-black/50"
