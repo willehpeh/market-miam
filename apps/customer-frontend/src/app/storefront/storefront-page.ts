@@ -11,8 +11,9 @@ import { ComingSoonPage } from './coming-soon-page';
       @switch (storefront.status) {
         @case ('published') {
           <main class="mx-auto min-h-dvh max-w-xl bg-surface-sunk">
-            <header class="px-5 py-4">
+            <header class="flex items-center gap-3 bg-surface px-5 py-4">
               <img src="logo-transparent.png" alt="Market Miam" class="h-6 w-auto" />
+              <span class="text-xl font-bold tracking-tight text-ink">{{ storefront.name }}</span>
             </header>
 
             <section class="relative">
@@ -30,42 +31,59 @@ import { ComingSoonPage } from './coming-soon-page';
 
             <section class="px-5 py-8">
               <h2 class="kicker">Notre carte</h2>
-              <ul class="mt-4 divide-y divide-line">
+              <p class="mt-3 text-lg text-ink-soft">Tout est cuisiné maison. La sélection change selon le marché et la saison.</p>
+              <ul class="mt-5 space-y-4">
                 @for (dish of storefront.dishes; track dish.itemId) {
                   <li>
                     <button
                       type="button"
                       [attr.data-dish]="dish.itemId"
-                      class="flex w-full items-center gap-4 py-4 text-left"
+                      class="flex w-full items-start gap-4 rounded-card bg-surface p-4 text-left shadow-soft"
                       (click)="selected.set(dish); sheet.showModal()"
                     >
-                      <span class="min-w-0 flex-1">
-                        <span class="block font-bold text-ink">{{ dish.name }}</span>
-                        <span class="mt-0.5 block truncate text-ink-soft">{{ dish.description }}</span>
-                        <span class="mt-1 block font-bold text-brand">{{ dish.priceLabel }}</span>
-                      </span>
                       @if (dish.photo; as photo) {
-                        <img [src]="photo.cardUrl" alt="" class="size-20 shrink-0 rounded-lg object-cover" />
+                        <img [src]="photo.cardUrl" alt="" class="size-24 shrink-0 rounded-card object-cover" />
+                      } @else {
+                        <span class="hatch grid size-24 shrink-0 place-items-center rounded-card">
+                          <span class="kicker rounded-pill bg-surface/85 px-2.5 py-1 normal-case">plat</span>
+                        </span>
                       }
+                      <span class="min-w-0 flex-1 pt-1">
+                        <span class="flex items-baseline justify-between gap-3">
+                          <span class="truncate text-lg font-bold text-ink">{{ dish.name }}</span>
+                          <span class="shrink-0 text-lg font-bold text-ink">{{ dish.priceLabel }}</span>
+                        </span>
+                        <span class="mt-1 line-clamp-2 block text-ink-soft">{{ dish.description }}</span>
+                      </span>
                     </button>
                   </li>
                 }
               </ul>
             </section>
 
-            <dialog #sheet class="m-auto w-full max-w-md rounded-xl p-0 backdrop:bg-black/50">
+            <dialog
+              #sheet
+              class="mx-auto mb-0 mt-auto w-full max-w-xl rounded-t-3xl bg-canvas p-0 backdrop:bg-black/50"
+              (click)="$event.target === sheet && sheet.close()"
+            >
               @if (selected(); as dish) {
-                @if (dish.photo; as photo) {
-                  <img [src]="photo.sheetUrl" alt="" class="aspect-[4/3] w-full object-cover" />
-                }
-                <div class="p-5">
-                  <h3 class="text-2xl font-bold text-ink">{{ dish.name }}</h3>
-                  <p class="mt-2 text-ink-soft">{{ dish.description }}</p>
-                  <p class="mt-3 text-xl font-bold text-brand">{{ dish.priceLabel }}</p>
-                  <p class="mt-3 text-sm text-ink-soft">Disponible les jours de marché, dans la limite des stocks.</p>
-                  <button type="button" class="mt-5 w-full rounded-pill border border-line py-2 text-ink" (click)="sheet.close()">
-                    Fermer
-                  </button>
+                <div class="p-5 pt-3">
+                  <span class="mx-auto mb-3 block h-1.5 w-10 rounded-pill bg-line-strong"></span>
+                  @if (dish.photo; as photo) {
+                    <img [src]="photo.sheetUrl" alt="" class="aspect-[4/3] w-full rounded-card object-cover" />
+                  } @else {
+                    <span class="hatch grid aspect-[4/3] w-full place-items-center rounded-card">
+                      <span class="kicker rounded-pill bg-surface/85 px-3 py-1">photo du plat</span>
+                    </span>
+                  }
+                  <div class="mt-5 flex items-baseline justify-between gap-3">
+                    <h3 class="text-2xl font-bold text-ink">{{ dish.name }}</h3>
+                    <p class="shrink-0 text-2xl font-bold text-ink">{{ dish.priceLabel }}</p>
+                  </div>
+                  <p class="mt-3 text-lg text-ink-soft">{{ dish.description }}</p>
+                  <p class="mt-5 rounded-card bg-surface p-4 text-ink-soft shadow-soft">
+                    Disponible les jours de marché, dans la limite des préparations du jour.
+                  </p>
                 </div>
               }
             </dialog>
