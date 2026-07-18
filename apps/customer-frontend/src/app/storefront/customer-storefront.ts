@@ -6,6 +6,19 @@ export type CatalogueDish = {
   imageReference: string;
 };
 
+export type UpcomingMarket = {
+  date: string;
+  weekday: string;
+  marketName: string;
+  startTime?: string;
+  endTime?: string;
+  street?: string;
+  postalCode: string;
+  town: string;
+  pitch?: string;
+  cancelled: boolean;
+};
+
 export type CustomerStorefront =
   | {
       status: 'published';
@@ -14,6 +27,7 @@ export type CustomerStorefront =
       phone: string;
       coverPhoto: string | null;
       dishes: CatalogueDish[];
+      upcomingMarkets: UpcomingMarket[];
     }
   | {
       status: 'coming-soon';

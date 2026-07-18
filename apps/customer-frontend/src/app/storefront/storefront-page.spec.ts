@@ -24,6 +24,10 @@ const ACME: StorefrontViewModel = {
       photo: null,
     },
   ],
+  upcomingMarkets: [
+    { weekday: 'JEU', day: '18', month: 'JUIN', marketName: 'Marché Saint-Antoine', hours: '8h – 13h30', address: 'Quai Saint-Antoine, Lyon', cancelled: false },
+    { weekday: 'MAR', day: '23', month: 'JUIN', marketName: 'Marché de la Croix-Rousse', hours: '8h – 13h', address: 'Lyon', cancelled: true },
+  ],
 };
 
 describe('StorefrontPage', () => {
@@ -52,6 +56,23 @@ describe('StorefrontPage', () => {
       .map(img => (img as HTMLImageElement).src);
     expect(thumbs).toContain('https://cdn.test/card/dish-1');
     expect(thumbs.some(src => src.includes('dish-2'))).toBe(false);
+  });
+
+  it('renders the upcoming markets with a date badge and details, flagging cancelled ones', () => {
+    const fixture = TestBed.createComponent(StorefrontPage);
+    fixture.componentRef.setInput('storefront', ACME);
+    fixture.detectChanges();
+
+    const text = fixture.nativeElement.textContent as string;
+    expect(text).toContain('Prochains marchés');
+    expect(text).toContain('JEU');
+    expect(text).toContain('18');
+    expect(text).toContain('JUIN');
+    expect(text).toContain('Marché Saint-Antoine');
+    expect(text).toContain('8h – 13h30');
+    expect(text).toContain('Quai Saint-Antoine, Lyon');
+    expect(text).toContain('Marché de la Croix-Rousse');
+    expect(text).toContain('Annulé');
   });
 
   it('opens the dish sheet with the full details when a dish is clicked', () => {

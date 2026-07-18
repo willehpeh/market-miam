@@ -2,6 +2,7 @@ import { INestApplication } from '@nestjs/common';
 import { CommandGateway } from '@market-miam/event-sourcing';
 import {
   AddItemToCatalogue,
+  DeclareAbsence,
   EditStorefrontInformation,
   InMemorySubdomainRegistry,
   OpenStorefront,
@@ -42,7 +43,20 @@ export async function seedDev(app: INestApplication): Promise<void> {
     days: [{ day: 'SAT', startTime: '09:00', endTime: '13:00' }],
     frequency: { weeks: 1 },
   }));
+  const absentSaturday = upcomingSaturday(1);
+  await commands.execute(new DeclareAbsence({ vendorId: DEMO_VENDOR, scheduleId: 'demo-schedule', from: absentSaturday, to: absentSaturday }));
   await commands.execute(new PublishStorefront(DEMO_VENDOR));
   await subscriptions.drain();
   await registry.register(DEMO_SUBDOMAIN, DEMO_VENDOR);
+}
+
+// The 2nd upcoming Saturday (UTC, matching LocalDate's day-of-week math), so the
+// demo storefront shows one market flagged as cancelled.
+function upcomingSaturday(weeksAhead: number): string {
+  const date = new Date();
+  while (date.getUTCDay() !== 6) {
+    date.setUTCDate(date.getUTCDate() + 1);
+  }
+  date.setUTCDate(date.getUTCDate() + 7 * weeksAhead);
+  return date.toISOString().slice(0, 10);
 }
