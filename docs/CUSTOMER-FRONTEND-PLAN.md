@@ -10,7 +10,7 @@ Per-vendor public storefront at `{subdomain}.votreplateforme.fr`, rendering one 
 |---|---|---|
 | Header/footer — name, tagline, phone, cover | `VendorStorefrontViews.findByVendor` | built, reused — **wired (slice 1)** |
 | NOTRE CARTE — dishes | `CatalogueViews.forVendor` | built, reused — **wired (slice 2)** |
-| PROCHAIN / PROCHAINS MARCHÉS | `FindUpcomingMarketDays(vendorId)` | built, reused — **wired into the public composite (slice 3 backend)**; frontend cards are slice 3 step 8 |
+| PROCHAINS MARCHÉS | `FindUpcomingMarketDays(vendorId)` | built, reused — **wired into the public composite (slice 3 backend)**; frontend list is slice 3 step 8 |
 | subdomain → vendorId | `subdomain_registry` table | **built (slice 1)** |
 
 Composition: `GET /public/storefront/:subdomain` (public, no auth) resolves the subdomain, fans out to the three read models, returns one `CustomerStorefront` result — **a discriminated union** gated on publication (`published` | `coming-soon`), or 404 (see Publication gate). SSR fetches a single URL. Read-time compute is confined to the start-time cutoff; everything else is a view read.
@@ -37,7 +37,6 @@ CustomerStorefront =
 ```
 
 - Discriminated union on `status`; the frontend branches (published page / coming-soon page / `null`→introuvable). Only `published` carries the rich fields.
-- `nextMarket` (PROCHAIN MARCHÉ) = `upcomingMarkets[0]` — no separate field.
 - `upcomingMarkets` = `FindUpcomingMarketDays` occurrences, minus in-progress (start-time cutoff below), first ~5.
 - Image fields (`coverPhoto`, dish `photo`) are raw Cloudinary public-ids, not URLs — the frontend builds delivery URLs (no server-side builder exists).
 
@@ -65,6 +64,7 @@ A storefront is public only once the vendor **publishes** it — a deliberate go
 - **Markets read the shared model, not a customer BFF expansion.** Expansion + retraction (cancel/skip) live once in `FindUpcomingMarketDays`. A BFF expansion off the Calendrier view was **rejected**: it duplicates the `Schedule` VO cadence math and — without cancel/skip — asserts false future attendance on a customer surface (a shopper sent to an empty pitch). Buys no performance either: `FindUpcomingMarketDays` also expands at query time.
 - **Start-time cutoff is customer-side presentation.** Drop occurrences whose start (`date` + `startTime`, hardcoded `Europe/Paris`) has passed. The in-progress window belongs to a future active-market-day interface (MarketDay "in progress" lifecycle); vendor reads of the same model keep in-progress days, so this filter stays in the customer layer, not the read model. `Europe/Paris` is a single-region calibration constant → becomes a `Market` timezone attribute when multi-region.
 - **Menu chips per market: cut.** Cards show date/market/hours/address only — no "Menu à venir" placeholder (nothing behind it). The dish↔market-day join is the separate prepared-state overlay slice (`docs/MARKET-SCHEDULE-PLAN.md`).
+- **PROCHAIN MARCHÉ hero card: cut.** The mockup's separate "next market" hero is not built (ignore it in the mockup) — the PROCHAINS MARCHÉS list stands alone; its first entry is the next market. No `nextMarket` field, nothing derives `[0]`.
 - **Categories + tags: cut.** Domain has neither; deferred as `ItemAddedToCatalogue` v2 (`docs/CATALOGUE-PLAN.md`). Dish card + modal show name/description/price/photo only.
 - **Dish detail modal: no endpoint.** Opens client-side from `dishes[]`; "Disponible les jours de marché…" is static copy, not a data field.
 - **404 on unresolved subdomain; coming-soon on unpublished** (see Publication gate). For a *published* storefront: empty catalogue/schedule → empty arrays; missing cover can't happen (cover is a publish requirement).
@@ -91,8 +91,8 @@ Proves the whole pipe DNS→SSR→api→resolve→view→render, thinnest path.
 The seed now also registers a weekly demo schedule (Saturday 09:00–13:00, from today) and publishes — the demo renders the full published storefront; the schedule stays invisible until slice 3.
 
 **Slice 3 — markets (unblocked; the market-schedule dependency shipped — see Dependency).**
-7. ✅ **Shipped (backend)** — folded `upcomingMarkets` into the public `CustomerStorefront` by injecting `FindUpcomingMarketDaysHandler` into the composite (reused its expansion, no duplication). Customer-side handling: **start-time cutoff** (drop occurrences whose `date`+`startTime` has passed in `Europe/Paris`, computed via `Intl` `formatToParts` + `hourCycle:'h23'`), then first 5, mapped to a flat `UpcomingMarket` DTO (renamed/flattened, internal `scheduleId`/`marketId` stripped). **Absent days are kept, flagged `cancelled: true`** (from the occurrence's `absent`) — a declared-absence day keeps its calendar slot but the frontend renders it as cancelled, rather than vanishing. `nextMarket = [0]` stays frontend-derived. Acceptance test extended (fold+shape+cutoff+slice, absent→cancelled); also cleared the spec's pre-existing `object[]`→`DomainEvent[]` seed-helper typecheck errors.
-8. **← next.** Frontend PROCHAIN MARCHÉ card + PROCHAINS MARCHÉS list (date badge, hours, address).
+7. ✅ **Shipped (backend)** — folded `upcomingMarkets` into the public `CustomerStorefront` by injecting `FindUpcomingMarketDaysHandler` into the composite (reused its expansion, no duplication). Customer-side handling: **start-time cutoff** (drop occurrences whose `date`+`startTime` has passed in `Europe/Paris`, computed via `Intl` `formatToParts` + `hourCycle:'h23'`), then first 5, mapped to a flat `UpcomingMarket` DTO (renamed/flattened, internal `scheduleId`/`marketId` stripped). **Absent days are kept, flagged `cancelled: true`** (from the occurrence's `absent`) — a declared-absence day keeps its calendar slot but the frontend renders it as cancelled, rather than vanishing. Acceptance test extended (fold+shape+cutoff+slice, absent→cancelled); also cleared the spec's pre-existing `object[]`→`DomainEvent[]` seed-helper typecheck errors.
+8. **← next.** Frontend PROCHAINS MARCHÉS list (date badge, hours, address); cancelled days shown as such. No separate "next market" hero card (cut — see Decisions).
 
 **Slice 4 — publication gate (ADR 0031). ✅ Shipped** (steps 9–13; step 14 pending). Domain (cycles 1–8), API (`POST /storefront/publish`), read gate + `published` projection, and the coming-soon frontend are all live. The demo was left unpublished until slice 2, which seeded dishes + a schedule and published it.
 9. `Storefront`: store name/description in `apply`; `hasTitle()`/`hasDescription()`/`hasCoverPhoto()`; `publish()` (open + idempotent, raises `StorefrontPublished`). Add `StorefrontDescription.hasContent()`, `CoverPhoto.isSet()`. Aggregate tests.
@@ -131,7 +131,7 @@ The seed now also registers a weekly demo schedule (Saturday 09:00–13:00, from
 **Slices 1, 2 and 4 shipped.** Slice 1: subdomain registry, public endpoint, erasure row-deletion, SSR storefront tracer, dev seed. Slice 4: the full publication gate (ADR 0031) — readiness domain service, `POST /storefront/publish`, `published` projection, discriminated-union read gate, and the coming-soon page. Slice 2: dishes on the public endpoint, resolver view-model mapping, NOTRE CARTE list + native-dialog dish sheet, and the seed published the demo.
 
 Possible next steps (unordered):
-- **Slice 3 — markets.** Backend (step 7) shipped: `upcomingMarkets` folded into the public `CustomerStorefront` — start-time cutoff, first 5, absent days flagged `cancelled: true`. **Remaining: step 8 (frontend)** — render the PROCHAIN MARCHÉ card + PROCHAINS MARCHÉS list (cancelled days shown as such); resolver maps `upcomingMarkets` at the edge, `nextMarket = [0]`.
+- **Slice 3 — markets.** Backend (step 7) shipped: `upcomingMarkets` folded into the public `CustomerStorefront` — start-time cutoff, first 5, absent days flagged `cancelled: true`. **Remaining: step 8 (frontend)** — render the PROCHAINS MARCHÉS list (cancelled days shown as such); resolver maps `upcomingMarkets` at the edge. No separate "next market" hero card (cut).
 - **Slice 4 follow-up — vendor publish button (step 14).** Vendor-frontend button calling `POST /storefront/publish`, surfacing the `StorefrontNotReadyToPublish` reasons. The gate itself is shipped.
 - **Styling / design pass.** Header/dish cards/dish sheet match the mockups (done with slice 2). Remaining polish: `NgOptimizedImage` + Cloudinary loader for the cover; sheet slide-up/down animation (deferred — `animate.enter` keys on DOM insertion but the sheet content persists across opens; use `@starting-style` on the dialog's open state instead).
 - **Real-time availability** (roadmap). Live dish sold-out/available (WS/SSE + signals) — introduces client state, likely NgRx per project convention.
