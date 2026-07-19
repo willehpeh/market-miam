@@ -1,17 +1,19 @@
 import { InMemoryEventStore } from '@market-miam/event-sourcing';
 import { VendorScopedEvents } from '@market-miam/market-days';
-import { Calendars, Catalogues, PublishStorefrontHandler, StorefrontNotReadyToPublish, StorefrontPublication, Storefronts } from '@market-miam/market-days';
+import { Calendars, Catalogues, InMemorySubdomainRegistry, PublishStorefrontHandler, StorefrontNotReadyToPublish, StorefrontPublication, Storefronts } from '@market-miam/market-days';
 import { TestPublishStorefront } from './test-data';
 import { expectVendorScopedEvents } from '../../shared-kernel';
 
 describe('Publish Storefront', () => {
   let store: InMemoryEventStore;
+  let registry: InMemorySubdomainRegistry;
   let handler: PublishStorefrontHandler;
 
   beforeEach(() => {
     store = new InMemoryEventStore();
+    registry = new InMemorySubdomainRegistry();
     const events = new VendorScopedEvents(store);
-    handler = new PublishStorefrontHandler(new Storefronts(events), new Catalogues(events), new Calendars(events), new StorefrontPublication());
+    handler = new PublishStorefrontHandler(new Storefronts(events), new Catalogues(events), new Calendars(events), registry, new StorefrontPublication());
   });
 
   it('rejects publishing a storefront that is not ready', async () => {
@@ -61,10 +63,23 @@ describe('Publish Storefront', () => {
     expect((failure as StorefrontNotReadyToPublish).missing).not.toContain('catalogue');
   });
 
+  it('rejects publishing a storefront with no assigned subdomain', async () => {
+    openStorefrontWithCover();
+    addDish();
+    addSchedule();
+
+    const failure = await handler.execute(TestPublishStorefront.valid()).catch((e: unknown) => e);
+
+    expect(failure).toBeInstanceOf(StorefrontNotReadyToPublish);
+    expect((failure as StorefrontNotReadyToPublish).missing).toContain('url');
+    expect((failure as StorefrontNotReadyToPublish).missing).not.toContain('schedule');
+  });
+
   it('publishes a storefront that meets every requirement', async () => {
     openStorefrontWithCover();
     addDish();
     addSchedule();
+    await assignSubdomain();
 
     await handler.execute(TestPublishStorefront.valid());
 
@@ -77,11 +92,16 @@ describe('Publish Storefront', () => {
     publishedStorefront();
     addDish();
     addSchedule();
+    await assignSubdomain();
 
     await handler.execute(TestPublishStorefront.valid());
 
     expect(store.newEvents()).toEqual([]);
   });
+
+  function assignSubdomain() {
+    return registry.register('chez-demo', 'vendor-id');
+  }
 
   function publishedStorefront() {
     store.seedWith('storefront-vendor-id', [
@@ -110,13 +130,14 @@ describe('Publish Storefront', () => {
     const failure = await handler.execute(TestPublishStorefront.valid()).catch((e: unknown) => e);
 
     expect(failure).toBeInstanceOf(StorefrontNotReadyToPublish);
-    expect((failure as StorefrontNotReadyToPublish).missing).toEqual(['title', 'description', 'cover', 'catalogue', 'schedule']);
+    expect((failure as StorefrontNotReadyToPublish).missing).toEqual(['title', 'description', 'cover', 'catalogue', 'schedule', 'url']);
   });
 
   it('stamps the vendor id into the published event metadata', async () => {
     openStorefrontWithCover();
     addDish();
     addSchedule();
+    await assignSubdomain();
 
     await handler.execute(TestPublishStorefront.valid());
 

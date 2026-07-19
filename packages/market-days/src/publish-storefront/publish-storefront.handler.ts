@@ -5,6 +5,7 @@ import { StorefrontPublication } from './storefront-publication';
 import { Storefronts } from '../storefront';
 import { Catalogues } from '../catalogue';
 import { Calendars } from '../calendar';
+import { SubdomainRegistry } from '../subdomain-registry';
 
 @CommandHandler(PublishStorefront)
 export class PublishStorefrontHandler implements ICommandHandler<PublishStorefront> {
@@ -12,6 +13,7 @@ export class PublishStorefrontHandler implements ICommandHandler<PublishStorefro
     private readonly storefronts: Storefronts,
     private readonly catalogues: Catalogues,
     private readonly calendars: Calendars,
+    private readonly subdomains: SubdomainRegistry,
     private readonly publication: StorefrontPublication,
   ) {}
 
@@ -20,7 +22,8 @@ export class PublishStorefrontHandler implements ICommandHandler<PublishStorefro
     const storefront = await this.storefronts.forVendor(vendorId);
     const catalogue = await this.catalogues.forVendor(vendorId);
     const calendar = await this.calendars.forVendor(vendorId);
-    this.publication.publish(storefront, catalogue, calendar);
+    const subdomain = await this.subdomains.subdomainFor(command.vendorId);
+    this.publication.publish(storefront, catalogue, calendar, subdomain !== undefined);
     await this.storefronts.save(storefront, vendorId);
   }
 }

@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { EventStore } from '@market-miam/event-sourcing';
+import { InMemorySubdomainRegistry } from '@market-miam/market-days';
 import { bootApiTestApp, openStorefrontFor } from '../testing/api-test-app';
 
 describe('Publishing a storefront over HTTP', () => {
@@ -26,8 +27,20 @@ describe('Publishing a storefront over HTTP', () => {
     expect(response.body.message).toContain('catalogue');
   });
 
+  it('rejects publishing a storefront with no assigned subdomain', async () => {
+    await readyStorefrontFor(app, 'acme-bakery');
+
+    const response = await request(app.getHttpServer())
+      .post('/storefront/publish')
+      .set('Authorization', 'Bearer any-token')
+      .expect(400);
+
+    expect(response.body.message).toContain('url');
+  });
+
   it('publishes a storefront that meets every requirement', async () => {
     await readyStorefrontFor(app, 'acme-bakery');
+    await app.get(InMemorySubdomainRegistry).register('acme', 'acme-bakery');
 
     await request(app.getHttpServer())
       .post('/storefront/publish')

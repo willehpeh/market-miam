@@ -11,6 +11,13 @@ export class InMemorySubdomainRegistry implements SubdomainRegistry {
     return this.vendors.get(subdomain.toLowerCase());
   }
 
+  async subdomainFor(vendorId: string): Promise<string | undefined> {
+    for (const [subdomain, id] of this.vendors) {
+      if (id === vendorId) return subdomain;
+    }
+    return undefined;
+  }
+
   async removeFor(vendorId: string): Promise<void> {
     for (const [subdomain, id] of this.vendors) {
       if (id === vendorId) this.vendors.delete(subdomain);

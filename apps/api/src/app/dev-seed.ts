@@ -45,9 +45,10 @@ export async function seedDev(app: INestApplication): Promise<void> {
   }));
   const absentSaturday = upcomingSaturday(1);
   await commands.execute(new DeclareAbsence({ vendorId: DEMO_VENDOR, scheduleId: 'demo-schedule', from: absentSaturday, to: absentSaturday }));
+  // Subdomain must exist before publishing — it's now a publication requirement (step 14).
+  await registry.register(DEMO_SUBDOMAIN, DEMO_VENDOR);
   await commands.execute(new PublishStorefront(DEMO_VENDOR));
   await subscriptions.drain();
-  await registry.register(DEMO_SUBDOMAIN, DEMO_VENDOR);
 }
 
 // The 2nd upcoming Saturday (UTC, matching LocalDate's day-of-week math), so the

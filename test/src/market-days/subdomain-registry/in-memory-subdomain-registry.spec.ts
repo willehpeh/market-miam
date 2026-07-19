@@ -31,4 +31,21 @@ describe('InMemorySubdomainRegistry', () => {
     await registry.removeFor('acme-bakery');
     expect(await registry.vendorFor('acme')).toBeUndefined();
   });
+
+  it('resolves a vendor to its registered subdomain', async () => {
+    const registry = new InMemorySubdomainRegistry();
+    await registry.register('acme', 'acme-bakery');
+    expect(await registry.subdomainFor('acme-bakery')).toBe('acme');
+  });
+
+  it('returns undefined for a vendor with no subdomain', async () => {
+    const registry = new InMemorySubdomainRegistry();
+    expect(await registry.subdomainFor('nobody')).toBeUndefined();
+  });
+
+  it('resolves a vendor to the normalised lower-case subdomain it was registered with', async () => {
+    const registry = new InMemorySubdomainRegistry();
+    await registry.register('ACME', 'acme-bakery');
+    expect(await registry.subdomainFor('acme-bakery')).toBe('acme');
+  });
 });

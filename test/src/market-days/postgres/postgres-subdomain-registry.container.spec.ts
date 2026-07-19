@@ -45,4 +45,13 @@ describe('PostgresSubdomainRegistry', () => {
     await seed('acme', 'acme-bakery');
     await expect(seed('bistro', 'acme-bakery')).rejects.toThrow();
   });
+
+  it('resolves a vendor to its seeded subdomain', async () => {
+    await seed('acme', 'acme-bakery');
+    expect(await new PostgresSubdomainRegistry(pg.pool).subdomainFor('acme-bakery')).toBe('acme');
+  });
+
+  it('returns undefined for a vendor with no subdomain', async () => {
+    expect(await new PostgresSubdomainRegistry(pg.pool).subdomainFor('nobody')).toBeUndefined();
+  });
 });
