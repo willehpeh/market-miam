@@ -97,5 +97,4 @@ from several vendor-scoped streams.
   publish for the demo to render live.
 
 - Builds on ADR 0004 (single BC), 0008 (no getters — the `hasX()` queries),
-  0009 (one event / vendor-scoped streams). Plan and build order:
-  `CUSTOMER-FRONTEND-PLAN.md`.
+  0009 (one event / vendor-scoped streams).
