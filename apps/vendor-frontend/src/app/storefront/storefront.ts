@@ -6,6 +6,7 @@ export interface StorefrontView {
   description: string;
   phone: string;
   imageReference: string;
+  subdomain: string | null;
 }
 
 export abstract class Storefront {

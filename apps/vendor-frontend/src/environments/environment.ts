@@ -5,4 +5,5 @@
 export const environment = {
   apiBaseUrl: 'https://api.marketmiam.fr',
   cloudinary: { cloudName: 'du7bhdijj' },
+  storefrontBaseDomain: 'marketmiam.fr',
 };

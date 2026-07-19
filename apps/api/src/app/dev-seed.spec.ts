@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
+import { InMemorySubdomainRegistry } from '@market-miam/market-days';
 import { bootApiTestApp } from './testing/api-test-app';
 import { seedDev } from './dev-seed';
 
@@ -26,5 +27,11 @@ describe('seedDev', () => {
       'Tarte tatin',
       'Soupe du jour',
     ]);
+  });
+
+  it('assigns the local dev sign-in vendor a subdomain so it can publish', async () => {
+    await seedDev(app);
+
+    expect(await app.get(InMemorySubdomainRegistry).subdomainFor('dev-vendor')).toBe('dev');
   });
 });

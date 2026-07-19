@@ -43,9 +43,9 @@ import { OnboardingFacade } from './onboarding.facade';
 import { StoreOnboardingFacade } from './store.onboarding.facade';
 import { provideNotifications } from '../core/notifications/notifications.providers';
 
-const EMPTY = { name: '', description: '', phone: '', imageReference: '' };
-const PHOTO_ONLY = { name: '', description: '', phone: '', imageReference: 'v1/storefronts/acme/cover-photo' };
-const NAMED = { name: 'La Table de Margaux', description: 'Cuisine de marché', phone: '', imageReference: '' };
+const EMPTY = { name: '', description: '', phone: '', imageReference: '', subdomain: null };
+const PHOTO_ONLY = { name: '', description: '', phone: '', imageReference: 'v1/storefronts/acme/cover-photo', subdomain: null };
+const NAMED = { name: 'La Table de Margaux', description: 'Cuisine de marché', phone: '', imageReference: '', subdomain: null };
 
 describe('Onboarding launch', () => {
   let httpCtrl: HttpTestingController;

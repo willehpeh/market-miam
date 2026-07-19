@@ -12,7 +12,7 @@ import { PhotoUploads } from './photo-uploads';
 import { FakePhotoUploads } from './fake.photo-uploads';
 import { SignedUpload } from './signed-upload';
 
-const ACME = { name: 'Acme Bakery', description: 'Fresh bread daily', phone: '', imageReference: '' };
+const ACME = { name: 'Acme Bakery', description: 'Fresh bread daily', phone: '', imageReference: '', subdomain: null };
 
 const notFound = { status: 404, statusText: 'Not Found' };
 
@@ -143,6 +143,7 @@ describe('Storefront', () => {
       description: 'Cuisine de marché',
       phone: '06 12 34 56 78',
       imageReference: 'v1/acme/cover',
+      subdomain: null,
     });
     expect(facade.saved()).toBe(true);
   });

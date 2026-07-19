@@ -16,6 +16,11 @@ const DEMO_VENDOR = 'demo-vendor';
 const DEMO_SUBDOMAIN = 'demo';
 const DEMO_COVER = 'v1784235195/demo-cover_ghvwt5';
 
+// The vendor you sign in as locally — StaticTokenVerifier.forDevelopment() resolves
+// every dev request to this id. Keep in sync with that verifier.
+const DEV_VENDOR = 'dev-vendor';
+const DEV_SUBDOMAIN = 'dev';
+
 // Local-dev convenience: the subdomain registry has no command or UI in v1, so
 // without this there is no in-app way to make the customer storefront return
 // anything on the memory profile. Dev-only — main.ts calls it under
@@ -26,6 +31,11 @@ export async function seedDev(app: INestApplication): Promise<void> {
   const commands = app.get(CommandGateway);
   const subscriptions = app.get(Subscriptions);
   const registry = app.get(InMemorySubdomainRegistry);
+
+  // Give the local sign-in vendor a subdomain so its publish gate passes and the
+  // storefront URL shows once you finish onboarding through the app. Its storefront,
+  // catalogue and schedule you build yourself in the vendor-frontend.
+  await registry.register(DEV_SUBDOMAIN, DEV_VENDOR);
 
   await commands.execute(new OpenStorefront(DEMO_VENDOR));
   await commands.execute(

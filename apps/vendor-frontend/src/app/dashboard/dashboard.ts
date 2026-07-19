@@ -4,6 +4,7 @@ import { Card } from '../core/card';
 import { StorefrontFacade } from '../storefront/storefront.facade';
 import { CatalogueFacade } from '../catalogue/catalogue.facade';
 import { MarketScheduleFacade } from '../markets/market-schedule.facade';
+import { environment } from '../../environments/environment';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -67,7 +68,31 @@ import { MarketScheduleFacade } from '../markets/market-schedule.facade';
       </ul>
 
       @if (allDone()) {
-        <button type="button" class="mt-6 flex w-full max-w-xs mx-auto justify-center">Publier</button>
+        @if (storefrontUrl(); as url) {
+          <p class="mt-6 text-center text-ink">
+            {{ published() ? 'Votre vitrine est en ligne à' : 'Votre vitrine sera publiée à' }}
+            <a [href]="url.href" target="_blank" rel="noopener" class="font-bold text-brand">{{ url.label }}</a>
+          </p>
+          @if (published()) {
+            <p class="mt-4 text-center font-bold text-brand">✓ Vitrine publiée</p>
+          } @else {
+            @if (publishError()) {
+              <p class="mt-4 text-center text-sm text-danger">La publication a échoué. Veuillez réessayer.</p>
+            }
+            <button
+              type="button"
+              class="mt-4 flex w-full max-w-xs mx-auto justify-center"
+              [disabled]="publishing()"
+              (click)="publish()"
+            >
+              {{ publishing() ? 'Publication…' : 'Publier' }}
+            </button>
+          }
+        } @else {
+          <p class="mt-6 text-center text-sm text-muted">
+            Votre adresse web est en cours d'attribution. Vous pourrez publier votre vitrine dès qu'elle sera prête.
+          </p>
+        }
       }
     </mm-card>
   `,
@@ -108,6 +133,21 @@ export class Dashboard {
       ? 'Si vous êtes satisfait·e de votre configuration, cliquez sur Publier.'
       : 'Vous pourrez publier votre vitrine dès que ce sera fait.',
   );
+
+  readonly storefrontUrl = computed(() => {
+    const subdomain = this.storefront.view()?.subdomain;
+    if (!subdomain) return null;
+    const domain = `${subdomain}.${environment.storefrontBaseDomain}`;
+    return { href: `https://${domain}`, label: domain };
+  });
+
+  readonly publishing = this.storefront.publishing;
+  readonly published = this.storefront.published;
+  readonly publishError = this.storefront.publishError;
+
+  publish(): void {
+    this.storefront.publish();
+  }
 
   constructor() {
     this.catalogue.load();

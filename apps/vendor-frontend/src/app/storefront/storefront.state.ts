@@ -69,7 +69,7 @@ export const storefrontFeature = createFeature({
     on(EditStorefrontSuccess, (state, { name, description, phone }): StorefrontState => ({
       ...state,
       saved: true,
-      view: { ...(state.view ?? { imageReference: '' }), name, description, phone },
+      view: { ...(state.view ?? { imageReference: '', subdomain: null }), name, description, phone },
     })),
     on(UploadCoverPhoto, (state): StorefrontState => ({ ...state, coverPhotoUploading: true, coverPhotoError: false })),
     on(UploadCoverPhotoSuccess, (state, { imageReference }): StorefrontState => ({
