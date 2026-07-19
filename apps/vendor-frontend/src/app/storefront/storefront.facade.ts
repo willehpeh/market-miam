@@ -7,7 +7,11 @@ export abstract class StorefrontFacade {
   abstract readonly saved: Signal<boolean>;
   abstract readonly coverPhotoUploading: Signal<boolean>;
   abstract readonly coverPhotoError: Signal<boolean>;
+  abstract readonly publishing: Signal<boolean>;
+  abstract readonly published: Signal<boolean>;
+  abstract readonly publishError: Signal<boolean>;
 
   abstract save(name: string, description: string, phone: string): void;
   abstract uploadCoverPhoto(file: File): void;
+  abstract publish(): void;
 }

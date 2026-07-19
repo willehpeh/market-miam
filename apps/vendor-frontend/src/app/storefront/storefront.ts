@@ -13,4 +13,5 @@ export abstract class Storefront {
   abstract edit(name: string, description: string, phone: string): Observable<void>;
   abstract coverPhotoSignature(): Observable<SignedUpload>;
   abstract setCoverPhoto(version: number): Observable<void>;
+  abstract publish(): Observable<void>;
 }

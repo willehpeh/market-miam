@@ -9,8 +9,12 @@ export class FakeStorefrontFacade implements StorefrontFacade {
   readonly saved = signal(false);
   readonly coverPhotoUploading = signal(false);
   readonly coverPhotoError = signal(false);
+  readonly publishing = signal(false);
+  readonly published = signal(false);
+  readonly publishError = signal(false);
   savedInfo: { name: string; description: string; phone: string } | undefined;
   uploadedFile: File | undefined;
+  publishCalled = false;
 
   save(name: string, description: string, phone: string): void {
     this.savedInfo = { name, description, phone };
@@ -18,5 +22,9 @@ export class FakeStorefrontFacade implements StorefrontFacade {
 
   uploadCoverPhoto(file: File): void {
     this.uploadedFile = file;
+  }
+
+  publish(): void {
+    this.publishCalled = true;
   }
 }

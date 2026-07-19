@@ -24,4 +24,8 @@ export class HttpStorefront implements Storefront {
   setCoverPhoto(version: number): Observable<void> {
     return this.http.put<void>(`${environment.apiBaseUrl}/api/storefront/cover-photo`, { version });
   }
+
+  publish(): Observable<void> {
+    return this.http.post<void>(`${environment.apiBaseUrl}/api/storefront/publish`, {});
+  }
 }

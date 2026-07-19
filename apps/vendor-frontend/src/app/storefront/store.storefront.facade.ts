@@ -1,7 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { StorefrontFacade } from './storefront.facade';
-import { EditStorefront, storefrontFeature, UploadCoverPhoto } from './storefront.state';
+import { EditStorefront, PublishStorefront, storefrontFeature, UploadCoverPhoto } from './storefront.state';
 
 @Injectable()
 export class StoreStorefrontFacade implements StorefrontFacade {
@@ -12,6 +12,9 @@ export class StoreStorefrontFacade implements StorefrontFacade {
   readonly saved = this.store.selectSignal(storefrontFeature.selectSaved);
   readonly coverPhotoUploading = this.store.selectSignal(storefrontFeature.selectCoverPhotoUploading);
   readonly coverPhotoError = this.store.selectSignal(storefrontFeature.selectCoverPhotoError);
+  readonly publishing = this.store.selectSignal(storefrontFeature.selectPublishing);
+  readonly published = this.store.selectSignal(storefrontFeature.selectPublished);
+  readonly publishError = this.store.selectSignal(storefrontFeature.selectPublishError);
 
   save(name: string, description: string, phone: string): void {
     this.store.dispatch(EditStorefront({ name, description, phone }));
@@ -19,5 +22,9 @@ export class StoreStorefrontFacade implements StorefrontFacade {
 
   uploadCoverPhoto(file: File): void {
     this.store.dispatch(UploadCoverPhoto({ file }));
+  }
+
+  publish(): void {
+    this.store.dispatch(PublishStorefront());
   }
 }

@@ -32,12 +32,19 @@ export const UploadCoverPhotoSuccess = createAction(
 export const UploadCoverPhotoFailure = createAction('[Storefront] Upload Cover Photo Failure');
 export const HideSavedModal = createAction('[@Effect navigateHomeOnSaved$] Hide Saved Modal');
 
+export const PublishStorefront = createAction('[Storefront] Publish Storefront');
+export const PublishStorefrontSuccess = createAction('[Storefront] Publish Storefront Success');
+export const PublishStorefrontFailure = createAction('[Storefront] Publish Storefront Failure');
+
 export interface StorefrontState {
   loading: boolean;
   view: StorefrontView | undefined;
   saved: boolean;
   coverPhotoUploading: boolean;
   coverPhotoError: boolean;
+  publishing: boolean;
+  published: boolean;
+  publishError: boolean;
 }
 
 export const initialState: StorefrontState = {
@@ -46,6 +53,9 @@ export const initialState: StorefrontState = {
   saved: false,
   coverPhotoUploading: false,
   coverPhotoError: false,
+  publishing: false,
+  published: false,
+  publishError: false,
 };
 
 export const storefrontFeature = createFeature({
@@ -68,6 +78,9 @@ export const storefrontFeature = createFeature({
       view: state.view ? { ...state.view, imageReference } : state.view,
     })),
     on(UploadCoverPhotoFailure, (state): StorefrontState => ({ ...state, coverPhotoUploading: false, coverPhotoError: true })),
-    on(HideSavedModal, (state): StorefrontState => ({ ...state, saved: false }))
+    on(HideSavedModal, (state): StorefrontState => ({ ...state, saved: false })),
+    on(PublishStorefront, (state): StorefrontState => ({ ...state, publishing: true, publishError: false })),
+    on(PublishStorefrontSuccess, (state): StorefrontState => ({ ...state, publishing: false, published: true })),
+    on(PublishStorefrontFailure, (state): StorefrontState => ({ ...state, publishing: false, publishError: true }))
   ),
 });

@@ -185,4 +185,41 @@ describe('Storefront', () => {
     expect(facade.coverPhotoUploading()).toBe(false);
     expect(facade.coverPhotoError()).toBe(true);
   });
+
+  it('publishes the storefront', () => {
+    facade.publish();
+
+    const req = httpCtrl.expectOne('/api/storefront/publish');
+    expect(req.request.method).toBe('POST');
+    req.flush(null);
+  });
+
+  it('shows as publishing until the request resolves', () => {
+    facade.publish();
+
+    const req = httpCtrl.expectOne('/api/storefront/publish');
+    expect(facade.publishing()).toBe(true);
+    req.flush(null);
+
+    expect(facade.publishing()).toBe(false);
+  });
+
+  it('marks the storefront published on success', () => {
+    facade.publish();
+
+    httpCtrl.expectOne('/api/storefront/publish').flush(null);
+
+    expect(facade.published()).toBe(true);
+    expect(facade.publishError()).toBe(false);
+  });
+
+  it('flags an error and stops publishing when the storefront is not ready', () => {
+    facade.publish();
+
+    httpCtrl.expectOne('/api/storefront/publish').flush(null, { status: 400, statusText: 'Bad Request' });
+
+    expect(facade.publishing()).toBe(false);
+    expect(facade.published()).toBe(false);
+    expect(facade.publishError()).toBe(true);
+  });
 });

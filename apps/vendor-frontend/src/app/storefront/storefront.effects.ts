@@ -11,6 +11,9 @@ import {
   LoadStorefront,
   LoadStorefrontFailure,
   LoadStorefrontSuccess,
+  PublishStorefront,
+  PublishStorefrontFailure,
+  PublishStorefrontSuccess,
   UploadCoverPhoto,
   UploadCoverPhotoFailure,
   UploadCoverPhotoSuccess,
@@ -85,6 +88,18 @@ export class StorefrontEffects {
             ),
           ),
           catchError(() => of(UploadCoverPhotoFailure())),
+        ),
+      ),
+    ),
+  );
+
+  publishStorefront$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(PublishStorefront),
+      switchMap(() =>
+        this.storefront.publish().pipe(
+          map(() => PublishStorefrontSuccess()),
+          catchError(() => of(PublishStorefrontFailure())),
         ),
       ),
     ),
