@@ -49,6 +49,7 @@ describe('Erasing a vendor', () => {
       phone: SHREDDED,
       imageReference: '',
       published: false,
+      subdomain: null,
     });
   });
 

@@ -7,7 +7,7 @@ import {
   FindVendorStorefront,
   PublishStorefront,
   SetStorefrontCoverPhoto,
-  VendorStorefrontView,
+  VendorStorefront,
 } from '@market-miam/market-days';
 import { CloudinarySignedUpload, SignedUploads } from '../signed-uploads';
 
@@ -25,7 +25,7 @@ export class StorefrontController {
 
   @Get()
   @UseGuards(JwtAuthGuard)
-  async view(@CurrentVendor() vendor: VerifiedVendor): Promise<VendorStorefrontView> {
+  async view(@CurrentVendor() vendor: VerifiedVendor): Promise<VendorStorefront> {
     const view = await this.queries.execute(new FindVendorStorefront(vendor.vendorId.value()));
     if (!view) throw new NotFoundException();
     return view;

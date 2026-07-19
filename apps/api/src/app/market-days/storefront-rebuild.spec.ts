@@ -51,6 +51,7 @@ describe('Rebuilding the storefront projection', () => {
       phone: '0102030405',
       imageReference: '',
       published: false,
+      subdomain: null,
     });
     expect(await app.get(VendorStorefrontViews).findByVendor('ghost-vendor')).toBeUndefined();
   });
