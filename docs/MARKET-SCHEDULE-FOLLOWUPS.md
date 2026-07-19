@@ -31,8 +31,7 @@ Was: `AmendMarketSchedule` carries `market.id`; the aggregate used whatever was 
 
 `GET /market-schedules/upcoming` + the occurrence shape (with `absent`) exist but nothing renders them. This is why the read half was built: the public storefront (and vendor dashboard) showing chronological market days with **"Sat 3 Jul — ABSENT"**.
 
-- Current endpoint is JWT-authed/vendor-scoped. Customer side needs a **public (unauthed) variant keyed by subdomain → vendor** — sketched in `docs/CUSTOMER-FRONTEND-PLAN.md`.
-- Scope: public endpoint variant + frontend feature. Grill before building.
+- Current endpoint is JWT-authed/vendor-scoped. The customer side needed a **public (unauthed) variant keyed by subdomain → vendor** — **shipped**: the public composite `FindCustomerStorefront` (`GET /public/storefront/:subdomain`) folds `upcomingMarkets` in, and the customer storefront renders the PROCHAINS MARCHÉS list (absent days → cancelled).
 
 ## 5. Prepared-state overlay — slice, design-heavy, deferred throughout
 
