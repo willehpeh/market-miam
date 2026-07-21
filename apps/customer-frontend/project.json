@@ -48,7 +48,7 @@
           ],
           "outputHashing": "all",
           "security": {
-            "allowedHosts": ["*.marketmiam.fr"]
+            "allowedHosts": ["*.marketmiam.fr", "*.onrender.com"]
           }
         },
         "development": {
