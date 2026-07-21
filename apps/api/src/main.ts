@@ -14,7 +14,9 @@ import { seedDev } from './app/dev-seed';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.enableCors({
-    origin: ['https://app.marketmiam.fr', 'http://localhost:4200'],
+    // Customer storefronts are served per-vendor on *.marketmiam.fr, so allow any
+    // first-party subdomain (covers app.marketmiam.fr and every storefront origin).
+    origin: [/^https:\/\/([a-z0-9-]+\.)?marketmiam\.fr$/, 'http://localhost:4200'],
   });
   const globalPrefix = 'api';
   app.setGlobalPrefix(globalPrefix);
