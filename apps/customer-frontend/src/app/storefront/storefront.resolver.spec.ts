@@ -1,4 +1,4 @@
-import { DOCUMENT } from '@angular/core';
+import { DOCUMENT, REQUEST } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
@@ -34,11 +34,18 @@ function resolve(queryParams: Record<string, string>): Observable<StorefrontView
 describe('storefrontResolver', () => {
   let http: HttpTestingController;
   let location: { host: string };
+  let request: Request | null;
 
   beforeEach(() => {
     location = { host: 'localhost' };
+    request = null;
     TestBed.configureTestingModule({
-      providers: [provideHttpClient(), provideHttpClientTesting(), { provide: DOCUMENT, useValue: { location } }],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        { provide: DOCUMENT, useValue: { location } },
+        { provide: REQUEST, useFactory: () => request },
+      ],
     });
     http = TestBed.inject(HttpTestingController);
   });
@@ -100,6 +107,15 @@ describe('storefrontResolver', () => {
 
   it('derives the subdomain from location.host on the client, where REQUEST is null', async () => {
     location.host = 'demo.marketmiam.fr';
+    const result = firstValueFrom(resolve({}));
+    http.expectOne('/api/public/storefront/demo').flush({ status: 'coming-soon', name: 'Chez Demo' });
+    expect(await result).toEqual({ status: 'coming-soon', name: 'Chez Demo' });
+  });
+
+  it('derives the subdomain from request.url on the server, not the internal proxy host', async () => {
+    // Behind Render, request.url resolves to the forwarded host while the `host`
+    // header stays the internal .onrender.com name — the resolver must use the URL.
+    request = new Request('https://demo.marketmiam.fr/');
     const result = firstValueFrom(resolve({}));
     http.expectOne('/api/public/storefront/demo').flush({ status: 'coming-soon', name: 'Chez Demo' });
     expect(await result).toEqual({ status: 'coming-soon', name: 'Chez Demo' });

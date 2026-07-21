@@ -12,7 +12,10 @@ const serverDistFolder = dirname(fileURLToPath(import.meta.url));
 const browserDistFolder = resolve(serverDistFolder, '../browser');
 
 const app = express();
-const angularApp = new AngularNodeAppEngine();
+// Behind Render's proxy every request carries X-Forwarded-* headers; without trusting
+// them Angular SSR deopts to CSR (serving index.csr.html) and reads the internal
+// .onrender.com host instead of the real *.marketmiam.fr one.
+const angularApp = new AngularNodeAppEngine({ trustProxyHeaders: true });
 
 /**
  * Example Express Rest API endpoints can be defined here.

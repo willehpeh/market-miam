@@ -10,9 +10,10 @@ import { StorefrontViewModel, toViewModel } from './storefront-view-model';
 export const storefrontResolver: ResolveFn<StorefrontViewModel | null> = (route): Observable<StorefrontViewModel | null> => {
   const request = inject(REQUEST, { optional: true });
   const http = inject(HttpClient);
-  // REQUEST is server-only; on client hydration the resolver re-runs with it null, so
-  // fall back to location.host or the resolver returns null → "Boutique introuvable".
-  const host = request?.headers.get('host') ?? inject(DOCUMENT).location.host;
+  // Server: use request.url — behind a trusted proxy Angular resolves it from
+  // X-Forwarded-Host, whereas the raw `host` header is the internal .onrender.com name.
+  // Client: REQUEST is null on the hydration re-run, so read the browser's location.
+  const host = request ? new URL(request.url).host : inject(DOCUMENT).location.host;
   const subdomain = subdomainFrom(host, route.queryParamMap.get('subdomain'));
   if (!subdomain) {
     return of(null);
