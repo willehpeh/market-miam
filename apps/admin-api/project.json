@@ -6,6 +6,13 @@
   "tags": [],
   "targets": {
     "typecheck": {},
+    "test": {
+      "command": "vitest run",
+      "outputs": ["{workspaceRoot}/coverage/admin-api"],
+      "options": {
+        "cwd": "apps/admin-api"
+      }
+    },
     "build": {
       "executor": "nx:run-commands",
       "options": {

@@ -2,7 +2,7 @@
   "name": "admin-frontend",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "projectType": "application",
-  "prefix": "app",
+  "prefix": "admin",
   "sourceRoot": "apps/admin-frontend/src",
   "tags": [],
   "targets": {
@@ -49,6 +49,9 @@
     "serve": {
       "continuous": true,
       "executor": "@angular/build:dev-server",
+      "options": {
+        "proxyConfig": "apps/admin-frontend/proxy.conf.json"
+      },
       "configurations": {
         "production": {
           "buildTarget": "admin-frontend:build:production"
