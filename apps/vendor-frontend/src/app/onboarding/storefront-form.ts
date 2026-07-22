@@ -70,14 +70,14 @@ const MAX_PHOTO_BYTES = 10 * 1024 * 1024;
             }
           </div>
           <div>
-            <label for="slogan" class="field-label">Slogan · optionnel</label>
-            <input
-              id="slogan"
-              type="text"
+            <label for="description" class="field-label">Description · optionnel</label>
+            <textarea
+              id="description"
+              rows="3"
               class="mt-1"
               [formField]="fields.description"
-              placeholder="Cuisine de marché, mijotée maison."
-            />
+              placeholder="Cuisine de marché mijotée maison, à base de produits locaux et de saison. Plats à emporter et sur commande."
+            ></textarea>
           </div>
           <div>
             <label for="phone" class="field-label">Téléphone · optionnel</label>

@@ -24,9 +24,14 @@ import { ComingSoonPage } from './coming-soon-page';
               }
               <div class="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/65 via-black/25 to-transparent px-5 pb-5 pt-16">
                 <h1 class="text-4xl font-bold tracking-tight text-white">{{ storefront.name }}</h1>
-                <p class="mt-1 text-lg text-white/85">{{ storefront.description }}</p>
               </div>
             </section>
+
+            @if (storefront.description) {
+              <section class="px-5 pt-6">
+                <p class="text-ink-soft">{{ storefront.description }}</p>
+              </section>
+            }
 
             <section class="px-5 py-8">
               <h2 class="kicker">Notre carte</h2>
@@ -40,20 +45,13 @@ import { ComingSoonPage } from './coming-soon-page';
                       (click)="selected.set(dish); sheet.showModal()"
                     >
                       @if (dish.photo; as photo) {
-                        <img [src]="photo.cardUrl" alt="" class="aspect-16/10 w-full rounded-card object-cover" />
-                      } @else {
-                        <span class="hatch grid aspect-16/10 w-full place-items-center rounded-card">
-                          <span class="kicker rounded-pill bg-surface/85 px-3 py-1 normal-case">plat</span>
-                        </span>
+                        <img [src]="photo.cardUrl" alt="" class="mb-3 aspect-16/10 w-full rounded-card object-cover" />
                       }
-                      <span class="mt-3 block">
+                      <span class="block">
                         <span class="flex items-baseline justify-between gap-3">
                           <span class="line-clamp-2 text-lg font-bold text-ink">{{ dish.name }}</span>
                           <span class="shrink-0 text-lg font-bold text-ink">{{ dish.priceLabel }}</span>
                         </span>
-                        @if (dish.description) {
-                          <span class="mt-1 line-clamp-2 block text-ink-soft">{{ dish.description }}</span>
-                        }
                       </span>
                     </button>
                   </li>
@@ -110,10 +108,6 @@ import { ComingSoonPage } from './coming-soon-page';
                   <span class="mx-auto mb-3 block h-1.5 w-10 rounded-pill bg-line-strong"></span>
                   @if (dish.photo; as photo) {
                     <img [src]="photo.sheetUrl" alt="" class="aspect-4/3 w-full rounded-card object-cover" />
-                  } @else {
-                    <span class="hatch grid aspect-4/3 w-full place-items-center rounded-card">
-                      <span class="kicker rounded-pill bg-surface/85 px-3 py-1">photo du plat</span>
-                    </span>
                   }
                   <div class="mt-5 flex items-baseline justify-between gap-3">
                     <h3 class="text-2xl font-bold text-ink">{{ dish.name }}</h3>

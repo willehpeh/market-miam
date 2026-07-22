@@ -31,13 +31,14 @@ const ACME: StorefrontViewModel = {
 };
 
 describe('StorefrontPage', () => {
-  it('renders the vendor name and phone for a published storefront', () => {
+  it('renders the vendor name, description and phone for a published storefront', () => {
     const fixture = TestBed.createComponent(StorefrontPage);
     fixture.componentRef.setInput('storefront', ACME);
     fixture.detectChanges();
 
     const text = fixture.nativeElement.textContent as string;
     expect(text).toContain('Acme Bakery');
+    expect(text).toContain('Fresh bread daily');
     expect(text).toContain('0102030405');
   });
 
