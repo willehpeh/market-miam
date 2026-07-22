@@ -39,10 +39,10 @@ export async function seedDev(app: INestApplication): Promise<void> {
 
   await commands.execute(new OpenStorefront(DEMO_VENDOR));
   await commands.execute(
-    new EditStorefrontInformation(DEMO_VENDOR, 'Chez Demo', 'Cuisine de démonstration maison', '0102030405'),
+    new EditStorefrontInformation(DEMO_VENDOR, 'Jean-Pierre et Yvette - Bouchers de la Drôme', `C'est si bon que même ta grand-mère en réclame`, '0102030405'),
   );
   await commands.execute(new SetStorefrontCoverPhoto(DEMO_VENDOR, DEMO_COVER));
-  await commands.execute(new AddItemToCatalogue('demo-dish-1', DEMO_VENDOR, 'Bœuf bourguignon', 'Mijoté 7 heures au vin rouge', 1300, 'v1784320097/demo-dish1_p1veiv'));
+  await commands.execute(new AddItemToCatalogue('demo-dish-1', DEMO_VENDOR, 'Bœuf bourguignon aux pommes de terre sautées', 'Mijoté 7 heures au vin rouge', 1300, 'v1784320097/demo-dish1_p1veiv'));
   await commands.execute(new AddItemToCatalogue('demo-dish-2', DEMO_VENDOR, 'Tarte tatin', 'Aux pommes caramélisées', 600, 'v1784320098/demo-dish2_pmotbl'));
   await commands.execute(new AddItemToCatalogue('demo-dish-3', DEMO_VENDOR, 'Soupe du jour', 'Selon le marché', 500));
   await commands.execute(new RegisterMarketSchedule({

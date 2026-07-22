@@ -13,7 +13,6 @@ import { ComingSoonPage } from './coming-soon-page';
           <main class="mx-auto min-h-dvh max-w-xl bg-surface-sunk">
             <header class="flex items-center gap-3 bg-surface px-5 py-4">
               <img src="logo-transparent.png" alt="Market Miam" class="h-6 w-auto" />
-              <span class="text-xl font-bold tracking-tight text-ink">{{ storefront.name }}</span>
             </header>
 
             <section class="relative">
@@ -37,22 +36,24 @@ import { ComingSoonPage } from './coming-soon-page';
                     <button
                       type="button"
                       [attr.data-dish]="dish.itemId"
-                      class="flex w-full items-start gap-4 rounded-card bg-surface p-4 text-left shadow-soft"
+                      class="block w-full rounded-card bg-surface p-4 text-left shadow-soft"
                       (click)="selected.set(dish); sheet.showModal()"
                     >
                       @if (dish.photo; as photo) {
-                        <img [src]="photo.cardUrl" alt="" class="size-24 shrink-0 rounded-card object-cover" />
+                        <img [src]="photo.cardUrl" alt="" class="aspect-16/10 w-full rounded-card object-cover" />
                       } @else {
-                        <span class="hatch grid size-24 shrink-0 place-items-center rounded-card">
-                          <span class="kicker rounded-pill bg-surface/85 px-2.5 py-1 normal-case">plat</span>
+                        <span class="hatch grid aspect-16/10 w-full place-items-center rounded-card">
+                          <span class="kicker rounded-pill bg-surface/85 px-3 py-1 normal-case">plat</span>
                         </span>
                       }
-                      <span class="min-w-0 flex-1 pt-1">
+                      <span class="mt-3 block">
                         <span class="flex items-baseline justify-between gap-3">
-                          <span class="truncate text-lg font-bold text-ink">{{ dish.name }}</span>
+                          <span class="line-clamp-2 text-lg font-bold text-ink">{{ dish.name }}</span>
                           <span class="shrink-0 text-lg font-bold text-ink">{{ dish.priceLabel }}</span>
                         </span>
-                        <span class="mt-1 line-clamp-2 block text-ink-soft">{{ dish.description }}</span>
+                        @if (dish.description) {
+                          <span class="mt-1 line-clamp-2 block text-ink-soft">{{ dish.description }}</span>
+                        }
                       </span>
                     </button>
                   </li>

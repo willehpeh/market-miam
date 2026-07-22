@@ -51,7 +51,7 @@ export function toViewModel(storefront: CustomerStorefront): StorefrontViewModel
       priceLabel: formatEuros(dish.price),
       photo: dish.imageReference
         ? {
-            cardUrl: cloudinaryUrl(dish.imageReference, 'c_fill,w_400,h_400,q_auto,f_auto'),
+            cardUrl: cloudinaryUrl(dish.imageReference, 'c_fill,w_800,h_500,q_auto,f_auto'),
             sheetUrl: cloudinaryUrl(dish.imageReference, 'c_fill,w_1200,h_900,q_auto,f_auto'),
           }
         : null,
