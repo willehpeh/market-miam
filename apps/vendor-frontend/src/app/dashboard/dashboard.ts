@@ -10,72 +10,102 @@ import { environment } from '../../environments/environment';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterLink, Card],
   template: `
-    <mm-card>
-      <div class="flex items-start justify-between gap-4">
-        <div>
-          <h2 class="text-2xl font-bold tracking-tight text-ink">{{ title() }}</h2>
-          <p class="mt-1 text-sm text-muted">{{ subtitle() }}</p>
+    @if (!loaded()) {
+      <mm-card>
+        <div class="mx-auto grid h-32 place-items-center">
+          <div
+            role="status"
+            aria-label="Chargement de votre stand…"
+            class="size-8 animate-spin rounded-full border-4 border-line-strong border-t-brand"
+          ></div>
         </div>
-        <p aria-hidden="true" class="shrink-0 text-3xl font-bold text-brand">
-          {{ doneCount() }}<span class="text-lg font-normal text-muted">/{{ steps().length }}</span>
-        </p>
-      </div>
+      </mm-card>
+    } @else if (published()) {
+      <mm-card>
+        <h2 class="text-2xl font-bold tracking-tight text-ink">
+          <span aria-hidden="true" class="text-brand">✓</span> Votre vitrine est en ligne
+        </h2>
+        @if (storefrontUrl(); as url) {
+          <a [href]="url.href" target="_blank" rel="noopener" class="mt-1 inline-block font-bold text-brand">
+            {{ url.label }}<span aria-hidden="true"> ↗</span>
+          </a>
+        }
 
-      <div
-        class="mt-4 h-1.5 overflow-hidden rounded-pill bg-surface-sunk"
-        role="progressbar"
-        aria-label="Étapes terminées"
-        aria-valuemin="0"
-        [attr.aria-valuemax]="steps().length"
-        [attr.aria-valuenow]="doneCount()"
-      >
-        <div class="h-full rounded-pill bg-brand transition-all" [style.width.%]="doneCount() / steps().length * 100"></div>
-      </div>
-
-      <ul class="mt-2 divide-y divide-line">
-        @for (step of steps(); track step.title) {
-          <li>
-            @if (step.done) {
-              <a [routerLink]="step.link" class="flex items-center gap-4 py-5 no-underline">
-                <span aria-hidden="true" class="grid size-9 shrink-0 place-items-center rounded-field border border-brand text-brand">✓</span>
-                <div class="flex-1">
-                  <p class="text-lg font-bold text-ink">{{ step.title }}</p>
-                  <p class="text-sm text-muted">{{ step.detail }}</p>
-                </div>
-              </a>
-            } @else {
-              <a [routerLink]="step.link" class="flex items-center gap-4 py-5 no-underline">
-                <span
-                  aria-hidden="true"
-                  class="grid size-9 shrink-0 place-items-center rounded-field text-sm font-bold"
-                  [class.bg-brand]="step.active"
-                  [class.text-white]="step.active"
-                  [class.border]="!step.active"
-                  [class.border-line-strong]="!step.active"
-                  [class.text-muted]="!step.active"
-                >
-                  {{ step.number }}
-                </span>
-                <div class="flex-1">
-                  <p class="text-lg font-bold text-ink">{{ step.title }}</p>
-                  <p class="text-sm text-muted">{{ step.detail }}</p>
-                </div>
+        <ul class="mt-2 divide-y divide-line">
+          @for (destination of destinations; track destination.title) {
+            <li>
+              <a [routerLink]="destination.link" class="flex items-center gap-4 py-5 no-underline">
+                <p class="flex-1 text-lg font-bold text-ink">{{ destination.title }}</p>
                 <span aria-hidden="true" class="text-2xl leading-none text-muted">›</span>
               </a>
-            }
-          </li>
-        }
-      </ul>
-
-      @if (allDone()) {
-        @if (storefrontUrl(); as url) {
-          <p class="mt-6 text-center text-ink">
-            {{ published() ? 'Votre vitrine est en ligne à' : 'Votre vitrine sera publiée à' }}
-            <a [href]="url.href" target="_blank" rel="noopener" class="font-bold text-brand">{{ url.label }}</a>
+            </li>
+          }
+        </ul>
+      </mm-card>
+    } @else {
+      <mm-card>
+        <div class="flex items-start justify-between gap-4">
+          <div>
+            <h2 class="text-2xl font-bold tracking-tight text-ink">{{ title() }}</h2>
+            <p class="mt-1 text-sm text-muted">{{ subtitle() }}</p>
+          </div>
+          <p aria-hidden="true" class="shrink-0 text-3xl font-bold text-brand">
+            {{ doneCount() }}<span class="text-lg font-normal text-muted">/{{ steps().length }}</span>
           </p>
-          @if (published()) {
-            <p class="mt-4 text-center font-bold text-brand">✓ Vitrine publiée</p>
-          } @else {
+        </div>
+  
+        <div
+          class="mt-4 h-1.5 overflow-hidden rounded-pill bg-surface-sunk"
+          role="progressbar"
+          aria-label="Étapes terminées"
+          aria-valuemin="0"
+          [attr.aria-valuemax]="steps().length"
+          [attr.aria-valuenow]="doneCount()"
+        >
+          <div class="h-full rounded-pill bg-brand transition-all" [style.width.%]="doneCount() / steps().length * 100"></div>
+        </div>
+  
+        <ul class="mt-2 divide-y divide-line">
+          @for (step of steps(); track step.title) {
+            <li>
+              @if (step.done) {
+                <a [routerLink]="step.link" class="flex items-center gap-4 py-5 no-underline">
+                  <span aria-hidden="true" class="grid size-9 shrink-0 place-items-center rounded-field border border-brand text-brand">✓</span>
+                  <div class="flex-1">
+                    <p class="text-lg font-bold text-ink">{{ step.title }}</p>
+                    <p class="text-sm text-muted">{{ step.detail }}</p>
+                  </div>
+                </a>
+              } @else {
+                <a [routerLink]="step.link" class="flex items-center gap-4 py-5 no-underline">
+                  <span
+                    aria-hidden="true"
+                    class="grid size-9 shrink-0 place-items-center rounded-field text-sm font-bold"
+                    [class.bg-brand]="step.active"
+                    [class.text-white]="step.active"
+                    [class.border]="!step.active"
+                    [class.border-line-strong]="!step.active"
+                    [class.text-muted]="!step.active"
+                  >
+                    {{ step.number }}
+                  </span>
+                  <div class="flex-1">
+                    <p class="text-lg font-bold text-ink">{{ step.title }}</p>
+                    <p class="text-sm text-muted">{{ step.detail }}</p>
+                  </div>
+                  <span aria-hidden="true" class="text-2xl leading-none text-muted">›</span>
+                </a>
+              }
+            </li>
+          }
+        </ul>
+  
+        @if (allDone()) {
+          @if (storefrontUrl(); as url) {
+            <p class="mt-6 text-center text-ink">
+              Votre vitrine sera publiée à
+              <a [href]="url.href" target="_blank" rel="noopener" class="font-bold text-brand">{{ url.label }}</a>
+            </p>
             @if (publishError()) {
               <p class="mt-4 text-center text-sm text-danger">La publication a échoué. Veuillez réessayer.</p>
             }
@@ -87,14 +117,14 @@ import { environment } from '../../environments/environment';
             >
               {{ publishing() ? 'Publication…' : 'Publier' }}
             </button>
+          } @else {
+            <p class="mt-6 text-center text-sm text-muted">
+              Votre adresse web est en cours d'attribution. Vous pourrez publier votre vitrine dès qu'elle sera prête.
+            </p>
           }
-        } @else {
-          <p class="mt-6 text-center text-sm text-muted">
-            Votre adresse web est en cours d'attribution. Vous pourrez publier votre vitrine dès qu'elle sera prête.
-          </p>
         }
-      }
-    </mm-card>
+      </mm-card>
+    }
   `,
 })
 export class Dashboard {
@@ -141,8 +171,17 @@ export class Dashboard {
     return { href: `https://${domain}`, label: domain };
   });
 
+  readonly loaded = computed(() => !!this.storefront.view());
+
+  readonly published = computed(() => this.storefront.view()?.published === true);
+
+  readonly destinations = [
+    { title: 'Ma vitrine', link: '/onboarding/storefront' },
+    { title: 'Mon catalogue', link: '/dashboard/catalogue' },
+    { title: 'Mes marchés', link: '/dashboard/markets' },
+  ];
+
   readonly publishing = this.storefront.publishing;
-  readonly published = this.storefront.published;
   readonly publishError = this.storefront.publishError;
 
   publish(): void {

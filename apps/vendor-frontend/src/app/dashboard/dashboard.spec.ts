@@ -33,7 +33,15 @@ const completeStorefront: StorefrontView = {
   phone: '',
   imageReference: 'v42/storefronts/acme/cover-photo',
   subdomain: null,
+  published: false,
 };
+
+async function renderBlank() {
+  const ctx = await renderDashboard();
+  ctx.storefront.view.set({ name: '', description: '', phone: '', imageReference: '', subdomain: null, published: false });
+  ctx.view.detectChanges();
+  return ctx;
+}
 
 async function renderReady(overrides: Partial<StorefrontView> = {}) {
   const ctx = await renderDashboard();
@@ -61,8 +69,16 @@ const aSchedule: MarketScheduleView = {
 };
 
 describe('Dashboard', () => {
-  it('leaves every setup step to do for a vendor without a storefront', async () => {
+  it('waits for the storefront to arrive before showing steps or the published home', async () => {
     await renderDashboard();
+
+    expect(screen.getByRole('status', { name: /chargement/i })).toBeInTheDocument();
+    expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+    expect(screen.queryByRole('link')).not.toBeInTheDocument();
+  });
+
+  it('leaves every setup step to do for a vendor who has filled nothing in', async () => {
+    await renderBlank();
 
     expect(screen.getByRole('link', { name: /informations de la vitrine/i })).toHaveAttribute('href', '/onboarding/storefront');
     expect(screen.getByRole('link', { name: /composez votre catalogue/i })).toHaveAttribute('href', '/dashboard/catalogue');
@@ -94,7 +110,7 @@ describe('Dashboard', () => {
   });
 
   it('marks the markets step done and shows the count once schedules exist', async () => {
-    const { view, markets } = await renderDashboard();
+    const { view, markets } = await renderBlank();
     markets.schedules.set([aSchedule]);
     view.detectChanges();
 
@@ -105,7 +121,7 @@ describe('Dashboard', () => {
   });
 
   it('pluralises the market count', async () => {
-    const { view, markets } = await renderDashboard();
+    const { view, markets } = await renderBlank();
     markets.schedules.set([aSchedule, { ...aSchedule, scheduleId: 'schedule-2' }]);
     view.detectChanges();
 
@@ -114,7 +130,7 @@ describe('Dashboard', () => {
   });
 
   it('marks the catalogue step done and shows the dish count once dishes exist', async () => {
-    const { view, catalogue } = await renderDashboard();
+    const { view, catalogue } = await renderBlank();
     catalogue.items.set([aDish]);
     view.detectChanges();
 
@@ -125,7 +141,7 @@ describe('Dashboard', () => {
   });
 
   it('pluralises the dish count', async () => {
-    const { view, catalogue } = await renderDashboard();
+    const { view, catalogue } = await renderBlank();
     catalogue.items.set([aDish, { ...aDish, itemId: 'item-2' }]);
     view.detectChanges();
 
@@ -134,7 +150,7 @@ describe('Dashboard', () => {
   });
 
   it('leaves the catalogue step to do while it holds no dishes', async () => {
-    await renderDashboard();
+    await renderBlank();
 
     const step = screen.getByRole('link', { name: /composez votre catalogue/i });
     expect(within(step).queryByText('✓')).not.toBeInTheDocument();
@@ -174,13 +190,30 @@ describe('Dashboard', () => {
     expect(screen.getByRole('button', { name: 'Publication…' })).toBeDisabled();
   });
 
-  it('confirms and hides the button once published', async () => {
-    const { storefront, view } = await renderReady();
-    storefront.published.set(true);
-    view.detectChanges();
+  it('drops the setup steps once the vitrine is published', async () => {
+    await renderReady({ published: true });
 
-    expect(screen.getByText('✓ Vitrine publiée')).toBeInTheDocument();
+    expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+    expect(screen.queryByText(/terminez votre installation/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/votre vitrine est prête/i)).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /publier|publication/i })).not.toBeInTheDocument();
+    expect(screen.getByText(/votre vitrine est en ligne/i)).toBeInTheDocument();
+  });
+
+  it('keeps the vitrine, catalogue and markets reachable once published', async () => {
+    await renderReady({ published: true });
+
+    expect(screen.getByRole('link', { name: 'Ma vitrine' })).toHaveAttribute('href', '/onboarding/storefront');
+    expect(screen.getByRole('link', { name: 'Mon catalogue' })).toHaveAttribute('href', '/dashboard/catalogue');
+    expect(screen.getByRole('link', { name: 'Mes marchés' })).toHaveAttribute('href', '/dashboard/markets');
+  });
+
+  it('links to the live storefront once published', async () => {
+    await renderReady({ published: true });
+
+    const link = screen.getByRole('link', { name: 'acme.marketmiam.fr' });
+    expect(link).toHaveAttribute('href', 'https://acme.marketmiam.fr');
+    expect(link).toHaveAttribute('target', '_blank');
   });
 
   it('shows an error when publishing fails', async () => {

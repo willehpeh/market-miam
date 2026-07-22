@@ -16,8 +16,9 @@ const DEMO_VENDOR = 'demo-vendor';
 const DEMO_SUBDOMAIN = 'demo';
 const DEMO_COVER = 'v1784235195/demo-cover_ghvwt5';
 
-// The vendor you sign in as locally — StaticTokenVerifier.forDevelopment() resolves
-// every dev request to this id. Keep in sync with that verifier.
+// The vendor you sign in as locally by default — DevelopmentTokenVerifier resolves
+// a plain `dev` token to this id. Keep in sync with that verifier. Load the vendor
+// app with ?vendor=demo-vendor to sign in as the published demo vendor below instead.
 const DEV_VENDOR = 'dev-vendor';
 const DEV_SUBDOMAIN = 'dev';
 

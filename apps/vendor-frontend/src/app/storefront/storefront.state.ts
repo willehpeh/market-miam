@@ -43,7 +43,6 @@ export interface StorefrontState {
   coverPhotoUploading: boolean;
   coverPhotoError: boolean;
   publishing: boolean;
-  published: boolean;
   publishError: boolean;
 }
 
@@ -54,7 +53,6 @@ export const initialState: StorefrontState = {
   coverPhotoUploading: false,
   coverPhotoError: false,
   publishing: false,
-  published: false,
   publishError: false,
 };
 
@@ -69,7 +67,7 @@ export const storefrontFeature = createFeature({
     on(EditStorefrontSuccess, (state, { name, description, phone }): StorefrontState => ({
       ...state,
       saved: true,
-      view: { ...(state.view ?? { imageReference: '', subdomain: null }), name, description, phone },
+      view: { ...(state.view ?? { imageReference: '', subdomain: null, published: false }), name, description, phone },
     })),
     on(UploadCoverPhoto, (state): StorefrontState => ({ ...state, coverPhotoUploading: true, coverPhotoError: false })),
     on(UploadCoverPhotoSuccess, (state, { imageReference }): StorefrontState => ({
@@ -80,7 +78,11 @@ export const storefrontFeature = createFeature({
     on(UploadCoverPhotoFailure, (state): StorefrontState => ({ ...state, coverPhotoUploading: false, coverPhotoError: true })),
     on(HideSavedModal, (state): StorefrontState => ({ ...state, saved: false })),
     on(PublishStorefront, (state): StorefrontState => ({ ...state, publishing: true, publishError: false })),
-    on(PublishStorefrontSuccess, (state): StorefrontState => ({ ...state, publishing: false, published: true })),
+    on(PublishStorefrontSuccess, (state): StorefrontState => ({
+      ...state,
+      publishing: false,
+      view: state.view ? { ...state.view, published: true } : state.view,
+    })),
     on(PublishStorefrontFailure, (state): StorefrontState => ({ ...state, publishing: false, publishError: true }))
   ),
 });

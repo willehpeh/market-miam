@@ -12,7 +12,7 @@ import { PhotoUploads } from './photo-uploads';
 import { FakePhotoUploads } from './fake.photo-uploads';
 import { SignedUpload } from './signed-upload';
 
-const ACME = { name: 'Acme Bakery', description: 'Fresh bread daily', phone: '', imageReference: '', subdomain: null };
+const ACME = { name: 'Acme Bakery', description: 'Fresh bread daily', phone: '', imageReference: '', subdomain: null, published: false };
 
 const notFound = { status: 404, statusText: 'Not Found' };
 
@@ -87,6 +87,14 @@ describe('Storefront', () => {
     expect(facade.loading()).toBe(false);
   });
 
+  it('reports a storefront the server calls published as published', () => {
+    store.dispatch(LoadStorefront());
+
+    httpCtrl.expectOne('/api/storefront').flush({ ...ACME, published: true });
+
+    expect(facade.view()?.published).toBe(true);
+  });
+
   it('retries after a 404 and loads once the storefront is projected', async () => {
     store.dispatch(LoadStorefront());
 
@@ -144,6 +152,7 @@ describe('Storefront', () => {
       phone: '06 12 34 56 78',
       imageReference: 'v1/acme/cover',
       subdomain: null,
+      published: false,
     });
     expect(facade.saved()).toBe(true);
   });
@@ -205,22 +214,26 @@ describe('Storefront', () => {
     expect(facade.publishing()).toBe(false);
   });
 
-  it('marks the storefront published on success', () => {
-    facade.publish();
+  it('marks the loaded storefront published on success', () => {
+    store.dispatch(LoadStorefront());
+    httpCtrl.expectOne('/api/storefront').flush(ACME);
 
+    facade.publish();
     httpCtrl.expectOne('/api/storefront/publish').flush(null);
 
-    expect(facade.published()).toBe(true);
+    expect(facade.view()?.published).toBe(true);
     expect(facade.publishError()).toBe(false);
   });
 
   it('flags an error and stops publishing when the storefront is not ready', () => {
-    facade.publish();
+    store.dispatch(LoadStorefront());
+    httpCtrl.expectOne('/api/storefront').flush(ACME);
 
+    facade.publish();
     httpCtrl.expectOne('/api/storefront/publish').flush(null, { status: 400, statusText: 'Bad Request' });
 
     expect(facade.publishing()).toBe(false);
-    expect(facade.published()).toBe(false);
+    expect(facade.view()?.published).toBe(false);
     expect(facade.publishError()).toBe(true);
   });
 });

@@ -27,6 +27,7 @@ describe('StorefrontForm', () => {
       phone: '06 12 34 56 78',
       imageReference: '',
       subdomain: null,
+      published: false,
     });
     view.detectChanges();
 
@@ -110,7 +111,7 @@ describe('StorefrontForm', () => {
 
   it('previews the stored cover photo', async () => {
     const { view, storefront } = await renderForm();
-    storefront.view.set({ name: '', description: '', phone: '', imageReference: 'storefronts/acme/cover-photo', subdomain: null });
+    storefront.view.set({ name: '', description: '', phone: '', imageReference: 'storefronts/acme/cover-photo', subdomain: null, published: false });
     view.detectChanges();
 
     expect(screen.getByAltText(/photo de votre stand/i)).toHaveAttribute(
