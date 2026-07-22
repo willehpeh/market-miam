@@ -92,6 +92,26 @@ describe('StorefrontPage', () => {
     expect((dialog.querySelector('img') as HTMLImageElement).src).toBe('https://cdn.test/sheet/dish-1');
   });
 
+  it('closes the dish sheet on a backdrop click, but not when its content is clicked', () => {
+    const fixture = TestBed.createComponent(StorefrontPage);
+    fixture.componentRef.setInput('storefront', ACME);
+    fixture.detectChanges();
+
+    (fixture.nativeElement.querySelector('[data-dish="dish-1"]') as HTMLElement).click();
+    fixture.detectChanges();
+
+    const dialog = fixture.nativeElement.querySelector('dialog') as HTMLDialogElement;
+    expect(dialog.open).toBe(true);
+
+    (dialog.querySelector('h3') as HTMLElement).click();
+    fixture.detectChanges();
+    expect(dialog.open).toBe(true);
+
+    dialog.click();
+    fixture.detectChanges();
+    expect(dialog.open).toBe(false);
+  });
+
   it('shows a coming-soon message with the title for an unpublished storefront', () => {
     const fixture = TestBed.createComponent(StorefrontPage);
     fixture.componentRef.setInput('storefront', { status: 'coming-soon', name: 'Chez Demo' } satisfies StorefrontViewModel);
