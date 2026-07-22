@@ -119,9 +119,6 @@ import { ComingSoonPage } from './coming-soon-page';
                     <p class="shrink-0 text-2xl font-bold text-ink">{{ dish.priceLabel }}</p>
                   </div>
                   <p class="mt-3 text-lg text-ink-soft">{{ dish.description }}</p>
-                  <p class="mt-5 rounded-card bg-surface p-4 text-ink-soft shadow-soft">
-                    Disponible les jours de marché, dans la limite des préparations du jour.
-                  </p>
                 </div>
               }
             </dialog>
