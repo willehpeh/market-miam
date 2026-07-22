@@ -14,14 +14,15 @@ in-memory adapters, and the `Aggregate` base. Framework-agnostic apart from the
   for subscriptions), `Checkpoint`, `Subscription`, `EventHandler`
   (→ `Projection` / `Processor`), `CommandGateway`, `Lineage`.
 - **In-memory adapters** — `InMemoryEventStore`, `InMemoryCheckpoint`,
-  `InMemorySubscription`. Used in tests and, for now, at runtime.
+  `InMemorySubscription`. Used in tests and in local dev (`NODE_ENV=development`).
 - **Postgres adapters** (over a `pg` `Pool`/`Client`) — `PostgresEventStore`
   (`EventStore` + `Events`; append in a transaction, load by stream / global
   position), `PostgresCheckpoint`, `PostgresNotifications` (long-lived
   `LISTEN events` connection exposed as a poke stream with reconnect/backoff),
   and `PostgresDataKeys` (AES-256-GCM keys envelope-encrypted under a master
-  key, for crypto-shredding). In flight — exported and contract-tested, but not
-  yet the runtime default; the app still wires the in-memory adapters.
+  key, for crypto-shredding). The runtime default in every non-development
+  environment (the app wires in-memory only for local dev); exported and
+  contract-tested.
 - **Decorators / wrappers** — `@CheckpointedProjection` / `@CheckpointedProcessor`
   (discovery + checkpoint name), `LineageEventStore`,
   `LineageDispatcher`.
