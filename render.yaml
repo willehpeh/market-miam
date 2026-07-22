@@ -76,7 +76,7 @@ projects:
             name: customer-frontend
             runtime: node
             repo: https://github.com/willehpeh/market-miam
-            plan: free
+            plan: starter
             region: frankfurt
             buildCommand: npm ci && npx nx run customer-frontend:build
             startCommand: node dist/apps/customer-frontend/server/server.mjs
