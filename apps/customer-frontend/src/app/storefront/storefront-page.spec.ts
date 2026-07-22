@@ -30,6 +30,12 @@ const ACME: StorefrontViewModel = {
   ],
 };
 
+function drag(type: string, clientY: number): Event {
+  const event = new Event(type, { bubbles: true });
+  Object.assign(event, { clientY, pointerType: 'mouse', pointerId: 1 });
+  return event;
+}
+
 describe('StorefrontPage', () => {
   it('renders the vendor name, description and phone for a published storefront', () => {
     const fixture = TestBed.createComponent(StorefrontPage);
@@ -108,6 +114,31 @@ describe('StorefrontPage', () => {
     expect(dialog.open).toBe(true);
 
     dialog.click();
+    fixture.detectChanges();
+    expect(dialog.open).toBe(false);
+  });
+
+  it('dismisses the dish sheet when the handle is dragged past the threshold, but snaps back on a small drag', () => {
+    const fixture = TestBed.createComponent(StorefrontPage);
+    fixture.componentRef.setInput('storefront', ACME);
+    fixture.detectChanges();
+
+    (fixture.nativeElement.querySelector('[data-dish="dish-1"]') as HTMLElement).click();
+    fixture.detectChanges();
+
+    const dialog = fixture.nativeElement.querySelector('dialog') as HTMLDialogElement;
+    Object.defineProperty(dialog, 'offsetHeight', { value: 400, configurable: true });
+    const handle = (dialog.querySelector('div') as HTMLElement).firstElementChild as HTMLElement;
+
+    handle.dispatchEvent(drag('pointerdown', 100));
+    handle.dispatchEvent(drag('pointermove', 120));
+    handle.dispatchEvent(drag('pointerup', 120));
+    fixture.detectChanges();
+    expect(dialog.open).toBe(true);
+
+    handle.dispatchEvent(drag('pointerdown', 100));
+    handle.dispatchEvent(drag('pointermove', 400));
+    handle.dispatchEvent(drag('pointerup', 400));
     fixture.detectChanges();
     expect(dialog.open).toBe(false);
   });

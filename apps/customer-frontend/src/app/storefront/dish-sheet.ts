@@ -1,11 +1,13 @@
 import { ChangeDetectionStrategy, Component, ElementRef, signal, viewChild, ViewEncapsulation } from '@angular/core';
 import { DishViewModel } from './storefront-view-model';
+import { DragToDismiss } from './drag-to-dismiss';
 
 @Component({
   selector: 'app-dish-sheet',
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: { class: 'contents' },
+  imports: [DragToDismiss],
   styles: `
     .dish-sheet {
       transform: translateY(100%);
@@ -52,8 +54,10 @@ import { DishViewModel } from './storefront-view-model';
       (click)="dismissOnBackdrop($event)"
     >
       @if (dish(); as dish) {
-        <div class="p-5 pt-3">
-          <span class="mx-auto mb-3 block h-1.5 w-10 rounded-pill bg-line-strong"></span>
+        <div class="p-5 pt-2">
+          <div [appDragToDismiss]="dialog" class="-mt-1 mb-2 flex justify-center py-2">
+            <span class="h-1.5 w-10 rounded-pill bg-line-strong"></span>
+          </div>
           @if (dish.photo; as photo) {
             <img [src]="photo.sheetUrl" alt="" class="aspect-4/3 w-full rounded-card object-cover" />
           }
