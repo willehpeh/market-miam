@@ -55,12 +55,14 @@ import { DragToDismiss } from '../../core/drag-to-dismiss';
     >
       @if (dish(); as dish) {
         <div class="p-5 pt-2">
-          <div [appDragToDismiss]="dialog" class="-mt-1 mb-2 flex justify-center py-2">
-            <span class="h-1.5 w-10 rounded-pill bg-line-strong"></span>
+          <div [appDragToDismiss]="dialog">
+            <div class="-mt-1 mb-2 flex justify-center py-2">
+              <span class="h-1.5 w-10 rounded-pill bg-line-strong"></span>
+            </div>
+            @if (dish.photo; as photo) {
+              <img [src]="photo.sheetUrl" alt="" class="aspect-4/3 w-full rounded-card object-cover" />
+            }
           </div>
-          @if (dish.photo; as photo) {
-            <img [src]="photo.sheetUrl" alt="" class="aspect-4/3 w-full rounded-card object-cover" />
-          }
           <div class="mt-5 flex items-baseline justify-between gap-3">
             <h3 class="text-2xl font-bold text-ink">{{ dish.name }}</h3>
             <p class="shrink-0 text-2xl font-bold text-ink">{{ dish.priceLabel }}</p>
