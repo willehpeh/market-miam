@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, ElementRef, signal, viewChild, ViewEncapsulation } from '@angular/core';
-import { DishViewModel } from './storefront-view-model';
-import { DragToDismiss } from './drag-to-dismiss';
+import { DishViewModel } from '../storefront-view-model';
+import { DragToDismiss } from '../../core/drag-to-dismiss';
 
 @Component({
   selector: 'app-dish-sheet',

@@ -3,7 +3,6 @@ import { ResolveFn } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { catchError, map, Observable, of } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { subdomainFrom } from './subdomain';
 import { CustomerStorefront } from './customer-storefront';
 import { StorefrontViewModel, toViewModel } from './storefront-view-model';
 
@@ -22,3 +21,9 @@ export const storefrontResolver: ResolveFn<StorefrontViewModel | null> = (route)
     .get<CustomerStorefront>(`${environment.apiBaseUrl}/api/public/storefront/${subdomain}`)
     .pipe(map(toViewModel), catchError(() => of(null)));
 };
+
+function subdomainFrom(host: string, queryParam: string | null): string | null {
+  const label = host.split(':')[0].split('.')[0];
+  if (label && label !== 'localhost') return label;
+  return queryParam?.trim() || null;
+}

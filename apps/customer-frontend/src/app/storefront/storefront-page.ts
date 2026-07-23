@@ -1,11 +1,11 @@
 import { ChangeDetectionStrategy, Component, input, viewChild } from '@angular/core';
 import { DishViewModel, StorefrontViewModel } from './storefront-view-model';
-import { ComingSoonPage } from './coming-soon-page';
-import { StorefrontHero } from './storefront-hero';
-import { DishCard } from './dish-card';
-import { DishSheet } from './dish-sheet';
-import { MarketCard } from './market-card';
-import { StorefrontFooter } from './storefront-footer';
+import { ComingSoonPage } from './coming-soon/coming-soon-page';
+import { StorefrontHero } from './layout/storefront-hero';
+import { DishCard } from './dishes/dish-card';
+import { DishSheet } from './dishes/dish-sheet';
+import { MarketCard } from './markets/market-card';
+import { StorefrontFooter } from './layout/storefront-footer';
 
 @Component({
   selector: 'app-storefront-page',

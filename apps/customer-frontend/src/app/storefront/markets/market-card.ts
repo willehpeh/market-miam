@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
-import { MarketViewModel } from './storefront-view-model';
+import { MarketViewModel } from '../storefront-view-model';
 
 @Component({
   selector: 'app-market-card',

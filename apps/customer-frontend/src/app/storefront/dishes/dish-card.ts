@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
-import { DishViewModel } from './storefront-view-model';
+import { DishViewModel } from '../storefront-view-model';
 
 @Component({
   selector: 'app-dish-card',

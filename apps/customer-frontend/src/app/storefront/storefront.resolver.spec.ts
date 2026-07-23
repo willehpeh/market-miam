@@ -37,7 +37,7 @@ describe('storefrontResolver', () => {
   let request: Request | null;
 
   beforeEach(() => {
-    location = { host: 'localhost' };
+    location = { host: 'localhost:4200' };
     request = null;
     TestBed.configureTestingModule({
       providers: [

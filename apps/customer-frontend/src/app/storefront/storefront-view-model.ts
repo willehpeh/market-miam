@@ -1,5 +1,6 @@
 import { environment } from '../../environments/environment';
-import { CustomerStorefront, UpcomingMarket } from './customer-storefront';
+import { CustomerStorefront } from './customer-storefront';
+import { UpcomingMarket } from './markets/upcoming-market';
 
 export type DishViewModel = {
   itemId: string;
