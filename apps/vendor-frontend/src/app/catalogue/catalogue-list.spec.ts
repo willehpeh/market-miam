@@ -50,6 +50,18 @@ describe('CatalogueList', () => {
     expect(screen.getByText('11,00 €')).toBeInTheDocument();
   });
 
+  it('shows the most recently added dish first', async () => {
+    const { view, catalogue } = await renderList();
+    catalogue.items.set([dish({ itemId: 'item-1' }), dish({ itemId: 'item-2' })]);
+    view.detectChanges();
+
+    const editHrefs = screen
+      .getAllByRole('link')
+      .map((link) => link.getAttribute('href'))
+      .filter((href) => href?.endsWith('/edit'));
+    expect(editHrefs).toEqual(['/dashboard/catalogue/item-2/edit', '/dashboard/catalogue/item-1/edit']);
+  });
+
   it('renders each dish photo with a thumbnail rendition', async () => {
     const { view, catalogue } = await renderList();
     catalogue.items.set([dish({ imageReference: 'v1/dishes/acme/item-1' })]);

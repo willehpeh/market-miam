@@ -51,6 +51,18 @@ describe('MarketsList', () => {
     expect(screen.getByText('Marché Saint-Antoine')).toBeInTheDocument();
   });
 
+  it('shows the most recently added schedule first', async () => {
+    const { view, markets } = await renderList();
+    markets.schedules.set([schedule({ scheduleId: 'schedule-1' }), schedule({ scheduleId: 'schedule-2' })]);
+    view.detectChanges();
+
+    const editHrefs = screen
+      .getAllByRole('link')
+      .map((link) => link.getAttribute('href'))
+      .filter((href) => href?.endsWith('/edit'));
+    expect(editHrefs).toEqual(['/dashboard/markets/schedule-2/edit', '/dashboard/markets/schedule-1/edit']);
+  });
+
   it('lists each day in French, ordered Monday first, with its time range', async () => {
     const { view, markets } = await renderList();
     markets.schedules.set([

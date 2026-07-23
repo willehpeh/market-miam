@@ -37,6 +37,20 @@ type ScheduleCard = { scheduleId: string; marketName: string; cadence: string; d
       <p class="mt-3 text-sm text-ink-soft">Où et quand vos clients vous trouvent.</p>
 
       <ul class="mt-6 space-y-3">
+        <li>
+          <a
+            routerLink="/dashboard/markets/new"
+            class="flex items-center gap-4 rounded-card border border-dashed border-line-strong bg-surface-sunk p-3 no-underline"
+          >
+            <span class="grid size-11 shrink-0 place-items-center rounded-field bg-brand-soft text-xl text-brand">+</span>
+            <div class="flex-1">
+              <p class="font-bold text-ink">Ajouter un marché</p>
+              <p class="text-xs text-muted">Récurrent chaque semaine ou date ponctuelle.</p>
+            </div>
+            <span aria-hidden="true" class="text-2xl leading-none text-muted">›</span>
+          </a>
+        </li>
+
         @for (card of scheduleCards(); track card.scheduleId) {
           <li>
             <a
@@ -59,20 +73,6 @@ type ScheduleCard = { scheduleId: string; marketName: string; cadence: string; d
             </a>
           </li>
         }
-
-        <li>
-          <a
-            routerLink="/dashboard/markets/new"
-            class="flex items-center gap-4 rounded-card border border-dashed border-line-strong bg-surface-sunk p-3 no-underline"
-          >
-            <span class="grid size-11 shrink-0 place-items-center rounded-field bg-brand-soft text-xl text-brand">+</span>
-            <div class="flex-1">
-              <p class="font-bold text-ink">Ajouter un marché</p>
-              <p class="text-xs text-muted">Récurrent chaque semaine ou date ponctuelle.</p>
-            </div>
-            <span aria-hidden="true" class="text-2xl leading-none text-muted">›</span>
-          </a>
-        </li>
       </ul>
 
       <a
@@ -98,7 +98,7 @@ export class MarketsList {
         label: DAY_LABELS[day.day] ?? day.day,
         time: timeRange(day),
       })),
-    })),
+    })).reverse(),
   );
 
   constructor() {

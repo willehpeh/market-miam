@@ -24,6 +24,22 @@ const DISH_THUMBNAIL_TRANSFORMATION = 'c_fill,w_200,h_200,q_auto,f_webp';
       <p class="mt-3 text-sm text-ink-soft">Constituez votre carte. Chaque plat prend 30 secondes.</p>
 
       <ul class="mt-6 space-y-3">
+        <li>
+          <a
+            routerLink="/dashboard/catalogue/new"
+            class="flex items-center gap-4 rounded-card border border-dashed border-line-strong bg-surface-sunk p-3 no-underline"
+          >
+            <span class="grid size-16 shrink-0 place-items-center rounded-field bg-brand-soft text-xl text-brand">
+            <i class="fa-solid fa-camera" aria-hidden="true"></i>
+          </span>
+            <div class="flex-1">
+              <p class="font-bold text-ink">Ajouter un plat</p>
+              <p class="text-xs text-muted">Prenez-le en photo, on remplit le reste.</p>
+            </div>
+            <span aria-hidden="true" class="text-2xl leading-none text-brand">+</span>
+          </a>
+        </li>
+
         @for (dish of dishes(); track dish.itemId) {
           <li>
             <a
@@ -46,22 +62,6 @@ const DISH_THUMBNAIL_TRANSFORMATION = 'c_fill,w_200,h_200,q_auto,f_webp';
             </a>
           </li>
         }
-
-        <li>
-          <a
-            routerLink="/dashboard/catalogue/new"
-            class="flex items-center gap-4 rounded-card border border-dashed border-line-strong bg-surface-sunk p-3 no-underline"
-          >
-            <span class="grid size-16 shrink-0 place-items-center rounded-field bg-brand-soft text-xl text-brand">
-            <i class="fa-solid fa-camera" aria-hidden="true"></i>
-          </span>
-            <div class="flex-1">
-              <p class="font-bold text-ink">Ajouter un plat</p>
-              <p class="text-xs text-muted">Prenez-le en photo, on remplit le reste.</p>
-            </div>
-            <span aria-hidden="true" class="text-2xl leading-none text-brand">+</span>
-          </a>
-        </li>
       </ul>
 
       <a
@@ -79,7 +79,7 @@ export class CatalogueList {
 
   readonly thumbnailTransformation = DISH_THUMBNAIL_TRANSFORMATION;
   readonly dishes = computed(() =>
-    this.catalogue.items().map((item) => ({ ...item, priceLabel: formatEuros(item.price) })),
+    this.catalogue.items().map((item) => ({ ...item, priceLabel: formatEuros(item.price) })).reverse(),
   );
 
   constructor() {
