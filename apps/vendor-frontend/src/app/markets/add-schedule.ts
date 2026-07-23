@@ -13,8 +13,6 @@ const DAYS = [
   { code: 'SAT', short: 'S', label: 'Samedi' },
   { code: 'SUN', short: 'D', label: 'Dimanche' },
 ];
-const DAY_ORDER = DAYS.map((day) => day.code);
-
 type DayEntry = { day: string; startTime: string; endTime: string };
 
 @Component({
@@ -196,11 +194,13 @@ export class AddSchedule {
     },
   );
 
-  protected readonly rows = computed(() =>
-    [...this.days()]
-      .sort((a, b) => DAY_ORDER.indexOf(a.day) - DAY_ORDER.indexOf(b.day))
-      .map((entry) => ({ ...entry, label: DAYS.find((day) => day.code === entry.day)!.label })),
-  );
+  protected readonly rows = computed(() => {
+    const entries = this.days();
+    return DAYS.flatMap((day) => {
+      const entry = entries.find((e) => e.day === day.code);
+      return entry ? [{ ...entry, label: day.label }] : [];
+    });
+  });
 
   private readonly codePostalValid = computed(() => /^\d{5}$/.test(this.fields().value().codePostal.trim()));
   protected readonly codePostalInvalid = computed(() => !this.codePostalValid());
