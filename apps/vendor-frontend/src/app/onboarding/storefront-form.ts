@@ -73,7 +73,7 @@ const MAX_PHOTO_BYTES = 10 * 1024 * 1024;
               [formField]="fields.name"
               [attr.aria-invalid]="fields.name().touched() && fields.name().invalid()"
               [attr.aria-describedby]="fields.name().touched() && fields.name().invalid() ? 'name-error' : null"
-              placeholder="La Table de Margaux"
+              placeholder="ex. La Table de Margaux"
             />
             @if (fields.name().touched() && fields.name().invalid()) {
               <p id="name-error" role="alert" class="mt-1 text-xs text-danger">Le nom du stand est requis.</p>
@@ -86,12 +86,12 @@ const MAX_PHOTO_BYTES = 10 * 1024 * 1024;
               rows="3"
               class="mt-1"
               [formField]="fields.description"
-              placeholder="Cuisine de marché mijotée maison, à base de produits locaux et de saison. Plats à emporter et sur commande."
+              placeholder="ex. Cuisine de marché mijotée maison, à base de produits locaux et de saison. Plats à emporter et sur commande."
             ></textarea>
           </div>
           <div>
             <label for="phone" class="field-label">Téléphone · optionnel</label>
-            <input id="phone" type="tel" class="mt-1" [formField]="fields.phone" placeholder="06 12 34 56 78" />
+            <input id="phone" type="tel" class="mt-1" [formField]="fields.phone" placeholder="ex. 06 12 34 56 78" />
           </div>
         </div>
 

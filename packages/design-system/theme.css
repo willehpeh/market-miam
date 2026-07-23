@@ -30,6 +30,7 @@
   --color-ink:          var(--mm-ink);
   --color-ink-soft:     var(--mm-ink-soft);
   --color-muted:        var(--mm-muted);
+  --color-placeholder:  var(--mm-placeholder);
   --color-line:         var(--mm-line);
   --color-line-strong:  var(--mm-line-strong);
 
@@ -100,7 +101,7 @@
   textarea {
     /* text-base (16px) keeps iOS Safari from auto-zooming the field on focus */
     @apply w-full rounded-field border border-line bg-surface px-3.5 py-2.5 text-base text-ink;
-    @apply placeholder:text-muted;
+    @apply placeholder:text-placeholder;
     @apply focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-brand;
     @apply disabled:cursor-not-allowed disabled:opacity-50;
   }

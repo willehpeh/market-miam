@@ -60,7 +60,7 @@ const DISH_PREVIEW_TRANSFORMATION = 'c_fill,w_600,h_400,q_auto,f_webp';
               [formField]="fields.name"
               [attr.aria-invalid]="fields.name().touched() && fields.name().invalid()"
               [attr.aria-describedby]="fields.name().touched() && fields.name().invalid() ? 'name-error' : null"
-              placeholder="Parmentier de canard"
+              placeholder="ex. Parmentier de canard"
             />
             @if (fields.name().touched() && fields.name().invalid()) {
               <p id="name-error" role="alert" class="mt-1 text-xs text-danger">Le nom du plat est requis.</p>
@@ -77,7 +77,7 @@ const DISH_PREVIEW_TRANSFORMATION = 'c_fill,w_600,h_400,q_auto,f_webp';
                 [formField]="fields.price"
                 [attr.aria-invalid]="fields.price().touched() && priceInvalid()"
                 [attr.aria-describedby]="fields.price().touched() && priceInvalid() ? 'price-error' : null"
-                placeholder="12,00"
+                placeholder="ex. 12,00"
               />
               <span class="text-sm text-muted">EUR</span>
             </div>
@@ -92,7 +92,7 @@ const DISH_PREVIEW_TRANSFORMATION = 'c_fill,w_600,h_400,q_auto,f_webp';
               rows="3"
               class="mt-1"
               [formField]="fields.description"
-              placeholder="Confit de canard effiloché, purée de rattes au beurre."
+              placeholder="ex. Confit de canard effiloché, purée de rattes au beurre."
             ></textarea>
           </div>
         </div>

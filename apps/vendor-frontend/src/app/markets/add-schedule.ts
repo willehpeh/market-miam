@@ -83,7 +83,7 @@ type DayEntry = { day: string; startTime: string; endTime: string };
                   inputmode="numeric"
                   class="mt-1"
                   [formField]="fields.codePostal"
-                  placeholder="69008"
+                  placeholder="ex. 69008"
                   [attr.aria-invalid]="fields.codePostal().touched() && codePostalInvalid()"
                 />
               </div>

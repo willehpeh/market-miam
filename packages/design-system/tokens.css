@@ -23,6 +23,7 @@
   --mm-ink:          #2a241e;
   --mm-ink-soft:     #5c544a;
   --mm-muted:        #6f665c;  /* darkened to clear WCAG AA 4.5:1 on light surfaces */
+  --mm-placeholder:  #796f63;  /* lighter than muted so it reads as a hint; ≈4.9:1 on white (AA) */
   --mm-line:         #e7e1d6;
   --mm-line-strong:  #d8d1c4;
 
