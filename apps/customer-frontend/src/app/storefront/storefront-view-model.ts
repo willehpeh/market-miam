@@ -27,6 +27,9 @@ export type StorefrontViewModel =
       description: string;
       phone: string;
       coverUrl: string | null;
+      // Absolute Open Graph / Twitter card image, cropped to the 1200×630 the
+      // crawlers expect — null when the vendor has no cover photo yet.
+      socialImageUrl: string | null;
       dishes: DishViewModel[];
       upcomingMarkets: MarketViewModel[];
     }
@@ -45,6 +48,7 @@ export function toViewModel(storefront: CustomerStorefront): StorefrontViewModel
     description: storefront.description,
     phone: storefront.phone,
     coverUrl: storefront.coverPhoto ? cloudinaryUrl(storefront.coverPhoto, 'c_fill,w_1200,h_750,q_auto,f_auto') : null,
+    socialImageUrl: storefront.coverPhoto ? cloudinaryUrl(storefront.coverPhoto, 'c_fill,w_1200,h_630,q_auto,f_auto') : null,
     dishes: storefront.dishes.map(dish => ({
       itemId: dish.itemId,
       name: dish.name,

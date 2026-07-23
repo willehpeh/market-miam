@@ -61,6 +61,7 @@ describe('storefrontResolver', () => {
       description: 'Fresh bread daily',
       phone: '0102030405',
       coverUrl: 'https://res.cloudinary.com/test-cloud/image/upload/c_fill,w_1200,h_750,q_auto,f_auto/v7/cover',
+      socialImageUrl: 'https://res.cloudinary.com/test-cloud/image/upload/c_fill,w_1200,h_630,q_auto,f_auto/v7/cover',
       dishes: [
         {
           itemId: 'dish-1',

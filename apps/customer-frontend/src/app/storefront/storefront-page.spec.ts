@@ -8,6 +8,7 @@ const ACME: StorefrontViewModel = {
   description: 'Fresh bread daily',
   phone: '0102030405',
   coverUrl: null,
+  socialImageUrl: null,
   dishes: [
     {
       itemId: 'dish-1',
