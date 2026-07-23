@@ -1,5 +1,7 @@
-import { ChangeDetectionStrategy, Component, input, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, inject, input, viewChild } from '@angular/core';
 import { DishViewModel, StorefrontViewModel } from './storefront-view-model';
+import { StorefrontMetadata } from './storefront-metadata';
+import { currentOrigin } from '../core/request-url';
 import { ComingSoonPage } from './coming-soon/coming-soon-page';
 import { StorefrontHero } from './layout/storefront-hero';
 import { DishCard } from './dishes/dish-card';
@@ -67,6 +69,14 @@ import { StorefrontFooter } from './layout/storefront-footer';
 export class StorefrontPage {
   readonly storefront = input<StorefrontViewModel | null>(null);
   private readonly sheet = viewChild.required(DishSheet);
+  private readonly metadata = inject(StorefrontMetadata);
+  // Captured in the injection context; the effect reruns the tag update whenever
+  // the resolved storefront changes (SSR render, then the hydration re-run).
+  private readonly origin = currentOrigin();
+
+  constructor() {
+    effect(() => this.metadata.set(this.storefront(), this.origin));
+  }
 
   protected openDish(dish: DishViewModel): void {
     this.sheet().open(dish);
