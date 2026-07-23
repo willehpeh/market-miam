@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject, linkedSignal, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { form, FormField, required } from '@angular/forms/signals';
 import { StorefrontFacade } from '../storefront/storefront.facade';
 import { CloudinaryUrlPipe } from '../core/cloudinary-url.pipe';
@@ -9,10 +10,19 @@ const MAX_PHOTO_BYTES = 10 * 1024 * 1024;
 @Component({
   selector: 'mm-storefront-form',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [Card, FormField, CloudinaryUrlPipe],
+  imports: [Card, FormField, CloudinaryUrlPipe, RouterLink],
   template: `
     <mm-card>
-      <form (submit)="submit($event)">
+      <form class="relative" (submit)="submit($event)">
+        @if (view()?.published) {
+          <a
+            routerLink="/dashboard"
+            aria-label="Fermer"
+            class="absolute right-0 top-0 grid place-items-center rounded-full text-brand"
+          >
+            <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+          </a>
+        }
         <p class="kicker">Votre vitrine</p>
         <h1 class="mt-2 text-2xl leading-tight">Présentez votre stand</h1>
         <p class="mt-2 text-sm text-ink-soft">C'est ce que vos clients voient en premier.</p>
@@ -85,13 +95,17 @@ const MAX_PHOTO_BYTES = 10 * 1024 * 1024;
           </div>
         </div>
 
-        <button type="submit" class="mt-6 flex w-full max-w-xs mx-auto" [disabled]="fields().invalid()">Continuer →</button>
+        @if (!view()?.published) {
+          <button type="submit" class="mt-6 flex w-full max-w-xs mx-auto" [disabled]="fields().invalid()">Continuer →
+          </button>
+        }
       </form>
     </mm-card>
 
     @if (saved()) {
       <div role="status" class="fixed inset-0 m-auto h-fit w-fit rounded-card bg-surface p-6 text-center shadow-frame">
-        <div aria-hidden="true" class="mx-auto grid size-11 place-items-center rounded-full bg-brand-soft text-lg">✓</div>
+        <div aria-hidden="true" class="mx-auto grid size-11 place-items-center rounded-full bg-brand-soft text-lg">✓
+        </div>
         <p class="mt-3 font-bold text-ink">Informations sauvegardées</p>
       </div>
     }

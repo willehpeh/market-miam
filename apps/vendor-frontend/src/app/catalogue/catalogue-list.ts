@@ -11,6 +11,14 @@ const DISH_THUMBNAIL_TRANSFORMATION = 'c_fill,w_200,h_200,q_auto,f_webp';
   imports: [RouterLink, Card, CloudinaryUrlPipe],
   template: `
     <mm-card>
+      <div class="relative">
+        <a
+          routerLink="/dashboard"
+          aria-label="Fermer"
+          class="absolute right-0 top-0 grid place-items-center rounded-full text-brand"
+        >
+          <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+        </a>
       <p class="kicker">Votre catalogue</p>
       <h1 class="mt-2 text-2xl leading-tight">Ajoutez vos plats</h1>
       <p class="mt-3 text-sm text-ink-soft">Constituez votre carte. Chaque plat prend 30 secondes.</p>
@@ -62,6 +70,7 @@ const DISH_THUMBNAIL_TRANSFORMATION = 'c_fill,w_200,h_200,q_auto,f_webp';
       >
         Retour
       </a>
+      </div>
     </mm-card>
   `,
 })

@@ -24,6 +24,14 @@ type ScheduleCard = { scheduleId: string; marketName: string; cadence: string; d
   imports: [RouterLink, Card],
   template: `
     <mm-card>
+      <div class="relative">
+        <a
+          routerLink="/dashboard"
+          aria-label="Fermer"
+          class="absolute right-0 top-0 grid place-items-center rounded-full text-brand"
+        >
+          <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+        </a>
       <p class="kicker">Votre calendrier</p>
       <h1 class="mt-2 text-2xl leading-tight">Vos marchés</h1>
       <p class="mt-3 text-sm text-ink-soft">Où et quand vos clients vous trouvent.</p>
@@ -73,6 +81,7 @@ type ScheduleCard = { scheduleId: string; marketName: string; cadence: string; d
       >
         Retour
       </a>
+      </div>
     </mm-card>
   `,
 })
