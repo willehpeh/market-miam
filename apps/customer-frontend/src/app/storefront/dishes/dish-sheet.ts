@@ -19,6 +19,9 @@ import { DragToDismiss } from '../../core/drag-to-dismiss';
     .dish-sheet[open] {
       transform: translateY(0);
     }
+    .dish-sheet.closing {
+      transform: translateY(100%);
+    }
     @starting-style {
       .dish-sheet[open] {
         transform: translateY(100%);
@@ -33,6 +36,9 @@ import { DragToDismiss } from '../../core/drag-to-dismiss';
     }
     .dish-sheet[open]::backdrop {
       background-color: rgb(0 0 0 / 0.5);
+    }
+    .dish-sheet.closing::backdrop {
+      background-color: rgb(0 0 0 / 0);
     }
     @starting-style {
       .dish-sheet[open]::backdrop {
@@ -51,11 +57,15 @@ import { DragToDismiss } from '../../core/drag-to-dismiss';
     <dialog
       #dialog
       class="dish-sheet mx-auto mb-0 mt-auto w-full max-w-xl rounded-t-3xl bg-canvas p-0"
+      [class.closing]="closing()"
+      [style.transform]="dragOffset() !== null ? 'translateY(' + dragOffset() + 'px)' : null"
+      [style.transition]="dragOffset() !== null ? 'none' : null"
       (click)="dismissOnBackdrop($event)"
+      (transitionend)="onSlideEnd($event)"
     >
       @if (dish(); as dish) {
         <div class="p-5 pt-2">
-          <div [appDragToDismiss]="dialog">
+          <div [appDragToDismiss]="dialog" (dragTo)="dragOffset.set($event)" (dismissed)="dismiss()">
             <div class="-mt-1 mb-2 flex justify-center py-2">
               <span class="h-1.5 w-10 rounded-pill bg-line-strong"></span>
             </div>
@@ -75,6 +85,8 @@ import { DragToDismiss } from '../../core/drag-to-dismiss';
 })
 export class DishSheet {
   protected readonly dish = signal<DishViewModel | null>(null);
+  protected readonly dragOffset = signal<number | null>(null);
+  protected readonly closing = signal(false);
   private readonly dialog = viewChild.required<ElementRef<HTMLDialogElement>>('dialog');
 
   open(dish: DishViewModel): void {
@@ -84,6 +96,25 @@ export class DishSheet {
 
   protected dismissOnBackdrop(event: MouseEvent): void {
     if (event.target === this.dialog().nativeElement) {
+      this.dismiss();
+    }
+  }
+
+  // Slide the sheet out via the `.closing` class while it stays in the top layer, then close on
+  // transitionend — WebKit doesn't animate the native `overlay`/top-layer exit, so a plain close()
+  // vanishes. Reduced-motion (and non-browser/test) skips straight to close.
+  protected dismiss(): void {
+    this.dragOffset.set(null);
+    if (typeof matchMedia === 'function' && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      this.closing.set(true);
+    } else {
+      this.dialog().nativeElement.close();
+    }
+  }
+
+  protected onSlideEnd(event: TransitionEvent): void {
+    if (event.propertyName === 'transform' && this.closing()) {
+      this.closing.set(false);
       this.dialog().nativeElement.close();
     }
   }

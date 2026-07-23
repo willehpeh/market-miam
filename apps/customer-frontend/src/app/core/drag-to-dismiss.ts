@@ -1,9 +1,9 @@
-import { Directive, input } from '@angular/core';
+import { Directive, input, output } from '@angular/core';
 
 @Directive({
   selector: '[appDragToDismiss]',
   host: {
-    '[style.touchAction]': "'none'",
+    '[style.touch-action]': "'none'",
     '[style.cursor]': "'grab'",
     '(pointerdown)': 'onDown($event)',
     '(pointermove)': 'onMove($event)',
@@ -13,13 +13,14 @@ import { Directive, input } from '@angular/core';
 })
 export class DragToDismiss {
   readonly sheet = input.required<HTMLDialogElement>({ alias: 'appDragToDismiss' });
+  readonly dragTo = output<number | null>();
+  readonly dismissed = output<void>();
   private startY = 0;
   private dragging = false;
 
   protected onDown(event: PointerEvent): void {
     this.dragging = true;
     this.startY = event.clientY;
-    this.sheet().style.transition = 'none';
     (event.currentTarget as Element).setPointerCapture?.(event.pointerId);
   }
 
@@ -27,26 +28,23 @@ export class DragToDismiss {
     if (!this.dragging) {
       return;
     }
-    const offset = Math.max(0, event.clientY - this.startY);
-    this.sheet().style.transform = `translateY(${offset}px)`;
+    this.dragTo.emit(Math.max(0, event.clientY - this.startY));
   }
 
   protected onUp(event: PointerEvent): void {
     if (!this.dragging) {
       return;
     }
-    const sheet = this.sheet();
-    const offset = Math.max(0, event.clientY - this.startY);
-    this.reset();
-    if (offset > sheet.offsetHeight * 0.1) {
-      sheet.close();
+    this.dragging = false;
+    if (event.clientY - this.startY > this.sheet().offsetHeight * 0.1) {
+      this.dismissed.emit();
+    } else {
+      this.dragTo.emit(null);
     }
   }
 
   protected reset(): void {
     this.dragging = false;
-    const sheet = this.sheet();
-    sheet.style.transition = '';
-    sheet.style.transform = '';
+    this.dragTo.emit(null);
   }
 }
