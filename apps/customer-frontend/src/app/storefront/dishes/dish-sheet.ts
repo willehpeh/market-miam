@@ -64,8 +64,8 @@ import { DragToDismiss } from '../../core/drag-to-dismiss';
       (transitionend)="onSlideEnd($event)"
     >
       @if (dish(); as dish) {
-        <div class="p-5 pt-2">
-          <div [appDragToDismiss]="dialog" (dragTo)="dragOffset.set($event)" (dismissed)="dismiss()">
+        <div class="flex h-[80dvh] flex-col p-5 pt-2">
+          <div class="shrink-0" [appDragToDismiss]="dialog" (dragTo)="dragOffset.set($event)" (dismissed)="dismiss()">
             <div class="-mt-1 mb-2 flex justify-center py-2">
               <span class="h-1.5 w-10 rounded-pill bg-line-strong"></span>
             </div>
@@ -73,11 +73,11 @@ import { DragToDismiss } from '../../core/drag-to-dismiss';
               <img [src]="photo.sheetUrl" alt="" class="aspect-4/3 w-full rounded-card object-cover" />
             }
           </div>
-          <div class="mt-5 flex items-baseline justify-between gap-3">
+          <div class="mt-5 flex shrink-0 items-baseline justify-between gap-3">
             <h3 class="text-2xl font-bold text-ink">{{ dish.name }}</h3>
             <p class="shrink-0 text-2xl font-bold text-ink">{{ dish.priceLabel }}</p>
           </div>
-          <p class="mt-3 text-lg text-ink-soft">{{ dish.description }}</p>
+          <p class="mt-3 min-h-0 overflow-y-auto text-lg text-ink-soft">{{ dish.description }}</p>
         </div>
       }
     </dialog>
