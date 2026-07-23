@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, effect, inject, input, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input, OnInit, viewChild } from '@angular/core';
 import { DishViewModel, StorefrontViewModel } from './storefront-view-model';
 import { StorefrontMetadata } from './storefront-metadata';
 import { currentOrigin } from '../core/request-url';
@@ -66,16 +66,19 @@ import { StorefrontFooter } from './layout/storefront-footer';
     }
   `,
 })
-export class StorefrontPage {
+export class StorefrontPage implements OnInit {
   readonly storefront = input<StorefrontViewModel | null>(null);
   private readonly sheet = viewChild.required(DishSheet);
   private readonly metadata = inject(StorefrontMetadata);
-  // Captured in the injection context; the effect reruns the tag update whenever
-  // the resolved storefront changes (SSR render, then the hydration re-run).
+  // Captured here in the injection context; read in ngOnInit.
   private readonly origin = currentOrigin();
 
-  constructor() {
-    effect(() => this.metadata.set(this.storefront(), this.origin));
+  // The router binds `storefront` before ngOnInit, which runs inside the SSR
+  // render pass — so the tags reach the serialized <head>. The resolved
+  // storefront is set once (one vendor per subdomain, no in-app navigation
+  // swaps it), so a lifecycle hook suffices; no reactive effect is needed.
+  ngOnInit(): void {
+    this.metadata.set(this.storefront(), this.origin);
   }
 
   protected openDish(dish: DishViewModel): void {
