@@ -4,6 +4,7 @@ import { ImageReference } from '@market-miam/common';
 import { Item, ItemDescription, ItemId, ItemName, ItemPrice, Variant } from './item';
 import { NoSuchItemError } from './errors/no-such-item.error';
 import { ItemAlreadyInCatalogueError } from './errors/item-already-in-catalogue.error';
+import { TooFewVariantsError } from './errors/too-few-variants.error';
 
 export class Catalogue extends Aggregate {
 
@@ -12,6 +13,9 @@ export class Catalogue extends Aggregate {
   addItem(item: { id: ItemId, name: ItemName, description: ItemDescription, price?: ItemPrice, imageReference?: ImageReference, variants?: Variant[] }) {
     if (this.hasItem(item.id)) {
       throw new ItemAlreadyInCatalogueError(`Item already in catalogue with ID ${ item.id.value() }`);
+    }
+    if (item.variants && item.variants.length < 2) {
+      throw new TooFewVariantsError(`A dish with variants needs at least two; got ${ item.variants.length }`);
     }
     const event: ItemAddedToCatalogue = {
       type: 'ItemAddedToCatalogue',

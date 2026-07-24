@@ -3,6 +3,8 @@ import {
   InvalidPriceError,
   ItemAddedToCatalogue,
   ItemAlreadyInCatalogueError,
+  TooFewVariantsError,
+  VariantInput,
   Catalogues,
   VendorScopedEvents
 } from '@market-miam/market-days';
@@ -65,6 +67,17 @@ describe('AddItemToCatalogue', () => {
         },
       }),
     ]);
+  });
+
+  it.each([
+    { when: 'no variants', variants: [] as VariantInput[] },
+    { when: 'a single variant', variants: [{ name: 'Only', description: '', price: 800 }] },
+  ])('rejects a variant dish with $when', async ({ variants }) => {
+    await expect(
+      handler.execute(TestAddItemToCatalogue.withVariants(variants))
+    ).rejects.toThrow(TooFewVariantsError);
+
+    expect(store.newEvents()).toEqual([]);
   });
 
   it('stamps the vendor id into the event metadata', async () => {
