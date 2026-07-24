@@ -2,8 +2,8 @@
 
 -- Poke on append: pg_notify fires on commit, so a LISTENer only wakes once the
 -- row is visible. Empty payload — the notification is just a "poll now" nudge;
--- the 5s timer is the backstop that covers any notification missed while LISTEN
--- is reconnecting.
+-- pollSchedule's timer is the backstop that covers any notification missed while
+-- LISTEN is reconnecting.
 CREATE FUNCTION events_notify_append() RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN
   PERFORM pg_notify('events', '');

@@ -18,6 +18,7 @@ import {
   Subscriptions,
   CHECKPOINT_FACTORY,
   EVENT_NOTIFICATIONS,
+  POLL_INTERVAL,
   POLLING_ENABLED,
 } from './subscriptions';
 
@@ -133,6 +134,7 @@ describe('Subscriptions', () => {
         StorefrontProjection,
         { provide: Events, useValue: countingEvents },
         { provide: POLLING_ENABLED, useValue: true },
+        { provide: POLL_INTERVAL, useValue: 30000 },
       ],
     }).compile();
 
