@@ -39,6 +39,15 @@ const pool = {
       // transiently. 10 is safe for a handful of instances on basic-256mb (~97 conns);
       // set DATABASE_POOL_MAX to retune per plan / instance count without a code deploy.
       max: Number(config.get<string>('DATABASE_POOL_MAX')) || 10,
+      // Keep one connection alive rather than raising idleTimeoutMillis above the poll
+      // interval: the timeout fix would silently re-break the day the interval changes.
+      // pg-pool only arms its idle-eviction timer while the pool is above min, so this
+      // pins exactly one connection; burst extras still evict on the 10s default.
+      // It is an eviction floor, not a warm-up — the first poll after boot fills it.
+      min: 1,
+      // Long-idle connections get dropped by the network without pg noticing until the
+      // next query fails. TCP keepalive surfaces the death instead.
+      keepAlive: true,
     }),
   inject: [ConfigService],
 };
