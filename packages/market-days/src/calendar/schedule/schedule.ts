@@ -50,6 +50,10 @@ export class Schedule {
     };
   }
 
+  id(): ScheduleId {
+    return this._id;
+  }
+
   static fromSnapshot(snapshot: ScheduleSnapshot): Schedule {
     return new Schedule({
       id: new ScheduleId(snapshot.scheduleId),

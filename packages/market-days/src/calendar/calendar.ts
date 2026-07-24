@@ -1,11 +1,15 @@
-import { CalendarEvent, MarketScheduleRegistered, MarketScheduleCancelled, MarketScheduleAmended, AbsenceDeclared } from './events';
+import {
+  AbsenceDeclared,
+  CalendarEvent,
+  MarketScheduleAmended,
+  MarketScheduleCancelled,
+  MarketScheduleRegistered
+} from './events';
 import { Aggregate } from '@market-miam/event-sourcing';
 import { Schedule } from './schedule/schedule';
 import { ScheduleId } from './schedule/schedule-id';
 import { DateRange } from './date-range';
-import { NoSuchScheduleError } from './errors/no-such-schedule.error';
-import { ScheduleAlreadyRegisteredError } from './errors/schedule-already-registered.error';
-import { ImmutableMarketError } from './errors/immutable-market.error';
+import { ImmutableMarketError, NoSuchScheduleError, ScheduleAlreadyRegisteredError } from './errors';
 import { Market } from '../market';
 
 export class Calendar extends Aggregate {
@@ -25,7 +29,7 @@ export class Calendar extends Aggregate {
 
   registerMarketSchedule(market: Market, schedule: Schedule): void {
     const { scheduleId, days, frequency, startDate } = schedule.snapshot();
-    if (this.hasSchedule(scheduleId)) {
+    if (this.containsSchedule(scheduleId)) {
       throw new ScheduleAlreadyRegisteredError(`Schedule already registered with ID ${ scheduleId }`);
     }
     const event: MarketScheduleRegistered = {
@@ -44,7 +48,7 @@ export class Calendar extends Aggregate {
 
   amendMarketSchedule(market: Market, schedule: Schedule): void {
     const { scheduleId, days, frequency, startDate } = schedule.snapshot();
-    if (!this.hasSchedule(scheduleId)) {
+    if (!this.containsSchedule(scheduleId)) {
       throw new NoSuchScheduleError(`No schedule with ID ${ scheduleId }`);
     }
     const marketSnapshot = market.snapshot();
@@ -66,7 +70,7 @@ export class Calendar extends Aggregate {
   }
 
   cancelMarketSchedule(scheduleId: ScheduleId): void {
-    if (!this.hasSchedule(scheduleId.value())) {
+    if (!this.containsSchedule(scheduleId.value())) {
       throw new NoSuchScheduleError(`No schedule with ID ${ scheduleId.value() }`);
     }
     const event: MarketScheduleCancelled = {
@@ -78,7 +82,7 @@ export class Calendar extends Aggregate {
   }
 
   declareAbsence(scheduleId: ScheduleId, range: DateRange): void {
-    if (!this.hasSchedule(scheduleId.value())) {
+    if (!this.containsSchedule(scheduleId.value())) {
       throw new NoSuchScheduleError(`No schedule with ID ${ scheduleId.value() }`);
     }
     const event: AbsenceDeclared = {
@@ -93,7 +97,7 @@ export class Calendar extends Aggregate {
     return this._marketIds.size > 0;
   }
 
-  private hasSchedule(scheduleId: string): boolean {
+  private containsSchedule(scheduleId: string): boolean {
     return this._marketIds.has(scheduleId);
   }
 }
