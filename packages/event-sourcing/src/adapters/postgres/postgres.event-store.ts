@@ -44,6 +44,15 @@ export class PostgresEventStore implements EventStore, Events {
     );
     return rows.map(toStoredEvent);
   }
+
+  async head(): Promise<number> {
+    // COALESCE so an empty log reads 0 rather than null; Number() because MAX over a
+    // bigint column comes back as a string.
+    const { rows } = await this.pool.query<{ head: string }>(
+      'SELECT COALESCE(MAX(global_position), 0) AS head FROM events',
+    );
+    return Number(rows[0].head);
+  }
 }
 
 function toStoredEvent(row: EventRow): StoredEvent {

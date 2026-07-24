@@ -33,4 +33,8 @@ export class LineageEventStore extends EventStore implements Events {
   loadFrom(globalPosition: number, limit: number): Promise<StoredEvent[]> {
     return this.inner.loadFrom(globalPosition, limit);
   }
+
+  head(): Promise<number> {
+    return this.inner.head();
+  }
 }

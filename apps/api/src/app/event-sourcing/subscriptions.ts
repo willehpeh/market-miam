@@ -125,6 +125,12 @@ export class Subscriptions implements OnApplicationBootstrap, OnApplicationShutd
           this.unitOfWork,
         ),
         name,
+        // Checkpoint before head: both only advance, so reading the consumer's
+        // position first cannot make it look ahead of a log read later.
+        async () => {
+          const position = await checkpoint.read();
+          return (await this.events.head()) - position;
+        },
       );
       return { name, kind, handler, checkpoint, subscription };
     });

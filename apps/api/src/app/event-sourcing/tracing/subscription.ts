@@ -11,7 +11,11 @@ const tracer = trace.getTracer('subscription');
 // again the moment a real event is found — the detail is only dropped when nothing
 // happened.
 export class TracingSubscription implements Subscription {
-  constructor(private readonly inner: Subscription, private readonly name: string) {}
+  constructor(
+    private readonly inner: Subscription,
+    private readonly name: string,
+    private readonly lag: () => Promise<number>,
+  ) {}
 
   poll(): Promise<void> {
     return tracer.startActiveSpan(
@@ -20,7 +24,12 @@ export class TracingSubscription implements Subscription {
       async (span: Span) => {
         span.setAttribute('subscription.name', this.name);
         try {
-          return await context.with(suppressTracing(context.active()), () => this.inner.poll());
+          return await context.with(suppressTracing(context.active()), async () => {
+            // Before the poll, not after: poll() drains before it returns, so reading
+            // afterwards would always gauge zero and measure nothing.
+            await this.gauge(span);
+            return this.inner.poll();
+          });
         } catch (error) {
           span.setAttribute('exception.slug', 'subscription-poll-failed');
           span.recordException(error as Error);
@@ -31,5 +40,15 @@ export class TracingSubscription implements Subscription {
         }
       },
     );
+  }
+
+  private async gauge(span: Span): Promise<void> {
+    try {
+      span.setAttribute('subscription.lag', await this.lag());
+    } catch {
+      // A measurement that takes down the thing it measures is worse than no
+      // measurement — losing the gauge for a cycle is the cheaper failure.
+      span.setAttribute('subscription.lag_unavailable', true);
+    }
   }
 }

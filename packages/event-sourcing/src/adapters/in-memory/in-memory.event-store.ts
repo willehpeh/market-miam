@@ -70,4 +70,9 @@ export class InMemoryEventStore implements EventStore, Events {
     );
   }
 
+  head(): Promise<number> {
+    const all = this.allEvents();
+    return Promise.resolve(all.length === 0 ? 0 : all[all.length - 1].globalPosition);
+  }
+
 }

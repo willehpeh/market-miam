@@ -61,6 +61,27 @@ export function eventsContract(
 
       expect(firstTwo).toEqual(['First', 'Second']);
     });
+
+    it('head is 0 when nothing has been stored', async () => {
+      expect(await events.head()).toBe(0);
+    });
+
+    it('head is the global position of the most recently stored event', async () => {
+      await writer.append('stream-1', [dummyEvent('First'), dummyEvent('Second')], 0);
+
+      const all = await events.loadFrom(0, PAGE);
+
+      expect(await events.head()).toBe(all[all.length - 1].globalPosition);
+    });
+
+    it('head advances as further events are appended', async () => {
+      await writer.append('stream-1', [dummyEvent('First')], 0);
+      const afterFirst = await events.head();
+
+      await writer.append('stream-2', [dummyEvent('Second')], 0);
+
+      expect(await events.head()).toBeGreaterThan(afterFirst);
+    });
   });
 }
 

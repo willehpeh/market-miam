@@ -87,7 +87,10 @@ class RecordingLogger {
   }
 }
 
-const noEvents: Events = { loadFrom: () => Promise.resolve([] as StoredEvent[]) };
+const noEvents: Events = {
+  loadFrom: () => Promise.resolve([] as StoredEvent[]),
+  head: () => Promise.resolve(0),
+};
 
 describe('Subscriptions', () => {
   let app: INestApplication | undefined;
@@ -120,6 +123,7 @@ describe('Subscriptions', () => {
     vi.useFakeTimers();
     let polls = 0;
     const countingEvents: Events = {
+      head: () => Promise.resolve(0),
       loadFrom: () => {
         polls++;
         return Promise.resolve([] as StoredEvent[]);
@@ -153,6 +157,7 @@ describe('Subscriptions', () => {
     vi.useFakeTimers();
     let polls = 0;
     const countingEvents: Events = {
+      head: () => Promise.resolve(0),
       loadFrom: () => {
         polls++;
         return Promise.resolve([] as StoredEvent[]);
@@ -188,6 +193,7 @@ describe('Subscriptions', () => {
     vi.useFakeTimers();
     let polls = 0;
     const alwaysFails: Events = {
+      head: () => Promise.resolve(0),
       loadFrom: () => {
         polls++;
         return Promise.reject(new Error('boom'));
@@ -229,6 +235,7 @@ describe('Subscriptions', () => {
     const logger = new RecordingLogger();
     let polls = 0;
     const flakyEvents: Events = {
+      head: () => Promise.resolve(0),
       loadFrom: () => {
         polls++;
         return polls === 1
@@ -274,6 +281,7 @@ describe('Subscriptions', () => {
       timestamp: 0,
     }));
     const backlog: Events = {
+      head: () => Promise.resolve(all.length),
       loadFrom: (position, limit) =>
         Promise.resolve(all.filter((event) => event.globalPosition > position).slice(0, limit)),
     };
@@ -308,6 +316,7 @@ describe('Subscriptions', () => {
       timestamp: 0,
     }));
     const backlog: Events = {
+      head: () => Promise.resolve(events.length),
       loadFrom: (position, limit) =>
         Promise.resolve(events.filter((event) => event.globalPosition > position).slice(0, limit)),
     };
@@ -351,6 +360,7 @@ describe('Subscriptions', () => {
       },
     ];
     const backlog: Events = {
+      head: () => Promise.resolve(events.length),
       loadFrom: (position, limit) =>
         Promise.resolve(events.filter((event) => event.globalPosition > position).slice(0, limit)),
     };
