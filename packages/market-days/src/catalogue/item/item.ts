@@ -2,6 +2,7 @@ import { ItemId } from './item-id';
 import { ItemName } from './item-name';
 import { ItemDescription } from './item-description';
 import { ItemPrice } from './item-price';
+import { Variant } from './variant';
 import { ImageReference } from '@market-miam/common';
 
 export class Item {
@@ -9,8 +10,9 @@ export class Item {
     private _itemId: ItemId,
     private _name: ItemName,
     private _description: ItemDescription,
-    private _price: ItemPrice,
-    private _imageReference?: ImageReference
+    private _price?: ItemPrice,
+    private _imageReference?: ImageReference,
+    private _variants?: Variant[]
   ) {
   }
 
@@ -27,7 +29,11 @@ export class Item {
   }
 
   price(): ItemPrice {
-    return this._price;
+    return this._price!;
+  }
+
+  variants(): Variant[] | undefined {
+    return this._variants;
   }
 
   imageReference(): ImageReference | undefined {

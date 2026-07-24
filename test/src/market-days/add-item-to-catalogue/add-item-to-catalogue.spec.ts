@@ -41,6 +41,32 @@ describe('AddItemToCatalogue', () => {
     expect(store.newEvents()).toEqual([expect.objectContaining(expectedEvent)]);
   });
 
+  it('adds a dish with variants and no dish-level price', async () => {
+    const command = TestAddItemToCatalogue.withVariants([
+      { name: 'Small', description: '', price: 800 },
+      { name: 'Large', description: 'extra hungry', price: 1200 },
+    ]);
+
+    await handler.execute(command);
+
+    expect(store.newEvents()).toEqual([
+      expect.objectContaining({
+        type: 'ItemAddedToCatalogue',
+        version: 1,
+        payload: {
+          itemId: command.itemId,
+          name: command.name,
+          description: command.description,
+          variants: [
+            { name: 'Small', description: '', price: 800 },
+            { name: 'Large', description: 'extra hungry', price: 1200 },
+          ],
+          imageReference: command.imageReference,
+        },
+      }),
+    ]);
+  });
+
   it('stamps the vendor id into the event metadata', async () => {
     await handler.execute(TestAddItemToCatalogue.valid());
 

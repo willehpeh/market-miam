@@ -1,7 +1,7 @@
 import { ItemAddedToCatalogue, ItemPriceChanged, ItemRetired, ItemRevised, ItemPhotoChanged, CatalogueEvent } from './events';
 import { Aggregate } from '@market-miam/event-sourcing';
 import { ImageReference } from '@market-miam/common';
-import { Item, ItemDescription, ItemId, ItemName, ItemPrice } from './item';
+import { Item, ItemDescription, ItemId, ItemName, ItemPrice, Variant } from './item';
 import { NoSuchItemError } from './errors/no-such-item.error';
 import { ItemAlreadyInCatalogueError } from './errors/item-already-in-catalogue.error';
 
@@ -9,19 +9,20 @@ export class Catalogue extends Aggregate {
 
   private _items: Item[] = [];
 
-  addItem(id: ItemId, name: ItemName, description: ItemDescription, price: ItemPrice, imageReference?: ImageReference) {
-    if (this.hasItem(id)) {
-      throw new ItemAlreadyInCatalogueError(`Item already in catalogue with ID ${ id.value() }`);
+  addItem(item: { id: ItemId, name: ItemName, description: ItemDescription, price?: ItemPrice, imageReference?: ImageReference, variants?: Variant[] }) {
+    if (this.hasItem(item.id)) {
+      throw new ItemAlreadyInCatalogueError(`Item already in catalogue with ID ${ item.id.value() }`);
     }
-    const item = new Item(id, name, description, price, imageReference);
     const event: ItemAddedToCatalogue = {
       type: 'ItemAddedToCatalogue',
       payload: {
-        itemId: item.itemId().value(),
-        name: item.name().value(),
-        description: item.description().value(),
-        price: item.price().value(),
-        imageReference: item.imageReference()?.value()
+        itemId: item.id.value(),
+        name: item.name.value(),
+        description: item.description.value(),
+        ...(item.variants
+          ? { variants: item.variants.map(variant => variant.value()) }
+          : { price: item.price!.value() }),
+        imageReference: item.imageReference?.value()
       },
       version: 1
     };
@@ -35,8 +36,9 @@ export class Catalogue extends Aggregate {
           new ItemId(event.payload.itemId),
           new ItemName(event.payload.name),
           new ItemDescription(event.payload.description),
-          new ItemPrice(event.payload.price),
-          event.payload.imageReference ? new ImageReference(event.payload.imageReference) : undefined
+          event.payload.variants ? undefined : new ItemPrice(event.payload.price!),
+          event.payload.imageReference ? new ImageReference(event.payload.imageReference) : undefined,
+          event.payload.variants?.map(variant => new Variant(variant.name, variant.description, variant.price))
         ));
         break;
     }

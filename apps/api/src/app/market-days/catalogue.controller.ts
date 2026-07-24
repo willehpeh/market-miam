@@ -42,14 +42,14 @@ export class CatalogueController {
     @Body() body: { itemId: string; name: string; description: string; price: number; imageReference?: string },
   ): Promise<void> {
     await this.commands.execute(
-      new AddItemToCatalogue(
-        body.itemId,
-        vendor.vendorId.value(),
-        body.name,
-        body.description,
-        body.price,
-        body.imageReference,
-      ),
+      new AddItemToCatalogue({
+        itemId: body.itemId,
+        vendorId: vendor.vendorId.value(),
+        name: body.name,
+        description: body.description,
+        price: body.price,
+        imageReference: body.imageReference,
+      }),
     );
   }
 
