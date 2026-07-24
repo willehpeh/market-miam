@@ -5,6 +5,7 @@ import { Item, ItemDescription, ItemId, ItemName, ItemPrice, Variant } from './i
 import { NoSuchItemError } from './errors/no-such-item.error';
 import { ItemAlreadyInCatalogueError } from './errors/item-already-in-catalogue.error';
 import { TooFewVariantsError } from './errors/too-few-variants.error';
+import { InvalidDishPricingError } from './errors/invalid-dish-pricing.error';
 
 export class Catalogue extends Aggregate {
 
@@ -13,6 +14,13 @@ export class Catalogue extends Aggregate {
   addItem(item: { id: ItemId, name: ItemName, description: ItemDescription, price?: ItemPrice, imageReference?: ImageReference, variants?: Variant[] }) {
     if (this.hasItem(item.id)) {
       throw new ItemAlreadyInCatalogueError(`Item already in catalogue with ID ${ item.id.value() }`);
+    }
+    const hasPrice = item.price !== undefined;
+    const hasVariants = item.variants !== undefined;
+    if (hasPrice === hasVariants) {
+      throw new InvalidDishPricingError(hasPrice
+        ? 'A dish cannot have both a price and variants'
+        : 'A dish must have either a price or variants');
     }
     if (item.variants && item.variants.length < 2) {
       throw new TooFewVariantsError(`A dish with variants needs at least two; got ${ item.variants.length }`);

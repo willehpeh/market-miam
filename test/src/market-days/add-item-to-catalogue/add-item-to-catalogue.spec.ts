@@ -1,6 +1,8 @@
 import {
+  AddItemToCatalogue,
   AddItemToCatalogueHandler,
   InvalidPriceError,
+  InvalidDishPricingError,
   ItemAddedToCatalogue,
   ItemAlreadyInCatalogueError,
   TooFewVariantsError,
@@ -78,6 +80,37 @@ describe('AddItemToCatalogue', () => {
     ).rejects.toThrow(TooFewVariantsError);
 
     expect(store.newEvents()).toEqual([]);
+  });
+
+  describe('rejects an invalid pricing shape', () => {
+    it('rejects a dish with both a price and variants', async () => {
+      const command = new AddItemToCatalogue({
+        itemId: 'item-id',
+        vendorId: 'vendor-id',
+        name: 'Item Name',
+        description: '',
+        price: 500,
+        variants: [
+          { name: 'Small', description: '', price: 800 },
+          { name: 'Large', description: '', price: 1200 },
+        ],
+      });
+
+      await expect(handler.execute(command)).rejects.toThrow(InvalidDishPricingError);
+      expect(store.newEvents()).toEqual([]);
+    });
+
+    it('rejects a dish with neither a price nor variants', async () => {
+      const command = new AddItemToCatalogue({
+        itemId: 'item-id',
+        vendorId: 'vendor-id',
+        name: 'Item Name',
+        description: '',
+      });
+
+      await expect(handler.execute(command)).rejects.toThrow(InvalidDishPricingError);
+      expect(store.newEvents()).toEqual([]);
+    });
   });
 
   it('stamps the vendor id into the event metadata', async () => {
