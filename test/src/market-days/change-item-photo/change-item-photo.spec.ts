@@ -18,7 +18,7 @@ describe('Change item photo', () => {
   });
 
   it('should change the photo of an existing item', async () => {
-    const newItemCommand = TestAddItemToCatalogue.valid();
+    const newItemCommand = TestAddItemToCatalogue.simple();
     await new AddItemToCatalogueHandler(catalogues).execute(newItemCommand);
 
     const command = new ChangeItemPhoto(newItemCommand.itemId, newItemCommand.vendorId, 'v9/dishes/vendor-id/item-id');
@@ -37,7 +37,7 @@ describe('Change item photo', () => {
   });
 
   it('stamps the vendor id into the event metadata', async () => {
-    const newItemCommand = TestAddItemToCatalogue.valid();
+    const newItemCommand = TestAddItemToCatalogue.simple();
     await new AddItemToCatalogueHandler(catalogues).execute(newItemCommand);
     await handler.execute(TestChangeItemPhoto.valid());
 

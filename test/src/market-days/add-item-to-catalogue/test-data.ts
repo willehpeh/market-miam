@@ -1,7 +1,7 @@
 import { AddItemToCatalogue, VariantInput } from '@market-miam/market-days';
 
 export class TestAddItemToCatalogue {
-  static valid(): AddItemToCatalogue {
+  static simple(): AddItemToCatalogue & { price: number } {
     return new AddItemToCatalogue({
       itemId: 'item-id',
       vendorId: 'vendor-id',
@@ -9,11 +9,11 @@ export class TestAddItemToCatalogue {
       description: 'Item Description',
       price: 500,
       imageReference: 'market-miam/items/item-photo',
-    });
+    }) as AddItemToCatalogue & { price: number };
   }
 
   static with(overrides: Partial<AddItemToCatalogue>): AddItemToCatalogue {
-    const defaults = this.valid();
+    const defaults = this.simple();
     return new AddItemToCatalogue({
       itemId: overrides.itemId ?? defaults.itemId,
       vendorId: overrides.vendorId ?? defaults.vendorId,

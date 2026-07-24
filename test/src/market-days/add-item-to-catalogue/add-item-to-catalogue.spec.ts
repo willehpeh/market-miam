@@ -23,7 +23,7 @@ describe('AddItemToCatalogue', () => {
   });
 
   it('should add the item to the catalogue', async () => {
-    const command = TestAddItemToCatalogue.valid();
+    const command = TestAddItemToCatalogue.simple();
 
     await handler.execute(command);
 
@@ -68,7 +68,7 @@ describe('AddItemToCatalogue', () => {
   });
 
   it('stamps the vendor id into the event metadata', async () => {
-    await handler.execute(TestAddItemToCatalogue.valid());
+    await handler.execute(TestAddItemToCatalogue.simple());
 
     expectVendorScopedEvents(store.newEvents(), 'vendor-id');
   });
@@ -95,7 +95,7 @@ describe('AddItemToCatalogue', () => {
   });
 
   it('should add a new item to an existing catalogue', async () => {
-    await handler.execute(TestAddItemToCatalogue.valid());
+    await handler.execute(TestAddItemToCatalogue.simple());
     await handler.execute(TestAddItemToCatalogue.with({ itemId: 'another-item-id', name: 'new-name' }));
 
     expect(store.newEvents()).toHaveLength(2);
@@ -103,7 +103,7 @@ describe('AddItemToCatalogue', () => {
   });
 
   it('should reject adding an item whose ID is already in the catalogue', async () => {
-    await handler.execute(TestAddItemToCatalogue.valid());
+    await handler.execute(TestAddItemToCatalogue.simple());
 
     await expect(
       handler.execute(TestAddItemToCatalogue.with({ name: 'different-name' }))

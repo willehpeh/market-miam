@@ -18,7 +18,7 @@ describe('Retire item', () => {
   });
 
   it('should retire an existing item', async () => {
-    const newItemCommand = TestAddItemToCatalogue.valid();
+    const newItemCommand = TestAddItemToCatalogue.simple();
     await new AddItemToCatalogueHandler(catalogues).execute(newItemCommand);
 
     const command = new RetireItem(newItemCommand.vendorId, newItemCommand.itemId);
@@ -36,7 +36,7 @@ describe('Retire item', () => {
   });
 
   it('stamps the vendor id into the event metadata', async () => {
-    const newItemCommand = TestAddItemToCatalogue.valid();
+    const newItemCommand = TestAddItemToCatalogue.simple();
     await new AddItemToCatalogueHandler(catalogues).execute(newItemCommand);
     await handler.execute(new RetireItem(newItemCommand.vendorId, newItemCommand.itemId));
 

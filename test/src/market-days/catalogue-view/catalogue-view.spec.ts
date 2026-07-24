@@ -54,7 +54,7 @@ describe('CatalogueView', () => {
   });
 
   it('should show the latest price', async () => {
-    const newItemCommand = TestAddItemToCatalogue.valid();
+    const newItemCommand = TestAddItemToCatalogue.simple();
     await new AddItemToCatalogueHandler(catalogues).execute(newItemCommand);
     await new ChangeItemPriceHandler(catalogues).execute(new ChangeItemPrice(newItemCommand.itemId, newItemCommand.price + 300, newItemCommand.vendorId));
 
@@ -68,7 +68,7 @@ describe('CatalogueView', () => {
   });
 
   it('should revise the item name, description and price, keeping its image', async () => {
-    const newItemCommand = TestAddItemToCatalogue.valid();
+    const newItemCommand = TestAddItemToCatalogue.simple();
     await new AddItemToCatalogueHandler(catalogues).execute(newItemCommand);
     await new ReviseItemHandler(catalogues).execute(new ReviseItem(newItemCommand.itemId, newItemCommand.vendorId, 'Revised Name', 'Revised Description', 999));
 
@@ -82,7 +82,7 @@ describe('CatalogueView', () => {
   });
 
   it('should change the item photo, keeping its other fields', async () => {
-    const newItemCommand = TestAddItemToCatalogue.valid();
+    const newItemCommand = TestAddItemToCatalogue.simple();
     await new AddItemToCatalogueHandler(catalogues).execute(newItemCommand);
     await new ChangeItemPhotoHandler(catalogues).execute(new ChangeItemPhoto(newItemCommand.itemId, newItemCommand.vendorId, 'v9/dishes/vendor-id/item-id'));
 
@@ -110,7 +110,7 @@ describe('CatalogueView', () => {
 });
 
 async function addTwoItems(catalogues: Catalogues) {
-  const first = TestAddItemToCatalogue.valid();
+  const first = TestAddItemToCatalogue.simple();
   const second = TestAddItemToCatalogue.with({ itemId: 'second-item', name: 'Second Item' });
   const vendorId = first.vendorId;
   const addItemHandler = new AddItemToCatalogueHandler(catalogues);

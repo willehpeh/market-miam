@@ -23,7 +23,7 @@ describe('Change Item Price', () => {
   });
 
   it('should change the price of an existing item', async () => {
-    const baseItem = TestAddItemToCatalogue.valid();
+    const baseItem = TestAddItemToCatalogue.simple();
     await new AddItemToCatalogueHandler(catalogues).execute(baseItem);
 
     const command = new ChangeItemPrice(baseItem.itemId, baseItem.price + 20, baseItem.vendorId);
@@ -42,7 +42,7 @@ describe('Change Item Price', () => {
   });
 
   it('stamps the vendor id into the event metadata', async () => {
-    const baseItem = TestAddItemToCatalogue.valid();
+    const baseItem = TestAddItemToCatalogue.simple();
     await new AddItemToCatalogueHandler(catalogues).execute(baseItem);
     await handler.execute(new ChangeItemPrice(baseItem.itemId, baseItem.price + 20, baseItem.vendorId));
 
@@ -50,7 +50,7 @@ describe('Change Item Price', () => {
   });
 
   it('should change the price multiple times', async () => {
-    const baseItem = TestAddItemToCatalogue.valid();
+    const baseItem = TestAddItemToCatalogue.simple();
     await new AddItemToCatalogueHandler(catalogues).execute(baseItem);
 
     const command = new ChangeItemPrice(baseItem.itemId, baseItem.price + 20, baseItem.vendorId);
@@ -72,7 +72,7 @@ describe('Change Item Price', () => {
   });
 
   it('should reject an inexistent item', async () => {
-    const baseItem = TestAddItemToCatalogue.valid();
+    const baseItem = TestAddItemToCatalogue.simple();
     await new AddItemToCatalogueHandler(catalogues).execute(baseItem);
 
     const command = new ChangeItemPrice('incorrect-id', baseItem.price + 20, baseItem.vendorId);

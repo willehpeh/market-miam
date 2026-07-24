@@ -18,7 +18,7 @@ describe('Revise item', () => {
   });
 
   it('should revise the name, description and price of an existing item', async () => {
-    const newItemCommand = TestAddItemToCatalogue.valid();
+    const newItemCommand = TestAddItemToCatalogue.simple();
     await new AddItemToCatalogueHandler(catalogues).execute(newItemCommand);
 
     const command = new ReviseItem(newItemCommand.itemId, newItemCommand.vendorId, 'Revised Name', 'Revised Description', 750);
@@ -39,7 +39,7 @@ describe('Revise item', () => {
   });
 
   it('stamps the vendor id into the event metadata', async () => {
-    const newItemCommand = TestAddItemToCatalogue.valid();
+    const newItemCommand = TestAddItemToCatalogue.simple();
     await new AddItemToCatalogueHandler(catalogues).execute(newItemCommand);
     await handler.execute(TestReviseItem.valid());
 
