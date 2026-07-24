@@ -38,3 +38,4 @@ deferred decisions in `docs/DEFERRED.md` (see ADR 0017).
 | [0030](0030-listen-notify-poke-poller.md) | LISTEN/NOTIFY to poke the poller | 2026-07-05 |
 | [0031](0031-storefront-publication-readiness-domain-service.md) | Storefront publication: readiness as a cross-aggregate domain service | 2026-07-16 |
 | [0032](0032-subdomain-assignment-is-a-publication-requirement.md) | An assigned subdomain is a storefront publication requirement | 2026-07-19 |
+| [0033](0033-dish-variants.md) | Dish variants: a dish is flat or variant, never both | 2026-07-24 |
