@@ -1,6 +1,7 @@
 import {
   AddItemToCatalogue,
   AddItemToCatalogueHandler,
+  DuplicateVariantNameError,
   InvalidPriceError,
   InvalidDishPricingError,
   ItemAddedToCatalogue,
@@ -79,6 +80,16 @@ describe('AddItemToCatalogue', () => {
       handler.execute(TestAddItemToCatalogue.withVariants(variants))
     ).rejects.toThrow(TooFewVariantsError);
 
+    expect(store.newEvents()).toEqual([]);
+  });
+
+  it('rejects a variant dish with duplicate variant names', async () => {
+    const command = TestAddItemToCatalogue.withVariants([
+      { name: 'Large', description: '', price: 800 },
+      { name: 'Large', description: 'the other large', price: 1200 },
+    ]);
+
+    await expect(handler.execute(command)).rejects.toThrow(DuplicateVariantNameError);
     expect(store.newEvents()).toEqual([]);
   });
 

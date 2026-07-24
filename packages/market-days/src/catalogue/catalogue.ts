@@ -6,6 +6,7 @@ import { NoSuchItemError } from './errors/no-such-item.error';
 import { ItemAlreadyInCatalogueError } from './errors/item-already-in-catalogue.error';
 import { TooFewVariantsError } from './errors/too-few-variants.error';
 import { InvalidDishPricingError } from './errors/invalid-dish-pricing.error';
+import { DuplicateVariantNameError } from './errors/duplicate-variant-name.error';
 
 export class Catalogue extends Aggregate {
 
@@ -24,6 +25,12 @@ export class Catalogue extends Aggregate {
     }
     if (item.variants && item.variants.length < 2) {
       throw new TooFewVariantsError(`A dish with variants needs at least two; got ${ item.variants.length }`);
+    }
+    if (item.variants) {
+      const names = item.variants.map(variant => variant.value().name);
+      if (new Set(names).size !== names.length) {
+        throw new DuplicateVariantNameError('Variant names must be unique within a dish');
+      }
     }
     const event: ItemAddedToCatalogue = {
       type: 'ItemAddedToCatalogue',
