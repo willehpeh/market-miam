@@ -1,4 +1,5 @@
-import { Span, SpanContext, SpanStatusCode, trace } from '@opentelemetry/api';
+import { context, Span, SpanContext, SpanStatusCode, trace } from '@opentelemetry/api';
+import { unsuppressTracing } from '@opentelemetry/core';
 import { EventHandler, StoredEvent } from '@market-miam/event-sourcing';
 
 const tracer = trace.getTracer('event-handler');
@@ -15,6 +16,10 @@ export class TracingEventHandler implements EventHandler {
     return tracer.startActiveSpan(
       'event-handler handle',
       { root: true, links: producer ? [{ context: producer }] : [] },
+      // TracingSubscription suppresses instrumentation for the length of a poll so an
+      // idle cycle costs one span. Real work is the exception to that: lift it here,
+      // or handling an event would be as invisible as finding nothing to handle.
+      unsuppressTracing(context.active()),
       async (span: Span) => {
         span.setAttributes({
           'event.type': event.type,

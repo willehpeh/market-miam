@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { SpanStatusCode, trace } from '@opentelemetry/api';
+import { context, SpanStatusCode, trace } from '@opentelemetry/api';
+import { suppressTracing } from '@opentelemetry/core';
 import { EventHandler, StoredEvent } from '@market-miam/event-sourcing';
 import { TracingEventHandler } from './event-handler';
 import { registerSpanCapture } from '../../testing/span-capture';
@@ -70,6 +71,14 @@ describe('TracingEventHandler', () => {
     await new TracingEventHandler(new StubHandler()).handle(storedEvent(metadata));
 
     expect(handleSpan()?.links).toEqual([]);
+  });
+
+  it('handles the event even when the polling cycle suppressed instrumentation', async () => {
+    await context.with(suppressTracing(context.active()), () =>
+      new TracingEventHandler(new StubHandler()).handle(storedEvent()),
+    );
+
+    expect(handleSpan()).toBeDefined();
   });
 
   it('records the exception and rethrows when the inner handler fails', async () => {

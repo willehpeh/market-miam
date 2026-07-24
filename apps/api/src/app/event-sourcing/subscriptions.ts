@@ -14,6 +14,7 @@ import {
   UnitOfWork
 } from '@market-miam/event-sourcing';
 import { TracingEventHandler } from './tracing/event-handler';
+import { TracingSubscription } from './tracing/subscription';
 import { ContinuedLineageHandler } from '../lineage/continued-lineage.handler';
 import { pollSchedule } from './poll-schedule';
 
@@ -116,11 +117,14 @@ export class Subscriptions implements OnApplicationBootstrap, OnApplicationShutd
       const checkpoint = this.checkpointFor(name);
       const driven =
         kind === 'processor' ? new ContinuedLineageHandler(handler, this.lineage) : handler;
-      const subscription = new PollingSubscription(
-        this.events,
-        new TracingEventHandler(driven),
-        checkpoint,
-        this.unitOfWork,
+      const subscription = new TracingSubscription(
+        new PollingSubscription(
+          this.events,
+          new TracingEventHandler(driven),
+          checkpoint,
+          this.unitOfWork,
+        ),
+        name,
       );
       return { name, kind, handler, checkpoint, subscription };
     });
