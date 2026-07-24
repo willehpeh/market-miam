@@ -40,12 +40,6 @@ export function catalogueViewsContract(name: string, create: () => Store): void 
       expect(await store.forVendor('v2')).toEqual({ items: [] });
     });
 
-    it('updates an item price', async () => {
-      await store.addItemToCatalogue(dish(), 'v1');
-      await store.updateItemPrice('item-1', 1500, 'v1');
-      expect((await store.forVendor('v1')).items[0].price).toBe(1500);
-    });
-
     it('revises an item name, description and price, keeping its image', async () => {
       await store.addItemToCatalogue(dish(), 'v1');
       await store.reviseItem('item-1', { name: 'Poulet rôti', description: 'Fermier', price: 1600 }, 'v1');

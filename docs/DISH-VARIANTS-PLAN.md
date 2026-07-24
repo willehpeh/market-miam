@@ -26,7 +26,7 @@ Design decisions: ADR 0033. This file tracks what's left; the ADR is the source 
 ### 3. Revise path
 - `ItemRevised` payload widened like the add event (`price` xor `variants`).
 - `ReviseItem` command + handler + `Catalogue.reviseItem`: carry variants, same three invariants, allow flat↔variant toggle.
-- `ItemPriceChanged`/`ItemRetired` stay flat-only — variant price edits go through revise (whole-array atomic).
+- `ItemRetired` stays flat-only — variant price edits go through revise (whole-array atomic).
 
 ### 4. HTTP wiring
 - `POST /catalogue` and `PUT /catalogue/:itemId` DTOs (`catalogue.controller.ts`): accept `variants`.

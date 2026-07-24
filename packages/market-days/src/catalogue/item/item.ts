@@ -44,10 +44,6 @@ export class Item {
     return this._itemId.value() === itemId.value();
   }
 
-  changePrice(newPrice: ItemPrice): void {
-    this._price = newPrice;
-  }
-
   revise(name: ItemName, description: ItemDescription, price: ItemPrice): void {
     this._name = name;
     this._description = description;

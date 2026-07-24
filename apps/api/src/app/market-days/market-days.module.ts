@@ -11,7 +11,6 @@ import {
   Catalogues,
   CatalogueViewProjection,
   CatalogueViewStore,
-  ChangeItemPriceHandler,
   ChangeItemPhotoHandler,
   EditStorefrontInformationHandler,
   FindCustomerStorefrontHandler,
@@ -98,7 +97,6 @@ const processors = [
 const commandHandlers = [
   RegisterVendorHandler,
   AddItemToCatalogueHandler,
-  ChangeItemPriceHandler,
   ChangeItemPhotoHandler,
   RetireItemHandler,
   ReviseItemHandler,
