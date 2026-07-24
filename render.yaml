@@ -83,6 +83,11 @@ projects:
             domains:
               - '*.marketmiam.fr'
             autoDeployTrigger: checksPass
+            # Vendor storefronts are addressed by subdomain, so the SSR resolver reads the
+            # host's first label as the vendor. On the bare onrender.com hostname that label
+            # is the service name, which sent a scanner-driven 404 to the API every couple of
+            # hours. Closing it leaves only *.marketmiam.fr, where the label is always a vendor.
+            renderSubdomainPolicy: disabled
             buildFilter:
               paths:
                 - apps/customer-frontend/**
