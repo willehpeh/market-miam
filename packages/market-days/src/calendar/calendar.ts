@@ -28,15 +28,16 @@ export class Calendar extends Aggregate {
   }
 
   registerMarketSchedule(market: Market, schedule: Schedule): void {
-    const { scheduleId, days, frequency, startDate } = schedule.snapshot();
+    const { days, frequency, startDate } = schedule.snapshot();
+    const scheduleId = schedule.id();
     if (this.containsSchedule(scheduleId)) {
-      throw new ScheduleAlreadyRegisteredError(`Schedule already registered with ID ${ scheduleId }`);
+      throw new ScheduleAlreadyRegisteredError(`Schedule already registered with ID ${ scheduleId.value() }`);
     }
     const event: MarketScheduleRegistered = {
       type: 'MarketScheduleRegistered',
       payload: {
         market: market.snapshot(),
-        scheduleId,
+        scheduleId: scheduleId.value(),
         startDate,
         days,
         frequency
@@ -47,19 +48,20 @@ export class Calendar extends Aggregate {
   }
 
   amendMarketSchedule(market: Market, schedule: Schedule): void {
-    const { scheduleId, days, frequency, startDate } = schedule.snapshot();
+    const { days, frequency, startDate } = schedule.snapshot();
+    const scheduleId = schedule.id();
     if (!this.containsSchedule(scheduleId)) {
-      throw new NoSuchScheduleError(`No schedule with ID ${ scheduleId }`);
+      throw new NoSuchScheduleError(`No schedule with ID ${ scheduleId.value() }`);
     }
     const marketSnapshot = market.snapshot();
-    if (this._marketIds.get(scheduleId) !== marketSnapshot.id) {
-      throw new ImmutableMarketError(`Cannot change the market of schedule ${ scheduleId }`);
+    if (this._marketIds.get(scheduleId.value()) !== marketSnapshot.id) {
+      throw new ImmutableMarketError(`Cannot change the market of schedule ${ scheduleId.value() }`);
     }
     const event: MarketScheduleAmended = {
       type: 'MarketScheduleAmended',
       payload: {
         market: marketSnapshot,
-        scheduleId,
+        scheduleId: scheduleId.value(),
         startDate,
         days,
         frequency
@@ -70,7 +72,7 @@ export class Calendar extends Aggregate {
   }
 
   cancelMarketSchedule(scheduleId: ScheduleId): void {
-    if (!this.containsSchedule(scheduleId.value())) {
+    if (!this.containsSchedule(scheduleId)) {
       throw new NoSuchScheduleError(`No schedule with ID ${ scheduleId.value() }`);
     }
     const event: MarketScheduleCancelled = {
@@ -82,7 +84,7 @@ export class Calendar extends Aggregate {
   }
 
   declareAbsence(scheduleId: ScheduleId, range: DateRange): void {
-    if (!this.containsSchedule(scheduleId.value())) {
+    if (!this.containsSchedule(scheduleId)) {
       throw new NoSuchScheduleError(`No schedule with ID ${ scheduleId.value() }`);
     }
     const event: AbsenceDeclared = {
@@ -97,7 +99,7 @@ export class Calendar extends Aggregate {
     return this._marketIds.size > 0;
   }
 
-  private containsSchedule(scheduleId: string): boolean {
-    return this._marketIds.has(scheduleId);
+  private containsSchedule(scheduleId: ScheduleId): boolean {
+    return this._marketIds.has(scheduleId.value());
   }
 }
