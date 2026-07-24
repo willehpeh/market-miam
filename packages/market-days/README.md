@@ -21,7 +21,8 @@ them.
   - Storefront: `open-storefront`, `edit-storefront-information`,
     `set-storefront-cover-photo`
   - Calendar: `register-market-schedule`
-  - Catalogue: `add-item-to-catalogue`, `change-item-price`, `retire-item`
+  - Catalogue: `add-item-to-catalogue`, `revise-item`, `change-item-photo`,
+    `retire-item`
   - MarketDay: `plan-items-for-market-day`, `unplan-item-from-market-day`,
     `mark-item-as-sold-out`
 - **Processors** — `OpensStorefronts`: on `VendorRegistered`, dispatches

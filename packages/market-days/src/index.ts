@@ -1,5 +1,4 @@
 export * from './add-item-to-catalogue';
-export * from './change-item-price';
 export * from './change-item-photo';
 export * from './retire-item';
 export * from './revise-item';
@@ -19,7 +18,6 @@ export * from './mark-item-as-sold-out';
 export * from './unplan-item-from-market-day';
 export * from './catalogue-view';
 export * from './market-schedule-view';
-export { ItemPriceChanged } from './catalogue/events';
 export * from './catalogue';
 export * from './register-vendor';
 export * from './vendor/events';

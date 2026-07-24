@@ -3,8 +3,6 @@ import {
   AddItemToCatalogueHandler,
   Catalogues,
   CatalogueViewProjection,
-  ChangeItemPrice,
-  ChangeItemPriceHandler,
   ChangeItemPhoto,
   ChangeItemPhotoHandler,
   InMemoryCatalogueViews,
@@ -49,20 +47,6 @@ describe('CatalogueView', () => {
       items: [
         { itemId: first.itemId, name: first.name, description: first.description, price: first.price, imageReference: first.imageReference },
         { itemId: second.itemId, name: second.name, description: second.description, price: second.price, imageReference: second.imageReference },
-      ],
-    });
-  });
-
-  it('should show the latest price', async () => {
-    const newItemCommand = TestAddItemToCatalogue.simple();
-    await new AddItemToCatalogueHandler(catalogues).execute(newItemCommand);
-    await new ChangeItemPriceHandler(catalogues).execute(new ChangeItemPrice(newItemCommand.itemId, newItemCommand.price + 300, newItemCommand.vendorId));
-
-    await subscription.poll();
-    const view = await views.forVendor(newItemCommand.vendorId);
-    expect(view).toEqual({
-      items: [
-        { itemId: newItemCommand.itemId, name: newItemCommand.name, description: newItemCommand.description, price: newItemCommand.price + 300, imageReference: newItemCommand.imageReference },
       ],
     });
   });

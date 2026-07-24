@@ -1,4 +1,4 @@
-import { ItemAddedToCatalogue, ItemPriceChanged, ItemRetired, ItemRevised, ItemPhotoChanged, CatalogueEvent } from './events';
+import { ItemAddedToCatalogue, ItemRetired, ItemRevised, ItemPhotoChanged, CatalogueEvent } from './events';
 import { Aggregate } from '@market-miam/event-sourcing';
 import { ImageReference } from '@market-miam/common';
 import { Item, ItemDescription, ItemId, ItemName, ItemPrice, Variant } from './item';
@@ -69,20 +69,6 @@ export class Catalogue extends Aggregate {
       throw new NoSuchItemError(`No item in catalogue with ID ${ itemId.value() }`);
     }
     return item;
-  }
-
-  changeItemPrice(itemId: ItemId, itemPrice: ItemPrice) {
-    const item = this.itemWithId(itemId);
-    item.changePrice(itemPrice);
-    const event: ItemPriceChanged = {
-      type: 'ItemPriceChanged',
-      payload: {
-        itemId: item.itemId().value(),
-        price: item.price().value()
-      },
-      version: 1
-    };
-    this.raise(event);
   }
 
   reviseItem(itemId: ItemId, name: ItemName, description: ItemDescription, price: ItemPrice) {

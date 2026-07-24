@@ -34,13 +34,6 @@ export class PostgresCatalogueViews implements CatalogueViews, CatalogueViewStor
     );
   }
 
-  async updateItemPrice(itemId: string, newPrice: number, vendorId: string): Promise<void> {
-    await this.db.query(
-      'UPDATE catalogue_view_items SET price = $3 WHERE vendor_id = $1 AND item_id = $2',
-      [vendorId, itemId, newPrice],
-    );
-  }
-
   async reviseItem(itemId: string, details: Pick<CatalogueViewItem, 'name' | 'description' | 'price'>, vendorId: string): Promise<void> {
     await this.db.query(
       'UPDATE catalogue_view_items SET name = $3, description = $4, price = $5 WHERE vendor_id = $1 AND item_id = $2',

@@ -4,7 +4,7 @@ Vendors build a catalogue of dishes, reached from dashboard step 2 (`/dashboard/
 
 ## Item shape (locked)
 
-5 fields only: `itemId, name, description, price, imageReference`. Domain in `packages/market-days/src/catalogue/` (aggregate, `item/` VOs) + `catalogue-view/` (read model). Commands `AddItemToCatalogue` / `ChangeItemPrice` / `RetireItem` already existed; only add + list are wired to HTTP.
+5 fields only: `itemId, name, description, price, imageReference`. Domain in `packages/market-days/src/catalogue/` (aggregate, `item/` VOs) + `catalogue-view/` (read model). Commands `AddItemToCatalogue` / `ReviseItem` / `ChangeItemPhoto` / `RetireItem`; add, list, revise and re-photo are wired to HTTP.
 
 | field | rule |
 |-------|------|
@@ -36,7 +36,7 @@ Vendors build a catalogue of dishes, reached from dashboard step 2 (`/dashboard/
 - **`itemId` client-supplied** so the future photo `public_id` (`dishes/{vendorId}/{itemId}`) is known before the add call.
 - **Category + tags deferred** — the design wants them, the domain has neither. Add later as an `ItemAddedToCatalogue` v2 (new VOs + payload fields + read-model columns).
 - **List page shipped before the add form** — read path needs no photo; write path needs the whole Cloudinary flow.
-- **Add + list only over HTTP.** `ChangeItemPrice`/`RetireItem` handlers + projection exist but have no controller.
+- **`RetireItem` has no controller.** Its handler + projection branch exist but nothing dispatches it. (`ChangeItemPrice` was in the same state and has been deleted — `ReviseItem` carries the price, so a price-only command had no route left to arrive on.)
 - **Read model in both branches** (in-memory + Postgres) so prod (postgres) boots — the query handler + projection instantiate in every mode.
 - **API tests are acceptance tests** (`bootApiTestApp` + supertest), not controller unit tests. Postgres store held to the same `catalogueViewsContract` as in-memory, via testcontainers.
 
@@ -50,5 +50,5 @@ Vendors build a catalogue of dishes, reached from dashboard step 2 (`/dashboard/
 
 - **vitest strips types without checking.** Angular's compiler plugin *does* typecheck the frontend build (a bad import fails the `nx test vendor-frontend` run); the `market-days`/`api`/`test` projects need `nx typecheck` — vitest alone won't catch type errors.
 - **Container specs run separately:** `nx run test:test:container` (needs Docker), excluded from `nx test test`. New read-model tables must be added to `test/src/event-sourcing/postgres/testcontainer.ts` `reset()` TRUNCATE list.
-- **`Catalogue.apply` handles only `ItemAddedToCatalogue` — not a bug today.** No decision reads price (`changeItemPrice` overwrites unconditionally, emits the new price) or retired-state (no "already retired" invariant), so applying the other two events would change nothing. It becomes relevant only when you add an invariant that consults that state (e.g. block reprice/retire of a retired item). When `RetireItem`/`ChangeItemPrice` get controllers: decide that rule first, then apply `ItemRetired` iff the rule needs it. Price almost certainly never needs applying.
+- **`Catalogue.apply` handles only `ItemAddedToCatalogue` — not a bug today.** `reviseItem`/`changeItemPhoto` mutate the `Item` directly and emit values taken from the command, and no decision reads retired-state (no "already retired" invariant), so applying the other events would change nothing observable. Note this makes `Catalogue` the one aggregate that breaks ADR 0008's "mutation happens only by applying events" — the divergence is latent, not live, because a handler loads a fresh aggregate per command. It becomes real when an invariant consults that state (e.g. block revise/retire of a retired item). When `RetireItem` gets a controller: decide that rule first, then apply `ItemRetired` iff the rule needs it.
 - Parallel `git add -A` commits on `main` have twice swept staged catalogue files into unrelated commits — commit frontend work before staging elsewhere.
