@@ -50,6 +50,27 @@ describe('CatalogueList', () => {
     expect(screen.getByText('11,00 €')).toBeInTheDocument();
   });
 
+  it('shows a variant dish as "dès {min} €" with its formats listed', async () => {
+    const { view, catalogue } = await renderList();
+    catalogue.items.set([{
+      itemId: 'pizza',
+      name: 'Pizza',
+      description: 'Wood-fired',
+      imageReference: '',
+      variants: [
+        { name: 'Petite', description: '', price: 950 },
+        { name: 'Grande', description: '', price: 1600 },
+      ],
+    }]);
+    view.detectChanges();
+
+    expect(screen.getByText('dès 9,50 €')).toBeInTheDocument();
+    expect(screen.getByText('Petite')).toBeInTheDocument();
+    expect(screen.getByText('9,50 €')).toBeInTheDocument();
+    expect(screen.getByText('Grande')).toBeInTheDocument();
+    expect(screen.getByText('16,00 €')).toBeInTheDocument();
+  });
+
   it('shows the most recently added dish first', async () => {
     const { view, catalogue } = await renderList();
     catalogue.items.set([dish({ itemId: 'item-1' }), dish({ itemId: 'item-2' })]);
