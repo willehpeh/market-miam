@@ -72,6 +72,7 @@ export class Recurrence {
   }
 
   private recursInWeekOf(date: LocalDate): boolean {
-    return this._frequency.recursAfter(this._firstWeek.countUntil(Week.containing(date)));
+    const week = this._firstWeek.countUntil(Week.containing(date));
+    return this._frequency.recursInWeek(week);
   }
 }
