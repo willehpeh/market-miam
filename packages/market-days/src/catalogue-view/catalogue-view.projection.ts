@@ -39,7 +39,7 @@ export class CatalogueViewProjection extends ProjectionFor<CatalogueEvent> {
     const payload = event.payload as ItemRevised['payload'];
     return this.store.reviseItem(
       payload.itemId,
-      { name: payload.name, description: payload.description, price: payload.price },
+      { name: payload.name, description: payload.description, price: payload.price, variants: payload.variants },
       vendorIdFrom(event),
     );
   }

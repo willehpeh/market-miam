@@ -38,10 +38,10 @@ export class PostgresCatalogueViews implements CatalogueViews, CatalogueViewStor
     );
   }
 
-  async reviseItem(itemId: string, details: Pick<CatalogueViewItem, 'name' | 'description' | 'price'>, vendorId: string): Promise<void> {
+  async reviseItem(itemId: string, details: Pick<CatalogueViewItem, 'name' | 'description' | 'price' | 'variants'>, vendorId: string): Promise<void> {
     await this.db.query(
-      'UPDATE catalogue_view_items SET name = $3, description = $4, price = $5 WHERE vendor_id = $1 AND item_id = $2',
-      [vendorId, itemId, details.name, details.description, details.price],
+      'UPDATE catalogue_view_items SET name = $3, description = $4, price = $5, variants = $6 WHERE vendor_id = $1 AND item_id = $2',
+      [vendorId, itemId, details.name, details.description, details.price ?? null, details.variants ? JSON.stringify(details.variants) : null],
     );
   }
 

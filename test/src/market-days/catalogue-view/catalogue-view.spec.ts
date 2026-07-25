@@ -91,6 +91,32 @@ describe('CatalogueView', () => {
     });
   });
 
+  it('should revise a flat dish into a variant dish', async () => {
+    const added = TestAddItemToCatalogue.simple();
+    await new AddItemToCatalogueHandler(catalogues).execute(added);
+    await new ReviseItemHandler(catalogues).execute(new ReviseItem(added.itemId, added.vendorId, 'Pizza', 'Wood-fired', undefined, [
+      { name: 'Small', description: '', price: 800 },
+      { name: 'Large', description: 'extra hungry', price: 1200 },
+    ]));
+
+    await subscription.poll();
+    const view = await views.forVendor(added.vendorId);
+    expect(view).toEqual({
+      items: [
+        {
+          itemId: added.itemId,
+          name: 'Pizza',
+          description: 'Wood-fired',
+          variants: [
+            { name: 'Small', description: '', price: 800 },
+            { name: 'Large', description: 'extra hungry', price: 1200 },
+          ],
+          imageReference: added.imageReference,
+        },
+      ],
+    });
+  });
+
   it('should change the item photo, keeping its other fields', async () => {
     const newItemCommand = TestAddItemToCatalogue.simple();
     await new AddItemToCatalogueHandler(catalogues).execute(newItemCommand);

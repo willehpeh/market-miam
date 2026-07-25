@@ -11,9 +11,11 @@ export class InMemoryCatalogueViews implements CatalogueViews, CatalogueViewStor
     this.items.set(vendorId, existing);
   }
 
-  async reviseItem(itemId: string, details: Pick<CatalogueViewItem, 'name' | 'description' | 'price'>, vendorId: string): Promise<void> {
+  async reviseItem(itemId: string, details: Pick<CatalogueViewItem, 'name' | 'description' | 'price' | 'variants'>, vendorId: string): Promise<void> {
     const vendorItems = (await this.forVendor(vendorId)).items;
-    this.items.set(vendorId, vendorItems.map(item => item.itemId === itemId ? { ...item, ...details } : item));
+    this.items.set(vendorId, vendorItems.map(item => item.itemId === itemId
+      ? { ...item, name: details.name, description: details.description, price: details.price, variants: details.variants }
+      : item));
   }
 
   async updateItemPhoto(itemId: string, imageReference: string, vendorId: string): Promise<void> {
