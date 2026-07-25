@@ -33,14 +33,13 @@ Design decisions: ADR 0033. This file tracks what's left; the ADR is the source 
 - `catalogue-list.ts`: a variant row shows "dès {min} €" + N formats + inline breakdown.
 - *Not done (optional polish):* inline per-row error text — submit is gated + server 400 backstops, but rows show no red-text errors yet.
 
+**Slice 6 — customer sheet refinement (mockup 2026-07-25)**
+- `dish-sheet.ts`: **"Formats"** `.field-label` section label (divider above it) separating blurb from the list; row name → `font-bold`.
+- Category kicker deferred with the category feature. Rest of the sheet (header "dès {min} €", per-row name/price/muted description, dividers) was already shipped in Slice 2.
+
 ## Remaining
 
-### 6. Customer sheet refinement (mockup 2026-07-25)
-Polish the shipped variant sheet (`dish-sheet.ts`) to match the target:
-- Header: dish name + **"dès {min} €"** (already shipped).
-- Optional kicker/category label under the name (e.g. "PLATS MIJOTÉS") — category is deferred; skip until it ships.
-- Dish blurb (shipped), then a **"FORMATS"** section label above the list (new).
-- Each format row: name (bold) + price (right, bold), description muted on the line below, divider between rows. Close to shipped — restyle to match.
+*(none — feature complete; see Deferred for out-of-scope follow-ups)*
 
 ## Deferred (out of scope; clean to add later)
 

@@ -125,6 +125,7 @@ describe('StorefrontPage', () => {
 
     const dialog = fixture.nativeElement.querySelector('dialog') as HTMLDialogElement;
     const text = dialog.textContent as string;
+    expect(text).toMatch(/formats/i);
     expect(text).toContain('Margherita');
     expect(text).toContain('tomato & basil');
     expect(text).toContain('9,00 €');
