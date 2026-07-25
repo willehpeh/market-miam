@@ -3,34 +3,38 @@ import { CatalogueView, CatalogueViewItem } from './catalogue-view';
 import { CatalogueViews } from './catalogue-views';
 import { CatalogueViewStore } from './catalogue-view.store';
 
-type Row = { item_id: string; name: string; description: string; price: number; image_reference: string };
+type Row = {
+  item_id: string;
+  name: string;
+  description: string;
+  price: number | null;
+  image_reference: string;
+  variants: { name: string; description: string; price: number }[] | null;
+};
 
 export class PostgresCatalogueViews implements CatalogueViews, CatalogueViewStore {
   constructor(private readonly db: Queryable) {}
 
   async forVendor(vendorId: string): Promise<CatalogueView> {
     const { rows } = await this.db.query<Row>(
-      'SELECT item_id, name, description, price, image_reference FROM catalogue_view_items WHERE vendor_id = $1 ORDER BY seq',
+      'SELECT item_id, name, description, price, image_reference, variants FROM catalogue_view_items WHERE vendor_id = $1 ORDER BY seq',
       [vendorId],
     );
     return {
-      items: rows.map(row => ({
-        itemId: row.item_id,
-        name: row.name,
-        description: row.description,
-        price: row.price,
-        imageReference: row.image_reference,
-      })),
+      items: rows.map(row => row.variants
+        ? { itemId: row.item_id, name: row.name, description: row.description, variants: row.variants, imageReference: row.image_reference }
+        : { itemId: row.item_id, name: row.name, description: row.description, price: row.price ?? undefined, imageReference: row.image_reference }),
     };
   }
 
   async addItemToCatalogue(item: CatalogueViewItem, vendorId: string): Promise<void> {
     await this.db.query(
-      `INSERT INTO catalogue_view_items (vendor_id, item_id, name, description, price, image_reference)
-       VALUES ($1, $2, $3, $4, $5, $6)
+      `INSERT INTO catalogue_view_items (vendor_id, item_id, name, description, price, image_reference, variants)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
        ON CONFLICT (vendor_id, item_id) DO UPDATE SET
-         name = EXCLUDED.name, description = EXCLUDED.description, price = EXCLUDED.price, image_reference = EXCLUDED.image_reference`,
-      [vendorId, item.itemId, item.name, item.description, item.price, item.imageReference],
+         name = EXCLUDED.name, description = EXCLUDED.description, price = EXCLUDED.price,
+         image_reference = EXCLUDED.image_reference, variants = EXCLUDED.variants`,
+      [vendorId, item.itemId, item.name, item.description, item.price ?? null, item.imageReference, item.variants ? JSON.stringify(item.variants) : null],
     );
   }
 

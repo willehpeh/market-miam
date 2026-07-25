@@ -29,6 +29,21 @@ export function catalogueViewsContract(name: string, create: () => Store): void 
       expect(await store.forVendor('v1')).toEqual({ items: [dish()] });
     });
 
+    it('round-trips a variant dish (variants, no price)', async () => {
+      const variantDish: CatalogueViewItem = {
+        itemId: 'pizza',
+        name: 'Pizza',
+        description: 'Wood-fired',
+        imageReference: 'v1/dishes/pizza',
+        variants: [
+          { name: 'Margherita', description: '', price: 900 },
+          { name: 'Pepperoni', description: 'spicy', price: 1200 },
+        ],
+      };
+      await store.addItemToCatalogue(variantDish, 'v1');
+      expect(await store.forVendor('v1')).toEqual({ items: [variantDish] });
+    });
+
     it('keeps items in the order they were added', async () => {
       await store.addItemToCatalogue(dish({ itemId: 'a', name: 'A' }), 'v1');
       await store.addItemToCatalogue(dish({ itemId: 'b', name: 'B' }), 'v1');
