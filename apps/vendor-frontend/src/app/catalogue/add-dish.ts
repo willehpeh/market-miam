@@ -12,6 +12,32 @@ const DISH_PREVIEW_TRANSFORMATION = 'c_fill,w_600,h_400,q_auto,f_webp';
   selector: 'mm-add-dish',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterLink, Card, FormField, CloudinaryUrlPipe],
+  styles: `
+    .segment {
+      flex: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      border: 1px solid transparent;
+      border-radius: var(--radius-field);
+      padding: 0.3rem 0.5rem;
+      font-size: 0.875rem;
+      font-weight: 700;
+      background: transparent;
+      color: var(--color-ink-soft);
+      box-shadow: none;
+    }
+    .segment:hover:not(.active) {
+      color: var(--color-ink);
+    }
+    .segment.active {
+      background: var(--color-canvas);
+      border-color: var(--color-brand);
+      color: var(--color-ink);
+      box-shadow: var(--color-brand-soft);
+    }
+  `,
   template: `
     <mm-card>
       <form (submit)="submit($event)">
@@ -66,25 +92,63 @@ const DISH_PREVIEW_TRANSFORMATION = 'c_fill,w_600,h_400,q_auto,f_webp';
               <p id="name-error" role="alert" class="mt-1 text-xs text-danger">Le nom du plat est requis.</p>
             }
           </div>
-          <div>
-            <label for="price" class="field-label">Prix</label>
-            <div class="mt-1 flex items-center gap-2">
-              <input
-                id="price"
-                type="text"
-                inputmode="decimal"
-                class="flex-1"
-                [formField]="fields.price"
-                [attr.aria-invalid]="fields.price().touched() && priceInvalid()"
-                [attr.aria-describedby]="fields.price().touched() && priceInvalid() ? 'price-error' : null"
-                placeholder="ex. 12,00"
-              />
-              <span class="text-sm text-muted">EUR</span>
-            </div>
-            @if (fields.price().touched() && priceInvalid()) {
-              <p id="price-error" role="alert" class="mt-1 text-xs text-danger">Indiquez un prix, par exemple 12,00.</p>
-            }
+          <div class="flex gap-1 rounded-card bg-surface-sunk p-1">
+            <button type="button" class="segment" [class.active]="mode() === 'single'" (click)="mode.set('single')">
+              <i class="fa-solid fa-tag" aria-hidden="true"></i> Prix unique
+            </button>
+            <button type="button" class="segment" [class.active]="mode() === 'variants'" (click)="mode.set('variants')">
+              <i class="fa-solid fa-list" aria-hidden="true"></i> Plusieurs formats
+            </button>
           </div>
+
+          @if (mode() === 'single') {
+            <div>
+              <label for="price" class="field-label">Prix</label>
+              <div class="mt-1 flex items-center gap-2">
+                <input
+                  id="price"
+                  type="text"
+                  inputmode="decimal"
+                  class="flex-1"
+                  [formField]="fields.price"
+                  [attr.aria-invalid]="fields.price().touched() && priceInvalid()"
+                  [attr.aria-describedby]="fields.price().touched() && priceInvalid() ? 'price-error' : null"
+                  placeholder="ex. 12,00"
+                />
+                <span class="text-sm text-muted">EUR</span>
+              </div>
+              @if (fields.price().touched() && priceInvalid()) {
+                <p id="price-error" role="alert" class="mt-1 text-xs text-danger">Indiquez un prix, par exemple 12,00.</p>
+              }
+            </div>
+          } @else {
+            <div>
+              <p class="field-label">Formats</p>
+              <div class="mt-2 space-y-4">
+                @for (format of fields.variants().value(); track $index) {
+                  <div class="rounded-card border border-line bg-surface p-4">
+                    <div class="mb-4 flex items-center gap-2">
+                      <span class="grid size-7 shrink-0 place-items-center rounded-card bg-brand-soft text-sm font-bold text-ink">{{ $index + 1 }}</span>
+                      <span class="truncate font-bold text-ink">{{ format.name }}</span>
+                    </div>
+                    <div class="grid grid-cols-[auto_1fr] items-baseline gap-x-4 gap-y-3">
+                      <label [attr.for]="'format-name-' + $index" class="field-label">Format</label>
+                      <input [id]="'format-name-' + $index" type="text" [formField]="fields.variants[$index].name" placeholder="ex. Petite" />
+
+                      <label [attr.for]="'format-price-' + $index" class="field-label">Prix</label>
+                      <div class="flex items-center gap-2">
+                        <input [id]="'format-price-' + $index" type="text" inputmode="decimal" class="flex-1" [formField]="fields.variants[$index].price" placeholder="ex. 9,50" />
+                        <span class="text-sm text-muted">EUR</span>
+                      </div>
+
+                      <label [attr.for]="'format-detail-' + $index" class="field-label pt-2">Détail<span class="block font-sans font-normal normal-case tracking-normal text-muted">optionnel</span></label>
+                      <textarea [id]="'format-detail-' + $index" rows="2" [formField]="fields.variants[$index].description" placeholder="ex. 250 g · pour une personne"></textarea>
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+          }
           <div>
             <label for="description" class="field-label">Description · optionnel</label>
             <textarea
@@ -122,11 +186,14 @@ export class AddDish {
   protected readonly uploadError = this.catalogue.photoError;
   protected readonly tooLarge = signal(false);
 
+  protected readonly mode = signal<'single' | 'variants'>('single');
+
   protected readonly fields = form(
     signal({
       name: this.editing?.name ?? '',
       price: this.editing ? centsToEuros(this.editing.price) : '',
       description: this.editing?.description ?? '',
+      variants: [emptyFormat(), emptyFormat()],
     }),
     (path) => {
       required(path.name);
@@ -176,6 +243,10 @@ export class AddDish {
       });
     }
   }
+}
+
+function emptyFormat(): { name: string; price: string; description: string } {
+  return { name: '', price: '', description: '' };
 }
 
 function parseEurosToCents(text: string): number | null {

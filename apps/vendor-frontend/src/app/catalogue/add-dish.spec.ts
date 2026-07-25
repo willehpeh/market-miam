@@ -88,6 +88,15 @@ describe('AddDish', () => {
     expect(screen.getByText(/échoué/i)).toBeVisible();
   });
 
+  it('reveals a two-row formats editor when "Plusieurs formats" is chosen', async () => {
+    const { view } = await renderForm();
+
+    fireEvent.click(screen.getByRole('button', { name: /plusieurs formats/i }));
+    view.detectChanges();
+
+    expect(screen.getAllByLabelText(/^format$/i)).toHaveLength(2);
+  });
+
   it('will not submit without a name and a price, but does not require a photo', async () => {
     const { view } = await renderForm();
 
