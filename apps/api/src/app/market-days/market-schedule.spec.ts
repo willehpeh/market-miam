@@ -19,6 +19,17 @@ const schedule = {
   frequency: { weeks: 1 },
 };
 
+const { id: marketId, ...marketDisplay } = schedule.market;
+
+const scheduleView = {
+  scheduleId: schedule.scheduleId,
+  marketId,
+  market: marketDisplay,
+  startDate: schedule.startDate,
+  days: schedule.days,
+  frequency: schedule.frequency,
+};
+
 describe('Managing market schedules over HTTP', () => {
   let app: INestApplication;
 
@@ -95,7 +106,7 @@ describe('Managing market schedules over HTTP', () => {
 
     const response = await list().expect(200);
 
-    expect(response.body).toEqual({ schedules: [schedule] });
+    expect(response.body).toEqual({ schedules: [scheduleView] });
   });
 
   it('returns no schedules for a vendor with none', async () => {

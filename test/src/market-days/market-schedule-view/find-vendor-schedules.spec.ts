@@ -11,7 +11,8 @@ describe('FindVendorSchedules', () => {
 
   const schedule: MarketScheduleView = {
     scheduleId: 'schedule-1',
-    market: { id: 'market-1', name: 'Marché de Belleville', streetAddress: 'Boulevard de Belleville', codePostal: '75011', town: 'Paris', pitch: 'B12' },
+    marketId: 'market-1',
+    market: { name: 'Marché de Belleville', streetAddress: 'Boulevard de Belleville', codePostal: '75011', town: 'Paris', pitch: 'B12' },
     startDate: '2026-07-15',
     days: [{ day: 'TUE', startTime: '07:00', endTime: '14:30' }],
     frequency: { weeks: 1 },

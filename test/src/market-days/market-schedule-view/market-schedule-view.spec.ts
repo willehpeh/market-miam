@@ -33,16 +33,18 @@ describe('MarketScheduleView', () => {
     expect(await views.forVendor('vendor-id')).toEqual({ schedules: [] });
   });
 
-  it('projects a registered schedule as its snapshot', async () => {
+  it('projects a registered schedule, hoisting the market id out of the market', async () => {
     const command = TestRegisterMarketSchedule.simple();
     await new RegisterMarketScheduleHandler(calendars).execute(command);
 
     await subscription.poll();
 
+    const { id, ...market } = command.market;
     expect(await views.forVendor(command.vendorId)).toEqual({
       schedules: [{
         scheduleId: command.scheduleId,
-        market: command.market,
+        marketId: id,
+        market,
         startDate: command.startDate,
         days: command.days,
         frequency: { weeks: 1 }

@@ -62,7 +62,8 @@ const aDish: CatalogueItemView = {
 
 const aSchedule: MarketScheduleView = {
   scheduleId: 'schedule-1',
-  market: { id: 'market-1', name: 'Marché de la Croix-Rousse', codePostal: '69004', town: 'Lyon' },
+  marketId: 'market-1',
+  market: { name: 'Marché de la Croix-Rousse', codePostal: '69004', town: 'Lyon' },
   startDate: '2026-07-15',
   days: [{ day: 'TUE', startTime: '08:00', endTime: '13:00' }],
   frequency: { weeks: 1 },

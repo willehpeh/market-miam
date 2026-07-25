@@ -2,8 +2,8 @@ import { Observable } from 'rxjs';
 
 export interface MarketScheduleView {
   scheduleId: string;
+  marketId: string;
   market: {
-    id: string;
     name: string;
     streetAddress?: string;
     codePostal: string;

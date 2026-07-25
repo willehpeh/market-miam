@@ -1,7 +1,7 @@
 export type MarketScheduleView = {
   scheduleId: string;
+  marketId: string;
   market: {
-    id: string;
     name: string;
     streetAddress?: string;
     codePostal: string;

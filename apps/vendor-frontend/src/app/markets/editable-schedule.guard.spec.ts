@@ -10,7 +10,8 @@ import { MarketScheduleView } from './market-schedules';
 
 const existing: MarketScheduleView = {
   scheduleId: 'schedule-1',
-  market: { id: 'market-1', name: 'Marché de Belleville', codePostal: '75011', town: 'Paris' },
+  marketId: 'market-1',
+  market: { name: 'Marché de Belleville', codePostal: '75011', town: 'Paris' },
   startDate: '2026-07-15',
   days: [{ day: 'TUE', startTime: '07:00', endTime: '14:30' }],
   frequency: { weeks: 1 },

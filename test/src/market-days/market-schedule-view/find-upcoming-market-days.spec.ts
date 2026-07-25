@@ -13,25 +13,17 @@ const clockAt = (date: string): Clock => ({
 });
 
 const market = {
-  id: 'market-1',
   name: 'Marché de Belleville',
   streetAddress: 'Boulevard de Belleville',
   codePostal: '75011',
   town: 'Paris',
-  pitch: 'B12',
-};
-
-const marketDisplay = {
-  name: 'Marché de Belleville',
-  town: 'Paris',
-  codePostal: '75011',
-  streetAddress: 'Boulevard de Belleville',
   pitch: 'B12',
 };
 
 function scheduleWith(overrides: Partial<MarketScheduleView>): MarketScheduleView {
   return {
     scheduleId: 'schedule-1',
+    marketId: 'market-1',
     market,
     startDate: '2024-02-05',
     days: [{ day: 'SAT', startTime: '08:00', endTime: '14:00' }],
@@ -69,7 +61,7 @@ describe('FindUpcomingMarketDays', () => {
         startTime: '08:00',
         endTime: '14:00',
         absent: false,
-        market: marketDisplay,
+        market,
       })),
     });
   });

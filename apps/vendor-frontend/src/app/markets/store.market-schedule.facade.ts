@@ -18,7 +18,8 @@ export class StoreMarketScheduleFacade implements MarketScheduleFacade {
   registerSchedule(schedule: NewSchedule): void {
     const body: MarketScheduleView = {
       scheduleId: crypto.randomUUID(),
-      market: { id: crypto.randomUUID(), ...schedule.market },
+      marketId: crypto.randomUUID(),
+      market: schedule.market,
       startDate: today(),
       days: schedule.days,
       frequency: schedule.frequency,
@@ -33,7 +34,8 @@ export class StoreMarketScheduleFacade implements MarketScheduleFacade {
     }
     const body: MarketScheduleView = {
       scheduleId,
-      market: { id: existing.market.id, ...schedule.market },
+      marketId: existing.marketId,
+      market: schedule.market,
       startDate: existing.startDate,
       days: schedule.days,
       frequency: schedule.frequency,

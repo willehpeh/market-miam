@@ -13,32 +13,35 @@ export class FindUpcomingMarketDaysHandler implements IQueryHandler<FindUpcoming
   constructor(private readonly views: MarketScheduleViews, private readonly clock: Clock) {}
 
   async execute(query: FindUpcomingMarketDays): Promise<UpcomingMarketDaysView> {
-    const today = this.clock.today();
-    const horizon = today.plusDays(FindUpcomingMarketDaysHandler.HORIZON_DAYS);
+    const { today, horizon } = this.queryPeriod();
     const { schedules } = await this.views.forVendor(query.vendorId);
-    const marketDays = schedules
+    return { marketDays: this.marketDaysFrom(schedules, today, horizon) };
+  }
+
+  private marketDaysFrom(schedules: MarketScheduleView[], today: LocalDate, horizon: LocalDate) {
+    return schedules
       .flatMap(schedule => this.occurrencesOf(schedule, today, horizon))
       .sort((a, b) => a.date.localeCompare(b.date));
-    return { marketDays };
+  }
+
+  private queryPeriod() {
+    const today = this.clock.today();
+    const horizon = today.plusDays(FindUpcomingMarketDaysHandler.HORIZON_DAYS);
+    return { today, horizon };
   }
 
   private occurrencesOf(schedule: MarketScheduleView, from: LocalDate, to: LocalDate): MarketDayOccurrence[] {
     const absences = schedule.absences ?? [];
-    return Recurrence.fromSnapshot(schedule).occurrencesWithin(from, to).map(occurrence => ({
+    const occurrences = Recurrence.fromSnapshot(schedule).occurrencesWithin(from, to);
+    return occurrences.map(occurrence => ({
       scheduleId: schedule.scheduleId,
-      marketId: schedule.market.id,
+      marketId: schedule.marketId,
       date: occurrence.date,
       day: occurrence.day,
       startTime: occurrence.startTime,
       endTime: occurrence.endTime,
       absent: absences.some(range => range.from <= occurrence.date && occurrence.date <= range.to),
-      market: {
-        name: schedule.market.name,
-        town: schedule.market.town,
-        codePostal: schedule.market.codePostal,
-        streetAddress: schedule.market.streetAddress,
-        pitch: schedule.market.pitch,
-      },
+      market: schedule.market,
     }));
   }
 }

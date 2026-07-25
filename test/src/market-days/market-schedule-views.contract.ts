@@ -5,7 +5,8 @@ type Store = MarketScheduleViews & MarketScheduleViewStore;
 
 const schedule = (overrides: Partial<MarketScheduleView> = {}): MarketScheduleView => ({
   scheduleId: 'schedule-1',
-  market: { id: 'market-1', name: 'Marché de Belleville', streetAddress: 'Boulevard de Belleville', codePostal: '75011', town: 'Paris', pitch: 'B12' },
+  marketId: 'market-1',
+  market: { name: 'Marché de Belleville', streetAddress: 'Boulevard de Belleville', codePostal: '75011', town: 'Paris', pitch: 'B12' },
   startDate: '2026-07-15',
   days: [{ day: 'TUE', startTime: '07:00', endTime: '14:30' }],
   frequency: { weeks: 1 },
@@ -46,7 +47,7 @@ export function marketScheduleViewsContract(name: string, create: () => Store): 
     });
 
     it('preserves a schedule with optional fields omitted', async () => {
-      const lean = schedule({ market: { id: 'm', name: 'N', codePostal: '75001', town: 'Paris' }, days: [{ day: 'MON' }] });
+      const lean = schedule({ marketId: 'm', market: { name: 'N', codePostal: '75001', town: 'Paris' }, days: [{ day: 'MON' }] });
       await store.recordSchedule(lean, 'v1');
       expect(await store.forVendor('v1')).toEqual({ schedules: [lean] });
     });
