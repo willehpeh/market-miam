@@ -29,9 +29,22 @@ Design decisions: ADR 0033. This file tracks what's left; the ADR is the source 
 ## Remaining
 
 ### 5. Vendor frontend — Signal Form (`add-dish.ts`)
-- "This dish has variants" toggle: swaps the price field ↔ a variant editor.
-- Variant editor: add/remove rows, **up/down reorder** (swap adjacent indices — no `@angular/cdk`), per-row name + price validation, ≥2 gate, unique-name check.
-- Submit gating for the variant shape; edit mode uses the same toggle (flip drops the other side).
+Design grilled 2026-07-25 (mockups in `./tmp`). **Non-destructive** toggle (both sides keep data); customer label "dès {min} €".
+- **Done:** "Prix unique / Plusieurs formats" segmented toggle + `mode` signal; Signal Form gains a `variants` array (2 empty seed rows); two-column format cards (FORMAT · PRIX · DÉTAIL) with numbered badge + live name; scoped `.segment` styling.
+- **Remaining reds:**
+  - submit → variants, **+ port layer**: `NewDish` / `DishRevision` / `CatalogueItemView` + HTTP gateway gain `variants`.
+  - per-row name + price validation; **≥2 gate** (🗑 delete disabled at 2 rows).
+  - unique-name (inline error).
+  - **up/down reorder** (chevrons in the card header, disabled at the ends — no `@angular/cdk`).
+  - edit prefill (a variant dish opens in "Plusieurs formats").
+  - vendor `catalogue-list` row: "dès {min} €" + "N FORMATS" + inline format breakdown.
+
+### 6. Customer sheet refinement (mockup 2026-07-25)
+Polish the shipped variant sheet (`dish-sheet.ts`) to match the target:
+- Header: dish name + **"dès {min} €"** (already shipped).
+- Optional kicker/category label under the name (e.g. "PLATS MIJOTÉS") — category is deferred; skip until it ships.
+- Dish blurb (shipped), then a **"FORMATS"** section label above the list (new).
+- Each format row: name (bold) + price (right, bold), description muted on the line below, divider between rows. Close to shipped — restyle to match.
 
 ## Deferred (out of scope; clean to add later)
 
