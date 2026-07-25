@@ -39,7 +39,7 @@ export class CatalogueController {
   @UseGuards(JwtAuthGuard)
   async add(
     @CurrentVendor() vendor: VerifiedVendor,
-    @Body() body: { itemId: string; name: string; description: string; price: number; imageReference?: string },
+    @Body() body: { itemId: string; name: string; description: string; price?: number; imageReference?: string; variants?: { name: string; description: string; price: number }[] },
   ): Promise<void> {
     await this.commands.execute(
       new AddItemToCatalogue({
@@ -49,6 +49,7 @@ export class CatalogueController {
         description: body.description,
         price: body.price,
         imageReference: body.imageReference,
+        variants: body.variants,
       }),
     );
   }
@@ -58,10 +59,10 @@ export class CatalogueController {
   async revise(
     @CurrentVendor() vendor: VerifiedVendor,
     @Param('itemId') itemId: string,
-    @Body() body: { name: string; description: string; price: number },
+    @Body() body: { name: string; description: string; price?: number; variants?: { name: string; description: string; price: number }[] },
   ): Promise<void> {
     await this.commands.execute(
-      new ReviseItem(itemId, vendor.vendorId.value(), body.name, body.description, body.price),
+      new ReviseItem(itemId, vendor.vendorId.value(), body.name, body.description, body.price, body.variants),
     );
   }
 
