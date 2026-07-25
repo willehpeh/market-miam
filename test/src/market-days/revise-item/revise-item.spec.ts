@@ -21,7 +21,7 @@ describe('Revise item', () => {
     const newItemCommand = TestAddItemToCatalogue.simple();
     await new AddItemToCatalogueHandler(catalogues).execute(newItemCommand);
 
-    const command = new ReviseItem(newItemCommand.itemId, newItemCommand.vendorId, 'Revised Name', 'Revised Description', 750);
+    const command = new ReviseItem({ itemId: newItemCommand.itemId, vendorId: newItemCommand.vendorId, name: 'Revised Name', description: 'Revised Description', price: 750 });
     await handler.execute(command);
 
     expect(store.newEvents()).toEqual([
@@ -77,10 +77,10 @@ describe('Revise item', () => {
       const added = TestAddItemToCatalogue.simple();
       await new AddItemToCatalogueHandler(catalogues).execute(added);
 
-      const command = new ReviseItem(added.itemId, added.vendorId, 'Revised Name', 'Revised Description', 500, [
+      const command = new ReviseItem({ itemId: added.itemId, vendorId: added.vendorId, name: 'Revised Name', description: 'Revised Description', price: 500, variants: [
         { name: 'Small', description: '', price: 800 },
         { name: 'Large', description: '', price: 1200 },
-      ]);
+      ] });
 
       await expect(handler.execute(command)).rejects.toThrow(InvalidDishPricingError);
       expect(store.newEvents()).toEqual([expect.objectContaining({ type: 'ItemAddedToCatalogue' })]);
@@ -90,7 +90,7 @@ describe('Revise item', () => {
       const added = TestAddItemToCatalogue.simple();
       await new AddItemToCatalogueHandler(catalogues).execute(added);
 
-      const command = new ReviseItem(added.itemId, added.vendorId, 'Revised Name', 'Revised Description');
+      const command = new ReviseItem({ itemId: added.itemId, vendorId: added.vendorId, name: 'Revised Name', description: 'Revised Description' });
 
       await expect(handler.execute(command)).rejects.toThrow(InvalidDishPricingError);
       expect(store.newEvents()).toEqual([expect.objectContaining({ type: 'ItemAddedToCatalogue' })]);

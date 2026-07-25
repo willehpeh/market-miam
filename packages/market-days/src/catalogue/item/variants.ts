@@ -16,6 +16,10 @@ export class Variants {
     this._variants = variants;
   }
 
+  static fromInputs(inputs: { name: string; description: string; price: number }[]): Variants {
+    return new Variants(inputs.map(input => new Variant(input.name, input.description, input.price)));
+  }
+
   value(): { name: string; description: string; price: number }[] {
     return this._variants.map(variant => variant.value());
   }

@@ -1,7 +1,7 @@
 import { ItemAddedToCatalogue, ItemRetired, ItemRevised, ItemPhotoChanged, CatalogueEvent } from './events';
 import { Aggregate } from '@market-miam/event-sourcing';
 import { ImageReference } from '@market-miam/common';
-import { Item, ItemDescription, ItemId, ItemName, ItemPrice, Variant, Variants } from './item';
+import { Item, ItemDescription, ItemId, ItemName, ItemPrice, Variants } from './item';
 import { NoSuchItemError } from './errors/no-such-item.error';
 import { ItemAlreadyInCatalogueError } from './errors/item-already-in-catalogue.error';
 import { InvalidDishPricingError } from './errors/invalid-dish-pricing.error';
@@ -14,13 +14,7 @@ export class Catalogue extends Aggregate {
     if (this.hasItem(item.id)) {
       throw new ItemAlreadyInCatalogueError(`Item already in catalogue with ID ${ item.id.value() }`);
     }
-    const hasPrice = item.price !== undefined;
-    const hasVariants = item.variants !== undefined;
-    if (hasPrice === hasVariants) {
-      throw new InvalidDishPricingError(hasPrice
-        ? 'A dish cannot have both a price and variants'
-        : 'A dish must have either a price or variants');
-    }
+    this.assertPricedXorVariants(item.price, item.variants);
     const event: ItemAddedToCatalogue = {
       type: 'ItemAddedToCatalogue',
       payload: {
@@ -46,7 +40,7 @@ export class Catalogue extends Aggregate {
           new ItemDescription(event.payload.description),
           event.payload.variants ? undefined : new ItemPrice(event.payload.price!),
           event.payload.imageReference ? new ImageReference(event.payload.imageReference) : undefined,
-          event.payload.variants ? new Variants(event.payload.variants.map(variant => new Variant(variant.name, variant.description, variant.price))) : undefined
+          event.payload.variants ? Variants.fromInputs(event.payload.variants) : undefined
         ));
         break;
       case 'ItemRevised':
@@ -54,7 +48,7 @@ export class Catalogue extends Aggregate {
           new ItemName(event.payload.name),
           new ItemDescription(event.payload.description),
           event.payload.variants ? undefined : new ItemPrice(event.payload.price!),
-          event.payload.variants ? new Variants(event.payload.variants.map(variant => new Variant(variant.name, variant.description, variant.price))) : undefined
+          event.payload.variants ? Variants.fromInputs(event.payload.variants) : undefined
         );
         break;
       case 'ItemPhotoChanged':
@@ -74,13 +68,7 @@ export class Catalogue extends Aggregate {
 
   reviseItem(itemId: ItemId, name: ItemName, description: ItemDescription, price?: ItemPrice, variants?: Variants) {
     this.assertHasItem(itemId);
-    const hasPrice = price !== undefined;
-    const hasVariants = variants !== undefined;
-    if (hasPrice === hasVariants) {
-      throw new InvalidDishPricingError(hasPrice
-        ? 'A dish cannot have both a price and variants'
-        : 'A dish must have either a price or variants');
-    }
+    this.assertPricedXorVariants(price, variants);
     const event: ItemRevised = {
       type: 'ItemRevised',
       payload: {
@@ -133,6 +121,16 @@ export class Catalogue extends Aggregate {
   private assertHasItem(itemId: ItemId): void {
     if (!this.hasItem(itemId)) {
       throw new NoSuchItemError(`No item in catalogue with ID ${ itemId.value() }`);
+    }
+  }
+
+  private assertPricedXorVariants(price?: ItemPrice, variants?: Variants): void {
+    const hasPrice = price !== undefined;
+    const hasVariants = variants !== undefined;
+    if (hasPrice === hasVariants) {
+      throw new InvalidDishPricingError(hasPrice
+        ? 'A dish cannot have both a price and variants'
+        : 'A dish must have either a price or variants');
     }
   }
 }

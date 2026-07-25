@@ -80,7 +80,7 @@ describe('CatalogueView', () => {
   it('should revise the item name, description and price, keeping its image', async () => {
     const newItemCommand = TestAddItemToCatalogue.simple();
     await new AddItemToCatalogueHandler(catalogues).execute(newItemCommand);
-    await new ReviseItemHandler(catalogues).execute(new ReviseItem(newItemCommand.itemId, newItemCommand.vendorId, 'Revised Name', 'Revised Description', 999));
+    await new ReviseItemHandler(catalogues).execute(new ReviseItem({ itemId: newItemCommand.itemId, vendorId: newItemCommand.vendorId, name: 'Revised Name', description: 'Revised Description', price: 999 }));
 
     await subscription.poll();
     const view = await views.forVendor(newItemCommand.vendorId);
@@ -94,10 +94,10 @@ describe('CatalogueView', () => {
   it('should revise a flat dish into a variant dish', async () => {
     const added = TestAddItemToCatalogue.simple();
     await new AddItemToCatalogueHandler(catalogues).execute(added);
-    await new ReviseItemHandler(catalogues).execute(new ReviseItem(added.itemId, added.vendorId, 'Pizza', 'Wood-fired', undefined, [
+    await new ReviseItemHandler(catalogues).execute(new ReviseItem({ itemId: added.itemId, vendorId: added.vendorId, name: 'Pizza', description: 'Wood-fired', variants: [
       { name: 'Small', description: '', price: 800 },
       { name: 'Large', description: 'extra hungry', price: 1200 },
-    ]));
+    ] }));
 
     await subscription.poll();
     const view = await views.forVendor(added.vendorId);
@@ -123,7 +123,7 @@ describe('CatalogueView', () => {
       { name: 'Large', description: 'extra hungry', price: 1200 },
     ]);
     await new AddItemToCatalogueHandler(catalogues).execute(added);
-    await new ReviseItemHandler(catalogues).execute(new ReviseItem(added.itemId, added.vendorId, 'Soup', 'Daily', 500));
+    await new ReviseItemHandler(catalogues).execute(new ReviseItem({ itemId: added.itemId, vendorId: added.vendorId, name: 'Soup', description: 'Daily', price: 500 }));
 
     await subscription.poll();
     const view = await views.forVendor(added.vendorId);

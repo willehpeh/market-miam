@@ -62,7 +62,14 @@ export class CatalogueController {
     @Body() body: { name: string; description: string; price?: number; variants?: { name: string; description: string; price: number }[] },
   ): Promise<void> {
     await this.commands.execute(
-      new ReviseItem(itemId, vendor.vendorId.value(), body.name, body.description, body.price, body.variants),
+      new ReviseItem({
+        itemId,
+        vendorId: vendor.vendorId.value(),
+        name: body.name,
+        description: body.description,
+        price: body.price,
+        variants: body.variants,
+      }),
     );
   }
 

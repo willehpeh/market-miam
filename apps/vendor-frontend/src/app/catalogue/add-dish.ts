@@ -4,6 +4,7 @@ import { form, FormField, required } from '@angular/forms/signals';
 import { Card } from '../core/card';
 import { CloudinaryUrlPipe } from '../core/cloudinary-url.pipe';
 import { CatalogueFacade } from './catalogue.facade';
+import { centsToEuros, parseEurosToCents } from './money';
 
 const MAX_PHOTO_BYTES = 10 * 1024 * 1024;
 const DISH_PREVIEW_TRANSFORMATION = 'c_fill,w_600,h_400,q_auto,f_webp';
@@ -365,16 +366,4 @@ export class AddDish {
 
 function emptyFormat(): { name: string; price: string; description: string } {
   return { name: '', price: '', description: '' };
-}
-
-function parseEurosToCents(text: string): number | null {
-  const normalized = text.trim().replace(',', '.');
-  if (!/^\d+(\.\d{1,2})?$/.test(normalized)) {
-    return null;
-  }
-  return Math.round(parseFloat(normalized) * 100);
-}
-
-function centsToEuros(cents: number): string {
-  return (cents / 100).toFixed(2).replace('.', ',');
 }

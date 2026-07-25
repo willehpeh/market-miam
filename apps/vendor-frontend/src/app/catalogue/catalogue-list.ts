@@ -3,6 +3,7 @@ import { RouterLink } from '@angular/router';
 import { Card } from '../core/card';
 import { CloudinaryUrlPipe } from '../core/cloudinary-url.pipe';
 import { CatalogueFacade } from './catalogue.facade';
+import { formatEuros } from './money';
 
 const DISH_THUMBNAIL_TRANSFORMATION = 'c_fill,w_200,h_200,q_auto,f_webp';
 
@@ -121,8 +122,4 @@ export class CatalogueList {
       this.catalogue.load();
     }
   }
-}
-
-function formatEuros(cents: number): string {
-  return `${(cents / 100).toFixed(2).replace('.', ',')} €`;
 }
