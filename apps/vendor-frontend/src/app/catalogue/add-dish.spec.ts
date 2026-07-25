@@ -161,6 +161,23 @@ describe('AddDish', () => {
     expect(screen.getByRole('button', { name: /ajouter à ma carte/i })).toBeDisabled();
   });
 
+  it('will not submit a formats dish with duplicate format names', async () => {
+    const { view } = await renderForm();
+    fireEvent.input(screen.getByLabelText(/nom du plat/i), { target: { value: 'Pizza' } });
+    fireEvent.click(screen.getByRole('button', { name: /plusieurs formats/i }));
+    view.detectChanges();
+
+    const names = screen.getAllByLabelText(/^format$/i);
+    const prices = screen.getAllByLabelText(/^prix$/i);
+    fireEvent.input(names[0], { target: { value: 'Grande' } });
+    fireEvent.input(prices[0], { target: { value: '9,50' } });
+    fireEvent.input(names[1], { target: { value: 'Grande' } });
+    fireEvent.input(prices[1], { target: { value: '16,00' } });
+    view.detectChanges();
+
+    expect(screen.getByRole('button', { name: /ajouter à ma carte/i })).toBeDisabled();
+  });
+
   it('will not submit without a name and a price, but does not require a photo', async () => {
     const { view } = await renderForm();
 

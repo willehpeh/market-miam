@@ -242,11 +242,15 @@ export class AddDish {
   private readonly formatsComplete = computed(() =>
     this.fields().value().variants.every((v) => v.name.trim() !== '' && parseEurosToCents(v.price) !== null),
   );
+  private readonly formatsUnique = computed(() => {
+    const names = this.fields().value().variants.map((v) => v.name.trim());
+    return new Set(names).size === names.length;
+  });
   protected readonly cannotSubmit = computed(() => {
     if (this.uploading() || this.fields().invalid()) {
       return true;
     }
-    return this.mode() === 'single' ? this.priceInvalid() : !this.formatsComplete();
+    return this.mode() === 'single' ? this.priceInvalid() : !this.formatsComplete() || !this.formatsUnique();
   });
 
   constructor() {
