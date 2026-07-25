@@ -1,18 +1,16 @@
 import { ItemAddedToCatalogue, ItemRetired, ItemRevised, ItemPhotoChanged, CatalogueEvent } from './events';
 import { Aggregate } from '@market-miam/event-sourcing';
 import { ImageReference } from '@market-miam/common';
-import { Item, ItemDescription, ItemId, ItemName, ItemPrice, Variant } from './item';
+import { Item, ItemDescription, ItemId, ItemName, ItemPrice, Variant, Variants } from './item';
 import { NoSuchItemError } from './errors/no-such-item.error';
 import { ItemAlreadyInCatalogueError } from './errors/item-already-in-catalogue.error';
-import { TooFewVariantsError } from './errors/too-few-variants.error';
 import { InvalidDishPricingError } from './errors/invalid-dish-pricing.error';
-import { DuplicateVariantNameError } from './errors/duplicate-variant-name.error';
 
 export class Catalogue extends Aggregate {
 
   private _items: Item[] = [];
 
-  addItem(item: { id: ItemId, name: ItemName, description: ItemDescription, price?: ItemPrice, imageReference?: ImageReference, variants?: Variant[] }) {
+  addItem(item: { id: ItemId, name: ItemName, description: ItemDescription, price?: ItemPrice, imageReference?: ImageReference, variants?: Variants }) {
     if (this.hasItem(item.id)) {
       throw new ItemAlreadyInCatalogueError(`Item already in catalogue with ID ${ item.id.value() }`);
     }
@@ -23,15 +21,6 @@ export class Catalogue extends Aggregate {
         ? 'A dish cannot have both a price and variants'
         : 'A dish must have either a price or variants');
     }
-    if (item.variants && item.variants.length < 2) {
-      throw new TooFewVariantsError(`A dish with variants needs at least two; got ${ item.variants.length }`);
-    }
-    if (item.variants) {
-      const names = item.variants.map(variant => variant.value().name);
-      if (new Set(names).size !== names.length) {
-        throw new DuplicateVariantNameError('Variant names must be unique within a dish');
-      }
-    }
     const event: ItemAddedToCatalogue = {
       type: 'ItemAddedToCatalogue',
       payload: {
@@ -39,7 +28,7 @@ export class Catalogue extends Aggregate {
         name: item.name.value(),
         description: item.description.value(),
         ...(item.variants
-          ? { variants: item.variants.map(variant => variant.value()) }
+          ? { variants: item.variants.value() }
           : { price: item.price!.value() }),
         imageReference: item.imageReference?.value()
       },
@@ -57,7 +46,7 @@ export class Catalogue extends Aggregate {
           new ItemDescription(event.payload.description),
           event.payload.variants ? undefined : new ItemPrice(event.payload.price!),
           event.payload.imageReference ? new ImageReference(event.payload.imageReference) : undefined,
-          event.payload.variants?.map(variant => new Variant(variant.name, variant.description, variant.price))
+          event.payload.variants ? new Variants(event.payload.variants.map(variant => new Variant(variant.name, variant.description, variant.price))) : undefined
         ));
         break;
       case 'ItemRevised':
