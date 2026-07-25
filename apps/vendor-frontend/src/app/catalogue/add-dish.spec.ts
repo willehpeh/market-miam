@@ -288,6 +288,32 @@ describe('AddDish', () => {
       expect(screen.getByLabelText(/description/i)).toHaveValue('Mijoté maison');
     });
 
+    it('opens a variant dish in formats mode, prefilled', async () => {
+      const catalogue = new FakeCatalogueFacade();
+      catalogue.items.set([{
+        itemId: 'item-1',
+        name: 'Pizza',
+        description: 'Wood-fired',
+        imageReference: '',
+        variants: [
+          { name: 'Margherita', description: 'tomato', price: 900 },
+          { name: 'Pepperoni', description: 'spicy', price: 1200 },
+        ],
+      }]);
+      await render(AddDish, {
+        providers: [
+          provideRouter([]),
+          { provide: CatalogueFacade, useValue: catalogue },
+          { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ itemId: 'item-1' }) } } },
+        ],
+      });
+
+      const names = screen.getAllByLabelText(/^format$/i) as HTMLInputElement[];
+      const prices = screen.getAllByLabelText(/^prix$/i) as HTMLInputElement[];
+      expect(names.map((n) => n.value)).toEqual(['Margherita', 'Pepperoni']);
+      expect(prices.map((p) => p.value)).toEqual(['9,00', '12,00']);
+    });
+
     it('shows the current photo', async () => {
       await renderEdit();
 

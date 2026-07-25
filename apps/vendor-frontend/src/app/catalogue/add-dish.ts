@@ -242,13 +242,15 @@ export class AddDish {
   protected readonly uploadError = this.catalogue.photoError;
   protected readonly tooLarge = signal(false);
 
-  protected readonly mode = signal<'single' | 'variants'>('single');
+  protected readonly mode = signal<'single' | 'variants'>(this.editing?.variants ? 'variants' : 'single');
 
   private readonly model = signal({
     name: this.editing?.name ?? '',
     price: this.editing && this.editing.price !== undefined ? centsToEuros(this.editing.price) : '',
     description: this.editing?.description ?? '',
-    variants: [emptyFormat(), emptyFormat()],
+    variants: this.editing?.variants
+      ? this.editing.variants.map((v) => ({ name: v.name, price: centsToEuros(v.price), description: v.description }))
+      : [emptyFormat(), emptyFormat()],
   });
 
   protected readonly fields = form(this.model, (path) => {
