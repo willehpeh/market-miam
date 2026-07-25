@@ -35,7 +35,7 @@ const DISH_PREVIEW_TRANSFORMATION = 'c_fill,w_600,h_400,q_auto,f_webp';
       background: var(--color-canvas);
       border-color: var(--color-brand);
       color: var(--color-ink);
-      box-shadow: var(--color-brand-soft);
+      box-shadow: 0 0 5px var(--color-brand);
     }
   `,
   template: `
@@ -91,6 +91,16 @@ const DISH_PREVIEW_TRANSFORMATION = 'c_fill,w_600,h_400,q_auto,f_webp';
             @if (fields.name().touched() && fields.name().invalid()) {
               <p id="name-error" role="alert" class="mt-1 text-xs text-danger">Le nom du plat est requis.</p>
             }
+          </div>
+          <div>
+            <label for="description" class="field-label">Description · optionnel</label>
+            <textarea
+              id="description"
+              rows="5"
+              class="mt-1"
+              [formField]="fields.description"
+              placeholder="ex. Confit de canard effiloché, purée de rattes au beurre."
+            ></textarea>
           </div>
           <div class="flex gap-1 rounded-card bg-surface-sunk p-1">
             <button type="button" class="segment" [class.active]="mode() === 'single'" (click)="mode.set('single')">
@@ -149,16 +159,6 @@ const DISH_PREVIEW_TRANSFORMATION = 'c_fill,w_600,h_400,q_auto,f_webp';
               </div>
             </div>
           }
-          <div>
-            <label for="description" class="field-label">Description · optionnel</label>
-            <textarea
-              id="description"
-              rows="3"
-              class="mt-1"
-              [formField]="fields.description"
-              placeholder="ex. Confit de canard effiloché, purée de rattes au beurre."
-            ></textarea>
-          </div>
         </div>
 
         <button type="submit" class="mt-6 flex w-full max-w-xs mx-auto justify-center" [disabled]="cannotSubmit()">
