@@ -66,9 +66,9 @@ export const catalogueFeature = createFeature({
     on(AddDishSuccess, (state, { item }): CatalogueState => ({ ...state, items: [...state.items, item], newPhotoReference: '' })),
     // ponytail: ReviseDishFailure is emitted but unreduced — same no-error-UX stance as AddDishFailure.
     // Optimistic: merge the revised fields by id on success, preserving the item's other fields (image).
-    on(ReviseDishSuccess, (state, { itemId, name, description, price }): CatalogueState => ({
+    on(ReviseDishSuccess, (state, { itemId, name, description, price, variants }): CatalogueState => ({
       ...state,
-      items: state.items.map(item => item.itemId === itemId ? { ...item, name, description, price } : item),
+      items: state.items.map(item => item.itemId === itemId ? { ...item, name, description, price, variants } : item),
     })),
     // ponytail: ChangeDishPhotoFailure unreduced — same no-error-UX stance.
     on(ChangeDishPhotoSuccess, (state, { itemId, imageReference }): CatalogueState => ({

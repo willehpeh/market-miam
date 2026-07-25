@@ -79,7 +79,7 @@ export class CatalogueList {
 
   readonly thumbnailTransformation = DISH_THUMBNAIL_TRANSFORMATION;
   readonly dishes = computed(() =>
-    this.catalogue.items().map((item) => ({ ...item, priceLabel: formatEuros(item.price) })).reverse(),
+    this.catalogue.items().map((item) => ({ ...item, priceLabel: formatEuros(item.price ?? 0) })).reverse(),
   );
 
   constructor() {

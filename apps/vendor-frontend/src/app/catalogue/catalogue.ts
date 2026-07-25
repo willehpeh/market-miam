@@ -5,8 +5,9 @@ export interface CatalogueItemView {
   itemId: string;
   name: string;
   description: string;
-  price: number;
+  price?: number;
   imageReference: string;
+  variants?: { name: string; description: string; price: number }[];
 }
 
 export interface CatalogueView {
@@ -17,15 +18,17 @@ export interface NewDish {
   itemId: string;
   name: string;
   description: string;
-  price: number;
+  price?: number;
   imageReference?: string;
+  variants?: { name: string; description: string; price: number }[];
 }
 
 export interface DishRevision {
   itemId: string;
   name: string;
   description: string;
-  price: number;
+  price?: number;
+  variants?: { name: string; description: string; price: number }[];
 }
 
 export abstract class Catalogue {

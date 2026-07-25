@@ -97,6 +97,34 @@ describe('AddDish', () => {
     expect(screen.getAllByLabelText(/^format$/i)).toHaveLength(2);
   });
 
+  it('adds a variant dish, sending its formats and no price', async () => {
+    const { view, catalogue } = await renderForm();
+    fireEvent.input(screen.getByLabelText(/nom du plat/i), { target: { value: 'Pizza' } });
+    fireEvent.click(screen.getByRole('button', { name: /plusieurs formats/i }));
+    view.detectChanges();
+
+    const names = screen.getAllByLabelText(/^format$/i);
+    const prices = screen.getAllByLabelText(/^prix$/i);
+    fireEvent.input(names[0], { target: { value: 'Petite' } });
+    fireEvent.input(prices[0], { target: { value: '9,50' } });
+    fireEvent.input(names[1], { target: { value: 'Grande' } });
+    fireEvent.input(prices[1], { target: { value: '16,00' } });
+    view.detectChanges();
+
+    fireEvent.click(screen.getByRole('button', { name: /ajouter à ma carte/i }));
+
+    expect(catalogue.addedDish).toEqual({
+      itemId: expect.stringMatching(/.+/),
+      name: 'Pizza',
+      description: '',
+      variants: [
+        { name: 'Petite', description: '', price: 950 },
+        { name: 'Grande', description: '', price: 1600 },
+      ],
+      imageReference: undefined,
+    });
+  });
+
   it('will not submit without a name and a price, but does not require a photo', async () => {
     const { view } = await renderForm();
 

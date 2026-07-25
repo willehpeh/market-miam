@@ -191,7 +191,7 @@ export class AddDish {
   protected readonly fields = form(
     signal({
       name: this.editing?.name ?? '',
-      price: this.editing ? centsToEuros(this.editing.price) : '',
+      price: this.editing && this.editing.price !== undefined ? centsToEuros(this.editing.price) : '',
       description: this.editing?.description ?? '',
       variants: [emptyFormat(), emptyFormat()],
     }),
@@ -202,9 +202,12 @@ export class AddDish {
 
   private readonly priceCents = computed(() => parseEurosToCents(this.fields().value().price));
   protected readonly priceInvalid = computed(() => this.priceCents() === null);
-  protected readonly cannotSubmit = computed(
-    () => this.fields().invalid() || this.priceInvalid() || this.uploading(),
-  );
+  protected readonly cannotSubmit = computed(() => {
+    if (this.uploading() || this.fields().invalid()) {
+      return true;
+    }
+    return this.mode() === 'single' && this.priceInvalid();
+  });
 
   constructor() {
     this.catalogue.beginDish();
@@ -226,11 +229,23 @@ export class AddDish {
 
   protected submit(event: Event): void {
     event.preventDefault();
+    const { name, description } = this.fields().value();
+    if (this.mode() === 'variants') {
+      const variants = this.parseVariants();
+      if (variants === null) {
+        return;
+      }
+      if (this.isEditing) {
+        this.catalogue.reviseDish({ itemId: this.itemId, name, description, variants });
+      } else {
+        this.catalogue.addDish({ itemId: this.itemId, name, description, variants, imageReference: this.photoReference() || undefined });
+      }
+      return;
+    }
     const cents = this.priceCents();
     if (cents === null) {
       return;
     }
-    const { name, description } = this.fields().value();
     if (this.isEditing) {
       this.catalogue.reviseDish({ itemId: this.itemId, name, description, price: cents });
     } else {
@@ -242,6 +257,18 @@ export class AddDish {
         imageReference: this.photoReference() || undefined,
       });
     }
+  }
+
+  private parseVariants(): { name: string; description: string; price: number }[] | null {
+    const rows = this.fields().value().variants.map((row) => ({
+      name: row.name,
+      description: row.description,
+      price: parseEurosToCents(row.price),
+    }));
+    if (rows.some((row) => row.price === null)) {
+      return null;
+    }
+    return rows.map((row) => ({ name: row.name, description: row.description, price: row.price as number }));
   }
 }
 

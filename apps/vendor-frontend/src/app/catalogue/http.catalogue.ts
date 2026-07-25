@@ -21,8 +21,8 @@ export class HttpCatalogue implements Catalogue {
     return this.http.post<void>(`${environment.apiBaseUrl}/api/catalogue`, dish);
   }
 
-  revise({ itemId, name, description, price }: DishRevision): Observable<void> {
-    return this.http.put<void>(`${environment.apiBaseUrl}/api/catalogue/${itemId}`, { name, description, price });
+  revise({ itemId, name, description, price, variants }: DishRevision): Observable<void> {
+    return this.http.put<void>(`${environment.apiBaseUrl}/api/catalogue/${itemId}`, { name, description, price, variants });
   }
 
   changePhoto(itemId: string, imageReference: string): Observable<void> {
