@@ -125,6 +125,25 @@ describe('AddDish', () => {
     });
   });
 
+  it('adds and removes format rows, keeping at least two', async () => {
+    const { view } = await renderForm();
+    fireEvent.click(screen.getByRole('button', { name: /plusieurs formats/i }));
+    view.detectChanges();
+
+    expect(screen.getAllByLabelText(/^format$/i)).toHaveLength(2);
+    expect(screen.getAllByRole('button', { name: /supprimer le format/i })[0]).toBeDisabled();
+
+    fireEvent.click(screen.getByRole('button', { name: /ajouter un format/i }));
+    view.detectChanges();
+    expect(screen.getAllByLabelText(/^format$/i)).toHaveLength(3);
+
+    const deletes = screen.getAllByRole('button', { name: /supprimer le format/i });
+    expect(deletes[0]).toBeEnabled();
+    fireEvent.click(deletes[0]);
+    view.detectChanges();
+    expect(screen.getAllByLabelText(/^format$/i)).toHaveLength(2);
+  });
+
   it('will not submit a formats dish while a format row is incomplete', async () => {
     const { view } = await renderForm();
     fireEvent.input(screen.getByLabelText(/nom du plat/i), { target: { value: 'Pizza' } });

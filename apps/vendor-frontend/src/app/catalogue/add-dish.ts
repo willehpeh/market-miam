@@ -37,6 +37,32 @@ const DISH_PREVIEW_TRANSFORMATION = 'c_fill,w_600,h_400,q_auto,f_webp';
       color: var(--color-ink);
       box-shadow: 0 0 5px var(--color-brand);
     }
+    .icon-btn {
+      background: transparent;
+      color: var(--color-muted);
+      box-shadow: none;
+      padding: 0.375rem;
+      border-radius: var(--radius-field);
+    }
+    .icon-btn:hover:not(:disabled) {
+      color: var(--color-ink);
+    }
+    .icon-btn:disabled {
+      opacity: 0.3;
+    }
+    .add-format {
+      width: 100%;
+      background: transparent;
+      color: var(--color-brand);
+      border: 1px dashed var(--color-line-strong);
+      box-shadow: none;
+      border-radius: var(--radius-card);
+      padding: 0.75rem;
+      font-weight: 700;
+    }
+    .add-format:hover {
+      background: var(--color-surface-sunk);
+    }
   `,
   template: `
     <mm-card>
@@ -139,7 +165,16 @@ const DISH_PREVIEW_TRANSFORMATION = 'c_fill,w_600,h_400,q_auto,f_webp';
                   <div class="rounded-card border border-line bg-surface p-4">
                     <div class="mb-4 flex items-center gap-2">
                       <span class="grid size-7 shrink-0 place-items-center rounded-card bg-brand-soft text-sm font-bold text-ink">{{ $index + 1 }}</span>
-                      <span class="truncate font-bold text-ink">{{ format.name }}</span>
+                      <span class="flex-1 truncate font-bold text-ink">{{ format.name }}</span>
+                      <button
+                        type="button"
+                        class="icon-btn"
+                        [attr.aria-label]="'Supprimer le format ' + ($index + 1)"
+                        [disabled]="fields.variants().value().length <= 2"
+                        (click)="removeFormat($index)"
+                      >
+                        <i class="fa-solid fa-trash-can" aria-hidden="true"></i>
+                      </button>
                     </div>
                     <div class="grid grid-cols-[auto_1fr] items-baseline gap-x-4 gap-y-3">
                       <label [attr.for]="'format-name-' + $index" class="field-label">Format</label>
@@ -157,6 +192,9 @@ const DISH_PREVIEW_TRANSFORMATION = 'c_fill,w_600,h_400,q_auto,f_webp';
                   </div>
                 }
               </div>
+              <button type="button" class="add-format mt-4" (click)="addFormat()">
+                <i class="fa-solid fa-plus" aria-hidden="true"></i> Ajouter un format
+              </button>
             </div>
           }
         </div>
@@ -188,17 +226,16 @@ export class AddDish {
 
   protected readonly mode = signal<'single' | 'variants'>('single');
 
-  protected readonly fields = form(
-    signal({
-      name: this.editing?.name ?? '',
-      price: this.editing && this.editing.price !== undefined ? centsToEuros(this.editing.price) : '',
-      description: this.editing?.description ?? '',
-      variants: [emptyFormat(), emptyFormat()],
-    }),
-    (path) => {
-      required(path.name);
-    },
-  );
+  private readonly model = signal({
+    name: this.editing?.name ?? '',
+    price: this.editing && this.editing.price !== undefined ? centsToEuros(this.editing.price) : '',
+    description: this.editing?.description ?? '',
+    variants: [emptyFormat(), emptyFormat()],
+  });
+
+  protected readonly fields = form(this.model, (path) => {
+    required(path.name);
+  });
 
   private readonly priceCents = computed(() => parseEurosToCents(this.fields().value().price));
   protected readonly priceInvalid = computed(() => this.priceCents() === null);
@@ -214,6 +251,14 @@ export class AddDish {
 
   constructor() {
     this.catalogue.beginDish();
+  }
+
+  protected addFormat(): void {
+    this.model.update((m) => ({ ...m, variants: [...m.variants, emptyFormat()] }));
+  }
+
+  protected removeFormat(index: number): void {
+    this.model.update((m) => ({ ...m, variants: m.variants.filter((_, i) => i !== index) }));
   }
 
   protected selectPhoto(event: Event): void {
