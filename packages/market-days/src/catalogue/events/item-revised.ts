@@ -1,3 +1,9 @@
 import { DomainEvent } from '@market-miam/event-sourcing';
 
-export type ItemRevised = DomainEvent<'ItemRevised', { itemId: string, name: string, description: string, price: number }>
+export type ItemRevised = DomainEvent<'ItemRevised', {
+  itemId: string;
+  name: string;
+  description: string;
+  price?: number;
+  variants?: { name: string; description: string; price: number }[];
+}>

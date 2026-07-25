@@ -38,6 +38,32 @@ describe('Revise item', () => {
     ]);
   });
 
+  it('revises a flat dish into a variant dish (variants, no price)', async () => {
+    const added = TestAddItemToCatalogue.simple();
+    await new AddItemToCatalogueHandler(catalogues).execute(added);
+
+    await handler.execute(TestReviseItem.withVariants(added.itemId, [
+      { name: 'Small', description: '', price: 800 },
+      { name: 'Large', description: 'extra', price: 1200 },
+    ]));
+
+    expect(store.newEvents()).toEqual([
+      expect.objectContaining({ type: 'ItemAddedToCatalogue' }),
+      expect.objectContaining({
+        type: 'ItemRevised',
+        payload: {
+          itemId: added.itemId,
+          name: 'Revised Name',
+          description: 'Revised Description',
+          variants: [
+            { name: 'Small', description: '', price: 800 },
+            { name: 'Large', description: 'extra', price: 1200 },
+          ],
+        },
+      }),
+    ]);
+  });
+
   it('stamps the vendor id into the event metadata', async () => {
     const newItemCommand = TestAddItemToCatalogue.simple();
     await new AddItemToCatalogueHandler(catalogues).execute(newItemCommand);

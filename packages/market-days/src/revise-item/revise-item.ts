@@ -6,6 +6,7 @@ export class ReviseItem extends Command<void> {
     readonly vendorId: string,
     readonly name: string,
     readonly description: string,
-    readonly price: number,
+    readonly price?: number,
+    readonly variants?: { name: string; description: string; price: number }[],
   ) { super(); }
 }

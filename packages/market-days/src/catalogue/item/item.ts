@@ -44,10 +44,11 @@ export class Item {
     return this._itemId.value() === itemId.value();
   }
 
-  revise(name: ItemName, description: ItemDescription, price: ItemPrice): void {
+  revise(name: ItemName, description: ItemDescription, price?: ItemPrice, variants?: Variants): void {
     this._name = name;
     this._description = description;
     this._price = price;
+    this._variants = variants;
   }
 
   changePhoto(imageReference: ImageReference): void {

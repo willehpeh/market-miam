@@ -21,4 +21,8 @@ export class TestReviseItem {
       overrides.price ?? defaults.price,
     );
   }
+
+  static withVariants(itemId: string, variants: { name: string; description: string; price: number }[]): ReviseItem {
+    return new ReviseItem(itemId, 'vendor-id', 'Revised Name', 'Revised Description', undefined, variants);
+  }
 }

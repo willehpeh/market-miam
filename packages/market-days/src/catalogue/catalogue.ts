@@ -53,7 +53,8 @@ export class Catalogue extends Aggregate {
         this.itemWithId(new ItemId(event.payload.itemId)).revise(
           new ItemName(event.payload.name),
           new ItemDescription(event.payload.description),
-          new ItemPrice(event.payload.price)
+          event.payload.variants ? undefined : new ItemPrice(event.payload.price!),
+          event.payload.variants ? new Variants(event.payload.variants.map(variant => new Variant(variant.name, variant.description, variant.price))) : undefined
         );
         break;
       case 'ItemPhotoChanged':
@@ -71,7 +72,7 @@ export class Catalogue extends Aggregate {
     return item;
   }
 
-  reviseItem(itemId: ItemId, name: ItemName, description: ItemDescription, price: ItemPrice) {
+  reviseItem(itemId: ItemId, name: ItemName, description: ItemDescription, price?: ItemPrice, variants?: Variants) {
     this.assertHasItem(itemId);
     const event: ItemRevised = {
       type: 'ItemRevised',
@@ -79,7 +80,7 @@ export class Catalogue extends Aggregate {
         itemId: itemId.value(),
         name: name.value(),
         description: description.value(),
-        price: price.value()
+        ...(variants ? { variants: variants.value() } : { price: price!.value() })
       },
       version: 1
     };
