@@ -26,18 +26,14 @@ Design decisions: ADR 0033. This file tracks what's left; the ADR is the source 
 **Slice 4 — HTTP wiring**
 - `POST /catalogue` and `PUT /catalogue/:itemId` accept an optional `variants` array (+ optional `price`); verified end-to-end (POST/PUT → command → projection → GET).
 
-## Remaining
+**Slice 5 — vendor frontend (form + list)**
+- `add-dish.ts`: "Prix unique / Plusieurs formats" toggle (`mode`); formats editor with add/remove rows (2-row min, 🗑 disabled at 2), up/down reorder (disabled at ends), two-column FORMAT/PRIX/DÉTAIL cards, numbered badge + live name; scoped `.segment` / `.icon-btn` / `.add-format` styling.
+- Submit branches on mode → formats sent as `{name, description, variants}`; `cannotSubmit` gates on complete + unique format rows. Edit opens a variant dish in formats mode, prefilled.
+- Port layer: `NewDish` / `DishRevision` / `CatalogueItemView` + HTTP gateway + NgRx effects/reducer thread variants.
+- `catalogue-list.ts`: a variant row shows "dès {min} €" + N formats + inline breakdown.
+- *Not done (optional polish):* inline per-row error text — submit is gated + server 400 backstops, but rows show no red-text errors yet.
 
-### 5. Vendor frontend — Signal Form (`add-dish.ts`)
-Design grilled 2026-07-25 (mockups in `./tmp`). **Non-destructive** toggle (both sides keep data); customer label "dès {min} €".
-- **Done:** "Prix unique / Plusieurs formats" segmented toggle + `mode` signal; Signal Form gains a `variants` array (2 empty seed rows); two-column format cards (FORMAT · PRIX · DÉTAIL) with numbered badge + live name; scoped `.segment` styling.
-- **Remaining reds:**
-  - submit → variants, **+ port layer**: `NewDish` / `DishRevision` / `CatalogueItemView` + HTTP gateway gain `variants`.
-  - per-row name + price validation; **≥2 gate** (🗑 delete disabled at 2 rows).
-  - unique-name (inline error).
-  - **up/down reorder** (chevrons in the card header, disabled at the ends — no `@angular/cdk`).
-  - edit prefill (a variant dish opens in "Plusieurs formats").
-  - vendor `catalogue-list` row: "dès {min} €" + "N FORMATS" + inline format breakdown.
+## Remaining
 
 ### 6. Customer sheet refinement (mockup 2026-07-25)
 Polish the shipped variant sheet (`dish-sheet.ts`) to match the target:
