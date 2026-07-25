@@ -35,10 +35,13 @@ export class Schedule {
   private readonly _frequency: ScheduleFrequency;
 
   constructor(params: ScheduleParams) {
+    if (params.days.length === 0) {
+      throw new InvalidScheduleError('Schedule must have at least one day');
+    }
     this._id = params.id;
     this._startDate = params.startDate;
     this._frequency = params.frequency ?? new ScheduleFrequency();
-    this.addDays(params.days);
+    this._days.push(...(params.days));
   }
 
   snapshot(): ScheduleSnapshot {
@@ -95,12 +98,5 @@ export class Schedule {
 
   private mondayOf(date: LocalDate): LocalDate {
     return date.plusDays(-Schedule.WEEKDAY_INDEX[date.dayOfWeek()]);
-  }
-
-  private addDays(days: ScheduleDay[]): void {
-    if (days.length === 0) {
-      throw new InvalidScheduleError('Schedule must have at least one day');
-    }
-    this._days.push(...days);
   }
 }
