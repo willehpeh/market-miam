@@ -19,15 +19,14 @@ Design decisions: ADR 0033. This file tracks what's left; the ADR is the source 
 - `dish-sheet.ts` lists the variants under the blurb; `dish-card.ts` shows "dès {min} €" via `priceLabel`.
 - Backend serves variants unchanged — `FindCustomerStorefrontHandler` passes `catalogue.items` whole; DTO reuses `CatalogueViewItem`. *(Pass-through untested — a `dishes[0].variants` assertion in the handler spec would lock it.)*
 
-## Remaining (ordered slices — numbers kept for continuity)
+**Slice 3 — revise path**
+- `ItemRevised` widened to `price` xor `variants`; `ReviseItem` / `reviseItem` / `Item.revise` carry variants (via the `Variants` VO). XOR guard on revise.
+- Read model: projection + both stores carry variants through `reviseItem`, replacing price↔variants (postgres `UPDATE` sets price NULL + jsonb; verified via `test:container`). Flat↔variant toggle locked both directions.
 
-### 3. Revise path
-- `ItemRevised` payload widened like the add event (`price` xor `variants`).
-- `ReviseItem` command + handler + `Catalogue.reviseItem`: carry variants, same three invariants, allow flat↔variant toggle.
-- `ItemRetired` stays flat-only — variant price edits go through revise (whole-array atomic).
+**Slice 4 — HTTP wiring**
+- `POST /catalogue` and `PUT /catalogue/:itemId` accept an optional `variants` array (+ optional `price`); verified end-to-end (POST/PUT → command → projection → GET).
 
-### 4. HTTP wiring
-- `POST /catalogue` and `PUT /catalogue/:itemId` DTOs (`catalogue.controller.ts`): accept `variants`.
+## Remaining
 
 ### 5. Vendor frontend — Signal Form (`add-dish.ts`)
 - "This dish has variants" toggle: swaps the price field ↔ a variant editor.
