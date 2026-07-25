@@ -2,6 +2,7 @@ export type CatalogueDish = {
   itemId: string;
   name: string;
   description: string;
-  price: number;
+  price?: number;
   imageReference: string;
+  variants?: { name: string; description: string; price: number }[];
 };

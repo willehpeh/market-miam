@@ -7,6 +7,7 @@ export type DishViewModel = {
   name: string;
   description: string;
   priceLabel: string;
+  variants?: { name: string; description: string; priceLabel: string }[];
   photo: { cardUrl: string; sheetUrl: string } | null;
 };
 
@@ -49,18 +50,23 @@ export function toViewModel(storefront: CustomerStorefront): StorefrontViewModel
     phone: storefront.phone,
     coverUrl: storefront.coverPhoto ? cloudinaryUrl(storefront.coverPhoto, 'c_fill,w_1200,h_750,q_auto,f_auto') : null,
     socialImageUrl: storefront.coverPhoto ? cloudinaryUrl(storefront.coverPhoto, 'c_fill,w_1200,h_630,q_auto,f_auto') : null,
-    dishes: storefront.dishes.map(dish => ({
-      itemId: dish.itemId,
-      name: dish.name,
-      description: dish.description,
-      priceLabel: formatEuros(dish.price),
-      photo: dish.imageReference
+    dishes: storefront.dishes.map(dish => {
+      const photo = dish.imageReference
         ? {
             cardUrl: cloudinaryUrl(dish.imageReference, 'c_fill,w_800,h_500,q_auto,f_auto'),
             sheetUrl: cloudinaryUrl(dish.imageReference, 'c_fill,w_1200,h_900,q_auto,f_auto'),
           }
-        : null,
-    })),
+        : null;
+      const base = { itemId: dish.itemId, name: dish.name, description: dish.description, photo };
+      if (dish.variants) {
+        return {
+          ...base,
+          priceLabel: `dès ${formatEuros(Math.min(...dish.variants.map(variant => variant.price)))}`,
+          variants: dish.variants.map(variant => ({ name: variant.name, description: variant.description, priceLabel: formatEuros(variant.price) })),
+        };
+      }
+      return { ...base, priceLabel: formatEuros(dish.price ?? 0) };
+    }),
     upcomingMarkets: storefront.upcomingMarkets.map(toMarketViewModel),
   };
 }
