@@ -134,6 +134,22 @@ describe('StorefrontPage', () => {
     expect(text).toContain('12,00 €');
   });
 
+  it('resets the scroll position when a different dish is opened', () => {
+    const fixture = TestBed.createComponent(StorefrontPage);
+    fixture.componentRef.setInput('storefront', ACME);
+    fixture.detectChanges();
+
+    (fixture.nativeElement.querySelector('[data-dish="dish-1"]') as HTMLElement).click();
+    fixture.detectChanges();
+    const scroller = fixture.nativeElement.querySelector('dialog .overflow-y-auto') as HTMLElement;
+    scroller.scrollTop = 200;
+
+    (fixture.nativeElement.querySelector('[data-dish="dish-2"]') as HTMLElement).click();
+    fixture.detectChanges();
+
+    expect(scroller.scrollTop).toBe(0);
+  });
+
   it('closes the dish sheet on a backdrop click, but not when its content is clicked', () => {
     const fixture = TestBed.createComponent(StorefrontPage);
     fixture.componentRef.setInput('storefront', ACME);

@@ -77,7 +77,7 @@ import { DragToDismiss } from '../../core/drag-to-dismiss';
             <h3 class="text-2xl font-bold text-ink">{{ dish.name }}</h3>
             <p class="shrink-0 text-2xl font-bold text-ink">{{ dish.priceLabel }}</p>
           </div>
-          <div class="mt-3 min-h-0 overflow-y-auto">
+          <div #scroller class="mt-3 min-h-0 overflow-y-auto">
             <p class="text-lg text-ink-soft">{{ dish.description }}</p>
             @if (dish.variants; as variants) {
               <p class="field-label mt-5 border-t border-line pt-4">Formats</p>
@@ -106,8 +106,13 @@ export class DishSheet {
   protected readonly dragOffset = signal<number | null>(null);
   protected readonly closing = signal(false);
   private readonly dialog = viewChild.required<ElementRef<HTMLDialogElement>>('dialog');
+  private readonly scroller = viewChild<ElementRef<HTMLElement>>('scroller');
 
   open(dish: DishViewModel): void {
+    const scroller = this.scroller()?.nativeElement;
+    if (scroller) {
+      scroller.scrollTop = 0;
+    }
     this.dish.set(dish);
     this.dialog().nativeElement.showModal();
   }
