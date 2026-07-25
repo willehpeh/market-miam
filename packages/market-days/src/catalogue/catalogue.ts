@@ -74,6 +74,13 @@ export class Catalogue extends Aggregate {
 
   reviseItem(itemId: ItemId, name: ItemName, description: ItemDescription, price?: ItemPrice, variants?: Variants) {
     this.assertHasItem(itemId);
+    const hasPrice = price !== undefined;
+    const hasVariants = variants !== undefined;
+    if (hasPrice === hasVariants) {
+      throw new InvalidDishPricingError(hasPrice
+        ? 'A dish cannot have both a price and variants'
+        : 'A dish must have either a price or variants');
+    }
     const event: ItemRevised = {
       type: 'ItemRevised',
       payload: {

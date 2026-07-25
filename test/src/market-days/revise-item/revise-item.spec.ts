@@ -1,7 +1,7 @@
 import { describe } from 'vitest';
 import { VendorScopedEvents } from '@market-miam/market-days';
 import { InMemoryEventStore } from '@market-miam/event-sourcing';
-import { AddItemToCatalogueHandler, Catalogues, NoSuchItemError, ReviseItem, ReviseItemHandler } from '@market-miam/market-days';
+import { AddItemToCatalogueHandler, Catalogues, InvalidDishPricingError, NoSuchItemError, ReviseItem, ReviseItemHandler } from '@market-miam/market-days';
 import { TestAddItemToCatalogue } from '../add-item-to-catalogue/test-data';
 import { TestReviseItem } from './test-data';
 import { expectVendorScopedEvents } from '../../shared-kernel';
@@ -70,6 +70,31 @@ describe('Revise item', () => {
     await handler.execute(TestReviseItem.valid());
 
     expectVendorScopedEvents(store.newEvents(), 'vendor-id');
+  });
+
+  describe('rejects an invalid pricing shape', () => {
+    it('rejects revising to both a price and variants', async () => {
+      const added = TestAddItemToCatalogue.simple();
+      await new AddItemToCatalogueHandler(catalogues).execute(added);
+
+      const command = new ReviseItem(added.itemId, added.vendorId, 'Revised Name', 'Revised Description', 500, [
+        { name: 'Small', description: '', price: 800 },
+        { name: 'Large', description: '', price: 1200 },
+      ]);
+
+      await expect(handler.execute(command)).rejects.toThrow(InvalidDishPricingError);
+      expect(store.newEvents()).toEqual([expect.objectContaining({ type: 'ItemAddedToCatalogue' })]);
+    });
+
+    it('rejects revising to neither a price nor variants', async () => {
+      const added = TestAddItemToCatalogue.simple();
+      await new AddItemToCatalogueHandler(catalogues).execute(added);
+
+      const command = new ReviseItem(added.itemId, added.vendorId, 'Revised Name', 'Revised Description');
+
+      await expect(handler.execute(command)).rejects.toThrow(InvalidDishPricingError);
+      expect(store.newEvents()).toEqual([expect.objectContaining({ type: 'ItemAddedToCatalogue' })]);
+    });
   });
 
   it('should fail and raise no events if the item does not exist', async () => {
