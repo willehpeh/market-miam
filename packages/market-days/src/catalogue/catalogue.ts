@@ -60,6 +60,17 @@ export class Catalogue extends Aggregate {
           event.payload.variants?.map(variant => new Variant(variant.name, variant.description, variant.price))
         ));
         break;
+      case 'ItemRevised':
+        this.itemWithId(new ItemId(event.payload.itemId)).revise(
+          new ItemName(event.payload.name),
+          new ItemDescription(event.payload.description),
+          new ItemPrice(event.payload.price)
+        );
+        break;
+      case 'ItemPhotoChanged':
+        this.itemWithId(new ItemId(event.payload.itemId))
+          .changePhoto(new ImageReference(event.payload.imageReference));
+        break;
     }
   }
 
@@ -72,15 +83,14 @@ export class Catalogue extends Aggregate {
   }
 
   reviseItem(itemId: ItemId, name: ItemName, description: ItemDescription, price: ItemPrice) {
-    const item = this.itemWithId(itemId);
-    item.revise(name, description, price);
+    this.assertHasItem(itemId);
     const event: ItemRevised = {
       type: 'ItemRevised',
       payload: {
-        itemId: item.itemId().value(),
-        name: item.name().value(),
-        description: item.description().value(),
-        price: item.price().value()
+        itemId: itemId.value(),
+        name: name.value(),
+        description: description.value(),
+        price: price.value()
       },
       version: 1
     };
@@ -88,12 +98,11 @@ export class Catalogue extends Aggregate {
   }
 
   changeItemPhoto(itemId: ItemId, imageReference: ImageReference) {
-    const item = this.itemWithId(itemId);
-    item.changePhoto(imageReference);
+    this.assertHasItem(itemId);
     const event: ItemPhotoChanged = {
       type: 'ItemPhotoChanged',
       payload: {
-        itemId: item.itemId().value(),
+        itemId: itemId.value(),
         imageReference: imageReference.value()
       },
       version: 1
@@ -102,9 +111,7 @@ export class Catalogue extends Aggregate {
   }
 
   retireItem(itemId: ItemId) {
-    if (!this.hasItem(itemId)) {
-      throw new NoSuchItemError(`No item in catalogue with ID ${ itemId.value() }`);
-    }
+    this.assertHasItem(itemId);
     const event: ItemRetired = {
       type: 'ItemRetired',
       payload: {
@@ -124,6 +131,12 @@ export class Catalogue extends Aggregate {
 
   private hasItem(itemId: ItemId): boolean {
     return this._items.some(item => item.hasId(itemId));
+  }
+
+  private assertHasItem(itemId: ItemId): void {
+    if (!this.hasItem(itemId)) {
+      throw new NoSuchItemError(`No item in catalogue with ID ${ itemId.value() }`);
+    }
   }
 }
 
