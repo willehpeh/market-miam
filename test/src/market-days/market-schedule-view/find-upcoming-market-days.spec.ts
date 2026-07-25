@@ -83,6 +83,12 @@ describe('FindUpcomingMarketDays', () => {
     ]);
   });
 
+  it('yields nothing for a schedule starting after the window ends', async () => {
+    await views.recordSchedule(scheduleWith({ startDate: '2024-06-01' }), 'vendor-id');
+
+    expect(await upcoming('vendor-id')).toEqual({ marketDays: [] });
+  });
+
   it('applies every-N-weeks cadence anchored on the start week (Rule A)', async () => {
     await views.recordSchedule(
       scheduleWith({ startDate: '2024-01-01', days: [{ day: 'MON' }], frequency: { weeks: 2 } }),

@@ -4,7 +4,7 @@ import { FindUpcomingMarketDays } from './find-upcoming-market-days';
 import { MarketDayOccurrence, UpcomingMarketDaysView } from './upcoming-market-days-view';
 import { MarketScheduleView } from './market-schedule-view';
 import { MarketScheduleViews } from './market-schedule-views';
-import { Schedule } from '../calendar/schedule/schedule';
+import { Recurrence } from '../calendar/schedule/recurrence';
 
 @QueryHandler(FindUpcomingMarketDays)
 export class FindUpcomingMarketDaysHandler implements IQueryHandler<FindUpcomingMarketDays> {
@@ -24,8 +24,8 @@ export class FindUpcomingMarketDaysHandler implements IQueryHandler<FindUpcoming
 
   private occurrencesOf(schedule: MarketScheduleView, from: LocalDate, to: LocalDate): MarketDayOccurrence[] {
     const absences = schedule.absences ?? [];
-    return Schedule.fromSnapshot(schedule).occurrencesWithin(from, to).map(occurrence => ({
-      scheduleId: occurrence.scheduleId,
+    return Recurrence.fromSnapshot(schedule).occurrencesWithin(from, to).map(occurrence => ({
+      scheduleId: schedule.scheduleId,
       marketId: schedule.market.id,
       date: occurrence.date,
       day: occurrence.day,

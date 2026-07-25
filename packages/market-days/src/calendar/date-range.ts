@@ -8,6 +8,14 @@ export class DateRange {
     }
   }
 
+  dates(): LocalDate[] {
+    return Array.from({ length: this._from.daysUntil(this._to) + 1 }, (_, i) => this._from.plusDays(i));
+  }
+
+  notBefore(start: LocalDate): DateRange {
+    return this._from.isBefore(start) ? new DateRange(start, this._to) : this;
+  }
+
   value(): { from: string; to: string } {
     return { from: this._from.value(), to: this._to.value() };
   }

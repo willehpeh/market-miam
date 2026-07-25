@@ -7,5 +7,4 @@ export * from './date-clock';
 export * from './email';
 export * from './phone-number';
 export * from './image-reference';
-export * from './local-date-range';
 export * from './week';
