@@ -202,11 +202,14 @@ export class AddDish {
 
   private readonly priceCents = computed(() => parseEurosToCents(this.fields().value().price));
   protected readonly priceInvalid = computed(() => this.priceCents() === null);
+  private readonly formatsComplete = computed(() =>
+    this.fields().value().variants.every((v) => v.name.trim() !== '' && parseEurosToCents(v.price) !== null),
+  );
   protected readonly cannotSubmit = computed(() => {
     if (this.uploading() || this.fields().invalid()) {
       return true;
     }
-    return this.mode() === 'single' && this.priceInvalid();
+    return this.mode() === 'single' ? this.priceInvalid() : !this.formatsComplete();
   });
 
   constructor() {
