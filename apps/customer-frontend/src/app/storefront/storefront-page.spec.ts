@@ -99,6 +99,40 @@ describe('StorefrontPage', () => {
     expect((dialog.querySelector('img') as HTMLImageElement).src).toBe('https://cdn.test/sheet/dish-1');
   });
 
+  it('lists the variants in the sheet for a dish with variants', () => {
+    const withVariantDish: StorefrontViewModel = {
+      ...ACME,
+      dishes: [
+        {
+          itemId: 'pizza',
+          name: 'Pizza',
+          description: 'Wood-fired',
+          priceLabel: 'dès 9,00 €',
+          variants: [
+            { name: 'Margherita', description: 'tomato & basil', priceLabel: '9,00 €' },
+            { name: 'Pepperoni', description: 'spicy', priceLabel: '12,00 €' },
+          ],
+          photo: null,
+        },
+      ],
+    };
+    const fixture = TestBed.createComponent(StorefrontPage);
+    fixture.componentRef.setInput('storefront', withVariantDish);
+    fixture.detectChanges();
+
+    (fixture.nativeElement.querySelector('[data-dish="pizza"]') as HTMLElement).click();
+    fixture.detectChanges();
+
+    const dialog = fixture.nativeElement.querySelector('dialog') as HTMLDialogElement;
+    const text = dialog.textContent as string;
+    expect(text).toContain('Margherita');
+    expect(text).toContain('tomato & basil');
+    expect(text).toContain('9,00 €');
+    expect(text).toContain('Pepperoni');
+    expect(text).toContain('spicy');
+    expect(text).toContain('12,00 €');
+  });
+
   it('closes the dish sheet on a backdrop click, but not when its content is clicked', () => {
     const fixture = TestBed.createComponent(StorefrontPage);
     fixture.componentRef.setInput('storefront', ACME);

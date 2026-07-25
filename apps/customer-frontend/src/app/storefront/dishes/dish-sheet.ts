@@ -77,7 +77,24 @@ import { DragToDismiss } from '../../core/drag-to-dismiss';
             <h3 class="text-2xl font-bold text-ink">{{ dish.name }}</h3>
             <p class="shrink-0 text-2xl font-bold text-ink">{{ dish.priceLabel }}</p>
           </div>
-          <p class="mt-3 min-h-0 overflow-y-auto text-lg text-ink-soft">{{ dish.description }}</p>
+          <div class="mt-3 min-h-0 overflow-y-auto">
+            <p class="text-lg text-ink-soft">{{ dish.description }}</p>
+            @if (dish.variants; as variants) {
+              <ul class="mt-4">
+                @for (variant of variants; track variant.name) {
+                  <li class="border-t border-line py-3">
+                    <span class="flex items-baseline justify-between gap-3">
+                      <span class="text-lg font-semibold text-ink">{{ variant.name }}</span>
+                      <span class="shrink-0 text-lg font-semibold text-ink">{{ variant.priceLabel }}</span>
+                    </span>
+                    @if (variant.description) {
+                      <span class="mt-1 block text-base text-ink-soft">{{ variant.description }}</span>
+                    }
+                  </li>
+                }
+              </ul>
+            }
+          </div>
         </div>
       }
     </dialog>
