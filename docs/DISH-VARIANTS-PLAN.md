@@ -2,26 +2,24 @@
 
 Design decisions: ADR 0033. This file tracks what's left; the ADR is the source of truth for *why*.
 
-## Done (domain add-command slice)
+## Done
 
+**Add-command domain slice**
 - `ItemAddedToCatalogue` payload carries `price` **xor** `variants[]` — additive, tolerant reader, `version` stays 1. Old flat events replay unchanged.
 - `AddItemToCatalogue` command + handler + `Catalogue.addItem` — params objects.
-- `Variant` value object (`{name, description, price}`, reuses `ItemName`/`ItemDescription`/`ItemPrice`).
-- Invariants on the add path, each a `DomainError` → 400: **≥2 variants** (`TooFewVariantsError`), **priced-xor-variants** (`InvalidDishPricingError`), **unique names** (`DuplicateVariantNameError`).
+- `Variant` VO + `Variants` collection VO (validates **≥2** and **unique names** in its constructor; re-validates on rehydration).
+- Invariants, each a `DomainError` → 400: `TooFewVariantsError`, `InvalidDishPricingError` (priced-xor-variants), `DuplicateVariantNameError`.
 
-## Remaining (ordered slices)
+**Slice 1 — read model**
+- `CatalogueViewItem`: `price?` + `variants?`. Projection projects variant dishes (skip-guard removed).
+- Migration `0009`: `price` nullable + `variants jsonb`. In-memory + postgres round-trip variants (postgres verified via `test:container`).
 
-### 1. Read model
-- Migration: `catalogue_view_items.price` → nullable; add `variants jsonb` column.
-- `CatalogueViewItem`: `price?`, `variants?`.
-- `catalogue-view.projection.ts`: remove the `ponytail:` guard that skips variant dishes; project the variants array.
-- Both stores (`in-memory-catalogue.views.ts`, `postgres-catalogue.views.ts`): read/write variants.
+**Slice 2 — customer read surface + rendering**
+- `toViewModel`: variant dish → `priceLabel` **"dès {min} €"** + variant list `{name, description, priceLabel}`.
+- `dish-sheet.ts` lists the variants under the blurb; `dish-card.ts` shows "dès {min} €" via `priceLabel`.
+- Backend serves variants unchanged — `FindCustomerStorefrontHandler` passes `catalogue.items` whole; DTO reuses `CatalogueViewItem`. *(Pass-through untested — a `dishes[0].variants` assertion in the handler spec would lock it.)*
 
-### 2. Customer read surface + rendering
-- `DishViewModel`: add variants; `priceLabel` = **"dès {min} €"** for variant dishes (min of variant prices).
-- `toViewModel`: derive the min; map the variant list.
-- `dish-sheet.ts`: render the variant list (`name · price · description`) under the dish blurb.
-- `dish-card.ts`: show "dès {min} €".
+## Remaining (ordered slices — numbers kept for continuity)
 
 ### 3. Revise path
 - `ItemRevised` payload widened like the add event (`price` xor `variants`).
