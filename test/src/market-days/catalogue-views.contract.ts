@@ -87,6 +87,29 @@ export function catalogueViewsContract(name: string, create: () => Store): void 
       });
     });
 
+    it('revises a variant dish back to a single price, clearing the variants', async () => {
+      await store.addItemToCatalogue({
+        itemId: 'pizza',
+        name: 'Pizza',
+        description: 'Wood-fired',
+        imageReference: 'v1/dishes/pizza',
+        variants: [
+          { name: 'Margherita', description: '', price: 900 },
+          { name: 'Pepperoni', description: 'spicy', price: 1200 },
+        ],
+      }, 'v1');
+      await store.reviseItem('pizza', { name: 'Calzone', description: 'Folded', price: 1100 }, 'v1');
+      expect(await store.forVendor('v1')).toEqual({
+        items: [{
+          itemId: 'pizza',
+          name: 'Calzone',
+          description: 'Folded',
+          price: 1100,
+          imageReference: 'v1/dishes/pizza',
+        }],
+      });
+    });
+
     it('changes an item photo, keeping its other fields', async () => {
       await store.addItemToCatalogue(dish(), 'v1');
       await store.updateItemPhoto('item-1', 'v9/dishes/item-1', 'v1');

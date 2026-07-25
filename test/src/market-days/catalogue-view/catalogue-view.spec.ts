@@ -117,6 +117,23 @@ describe('CatalogueView', () => {
     });
   });
 
+  it('should revise a variant dish back to a single price', async () => {
+    const added = TestAddItemToCatalogue.withVariants([
+      { name: 'Small', description: '', price: 800 },
+      { name: 'Large', description: 'extra hungry', price: 1200 },
+    ]);
+    await new AddItemToCatalogueHandler(catalogues).execute(added);
+    await new ReviseItemHandler(catalogues).execute(new ReviseItem(added.itemId, added.vendorId, 'Soup', 'Daily', 500));
+
+    await subscription.poll();
+    const view = await views.forVendor(added.vendorId);
+    expect(view).toEqual({
+      items: [
+        { itemId: added.itemId, name: 'Soup', description: 'Daily', price: 500, imageReference: added.imageReference },
+      ],
+    });
+  });
+
   it('should change the item photo, keeping its other fields', async () => {
     const newItemCommand = TestAddItemToCatalogue.simple();
     await new AddItemToCatalogueHandler(catalogues).execute(newItemCommand);
