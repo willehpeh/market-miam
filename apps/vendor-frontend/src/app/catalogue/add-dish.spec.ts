@@ -161,6 +161,29 @@ describe('AddDish', () => {
     expect(screen.getByRole('button', { name: /ajouter à ma carte/i })).toBeDisabled();
   });
 
+  it('reorders formats with the up and down controls', async () => {
+    const { view } = await renderForm();
+    fireEvent.click(screen.getByRole('button', { name: /plusieurs formats/i }));
+    view.detectChanges();
+
+    const names = screen.getAllByLabelText(/^format$/i) as HTMLInputElement[];
+    fireEvent.input(names[0], { target: { value: 'Petite' } });
+    fireEvent.input(names[1], { target: { value: 'Grande' } });
+    view.detectChanges();
+
+    const ups = screen.getAllByRole('button', { name: /monter le format/i });
+    const downs = screen.getAllByRole('button', { name: /descendre le format/i });
+    expect(ups[0]).toBeDisabled();
+    expect(downs[downs.length - 1]).toBeDisabled();
+
+    fireEvent.click(downs[0]);
+    view.detectChanges();
+
+    const reordered = screen.getAllByLabelText(/^format$/i) as HTMLInputElement[];
+    expect(reordered[0].value).toBe('Grande');
+    expect(reordered[1].value).toBe('Petite');
+  });
+
   it('will not submit a formats dish with duplicate format names', async () => {
     const { view } = await renderForm();
     fireEvent.input(screen.getByLabelText(/nom du plat/i), { target: { value: 'Pizza' } });

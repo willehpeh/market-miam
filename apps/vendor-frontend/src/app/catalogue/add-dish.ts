@@ -165,6 +165,24 @@ const DISH_PREVIEW_TRANSFORMATION = 'c_fill,w_600,h_400,q_auto,f_webp';
                   <div class="rounded-card border border-line bg-surface p-4">
                     <div class="mb-4 flex items-center gap-2">
                       <span class="grid size-7 shrink-0 place-items-center rounded-card bg-brand-soft text-sm font-bold text-ink">{{ $index + 1 }}</span>
+                      <button
+                        type="button"
+                        class="icon-btn"
+                        [attr.aria-label]="'Monter le format ' + ($index + 1)"
+                        [disabled]="$index === 0"
+                        (click)="moveFormatUp($index)"
+                      >
+                        <i class="fa-solid fa-chevron-up" aria-hidden="true"></i>
+                      </button>
+                      <button
+                        type="button"
+                        class="icon-btn"
+                        [attr.aria-label]="'Descendre le format ' + ($index + 1)"
+                        [disabled]="$index === fields.variants().value().length - 1"
+                        (click)="moveFormatDown($index)"
+                      >
+                        <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
+                      </button>
                       <span class="flex-1 truncate font-bold text-ink">{{ format.name }}</span>
                       <button
                         type="button"
@@ -263,6 +281,25 @@ export class AddDish {
 
   protected removeFormat(index: number): void {
     this.model.update((m) => ({ ...m, variants: m.variants.filter((_, i) => i !== index) }));
+  }
+
+  protected moveFormatUp(index: number): void {
+    this.swapFormats(index, index - 1);
+  }
+
+  protected moveFormatDown(index: number): void {
+    this.swapFormats(index, index + 1);
+  }
+
+  private swapFormats(a: number, b: number): void {
+    this.model.update((m) => {
+      if (a < 0 || b < 0 || a >= m.variants.length || b >= m.variants.length) {
+        return m;
+      }
+      const variants = [...m.variants];
+      [variants[a], variants[b]] = [variants[b], variants[a]];
+      return { ...m, variants };
+    });
   }
 
   protected selectPhoto(event: Event): void {
