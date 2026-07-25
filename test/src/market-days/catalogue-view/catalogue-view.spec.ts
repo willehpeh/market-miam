@@ -51,6 +51,32 @@ describe('CatalogueView', () => {
     });
   });
 
+  it('should project a variant dish with its variants and no price', async () => {
+    const command = TestAddItemToCatalogue.withVariants([
+      { name: 'Small', description: '', price: 800 },
+      { name: 'Large', description: 'extra hungry', price: 1200 },
+    ]);
+    await new AddItemToCatalogueHandler(catalogues).execute(command);
+
+    await subscription.poll();
+
+    const view = await views.forVendor(command.vendorId);
+    expect(view).toEqual({
+      items: [
+        {
+          itemId: command.itemId,
+          name: command.name,
+          description: command.description,
+          variants: [
+            { name: 'Small', description: '', price: 800 },
+            { name: 'Large', description: 'extra hungry', price: 1200 },
+          ],
+          imageReference: command.imageReference,
+        },
+      ],
+    });
+  });
+
   it('should revise the item name, description and price, keeping its image', async () => {
     const newItemCommand = TestAddItemToCatalogue.simple();
     await new AddItemToCatalogueHandler(catalogues).execute(newItemCommand);

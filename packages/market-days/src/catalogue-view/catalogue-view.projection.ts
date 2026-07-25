@@ -21,17 +21,12 @@ export class CatalogueViewProjection extends ProjectionFor<CatalogueEvent> {
 
   private async handleItemAdded(event: StoredEvent): Promise<void> {
     const payload = event.payload as ItemAddedToCatalogue['payload'];
-    if (payload.price === undefined) {
-      // ponytail: variant dishes aren't projected yet — the read-model variant slice
-      // (nullable price + variants column) is next; no wired path emits one today.
-      return;
-    }
     return this.store.addItemToCatalogue({
       itemId: payload.itemId,
       name: payload.name,
       description: payload.description,
-      price: payload.price,
-      imageReference: payload.imageReference ?? ''
+      imageReference: payload.imageReference ?? '',
+      ...(payload.variants ? { variants: payload.variants } : { price: payload.price })
     }, vendorIdFrom(event));
   }
 
