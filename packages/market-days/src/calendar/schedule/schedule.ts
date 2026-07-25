@@ -2,7 +2,7 @@ import { ScheduleDay } from './schedule-day';
 import { ScheduleFrequency } from './schedule-frequency';
 import { InvalidScheduleError } from '../errors';
 import { ScheduleId } from './schedule-id';
-import { LocalDate } from '@market-miam/common';
+import { LocalDate, LocalDateRange, Week } from '@market-miam/common';
 
 type ScheduleSnapshot = {
   scheduleId: string;
@@ -27,10 +27,9 @@ type ScheduleParams = {
 };
 
 export class Schedule {
-  private static readonly WEEKDAY_INDEX: Record<string, number> = { MON: 0, TUE: 1, WED: 2, THU: 3, FRI: 4, SAT: 5, SUN: 6 };
-
   private readonly _id: ScheduleId;
   private readonly _startDate: LocalDate;
+  private readonly _firstWeek: Week;
   private readonly _days: ScheduleDay[] = [];
   private readonly _frequency: ScheduleFrequency;
 
@@ -40,8 +39,18 @@ export class Schedule {
     }
     this._id = params.id;
     this._startDate = params.startDate;
+    this._firstWeek = Week.containing(params.startDate);
     this._frequency = params.frequency ?? new ScheduleFrequency();
     this._days.push(...(params.days));
+  }
+
+  static fromSnapshot(snapshot: ScheduleSnapshot): Schedule {
+    return new Schedule({
+      id: new ScheduleId(snapshot.scheduleId),
+      startDate: new LocalDate(snapshot.startDate),
+      days: snapshot.days.map(d => new ScheduleDay(d.day, d.startTime, d.endTime)),
+      frequency: new ScheduleFrequency(snapshot.frequency)
+    });
   }
 
   snapshot(): ScheduleSnapshot {
@@ -57,46 +66,30 @@ export class Schedule {
     return this._id;
   }
 
-  static fromSnapshot(snapshot: ScheduleSnapshot): Schedule {
-    return new Schedule({
-      id: new ScheduleId(snapshot.scheduleId),
-      startDate: new LocalDate(snapshot.startDate),
-      days: snapshot.days.map(d => new ScheduleDay(d.day, d.startTime, d.endTime)),
-      frequency: new ScheduleFrequency(snapshot.frequency),
-    });
-  }
-
   occurrencesWithin(from: LocalDate, to: LocalDate): ScheduleOccurrence[] {
-    const occurrences: ScheduleOccurrence[] = [];
-    for (let date = this.laterOf(from, this._startDate); !to.isBefore(date); date = date.plusDays(1)) {
-      const scheduleDay = this._days.find(day => day.value().day === date.dayOfWeek());
-      if (scheduleDay && this.recursOn(date)) {
-        occurrences.push({ scheduleId: this._id.value(), date: date.value(), ...scheduleDay.value() });
+    const range = new LocalDateRange(from, to).notBefore(this._startDate);
+    return range.dates().reduce<ScheduleOccurrence[]>((occurrences, date) => {
+      const scheduledDay = this.scheduledDayOn(date);
+      if (!scheduledDay) {
+        return occurrences;
       }
-    }
-    return occurrences;
+      occurrences.push({
+        ...scheduledDay.value(),
+        scheduleId: this._id.value(),
+        date: date.value()
+      });
+      return occurrences;
+    }, []);
   }
 
-  private laterOf(a: LocalDate, b: LocalDate): LocalDate {
-    return a.isBefore(b) ? b : a;
+  private scheduledDayOn(date: LocalDate): ScheduleDay | undefined {
+    if (!this.recursInWeekOf(date)) {
+      return undefined;
+    }
+    return this._days.find(day => day.fallsOn(date));
   }
 
-  private recursOn(date: LocalDate): boolean {
-    const frequency = this._frequency.value();
-    if (frequency === 'once') {
-      return this.mondayOf(date).value() === this.mondayOf(this._startDate).value();
-    }
-    if (frequency.weeks === 1) {
-      return true;
-    }
-    let weeks = 0;
-    for (let monday = this.mondayOf(this._startDate); monday.isBefore(this.mondayOf(date)); monday = monday.plusDays(7)) {
-      weeks++;
-    }
-    return weeks % frequency.weeks === 0;
-  }
-
-  private mondayOf(date: LocalDate): LocalDate {
-    return date.plusDays(-Schedule.WEEKDAY_INDEX[date.dayOfWeek()]);
+  private recursInWeekOf(date: LocalDate): boolean {
+    return this._frequency.recursAfter(this._firstWeek.countUntil(Week.containing(date)));
   }
 }

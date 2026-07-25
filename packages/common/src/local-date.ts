@@ -48,6 +48,10 @@ export class LocalDate {
     return new LocalDate(date.toISOString().slice(0, 10));
   }
 
+  daysUntil(other: LocalDate): number {
+    return (other.toDate().getTime() - this.toDate().getTime()) / 86_400_000;
+  }
+
   private toDate(): Date {
     return new Date(`${this._value}T00:00:00Z`);
   }

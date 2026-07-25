@@ -1,5 +1,6 @@
 import { InvalidScheduleError } from '../errors/';
 import { TimeRange } from './time-range';
+import { LocalDate } from '@market-miam/common';
 
 export class ScheduleDay {
   private readonly _day: string;
@@ -20,6 +21,10 @@ export class ScheduleDay {
 
   private isValidDay(day: string) {
     return !['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'].includes(day);
+  }
+
+  fallsOn(date: LocalDate): boolean {
+    return this._day === date.dayOfWeek();
   }
 
   value(): { day: string; startTime?: string; endTime?: string } {

@@ -17,4 +17,8 @@ export class ScheduleFrequency {
   value(): Frequency {
     return this._value === 'once' ? 'once' : { ...this._value };
   }
+
+  recursAfter(weeks: number): boolean {
+    return this._value === 'once' ? weeks === 0 : weeks % this._value.weeks === 0;
+  }
 }
