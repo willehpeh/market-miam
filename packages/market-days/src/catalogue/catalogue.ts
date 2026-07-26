@@ -1,29 +1,25 @@
 import { ItemAddedToCatalogue, ItemRetired, ItemRevised, ItemPhotoChanged, CatalogueEvent } from './events';
 import { Aggregate } from '@market-miam/event-sourcing';
 import { ImageReference } from '@market-miam/common';
-import { Item, ItemDescription, ItemId, ItemName, ItemPrice, Variants } from './item';
+import { Item, ItemDescription, ItemId, ItemName, Pricing } from './item';
 import { NoSuchItemError } from './errors/no-such-item.error';
 import { ItemAlreadyInCatalogueError } from './errors/item-already-in-catalogue.error';
-import { InvalidDishPricingError } from './errors/invalid-dish-pricing.error';
 
 export class Catalogue extends Aggregate {
 
   private _items: Item[] = [];
 
-  addItem(item: { id: ItemId, name: ItemName, description: ItemDescription, price?: ItemPrice, imageReference?: ImageReference, variants?: Variants }) {
+  addItem(item: { id: ItemId, name: ItemName, description: ItemDescription, pricing: Pricing, imageReference?: ImageReference }) {
     if (this.hasItem(item.id)) {
       throw new ItemAlreadyInCatalogueError(`Item already in catalogue with ID ${ item.id.value() }`);
     }
-    this.assertPricedXorVariants(item.price, item.variants);
     const event: ItemAddedToCatalogue = {
       type: 'ItemAddedToCatalogue',
       payload: {
         itemId: item.id.value(),
         name: item.name.value(),
         description: item.description.value(),
-        ...(item.variants
-          ? { variants: item.variants.value() }
-          : { price: item.price!.value() }),
+        ...item.pricing.value(),
         imageReference: item.imageReference?.value()
       },
       version: 1
@@ -38,17 +34,15 @@ export class Catalogue extends Aggregate {
           new ItemId(event.payload.itemId),
           new ItemName(event.payload.name),
           new ItemDescription(event.payload.description),
-          event.payload.variants ? undefined : new ItemPrice(event.payload.price!),
-          event.payload.imageReference ? new ImageReference(event.payload.imageReference) : undefined,
-          event.payload.variants ? Variants.fromInputs(event.payload.variants) : undefined
+          Pricing.from(event.payload),
+          event.payload.imageReference ? new ImageReference(event.payload.imageReference) : undefined
         ));
         break;
       case 'ItemRevised':
         this.itemWithId(new ItemId(event.payload.itemId)).revise(
           new ItemName(event.payload.name),
           new ItemDescription(event.payload.description),
-          event.payload.variants ? undefined : new ItemPrice(event.payload.price!),
-          event.payload.variants ? Variants.fromInputs(event.payload.variants) : undefined
+          Pricing.from(event.payload)
         );
         break;
       case 'ItemPhotoChanged':
@@ -66,16 +60,15 @@ export class Catalogue extends Aggregate {
     return item;
   }
 
-  reviseItem(itemId: ItemId, name: ItemName, description: ItemDescription, price?: ItemPrice, variants?: Variants) {
+  reviseItem(itemId: ItemId, name: ItemName, description: ItemDescription, pricing: Pricing) {
     this.assertHasItem(itemId);
-    this.assertPricedXorVariants(price, variants);
     const event: ItemRevised = {
       type: 'ItemRevised',
       payload: {
         itemId: itemId.value(),
         name: name.value(),
         description: description.value(),
-        ...(variants ? { variants: variants.value() } : { price: price!.value() })
+        ...pricing.value()
       },
       version: 1
     };
@@ -121,16 +114,6 @@ export class Catalogue extends Aggregate {
   private assertHasItem(itemId: ItemId): void {
     if (!this.hasItem(itemId)) {
       throw new NoSuchItemError(`No item in catalogue with ID ${ itemId.value() }`);
-    }
-  }
-
-  private assertPricedXorVariants(price?: ItemPrice, variants?: Variants): void {
-    const hasPrice = price !== undefined;
-    const hasVariants = variants !== undefined;
-    if (hasPrice === hasVariants) {
-      throw new InvalidDishPricingError(hasPrice
-        ? 'A dish cannot have both a price and variants'
-        : 'A dish must have either a price or variants');
     }
   }
 }

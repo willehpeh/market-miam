@@ -2,7 +2,7 @@ import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { ImageReference } from '@market-miam/common';
 import { VendorId } from '@market-miam/shared-kernel';
 import { AddItemToCatalogue } from './add-item-to-catalogue';
-import { Catalogues, ItemDescription, ItemId, ItemName, ItemPrice, Variants } from '../catalogue';
+import { Catalogues, ItemDescription, ItemId, ItemName, Pricing } from '../catalogue';
 
 @CommandHandler(AddItemToCatalogue)
 export class AddItemToCatalogueHandler implements ICommandHandler<AddItemToCatalogue> {
@@ -16,9 +16,8 @@ export class AddItemToCatalogueHandler implements ICommandHandler<AddItemToCatal
       id: new ItemId(request.itemId),
       name: new ItemName(request.name),
       description: new ItemDescription(request.description),
-      price: request.price !== undefined ? new ItemPrice(request.price) : undefined,
+      pricing: Pricing.from({ price: request.price, variants: request.variants }),
       imageReference: request.imageReference ? new ImageReference(request.imageReference) : undefined,
-      variants: request.variants && Variants.fromInputs(request.variants),
     });
 
     await this.catalogues.save(catalogue, vendorId);
