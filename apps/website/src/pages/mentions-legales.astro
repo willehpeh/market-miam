@@ -1,0 +1,186 @@
+---
+import Base from '../layouts/Base.astro';
+
+// ponytail: à remplir avant que la page soit annoncée — coordonnées de l'hébergeur
+// (dénomination, adresse postale) relevées sur render.com. Tant que c'est null, le
+// bloc « Hébergeur » n'est pas rendu, plutôt que d'afficher une mention incomplète.
+const HEBERGEUR: { nom: string; adresse: string } | null = null;
+
+const EDITEUR = {
+  nom: 'William Alexander',
+  adresse: '95 avenue de Verdun, 93230 Romainville, France',
+  siren: '794 431 874',
+  email: 'contact@marketmiam.fr',
+};
+---
+
+<Base
+  title="Market Miam — Mentions légales et confidentialité"
+  description="Mentions légales de Market Miam et politique de confidentialité : qui édite le site, quelles données sont collectées, et comment les faire supprimer."
+>
+  <header class="bar">
+    <a class="wordmark" href="/">
+      <img src="/logo.webp" alt="Market Miam" width="160" height="25" />
+    </a>
+  </header>
+
+  <main class="wrap legal">
+    <h1>Mentions légales</h1>
+
+    <h2>Éditeur du site</h2>
+    <p>
+      {EDITEUR.nom}, entrepreneur individuel sous le régime de la micro-entreprise.<br />
+      {EDITEUR.adresse}<br />
+      SIREN {EDITEUR.siren} — non inscrit au registre du commerce et des sociétés.<br />
+      Contact : <a href={`mailto:${EDITEUR.email}`}>{EDITEUR.email}</a>
+    </p>
+    <p>Directeur de la publication : {EDITEUR.nom}.</p>
+
+    {
+      HEBERGEUR && (
+        <>
+          <h2>Hébergeur</h2>
+          <p>
+            {HEBERGEUR.nom}
+            <br />
+            {HEBERGEUR.adresse}
+          </p>
+        </>
+      )
+    }
+
+    <h1 class="second">Politique de confidentialité</h1>
+
+    <h2>Responsable du traitement</h2>
+    <p>
+      {EDITEUR.nom}, à l’adresse ci-dessus. Pour toute question sur vos données :
+      <a href={`mailto:${EDITEUR.email}`}>{EDITEUR.email}</a>.
+    </p>
+
+    <h2>Données collectées</h2>
+    <p>
+      Le site ne collecte aucune donnée pendant la simple consultation des pages. Les
+      seules données recueillies le sont si vous remplissez le formulaire de candidature
+      à la phase pilote : votre nom, votre adresse mail, et les marchés où vous exercez.
+    </p>
+
+    <h2>Finalité et base légale</h2>
+    <p>
+      Ces informations servent uniquement à vous recontacter au sujet de la phase pilote
+      de Market Miam. Elles ne sont ni revendues, ni transmises à des tiers à des fins
+      commerciales. La base légale est l’intérêt légitime : vous contacter en tant que
+      professionnel au sujet d’un service destiné à votre activité.
+    </p>
+
+    <h2>Durée de conservation</h2>
+    <p>
+      Vos données sont conservées jusqu’à votre demande de suppression, et au plus tard
+      trois ans après notre dernier échange.
+    </p>
+
+    <h2>Sous-traitants</h2>
+    <p>
+      Le formulaire est fourni par <strong>Tally</strong> (Tally BV, Belgique), qui héberge
+      les réponses dans l’Union européenne. Le script du formulaire est chargé sur la page
+      d’accueil : à cette occasion, votre adresse IP est transmise à Tally. Aucune donnée
+      n’est transférée hors de l’Union européenne.
+    </p>
+    <p>
+      Les polices de caractères sont hébergées sur nos propres serveurs : aucune requête
+      n’est faite à un service tiers pour les afficher.
+    </p>
+
+    <h2>Cookies et mesure d’audience</h2>
+    <p>
+      Le site ne dépose aucun cookie de mesure d’audience et n’utilise aucun outil de
+      statistiques. Vous ne verrez donc pas de bandeau de consentement : il n’y a rien à
+      consentir.
+    </p>
+
+    <h2>Vos droits</h2>
+    <p>
+      Conformément au RGPD, vous disposez d’un droit d’accès, de rectification,
+      d’effacement, d’opposition, de limitation et de portabilité sur vos données. Écrivez
+      à <a href={`mailto:${EDITEUR.email}`}>{EDITEUR.email}</a> : la demande est traitée
+      sous un mois. Vous pouvez également introduire une réclamation auprès de la CNIL
+      (<a href="https://www.cnil.fr" rel="noopener">cnil.fr</a>).
+    </p>
+  </main>
+
+  <footer class="foot">
+    <p><a href="/">← Retour à l’accueil</a></p>
+    <p><a href={`mailto:${EDITEUR.email}`}>{EDITEUR.email}</a></p>
+  </footer>
+</Base>
+
+<style>
+  .wrap {
+    max-width: 62rem;
+    margin-inline: auto;
+    padding-inline: 1.5rem;
+  }
+
+  .bar {
+    display: flex;
+    align-items: center;
+    max-width: 62rem;
+    margin-inline: auto;
+    padding: 1.25rem 1.5rem;
+  }
+
+  .wordmark {
+    display: block;
+    line-height: 0;
+  }
+
+  .legal {
+    padding-block: clamp(2rem, 6vw, 3.5rem);
+    max-width: 44rem;
+  }
+
+  .legal h1 {
+    font-size: clamp(1.8rem, 4.5vw, 2.4rem);
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+  }
+
+  .legal h1.second {
+    margin-top: 3.5rem;
+    padding-top: 2.5rem;
+    border-top: 1px solid var(--mm-line);
+  }
+
+  .legal h2 {
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin-top: 2rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .legal p {
+    color: var(--mm-ink-soft);
+    max-width: 58ch;
+    margin-bottom: 0.75rem;
+  }
+
+  .legal a {
+    color: var(--mm-brand-deep);
+  }
+
+  .foot {
+    max-width: 62rem;
+    margin-inline: auto;
+    padding: 2.5rem 1.5rem 3.5rem;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 0.5rem 1.5rem;
+    font-size: 0.9rem;
+    color: var(--mm-muted);
+  }
+
+  .foot a {
+    color: var(--mm-brand-deep);
+  }
+</style>

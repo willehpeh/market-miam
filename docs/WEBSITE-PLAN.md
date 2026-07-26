@@ -37,28 +37,36 @@ Above *Envoyer*:
 
 3 ans = CNIL retention for prospection, counted from last contact. No consent checkbox — submitting a form headed *"Rejoignez les premiers traiteurs"* is unambiguous consent, and B2B prospecting needs no prior opt-in in France. A newsletter would be a new purpose needing its own opt-in.
 
-### 3. Mentions légales + politique de confidentialité
+### 3. Mentions légales + politique de confidentialité — shipped, one gap
 
-Both required, different laws. One page `/mentions-legales`, two headings, linked from footer.
+`/mentions-legales`, two headings, linked from the footer. Owner is a micro-entreprise:
+William Alexander, 95 avenue de Verdun 93230 Romainville, SIREN 794 431 874, no RCS.
 
 | | Law | Trigger |
 |---|---|---|
 | Mentions légales | LCEN 2004-575 art. 6-III | Every French site, data or not |
 | Politique de confidentialité | RGPD art. 13 | Already triggered by the Tally form |
 
-**Blocked on details only the owner has** — do not invent these:
+Still open, and both are on the owner:
 
-- Legal structure (société vs micro-entreprise) — decides which set applies
-- Société: dénomination, forme juridique, capital social, siège social, RCS + ville, SIRET, TVA intracom if applicable, directeur de la publication
-- Micro-entreprise: nom, prénom, adresse déclarée, SIREN, RCS/RM if registered
-- Both: email, téléphone
-- Hébergeur: Render's US entity name + address
+- **Hébergeur block.** LCEN art. 6-III wants the host's name and address. `HEBERGEUR` in
+  the page is `null`, so the block doesn't render rather than show a half-mention — fill it
+  from render.com. This is the one thing keeping the page from being complete.
+- **Téléphone deliberately omitted.** LCEN expects a contact phone number; the owner
+  chose to publish only the email and accept the risk. Not an oversight — don't "fix" it.
+- **TVA unstated.** The page claims nothing about VAT. If the micro-entreprise is under
+  *franchise en base*, the pilot price should read *15 € (TVA non applicable, art. 293 B
+  du CGI)*, not *15 € HT* as `index.astro` currently says. Worth settling before invoicing.
 
-Privacy section should name Tally as processor (Belgium — no third-country transfer).
+Privacy section names Tally (Belgium, no third-country transfer) and discloses that the
+embed script on the home page sends the visitor's IP to Tally.
 
-### 4. Self-host the two fonts
+### 4. Self-host the two fonts — done
 
-`Base.astro` pulls Hanken Grotesk + Space Mono from `fonts.googleapis.com`, sending every visitor's IP to Google before any consent. German case law has gone against exactly this (LG München, 2022); CNIL has been less aggressive. Self-hosting removes the question and drops two DNS lookups off first paint.
+`public/fonts/`, six `woff2` files, `@font-face` in `Base.astro`; the Google Fonts
+stylesheet and both `preconnect`s are gone, so no visitor IP reaches Google before
+consent (LG München 2022 went against exactly that). Provenance and refresh recipe in
+`apps/website/README.md`.
 
 ### 5. Vendor dashboard screenshots
 
