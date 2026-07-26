@@ -64,38 +64,40 @@ import { DragToDismiss } from '../../core/drag-to-dismiss';
       (transitionend)="onSlideEnd($event)"
     >
       @if (dish(); as dish) {
-        <div class="flex h-[80dvh] flex-col p-5 pt-2">
-          <div class="shrink-0" [appDragToDismiss]="dialog" (dragTo)="dragOffset.set($event)" (dismissed)="dismiss()">
-            <div class="-mt-1 mb-2 flex justify-center py-2">
-              <span class="h-1.5 w-10 rounded-pill bg-line-strong"></span>
-            </div>
-            @if (dish.photo; as photo) {
-              <img [src]="photo.sheetUrl" alt="" class="aspect-4/3 w-full rounded-card object-cover" />
-            }
+        <div
+          #scroller
+          class="h-[80dvh] overflow-y-auto overscroll-y-none p-5 pt-2"
+          [appDragToDismiss]="dialog"
+          (dragTo)="dragOffset.set($event)"
+          (dismissed)="dismiss()"
+        >
+          <div class="-mt-1 mb-2 flex cursor-grab justify-center py-2">
+            <span class="h-1.5 w-10 rounded-pill bg-line-strong"></span>
           </div>
-          <div class="mt-5 flex shrink-0 items-baseline justify-between gap-3">
+          @if (dish.photo; as photo) {
+            <img [src]="photo.sheetUrl" alt="" class="aspect-4/3 w-full rounded-card object-cover" />
+          }
+          <div class="mt-5 flex items-baseline justify-between gap-3">
             <h3 class="text-2xl font-bold text-ink">{{ dish.name }}</h3>
             <p class="shrink-0 text-2xl font-bold text-ink">{{ dish.priceLabel }}</p>
           </div>
-          <div #scroller class="mt-3 min-h-0 overflow-y-auto">
-            <p class="text-lg text-ink-soft">{{ dish.description }}</p>
-            @if (dish.variants; as variants) {
-              <p class="field-label mt-5 border-t border-line pt-4">Formats</p>
-              <ul class="mt-1">
-                @for (variant of variants; track variant.name) {
-                  <li class="border-t border-line py-3">
-                    <span class="flex items-baseline justify-between gap-3">
-                      <span class="text-lg font-bold text-ink">{{ variant.name }}</span>
-                      <span class="shrink-0 text-lg font-semibold text-ink">{{ variant.priceLabel }}</span>
-                    </span>
-                    @if (variant.description) {
-                      <span class="mt-1 block text-base text-ink-soft">{{ variant.description }}</span>
-                    }
-                  </li>
-                }
-              </ul>
-            }
-          </div>
+          <p class="mt-3 text-lg text-ink-soft">{{ dish.description }}</p>
+          @if (dish.variants; as variants) {
+            <p class="field-label mt-5 border-t border-line pt-4">Formats</p>
+            <ul class="mt-1">
+              @for (variant of variants; track variant.name) {
+                <li class="border-t border-line py-3">
+                  <span class="flex items-baseline justify-between gap-3">
+                    <span class="text-lg font-bold text-ink">{{ variant.name }}</span>
+                    <span class="shrink-0 text-lg font-semibold text-ink">{{ variant.priceLabel }}</span>
+                  </span>
+                  @if (variant.description) {
+                    <span class="mt-1 block text-base text-ink-soft">{{ variant.description }}</span>
+                  }
+                </li>
+              }
+            </ul>
+          }
         </div>
       }
     </dialog>
@@ -108,13 +110,16 @@ export class DishSheet {
   private readonly dialog = viewChild.required<ElementRef<HTMLDialogElement>>('dialog');
   private readonly scroller = viewChild<ElementRef<HTMLElement>>('scroller');
 
+  // The scroll reset has to come after showModal(): a closed <dialog> is display:none, and CSSOM
+  // ignores a scrollTop write on an element with no layout box — the browser then restores the
+  // previous offset when the sheet is shown again.
   open(dish: DishViewModel): void {
+    this.dish.set(dish);
+    this.dialog().nativeElement.showModal();
     const scroller = this.scroller()?.nativeElement;
     if (scroller) {
       scroller.scrollTop = 0;
     }
-    this.dish.set(dish);
-    this.dialog().nativeElement.showModal();
   }
 
   protected dismissOnBackdrop(event: MouseEvent): void {

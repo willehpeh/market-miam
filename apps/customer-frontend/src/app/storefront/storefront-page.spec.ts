@@ -37,6 +37,21 @@ function drag(type: string, clientY: number): Event {
   return event;
 }
 
+// jsdom's scrollTop is a plain property, so it would accept a write the browser drops. CSSOM
+// ignores scrollTop on an element with no layout box, and a closed <dialog> is display:none.
+function trackScrollTop(scroller: HTMLElement, dialog: HTMLDialogElement): void {
+  let position = 0;
+  Object.defineProperty(scroller, 'scrollTop', {
+    configurable: true,
+    get: () => position,
+    set: (value: number) => {
+      if (dialog.open) {
+        position = value;
+      }
+    },
+  });
+}
+
 describe('StorefrontPage', () => {
   it('renders the vendor name, description and phone for a published storefront', () => {
     const fixture = TestBed.createComponent(StorefrontPage);
@@ -134,15 +149,34 @@ describe('StorefrontPage', () => {
     expect(text).toContain('12,00 €');
   });
 
-  it('resets the scroll position when a different dish is opened', () => {
+  it('scrolls the whole sheet content, photo and title included', () => {
     const fixture = TestBed.createComponent(StorefrontPage);
     fixture.componentRef.setInput('storefront', ACME);
     fixture.detectChanges();
 
     (fixture.nativeElement.querySelector('[data-dish="dish-1"]') as HTMLElement).click();
     fixture.detectChanges();
+
     const scroller = fixture.nativeElement.querySelector('dialog .overflow-y-auto') as HTMLElement;
+    expect(scroller.querySelector('img')).not.toBeNull();
+    expect(scroller.textContent).toContain('Bœuf bourguignon');
+    expect(scroller.textContent).toContain('13,00 €');
+    expect(scroller.textContent).toContain('Mijoté 7 heures');
+  });
+
+  it('resets the scroll position when a dish is opened, once the sheet is on screen', () => {
+    const fixture = TestBed.createComponent(StorefrontPage);
+    fixture.componentRef.setInput('storefront', ACME);
+    fixture.detectChanges();
+
+    (fixture.nativeElement.querySelector('[data-dish="dish-1"]') as HTMLElement).click();
+    fixture.detectChanges();
+    const dialog = fixture.nativeElement.querySelector('dialog') as HTMLDialogElement;
+    const scroller = fixture.nativeElement.querySelector('dialog .overflow-y-auto') as HTMLElement;
+    trackScrollTop(scroller, dialog);
     scroller.scrollTop = 200;
+    dialog.click();
+    fixture.detectChanges();
 
     (fixture.nativeElement.querySelector('[data-dish="dish-2"]') as HTMLElement).click();
     fixture.detectChanges();
@@ -170,7 +204,7 @@ describe('StorefrontPage', () => {
     expect(dialog.open).toBe(false);
   });
 
-  it('dismisses the dish sheet when the handle is dragged past the threshold, but snaps back on a small drag', () => {
+  it('dismisses the dish sheet when its content is dragged past the threshold, but snaps back on a small drag', () => {
     const fixture = TestBed.createComponent(StorefrontPage);
     fixture.componentRef.setInput('storefront', ACME);
     fixture.detectChanges();
@@ -180,19 +214,41 @@ describe('StorefrontPage', () => {
 
     const dialog = fixture.nativeElement.querySelector('dialog') as HTMLDialogElement;
     Object.defineProperty(dialog, 'offsetHeight', { value: 400, configurable: true });
-    const handle = (dialog.querySelector('div') as HTMLElement).firstElementChild as HTMLElement;
+    const title = dialog.querySelector('h3') as HTMLElement;
 
-    handle.dispatchEvent(drag('pointerdown', 100));
-    handle.dispatchEvent(drag('pointermove', 120));
-    handle.dispatchEvent(drag('pointerup', 120));
+    title.dispatchEvent(drag('pointerdown', 100));
+    title.dispatchEvent(drag('pointermove', 120));
+    title.dispatchEvent(drag('pointerup', 120));
     fixture.detectChanges();
     expect(dialog.open).toBe(true);
 
-    handle.dispatchEvent(drag('pointerdown', 100));
-    handle.dispatchEvent(drag('pointermove', 400));
-    handle.dispatchEvent(drag('pointerup', 400));
+    title.dispatchEvent(drag('pointerdown', 100));
+    title.dispatchEvent(drag('pointermove', 400));
+    title.dispatchEvent(drag('pointerup', 400));
     fixture.detectChanges();
     expect(dialog.open).toBe(false);
+  });
+
+  it('scrolls instead of dragging when the sheet content is not at the top', () => {
+    const fixture = TestBed.createComponent(StorefrontPage);
+    fixture.componentRef.setInput('storefront', ACME);
+    fixture.detectChanges();
+
+    (fixture.nativeElement.querySelector('[data-dish="dish-1"]') as HTMLElement).click();
+    fixture.detectChanges();
+
+    const dialog = fixture.nativeElement.querySelector('dialog') as HTMLDialogElement;
+    Object.defineProperty(dialog, 'offsetHeight', { value: 400, configurable: true });
+    const scroller = dialog.querySelector('.overflow-y-auto') as HTMLElement;
+    scroller.scrollTop = 200;
+
+    scroller.dispatchEvent(drag('pointerdown', 100));
+    scroller.dispatchEvent(drag('pointermove', 400));
+    scroller.dispatchEvent(drag('pointerup', 400));
+    fixture.detectChanges();
+
+    expect(dialog.open).toBe(true);
+    expect(dialog.style.transform).toBe('');
   });
 
   it('shows a coming-soon message with the title for an unpublished storefront', () => {
