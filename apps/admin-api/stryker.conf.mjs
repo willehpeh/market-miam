@@ -15,6 +15,7 @@ export default {
   jsonReporter: { fileName: 'reports/mutation/admin-api.json' },
   tempDirName: '.stryker-tmp/admin-api',
   concurrency: 2,
+  ignorePatterns: ['/.stryker-tmp', '/coverage', '/dist', '/.nx', '/.angular', '/reports'],
   mutate: [
     'apps/admin-api/src/**/*.ts',
     '!apps/admin-api/src/**/*.spec.ts',

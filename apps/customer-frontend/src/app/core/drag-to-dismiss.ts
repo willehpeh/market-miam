@@ -20,6 +20,8 @@ const DISMISS_RATIO = 0.1;
   },
 })
 export class DragToDismiss {
+  // Stryker disable next-line all: ngtsc statically analyses this options object,
+  // so wrapping it in a mutation switch fails the AOT build with NG1010.
   readonly sheet = input.required<HTMLDialogElement>({ alias: 'appDragToDismiss' });
   readonly dragTo = output<number | null>();
   readonly dismissed = output<void>();
