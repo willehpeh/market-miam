@@ -37,29 +37,32 @@ Above *Envoyer*:
 
 3 ans = CNIL retention for prospection, counted from last contact. No consent checkbox — submitting a form headed *"Rejoignez les premiers traiteurs"* is unambiguous consent, and B2B prospecting needs no prior opt-in in France. A newsletter would be a new purpose needing its own opt-in.
 
-### 3. Mentions légales + politique de confidentialité — shipped, one gap
+### 3. Mentions légales + politique de confidentialité — done
 
-`/mentions-legales`, two headings, linked from the footer. Owner is a micro-entreprise:
-William Alexander, 95 avenue de Verdun 93230 Romainville, SIREN 794 431 874, no RCS.
+`/mentions-legales`, two headings, linked from the footer.
 
 | | Law | Trigger |
 |---|---|---|
 | Mentions légales | LCEN 2004-575 art. 6-III | Every French site, data or not |
 | Politique de confidentialité | RGPD art. 13 | Already triggered by the Tally form |
 
-Still open, and both are on the owner:
+Éditeur: William Alexander, micro-entreprise, 95 avenue de Verdun 93230 Romainville,
+SIREN 794 431 874, no RCS, TVA FR 08 794 431 874. Hébergeur: Render Services, Inc.,
+525 Brannan Street Suite 300, San Francisco CA 94107.
 
-- **Hébergeur block.** LCEN art. 6-III wants the host's name and address. `HEBERGEUR` in
-  the page is `null`, so the block doesn't render rather than show a half-mention — fill it
-  from render.com. This is the one thing keeping the page from being complete.
 - **Téléphone deliberately omitted.** LCEN expects a contact phone number; the owner
   chose to publish only the email and accept the risk. Not an oversight — don't "fix" it.
-- **TVA unstated.** The page claims nothing about VAT. If the micro-entreprise is under
-  *franchise en base*, the pilot price should read *15 € (TVA non applicable, art. 293 B
-  du CGI)*, not *15 € HT* as `index.astro` currently says. Worth settling before invoicing.
+- **VAT-registered**, so `15 € HT` in `index.astro` is correct as written.
+- **Render is a US company**, so the privacy section says plainly that connection data
+  (IP) is processed outside the EU for page delivery. Only the *form responses* are
+  claimed to stay in the EU — that's Tally, Belgium. Don't restore the blanket
+  "aucune donnée ne quitte l'UE" line; it was wrong once the host was named.
 
-Privacy section names Tally (Belgium, no third-country transfer) and discloses that the
-embed script on the home page sends the visitor's IP to Tally.
+Privacy section also discloses that the Tally embed script on the home page sends the
+visitor's IP to Tally on load, form or no form.
+
+Render's coordinates came from a Google AI summary, not Render's own legal page — worth
+one confirmation against render.com before this matters.
 
 ### 4. Self-host the two fonts — done
 

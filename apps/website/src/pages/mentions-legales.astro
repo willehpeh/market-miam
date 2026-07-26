@@ -1,15 +1,17 @@
 ---
 import Base from '../layouts/Base.astro';
 
-// ponytail: à remplir avant que la page soit annoncée — coordonnées de l'hébergeur
-// (dénomination, adresse postale) relevées sur render.com. Tant que c'est null, le
-// bloc « Hébergeur » n'est pas rendu, plutôt que d'afficher une mention incomplète.
-const HEBERGEUR: { nom: string; adresse: string } | null = null;
+const HEBERGEUR = {
+  nom: 'Render Services, Inc.',
+  adresse: '525 Brannan Street, Suite 300, San Francisco, CA 94107, États-Unis',
+  telephone: '+1 415 319 8186',
+};
 
 const EDITEUR = {
   nom: 'William Alexander',
   adresse: '95 avenue de Verdun, 93230 Romainville, France',
   siren: '794 431 874',
+  tva: 'FR 08 794 431 874',
   email: 'contact@marketmiam.fr',
 };
 ---
@@ -32,22 +34,17 @@ const EDITEUR = {
       {EDITEUR.nom}, entrepreneur individuel sous le régime de la micro-entreprise.<br />
       {EDITEUR.adresse}<br />
       SIREN {EDITEUR.siren} — non inscrit au registre du commerce et des sociétés.<br />
+      N° de TVA intracommunautaire : {EDITEUR.tva}<br />
       Contact : <a href={`mailto:${EDITEUR.email}`}>{EDITEUR.email}</a>
     </p>
     <p>Directeur de la publication : {EDITEUR.nom}.</p>
 
-    {
-      HEBERGEUR && (
-        <>
-          <h2>Hébergeur</h2>
-          <p>
-            {HEBERGEUR.nom}
-            <br />
-            {HEBERGEUR.adresse}
-          </p>
-        </>
-      )
-    }
+    <h2>Hébergeur</h2>
+    <p>
+      {HEBERGEUR.nom}<br />
+      {HEBERGEUR.adresse}<br />
+      {HEBERGEUR.telephone}
+    </p>
 
     <h1 class="second">Politique de confidentialité</h1>
 
@@ -82,12 +79,18 @@ const EDITEUR = {
     <p>
       Le formulaire est fourni par <strong>Tally</strong> (Tally BV, Belgique), qui héberge
       les réponses dans l’Union européenne. Le script du formulaire est chargé sur la page
-      d’accueil : à cette occasion, votre adresse IP est transmise à Tally. Aucune donnée
-      n’est transférée hors de l’Union européenne.
+      d’accueil : à cette occasion, votre adresse IP est transmise à Tally. Vos réponses au
+      formulaire ne quittent pas l’Union européenne.
     </p>
     <p>
-      Les polices de caractères sont hébergées sur nos propres serveurs : aucune requête
-      n’est faite à un service tiers pour les afficher.
+      Le site est hébergé par <strong>{HEBERGEUR.nom}</strong>, société établie aux
+      États-Unis. À ce titre, les données techniques de connexion — dont votre adresse IP —
+      sont traitées par un prestataire situé hors de l’Union européenne pour la seule
+      distribution des pages.
+    </p>
+    <p>
+      Les polices de caractères sont servies depuis le site lui-même : aucune requête n’est
+      faite à un service tiers, Google Fonts compris, pour les afficher.
     </p>
 
     <h2>Cookies et mesure d’audience</h2>
