@@ -213,11 +213,55 @@ This is the identical equivalence class as the `SHREDDED` constant in
 `packages/`. No assertion can kill these; the only way to change the number is
 to exclude them.
 
-Once those are set aside, the genuine state-file gaps are the reducers nothing
-dispatches — e.g. `notifications.state.ts:19`, where the `ErrorDismissed`
-reducer's `ArrowFunction` mutates to `() => undefined` and survives, meaning no
-test dispatches `ErrorDismissed` and asserts the message is cleared. That is a
-real, cheap fix, and the pattern repeats across the other state files.
+Splitting the 59 state-file survivors by Stryker's own `static` flag (evaluated
+once at import vs. per test) puts a number on it: **52 are static (88%) and only
+7 are genuine dynamic reducer-branch gaps.** Of the 52, 38 are the action-type
+strings above and 11 are `initialState`/`createFeature` object collapses that
+survive because no test reads store state *before* dispatching anything — every
+spec calls `facade.load()` first.
+
+The 7 real gaps are reducers exercised through a real store round-trip where the
+test only checks the happy-path aggregate:
+
+- `notifications.state.ts:19` — the `ErrorDismissed` handler mutates to `() => undefined` and survives: nothing dispatches it and asserts the message cleared.
+- `auth.state.ts:23-24` — the `AuthLoadingChanged`/`LoginSuccess` handlers collapse to `{}` and survive, masked by `selectAuthStatus` (`:35`) treating `undefined` the same as a real falsy value, so downstream guard behaviour is identical either way. No test reads `selectUserId`/`selectIsLoading` directly.
+- `catalogue.state.ts:71,76` and `market-schedule.state.ts:58` — the `state.items.map(item => item.itemId === id ? ... : item)` ternaries are only ever exercised with **single-item fixtures**, so forcing the condition true changes nothing.
+- `catalogue.state.ts:54-55` — the `BeginDish` reducer's reset. This independently reproduces **finding 1.2 of `docs/VENDOR-FRONTEND-TEST-AUDIT.md`**, which proved the same line by hand-mutation; Stryker also shows zero coverage on the finer-grained mutants there, because `StoreCatalogueFacade.beginDish()` (`store.catalogue.facade.ts:21-23`) is never invoked through the real store by any spec.
+
+**The highest real-world risk in this app is `dashboard.ts:157`.**
+`allDone = computed(() => this.doneCount() === this.steps().length)` forced to
+`true` survives. `allDone()` gates the `@if` at `:103` that reveals the "Publier"
+button — so a vendor who has completed nothing would be offered a way to publish
+an incomplete storefront. Two tests *do* assert the button is absent, but neither
+constrains this: `drops the setup steps once the vitrine is published` and
+`explains the URL is pending...` both use `renderReady()`, where `allDone` is
+already true. The one test that matters — `leaves every setup step to do for a
+vendor who has filled nothing in` — asserts only what is *present* (the three
+step links, `aria-valuenow=0`). **Fix:** add
+`expect(screen.queryByRole('button', { name: /publier/i })).not.toBeInTheDocument()`
+to that test.
+
+**Both big forms can have their required-field validation deleted with all 176
+tests green.** `add-schedule.ts:191-194` — the whole
+`(path) => { required(path.name); required(path.town); }` block collapses to `{}`
+and survives, because every existing test that gets close is already held
+invalid by a *different* gate (blank postal code, no day selected). Same at
+`add-dish.ts:257-259`: the closest test ("will not submit without a name and a
+price") blanks both fields at once, so price-invalidity alone keeps the button
+disabled. **Fix:** one test each isolating "town filled, name blank" and "price
+valid, name blank", asserting submit stays disabled. Related: `add-schedule.ts:205`
+— the `^` and `$` anchors on `/^\d{5}$/` can both be dropped and survive, because
+the only invalid postal code tested is `'69'` (too short); add `'69008x'`.
+
+**Legitimately unreachable, not worth chasing:** `add-dish.ts:299`'s
+`swapFormats` boundary guards and `add-schedule.ts:243`'s defensive
+`if (cannotSubmit()) return` cannot be hit through the suite's role/label
+interaction style at all — the buttons carry `[disabled]`, and jsdom (like real
+browsers) does not dispatch `click` on a disabled button. Likewise
+`add-schedule.ts:8-14`'s `DAYS[].short` field is decorative text while the
+accessible name comes from `aria-label`, so Testing Library queries can never see
+it. And `dashboard.ts:210` mutates a truthy `present.length` check to
+`present.length >= 1` — mathematically identical for a non-negative integer.
 
 **`onboarding/welcome.ts` at 0% is a false alarm.** All 13 survivors are the
 `features` array (`:36`) and the `icon`/`title`/`detail` strings of its three
@@ -241,10 +285,15 @@ components, not spread evenly.
 **All 10 timeouts here are genuine infinite loops** — see §3; they are the
 `createEffect(..., { dispatch: false })` flags.
 
-**`NoCoverage` (34)** is small and mostly thin DI adapters: `auth0.auth.ts` (7,
-the Auth0 SDK wrapper), `store.notifications.facade.ts` (1),
-`store.auth.facade.ts` (1), `cover-photo-transformation.ts` (1). These are
-wiring rather than logic; not worth dedicated specs.
+**`NoCoverage` (34)** is small and mostly thin DI wiring, with two exceptions
+worth acting on:
+
+- `auth0.auth.ts` (7 mutants, the whole file) — `login()`, `logout()` and `isLoading$()` are pure delegation to `@auth0/auth0-angular` and a test would only prove a mock was called. But `userId$()`'s `user?.sub ?? null` mapping (`:23-25`) is the one line with real logic — the Auth0 user shape to `userId | null` conversion, including the logged-out case. Cheap to cover with a stub `AuthService`.
+- `cover-photo-transformation.ts:9` — a single exported constant whose own comment warns it must stay byte-identical to a backend constant or "the first photo renders broken". Untested cross-service contract with silent-drift risk; worth one pinning assertion, or better, asserting the rendered cover-photo `<img src>` contains it.
+
+The rest (`store.notifications.facade.ts:12`, `store.auth.facade.ts:12`,
+`store.market-schedule.facade.ts:32`) are facade methods never invoked through the
+real store — the same shape as the `BeginDish` gap above.
 
 ### 2.5 `apps/customer-frontend` — 62.81%, the weakest target
 
@@ -319,7 +368,28 @@ real signal is that the app has 2 tests, matching its size.
 
 ---
 
-## 3. Timeouts: 3 genuine infinite loops, 21 false positives
+## 3. Limitation: Stryker does not see inside Angular templates
+
+**A 100% score on an Angular component does not mean the component is fully
+verified.** Stryker's mutators work on the TypeScript AST and do not decompose
+Angular's `@if` / `@else` / `@for` control flow inside an inline `template:`
+string literal.
+
+Measured on `catalogue-list.ts`: the template occupies lines 13-93, and Stryker
+placed mutants only on line 8 and lines 99-121 — **not one mutant inside the
+template**. The file scores 100% (17/17 killed) on its TypeScript logic alone.
+
+This matters concretely: **finding 1.1 of `docs/VENDOR-FRONTEND-TEST-AUDIT.md`**
+— a vacuous assertion in `catalogue-list.spec.ts:97` where the audit deleted a
+template `@if/@else` placeholder block by hand and the suite stayed green — is
+**invisible to this run**. Mutation testing neither confirms nor contradicts it.
+
+So the manual hand-mutation technique the audits use remains necessary for
+template branching. Read this report as covering computed properties, reducers,
+effects, guards, resolvers and plain TypeScript logic — not Angular template
+structure. The same caveat applies to the customer-frontend numbers.
+
+## 4. Timeouts: 3 genuine infinite loops, 21 false positives
 
 Stryker counts `Timeout` as killed, so these don't hurt the score — but the
 distinction matters, because a genuine timeout means a loop guard with **zero
@@ -352,7 +422,7 @@ entire suite for each one — and this run had two Stryker processes competing f
 
 ---
 
-## 4. Recommendations, in priority order
+## 5. Recommendations, in priority order
 
 ### R1. Make the mutation scope match the test scope (highest value)
 
@@ -403,25 +473,38 @@ will keep producing weak tests:
 
 ### R4. Highest-value new tests, ranked by mutants-killed-per-effort × risk
 
-1. `customer-frontend` — assert the metadata wiring in `storefront-page.spec.ts` (also fixes `request-url.ts`).
-2. `customer-frontend` — a routing test for `app.routes.ts`; replace the vacuous smoke test in `app.spec.ts` with `RouterTestingHarness`.
+The first three are one-line changes guarding real user-visible failures.
+
+1. **`vendor-frontend` — assert the publish CTA is absent when setup is incomplete** (`dashboard.spec.ts`, the "leaves every setup step to do" test). One line; guards a vendor being able to publish an incomplete storefront.
+2. `customer-frontend` — assert the metadata wiring in `storefront-page.spec.ts` (also fixes 5 of `request-url.ts`'s 6 survivors).
 3. `customer-frontend` — add the 6 missing tag assertions to `storefront-metadata.spec.ts`. Assertion-only, ~20 mutants.
-4. `admin-api` — a spec for `management-api-auth0-users.ts`, starting with the pagination loop. 41 mutants and a completely unverified external integration.
-5. `packages` — a `catalogue.spec.ts` asserting aggregate state after revise/change-photo.
-6. `customer-frontend` — one `upcomingMarkets` fixture in `storefront-view-model.spec.ts`, killing the weekday/month/hours cluster.
-7. `customer-frontend` — stub `matchMedia` so `dish-sheet.ts`'s real dismissal path runs (~12 mutants).
-8. `customer-frontend` — a direct `drag-to-dismiss.spec.ts` covering the ratio boundary, the two-phase slop threshold, the upward-swipe cancel, and `pointercancel`.
-9. `api` — cover `master-key.ts`'s `fromSecretFile()`, and `PUT /catalogue/:itemId/photo`.
-10. `vendor-frontend` — dispatch each unexercised reducer action and assert the resulting state, starting with `ErrorDismissed` in `notifications.state.ts`. Cheap and repeats across all five state files.
-11. `packages` — a `development-token-verifier.spec.ts`; boundary dates in `find-upcoming-market-days.spec.ts`.
+4. **`vendor-frontend` — one test each isolating blank name in `add-schedule.spec.ts` and `add-dish.spec.ts`.** Both forms' required-field validation is currently deletable with the suite green.
+5. `customer-frontend` — a routing test for `app.routes.ts`; replace the vacuous smoke test in `app.spec.ts` with `RouterTestingHarness`.
+6. `admin-api` — a spec for `management-api-auth0-users.ts`, starting with the pagination loop. 41 mutants and a completely unverified external integration.
+7. `packages` — a `catalogue.spec.ts` asserting aggregate state after revise/change-photo.
+8. `vendor-frontend` — the `BeginDish` reducer reset (`catalogue.state.ts:54`), which is also the open finding 1.2 in the vendor audit; then the other unexercised reducer actions, starting with `ErrorDismissed`.
+9. `customer-frontend` — one `upcomingMarkets` fixture in `storefront-view-model.spec.ts`, killing the weekday/month/hours cluster.
+10. `customer-frontend` — stub `matchMedia` so `dish-sheet.ts`'s real dismissal path runs (~12 mutants).
+11. `vendor-frontend` — postal-code regex anchors (`'69008x'`), and a pinning assertion on `cover-photo-transformation.ts`'s cross-service constant.
+12. `customer-frontend` — a direct `drag-to-dismiss.spec.ts` covering the ratio boundary, the two-phase slop threshold, the upward-swipe cancel, and `pointercancel`.
+13. `api` — cover `master-key.ts`'s `fromSecretFile()`, and `PUT /catalogue/:itemId/photo`.
+14. `packages` — a `development-token-verifier.spec.ts`; boundary dates in `find-upcoming-market-days.spec.ts`.
 
 ### R5. Don't target 100%
 
 Realistic ceilings, given the survivors that are equivalent by design:
-`packages` ~95%, `apps/api` ~88-90%, `vendor-frontend` ~85% (≈59 unkillable NgRx
-action strings plus `welcome.ts`'s static copy), `customer-frontend` ~85% (≈15-20
-of its 106 survivors are legitimately unkillable). Setting thresholds above those
-will generate busywork.
+`packages` ~95%, `apps/api` ~88-90%, `vendor-frontend` ~85-90% (52 of its 59
+state-file survivors are static/structural, plus `welcome.ts`'s copy and the
+unreachable disabled-button guards), `customer-frontend` ~85% (≈15-20 of its 106
+survivors are legitimately unkillable). Setting thresholds above those will
+generate busywork.
+
+Read `vendor-frontend`'s 75.13% in that light: roughly half its survivors are
+structurally inert, and the files that assert behaviour properly —
+`catalogue-list.ts`, `http.catalogue.ts`, `http.market-schedules.ts`,
+`cloudinary-url.pipe.ts`, `layout.ts`, `landing.ts`,
+`cloudinary.photo-uploads.ts` — all score 100%. It is not the case that a quarter
+of real behaviour is unverified.
 
 Note the ranking of targets by *score* is not the ranking by *risk*.
 `admin-api` scores 13.43% but is a small internal tool; `customer-frontend`
@@ -436,7 +519,7 @@ nothing calls them at all.
 
 ---
 
-## 5. Notes on running this
+## 6. Notes on running this
 
 - **Runtime.** The full sweep is ~2h15m of wall clock on 4 cores, dominated by the two Angular apps. `packages` (19m) and `api` (13m) are cheap enough for regular use; the frontends are not.
 - **Parallel runs need `ignorePatterns`.** Stryker only auto-ignores its own `tempDirName`, so concurrent runs copy each other's sandboxes and race with cleanup (`ENOENT` on `copyfile`). Every config now sets `ignorePatterns: ['/.stryker-tmp', '/coverage', '/dist', '/.nx', '/.angular', '/reports']`, which also cut the sandbox from 3788 files to 751.
