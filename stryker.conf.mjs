@@ -8,7 +8,10 @@ export default {
     configFile: 'test/vitest.config.mts',
   },
   coverageAnalysis: 'perTest',
-  reporters: ['html', 'clear-text', 'progress'],
+  reporters: ['html', 'clear-text', 'progress', 'json'],
+  htmlReporter: { fileName: 'reports/mutation/packages.html' },
+  jsonReporter: { fileName: 'reports/mutation/packages.json' },
+  tempDirName: '.stryker-tmp/packages',
   concurrency: 8,
   // Mutate the production code under packages/. The specs that kill these
   // mutants live in the `test` project, not under packages/, so there are no
