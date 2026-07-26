@@ -1,37 +1,424 @@
 ---
 import Base from '../layouts/Base.astro';
+
+// ponytail: deux valeurs à changer avant mise en ligne.
+const TALLY_FORM_ID = 'aQX9NB';
+const PRIX_MENSUEL = '15€HT';
+
+const cta = {
+  'data-tally-open': TALLY_FORM_ID,
+  'data-tally-layout': 'modal',
+  'data-tally-width': '480',
+  'data-tally-emoji-text': '👋',
+  'data-tally-emoji-animation': 'wave',
+};
+
+const aujourdhui = [
+  {
+    titre: 'Une page à votre nom',
+    texte:
+      'chez-vous.marketmiam.fr — votre photo, vos couleurs, votre présentation. Une adresse que vous donnez à vos clients, qui ne disparaît pas.',
+  },
+  {
+    titre: 'Votre catalogue',
+    texte:
+      'Tous vos plats, saisis une bonne fois pour toutes. Vous les réutilisez d’un marché à l’autre au lieu de tout retaper à chaque fois.',
+  },
+  {
+    titre: 'Vos marchés',
+    texte:
+      'Quels marchés, quels jours, quels horaires. Vos habitués savent enfin où vous trouver cette semaine — sans avoir à vous le demander.',
+  },
+];
+
+const bientot = [
+  'Le menu du jour, publié marché par marché',
+  'Après chaque marché, un geste par plat : ça a bien marché, ça n’a pas marché, il n\'y en avait plus',
+  'Au fil des semaines, vos réponses deviennent des repères : quoi apporter, et en quelle quantité',
+];
 ---
 
-<Base title="Market Miam — Bientôt disponible">
+<Base title="Market Miam — l’adresse de votre stand">
+  <header class="bar">
+    <a class="wordmark" href="/">
+      <img src="/logo.webp" alt="Market Miam" width="160" height="25" />
+    </a>
+    <button class="btn btn-ghost" {...cta}>Rejoindre le pilote</button>
+  </header>
+
   <main>
-    <h1>Market Miam</h1>
-    <p>Votre étal, en ligne.</p>
-    <p class="soon">Bientôt disponible</p>
+    <section class="hero">
+      <div>
+        <p class="eyebrow">Pour les traiteurs de marché</p>
+        <h1>Arrêtez de poster votre menu en story à 6&nbsp;h du matin.</h1>
+        <p class="lede">
+          Market Miam donne à chaque traiteur sa propre page : votre catalogue, vos marchés,
+          vos horaires. Vos habitués la consultent quand ils veulent — elle ne s’efface pas
+          au bout de 24&nbsp;heures.
+        </p>
+        <div class="hero-actions">
+          <button class="btn btn-solid" {...cta}>Rejoindre le pilote</button>
+          <p class="note">Gratuit pendant la phase pilote. Sans engagement.</p>
+        </div>
+      </div>
+      <figure class="shot">
+        <img
+          src="/storefront-demo.webp"
+          alt="Exemple de page vendeur Market Miam : photo de stand, nom du traiteur et carte du jour"
+          width="900"
+          height="1180"
+        />
+      </figure>
+    </section>
+
+    <section class="band">
+      <div class="wrap">
+        <h2>Vous vendez sur les marchés. Votre communication, elle, tient du bricolage.</h2>
+        <ul class="problems">
+          <li>
+            <strong>Votre menu disparaît en une journée.</strong>
+            Une story, un post, un message dans un groupe — et le lendemain il n’en reste rien.
+          </li>
+          <li>
+            <strong>Vos clients ne savent pas où vous êtes.</strong>
+            Vous tournez sur trois ou quatre marchés ; eux doivent deviner, ou vous écrire.
+          </li>
+          <li>
+            <strong>Vous préparez à l’aveugle.</strong>
+            Trop, et vous jetez. Pas assez, et vous refusez des clients.
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="wrap section">
+      <p class="eyebrow">Disponible aujourd’hui</p>
+      <h2>Ce que vous avez dès l’inscription</h2>
+      <div class="cards">
+        {
+          aujourdhui.map((item) => (
+            <article class="card">
+              <h3>{item.titre}</h3>
+              <p>{item.texte}</p>
+            </article>
+          ))
+        }
+      </div>
+    </section>
+
+    <section class="wrap section">
+      <p class="eyebrow">En cours de développement</p>
+      <h2>Ce qui arrive ensuite</h2>
+      <p class="lede lede-tight">
+        De quoi ne plus préparer à l’aveugle : savoir quoi apporter, et combien. Ce n’est
+        pas encore en ligne, et nous préférons vous le dire franchement.
+      </p>
+      <ul class="next">
+        {bientot.map((item) => <li>{item}</li>)}
+      </ul>
+    </section>
+
+    <section class="band band-deep">
+      <div class="wrap">
+        <p class="eyebrow eyebrow-light">La phase pilote</p>
+        <h2>Nous accompagnons cinq à dix traiteurs, personnellement.</h2>
+        <p class="lede lede-light">
+          Vous n’êtes pas un numéro dans une file d’attente : nous mettons votre page en
+          place avec vous, et nous construisons la suite à partir de ce que vous nous dites.
+        </p>
+        <ul class="terms">
+          <li>
+            <strong>Gratuit</strong> jusqu’à la sortie de ces fonctionnalités,
+            puis {PRIX_MENSUEL} par mois.
+          </li>
+          <li><strong>Aucune commission</strong> sur vos ventes. Jamais.</li>
+          <li><strong>Vos clients restent vos clients</strong> — pas ceux d’une place de marché.</li>
+        </ul>
+        <button class="btn btn-solid" {...cta}>Demander à rejoindre le pilote</button>
+        <p class="note note-light">Deux minutes, trois questions.</p>
+      </div>
+    </section>
   </main>
+
+  <footer class="foot">
+    <p>Market Miam — l’adresse de votre stand.</p>
+    <p><a href="mailto:contact@marketmiam.fr">contact@marketmiam.fr</a></p>
+  </footer>
+
+  <script async src="https://tally.so/widgets/embed.js" is:inline></script>
 </Base>
 
 <style>
-  main {
-    text-align: center;
-    padding: 2rem;
+  .wrap {
+    max-width: 62rem;
+    margin-inline: auto;
+    padding-inline: 1.5rem;
+  }
+
+  /* ---- bar ---- */
+  .bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    max-width: 62rem;
+    margin-inline: auto;
+    padding: 1.25rem 1.5rem;
+  }
+
+  .wordmark {
+    display: block;
+    line-height: 0;
+  }
+
+  /* ---- buttons ---- */
+  .btn {
+    font: inherit;
+    font-weight: 600;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    padding: 0.7rem 1.4rem;
+    cursor: pointer;
+    transition: background-color 120ms ease, color 120ms ease;
+  }
+
+  .btn-solid {
+    background: var(--mm-brand);
+    color: #fff;
+    font-size: 1.05rem;
+    padding: 0.9rem 1.9rem;
+  }
+
+  .btn-solid:hover {
+    background: var(--mm-brand-deep);
+  }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--mm-ink);
+    border-color: var(--mm-line-strong);
+    padding: 0.5rem 1.1rem;
+    font-size: 0.95rem;
+  }
+
+  .btn-ghost:hover {
+    background: var(--mm-surface);
+  }
+
+  /* ---- type ---- */
+  .eyebrow {
+    font-family: var(--mm-font-mono);
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--mm-brand-deep);
+    margin-bottom: 0.9rem;
+  }
+
+  .eyebrow-light {
+    color: var(--mm-brand-soft);
   }
 
   h1 {
-    font-size: 3rem;
+    font-size: clamp(2.1rem, 6vw, 3.6rem);
+    font-weight: 700;
+    line-height: 1.08;
+    letter-spacing: -0.03em;
+    max-width: 18ch;
+  }
+
+  h2 {
+    font-size: clamp(1.5rem, 3.4vw, 2.1rem);
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+    max-width: 26ch;
+  }
+
+  h3 {
+    font-size: 1.1rem;
     font-weight: 700;
     margin-bottom: 0.5rem;
   }
 
-  p {
-    font-size: 1.25rem;
+  .lede {
+    font-size: clamp(1.05rem, 2vw, 1.2rem);
+    color: var(--mm-ink-soft);
+    max-width: 52ch;
+    margin-top: 1.25rem;
+  }
+
+  .lede-tight {
+    margin-top: 0.9rem;
+    font-size: 1.05rem;
+  }
+
+  .lede-light {
+    color: var(--mm-brand-soft);
+  }
+
+  .note {
+    font-size: 0.9rem;
+    color: var(--mm-muted);
+  }
+
+  .note-light {
+    color: var(--mm-sidebar-ink);
+    margin-top: 0.9rem;
+  }
+
+  /* ---- sections ---- */
+  .shot {
+    margin-top: 2.5rem;
+    max-width: 26rem;
+  }
+
+  .shot img {
+    display: block;
+    width: 100%;
+    height: auto;
+    border: 1px solid var(--mm-line-strong);
+    border-radius: 16px;
+    box-shadow: 0 18px 40px -18px rgb(42 36 30 / 0.35);
+  }
+
+  @media (min-width: 56rem) {
+    .hero {
+      display: grid;
+      grid-template-columns: 1.05fr 0.95fr;
+      align-items: center;
+      gap: 3rem;
+    }
+
+    .shot {
+      margin-top: 0;
+      max-width: none;
+    }
+  }
+
+  .hero {
+    max-width: 62rem;
+    margin-inline: auto;
+    padding: clamp(3rem, 9vw, 6rem) 1.5rem clamp(3.5rem, 9vw, 6rem);
+  }
+
+  .hero-actions {
+    margin-top: 2.25rem;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.85rem 1.25rem;
+  }
+
+  .section {
+    padding-block: clamp(3rem, 8vw, 5rem);
+  }
+
+  .band {
+    background: var(--mm-surface);
+    border-block: 1px solid var(--mm-line);
+    padding-block: clamp(3rem, 8vw, 5rem);
+  }
+
+  .band-deep {
+    background: var(--mm-sidebar);
+    color: var(--mm-brand-soft);
+    border-block: none;
+  }
+
+  .band-deep h2 {
+    color: #fff;
+  }
+
+  /* ---- lists ---- */
+  .problems {
+    list-style: none;
+    margin-top: 2rem;
+    display: grid;
+    gap: 1.1rem;
+    max-width: 58ch;
+  }
+
+  .problems li {
+    color: var(--mm-ink-soft);
+    padding-left: 1.1rem;
+    border-left: 3px solid var(--mm-brand-soft);
+  }
+
+  .problems strong {
+    display: block;
+    color: var(--mm-ink);
+    font-weight: 600;
+  }
+
+  .cards {
+    margin-top: 2.25rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+    gap: 1.25rem;
+  }
+
+  .card {
+    background: var(--mm-surface);
+    border: 1px solid var(--mm-line);
+    border-radius: 14px;
+    padding: 1.5rem;
+  }
+
+  .card p {
+    color: var(--mm-ink-soft);
+    font-size: 0.98rem;
+  }
+
+  .next {
+    list-style: none;
+    margin-top: 1.75rem;
+    display: grid;
+    gap: 0.75rem;
+    max-width: 52ch;
     color: var(--mm-ink-soft);
   }
 
-  .soon {
-    margin-top: 2rem;
-    font-size: 1rem;
-    text-transform: uppercase;
-    letter-spacing: 0.15em;
+  .next li {
+    display: flex;
+    gap: 0.7rem;
+  }
+
+  .next li::before {
+    content: '→';
+    color: var(--mm-brand);
+    font-family: var(--mm-font-mono);
+    flex: none;
+  }
+
+  .terms {
+    list-style: none;
+    margin: 2rem 0;
+    display: grid;
+    gap: 0.8rem;
+    max-width: 52ch;
+    color: var(--mm-sidebar-ink);
+  }
+
+  .terms strong {
+    color: #fff;
+    font-weight: 600;
+  }
+
+  /* ---- footer ---- */
+  .foot {
+    max-width: 62rem;
+    margin-inline: auto;
+    padding: 2.5rem 1.5rem 3.5rem;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 0.5rem 1.5rem;
+    font-size: 0.9rem;
     color: var(--mm-muted);
+  }
+
+  .foot a {
+    color: var(--mm-brand-deep);
   }
 </style>
