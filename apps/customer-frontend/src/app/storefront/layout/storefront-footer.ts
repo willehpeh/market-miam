@@ -11,6 +11,17 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
         Réservations &amp; commandes :
         <a class="text-brand" [href]="'tel:' + phone()">{{ phone() }}</a>
       </p>
+      <p class="mt-6 border-t border-line pt-4 text-sm text-ink-soft">
+        Vitrine mijotée par
+        <a
+          class="font-semibold text-brand"
+          href="https://marketmiam.fr"
+          target="_blank"
+          rel="noopener"
+        >
+          Market Miam
+        </a>
+      </p>
     </footer>
   `,
 })

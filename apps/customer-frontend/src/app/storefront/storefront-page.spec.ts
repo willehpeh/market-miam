@@ -64,6 +64,17 @@ describe('StorefrontPage', () => {
     expect(text).toContain('0102030405');
   });
 
+  it('credits Market Miam in the footer with a link to the homepage', () => {
+    const fixture = TestBed.createComponent(StorefrontPage);
+    fixture.componentRef.setInput('storefront', ACME);
+    fixture.detectChanges();
+
+    const footer = fixture.nativeElement.querySelector('footer') as HTMLElement;
+    expect(footer.textContent).toContain('Vitrine mijotée par');
+    const link = footer.querySelector('a[href="https://marketmiam.fr"]') as HTMLAnchorElement;
+    expect(link.textContent?.trim()).toBe('Market Miam');
+  });
+
   it('renders the catalogue dishes with prices, and thumbnails only for dishes with a photo', () => {
     const fixture = TestBed.createComponent(StorefrontPage);
     fixture.componentRef.setInput('storefront', ACME);
