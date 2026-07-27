@@ -66,11 +66,11 @@ const DISH_PREVIEW_TRANSFORMATION = 'c_fill,w_600,h_400,q_auto,f_webp';
     .photo-alt {
       background: transparent;
       color: var(--color-brand);
-      border: 1px solid var(--color-line-strong);
+      border: 1px solid var(--color-brand);
       box-shadow: none;
     }
     .photo-alt:hover:not(:disabled) {
-      background: var(--color-canvas);
+      background: var(--color-brand-soft);
     }
   `,
   template: `
