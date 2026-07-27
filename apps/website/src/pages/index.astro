@@ -135,8 +135,10 @@ const bientot = [
           <li><strong>Aucune commission</strong> sur vos ventes. Jamais.</li>
           <li><strong>Vos clients restent vos clients</strong> — pas ceux d’une plateforme.</li>
         </ul>
-        <button class="btn btn-solid" {...cta}>Rejoignez les premiers traiteurs</button>
-        <p class="note note-light">Deux minutes, trois questions.</p>
+        <div class="pilot-actions">
+          <button class="btn btn-solid" {...cta}>Rejoignez les premiers traiteurs</button>
+          <p class="note note-light">Deux minutes, trois questions.</p>
+        </div>
       </div>
     </section>
   </main>
@@ -304,12 +306,31 @@ const bientot = [
     padding: clamp(3rem, 9vw, 6rem) 1.5rem clamp(3.5rem, 9vw, 6rem);
   }
 
+  /* Each CTA and the reassurance line under it read as one unit. Centred while
+     the page is a single column, flush left once the hero splits in two. */
   .hero-actions {
     margin-top: 2.25rem;
     display: flex;
     flex-wrap: wrap;
     align-items: center;
+    justify-content: center;
+    text-align: center;
     gap: 0.85rem 1.25rem;
+  }
+
+  .pilot-actions {
+    text-align: center;
+  }
+
+  @media (min-width: 56rem) {
+    .hero-actions {
+      justify-content: flex-start;
+      text-align: left;
+    }
+
+    .pilot-actions {
+      text-align: left;
+    }
   }
 
   .section {
