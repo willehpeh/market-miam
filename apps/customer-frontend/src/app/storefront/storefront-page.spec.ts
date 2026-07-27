@@ -73,7 +73,7 @@ describe('StorefrontPage', () => {
     });
     fixture.detectChanges();
 
-    const paragraphs = [...fixture.nativeElement.querySelectorAll('p')] as HTMLParagraphElement[];
+    const paragraphs = Array.from(fixture.nativeElement.querySelectorAll('p')) as HTMLParagraphElement[];
     const description = paragraphs.find((p) => p.textContent?.includes('Pains au levain'));
     expect(description?.textContent).toContain('\n\n');
     expect(description?.className).toContain('whitespace-pre-line');
@@ -173,6 +173,37 @@ describe('StorefrontPage', () => {
     expect(text).toContain('Pepperoni');
     expect(text).toContain('spicy');
     expect(text).toContain('12,00 €');
+  });
+
+  // Same reasoning as the storefront description: jsdom lays nothing out, so the class is
+  // the only observable trace.
+  it('keeps the paragraph breaks a vendor typed into a dish and its formats', () => {
+    const multiline: StorefrontViewModel = {
+      ...ACME,
+      dishes: [
+        {
+          itemId: 'pizza',
+          name: 'Pizza',
+          description: 'Pâte maturée 48 h.\n\nFour à bois.',
+          priceLabel: 'dès 9,00 €',
+          variants: [{ name: 'Margherita', description: '250 g\npour une personne', priceLabel: '9,00 €' }],
+          photo: null,
+        },
+      ],
+    };
+    const fixture = TestBed.createComponent(StorefrontPage);
+    fixture.componentRef.setInput('storefront', multiline);
+    fixture.detectChanges();
+
+    (fixture.nativeElement.querySelector('[data-dish="pizza"]') as HTMLElement).click();
+    fixture.detectChanges();
+
+    const dialog = fixture.nativeElement.querySelector('dialog') as HTMLDialogElement;
+    const description = Array.from(dialog.querySelectorAll('p')).find((p) => p.textContent?.includes('Pâte maturée'));
+    const detail = Array.from(dialog.querySelectorAll('span')).find((s) => s.textContent?.includes('250 g'));
+    expect(description?.textContent).toContain('\n\n');
+    expect(description?.className).toContain('whitespace-pre-line');
+    expect(detail?.className).toContain('whitespace-pre-line');
   });
 
   it('scrolls the whole sheet content, photo and title included', () => {

@@ -81,7 +81,7 @@ import { DragToDismiss } from '../../core/drag-to-dismiss';
             <h3 class="text-2xl font-bold text-ink">{{ dish.name }}</h3>
             <p class="shrink-0 text-2xl font-bold text-ink">{{ dish.priceLabel }}</p>
           </div>
-          <p class="mt-3 text-lg text-ink-soft">{{ dish.description }}</p>
+          <p class="mt-3 whitespace-pre-line text-lg text-ink-soft">{{ dish.description }}</p>
           @if (dish.variants; as variants) {
             <p class="field-label mt-5 border-t border-line pt-4">Formats</p>
             <ul class="mt-1">
@@ -92,7 +92,7 @@ import { DragToDismiss } from '../../core/drag-to-dismiss';
                     <span class="shrink-0 text-lg font-semibold text-ink">{{ variant.priceLabel }}</span>
                   </span>
                   @if (variant.description) {
-                    <span class="mt-1 block text-base text-ink-soft">{{ variant.description }}</span>
+                    <span class="mt-1 block whitespace-pre-line text-base text-ink-soft">{{ variant.description }}</span>
                   }
                 </li>
               }
