@@ -64,6 +64,15 @@ const DISH_PREVIEW_TRANSFORMATION = 'c_fill,w_600,h_400,q_auto,f_webp';
     .add-format:hover {
       background: var(--color-surface-sunk);
     }
+    .photo-alt {
+      background: transparent;
+      color: var(--color-brand);
+      border: 1px solid var(--color-line-strong);
+      box-shadow: none;
+    }
+    .photo-alt:hover:not(:disabled) {
+      background: var(--color-canvas);
+    }
   `,
   template: `
     <mm-card>
@@ -89,10 +98,18 @@ const DISH_PREVIEW_TRANSFORMATION = 'c_fill,w_600,h_400,q_auto,f_webp';
               <i class="fa-solid fa-camera" aria-hidden="true"></i>
             </div>
           }
-          <input #photoInput type="file" accept="image/*" capture="environment" hidden (change)="selectPhoto($event)" />
-          <div class="p-3">
-            <button type="button" (click)="photoInput.click()" [disabled]="uploading()">
+          <!-- Two inputs, not one: capture keeps the camera a single tap away for a vendor
+               standing at their stall, and its absence is the only way to reach the photo roll. -->
+          <input #cameraInput type="file" accept="image/*" capture="environment" hidden (change)="selectPhoto($event)" />
+          <input #rollInput type="file" accept="image/*" hidden (change)="selectPhoto($event)" />
+          <div class="flex justify-center gap-2 p-3">
+            <button type="button" (click)="cameraInput.click()" [disabled]="uploading()">
+              <i class="fa-solid fa-camera" aria-hidden="true"></i>
               {{ previewRef() ? 'Reprendre' : 'Prendre en photo' }}
+            </button>
+            <button type="button" class="photo-alt" (click)="rollInput.click()" [disabled]="uploading()">
+              <i class="fa-solid fa-images" aria-hidden="true"></i>
+              Choisir une photo
             </button>
           </div>
           @if (tooLarge()) {

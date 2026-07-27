@@ -13,8 +13,14 @@ async function renderForm() {
   return { view, catalogue };
 }
 
-function selectFile(container: Element, file: File) {
-  const input = container.querySelector('input[type="file"]') as HTMLInputElement;
+// The camera input is the one carrying `capture`; the roll input is the one without it.
+function photoInput(container: Element, source: 'camera' | 'roll') {
+  const selector = source === 'camera' ? 'input[type="file"][capture]' : 'input[type="file"]:not([capture])';
+  return container.querySelector(selector) as HTMLInputElement;
+}
+
+function selectFile(container: Element, file: File, source: 'camera' | 'roll' = 'camera') {
+  const input = photoInput(container, source);
   Object.defineProperty(input, 'files', { value: [file], configurable: true });
   fireEvent.change(input);
 }
@@ -32,11 +38,29 @@ describe('AddDish', () => {
     expect(catalogue.began).toBe(true);
   });
 
-  it('offers to take a photo of the camera', async () => {
+  it('offers to take a photo with the camera', async () => {
     const { view } = await renderForm();
-    const input = view.container.querySelector('input[type="file"]') as HTMLInputElement;
-    expect(input.getAttribute('capture')).toBe('environment');
-    expect(input.getAttribute('accept')).toBe('image/*');
+    const camera = photoInput(view.container, 'camera');
+    expect(camera.getAttribute('capture')).toBe('environment');
+    expect(camera.getAttribute('accept')).toBe('image/*');
+    expect(screen.getByRole('button', { name: /prendre en photo/i })).toBeInTheDocument();
+  });
+
+  it('offers a photo from the roll, without forcing the camera', async () => {
+    const { view } = await renderForm();
+    const roll = photoInput(view.container, 'roll');
+    expect(roll.getAttribute('accept')).toBe('image/*');
+    expect(roll.hasAttribute('capture')).toBe(false);
+    expect(screen.getByRole('button', { name: /choisir une photo/i })).toBeInTheDocument();
+  });
+
+  it('uploads a photo picked from the roll', async () => {
+    const { view, catalogue } = await renderForm();
+    const file = anImage();
+
+    selectFile(view.container, file, 'roll');
+
+    expect(catalogue.uploadedPhoto?.file).toBe(file);
   });
 
   it('uploads the picked photo under a freshly minted item id', async () => {
@@ -67,6 +91,7 @@ describe('AddDish', () => {
 
     expect(screen.getByRole('status', { name: /envoi/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /prendre en photo/i })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /choisir une photo/i })).toBeDisabled();
   });
 
   it('previews the uploaded photo', async () => {
