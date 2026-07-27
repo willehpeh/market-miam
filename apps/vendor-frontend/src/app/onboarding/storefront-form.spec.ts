@@ -42,7 +42,7 @@ describe('StorefrontForm', () => {
     fireEvent.input(screen.getByLabelText(/nom du stand/i), { target: { value: 'La Table de Margaux' } });
     fireEvent.input(screen.getByLabelText(/description/i), { target: { value: 'Cuisine de marché' } });
     fireEvent.input(screen.getByLabelText(/téléphone/i), { target: { value: '06 12 34 56 78' } });
-    fireEvent.click(screen.getByRole('button', { name: /continuer/i }));
+    fireEvent.click(screen.getByRole('button', { name: /enregistrer/i }));
 
     expect(storefront.savedInfo).toEqual({
       name: 'La Table de Margaux',
@@ -55,20 +55,45 @@ describe('StorefrontForm', () => {
     const { storefront } = await renderForm();
 
     fireEvent.input(screen.getByLabelText(/nom du stand/i), { target: { value: 'La Table de Margaux' } });
-    fireEvent.click(screen.getByRole('button', { name: /continuer/i }));
+    fireEvent.click(screen.getByRole('button', { name: /enregistrer/i }));
 
     expect(screen.getByLabelText(/téléphone/i)).toBeEnabled();
     expect(storefront.savedInfo).toEqual({ name: 'La Table de Margaux', description: '', phone: '' });
   });
 
-  it('will not let the vendor continue without a stand name', async () => {
+  it('will not let the vendor save without a stand name', async () => {
     await renderForm();
 
-    expect(screen.getByRole('button', { name: /continuer/i })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /enregistrer/i })).toBeDisabled();
 
     fireEvent.input(screen.getByLabelText(/nom du stand/i), { target: { value: 'La Table de Margaux' } });
 
-    expect(screen.getByRole('button', { name: /continuer/i })).toBeEnabled();
+    expect(screen.getByRole('button', { name: /enregistrer/i })).toBeEnabled();
+  });
+
+  it.each([
+    { published: false, state: 'not yet published' },
+    { published: true, state: 'already published' },
+  ])('lets the vendor save changes when the storefront is $state', async ({ published }) => {
+    const { view, storefront } = await renderForm();
+    storefront.view.set({
+      name: 'La Table de Margaux',
+      description: 'Cuisine de marché',
+      phone: '',
+      imageReference: '',
+      subdomain: published ? 'margaux' : null,
+      published,
+    });
+    view.detectChanges();
+
+    fireEvent.input(screen.getByLabelText(/description/i), { target: { value: 'Cuisine de saison' } });
+    fireEvent.click(screen.getByRole('button', { name: /enregistrer/i }));
+
+    expect(storefront.savedInfo).toEqual({
+      name: 'La Table de Margaux',
+      description: 'Cuisine de saison',
+      phone: '',
+    });
   });
 
   it('flags the name as required once the vendor leaves it blank', async () => {
