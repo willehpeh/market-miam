@@ -18,6 +18,7 @@ export const UploadDishPhotoSuccess = createAction(
   props<{ itemId: string; imageReference: string }>(),
 );
 export const UploadDishPhotoFailure = createAction('[Catalogue] Upload Dish Photo Failure');
+export const UploadDishPhotoTooLarge = createAction('[Catalogue] Upload Dish Photo Too Large');
 export const AddDish = createAction('[Catalogue] Add Dish', props<NewDish>());
 export const AddDishSuccess = createAction('[Catalogue] Add Dish Success', props<{ item: CatalogueItemView }>());
 export const AddDishFailure = createAction('[Catalogue] Add Dish Failure');
@@ -33,6 +34,7 @@ export interface CatalogueState {
   items: CatalogueItemView[];
   photoUploading: boolean;
   photoError: boolean;
+  photoTooLarge: boolean;
   newPhotoReference: string;
 }
 
@@ -41,6 +43,7 @@ export const initialState: CatalogueState = {
   items: [],
   photoUploading: false,
   photoError: false,
+  photoTooLarge: false,
   newPhotoReference: '',
 };
 
@@ -51,14 +54,15 @@ export const catalogueFeature = createFeature({
     on(LoadCatalogue, (state): CatalogueState => ({ ...state, loading: true })),
     on(LoadCatalogueSuccess, (state, { items }): CatalogueState => ({ ...state, loading: false, items })),
     on(LoadCatalogueFailure, (state): CatalogueState => ({ ...state, loading: false })),
-    on(BeginDish, (state): CatalogueState => ({ ...state, photoUploading: false, photoError: false, newPhotoReference: '' })),
-    on(UploadDishPhoto, (state): CatalogueState => ({ ...state, photoUploading: true, photoError: false })),
+    on(BeginDish, (state): CatalogueState => ({ ...state, photoUploading: false, photoError: false, photoTooLarge: false, newPhotoReference: '' })),
+    on(UploadDishPhoto, (state): CatalogueState => ({ ...state, photoUploading: true, photoError: false, photoTooLarge: false })),
     on(UploadDishPhotoSuccess, (state, { imageReference }): CatalogueState => ({
       ...state,
       photoUploading: false,
       newPhotoReference: imageReference,
     })),
     on(UploadDishPhotoFailure, (state): CatalogueState => ({ ...state, photoUploading: false, photoError: true })),
+    on(UploadDishPhotoTooLarge, (state): CatalogueState => ({ ...state, photoUploading: false, photoTooLarge: true })),
     // ponytail: AddDishFailure is emitted but unreduced — no add-error UX yet. Wire a banner
     // into the reducer when the flow needs it (mirrors storefront's EditStorefrontFailure).
     // Optimistic: append on success so the list shows the dish without waiting for the

@@ -6,7 +6,6 @@ import { CloudinaryUrlPipe } from '../core/cloudinary-url.pipe';
 import { CatalogueFacade } from './catalogue.facade';
 import { centsToEuros, parseEurosToCents } from './money';
 
-const MAX_PHOTO_BYTES = 10 * 1024 * 1024;
 const DISH_PREVIEW_TRANSFORMATION = 'c_fill,w_600,h_400,q_auto,f_webp';
 
 @Component({
@@ -113,7 +112,7 @@ const DISH_PREVIEW_TRANSFORMATION = 'c_fill,w_600,h_400,q_auto,f_webp';
             </button>
           </div>
           @if (tooLarge()) {
-            <p role="alert" class="px-3 pb-3 text-xs text-danger">La photo dépasse 10 Mo. Choisissez-en une plus légère.</p>
+            <p role="alert" class="px-3 pb-3 text-xs text-danger">Cette photo est trop lourde. Choisissez-en une plus légère.</p>
           }
           @if (uploadError()) {
             <p role="alert" class="px-3 pb-3 text-xs text-danger">L'envoi de la photo a échoué. Réessayez.</p>
@@ -258,7 +257,7 @@ export class AddDish {
   protected readonly previewRef = computed(() => this.photoReference() || this.existingImage);
   protected readonly uploading = this.catalogue.photoUploading;
   protected readonly uploadError = this.catalogue.photoError;
-  protected readonly tooLarge = signal(false);
+  protected readonly tooLarge = this.catalogue.photoTooLarge;
 
   protected readonly mode = signal<'single' | 'variants'>(this.editing?.variants ? 'variants' : 'single');
 
@@ -328,11 +327,6 @@ export class AddDish {
     if (!file) {
       return;
     }
-    if (file.size > MAX_PHOTO_BYTES) {
-      this.tooLarge.set(true);
-      return;
-    }
-    this.tooLarge.set(false);
     this.catalogue.uploadDishPhoto(this.itemId, file);
   }
 

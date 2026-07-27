@@ -8,6 +8,7 @@ export class FakeCatalogueFacade implements CatalogueFacade {
   readonly loading = signal(false);
   readonly photoUploading = signal(false);
   readonly photoError = signal(false);
+  readonly photoTooLarge = signal(false);
   readonly newPhotoReference = signal('');
   loaded = false;
   began = false;

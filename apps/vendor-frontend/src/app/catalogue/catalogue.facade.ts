@@ -6,6 +6,7 @@ export abstract class CatalogueFacade {
   abstract readonly loading: Signal<boolean>;
   abstract readonly photoUploading: Signal<boolean>;
   abstract readonly photoError: Signal<boolean>;
+  abstract readonly photoTooLarge: Signal<boolean>;
   abstract readonly newPhotoReference: Signal<string>;
 
   abstract load(): void;

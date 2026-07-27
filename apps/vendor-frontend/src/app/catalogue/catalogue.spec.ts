@@ -11,6 +11,8 @@ import { CatalogueFacade } from './catalogue.facade';
 import { StoreCatalogueFacade } from './store.catalogue.facade';
 import { PhotoUploads } from '../storefront/photo-uploads';
 import { FakePhotoUploads } from '../storefront/fake.photo-uploads';
+import { MAX_SOURCE_BYTES, MAX_UPLOAD_BYTES, PhotoDownscale } from '../storefront/photo-downscale';
+import { FakePhotoDownscale } from '../storefront/fake.photo-downscale';
 import { SignedUpload } from '../storefront/signed-upload';
 
 const items: CatalogueItemView[] = [
@@ -36,15 +38,26 @@ const signedFor = (publicId: string): SignedUpload => ({
   },
 });
 
+const ofSize = (bytes: number, name = 'plat.jpg') => {
+  const file = new File(['x'], name, { type: 'image/jpeg' });
+  Object.defineProperty(file, 'size', { value: bytes });
+  return file;
+};
+
 describe('Catalogue', () => {
   let facade: CatalogueFacade;
   let httpCtrl: HttpTestingController;
+  let uploads: FakePhotoUploads;
+  let downscale: FakePhotoDownscale;
 
   beforeEach(() => {
+    uploads = new FakePhotoUploads();
+    downscale = new FakePhotoDownscale();
     TestBed.configureTestingModule({
       providers: [
         { provide: Catalogue, useClass: HttpCatalogue },
-        { provide: PhotoUploads, useClass: FakePhotoUploads },
+        { provide: PhotoUploads, useValue: uploads },
+        { provide: PhotoDownscale, useValue: downscale },
         provideStore(),
         provideState(catalogueFeature),
         provideEffects(CatalogueEffects),
@@ -104,6 +117,49 @@ describe('Catalogue', () => {
 
     expect(facade.photoUploading()).toBe(false);
     expect(facade.newPhotoReference()).toBe('v1/vendors/acme/dishes/coq');
+  });
+
+  it('shrinks the photo first and uploads what came back, not the original', () => {
+    const original = ofSize(9 * 1024 * 1024, 'original.jpg');
+    const shrunk = ofSize(300 * 1024, 'original.jpg');
+    downscale.returning(shrunk);
+
+    facade.uploadDishPhoto('coq', original);
+
+    expect(downscale.shrunk).toBe(original);
+    httpCtrl.expectOne('/api/catalogue/photo/signature').flush(signedFor('vendors/acme/dishes/coq'));
+    expect(uploads.uploaded).toBe(shrunk);
+  });
+
+  it('refuses a source too large to decode without signing anything', () => {
+    facade.uploadDishPhoto('coq', ofSize(MAX_SOURCE_BYTES + 1, 'enorme.jpg'));
+
+    httpCtrl.expectNone('/api/catalogue/photo/signature');
+    expect(downscale.shrunk).toBeUndefined();
+    expect(facade.photoTooLarge()).toBe(true);
+    expect(facade.photoUploading()).toBe(false);
+  });
+
+  // A photo the browser cannot decode — an iPhone HEIC on Chrome, say — comes back from
+  // the downscaler untouched, and may still be over what Cloudinary accepts.
+  it('refuses a photo that is still too large once shrinking has had its go', () => {
+    const undecodable = ofSize(MAX_UPLOAD_BYTES + 1, 'photo.heic');
+
+    facade.uploadDishPhoto('coq', undecodable);
+
+    httpCtrl.expectNone('/api/catalogue/photo/signature');
+    expect(facade.photoTooLarge()).toBe(true);
+    expect(facade.photoUploading()).toBe(false);
+  });
+
+  it('clears a refusal when the next photo is picked', () => {
+    facade.uploadDishPhoto('coq', ofSize(MAX_SOURCE_BYTES + 1));
+    expect(facade.photoTooLarge()).toBe(true);
+
+    facade.uploadDishPhoto('coq', anImage());
+
+    expect(facade.photoTooLarge()).toBe(false);
+    httpCtrl.expectOne('/api/catalogue/photo/signature').flush(signedFor('vendors/acme/dishes/coq'));
   });
 
   it('flags an error and stops uploading when signing fails', () => {

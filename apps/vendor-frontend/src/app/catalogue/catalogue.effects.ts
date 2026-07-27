@@ -6,6 +6,7 @@ import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { catchError, filter, map, of, switchMap, tap, withLatestFrom } from 'rxjs';
 import { Catalogue } from './catalogue';
 import { PhotoUploads } from '../storefront/photo-uploads';
+import { MAX_SOURCE_BYTES, MAX_UPLOAD_BYTES, PhotoDownscale } from '../storefront/photo-downscale';
 import {
   AddDish,
   AddDishFailure,
@@ -23,6 +24,7 @@ import {
   UploadDishPhoto,
   UploadDishPhotoFailure,
   UploadDishPhotoSuccess,
+  UploadDishPhotoTooLarge,
 } from './catalogue.state';
 
 @Injectable()
@@ -31,6 +33,7 @@ export class CatalogueEffects {
   private readonly store = inject(Store);
   private readonly catalogue = inject(Catalogue);
   private readonly photoUploads = inject(PhotoUploads);
+  private readonly downscale = inject(PhotoDownscale);
   private readonly router = inject(Router);
 
   loadCatalogue$ = createEffect(() =>
@@ -45,21 +48,35 @@ export class CatalogueEffects {
     ),
   );
 
+  // Every size judgment lives here rather than in the form, because the only size that
+  // matters is the one *after* shrinking: a 12 Mo photo off the roll leaves here at a few
+  // hundred Ko. Shrinking on this side of the dispatch also means the spinner is already
+  // up while the phone spends its half-second decoding and re-encoding.
   uploadDishPhoto$ = createEffect(() =>
     this.actions$.pipe(
       ofType(UploadDishPhoto),
-      switchMap(({ itemId, file }) =>
-        this.catalogue.photoSignature(itemId).pipe(
-          switchMap((signed) =>
-            this.photoUploads.upload(file, signed).pipe(
-              map((uploaded) =>
-                UploadDishPhotoSuccess({ itemId, imageReference: `v${uploaded.version}/${uploaded.publicId}` }),
-              ),
-            ),
+      switchMap(({ itemId, file }) => {
+        if (file.size > MAX_SOURCE_BYTES) {
+          return of(UploadDishPhotoTooLarge());
+        }
+        return this.downscale.shrink(file).pipe(
+          switchMap((prepared) =>
+            // Only a photo that came back undecoded can still be over the ceiling.
+            prepared.size > MAX_UPLOAD_BYTES
+              ? of(UploadDishPhotoTooLarge())
+              : this.catalogue.photoSignature(itemId).pipe(
+                  switchMap((signed) =>
+                    this.photoUploads.upload(prepared, signed).pipe(
+                      map((uploaded) =>
+                        UploadDishPhotoSuccess({ itemId, imageReference: `v${uploaded.version}/${uploaded.publicId}` }),
+                      ),
+                    ),
+                  ),
+                ),
           ),
           catchError(() => of(UploadDishPhotoFailure())),
-        ),
-      ),
+        );
+      }),
     ),
   );
 

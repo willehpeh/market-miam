@@ -73,15 +73,22 @@ describe('AddDish', () => {
     expect(catalogue.uploadedPhoto?.itemId).toMatch(/.+/);
   });
 
-  it('rejects a photo larger than 10 Mo without uploading it', async () => {
+  it('hands a heavy photo straight to the upload, which decides on size after shrinking it', async () => {
     const { view, catalogue } = await renderForm();
     const big = new File(['x'], 'huge.jpg', { type: 'image/jpeg' });
     Object.defineProperty(big, 'size', { value: 11 * 1024 * 1024 });
 
     selectFile(view.container, big);
 
-    expect(catalogue.uploadedPhoto).toBeUndefined();
-    expect(screen.getByText(/10 Mo/i)).toBeVisible();
+    expect(catalogue.uploadedPhoto?.file).toBe(big);
+  });
+
+  it('says so when a photo is refused as too heavy', async () => {
+    const { view, catalogue } = await renderForm();
+    catalogue.photoTooLarge.set(true);
+    view.detectChanges();
+
+    expect(screen.getByText(/trop lourde/i)).toBeVisible();
   });
 
   it('shows an uploading state while the photo is sent', async () => {

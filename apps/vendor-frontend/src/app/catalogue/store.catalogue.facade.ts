@@ -12,6 +12,7 @@ export class StoreCatalogueFacade implements CatalogueFacade {
   readonly loading = this.store.selectSignal(catalogueFeature.selectLoading);
   readonly photoUploading = this.store.selectSignal(catalogueFeature.selectPhotoUploading);
   readonly photoError = this.store.selectSignal(catalogueFeature.selectPhotoError);
+  readonly photoTooLarge = this.store.selectSignal(catalogueFeature.selectPhotoTooLarge);
   readonly newPhotoReference = this.store.selectSignal(catalogueFeature.selectNewPhotoReference);
 
   load(): void {

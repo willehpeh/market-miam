@@ -21,6 +21,8 @@ import { Storefront } from '../storefront/storefront';
 import { HttpStorefront } from '../storefront/http.storefront';
 import { PhotoUploads } from '../storefront/photo-uploads';
 import { FakePhotoUploads } from '../storefront/fake.photo-uploads';
+import { PhotoDownscale } from '../storefront/photo-downscale';
+import { FakePhotoDownscale } from '../storefront/fake.photo-downscale';
 import { storefrontFeature } from '../storefront/storefront.state';
 import { StorefrontEffects, STOREFRONT_RETRY } from '../storefront/storefront.effects';
 import { StorefrontFacade } from '../storefront/storefront.facade';
@@ -68,6 +70,7 @@ describe('Onboarding launch', () => {
         { provide: Catalogue, useClass: HttpCatalogue },
         { provide: MarketSchedules, useClass: HttpMarketSchedules },
         { provide: PhotoUploads, useClass: FakePhotoUploads },
+        { provide: PhotoDownscale, useClass: FakePhotoDownscale },
         { provide: AuthFacade, useClass: StoreAuthFacade },
         VendorFacade,
         { provide: StorefrontFacade, useClass: StoreStorefrontFacade },
