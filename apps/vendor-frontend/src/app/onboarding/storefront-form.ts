@@ -95,10 +95,9 @@ const MAX_PHOTO_BYTES = 10 * 1024 * 1024;
           </div>
         </div>
 
-        @if (!view()?.published) {
-          <button type="submit" class="mt-6 flex w-full max-w-xs mx-auto" [disabled]="fields().invalid()">Continuer →
-          </button>
-        }
+        <button type="submit" class="mt-6 flex w-full max-w-xs mx-auto justify-center" [disabled]="fields().invalid()">
+          Enregistrer
+        </button>
       </form>
     </mm-card>
 

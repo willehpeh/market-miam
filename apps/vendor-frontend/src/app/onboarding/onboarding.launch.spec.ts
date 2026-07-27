@@ -140,7 +140,7 @@ describe('Onboarding launch', () => {
     expect(router.url).toBe('/onboarding/storefront');
 
     fireEvent.input(screen.getByLabelText(/nom du stand/i), { target: { value: 'La Table de Margaux' } });
-    fireEvent.click(screen.getByRole('button', { name: /continuer/i }));
+    fireEvent.click(screen.getByRole('button', { name: /enregistrer/i }));
     httpCtrl.expectOne('/api/storefront').flush(null);
 
     await waitFor(() => expect(router.url).toBe('/dashboard'));
