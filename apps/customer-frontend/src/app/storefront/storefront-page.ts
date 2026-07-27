@@ -26,7 +26,9 @@ import { StorefrontFooter } from './layout/storefront-footer';
 
             @if (storefront.description) {
               <section class="px-5 pt-6">
-                <p class="text-ink-soft">{{ storefront.description }}</p>
+                <!-- pre-line, not pre-wrap: honours the paragraph breaks a vendor typed
+                     without also preserving stray runs of spaces from a paste. -->
+                <p class="whitespace-pre-line text-ink-soft">{{ storefront.description }}</p>
               </section>
             }
 

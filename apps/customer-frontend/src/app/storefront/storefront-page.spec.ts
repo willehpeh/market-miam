@@ -64,6 +64,21 @@ describe('StorefrontPage', () => {
     expect(text).toContain('0102030405');
   });
 
+  // jsdom lays nothing out, so the class is the only observable trace of the behaviour.
+  it('keeps the paragraph breaks a vendor typed into their description', () => {
+    const fixture = TestBed.createComponent(StorefrontPage);
+    fixture.componentRef.setInput('storefront', {
+      ...ACME,
+      description: 'Pains au levain, farine bio.\n\nCuisson au feu de bois.',
+    });
+    fixture.detectChanges();
+
+    const paragraphs = [...fixture.nativeElement.querySelectorAll('p')] as HTMLParagraphElement[];
+    const description = paragraphs.find((p) => p.textContent?.includes('Pains au levain'));
+    expect(description?.textContent).toContain('\n\n');
+    expect(description?.className).toContain('whitespace-pre-line');
+  });
+
   it('credits Market Miam in the footer with a link to the homepage', () => {
     const fixture = TestBed.createComponent(StorefrontPage);
     fixture.componentRef.setInput('storefront', ACME);
