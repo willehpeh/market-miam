@@ -14,11 +14,21 @@ const EDITEUR = {
   tva: 'FR 08 794 431 874',
   email: 'contact@marketmiam.fr',
 };
+
+// AGPL-3.0 §13 wants the offer to reach the source of *this* version, not just
+// whatever the default branch holds today. Render exposes the deployed commit as
+// RENDER_GIT_COMMIT; outside Render (local build, preview) we fall back to `main`.
+const REPO = 'https://github.com/willehpeh/market-miam';
+const COMMIT = process.env.RENDER_GIT_COMMIT ?? '';
+const SOURCE = {
+  url: COMMIT ? `${REPO}/tree/${COMMIT}` : REPO,
+  revision: COMMIT ? COMMIT.slice(0, 7) : null,
+};
 ---
 
 <Base
-  title="Market Miam — Mentions légales et confidentialité"
-  description="Mentions légales de Market Miam et politique de confidentialité : qui édite le site, quelles données sont collectées, et comment les faire supprimer."
+  title="Market Miam — Mentions légales, confidentialité et licence"
+  description="Mentions légales de Market Miam, politique de confidentialité et licence du logiciel : qui édite le site, quelles données sont collectées, et où trouver le code source."
 >
   <header class="bar">
     <a class="wordmark" href="/">
@@ -108,6 +118,44 @@ const EDITEUR = {
       sous un mois. Vous pouvez également introduire une réclamation auprès de la CNIL
       (<a href="https://www.cnil.fr" rel="noopener">cnil.fr</a>).
     </p>
+
+    <h1 class="second" id="licence">Licence du logiciel</h1>
+
+    <h2>Logiciel libre</h2>
+    <p>
+      Market Miam est un logiciel libre. Copyright © 2026 {EDITEUR.nom}.
+    </p>
+    <p>
+      Ce programme est distribué sous licence
+      <a href="https://www.gnu.org/licenses/agpl-3.0.html" rel="noopener">
+        GNU Affero General Public License</a>, version 3 ou toute version ultérieure. Vous
+      êtes libre de l’utiliser, de l’étudier, de le modifier et de le redistribuer selon
+      les termes de cette licence.
+    </p>
+    <p>
+      Il est distribué dans l’espoir qu’il sera utile, mais <strong>sans aucune
+      garantie</strong> ; sans même la garantie implicite de qualité marchande ou
+      d’adéquation à un usage particulier. Voyez la licence pour les détails.
+    </p>
+    <p>
+      Cette clause porte sur le code source mis à disposition sous licence libre, et sur
+      lui seul. Elle ne concerne pas le service Market Miam souscrit par les traiteurs,
+      qui relève de ses propres conditions générales.
+    </p>
+
+    <h2>Code source</h2>
+    <p>
+      L’intégralité du code — site, espace traiteur, vitrines et serveur — est publiée sur
+      <a href={SOURCE.url} rel="noopener">github.com/willehpeh/market-miam</a>, librement
+      consultable et téléchargeable, sans compte ni frais.
+      {
+        SOURCE.revision && (
+          <>
+            {' '}Version en ligne : <code>{SOURCE.revision}</code>.
+          </>
+        )
+      }
+    </p>
   </main>
 
   <footer class="foot">
@@ -165,6 +213,11 @@ const EDITEUR = {
     color: var(--mm-ink-soft);
     max-width: 58ch;
     margin-bottom: 0.75rem;
+  }
+
+  .legal code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.9em;
   }
 
   .legal a {

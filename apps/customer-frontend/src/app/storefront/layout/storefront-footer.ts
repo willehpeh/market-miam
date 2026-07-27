@@ -11,6 +11,9 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
         Réservations &amp; commandes :
         <a class="text-brand" [href]="'tel:' + phone()">{{ phone() }}</a>
       </p>
+      <!-- The "Logiciel libre" link is the AGPL §13 source offer for this storefront.
+           Storefront visitors never see the marketing site, so the offer has to live
+           here, in the interface they actually interact with. -->
       <p class="mt-6 border-t border-line pt-4 text-sm text-ink-soft">
         Vitrine mijotée par
         <a
@@ -20,6 +23,15 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
           rel="noopener"
         >
           Market Miam
+        </a>
+        ·
+        <a
+          class="text-brand"
+          href="https://marketmiam.fr/mentions-legales#licence"
+          target="_blank"
+          rel="noopener"
+        >
+          Logiciel libre
         </a>
       </p>
     </footer>

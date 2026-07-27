@@ -7,7 +7,7 @@ import { LogoutButton } from './auth/logout-button';
 @Component({
   selector: 'mm-layout',
   template: `
-    <div class="grid min-h-svh grid-rows-[auto_1fr]">
+    <div class="grid min-h-svh grid-rows-[auto_1fr_auto]">
       <header class="sticky top-0 z-40 flex h-15 items-center justify-between px-6 bg-surface">
         <img src="assets/logo-transparent.png" alt="Market Miam" class="h-6 w-auto rounded-2xl">
         @if (authenticated()) {
@@ -28,6 +28,18 @@ import { LogoutButton } from './auth/logout-button';
         }
         <router-outlet />
       </main>
+      <!-- AGPL §13 source offer for the vendor app: its users live here and never
+           pass through the marketing site. -->
+      <footer class="px-6 py-4 text-sm text-ink-soft bg-canvas">
+        <a
+          class="text-brand"
+          href="https://marketmiam.fr/mentions-legales#licence"
+          target="_blank"
+          rel="noopener"
+        >
+          Logiciel libre
+        </a>
+      </footer>
     </div>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,

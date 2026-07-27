@@ -27,6 +27,18 @@ describe('Layout', () => {
     expect(screen.queryByRole('button', LOGOUT)).not.toBeInTheDocument();
   });
 
+  // AGPL §13 owes the source offer to the users of *this* interface. Vendors live in
+  // the app and never pass through the marketing site, so losing this link would put
+  // the deployment out of compliance rather than just out of style.
+  it('should offer the source code, signed in or not', async () => {
+    await renderLayout();
+
+    expect(screen.getByRole('link', { name: 'Logiciel libre' })).toHaveAttribute(
+      'href',
+      'https://marketmiam.fr/mentions-legales#licence',
+    );
+  });
+
   it('should display the logout button if the user is authenticated', async () => {
     const { view, auth } = await renderLayout();
     auth.status.set('authenticated');
