@@ -33,7 +33,7 @@ const aujourdhui = [
 
 const bientot = [
   'Le menu du jour, publié marché par marché — et « il n’y en a plus » en direct quand un plat part',
-  'Le miam : vos clients disent ce qui leur fait envie avant le marché — sans commander, sans payer',
+  'Le <strong>miam</strong> : vos clients disent ce qui leur fait envie avant le marché — sans commander, sans payer',
   'Après chaque marché, un geste par plat : ça a bien marché, ça n’a pas marché, il n’y en avait plus',
   'Au fil des semaines, vos réponses deviennent des repères : quoi préparer la veille, et en quelle quantité',
 ];
@@ -121,7 +121,10 @@ const bientot = [
         pas encore en ligne, et nous préférons vous le dire franchement.
       </p>
       <ul class="next">
-        {bientot.map((item) => <li>{item}</li>)}
+        {/* set:html — the entries carry inline markup; they are literals above, not input.
+            The span keeps each entry one flex item, so the li's gap stays between the
+            arrow and the text instead of opening up mid-sentence. */}
+        {bientot.map((item) => <li><span set:html={item} /></li>)}
       </ul>
     </section>
 
@@ -428,6 +431,14 @@ const bientot = [
   .next li {
     display: flex;
     gap: 0.7rem;
+  }
+
+  /* :global — the strong comes from set:html, so it carries no scope attribute
+     and a plain `.next strong` would never match it. Still contained: .next
+     itself keeps the scope, so this reaches nothing outside this list. */
+  .next :global(strong) {
+    color: var(--mm-brand-deep);
+    font-weight: 700;
   }
 
   .next li::before {
