@@ -71,15 +71,18 @@ describe('StorefrontForm', () => {
     expect(screen.getByRole('button', { name: /enregistrer/i })).toBeEnabled();
   });
 
-  it('still lets the vendor save once the storefront is published', async () => {
+  it.each([
+    { published: false, state: 'not yet published' },
+    { published: true, state: 'already published' },
+  ])('lets the vendor save changes when the storefront is $state', async ({ published }) => {
     const { view, storefront } = await renderForm();
     storefront.view.set({
       name: 'La Table de Margaux',
       description: 'Cuisine de marché',
       phone: '',
       imageReference: '',
-      subdomain: 'margaux',
-      published: true,
+      subdomain: published ? 'margaux' : null,
+      published,
     });
     view.detectChanges();
 
