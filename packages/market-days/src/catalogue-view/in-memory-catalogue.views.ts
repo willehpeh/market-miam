@@ -23,6 +23,13 @@ export class InMemoryCatalogueViews implements CatalogueViews, CatalogueViewStor
     this.items.set(vendorId, vendorItems.map(item => item.itemId === itemId ? { ...item, imageReference } : item));
   }
 
+  // ItemsReordered always names every item in the catalogue — the aggregate refuses
+  // anything less — so seating them by the given ids loses nothing.
+  async reorderItems(itemIds: string[], vendorId: string): Promise<void> {
+    const byId = new Map((await this.forVendor(vendorId)).items.map(item => [item.itemId, item]));
+    this.items.set(vendorId, itemIds.flatMap(itemId => byId.get(itemId) ?? []));
+  }
+
   async retireItem(itemId: string, vendorId: string): Promise<void> {
     const current = (await this.forVendor(vendorId)).items;
     this.items.set(vendorId, current.filter(item => item.itemId !== itemId));

@@ -50,6 +50,37 @@ export function catalogueViewsContract(name: string, create: () => Store): void 
       expect((await store.forVendor('v1')).items.map(item => item.itemId)).toEqual(['a', 'b']);
     });
 
+    it('reorders the items into the order given', async () => {
+      await store.addItemToCatalogue(dish({ itemId: 'a', name: 'A' }), 'v1');
+      await store.addItemToCatalogue(dish({ itemId: 'b', name: 'B' }), 'v1');
+      await store.addItemToCatalogue(dish({ itemId: 'c', name: 'C' }), 'v1');
+
+      await store.reorderItems(['c', 'a', 'b'], 'v1');
+
+      expect((await store.forVendor('v1')).items.map(item => item.itemId)).toEqual(['c', 'a', 'b']);
+    });
+
+    it('adds an item after a reorder to the end of the order', async () => {
+      await store.addItemToCatalogue(dish({ itemId: 'a', name: 'A' }), 'v1');
+      await store.addItemToCatalogue(dish({ itemId: 'b', name: 'B' }), 'v1');
+      await store.reorderItems(['b', 'a'], 'v1');
+
+      await store.addItemToCatalogue(dish({ itemId: 'c', name: 'C' }), 'v1');
+
+      expect((await store.forVendor('v1')).items.map(item => item.itemId)).toEqual(['b', 'a', 'c']);
+    });
+
+    it('leaves another vendor\'s order alone when reordering', async () => {
+      await store.addItemToCatalogue(dish({ itemId: 'a', name: 'A' }), 'v1');
+      await store.addItemToCatalogue(dish({ itemId: 'b', name: 'B' }), 'v1');
+      await store.addItemToCatalogue(dish({ itemId: 'a', name: 'A' }), 'v2');
+      await store.addItemToCatalogue(dish({ itemId: 'b', name: 'B' }), 'v2');
+
+      await store.reorderItems(['b', 'a'], 'v1');
+
+      expect((await store.forVendor('v2')).items.map(item => item.itemId)).toEqual(['a', 'b']);
+    });
+
     it('scopes items to their vendor', async () => {
       await store.addItemToCatalogue(dish({ itemId: 'a' }), 'v1');
       expect(await store.forVendor('v2')).toEqual({ items: [] });

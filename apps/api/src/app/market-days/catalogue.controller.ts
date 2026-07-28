@@ -2,7 +2,7 @@ import { Body, Controller, Get, Param, Post, Put, UseGuards } from '@nestjs/comm
 import { CurrentVendor, JwtAuthGuard } from '@market-miam/auth-nestjs';
 import type { VerifiedVendor } from '@market-miam/auth';
 import { CommandGateway, QueryGateway } from '@market-miam/event-sourcing';
-import { AddItemToCatalogue, CatalogueView, ChangeItemPhoto, FindVendorCatalogue, ReviseItem } from '@market-miam/market-days';
+import { AddItemToCatalogue, CatalogueView, ChangeItemPhoto, FindVendorCatalogue, ReorderItems, ReviseItem } from '@market-miam/market-days';
 import { CloudinarySignedUpload, SignedUploads } from '../signed-uploads';
 
 function dishPhotoPublicId(vendorId: string, itemId: string): string {
@@ -52,6 +52,17 @@ export class CatalogueController {
         variants: body.variants,
       }),
     );
+  }
+
+  // Declared above :itemId — Nest matches in declaration order, so the other way round
+  // this arrives at revise() as a dish called "order".
+  @Put('order')
+  @UseGuards(JwtAuthGuard)
+  async reorder(
+    @CurrentVendor() vendor: VerifiedVendor,
+    @Body() body: { itemIds: string[] },
+  ): Promise<void> {
+    await this.commands.execute(new ReorderItems({ vendorId: vendor.vendorId.value(), itemIds: body.itemIds }));
   }
 
   @Put(':itemId')

@@ -52,6 +52,26 @@ export class PostgresCatalogueViews implements CatalogueViews, CatalogueViewStor
     );
   }
 
+  // Reordering redeals the vendor's own seq values: their existing seats, sorted, handed
+  // out in the order given. Values stay distinct and below any future nextval, so a dish
+  // added later still lands last — and no column or migration is needed to hold a position.
+  async reorderItems(itemIds: string[], vendorId: string): Promise<void> {
+    await this.db.query(
+      `WITH seats AS (
+         SELECT seq, row_number() OVER (ORDER BY seq) AS position
+         FROM catalogue_view_items WHERE vendor_id = $1
+       ), wanted AS (
+         SELECT item_id, ordinality AS position
+         FROM unnest($2::text[]) WITH ORDINALITY AS listed(item_id, ordinality)
+       )
+       UPDATE catalogue_view_items AS item
+       SET seq = seats.seq
+       FROM wanted JOIN seats ON seats.position = wanted.position
+       WHERE item.vendor_id = $1 AND item.item_id = wanted.item_id`,
+      [vendorId, itemIds],
+    );
+  }
+
   async retireItem(itemId: string, vendorId: string): Promise<void> {
     await this.db.query(
       'DELETE FROM catalogue_view_items WHERE vendor_id = $1 AND item_id = $2',

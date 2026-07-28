@@ -1,9 +1,10 @@
-import { ItemAddedToCatalogue, ItemRetired, ItemRevised, ItemPhotoChanged, CatalogueEvent } from './events';
+import { ItemAddedToCatalogue, ItemRetired, ItemRevised, ItemPhotoChanged, ItemsReordered, CatalogueEvent } from './events';
 import { Aggregate } from '@market-miam/event-sourcing';
 import { ImageReference } from '@market-miam/common';
 import { Item, ItemDescription, ItemId, ItemName, Pricing } from './item';
 import { NoSuchItemError } from './errors/no-such-item.error';
 import { ItemAlreadyInCatalogueError } from './errors/item-already-in-catalogue.error';
+import { IncompleteReorderError } from './errors/incomplete-reorder.error';
 
 export class Catalogue extends Aggregate {
 
@@ -82,6 +83,22 @@ export class Catalogue extends Aggregate {
       payload: {
         itemId: itemId.value(),
         imageReference: imageReference.value()
+      },
+      version: 1
+    };
+    this.raise(event);
+  }
+
+  reorderItems(itemIds: ItemId[]) {
+    const coversEveryItem = itemIds.length === this._items.length
+      && this._items.every(item => itemIds.some(itemId => item.hasId(itemId)));
+    if (!coversEveryItem) {
+      throw new IncompleteReorderError(`A new order must list each of the ${ this._items.length } items in the catalogue exactly once`);
+    }
+    const event: ItemsReordered = {
+      type: 'ItemsReordered',
+      payload: {
+        itemIds: itemIds.map(itemId => itemId.value())
       },
       version: 1
     };

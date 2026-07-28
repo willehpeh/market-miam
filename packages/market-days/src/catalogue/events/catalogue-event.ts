@@ -2,9 +2,11 @@ import { ItemAddedToCatalogue } from './item-added-to-catalogue';
 import { ItemRetired } from './item-retired';
 import { ItemRevised } from './item-revised';
 import { ItemPhotoChanged } from './item-photo-changed';
+import { ItemsReordered } from './items-reordered';
 
 export type CatalogueEvent = |
   ItemAddedToCatalogue |
   ItemRetired |
   ItemRevised |
-  ItemPhotoChanged;
+  ItemPhotoChanged |
+  ItemsReordered;

@@ -96,6 +96,26 @@ describe('Managing a catalogue over HTTP', () => {
     });
   });
 
+  it('reorders the catalogue, listing the dishes back in the order the vendor chose', async () => {
+    const second = { ...dish, itemId: 'item-2', name: 'Blanquette de veau', imageReference: 'v1/dishes/acme-bakery/item-2' };
+    await post(dish).expect(201);
+    await post(second).expect(201);
+
+    await request(app.getHttpServer())
+      .put('/catalogue/order')
+      .set('Authorization', 'Bearer any-token')
+      .send({ itemIds: [second.itemId, dish.itemId] })
+      .expect(200);
+    await app.get(Subscriptions).drain();
+
+    const response = await request(app.getHttpServer())
+      .get('/catalogue')
+      .set('Authorization', 'Bearer any-token')
+      .expect(200);
+
+    expect(response.body).toEqual({ items: [second, dish] });
+  });
+
   it('returns an empty catalogue for a vendor with no dishes', async () => {
     const response = await request(app.getHttpServer())
       .get('/catalogue')
