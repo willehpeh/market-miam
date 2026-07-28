@@ -9,6 +9,7 @@ export class FakeSignedUploads extends SignedUploads {
       params: {
         timestamp: 1_700_000_000,
         public_id: publicId,
+        asset_folder: publicId.split('/').slice(0, -1).join('/'),
         overwrite: true,
         invalidate: true,
         allowed_formats: 'jpg,png,webp',

@@ -1,6 +1,7 @@
 export interface CloudinaryUploadParams {
   timestamp: number;
   public_id: string;
+  asset_folder?: string;
   overwrite: boolean;
   invalidate: boolean;
   allowed_formats: string;

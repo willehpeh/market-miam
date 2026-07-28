@@ -18,6 +18,11 @@ describe('CloudinarySignedUploads', () => {
     expect(signed.params.public_id).toBe('storefronts/acme-bakery/cover-photo');
   });
 
+  it('files the photo under the folders its public id names, not the home folder', () => {
+    const signed = signedUploads.for('storefronts/acme-bakery/cover-photo');
+    expect(signed.params.asset_folder).toBe('storefronts/acme-bakery');
+  });
+
   it('eagerly generates the display rendition so it exists before the storefront requests it', () => {
     const signed = signedUploads.for('storefronts/acme-bakery/cover-photo');
     expect(signed.params.eager).toBe('c_fill,w_1200,h_600,q_auto,f_webp');

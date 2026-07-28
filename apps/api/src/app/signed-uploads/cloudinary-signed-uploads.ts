@@ -25,9 +25,13 @@ export class CloudinarySignedUploads extends SignedUploads {
   }
 
   for(publicId: string): CloudinarySignedUpload {
+    // In a dynamic-folder product environment the public id no longer places the asset:
+    // it only names it for delivery, so without this every photo lands in the home folder.
+    const assetFolder = publicId.split('/').slice(0, -1).join('/');
     const params: CloudinaryUploadParams = {
       timestamp: Math.floor(new Date(this.clock.now().value()).getTime() / 1000),
       public_id: publicId,
+      ...(assetFolder && { asset_folder: assetFolder }),
       overwrite: true,
       invalidate: true,
       allowed_formats: 'jpg,png,webp',
