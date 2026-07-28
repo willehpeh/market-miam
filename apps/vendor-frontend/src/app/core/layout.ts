@@ -30,9 +30,10 @@ import { LogoutButton } from './auth/logout-button';
       </main>
       <!-- AGPL §13 source offer for the vendor app: its users live here and never
            pass through the marketing site. -->
-      <footer class="px-6 py-4 text-sm text-ink-soft bg-canvas">
+      <footer class="border-t border-line px-6 py-4 text-center text-xs text-ink-soft bg-canvas">
+        Market Miam ·
         <a
-          class="text-brand"
+          class="underline underline-offset-2"
           href="https://marketmiam.fr/mentions-legales#licence"
           target="_blank"
           rel="noopener"

@@ -31,6 +31,9 @@ const DISH_PREVIEW_TRANSFORMATION = 'c_fill,w_600,h_400,q_auto,f_webp';
     .segment:hover:not(.active) {
       color: var(--color-ink);
     }
+    .segment:active:not(.active) {
+      background: var(--color-brand-soft);
+    }
     .segment.active {
       background: var(--color-canvas);
       border-color: var(--color-brand);
@@ -47,7 +50,8 @@ const DISH_PREVIEW_TRANSFORMATION = 'c_fill,w_600,h_400,q_auto,f_webp';
       padding: 0.75rem;
       font-weight: 700;
     }
-    .add-format:hover {
+    .add-format:hover,
+    .add-format:active {
       background: var(--color-surface-sunk);
     }
     .photo-alt {
@@ -56,7 +60,8 @@ const DISH_PREVIEW_TRANSFORMATION = 'c_fill,w_600,h_400,q_auto,f_webp';
       border: 1px solid var(--color-brand);
       box-shadow: none;
     }
-    .photo-alt:hover:not(:disabled) {
+    .photo-alt:hover:not(:disabled),
+    .photo-alt:active:not(:disabled) {
       background: var(--color-brand-soft);
     }
   `,

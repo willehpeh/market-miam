@@ -91,7 +91,7 @@
   input[type="submit"],
   input[type="reset"] {
     @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors;
-    @apply hover:bg-brand-deep active:bg-brand-deep font-bold;
+    @apply hover:bg-brand-deep active:bg-brand-deep active:scale-[0.98] active:shadow-none font-bold;
     @apply focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand;
     @apply disabled:pointer-events-none disabled:opacity-50;
   }
@@ -130,11 +130,13 @@
   /* anchors dressed as buttons — the base layer above only reaches <button> */
   .btn-link {
     @apply inline-flex items-center justify-center gap-2 rounded-lg bg-brand px-4 py-2 text-sm font-bold text-white no-underline shadow-sm transition-colors;
-    @apply hover:bg-brand-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand;
+    @apply hover:bg-brand-deep active:bg-brand-deep active:scale-[0.98] active:shadow-none;
+    @apply focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand;
   }
   .btn-link-alt {
     @apply inline-flex items-center justify-center gap-2 rounded-lg border border-brand px-4 py-2 text-sm font-bold text-brand no-underline transition-colors;
-    @apply hover:bg-brand-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand;
+    @apply hover:bg-brand-soft active:bg-brand-soft active:scale-[0.98];
+    @apply focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand;
   }
   /* quiet square icon button — row controls that must not shout like a submit */
   .icon-btn {
@@ -146,6 +148,10 @@
   }
   .icon-btn:hover:not(:disabled) {
     color: var(--color-ink);
+  }
+  .icon-btn:active:not(:disabled) {
+    background: var(--color-brand-soft);
+    color: var(--color-brand);
   }
   .icon-btn:disabled {
     opacity: 0.3;

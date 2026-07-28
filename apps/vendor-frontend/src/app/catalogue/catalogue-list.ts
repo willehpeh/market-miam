@@ -48,7 +48,7 @@ const DISH_THUMBNAIL_TRANSFORMATION = 'c_fill,w_200,h_200,q_auto,f_webp';
                   <p class="font-mono text-xs uppercase tracking-label text-muted">{{ dish.formats.length }} formats</p>
                 }
               </div>
-              <p class="font-mono text-sm font-bold text-ink text-right">{{ dish.priceLabel }}</p>
+              <p class="shrink-0 whitespace-pre text-right font-mono text-sm font-bold text-ink">{{ dish.priceLabel }}</p>
             </div>
             @if (dish.formats) {
               <ul class="mt-3 space-y-1 border-t border-line pt-3">
@@ -78,6 +78,8 @@ export class CatalogueList {
           itemId: item.itemId,
           name: item.name,
           imageReference: item.imageReference,
+          // The newline is load-bearing: whitespace-pre keeps it, so "dès" always sits on
+          // its own line and the price column stays as narrow as its widest price.
           priceLabel: `dès\n${formatEuros(Math.min(...item.variants.map((v) => v.price)))}`,
           formats: item.variants.map((v) => ({ name: v.name, priceLabel: formatEuros(v.price) })),
         }
