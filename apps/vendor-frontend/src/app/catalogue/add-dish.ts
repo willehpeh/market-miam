@@ -37,19 +37,6 @@ const DISH_PREVIEW_TRANSFORMATION = 'c_fill,w_600,h_400,q_auto,f_webp';
       color: var(--color-ink);
       box-shadow: 0 0 5px var(--color-brand);
     }
-    .icon-btn {
-      background: transparent;
-      color: var(--color-muted);
-      box-shadow: none;
-      padding: 0.375rem;
-      border-radius: var(--radius-field);
-    }
-    .icon-btn:hover:not(:disabled) {
-      color: var(--color-ink);
-    }
-    .icon-btn:disabled {
-      opacity: 0.3;
-    }
     .add-format {
       width: 100%;
       background: transparent;

@@ -1,8 +1,10 @@
 import { Route } from '@angular/router';
 import { Landing } from './landing/landing';
 import { Dashboard } from './dashboard/dashboard';
+import { CataloguePage } from './catalogue/catalogue-page';
 import { CatalogueList } from './catalogue/catalogue-list';
 import { AddDish } from './catalogue/add-dish';
+import { ReorderDishes } from './catalogue/reorder-dishes';
 import { editableDish } from './catalogue/editable-dish.guard';
 import { MarketsList } from './markets/markets-list';
 import { AddSchedule } from './markets/add-schedule';
@@ -28,9 +30,16 @@ export const appRoutes: Route[] = [
       {
         path: 'catalogue',
         children: [
-          { path: '', component: CatalogueList },
           { path: 'new', component: AddDish },
           { path: ':itemId/edit', component: AddDish, canActivate: [editableDish] },
+          {
+            path: '',
+            component: CataloguePage,
+            children: [
+              { path: '', component: CatalogueList },
+              { path: 'order', component: ReorderDishes },
+            ],
+          },
         ],
       },
       {

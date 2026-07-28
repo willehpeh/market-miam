@@ -88,7 +88,7 @@ describe('CatalogueList', () => {
     catalogue.items.set([dish({ imageReference: 'v1/dishes/acme/item-1' })]);
     view.detectChanges();
 
-    expect(screen.getByAltText('Bœuf bourguignon')).toHaveAttribute(
+    expect(view.container.querySelector('img')).toHaveAttribute(
       'src',
       expect.stringContaining('c_fill,w_200,h_200,q_auto,f_webp/v1/dishes/acme/item-1'),
     );
@@ -99,7 +99,7 @@ describe('CatalogueList', () => {
     catalogue.items.set([dish({ imageReference: '' })]);
     view.detectChanges();
 
-    expect(screen.queryByAltText('Bœuf bourguignon')).toBeNull();
+    expect(view.container.querySelector('img')).toBeNull();
     expect(view.container.querySelector('.fa-camera')).not.toBeNull();
   });
 
@@ -116,24 +116,35 @@ describe('CatalogueList', () => {
     catalogue.items.set([dish()]);
     view.detectChanges();
 
-    expect(screen.getByRole('link', { name: /ajouter un plat/i })).toHaveAttribute('href', '/dashboard/catalogue/new');
+    expect(screen.getByRole('link', { name: /ajouter/i })).toHaveAttribute('href', '/dashboard/catalogue/new');
   });
 
-  it('links back to the dashboard', async () => {
-    await renderList();
-    expect(screen.getByRole('link', { name: /retour/i })).toHaveAttribute('href', '/dashboard');
+  it('offers to reorder once there are two dishes to put in an order', async () => {
+    const { view, catalogue } = await renderList();
+    catalogue.items.set([dish(), dish({ itemId: 'item-2', name: 'Blanquette de veau' })]);
+    view.detectChanges();
+
+    expect(screen.getByRole('link', { name: /changer l'ordre/i })).toHaveAttribute('href', '/dashboard/catalogue/order');
   });
 
-  it('invites a first dish when the catalogue is empty', async () => {
-    await renderList();
-    expect(screen.getByRole('link', { name: /premier plat/i })).toHaveAttribute('href', '/dashboard/catalogue/new');
-  });
-
-  it('drops the first-dish invitation once the catalogue has a dish', async () => {
+  it('has nothing to reorder with a single dish', async () => {
     const { view, catalogue } = await renderList();
     catalogue.items.set([dish()]);
     view.detectChanges();
 
-    expect(screen.queryByRole('link', { name: /premier plat/i })).toBeNull();
+    expect(screen.queryByRole('link', { name: /changer l'ordre/i })).toBeNull();
+  });
+
+  it('says the carte is empty when there are no dishes', async () => {
+    await renderList();
+    expect(screen.getByText(/carte est vide/i)).toBeInTheDocument();
+  });
+
+  it('drops the empty line once the catalogue has a dish', async () => {
+    const { view, catalogue } = await renderList();
+    catalogue.items.set([dish()]);
+    view.detectChanges();
+
+    expect(screen.queryByText(/carte est vide/i)).toBeNull();
   });
 });

@@ -1,7 +1,8 @@
 import { TestBed } from '@angular/core/testing';
+import { waitFor } from '@testing-library/angular';
 import { provideState, provideStore } from '@ngrx/store';
 import { provideEffects } from '@ngrx/effects';
-import { provideRouter } from '@angular/router';
+import { provideRouter, Router } from '@angular/router';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { Catalogue, CatalogueItemView } from './catalogue';
 import { HttpCatalogue } from './http.catalogue';
@@ -278,6 +279,13 @@ describe('Catalogue', () => {
     httpCtrl.expectOne('/api/catalogue/order').flush(null);
 
     expect(facade.items()).toEqual([second, ...items]);
+  });
+
+  it('returns to the catalogue once the new order is saved', async () => {
+    facade.reorderDishes(['item-2', 'item-1']);
+    httpCtrl.expectOne('/api/catalogue/order').flush(null);
+
+    await waitFor(() => expect(TestBed.inject(Router).url).toBe('/dashboard/catalogue'));
   });
 
   it('changes a dish photo, putting the reference to its item id', () => {

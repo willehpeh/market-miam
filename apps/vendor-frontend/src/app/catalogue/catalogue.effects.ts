@@ -147,7 +147,7 @@ export class CatalogueEffects {
   navigateOnAdded$ = createEffect(
     () =>
       this.actions$.pipe(
-        ofType(AddDishSuccess, ReviseDishSuccess),
+        ofType(AddDishSuccess, ReviseDishSuccess, ReorderDishesSuccess),
         tap(() => {
           this.router.navigate(['/dashboard/catalogue']);
         }),

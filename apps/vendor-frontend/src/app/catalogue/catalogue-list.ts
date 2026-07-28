@@ -1,6 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { Card } from '../core/card';
 import { CloudinaryUrlPipe } from '../core/cloudinary-url.pipe';
 import { CatalogueFacade } from './catalogue.facade';
 import { formatEuros } from './money';
@@ -9,84 +8,64 @@ const DISH_THUMBNAIL_TRANSFORMATION = 'c_fill,w_200,h_200,q_auto,f_webp';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, Card, CloudinaryUrlPipe],
+  imports: [RouterLink, CloudinaryUrlPipe],
   template: `
-    <mm-card back="/dashboard">
-      <div class="flex items-start justify-between gap-3">
-        <div>
-          <p class="kicker">Votre catalogue</p>
-          <h1 class="mt-2 text-2xl leading-tight">Ajoutez vos plats</h1>
-          <p class="mt-3 text-sm text-ink-soft">Constituez votre carte. Chaque plat prend 30 secondes.</p>
-        </div>
-        <a
-          routerLink="/dashboard/catalogue/new"
-          aria-label="Ajouter un plat"
-          class="-mr-2.5 -mt-2.5 grid size-11 shrink-0 place-items-center no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
-        >
-          <span class="grid size-6 place-items-center rounded-md bg-brand text-sm text-white">
-            <i class="fa-solid fa-plus" aria-hidden="true"></i>
-          </span>
+    <div class="mt-4 flex flex-wrap gap-2">
+      <a routerLink="/dashboard/catalogue/new" class="btn-link">
+        <i class="fa-solid fa-plus" aria-hidden="true"></i>
+        Ajouter
+      </a>
+      @if (dishes().length > 1) {
+        <a routerLink="/dashboard/catalogue/order" class="btn-link-alt">
+          <i class="fa-solid fa-list-ol" aria-hidden="true"></i>
+          Changer l'ordre
         </a>
-      </div>
+      }
+    </div>
 
-      <ul class="mt-6 space-y-3">
-        @for (dish of dishes(); track dish.itemId) {
-          <li>
-            <a
-              [routerLink]="['/dashboard/catalogue', dish.itemId, 'edit']"
-              class="block rounded-card border border-line bg-surface p-3 no-underline"
-            >
-              <div class="flex items-center gap-4">
-                @if (dish.imageReference) {
-                  <img
-                    class="size-16 shrink-0 rounded-field object-cover"
-                    [src]="dish.imageReference | cloudinaryUrl: thumbnailTransformation"
-                    [alt]="dish.name"
-                  >
-                } @else {
-                  <span class="hatch grid size-16 shrink-0 place-items-center rounded-field text-lg text-line-strong">
-                    <i class="fa-solid fa-camera" aria-hidden="true"></i>
-                  </span>
-                }
-                <div class="flex-1">
-                  <p class="font-bold text-ink">{{ dish.name }}</p>
-                  @if (dish.formats) {
-                    <p class="font-mono text-xs uppercase tracking-label text-muted">{{ dish.formats.length }} formats</p>
-                  }
-                </div>
-                <p class="shrink-0 font-mono font-bold text-ink">{{ dish.priceLabel }}</p>
-              </div>
-              @if (dish.formats) {
-                <ul class="mt-3 space-y-1 border-t border-line pt-3">
-                  @for (format of dish.formats; track format.name) {
-                    <li class="flex justify-between gap-3 text-sm">
-                      <span class="text-ink-soft">{{ format.name }}</span>
-                      <span class="font-mono text-ink-soft">{{ format.priceLabel }}</span>
-                    </li>
-                  }
-                </ul>
+    <ul class="mt-6 space-y-3">
+      @for (dish of dishes(); track dish.itemId) {
+        <li>
+          <a
+            [routerLink]="['/dashboard/catalogue', dish.itemId, 'edit']"
+            class="block rounded-card border border-line bg-surface p-3 no-underline"
+          >
+            <div class="flex items-center gap-4">
+              @if (dish.imageReference) {
+                <img
+                  class="size-16 shrink-0 rounded-field object-cover"
+                  [src]="dish.imageReference | cloudinaryUrl: thumbnailTransformation"
+                  alt=""
+                >
+              } @else {
+                <span class="hatch grid size-16 shrink-0 place-items-center rounded-field text-lg text-line-strong">
+                  <i class="fa-solid fa-camera" aria-hidden="true"></i>
+                </span>
               }
-            </a>
-          </li>
-        } @empty {
-          <li>
-            <a
-              routerLink="/dashboard/catalogue/new"
-              class="flex items-center gap-4 rounded-card border border-dashed border-line-strong bg-surface-sunk p-3 no-underline"
-            >
-              <span class="grid size-16 shrink-0 place-items-center rounded-field bg-brand-soft text-xl text-brand">
-                <i class="fa-solid fa-camera" aria-hidden="true"></i>
-              </span>
-              <div class="flex-1">
-                <p class="font-bold text-ink">Ajoutez votre premier plat</p>
-                <p class="text-xs text-muted">Prenez-le en photo, on remplit le reste.</p>
+              <div class="min-w-0 flex-1">
+                <p class="break-words text-sm font-bold text-ink">{{ dish.name }}</p>
+                @if (dish.formats) {
+                  <p class="font-mono text-xs uppercase tracking-label text-muted">{{ dish.formats.length }} formats</p>
+                }
               </div>
-              <span aria-hidden="true" class="text-2xl leading-none text-brand">+</span>
-            </a>
-          </li>
-        }
-      </ul>
-    </mm-card>
+              <p class="font-mono text-sm font-bold text-ink text-right">{{ dish.priceLabel }}</p>
+            </div>
+            @if (dish.formats) {
+              <ul class="mt-3 space-y-1 border-t border-line pt-3">
+                @for (format of dish.formats; track format.name) {
+                  <li class="flex justify-between gap-3 text-sm">
+                    <span class="min-w-0 break-words text-ink-soft">{{ format.name }}</span>
+                    <span class="shrink-0 font-mono text-ink-soft">{{ format.priceLabel }}</span>
+                  </li>
+                }
+              </ul>
+            }
+          </a>
+        </li>
+      } @empty {
+        <li class="text-sm text-ink-soft">Votre carte est vide pour l'instant.</li>
+      }
+    </ul>
   `,
 })
 export class CatalogueList {
@@ -99,7 +78,7 @@ export class CatalogueList {
           itemId: item.itemId,
           name: item.name,
           imageReference: item.imageReference,
-          priceLabel: `dès ${formatEuros(Math.min(...item.variants.map((v) => v.price)))}`,
+          priceLabel: `dès\n${formatEuros(Math.min(...item.variants.map((v) => v.price)))}`,
           formats: item.variants.map((v) => ({ name: v.name, priceLabel: formatEuros(v.price) })),
         }
       : {
