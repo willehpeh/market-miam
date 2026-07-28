@@ -11,36 +11,25 @@ const DISH_THUMBNAIL_TRANSFORMATION = 'c_fill,w_200,h_200,q_auto,f_webp';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterLink, Card, CloudinaryUrlPipe],
   template: `
-    <mm-card>
-      <div class="relative">
+    <mm-card back="/dashboard">
+      <div class="flex items-start justify-between gap-3">
+        <div>
+          <p class="kicker">Votre catalogue</p>
+          <h1 class="mt-2 text-2xl leading-tight">Ajoutez vos plats</h1>
+          <p class="mt-3 text-sm text-ink-soft">Constituez votre carte. Chaque plat prend 30 secondes.</p>
+        </div>
         <a
-          routerLink="/dashboard"
-          aria-label="Fermer"
-          class="absolute right-0 top-0 grid place-items-center rounded-full text-brand"
+          routerLink="/dashboard/catalogue/new"
+          aria-label="Ajouter un plat"
+          class="-mr-2.5 -mt-2.5 grid size-11 shrink-0 place-items-center no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
         >
-          <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+          <span class="grid size-6 place-items-center rounded-md bg-brand text-sm text-white">
+            <i class="fa-solid fa-plus" aria-hidden="true"></i>
+          </span>
         </a>
-      <p class="kicker">Votre catalogue</p>
-      <h1 class="mt-2 text-2xl leading-tight">Ajoutez vos plats</h1>
-      <p class="mt-3 text-sm text-ink-soft">Constituez votre carte. Chaque plat prend 30 secondes.</p>
+      </div>
 
       <ul class="mt-6 space-y-3">
-        <li>
-          <a
-            routerLink="/dashboard/catalogue/new"
-            class="flex items-center gap-4 rounded-card border border-dashed border-line-strong bg-surface-sunk p-3 no-underline"
-          >
-            <span class="grid size-16 shrink-0 place-items-center rounded-field bg-brand-soft text-xl text-brand">
-            <i class="fa-solid fa-camera" aria-hidden="true"></i>
-          </span>
-            <div class="flex-1">
-              <p class="font-bold text-ink">Ajouter un plat</p>
-              <p class="text-xs text-muted">Prenez-le en photo, on remplit le reste.</p>
-            </div>
-            <span aria-hidden="true" class="text-2xl leading-none text-brand">+</span>
-          </a>
-        </li>
-
         @for (dish of dishes(); track dish.itemId) {
           <li>
             <a
@@ -79,16 +68,24 @@ const DISH_THUMBNAIL_TRANSFORMATION = 'c_fill,w_200,h_200,q_auto,f_webp';
               }
             </a>
           </li>
+        } @empty {
+          <li>
+            <a
+              routerLink="/dashboard/catalogue/new"
+              class="flex items-center gap-4 rounded-card border border-dashed border-line-strong bg-surface-sunk p-3 no-underline"
+            >
+              <span class="grid size-16 shrink-0 place-items-center rounded-field bg-brand-soft text-xl text-brand">
+                <i class="fa-solid fa-camera" aria-hidden="true"></i>
+              </span>
+              <div class="flex-1">
+                <p class="font-bold text-ink">Ajoutez votre premier plat</p>
+                <p class="text-xs text-muted">Prenez-le en photo, on remplit le reste.</p>
+              </div>
+              <span aria-hidden="true" class="text-2xl leading-none text-brand">+</span>
+            </a>
+          </li>
         }
       </ul>
-
-      <a
-        routerLink="/dashboard"
-        class="mt-6 flex w-full max-w-xs mx-auto items-center justify-center rounded-lg border border-brand px-4 py-2 text-sm font-bold text-brand no-underline hover:bg-brand-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
-      >
-        Retour
-      </a>
-      </div>
     </mm-card>
   `,
 })
@@ -112,7 +109,7 @@ export class CatalogueList {
           priceLabel: formatEuros(item.price ?? 0),
           formats: null as { name: string; priceLabel: string }[] | null,
         },
-    ).reverse(),
+    ),
   );
 
   constructor() {

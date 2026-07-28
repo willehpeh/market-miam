@@ -71,7 +71,7 @@ describe('CatalogueList', () => {
     expect(screen.getByText('16,00 €')).toBeInTheDocument();
   });
 
-  it('shows the most recently added dish first', async () => {
+  it('lists the dishes in catalogue order, as the storefront shows them', async () => {
     const { view, catalogue } = await renderList();
     catalogue.items.set([dish({ itemId: 'item-1' }), dish({ itemId: 'item-2' })]);
     view.detectChanges();
@@ -80,7 +80,7 @@ describe('CatalogueList', () => {
       .getAllByRole('link')
       .map((link) => link.getAttribute('href'))
       .filter((href) => href?.endsWith('/edit'));
-    expect(editHrefs).toEqual(['/dashboard/catalogue/item-2/edit', '/dashboard/catalogue/item-1/edit']);
+    expect(editHrefs).toEqual(['/dashboard/catalogue/item-1/edit', '/dashboard/catalogue/item-2/edit']);
   });
 
   it('renders each dish photo with a thumbnail rendition', async () => {
@@ -111,8 +111,11 @@ describe('CatalogueList', () => {
     expect(screen.getByRole('link', { name: /bœuf bourguignon/i })).toHaveAttribute('href', '/dashboard/catalogue/item-1/edit');
   });
 
-  it('links the add-dish card to the new-dish route', async () => {
-    await renderList();
+  it('links the add-dish button to the new-dish route', async () => {
+    const { view, catalogue } = await renderList();
+    catalogue.items.set([dish()]);
+    view.detectChanges();
+
     expect(screen.getByRole('link', { name: /ajouter un plat/i })).toHaveAttribute('href', '/dashboard/catalogue/new');
   });
 
@@ -121,9 +124,16 @@ describe('CatalogueList', () => {
     expect(screen.getByRole('link', { name: /retour/i })).toHaveAttribute('href', '/dashboard');
   });
 
-  it('shows only the add-dish affordance when the catalogue is empty', async () => {
+  it('invites a first dish when the catalogue is empty', async () => {
     await renderList();
-    expect(screen.getByRole('link', { name: /ajouter un plat/i })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /retour/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /premier plat/i })).toHaveAttribute('href', '/dashboard/catalogue/new');
+  });
+
+  it('drops the first-dish invitation once the catalogue has a dish', async () => {
+    const { view, catalogue } = await renderList();
+    catalogue.items.set([dish()]);
+    view.detectChanges();
+
+    expect(screen.queryByRole('link', { name: /premier plat/i })).toBeNull();
   });
 });
