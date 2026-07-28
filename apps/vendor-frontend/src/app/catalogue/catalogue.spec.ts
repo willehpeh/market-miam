@@ -260,6 +260,26 @@ describe('Catalogue', () => {
     ]);
   });
 
+  it('reorders the dishes, putting the chosen order to the order route', () => {
+    facade.reorderDishes(['item-2', 'item-1']);
+
+    const req = httpCtrl.expectOne('/api/catalogue/order');
+    expect(req.request.method).toBe('PUT');
+    expect(req.request.body).toEqual({ itemIds: ['item-2', 'item-1'] });
+    req.flush(null);
+  });
+
+  it('reorders the dishes it holds on success', () => {
+    const second = { itemId: 'item-2', name: 'Blanquette de veau', description: 'À l\'ancienne', price: 1100, imageReference: 'v1/dishes/acme/item-2' };
+    facade.load();
+    httpCtrl.expectOne('/api/catalogue').flush({ items: [...items, second] });
+
+    facade.reorderDishes(['item-2', 'item-1']);
+    httpCtrl.expectOne('/api/catalogue/order').flush(null);
+
+    expect(facade.items()).toEqual([second, ...items]);
+  });
+
   it('changes a dish photo, putting the reference to its item id', () => {
     facade.changeDishPhoto('item-1', 'v3/dishes/acme/item-1');
 

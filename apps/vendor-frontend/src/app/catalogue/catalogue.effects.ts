@@ -15,6 +15,9 @@ import {
   LoadCatalogue,
   LoadCatalogueFailure,
   LoadCatalogueSuccess,
+  ReorderDishes,
+  ReorderDishesFailure,
+  ReorderDishesSuccess,
   ReviseDish,
   ReviseDishFailure,
   ReviseDishSuccess,
@@ -114,6 +117,18 @@ export class CatalogueEffects {
           catchError(() => of(ReviseDishFailure())),
         );
       }),
+    ),
+  );
+
+  reorderDishes$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(ReorderDishes),
+      switchMap(({ itemIds }) =>
+        this.catalogue.reorder(itemIds).pipe(
+          map(() => ReorderDishesSuccess({ itemIds })),
+          catchError(() => of(ReorderDishesFailure())),
+        ),
+      ),
     ),
   );
 

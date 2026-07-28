@@ -25,6 +25,9 @@ export const AddDishFailure = createAction('[Catalogue] Add Dish Failure');
 export const ReviseDish = createAction('[Catalogue] Revise Dish', props<DishRevision>());
 export const ReviseDishSuccess = createAction('[Catalogue] Revise Dish Success', props<DishRevision>());
 export const ReviseDishFailure = createAction('[Catalogue] Revise Dish Failure');
+export const ReorderDishes = createAction('[Catalogue] Reorder Dishes', props<{ itemIds: string[] }>());
+export const ReorderDishesSuccess = createAction('[Catalogue] Reorder Dishes Success', props<{ itemIds: string[] }>());
+export const ReorderDishesFailure = createAction('[Catalogue] Reorder Dishes Failure');
 export const ChangeDishPhoto = createAction('[Catalogue] Change Dish Photo', props<{ itemId: string; imageReference: string }>());
 export const ChangeDishPhotoSuccess = createAction('[Catalogue] Change Dish Photo Success', props<{ itemId: string; imageReference: string }>());
 export const ChangeDishPhotoFailure = createAction('[Catalogue] Change Dish Photo Failure');
@@ -73,6 +76,13 @@ export const catalogueFeature = createFeature({
     on(ReviseDishSuccess, (state, { itemId, name, description, price, variants }): CatalogueState => ({
       ...state,
       items: state.items.map(item => item.itemId === itemId ? { ...item, name, description, price, variants } : item),
+    })),
+    // ponytail: ReorderDishesFailure unreduced — the reorder screen keeps the vendor's
+    // order on its own until it saves, so a failure leaves the stored order untouched
+    // rather than wrong. Wire a banner in when there is an error UX to hang it on.
+    on(ReorderDishesSuccess, (state, { itemIds }): CatalogueState => ({
+      ...state,
+      items: itemIds.flatMap(itemId => state.items.find(item => item.itemId === itemId) ?? []),
     })),
     // ponytail: ChangeDishPhotoFailure unreduced — same no-error-UX stance.
     on(ChangeDishPhotoSuccess, (state, { itemId, imageReference }): CatalogueState => ({

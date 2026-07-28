@@ -37,4 +37,5 @@ export abstract class Catalogue {
   abstract add(dish: NewDish): Observable<void>;
   abstract revise(revision: DishRevision): Observable<void>;
   abstract changePhoto(itemId: string, imageReference: string): Observable<void>;
+  abstract reorder(itemIds: string[]): Observable<void>;
 }
