@@ -52,6 +52,19 @@ describe('Publish Storefront', () => {
     expect((failure as StorefrontNotReadyToPublish).missing).not.toContain('cover');
   });
 
+  it('rejects publishing a storefront whose only dish has been retired', async () => {
+    openStorefrontWithCover();
+    addDish();
+    retireDish();
+    addSchedule();
+
+    const failure = await handler.execute(TestPublishStorefront.valid()).catch((e: unknown) => e);
+
+    expect(failure).toBeInstanceOf(StorefrontNotReadyToPublish);
+    expect((failure as StorefrontNotReadyToPublish).missing).toContain('catalogue');
+    expect((failure as StorefrontNotReadyToPublish).missing).not.toContain('schedule');
+  });
+
   it('rejects publishing a storefront with no market schedule', async () => {
     openStorefrontWithCover();
     addDish();
@@ -121,6 +134,12 @@ describe('Publish Storefront', () => {
   function addDish() {
     store.seedWith('catalogue-vendor-id', [
       { type: 'ItemAddedToCatalogue', payload: { itemId: 'dish-1', name: 'Bœuf bourguignon', description: 'Mijoté', price: 1300 }, version: 1 },
+    ], { vendorId: 'vendor-id' });
+  }
+
+  function retireDish() {
+    store.seedWith('catalogue-vendor-id', [
+      { type: 'ItemRetired', payload: { itemId: 'dish-1' }, version: 1 },
     ], { vendorId: 'vendor-id' });
   }
 

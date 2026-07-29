@@ -50,6 +50,9 @@ export class Catalogue extends Aggregate {
         this.itemWithId(new ItemId(event.payload.itemId))
           .changePhoto(new ImageReference(event.payload.imageReference));
         break;
+      case 'ItemRetired':
+        this._items = this._items.filter(item => !item.hasId(new ItemId(event.payload.itemId)));
+        break;
     }
   }
 
@@ -105,8 +108,12 @@ export class Catalogue extends Aggregate {
     this.raise(event);
   }
 
+  // Retiring is idempotent: a catalogue forgets a retired item entirely, so a repeated
+  // DELETE and one naming an id we never held are the same thing — nothing left to retire.
   retireItem(itemId: ItemId) {
-    this.assertHasItem(itemId);
+    if (!this.hasItem(itemId)) {
+      return;
+    }
     const event: ItemRetired = {
       type: 'ItemRetired',
       payload: {
@@ -118,9 +125,6 @@ export class Catalogue extends Aggregate {
   }
 
   hasAtLeastOneItem(): boolean {
-    // ponytail: apply() ignores ItemRetired, so retired items stay in _items and
-    // an all-retired catalogue still reads non-empty. Make retirement-aware (apply
-    // ItemRetired) if publishing an empty menu becomes a real problem.
     return this._items.length > 0;
   }
 

@@ -1,7 +1,7 @@
 import { describe } from 'vitest';
 import { VendorScopedEvents } from '@market-miam/market-days';
 import { InMemoryEventStore } from '@market-miam/event-sourcing';
-import { AddItemToCatalogueHandler, Catalogues, InvalidDishPricingError, NoSuchItemError, ReviseItem, ReviseItemHandler } from '@market-miam/market-days';
+import { AddItemToCatalogueHandler, Catalogues, InvalidDishPricingError, NoSuchItemError, RetireItem, RetireItemHandler, ReviseItem, ReviseItemHandler } from '@market-miam/market-days';
 import { TestAddItemToCatalogue } from '../add-item-to-catalogue/test-data';
 import { TestReviseItem } from './test-data';
 import { expectVendorScopedEvents } from '../../shared-kernel';
@@ -101,5 +101,15 @@ describe('Revise item', () => {
     const command = TestReviseItem.valid();
     await expect(() => handler.execute(command)).rejects.toThrow(NoSuchItemError);
     expect(store.newEvents()).toEqual([]);
+  });
+
+  it('should fail if the item has been retired', async () => {
+    const added = TestAddItemToCatalogue.simple();
+    await new AddItemToCatalogueHandler(catalogues).execute(added);
+    await new RetireItemHandler(catalogues).execute(new RetireItem(added.vendorId, added.itemId));
+
+    const command = new ReviseItem({ itemId: added.itemId, vendorId: added.vendorId, name: 'Revised Name', description: 'Revised Description', price: 750 });
+
+    await expect(handler.execute(command)).rejects.toThrow(NoSuchItemError);
   });
 });

@@ -156,6 +156,17 @@ export function catalogueViewsContract(name: string, create: () => Store): void 
       expect((await store.forVendor('v1')).items.map(item => item.itemId)).toEqual(['b']);
     });
 
+    it('reorders the items left after a retirement', async () => {
+      await store.addItemToCatalogue(dish({ itemId: 'a' }), 'v1');
+      await store.addItemToCatalogue(dish({ itemId: 'b' }), 'v1');
+      await store.addItemToCatalogue(dish({ itemId: 'c' }), 'v1');
+      await store.retireItem('b', 'v1');
+
+      await store.reorderItems(['c', 'a'], 'v1');
+
+      expect((await store.forVendor('v1')).items.map(item => item.itemId)).toEqual(['c', 'a']);
+    });
+
     it('clears all items', async () => {
       await store.addItemToCatalogue(dish(), 'v1');
       await store.clear();

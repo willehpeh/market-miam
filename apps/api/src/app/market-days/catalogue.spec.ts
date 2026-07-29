@@ -27,6 +27,14 @@ describe('Managing a catalogue over HTTP', () => {
     return request(app.getHttpServer()).post('/catalogue').set('Authorization', 'Bearer any-token').send(body);
   }
 
+  function retire(itemId: string) {
+    return request(app.getHttpServer()).delete(`/catalogue/${itemId}`).set('Authorization', 'Bearer any-token');
+  }
+
+  function list() {
+    return request(app.getHttpServer()).get('/catalogue').set('Authorization', 'Bearer any-token');
+  }
+
   it('adds a dish and lists it back for the authenticated vendor', async () => {
     await post(dish).expect(201);
     await app.get(Subscriptions).drain();
@@ -114,6 +122,58 @@ describe('Managing a catalogue over HTTP', () => {
       .expect(200);
 
     expect(response.body).toEqual({ items: [second, dish] });
+  });
+
+  it('retires a dish, dropping it from the listed catalogue', async () => {
+    const second = { ...dish, itemId: 'item-2', name: 'Blanquette de veau', imageReference: 'v1/dishes/acme-bakery/item-2' };
+    await post(dish).expect(201);
+    await post(second).expect(201);
+
+    await retire(dish.itemId).expect(200);
+    await app.get(Subscriptions).drain();
+
+    const response = await list().expect(200);
+    expect(response.body).toEqual({ items: [second] });
+  });
+
+  it('takes a second retirement of the same dish as a no-op', async () => {
+    await post(dish).expect(201);
+    await retire(dish.itemId).expect(200);
+
+    await retire(dish.itemId).expect(200);
+    await app.get(Subscriptions).drain();
+
+    const response = await list().expect(200);
+    expect(response.body).toEqual({ items: [] });
+  });
+
+  it('takes retiring a dish it has never heard of as a no-op', async () => {
+    await post(dish).expect(201);
+
+    await retire('no-such-dish').expect(200);
+    await app.get(Subscriptions).drain();
+
+    const response = await list().expect(200);
+    expect(response.body).toEqual({ items: [dish] });
+  });
+
+  it('reorders the dishes that are left after a retirement', async () => {
+    const second = { ...dish, itemId: 'item-2', name: 'Blanquette de veau', imageReference: 'v1/dishes/acme-bakery/item-2' };
+    const third = { ...dish, itemId: 'item-3', name: 'Coq au vin', imageReference: 'v1/dishes/acme-bakery/item-3' };
+    await post(dish).expect(201);
+    await post(second).expect(201);
+    await post(third).expect(201);
+    await retire(second.itemId).expect(200);
+
+    await request(app.getHttpServer())
+      .put('/catalogue/order')
+      .set('Authorization', 'Bearer any-token')
+      .send({ itemIds: [third.itemId, dish.itemId] })
+      .expect(200);
+    await app.get(Subscriptions).drain();
+
+    const response = await list().expect(200);
+    expect(response.body).toEqual({ items: [third, dish] });
   });
 
   it('returns an empty catalogue for a vendor with no dishes', async () => {

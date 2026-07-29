@@ -6,7 +6,9 @@ import {
   ItemsPlannedForMarketDay,
   MarketDays,
   NoSuchItemError,
-  PlanItemsForMarketDayHandler
+  PlanItemsForMarketDayHandler,
+  RetireItem,
+  RetireItemHandler
 } from '@market-miam/market-days';
 import { StoredEvent } from '@market-miam/event-sourcing';
 import { DateClock, EmptyValueError, Instant } from '@market-miam/common';
@@ -101,6 +103,14 @@ describe('Plan Items For Market Day', () => {
 
   it('should refuse to plan an item not in the vendor catalogue', async () => {
     const command = TestPlanItemsForMarketDay.forItems({ itemId: 'not-in-catalogue', quantity: 5 });
+    await expect(() => handler.execute(command)).rejects.toThrow(NoSuchItemError);
+  });
+
+  it('should refuse to plan a retired item', async () => {
+    await new RetireItemHandler(catalogues).execute(new RetireItem('vendor-1', 'item-2'));
+
+    const command = TestPlanItemsForMarketDay.forItems({ itemId: 'item-2', quantity: 5 });
+
     await expect(() => handler.execute(command)).rejects.toThrow(NoSuchItemError);
   });
 

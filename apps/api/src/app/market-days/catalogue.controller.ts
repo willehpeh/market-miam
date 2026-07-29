@@ -1,8 +1,8 @@
-import { Body, Controller, Get, Param, Post, Put, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Put, UseGuards } from '@nestjs/common';
 import { CurrentVendor, JwtAuthGuard } from '@market-miam/auth-nestjs';
 import type { VerifiedVendor } from '@market-miam/auth';
 import { CommandGateway, QueryGateway } from '@market-miam/event-sourcing';
-import { AddItemToCatalogue, CatalogueView, ChangeItemPhoto, FindVendorCatalogue, ReorderItems, ReviseItem } from '@market-miam/market-days';
+import { AddItemToCatalogue, CatalogueView, ChangeItemPhoto, FindVendorCatalogue, ReorderItems, RetireItem, ReviseItem } from '@market-miam/market-days';
 import { CloudinarySignedUpload, SignedUploads } from '../signed-uploads';
 
 function dishPhotoPublicId(vendorId: string, itemId: string): string {
@@ -82,6 +82,15 @@ export class CatalogueController {
         variants: body.variants,
       }),
     );
+  }
+
+  @Delete(':itemId')
+  @UseGuards(JwtAuthGuard)
+  async retire(
+    @CurrentVendor() vendor: VerifiedVendor,
+    @Param('itemId') itemId: string,
+  ): Promise<void> {
+    await this.commands.execute(new RetireItem(vendor.vendorId.value(), itemId));
   }
 
   @Put(':itemId/photo')
