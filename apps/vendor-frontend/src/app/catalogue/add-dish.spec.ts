@@ -370,5 +370,33 @@ describe('AddDish', () => {
 
       expect(catalogue.uploadedPhoto?.itemId).toBe('item-1');
     });
+
+    it('offers to delete the dish', async () => {
+      await renderEdit();
+
+      expect(screen.getByRole('button', { name: /^supprimer$/i })).toBeInTheDocument();
+    });
+
+    it('retires the dish when the vendor deletes it', async () => {
+      const { catalogue } = await renderEdit();
+
+      fireEvent.click(screen.getByRole('button', { name: /^supprimer$/i }));
+
+      expect(catalogue.retiredDish).toBe('item-1');
+    });
+
+    it('does not submit the form when deleting', async () => {
+      const { catalogue } = await renderEdit();
+
+      fireEvent.click(screen.getByRole('button', { name: /^supprimer$/i }));
+
+      expect(catalogue.revisedDish).toBeUndefined();
+    });
+  });
+
+  it('offers no delete for a dish that does not exist yet', async () => {
+    await renderForm();
+
+    expect(screen.queryByRole('button', { name: /^supprimer$/i })).not.toBeInTheDocument();
   });
 });

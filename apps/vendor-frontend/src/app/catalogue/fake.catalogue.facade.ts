@@ -17,6 +17,7 @@ export class FakeCatalogueFacade implements CatalogueFacade {
   revisedDish: DishRevision | undefined;
   changedPhoto: { itemId: string; imageReference: string } | undefined;
   reorderedDishes: string[] | undefined;
+  retiredDish: string | undefined;
 
   load(): void {
     this.loaded = true;
@@ -44,5 +45,9 @@ export class FakeCatalogueFacade implements CatalogueFacade {
 
   reorderDishes(itemIds: string[]): void {
     this.reorderedDishes = itemIds;
+  }
+
+  retireDish(itemId: string): void {
+    this.retiredDish = itemId;
   }
 }

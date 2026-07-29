@@ -18,6 +18,9 @@ import {
   ReorderDishes,
   ReorderDishesFailure,
   ReorderDishesSuccess,
+  RetireDish,
+  RetireDishFailure,
+  RetireDishSuccess,
   ReviseDish,
   ReviseDishFailure,
   ReviseDishSuccess,
@@ -132,6 +135,18 @@ export class CatalogueEffects {
     ),
   );
 
+  retireDish$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(RetireDish),
+      switchMap(({ itemId }) =>
+        this.catalogue.retire(itemId).pipe(
+          map(() => RetireDishSuccess({ itemId })),
+          catchError(() => of(RetireDishFailure())),
+        ),
+      ),
+    ),
+  );
+
   changeDishPhoto$ = createEffect(() =>
     this.actions$.pipe(
       ofType(ChangeDishPhoto),
@@ -147,7 +162,7 @@ export class CatalogueEffects {
   navigateOnAdded$ = createEffect(
     () =>
       this.actions$.pipe(
-        ofType(AddDishSuccess, ReviseDishSuccess, ReorderDishesSuccess),
+        ofType(AddDishSuccess, ReviseDishSuccess, ReorderDishesSuccess, RetireDishSuccess),
         tap(() => {
           this.router.navigate(['/dashboard/catalogue']);
         }),

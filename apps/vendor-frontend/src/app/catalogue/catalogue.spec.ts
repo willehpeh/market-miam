@@ -288,6 +288,42 @@ describe('Catalogue', () => {
     await waitFor(() => expect(TestBed.inject(Router).url).toBe('/dashboard/catalogue'));
   });
 
+  it('retires a dish, deleting it at its item id', () => {
+    facade.retireDish('item-1');
+
+    const req = httpCtrl.expectOne('/api/catalogue/item-1');
+    expect(req.request.method).toBe('DELETE');
+    req.flush(null);
+  });
+
+  it('drops the retired dish from the ones it holds on success', () => {
+    const second = { itemId: 'item-2', name: 'Blanquette de veau', description: 'À l\'ancienne', price: 1100, imageReference: 'v1/dishes/acme/item-2' };
+    facade.load();
+    httpCtrl.expectOne('/api/catalogue').flush({ items: [...items, second] });
+
+    facade.retireDish('item-1');
+    httpCtrl.expectOne('/api/catalogue/item-1').flush(null);
+
+    expect(facade.items()).toEqual([second]);
+  });
+
+  it('keeps the dish when the deletion fails', () => {
+    facade.load();
+    httpCtrl.expectOne('/api/catalogue').flush({ items });
+
+    facade.retireDish('item-1');
+    httpCtrl.expectOne('/api/catalogue/item-1').flush('nope', serverError);
+
+    expect(facade.items()).toEqual(items);
+  });
+
+  it('returns to the catalogue once the dish is deleted', async () => {
+    facade.retireDish('item-1');
+    httpCtrl.expectOne('/api/catalogue/item-1').flush(null);
+
+    await waitFor(() => expect(TestBed.inject(Router).url).toBe('/dashboard/catalogue'));
+  });
+
   it('changes a dish photo, putting the reference to its item id', () => {
     facade.changeDishPhoto('item-1', 'v3/dishes/acme/item-1');
 

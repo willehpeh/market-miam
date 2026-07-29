@@ -28,6 +28,9 @@ export const ReviseDishFailure = createAction('[Catalogue] Revise Dish Failure')
 export const ReorderDishes = createAction('[Catalogue] Reorder Dishes', props<{ itemIds: string[] }>());
 export const ReorderDishesSuccess = createAction('[Catalogue] Reorder Dishes Success', props<{ itemIds: string[] }>());
 export const ReorderDishesFailure = createAction('[Catalogue] Reorder Dishes Failure');
+export const RetireDish = createAction('[Catalogue] Retire Dish', props<{ itemId: string }>());
+export const RetireDishSuccess = createAction('[Catalogue] Retire Dish Success', props<{ itemId: string }>());
+export const RetireDishFailure = createAction('[Catalogue] Retire Dish Failure');
 export const ChangeDishPhoto = createAction('[Catalogue] Change Dish Photo', props<{ itemId: string; imageReference: string }>());
 export const ChangeDishPhotoSuccess = createAction('[Catalogue] Change Dish Photo Success', props<{ itemId: string; imageReference: string }>());
 export const ChangeDishPhotoFailure = createAction('[Catalogue] Change Dish Photo Failure');
@@ -83,6 +86,13 @@ export const catalogueFeature = createFeature({
     on(ReorderDishesSuccess, (state, { itemIds }): CatalogueState => ({
       ...state,
       items: itemIds.flatMap(itemId => state.items.find(item => item.itemId === itemId) ?? []),
+    })),
+    // ponytail: RetireDishFailure unreduced — same no-error-UX stance as its siblings. The
+    // dish stays put and the vendor stays on the form, which is at least not a lie.
+    // Optimistic: drop it on success so the list is right without waiting for the projection.
+    on(RetireDishSuccess, (state, { itemId }): CatalogueState => ({
+      ...state,
+      items: state.items.filter(item => item.itemId !== itemId),
     })),
     // ponytail: ChangeDishPhotoFailure unreduced — same no-error-UX stance.
     on(ChangeDishPhotoSuccess, (state, { itemId, imageReference }): CatalogueState => ({

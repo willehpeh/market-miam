@@ -29,6 +29,10 @@ export class HttpCatalogue implements Catalogue {
     return this.http.put<void>(`${environment.apiBaseUrl}/api/catalogue/order`, { itemIds });
   }
 
+  retire(itemId: string): Observable<void> {
+    return this.http.delete<void>(`${environment.apiBaseUrl}/api/catalogue/${itemId}`);
+  }
+
   changePhoto(itemId: string, imageReference: string): Observable<void> {
     return this.http.put<void>(`${environment.apiBaseUrl}/api/catalogue/${itemId}/photo`, { imageReference });
   }

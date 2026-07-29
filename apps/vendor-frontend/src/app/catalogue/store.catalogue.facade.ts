@@ -2,7 +2,7 @@ import { inject, Injectable } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { CatalogueFacade } from './catalogue.facade';
 import { DishRevision, NewDish } from './catalogue';
-import { AddDish, BeginDish, catalogueFeature, ChangeDishPhoto, LoadCatalogue, ReorderDishes, ReviseDish, UploadDishPhoto } from './catalogue.state';
+import { AddDish, BeginDish, catalogueFeature, ChangeDishPhoto, LoadCatalogue, ReorderDishes, RetireDish, ReviseDish, UploadDishPhoto } from './catalogue.state';
 
 @Injectable()
 export class StoreCatalogueFacade implements CatalogueFacade {
@@ -41,5 +41,9 @@ export class StoreCatalogueFacade implements CatalogueFacade {
 
   reorderDishes(itemIds: string[]): void {
     this.store.dispatch(ReorderDishes({ itemIds }));
+  }
+
+  retireDish(itemId: string): void {
+    this.store.dispatch(RetireDish({ itemId }));
   }
 }

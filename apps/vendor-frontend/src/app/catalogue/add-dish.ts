@@ -64,6 +64,16 @@ const DISH_PREVIEW_TRANSFORMATION = 'c_fill,w_600,h_400,q_auto,f_webp';
     .photo-alt:active:not(:disabled) {
       background: var(--color-brand-soft);
     }
+    .retire {
+      background: transparent;
+      color: var(--color-danger);
+      border: 1px solid var(--color-danger);
+      box-shadow: none;
+    }
+    .retire:hover,
+    .retire:active {
+      background: var(--color-danger-soft);
+    }
   `,
   template: `
     <mm-card>
@@ -229,6 +239,14 @@ const DISH_PREVIEW_TRANSFORMATION = 'c_fill,w_600,h_400,q_auto,f_webp';
         <button type="submit" class="mt-6 flex w-full max-w-xs mx-auto justify-center" [disabled]="cannotSubmit()">
           {{ isEditing ? 'Enregistrer' : 'Ajouter à ma carte ✓' }}
         </button>
+
+        @if (isEditing) {
+          <!-- type="button" keeps a stray Enter in the name field from deleting the dish. -->
+          <button type="button" class="retire mt-3 flex w-full max-w-xs mx-auto justify-center" (click)="retire()">
+            <i class="fa-solid fa-trash-can" aria-hidden="true"></i>
+            Supprimer
+          </button>
+        }
       </form>
     </mm-card>
   `,
@@ -320,6 +338,10 @@ export class AddDish {
       return;
     }
     this.catalogue.uploadDishPhoto(this.itemId, file);
+  }
+
+  protected retire(): void {
+    this.catalogue.retireDish(this.itemId);
   }
 
   protected submit(event: Event): void {
