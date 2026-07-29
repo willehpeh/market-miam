@@ -377,18 +377,45 @@ describe('AddDish', () => {
       expect(screen.getByRole('button', { name: /^supprimer$/i })).toBeInTheDocument();
     });
 
-    it('retires the dish when the vendor deletes it', async () => {
-      const { catalogue } = await renderEdit();
+    it('asks the vendor to confirm rather than deleting on the first tap', async () => {
+      const { view, catalogue } = await renderEdit();
 
       fireEvent.click(screen.getByRole('button', { name: /^supprimer$/i }));
+      view.detectChanges();
+
+      expect(catalogue.retiredDish).toBeUndefined();
+      expect(screen.getByRole('button', { name: /confirmer/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /annuler/i })).toBeInTheDocument();
+    });
+
+    it('retires the dish once the vendor confirms', async () => {
+      const { view, catalogue } = await renderEdit();
+      fireEvent.click(screen.getByRole('button', { name: /^supprimer$/i }));
+      view.detectChanges();
+
+      fireEvent.click(screen.getByRole('button', { name: /confirmer/i }));
 
       expect(catalogue.retiredDish).toBe('item-1');
     });
 
-    it('does not submit the form when deleting', async () => {
-      const { catalogue } = await renderEdit();
-
+    it('abandons the deletion when the vendor backs out', async () => {
+      const { view, catalogue } = await renderEdit();
       fireEvent.click(screen.getByRole('button', { name: /^supprimer$/i }));
+      view.detectChanges();
+
+      fireEvent.click(screen.getByRole('button', { name: /annuler/i }));
+      view.detectChanges();
+
+      expect(catalogue.retiredDish).toBeUndefined();
+      expect(screen.getByRole('button', { name: /^supprimer$/i })).toBeInTheDocument();
+    });
+
+    it('does not submit the form when confirming the deletion', async () => {
+      const { view, catalogue } = await renderEdit();
+      fireEvent.click(screen.getByRole('button', { name: /^supprimer$/i }));
+      view.detectChanges();
+
+      fireEvent.click(screen.getByRole('button', { name: /confirmer/i }));
 
       expect(catalogue.revisedDish).toBeUndefined();
     });

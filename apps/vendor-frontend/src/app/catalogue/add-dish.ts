@@ -74,6 +74,25 @@ const DISH_PREVIEW_TRANSFORMATION = 'c_fill,w_600,h_400,q_auto,f_webp';
     .retire:active {
       background: var(--color-danger-soft);
     }
+    .retire-confirm {
+      background: var(--color-danger);
+      border: 1px solid var(--color-danger);
+      color: white;
+    }
+    .retire-confirm:hover,
+    .retire-confirm:active {
+      background: var(--color-danger);
+    }
+    .quiet {
+      background: transparent;
+      color: var(--color-ink-soft);
+      border: 1px solid var(--color-line-strong);
+      box-shadow: none;
+    }
+    .quiet:hover,
+    .quiet:active {
+      background: var(--color-surface-sunk);
+    }
   `,
   template: `
     <mm-card>
@@ -240,12 +259,26 @@ const DISH_PREVIEW_TRANSFORMATION = 'c_fill,w_600,h_400,q_auto,f_webp';
           {{ isEditing ? 'Enregistrer' : 'Ajouter à ma carte ✓' }}
         </button>
 
+        <!-- Every button here is type="button": a stray Enter in the name field submits the
+             form's default button, and none of these should be the one that answers it. -->
         @if (isEditing) {
-          <!-- type="button" keeps a stray Enter in the name field from deleting the dish. -->
-          <button type="button" class="retire mt-3 flex w-full max-w-xs mx-auto justify-center" (click)="retire()">
-            <i class="fa-solid fa-trash-can" aria-hidden="true"></i>
-            Supprimer
-          </button>
+          @if (confirmingRetire()) {
+            <div class="mt-3 mx-auto w-full max-w-xs">
+              <p role="alert" class="text-center text-sm text-ink">Supprimer ce plat de votre carte ?</p>
+              <div class="mt-2 flex gap-2">
+                <button type="button" class="quiet flex-1" (click)="confirmingRetire.set(false)">Annuler</button>
+                <button type="button" class="retire-confirm flex-1" (click)="retire()">
+                  <i class="fa-solid fa-trash-can" aria-hidden="true"></i>
+                  Confirmer
+                </button>
+              </div>
+            </div>
+          } @else {
+            <button type="button" class="retire mt-3 flex w-full max-w-xs mx-auto justify-center" (click)="confirmingRetire.set(true)">
+              <i class="fa-solid fa-trash-can" aria-hidden="true"></i>
+              Supprimer
+            </button>
+          }
         }
       </form>
     </mm-card>
@@ -270,6 +303,9 @@ export class AddDish {
   protected readonly tooLarge = this.catalogue.photoTooLarge;
 
   protected readonly mode = signal<'single' | 'variants'>(this.editing?.variants ? 'variants' : 'single');
+  // Annuler puts this back rather than leaving the screen, so backing out of a deletion
+  // costs nothing the vendor typed.
+  protected readonly confirmingRetire = signal(false);
 
   private readonly model = signal({
     name: this.editing?.name ?? '',
