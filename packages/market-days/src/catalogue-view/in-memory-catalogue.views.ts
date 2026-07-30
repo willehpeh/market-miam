@@ -7,7 +7,15 @@ export class InMemoryCatalogueViews implements CatalogueViews, CatalogueViewStor
 
   async addItemToCatalogue(item: CatalogueViewItem, vendorId: string): Promise<void> {
     const existing = (await this.forVendor(vendorId)).items;
-    existing.push(item);
+    // Replace in place rather than append: a rebuild replays every ItemAddedToCatalogue,
+    // and an unconditional push would duplicate each item. Mirrors the postgres adapter's
+    // ON CONFLICT DO UPDATE, which is what the shared contract pins.
+    const index = existing.findIndex(candidate => candidate.itemId === item.itemId);
+    if (index === -1) {
+      existing.push(item);
+    } else {
+      existing[index] = item;
+    }
     this.items.set(vendorId, existing);
   }
 

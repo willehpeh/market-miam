@@ -20,6 +20,10 @@ export class MarketScheduleViewProjection extends ProjectionFor<CalendarEvent> {
     };
   }
 
+  reset(): Promise<void> {
+    return this.store.clear();
+  }
+
   private handleRegistered(event: StoredEvent): Promise<void> {
     const payload = event.payload as MarketScheduleRegistered['payload'];
     return this.store.recordSchedule(this.viewOf(payload), vendorIdFrom(event));

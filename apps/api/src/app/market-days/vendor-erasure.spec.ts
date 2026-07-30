@@ -2,7 +2,11 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { DataKeys, SHREDDED } from '@market-miam/event-sourcing';
-import { InMemorySubdomainRegistry } from '@market-miam/market-days';
+import {
+  InMemorySubdomainRegistry,
+  VendorStorefrontViews,
+  VendorStorefrontViewStore,
+} from '@market-miam/market-days';
 import { bootApiTestApp } from '../testing/api-test-app';
 import { Subscriptions } from '../event-sourcing/subscriptions';
 import { VendorErasure } from './vendor-erasure';
@@ -34,10 +38,22 @@ describe('Erasing a vendor', () => {
       .expect(200);
     await app.get(Subscriptions).drain();
 
+    // A row with no backing events. The erased vendor's own row would come back as
+    // the sentinel either way — editInformation is last-write-wins, so the replay
+    // overwrites it whether or not the projection cleared first. Only a row replay
+    // cannot recreate proves the clear actually ran, so this is what makes the
+    // assertion below depend on the erasure mechanism rather than on overwriting.
+    await app.get(VendorStorefrontViewStore).editInformation('ghost-vendor', {
+      name: 'Ghost',
+      description: 'no events',
+      phone: '',
+    });
+
     await app.get(VendorErasure).erase('acme-bakery');
 
     // The key is gone, so replay decrypts the PII fields to the sentinel.
     expect(await app.get(DataKeys).findKeyFor('acme-bakery')).toBeNull();
+    expect(await app.get(VendorStorefrontViews).findByVendor('ghost-vendor')).toBeUndefined();
 
     const view = await request(app.getHttpServer())
       .get('/storefront')

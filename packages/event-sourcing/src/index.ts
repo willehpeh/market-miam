@@ -3,15 +3,15 @@ export { StoredEvent } from './domain/stored-event';
 export { DomainEvent } from './domain/domain-event';
 export { Aggregate } from './domain/aggregate';
 export { Events } from './ports/events';
-export { EventHandler } from './ports/event-handler';
-export { Projection } from './domain/projection';
+export type { EventHandler } from './ports/event-handler';
+export type { Projection } from './domain/projection';
 export { ProjectionFor } from './domain/projection-for';
 export {
   CheckpointedProjection,
   CheckpointedProcessor,
   checkpointMetadata,
 } from './domain/checkpointed.decorator';
-export { Processor } from './domain/processor';
+export type { Processor } from './domain/processor';
 export { CommandGateway } from './ports/command-gateway';
 export { QueryGateway } from './ports/query-gateway';
 export { Subscription } from './ports/subscription';

@@ -18,12 +18,14 @@ describe('MarketScheduleView', () => {
   let store: InMemoryEventStore;
   let views: InMemoryMarketScheduleViews;
   let calendars: Calendars;
+  let projection: MarketScheduleViewProjection;
   let subscription: PollingSubscription;
 
   beforeEach(() => {
     store = new InMemoryEventStore();
     views = new InMemoryMarketScheduleViews();
-    subscription = new PollingSubscription(store, new MarketScheduleViewProjection(views), new InMemoryCheckpoint('market-schedule-view'));
+    projection = new MarketScheduleViewProjection(views);
+    subscription = new PollingSubscription(store, projection, new InMemoryCheckpoint('market-schedule-view'));
     calendars = new Calendars(new VendorScopedEvents(store));
   });
 
@@ -102,4 +104,15 @@ describe('MarketScheduleView', () => {
     ]);
   });
 
+
+  it('resets by clearing the read model so a replay rebuilds it from zero', async () => {
+    const command = TestRegisterMarketSchedule.simple();
+    await new RegisterMarketScheduleHandler(calendars).execute(command);
+    await subscription.poll();
+    expect((await views.forVendor(command.vendorId)).schedules).toHaveLength(1);
+
+    await projection.reset();
+
+    expect(await views.forVendor(command.vendorId)).toEqual({ schedules: [] });
+  });
 });

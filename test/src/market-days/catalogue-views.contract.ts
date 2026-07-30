@@ -44,6 +44,18 @@ export function catalogueViewsContract(name: string, create: () => Store): void 
       expect(await store.forVendor('v1')).toEqual({ items: [variantDish] });
     });
 
+    // A rebuild replays every ItemAddedToCatalogue onto the store, so re-adding must
+    // replace rather than append — otherwise a replay duplicates the whole catalogue.
+    it('replaces a re-added item in place', async () => {
+      await store.addItemToCatalogue(dish({ itemId: 'a' }), 'v1');
+      await store.addItemToCatalogue(dish({ itemId: 'b' }), 'v1');
+      await store.addItemToCatalogue(dish({ itemId: 'a', name: 'Renamed' }), 'v1');
+
+      const { items } = await store.forVendor('v1');
+      expect(items.map(item => item.itemId)).toEqual(['a', 'b']);
+      expect(items[0].name).toBe('Renamed');
+    });
+
     it('keeps items in the order they were added', async () => {
       await store.addItemToCatalogue(dish({ itemId: 'a', name: 'A' }), 'v1');
       await store.addItemToCatalogue(dish({ itemId: 'b', name: 'B' }), 'v1');

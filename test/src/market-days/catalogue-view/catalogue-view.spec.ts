@@ -22,12 +22,14 @@ describe('CatalogueView', () => {
   let store: InMemoryEventStore;
   let views: InMemoryCatalogueViews;
   let catalogues: Catalogues;
+  let projection: CatalogueViewProjection;
   let subscription: PollingSubscription;
 
   beforeEach(() => {
     store = new InMemoryEventStore();
     views = new InMemoryCatalogueViews();
-    subscription = new PollingSubscription(store, new CatalogueViewProjection(views), new InMemoryCheckpoint('catalogue-view'));
+    projection = new CatalogueViewProjection(views);
+    subscription = new PollingSubscription(store, projection, new InMemoryCheckpoint('catalogue-view'));
     catalogues = new Catalogues(new VendorScopedEvents(store));
   });
 
@@ -159,6 +161,16 @@ describe('CatalogueView', () => {
         { itemId: second.itemId, name: second.name, description: second.description, price: second.price, imageReference: second.imageReference }
       ],
     })
+  });
+
+  it('resets by clearing the read model so a replay rebuilds it from zero', async () => {
+    const { vendorId } = await addTwoItems(catalogues);
+    await subscription.poll();
+    expect((await views.forVendor(vendorId)).items).toHaveLength(2);
+
+    await projection.reset();
+
+    expect(await views.forVendor(vendorId)).toEqual({ items: [] });
   });
 });
 

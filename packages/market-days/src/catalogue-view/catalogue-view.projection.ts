@@ -20,6 +20,10 @@ export class CatalogueViewProjection extends ProjectionFor<CatalogueEvent> {
     };
   }
 
+  reset(): Promise<void> {
+    return this.store.clear();
+  }
+
   private async handleItemAdded(event: StoredEvent): Promise<void> {
     const payload = event.payload as ItemAddedToCatalogue['payload'];
     return this.store.addItemToCatalogue({

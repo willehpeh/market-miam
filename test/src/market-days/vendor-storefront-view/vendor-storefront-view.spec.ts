@@ -20,13 +20,15 @@ describe('VendorStorefrontView', () => {
   let store: InMemoryEventStore;
   let views: InMemoryVendorStorefrontViews;
   let storefronts: Storefronts;
+  let projection: VendorStorefrontViewProjection;
   let subscription: PollingSubscription;
 
   beforeEach(() => {
     store = new InMemoryEventStore();
     views = new InMemoryVendorStorefrontViews();
     storefronts = new Storefronts(new VendorScopedEvents(store));
-    subscription = new PollingSubscription(store, new VendorStorefrontViewProjection(views), new InMemoryCheckpoint('vendor-storefront-view'));
+    projection = new VendorStorefrontViewProjection(views);
+    subscription = new PollingSubscription(store, projection, new InMemoryCheckpoint('vendor-storefront-view'));
   });
 
   it('has no view for a vendor whose storefront has not opened', async () => {
@@ -78,5 +80,15 @@ describe('VendorStorefrontView', () => {
       imageReference: '',
       published: true
     });
+  });
+
+  it('resets by clearing the read model so a replay rebuilds it from zero', async () => {
+    await new OpenStorefrontHandler(storefronts).execute(TestOpenStorefront.valid());
+    await subscription.poll();
+    expect(await views.findByVendor('vendor-id')).toBeDefined();
+
+    await projection.reset();
+
+    expect(await views.findByVendor('vendor-id')).toBeUndefined();
   });
 });

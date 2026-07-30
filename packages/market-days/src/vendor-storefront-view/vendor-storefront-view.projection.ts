@@ -19,7 +19,7 @@ export class VendorStorefrontViewProjection extends ProjectionFor<StorefrontEven
     };
   }
 
-  override reset(): Promise<void> {
+  reset(): Promise<void> {
     return this.store.clear();
   }
 
