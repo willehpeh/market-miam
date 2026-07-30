@@ -48,4 +48,31 @@ describe('Rebuilding the catalogue projection', () => {
     expect(rebuilt.body).toEqual({ items: [dish] });
     expect(await app.get(CatalogueViews).forVendor('ghost-vendor')).toEqual({ items: [] });
   });
+
+  // A chosen order lives only in the read model — the log carries it as ItemsReordered,
+  // and a rebuild has to replay that on top of a freshly-seeded insertion order to get
+  // back to it. Rebuilding into the wrong order silently reshuffles a vendor's storefront.
+  it('replays a chosen order rather than reverting to the order items were added', async () => {
+    for (const itemId of ['a', 'b', 'c']) {
+      await request(app.getHttpServer())
+        .post('/catalogue')
+        .set('Authorization', 'Bearer any-token')
+        .send({ ...dish, itemId, name: itemId.toUpperCase() })
+        .expect(201);
+    }
+    await request(app.getHttpServer())
+      .put('/catalogue/order')
+      .set('Authorization', 'Bearer any-token')
+      .send({ itemIds: ['c', 'a', 'b'] })
+      .expect(200);
+    await app.get(Subscriptions).drain();
+
+    await app.get(Subscriptions).rebuild('catalogue-view');
+
+    const rebuilt = await request(app.getHttpServer())
+      .get('/catalogue')
+      .set('Authorization', 'Bearer any-token')
+      .expect(200);
+    expect(rebuilt.body.items.map((item: { itemId: string }) => item.itemId)).toEqual(['c', 'a', 'b']);
+  });
 });
