@@ -3,6 +3,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { form, FormField, required } from '@angular/forms/signals';
 import { Card } from '../core/card';
 import { CloudinaryUrlPipe } from '../core/cloudinary-url.pipe';
+import { DismissOnOutsidePress } from '../core/dismiss-on-outside-press';
 import { CatalogueFacade } from './catalogue.facade';
 import { centsToEuros, parseEurosToCents } from './money';
 
@@ -11,7 +12,7 @@ const DISH_PREVIEW_TRANSFORMATION = 'c_fill,w_600,h_400,q_auto,f_webp';
 @Component({
   selector: 'mm-add-dish',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, Card, FormField, CloudinaryUrlPipe],
+  imports: [RouterLink, Card, FormField, CloudinaryUrlPipe, DismissOnOutsidePress],
   styles: `
     .segment {
       flex: 1;
@@ -81,6 +82,18 @@ const DISH_PREVIEW_TRANSFORMATION = 'c_fill,w_600,h_400,q_auto,f_webp';
     }
     .retire-confirm:hover,
     .retire-confirm:active {
+      background: var(--color-danger);
+    }
+    /* the row-scale twin of .retire-confirm — compact enough to sit in a format header
+       without growing the row it replaces the arrows in */
+    .format-confirm {
+      background: var(--color-danger);
+      border: 1px solid var(--color-danger);
+      color: white;
+      padding: 0.375rem 0.75rem;
+    }
+    .format-confirm:hover,
+    .format-confirm:active {
       background: var(--color-danger);
     }
     .quiet {
@@ -203,34 +216,52 @@ const DISH_PREVIEW_TRANSFORMATION = 'c_fill,w_600,h_400,q_auto,f_webp';
                   <div class="rounded-card border border-line bg-surface p-4">
                     <div class="mb-4 flex items-center gap-2">
                       <span class="grid size-7 shrink-0 place-items-center rounded-card bg-brand-soft text-sm font-bold text-ink">{{ $index + 1 }}</span>
-                      <button
-                        type="button"
-                        class="icon-btn"
-                        [attr.aria-label]="'Monter le format ' + ($index + 1)"
-                        [disabled]="$index === 0"
-                        (click)="moveFormatUp($index)"
-                      >
-                        <i class="fa-solid fa-chevron-up" aria-hidden="true"></i>
-                      </button>
-                      <button
-                        type="button"
-                        class="icon-btn"
-                        [attr.aria-label]="'Descendre le format ' + ($index + 1)"
-                        [disabled]="$index === fields.variants().value().length - 1"
-                        (click)="moveFormatDown($index)"
-                      >
-                        <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
-                      </button>
-                      <span class="flex-1 truncate font-bold text-ink">{{ format.name }}</span>
-                      <button
-                        type="button"
-                        class="icon-btn"
-                        [attr.aria-label]="'Supprimer le format ' + ($index + 1)"
-                        [disabled]="fields.variants().value().length <= 2"
-                        (click)="removeFormat($index)"
-                      >
-                        <i class="fa-solid fa-trash-can" aria-hidden="true"></i>
-                      </button>
+                      <span class="min-w-0 flex-1 truncate font-bold text-ink">{{ format.name }}</span>
+                      <!-- Deleting a format throws away what the vendor typed into it, so it asks
+                           first. The arrows stand down while it does: they make room for the wider
+                           button, and reordering a row that is halfway to being deleted is not a
+                           gesture worth honouring. -->
+                      @if (confirmingFormat() === $index) {
+                        <button
+                          type="button"
+                          class="format-confirm shrink-0"
+                          mmDismissOnOutsidePress
+                          (dismissed)="confirmingFormat.set(null)"
+                          [attr.aria-label]="'Confirmer la suppression du format ' + ($index + 1)"
+                          (click)="removeFormat($index)"
+                        >
+                          <i class="fa-solid fa-trash-can" aria-hidden="true"></i>
+                          Supprimer
+                        </button>
+                      } @else {
+                        <button
+                          type="button"
+                          class="icon-btn shrink-0"
+                          [attr.aria-label]="'Descendre le format ' + ($index + 1)"
+                          [disabled]="$index === fields.variants().value().length - 1"
+                          (click)="moveFormatDown($index)"
+                        >
+                          <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
+                        </button>
+                        <button
+                          type="button"
+                          class="icon-btn shrink-0"
+                          [attr.aria-label]="'Monter le format ' + ($index + 1)"
+                          [disabled]="$index === 0"
+                          (click)="moveFormatUp($index)"
+                        >
+                          <i class="fa-solid fa-chevron-up" aria-hidden="true"></i>
+                        </button>
+                        <button
+                          type="button"
+                          class="icon-btn shrink-0"
+                          [attr.aria-label]="'Supprimer le format ' + ($index + 1)"
+                          [disabled]="fields.variants().value().length <= 2"
+                          (click)="confirmingFormat.set($index)"
+                        >
+                          <i class="fa-solid fa-trash-can" aria-hidden="true"></i>
+                        </button>
+                      }
                     </div>
                     <div class="grid grid-cols-[auto_1fr] items-baseline gap-x-4 gap-y-3">
                       <label [attr.for]="'format-name-' + $index" class="field-label">Format</label>
@@ -263,7 +294,7 @@ const DISH_PREVIEW_TRANSFORMATION = 'c_fill,w_600,h_400,q_auto,f_webp';
              form's default button, and none of these should be the one that answers it. -->
         @if (isEditing) {
           @if (confirmingRetire()) {
-            <div class="mt-3 mx-auto w-full max-w-xs">
+            <div class="mt-3 mx-auto w-full max-w-xs" mmDismissOnOutsidePress (dismissed)="confirmingRetire.set(false)">
               <p role="alert" class="text-center text-sm text-ink">Supprimer ce plat de votre carte ?</p>
               <div class="mt-2 flex gap-2">
                 <button type="button" class="quiet flex-1" (click)="confirmingRetire.set(false)">Annuler</button>
@@ -306,6 +337,9 @@ export class AddDish {
   // Annuler puts this back rather than leaving the screen, so backing out of a deletion
   // costs nothing the vendor typed.
   protected readonly confirmingRetire = signal(false);
+  // Which format row is asking to be confirmed, by index. Every edit to the list clears it:
+  // the index is only meaningful against the list it was taken from.
+  protected readonly confirmingFormat = signal<number | null>(null);
 
   private readonly model = signal({
     name: this.editing?.name ?? '',
@@ -341,10 +375,12 @@ export class AddDish {
   }
 
   protected addFormat(): void {
+    this.confirmingFormat.set(null);
     this.model.update((m) => ({ ...m, variants: [...m.variants, emptyFormat()] }));
   }
 
   protected removeFormat(index: number): void {
+    this.confirmingFormat.set(null);
     this.model.update((m) => ({ ...m, variants: m.variants.filter((_, i) => i !== index) }));
   }
 
@@ -357,6 +393,7 @@ export class AddDish {
   }
 
   private swapFormats(a: number, b: number): void {
+    this.confirmingFormat.set(null);
     this.model.update((m) => {
       if (a < 0 || b < 0 || a >= m.variants.length || b >= m.variants.length) {
         return m;

@@ -27,6 +27,16 @@ function selectFile(container: Element, file: File, source: 'camera' | 'roll' = 
 
 const anImage = () => new File(['bytes'], 'plat.jpg', { type: 'image/jpeg' });
 
+// Three rows, because the delete stays disabled while a dish is down to its last two formats.
+async function renderThreeFormats() {
+  const { view, catalogue } = await renderForm();
+  fireEvent.click(screen.getByRole('button', { name: /plusieurs formats/i }));
+  view.detectChanges();
+  fireEvent.click(screen.getByRole('button', { name: /ajouter un format/i }));
+  view.detectChanges();
+  return { view, catalogue };
+}
+
 function fillForm(name: string, price: string) {
   fireEvent.input(screen.getByLabelText(/nom du plat/i), { target: { value: name } });
   fireEvent.input(screen.getByLabelText(/prix/i), { target: { value: price } });
@@ -173,7 +183,50 @@ describe('AddDish', () => {
     expect(deletes[0]).toBeEnabled();
     fireEvent.click(deletes[0]);
     view.detectChanges();
+    fireEvent.click(screen.getByRole('button', { name: /confirmer la suppression du format 1/i }));
+    view.detectChanges();
     expect(screen.getAllByLabelText(/^format$/i)).toHaveLength(2);
+  });
+
+  it('asks before deleting a format, standing that row\'s arrows down while it does', async () => {
+    const { view } = await renderThreeFormats();
+
+    fireEvent.click(screen.getAllByRole('button', { name: /supprimer le format/i })[0]);
+    view.detectChanges();
+
+    expect(screen.getByRole('button', { name: /confirmer la suppression du format 1/i })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /descendre le format 1/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /monter le format 1/i })).not.toBeInTheDocument();
+    // the rows that were not asked about keep theirs
+    expect(screen.getByRole('button', { name: /descendre le format 2/i })).toBeInTheDocument();
+    expect(screen.getAllByLabelText(/^format$/i)).toHaveLength(3);
+  });
+
+  it('abandons a pending format delete when the vendor presses elsewhere', async () => {
+    const { view } = await renderThreeFormats();
+    fireEvent.click(screen.getAllByRole('button', { name: /supprimer le format/i })[0]);
+    view.detectChanges();
+
+    fireEvent.pointerDown(screen.getByLabelText(/nom du plat/i));
+    view.detectChanges();
+
+    expect(screen.queryByRole('button', { name: /confirmer la suppression/i })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /descendre le format 1/i })).toBeInTheDocument();
+    expect(screen.getAllByLabelText(/^format$/i)).toHaveLength(3);
+  });
+
+  // The pending row is tracked by index, so anything that renumbers the list has to drop it —
+  // otherwise the second tap lands on whichever format has since moved into that slot.
+  it('drops a pending format delete when another row is reordered', async () => {
+    const { view } = await renderThreeFormats();
+    fireEvent.click(screen.getAllByRole('button', { name: /supprimer le format/i })[0]);
+    view.detectChanges();
+
+    fireEvent.click(screen.getByRole('button', { name: /descendre le format 2/i }));
+    view.detectChanges();
+
+    expect(screen.queryByRole('button', { name: /confirmer la suppression/i })).not.toBeInTheDocument();
+    expect(screen.getAllByLabelText(/^format$/i)).toHaveLength(3);
   });
 
   it('will not submit a formats dish while a format row is incomplete', async () => {
@@ -404,6 +457,18 @@ describe('AddDish', () => {
       view.detectChanges();
 
       fireEvent.click(screen.getByRole('button', { name: /annuler/i }));
+      view.detectChanges();
+
+      expect(catalogue.retiredDish).toBeUndefined();
+      expect(screen.getByRole('button', { name: /^supprimer$/i })).toBeInTheDocument();
+    });
+
+    it('abandons the deletion when the vendor presses elsewhere', async () => {
+      const { view, catalogue } = await renderEdit();
+      fireEvent.click(screen.getByRole('button', { name: /^supprimer$/i }));
+      view.detectChanges();
+
+      fireEvent.pointerDown(screen.getByLabelText(/nom du plat/i));
       view.detectChanges();
 
       expect(catalogue.retiredDish).toBeUndefined();
