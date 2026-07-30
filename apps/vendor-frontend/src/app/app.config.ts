@@ -1,5 +1,5 @@
 import { ApplicationConfig, isDevMode, provideBrowserGlobalErrorListeners } from '@angular/core';
-import { provideRouter } from '@angular/router';
+import { provideRouter, withInMemoryScrolling } from '@angular/router';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { authHttpInterceptorFn } from '@auth0/auth0-angular';
 import { appRoutes } from './app.routes';
@@ -17,7 +17,11 @@ import { provideNgrx } from './core/ngrx.providers';
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
-    provideRouter(appRoutes),
+    // Sibling routes swap under one outlet, so without this the document keeps its
+    // scrollTop: a vendor who scrolled to a dish deep in their catalogue opened its
+    // form already scrolled past the top of it. Forward navigations start at the top,
+    // and a real back button still returns the vendor to their place in the list.
+    provideRouter(appRoutes, withInMemoryScrolling({ scrollPositionRestoration: 'enabled' })),
     // Prod attaches the real Auth0 access token; dev sends a stub token the API's
     // faked verifier accepts (its guard still requires a bearer credential).
     provideHttpClient(
