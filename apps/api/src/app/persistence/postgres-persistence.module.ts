@@ -38,6 +38,9 @@ const pool = {
       // instance ≈ max + 1 (the dedicated LISTEN client); migrate-on-boot adds one
       // transiently. 10 is safe for a handful of instances on basic-256mb (~97 conns);
       // set DATABASE_POOL_MAX to retune per plan / instance count without a code deploy.
+      // Nested acquisition: a processor's command appends on the transaction's own
+      // client, but a data-key mint inside that transaction still takes a second
+      // (PostgresDataKeys is deliberately pool-bound) — keep max ≥ 2.
       max: Number(config.get<string>('DATABASE_POOL_MAX')) || 10,
       // Keep one connection alive rather than raising idleTimeoutMillis above the poll
       // interval: the timeout fix would silently re-break the day the interval changes.
@@ -112,7 +115,14 @@ const views = [
 @Module({
   providers: [
     pool,
-    { provide: PERSISTED_EVENTS, useFactory: (p: Pool) => new PostgresEventStore(p), inject: [Pool] },
+    {
+      // The unit of work makes appends dispatched inside a subscription's transaction
+      // join it (W2): a processor's command appends commit atomically with its
+      // checkpoint. HTTP-path appends see no ambient transaction and are unchanged.
+      provide: PERSISTED_EVENTS,
+      useFactory: (p: Pool, uow: PostgresUnitOfWork) => new PostgresEventStore(p, uow),
+      inject: [Pool, PostgresUnitOfWork],
+    },
     {
       provide: DataKeys,
       useFactory: (p: Pool, config: ConfigService) => new PostgresDataKeys(p, masterKey(config)),

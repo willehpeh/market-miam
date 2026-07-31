@@ -8,15 +8,24 @@ export class AppendTransaction {
   private currentStreamPosition = 0;
 
   // ponytail: one global advisory lock serialises appends so global_position commits
-  // in order — the single-bigint cursor stays gap-free (ADR 0028).
+  // in order — monotonic commit order, which is all the single-bigint cursor needs
+  // (ADR 0028; rollbacks still burn identity values, so positions are not gap-free).
   private readonly APPEND_LOCK_KEY = 4_827_193;
 
+  // ownsTransaction=false joins an ambient transaction on the caller's client: the
+  // lock and the write run on it, but BEGIN/COMMIT/ROLLBACK/release stay with the
+  // owner — its commit is what makes the events durable, and its rollback discards
+  // them. The advisory lock is pg_advisory_xact_lock, so it scopes to whichever
+  // transaction it joins either way.
   constructor(private readonly client: PoolClient,
-              private readonly streamId: string) {
+              private readonly streamId: string,
+              private readonly ownsTransaction = true) {
   }
 
   async open(): Promise<void> {
-    await this.client.query('BEGIN');
+    if (this.ownsTransaction) {
+      await this.client.query('BEGIN');
+    }
     await this.client.query('SELECT pg_advisory_xact_lock($1)', [this.APPEND_LOCK_KEY]);
   }
 
@@ -70,7 +79,10 @@ export class AppendTransaction {
     }
   }
 
-  async commit(): Promise<QueryResult> {
+  async commit(): Promise<QueryResult | undefined> {
+    if (!this.ownsTransaction) {
+      return undefined;
+    }
     // Postgres resolves COMMIT on an aborted transaction successfully, with a ROLLBACK
     // command tag — any swallowed in-transaction error would otherwise read as a durable write.
     const result = await this.client.query('COMMIT');
@@ -81,10 +93,15 @@ export class AppendTransaction {
   }
 
   async rollback(): Promise<QueryResult | undefined> {
+    if (!this.ownsTransaction) {
+      return undefined;
+    }
     return this.client.query('ROLLBACK').catch(() => undefined);
   }
 
   release(): void {
-    this.client.release();
+    if (this.ownsTransaction) {
+      this.client.release();
+    }
   }
 }

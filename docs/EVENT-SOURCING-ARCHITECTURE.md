@@ -387,6 +387,14 @@ Handle and checkpoint-write commit **atomically**. A throw rolls both back, so a
 poison event replays rather than being silently skipped. Per-event dead-lettering
 needs a durable attempt count and is deferred.
 
+For a **processor** the unit is wider than it looks: its dispatched command
+appends events, and `PostgresEventStore` joins the ambient transaction when one
+exists (ADR 0035) — so the command's appends and the checkpoint commit together
+or not at all. Exactly-once therefore holds for side effects that are writes to
+this database. A processor whose side effect *leaves* the database (an email, an
+external API call) is still at-least-once and must tolerate redelivery; no such
+processor exists today.
+
 ### 7.4 Schedule and failure
 
 ```ts
@@ -475,8 +483,10 @@ whatever `PERSISTED_EVENTS` answered, so the decorator chain is written once.
 
 ```ts
 class PostgresUnitOfWork extends UnitOfWork implements Queryable {
-  transaction(fn) { /* BEGIN on a pooled client stashed in AsyncLocalStorage */ }
+  transaction(fn) { /* BEGIN on a pooled client stashed in AsyncLocalStorage;
+                       COMMIT's command tag is verified (ADR 0034) */ }
   query(text, params) { return (this.active.getStore() ?? this.pool).query(…) }
+  activeClient() { return this.active.getStore() }
 }
 ```
 
@@ -485,6 +495,12 @@ Postgres view adapters are constructed with the UoW *as their `Queryable`* — n
 the raw `Pool` — a projection write and its checkpoint write land in one physical
 transaction with no adapter knowing it. `Queryable` is what makes the swap invisible:
 `Pool` satisfies it too, so tests can pass a raw pool.
+
+`PostgresEventStore` needs more than query routing: an append is a multi-statement
+transaction that must pin one connection, so it asks `activeClient()` instead.
+Inside a transaction it runs the advisory lock and INSERT on that client with no
+BEGIN/COMMIT of its own — the outer, tag-verified commit decides durability
+(ADR 0035). Outside one, its dedicated-client append is unchanged.
 
 `PostgresDataKeys` deliberately bypasses this and takes the raw `Pool`: a minted key
 must survive even if the surrounding append rolls back, and `shred()` is its own

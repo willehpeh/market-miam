@@ -5,7 +5,7 @@
 | Severity | High |
 | Area | Read path ↔ write path seam |
 | Files | `packages/event-sourcing/src/adapters/postgres/postgres.event-store.ts:18`, `apps/api/src/app/persistence/postgres-persistence.module.ts:115`, `packages/event-sourcing/src/adapters/polling.subscription.ts:29-34` |
-| Status | Open |
+| Status | **Fixed** — see [Fix](#fix-2026-07-31) below; decision recorded in [ADR 0035](../adr/0035-appends-join-the-ambient-unit-of-work.md) |
 | Found | 2026-07-31 evaluation @ `eec797b` |
 | Reviewed | 2026-07-31 — core claim confirmed against the code; fix shape, deadlock condition, retry-loop claim, and doc citation corrected |
 
@@ -141,3 +141,38 @@ ADR 0031's no-op re-publish, `Storefront.open()`'s guard) — never as a rule
 processors must satisfy. The convention is enforced nowhere and is currently
 the only thing standing between a checkpoint failure and duplicated side
 effects, which makes writing it down more urgent, not less.
+
+## Fix (2026-07-31)
+
+Implemented as suggested above; the decision and its tradeoffs are recorded in
+[ADR 0035](../adr/0035-appends-join-the-ambient-unit-of-work.md).
+
+- `PostgresUnitOfWork` grew `activeClient()` (the explicit seam) and its
+  `transaction()` now verifies the COMMIT command tag — the ADR 0034 check
+  ported up, so joined appends keep W1's verified-commit protection.
+- `AppendTransaction` takes an `ownsTransaction` flag: joined mode runs the
+  advisory lock and INSERT on the ambient client and leaves
+  BEGIN/COMMIT/ROLLBACK/release to the transaction's owner.
+- `PostgresEventStore` takes the UoW alongside the `Pool`, joins the ambient
+  transaction when one exists, and routes reads through the UoW so a command
+  dispatched in-transaction sees its own uncommitted appends. Constructed with
+  only a `Pool` (every existing test, the standalone path), behaviour is
+  unchanged.
+- Wiring: `PERSISTED_EVENTS` in `postgres-persistence.module.ts` now injects
+  the UoW; the pool-sizing comment records the remaining nested acquisition
+  (the deliberately pool-bound data-key mint → keep `max ≥ 2`).
+
+Pinned by `test/src/market-days/postgres/transactional-processor.container.spec.ts`:
+a processor whose checkpoint write fails after its command appended — events
+gone after rollback, appended exactly once on retry — plus the max-1-pool spec
+proving the joined append takes no second connection. The commit-tag check and
+`activeClient()` are pinned by the fast `postgres-unit-of-work.spec.ts`.
+(Container specs written but not executed in this environment — no Docker; they
+run under `test:container` in CI.)
+
+Still true after the fix: a processor whose side effect *leaves* the database
+(email, external API) is at-least-once and must tolerate redelivery — now
+documented in ADR 0035 and `EVENT-SOURCING-ARCHITECTURE.md` §7.3 instead of
+implicit. The observability shift (a green append span in joined mode no longer
+implies durability; the outer commit decides) is recorded in ADR 0035's
+consequences.

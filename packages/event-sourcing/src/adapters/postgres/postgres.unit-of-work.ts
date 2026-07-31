@@ -20,7 +20,13 @@ export class PostgresUnitOfWork extends UnitOfWork implements Queryable {
     try {
       await client.query('BEGIN');
       const result = await this.active.run(client, fn);
-      await client.query('COMMIT');
+      // Postgres resolves COMMIT on an aborted transaction successfully, with a ROLLBACK
+      // command tag — an error swallowed inside fn would otherwise read as a durable unit
+      // of work (same verified commit as AppendTransaction, ADR 0034).
+      const commit = await client.query('COMMIT');
+      if (commit.command !== 'COMMIT') {
+        throw new Error(`unit of work was rolled back: COMMIT returned ${commit.command}`);
+      }
       return result;
     } catch (error) {
       await client.query('ROLLBACK').catch(() => undefined);
@@ -32,5 +38,12 @@ export class PostgresUnitOfWork extends UnitOfWork implements Queryable {
 
   query<R extends QueryResultRow = QueryResultRow>(text: string, params?: unknown[]): Promise<QueryResult<R>> {
     return (this.active.getStore() ?? this.pool).query<R>(text, params);
+  }
+
+  // The seam for work that needs the transaction's client itself, not just query
+  // routing — a multi-statement append must pin one connection, and Queryable can
+  // neither pin nor answer "is there an ambient transaction?".
+  activeClient(): PoolClient | undefined {
+    return this.active.getStore();
   }
 }

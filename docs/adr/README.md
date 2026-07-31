@@ -40,3 +40,4 @@ deferred decisions in `docs/DEFERRED.md` (see ADR 0017).
 | [0032](0032-subdomain-assignment-is-a-publication-requirement.md) | An assigned subdomain is a storefront publication requirement | 2026-07-19 |
 | [0033](0033-dish-variants.md) | Dish variants: a dish is flat or variant, never both | 2026-07-24 |
 | [0034](0034-atomic-appends-verified-commit.md) | Appends are one atomic statement; COMMIT tags are verified | 2026-07-31 |
+| [0035](0035-appends-join-the-ambient-unit-of-work.md) | Appends join the ambient unit of work | 2026-07-31 |
