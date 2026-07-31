@@ -15,14 +15,31 @@ export class PostgresUnitOfWork extends UnitOfWork implements Queryable {
     super();
   }
 
-  async transaction<T>(fn: () => Promise<T>): Promise<T> {
+  transaction<T>(fn: () => Promise<T>): Promise<T> {
+    return this.ownTransaction(() => fn());
+  }
+
+  // The tell for multi-statement work that must pin one connection (an append:
+  // lock, check, INSERT): run it in the ambient transaction when one exists — its
+  // owner's COMMIT decides durability — or in a fresh one when none does. The
+  // caller hands over the work and never learns which case applied.
+  inTransaction<T>(work: (client: PoolClient) => Promise<T>): Promise<T> {
+    const ambient = this.active.getStore();
+    return ambient ? work(ambient) : this.ownTransaction(work);
+  }
+
+  query<R extends QueryResultRow = QueryResultRow>(text: string, params?: unknown[]): Promise<QueryResult<R>> {
+    return (this.active.getStore() ?? this.pool).query<R>(text, params);
+  }
+
+  private async ownTransaction<T>(fn: (client: PoolClient) => Promise<T>): Promise<T> {
     const client = await this.pool.connect();
     try {
       await client.query('BEGIN');
-      const result = await this.active.run(client, fn);
+      const result = await this.active.run(client, () => fn(client));
       // Postgres resolves COMMIT on an aborted transaction successfully, with a ROLLBACK
       // command tag — an error swallowed inside fn would otherwise read as a durable unit
-      // of work (same verified commit as AppendTransaction, ADR 0034).
+      // of work (verified commit, ADR 0034).
       const commit = await client.query('COMMIT');
       if (commit.command !== 'COMMIT') {
         throw new Error(`unit of work was rolled back: COMMIT returned ${commit.command}`);
@@ -34,16 +51,5 @@ export class PostgresUnitOfWork extends UnitOfWork implements Queryable {
     } finally {
       client.release();
     }
-  }
-
-  query<R extends QueryResultRow = QueryResultRow>(text: string, params?: unknown[]): Promise<QueryResult<R>> {
-    return (this.active.getStore() ?? this.pool).query<R>(text, params);
-  }
-
-  // The seam for work that needs the transaction's client itself, not just query
-  // routing — a multi-statement append must pin one connection, and Queryable can
-  // neither pin nor answer "is there an ambient transaction?".
-  activeClient(): PoolClient | undefined {
-    return this.active.getStore();
   }
 }

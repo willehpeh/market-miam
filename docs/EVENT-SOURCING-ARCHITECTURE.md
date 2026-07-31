@@ -168,18 +168,19 @@ One instance is exposed under both tokens:
 
 ### 3.4 Appending
 
-`PostgresEventStore.append` opens an `AppendTransaction`:
+`PostgresEventStore.append` runs a `SerializedAppend` through
+`unitOfWork.inTransaction(...)` — the ambient transaction when one exists, a fresh
+one (BEGIN … tag-verified COMMIT, ADR 0034/0035) when none does:
 
-1. `BEGIN`
-2. `SELECT pg_advisory_xact_lock(4827193)` — one global lock so `global_position`
-   commits in order and the single-bigint cursor stays gap-free (ADR 0028)
-3. count the stream, compare to `expectedStreamPosition`, throw `ConcurrencyError` on
+1. `SELECT pg_advisory_xact_lock(4827193)` — one global lock so `global_position`
+   commits in order: monotonic commit order, which is all the single-bigint cursor
+   needs (ADR 0028; rollbacks burn identity values, so positions are not gap-free)
+2. count the stream, compare to `expectedStreamPosition`, throw `ConcurrencyError` on
    mismatch
-4. insert each event
-5. `COMMIT`
+3. one multi-row `INSERT` for the whole batch (ADR 0034)
 
-Serialised appends are a deliberate throughput ceiling bought in exchange for a
-gap-free global cursor, which is what makes the checkpoint a single number.
+Serialised appends are a deliberate throughput ceiling bought in exchange for
+monotonic commit order, which is what makes the checkpoint a single number.
 
 ---
 
@@ -485,8 +486,8 @@ whatever `PERSISTED_EVENTS` answered, so the decorator chain is written once.
 class PostgresUnitOfWork extends UnitOfWork implements Queryable {
   transaction(fn) { /* BEGIN on a pooled client stashed in AsyncLocalStorage;
                        COMMIT's command tag is verified (ADR 0034) */ }
+  inTransaction(work) { /* run work(client) in the ambient transaction, else own one */ }
   query(text, params) { return (this.active.getStore() ?? this.pool).query(…) }
-  activeClient() { return this.active.getStore() }
 }
 ```
 
@@ -496,11 +497,14 @@ the raw `Pool` — a projection write and its checkpoint write land in one physi
 transaction with no adapter knowing it. `Queryable` is what makes the swap invisible:
 `Pool` satisfies it too, so tests can pass a raw pool.
 
-`PostgresEventStore` needs more than query routing: an append is a multi-statement
-transaction that must pin one connection, so it asks `activeClient()` instead.
-Inside a transaction it runs the advisory lock and INSERT on that client with no
-BEGIN/COMMIT of its own — the outer, tag-verified commit decides durability
-(ADR 0035). Outside one, its dedicated-client append is unchanged.
+`PostgresEventStore` needs more than query routing: an append is multi-statement
+work that must pin one connection. So it *tells* the UoW —
+`inTransaction(client => new SerializedAppend(client, streamId).execute(…))` — and
+never learns which case applied. Inside a transaction the lock, check, and INSERT
+run on the ambient client and the outer, tag-verified commit decides durability
+(ADR 0035); outside one, the UoW owns a fresh transaction around the same
+statements. All transaction lifecycle lives in one place, `PostgresUnitOfWork`,
+which is also the only holder of the ADR 0034 verified-commit check.
 
 `PostgresDataKeys` deliberately bypasses this and takes the raw `Pool`: a minted key
 must survive even if the surrounding append rolls back, and `shred()` is its own

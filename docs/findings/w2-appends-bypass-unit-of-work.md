@@ -144,29 +144,36 @@ effects, which makes writing it down more urgent, not less.
 
 ## Fix (2026-07-31)
 
-Implemented as suggested above; the decision and its tradeoffs are recorded in
+Implemented in the shape suggested above, then reshaped once by a
+tell-don't-ask review (the first cut's `activeClient()` seam + `ownsTransaction`
+flag are recorded as rejected in the ADR); the decision and its tradeoffs are in
 [ADR 0035](../adr/0035-appends-join-the-ambient-unit-of-work.md).
 
-- `PostgresUnitOfWork` grew `activeClient()` (the explicit seam) and its
-  `transaction()` now verifies the COMMIT command tag — the ADR 0034 check
-  ported up, so joined appends keep W1's verified-commit protection.
-- `AppendTransaction` takes an `ownsTransaction` flag: joined mode runs the
-  advisory lock and INSERT on the ambient client and leaves
-  BEGIN/COMMIT/ROLLBACK/release to the transaction's owner.
-- `PostgresEventStore` takes the UoW alongside the `Pool`, joins the ambient
-  transaction when one exists, and routes reads through the UoW so a command
-  dispatched in-transaction sees its own uncommitted appends. Constructed with
-  only a `Pool` (every existing test, the standalone path), behaviour is
-  unchanged.
-- Wiring: `PERSISTED_EVENTS` in `postgres-persistence.module.ts` now injects
-  the UoW; the pool-sizing comment records the remaining nested acquisition
-  (the deliberately pool-bound data-key mint → keep `max ≥ 2`).
+- `PostgresUnitOfWork` grew `inTransaction(work)`: run `work(client)` in the
+  ambient transaction when one exists — its owner's COMMIT decides durability —
+  or in a fresh one when none does. All transaction lifecycle, including the
+  ADR 0034 verified-COMMIT check (ported up so joined appends keep W1's
+  protection), lives in this one class.
+- `AppendTransaction` became `SerializedAppend`: no lifecycle, no mode flag,
+  one `execute(events, expected, metadata)` owning lock + concurrency check +
+  INSERT on whatever client it is handed — which also resolves
+  `docs/OO-SMELL-AUDIT.md` #5 (temporal coupling of the five-call protocol).
+- `PostgresEventStore.append` is a single tell —
+  `unitOfWork.inTransaction(client => new SerializedAppend(client, streamId)
+  .execute(…))` — and reads route through the UoW so a command dispatched
+  in-transaction sees its own uncommitted appends. Constructed with only a
+  `Pool` (every existing test, the standalone path) it defaults a private UoW
+  that never has an ambient transaction: behaviour unchanged.
+- Wiring: `PERSISTED_EVENTS` in `postgres-persistence.module.ts` injects the
+  shared UoW — sharing is what makes joining possible; the pool-sizing comment
+  records the remaining nested acquisition (the deliberately pool-bound
+  data-key mint → keep `max ≥ 2`).
 
 Pinned by `test/src/market-days/postgres/transactional-processor.container.spec.ts`:
 a processor whose checkpoint write fails after its command appended — events
 gone after rollback, appended exactly once on retry — plus the max-1-pool spec
 proving the joined append takes no second connection. The commit-tag check and
-`activeClient()` are pinned by the fast `postgres-unit-of-work.spec.ts`.
+both `inTransaction` cases are pinned by the fast `postgres-unit-of-work.spec.ts`.
 (Container specs written but not executed in this environment — no Docker; they
 run under `test:container` in CI.)
 

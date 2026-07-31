@@ -57,14 +57,44 @@ describe('PostgresUnitOfWork', () => {
     expect(releasedTimes()).toBe(1);
   });
 
-  it('exposes the transaction client inside a transaction, and nothing outside one', async () => {
-    const { pool, client } = fakePool();
+  it('inTransaction outside a transaction owns one: BEGIN, the work, verified COMMIT', async () => {
+    const { pool, client, statements, releasedTimes } = fakePool();
+    const handed: PoolClient[] = [];
+
+    await new PostgresUnitOfWork(pool).inTransaction(async (c) => {
+      handed.push(c);
+      await c.query('WORK');
+    });
+
+    expect(handed).toEqual([client]);
+    expect(statements).toEqual(['BEGIN', 'WORK', 'COMMIT']);
+    expect(releasedTimes()).toBe(1);
+  });
+
+  it('inTransaction inside a transaction joins it: same client, no second BEGIN/COMMIT', async () => {
+    const { pool, client, statements } = fakePool();
     const uow = new PostgresUnitOfWork(pool);
 
-    expect(uow.activeClient()).toBeUndefined();
     await uow.transaction(async () => {
-      expect(uow.activeClient()).toBe(client);
+      await uow.inTransaction(async (c) => {
+        expect(c).toBe(client);
+        await c.query('WORK');
+      });
     });
-    expect(uow.activeClient()).toBeUndefined();
+
+    expect(statements).toEqual(['BEGIN', 'WORK', 'COMMIT']);
+  });
+
+  it('rolls back an owned inTransaction when the work throws', async () => {
+    const { pool, statements, releasedTimes } = fakePool();
+
+    await expect(
+      new PostgresUnitOfWork(pool).inTransaction(async () => {
+        throw new Error('append failed');
+      }),
+    ).rejects.toThrow('append failed');
+
+    expect(statements).toEqual(['BEGIN', 'ROLLBACK']);
+    expect(releasedTimes()).toBe(1);
   });
 });

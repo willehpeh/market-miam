@@ -4,43 +4,35 @@ import { EventStore } from '../../ports/event-store';
 import { Events } from '../../ports/events';
 import { StoredEvent } from '../../domain/stored-event';
 import { EventRow } from './event-row';
-import { AppendTransaction } from './append-transaction';
+import { SerializedAppend } from './serialized-append';
 import { PostgresUnitOfWork } from './postgres.unit-of-work';
-import { Queryable } from './queryable';
 
 export class PostgresEventStore implements EventStore, Events {
-  // Without a unit of work every append commits on its own dedicated connection.
-  // With one, an append issued inside unitOfWork.transaction(...) joins that
-  // transaction instead — a processor's command appends become durable atomically
-  // with its checkpoint, or not at all. Outside a transaction behaviour is unchanged.
+  // The unit of work decides where every statement lands. An append issued inside
+  // unitOfWork.transaction(...) joins that transaction — a processor's command
+  // appends commit atomically with its checkpoint — and reads inside one see its
+  // own uncommitted appends; outside a transaction everything falls back to the
+  // pool. Construction with only a Pool (tests, and any standalone use) gets a
+  // private unit of work that never has an ambient transaction: unchanged
+  // one-transaction-per-append behaviour.
   constructor(
-    private readonly pool: Pool,
-    private readonly unitOfWork?: PostgresUnitOfWork,
+    pool: Pool,
+    private readonly unitOfWork: PostgresUnitOfWork = new PostgresUnitOfWork(pool),
   ) {}
 
-  async append(
+  append(
     streamId: string,
     events: DomainEvent[],
     expectedStreamPosition: number,
     metadata?: Record<string, unknown>,
   ): Promise<void> {
-    const ambient = this.unitOfWork?.activeClient();
-    const client = ambient ?? (await this.pool.connect());
-    const txn = new AppendTransaction(client, streamId, ambient === undefined);
-    try {
-      await txn.open();
-      await txn.append(events, expectedStreamPosition, metadata);
-      await txn.commit();
-    } catch (error) {
-      await txn.rollback();
-      throw error;
-    } finally {
-      txn.release();
-    }
+    return this.unitOfWork.inTransaction((client) =>
+      new SerializedAppend(client, streamId).execute(events, expectedStreamPosition, metadata),
+    );
   }
 
   async load(streamId: string): Promise<StoredEvent[]> {
-    const { rows } = await this.queryable().query<EventRow>(
+    const { rows } = await this.unitOfWork.query<EventRow>(
       'SELECT * FROM events WHERE stream_id = $1 ORDER BY stream_position',
       [streamId],
     );
@@ -48,7 +40,7 @@ export class PostgresEventStore implements EventStore, Events {
   }
 
   async loadFrom(globalPosition: number, limit: number): Promise<StoredEvent[]> {
-    const { rows } = await this.queryable().query<EventRow>(
+    const { rows } = await this.unitOfWork.query<EventRow>(
       'SELECT * FROM events WHERE global_position > $1 ORDER BY global_position LIMIT $2',
       [globalPosition, limit],
     );
@@ -58,17 +50,10 @@ export class PostgresEventStore implements EventStore, Events {
   async head(): Promise<number> {
     // COALESCE so an empty log reads 0 rather than null; Number() because MAX over a
     // bigint column comes back as a string.
-    const { rows } = await this.queryable().query<{ head: string }>(
+    const { rows } = await this.unitOfWork.query<{ head: string }>(
       'SELECT COALESCE(MAX(global_position), 0) AS head FROM events',
     );
     return Number(rows[0].head);
-  }
-
-  // Reads route through the unit of work so a command dispatched inside a transaction
-  // sees its own uncommitted appends (load-then-save within one unit); outside a
-  // transaction the unit of work falls back to the pool itself.
-  private queryable(): Queryable {
-    return this.unitOfWork ?? this.pool;
   }
 }
 

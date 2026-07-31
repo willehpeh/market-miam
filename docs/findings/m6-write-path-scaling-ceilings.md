@@ -98,4 +98,6 @@ in the cluster can queue behind an appending processor's slowest per-event
 transaction. Accepted at current volume (one processor, one cheap command);
 this is the first number to look at if append latency ever climbs. The
 "gap-free" comment nit is also now fixed — the comment says monotonic commit
-order and names the burned-identity-values caveat.
+order and names the burned-identity-values caveat (the class is now
+`SerializedAppend` in `serialized-append.ts`; this finding's
+`append-transaction.ts` line references are anchored to the evaluated commit).
