@@ -2,7 +2,8 @@
 
 The event-store build is **done and proven live** — this plan now tracks what's
 left on the database: read-model persistence, crypto-shredding, and ops safety
-nets. Consolidated from `PLAN.md`, `docs/DEFERRED.md`, and `O11Y-PLAN.md`.
+nets. Consolidated from the former root `PLAN.md` (since deleted), `docs/DEFERRED.md`,
+and `O11Y-PLAN.md`.
 Prioritised: **read models can't be deferred; crypto-shredding needed very soon.**
 
 ## Already done (baseline — see git history)
@@ -203,9 +204,11 @@ Conditional — no action until measured.
 
 ## Cross-doc cleanup
 
-`PLAN.md` backlog **#1 (persistent store) is complete**; its #4 list ("checkpoint/views txn
-boundary, poison events, orphan detection, processor replay safety") now lives here. Update
-`PLAN.md` / `DEFERRED.md` to point here (or drop the migrated items) so there's one source of truth.
+The root `PLAN.md` has been deleted. Its backlog **#1 (persistent store) was complete**, and its
+#4 list ("checkpoint/views txn boundary, poison events, orphan detection, processor replay
+safety") lives here — so this file is the source of truth for remaining database work, and
+`DEFERRED.md` for the non-database items listed above. Shipped architecture is described in
+`EVENT-SOURCING-ARCHITECTURE.md`.
 
 ## Cadence
 
