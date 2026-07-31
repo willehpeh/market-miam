@@ -7,6 +7,7 @@
 | Files | `packages/event-sourcing/src/adapters/postgres/postgres.event-store.ts:18`, `apps/api/src/app/persistence/postgres-persistence.module.ts:115`, `packages/event-sourcing/src/adapters/polling.subscription.ts:29-34` |
 | Status | Open |
 | Found | 2026-07-31 evaluation @ `eec797b` |
+| Reviewed | 2026-07-31 — core claim confirmed against the code; fix shape, deadlock condition, retry-loop claim, and doc citation corrected |
 
 ## Issue
 
@@ -33,8 +34,13 @@ transaction the subscription opened.
 4. The poll retries and the processor re-dispatches. Today,
    `Storefront.open()`'s aggregate-level idempotency absorbs the duplicate.
    The *mechanism* guarantees nothing: any future processor whose command is not
-   idempotent silently loses exactly-once — duplicated events, or a permanent
-   `ConcurrencyError` loop against the moved stream.
+   idempotent silently loses exactly-once — duplicated events and side effects.
+   (Not, however, a permanent `ConcurrencyError` loop, as this finding
+   originally claimed: command handlers go through repositories (ADR 0010),
+   which load-then-save on every dispatch, so each retry recomputes the
+   expected position against the moved stream. A stuck loop would need a
+   command carrying a stale expected position across retries, which nothing
+   does today.)
 
 This is the one hole in the otherwise-proven "handle + checkpoint commit
 atomically" story (the atomicity itself is genuinely proven against real
@@ -44,9 +50,18 @@ Postgres in `test/src/market-days/postgres/transactional-projection.container.sp
 Secondary consequence — pool sizing: a processor holds one pooled client (the
 UoW transaction) while the append acquires a second. The sizing comment at
 `postgres-persistence.module.ts:37-44` ("steady state ≈ max + 1") does not
-account for this nested acquisition. With `DATABASE_POOL_MAX` at or below the
-checkpointed-consumer count, concurrent polls can deadlock the pool: every
-consumer holds a client and waits for a second that can never be granted.
+account for this nested acquisition. The deadlock threshold is the number of
+**processors appending concurrently**, not the checkpointed-consumer count as
+this finding originally claimed: projections hold a client per event but never
+nest an acquisition, so their transactions finish and release — they can starve
+a waiting processor for a while, but not deadlock it. Deadlock needs every pool
+slot held by a transaction that is itself waiting on the pool. With today's
+single processor that takes `DATABASE_POOL_MAX=1`; each appending processor
+added lowers the margin by one. The pool sets no `connectionTimeoutMillis`, so
+`connect()` waits forever and a genuine deadlock never self-resolves.
+`ShreddingEventStore`'s data-key mint (`shredding.event-store.ts:51`) is a
+second nested acquisition of the same shape whenever a processor's command
+carries PII — and, being deliberately pool-bound, it survives the fix below.
 
 ## Evidence
 
@@ -54,30 +69,75 @@ Static, from the wiring: contrast `postgres-persistence.module.ts:115` (event
 store ← `Pool`) with the `views` providers in the same file (adapters ←
 `PostgresUnitOfWork`). `PostgresUnitOfWork.query` routes to the ALS-stashed
 client only for callers that go through it (`postgres.unit-of-work.ts:33-35`);
-the event store never does. No test exercises a processor whose surrounding
-transaction fails after a successful command append — see also
-[T1](t1-test-and-ci-blind-spots.md).
+the event store never does. The dispatch chain, verified end to end:
+`OpensStorefronts.handle` → `CommandGateway.execute` → `OpenStorefrontHandler`
+→ `Storefronts.save` → `ApplicationEventStore` (tracing → lineage → shredding)
+→ `PostgresEventStore.append` → `pool.connect()` — no layer consults the
+UnitOfWork. No test exercises a processor whose surrounding transaction fails
+after a successful command append: `transactional-projection.container.spec.ts`
+proves rollback for a *projection*'s view write, whose only writes route
+through the UoW — see also [T1](t1-test-and-ci-blind-spots.md).
 
 ## Suggested fix
 
-Have `PostgresEventStore` accept a `Queryable` (which `Pool` satisfies
-structurally, so tests keep passing a raw pool) and construct it with the UoW in
-the Postgres profile, the same shape every view adapter already uses. The
-append transaction's BEGIN/COMMIT management must then become conditional: when
-an ambient transaction exists, the append joins it and must **not** issue its
-own BEGIN/COMMIT (the advisory lock is `pg_advisory_xact_lock`, so it scopes to
-whichever transaction it joins). When no ambient transaction exists (plain HTTP
-command path), behaviour is unchanged.
+Route the append through the ambient transaction when one exists; keep the
+current dedicated-client path when none does (plain HTTP command path —
+behaviour unchanged). The advisory lock is `pg_advisory_xact_lock`, so it
+scopes to whichever transaction it joins.
+
+The `Queryable`-only shape the view adapters use — which this finding
+originally proposed — is **not enough here**, for two reasons:
+
+1. An append is a multi-statement transaction (BEGIN, advisory lock,
+   concurrency check, INSERT, COMMIT) that must run on one pinned connection.
+   `Queryable.query` pins nothing: through a raw `Pool` each statement may land
+   on a different connection, and a stray BEGIN would leak an
+   idle-in-transaction client back into the pool.
+2. `Queryable` cannot answer "is there an ambient transaction?" — which is
+   exactly what the conditional BEGIN/COMMIT must branch on.
+
+So the seam has to be explicit: e.g. `PostgresUnitOfWork` grows
+`activeClient(): PoolClient | undefined` (reading the AsyncLocalStorage it
+already keeps), and `PostgresEventStore` takes the UoW alongside the `Pool`.
+Joined mode runs lock + check + INSERT on the ambient client and issues **no**
+BEGIN/COMMIT; standalone mode keeps `AppendTransaction` exactly as it is.
+Reads (`load`/`loadFrom`/`head`) can go through `Queryable` untouched.
+
+Two interactions the joined mode must respect:
+
+- **W1's verified commit (ADR 0034).** In joined mode there is no inner COMMIT
+  to check; durability is decided by `PostgresUnitOfWork.transaction`'s own
+  `COMMIT` (`postgres.unit-of-work.ts:23`), which does **not** check the
+  command tag. An error swallowed inside the transaction (a handler that
+  catches and continues) aborts it; COMMIT then resolves with a ROLLBACK tag
+  and `transaction()` reports success — silently losing both the events and
+  the checkpoint. Port the tag check to `PostgresUnitOfWork.transaction` as
+  part of this fix, or the fix reintroduces W1 one layer up.
+- **Lock hold time (M6).** `pg_advisory_xact_lock` is global and, once joined,
+  held until the *outer* commit — the whole handle + checkpoint transaction,
+  not just the INSERT. Every append in the system stalls behind an appending
+  processor's slowest per-event transaction. Acceptable at today's volumes
+  (the ADR 0028 lock already serialises all appends), but it moves
+  [M6](m6-write-path-scaling-ceilings.md)'s ceiling down and belongs in that
+  finding's arithmetic.
 
 Interaction to respect: `PostgresDataKeys` deliberately keeps the raw `Pool`
 (`postgres.data-keys.ts:8-13`) so a minted key survives a rolled-back append —
 that exemption is correct and documented; do not "fix" it along the way.
 
-Regression test to pin it: a container spec with a processor whose checkpoint
+Regression tests to pin it: a container spec with a processor whose checkpoint
 write fails after its command appended events, asserting the events are **not**
-durable after rollback, and appear exactly once after the retry.
+durable after rollback, and appear exactly once after the retry. A second spec
+worth having: an appending processor under a pool of `max: 1`, which deadlocks
+today and must not after the fix (the joined append acquires no second client —
+though a PII-minting command still would; see the sizing note above).
 
 Until fixed, the constraint worth documenting: processors' commands must be
-idempotent at the aggregate level — which `docs/EVENT-SOURCING-ARCHITECTURE.md`
-records as a design decision, without noting that it is currently the *only*
-thing standing between a checkpoint failure and duplicated side effects.
+idempotent at the aggregate level. Correcting this finding's original claim: no
+document actually records that constraint. `docs/EVENT-SOURCING-ARCHITECTURE.md`
+says only that delivery is at-least-once (→ ADR 0015), and aggregate idempotency
+appears solely as individual cases (ADR 0024's idempotent registration,
+ADR 0031's no-op re-publish, `Storefront.open()`'s guard) — never as a rule
+processors must satisfy. The convention is enforced nowhere and is currently
+the only thing standing between a checkpoint failure and duplicated side
+effects, which makes writing it down more urgent, not less.
