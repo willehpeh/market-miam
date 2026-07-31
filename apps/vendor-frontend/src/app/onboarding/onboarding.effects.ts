@@ -46,7 +46,7 @@ export class OnboardingEffects {
             : view.imageReference
               ? '/onboarding/storefront'
               : '/onboarding';
-          this.router.navigate([destination]);
+          void this.router.navigate([destination]);
         }),
       ),
     { dispatch: false },
@@ -58,7 +58,7 @@ export class OnboardingEffects {
         ofType(EditStorefrontSuccess),
         delay(this.savedRedirectDelay),
         tap(() => {
-          this.router.navigate(['/dashboard']);
+          void this.router.navigate(['/dashboard']);
         }),
         map(() => HideSavedModal())
       ),

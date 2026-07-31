@@ -5,7 +5,7 @@
 | Severity | **Critical** |
 | Area | Write path |
 | Files | `packages/event-sourcing/src/adapters/postgres/append-transaction.ts:29`, `packages/event-sourcing/src/adapters/postgres/postgres.event-store.ts:20-23` |
-| Status | Open |
+| Status | **Fixed** — [#22](https://github.com/willehpeh/market-miam/pull/22) |
 | Found | 2026-07-31 evaluation @ `eec797b` |
 
 ## Issue
@@ -92,3 +92,20 @@ violating `(stream_id, stream_position)`) and asserts `append()` **rejects** and
 the stream is unchanged. The existing contract already asserts
 nothing-persisted-on-`ConcurrencyError`; this adds the same guarantee for
 INSERT-stage failures.
+
+## Resolution
+
+Fixed in [#22](https://github.com/willehpeh/market-miam/pull/22), which went
+further than the sequential-await fix above:
+
+- `append` now issues a **single `unnest`-based multi-row INSERT**, awaited —
+  all-or-nothing, one round-trip under the advisory lock, batch order pinned
+  via `WITH ORDINALITY`, constant bind-parameter count.
+- `commit()` **verifies the COMMIT command tag** and throws on `ROLLBACK`,
+  so any future swallowed in-transaction error surfaces instead of reading as
+  a durable write.
+- The regression test above landed as a container spec using a NUL byte
+  (`\u0000`) in a jsonb payload — a user-controllable INSERT-stage failure —
+  asserting `append()` rejects and the stream is unchanged. First live run
+  passed in #22's CI (itself enabled for PRs by
+  [#21](https://github.com/willehpeh/market-miam/pull/21)).
