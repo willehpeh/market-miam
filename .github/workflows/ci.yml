@@ -4,6 +4,11 @@ on:
   push:
     branches:
       - main
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   ci:
@@ -21,8 +26,18 @@ jobs:
 
       - run: npm ci
 
-      - run: npx nx affected -t lint --base=${{ github.event.before }} --head=${{ github.sha }} --parallel=3
-      - run: npx nx affected -t typecheck --base=${{ github.event.before }} --head=${{ github.sha }} --parallel=3
-      - run: npx nx affected -t test --base=${{ github.event.before }} --head=${{ github.sha }} --parallel=3
-      - run: npx nx affected -t test:container --base=${{ github.event.before }} --head=${{ github.sha }} --parallel=3
-      - run: npx nx affected -t build --base=${{ github.event.before }} --head=${{ github.sha }} --parallel=3
+      # github.event.before only exists on push events; a PR compares against its base branch.
+      - name: Set affected range
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "NX_BASE=${{ github.event.pull_request.base.sha }}" >> "$GITHUB_ENV"
+          else
+            echo "NX_BASE=${{ github.event.before }}" >> "$GITHUB_ENV"
+          fi
+          echo "NX_HEAD=${{ github.sha }}" >> "$GITHUB_ENV"
+
+      - run: npx nx affected -t lint --base=$NX_BASE --head=$NX_HEAD --parallel=3
+      - run: npx nx affected -t typecheck --base=$NX_BASE --head=$NX_HEAD --parallel=3
+      - run: npx nx affected -t test --base=$NX_BASE --head=$NX_HEAD --parallel=3
+      - run: npx nx affected -t test:container --base=$NX_BASE --head=$NX_HEAD --parallel=3
+      - run: npx nx affected -t build --base=$NX_BASE --head=$NX_HEAD --parallel=3
