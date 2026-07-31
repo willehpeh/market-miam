@@ -226,10 +226,14 @@ Naming convention: `*.store.ts` is the write surface; the plural `*s.ts`
 projection code cannot grow query features. `clear()` lives on the write surface
 because it exists to serve rebuild.
 
-Not every durable read is a projection. Two look like one and aren't:
+Not every durable read is a projection. Three look like one and aren't:
 
 - **`upcoming-market-days`** has a view type and a query handler but no store — it is
   computed from `MarketScheduleViews` at query time.
+- **`customer-storefront`** is the same shape one level up: `FindCustomerStorefrontHandler`
+  composes `SubdomainRegistry`, `VendorStorefrontViews`, `CatalogueViews` and the
+  upcoming-market-days handler into the public page per request. No store, no projection,
+  nothing to rebuild — the composition is the view.
 - **`SubdomainRegistry`** is written by command handlers, not fed by events. It is
   **not derivable from the log** and can never be rebuilt — which is exactly why
   `VendorErasure` deletes from it explicitly instead of relying on a replay.
@@ -585,8 +589,8 @@ aggregate rehydration ends a span carrying neither a slug, an exception, nor ERR
 status ([§10.5](#105-gaps)).
 
 Spans are deliberately **payload-blind**: `command.name` but never command contents.
-`command-dispatch-tracing.spec.ts` pins this with an exact-match assertion proving the
-dispatch span does not carry `RegisterVendor.email`.
+`tracing/command-gateway.spec.ts` pins this with an exact-match assertion on the whole
+attribute bag, proving the dispatch span does not carry `RegisterVendor.email`.
 
 ### 10.3 Trace continuity across the commit boundary
 
@@ -720,9 +724,11 @@ genuine PII guard.
 ## 11. Testing strategy
 
 - **Contract suites** (`test/src/**/*.contract.ts`) — one suite, run against both the
-  in-memory and Postgres adapters, so the fake and the real thing cannot drift.
-  `checkpointContract`, `subscriptionContract`, `catalogueViewsContract`,
-  `marketScheduleViewsContract`, `vendorStorefrontViewsContract`.
+  in-memory and Postgres adapters, so the fake and the real thing cannot drift. Eight of
+  them: `eventStoreContract`, `eventsContract`, `checkpointContract`,
+  `subscriptionContract`, `dataKeysContract` over the ports, plus
+  `catalogueViewsContract`, `marketScheduleViewsContract` and
+  `vendorStorefrontViewsContract` over the read models.
 - **Container specs** (`*.container.spec.ts`) — real Postgres via testcontainers, run
   from a separate vitest config (`test:container`), excluded from the fast suite.
 - **API specs** (`apps/api/**/*.spec.ts`) — full Nest app over supertest on the

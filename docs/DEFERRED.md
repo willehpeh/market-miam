@@ -1,6 +1,6 @@
 # Deferred Decisions
 
-Genuinely-open decisions, not yet implemented and not tracked elsewhere. Resolved/built decisions live in their ADRs, `PLAN.md`, and the code; remaining **database** work is in `POSTGRES-PLAN.md`.
+Genuinely-open decisions, not yet implemented and not tracked elsewhere. Resolved/built decisions live in their ADRs, `EVENT-SOURCING-ARCHITECTURE.md`, and the code; remaining **database** work is in `POSTGRES-PLAN.md`.
 
 ## vendorIdFrom error handling
 
