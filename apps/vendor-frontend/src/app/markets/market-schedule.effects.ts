@@ -63,7 +63,7 @@ export class MarketScheduleEffects {
       this.actions$.pipe(
         ofType(RegisterMarketScheduleSuccess, AmendMarketScheduleSuccess),
         tap(() => {
-          this.router.navigate(['/dashboard/markets']);
+          void this.router.navigate(['/dashboard/markets']);
         }),
       ),
     { dispatch: false },

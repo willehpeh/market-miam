@@ -164,7 +164,7 @@ export class CatalogueEffects {
       this.actions$.pipe(
         ofType(AddDishSuccess, ReviseDishSuccess, ReorderDishesSuccess, RetireDishSuccess),
         tap(() => {
-          this.router.navigate(['/dashboard/catalogue']);
+          void this.router.navigate(['/dashboard/catalogue']);
         }),
       ),
     { dispatch: false },

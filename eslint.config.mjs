@@ -104,4 +104,20 @@ export default [
       'event-sourcing/processor-decorator': 'error',
     },
   },
+  // W1 was a dropped promise (async callback inside forEach) that turned a failed
+  // INSERT into a silent success. Type-aware linting catches that class at compile time.
+  {
+    files: ['**/*.ts', '**/*.tsx'],
+    languageOptions: {
+      parserOptions: {
+        projectService: {
+          allowDefaultProject: ['*.ts'],
+        },
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
+    rules: {
+      '@typescript-eslint/no-floating-promises': 'error',
+    },
+  },
 ];

@@ -338,7 +338,7 @@ describe('Subscriptions', () => {
     await subscriptions.drain();
 
     const recorder = app.get(Recorder);
-    recorder.handle({ ...events[0], id: 'stale' });
+    await recorder.handle({ ...events[0], id: 'stale' });
     expect(recorder.handled).toHaveLength(4);
 
     await subscriptions.rebuild('recorder');
