@@ -79,3 +79,13 @@ measurement says so:
 Related: [M5](m5-read-path-write-amplification.md) (the read-path half of the
 same scaling story), ADR 0028 (the decision this finding annotates rather than
 disputes).
+
+## Update (2026-07-31)
+
+The [W1](w1-silent-append-failure.md) fix
+([#22](https://github.com/willehpeh/market-miam/pull/22)) replaced the
+per-event INSERTs with one multi-row statement (ADR 0034), so the lock hold in
+ceiling 1 now contains a single INSERT round-trip regardless of batch size —
+"the round trips inside the hold" are down to lock + count + INSERT + COMMIT.
+Ceilings 2 (O(n) count) and 3 (unbounded `load()`, no snapshots) are
+unchanged, as is the "gap-free" comment nit at `append-transaction.ts:10-11`.

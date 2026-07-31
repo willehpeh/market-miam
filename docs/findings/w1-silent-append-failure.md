@@ -109,3 +109,8 @@ further than the sequential-await fix above:
   asserting `append()` rejects and the stream is unchanged. First live run
   passed in #22's CI (itself enabled for PRs by
   [#21](https://github.com/willehpeh/market-miam/pull/21)).
+
+Follow-ups: [#23](https://github.com/willehpeh/market-miam/pull/23) enabled
+`@typescript-eslint/no-floating-promises` workspace-wide — the defect's shape
+(a dropped promise from an async callback in `forEach`) now fails lint. The
+invariants the fix introduced are recorded in ADR 0034.

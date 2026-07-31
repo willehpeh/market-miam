@@ -5,7 +5,7 @@
 | Severity | High |
 | Area | Tests, CI, mutation testing |
 | Files | `stryker.conf.mjs:7-9`, `.github/workflows/ci.yml:3-6`, `packages/event-sourcing/src/adapters/polling.subscription.ts:24-28`, `test/vitest.config.mts` |
-| Status | Open |
+| Status | Partially fixed — see [Progress](#progress) |
 | Found | 2026-07-31 evaluation @ `eec797b` |
 
 ## Issue
@@ -88,3 +88,26 @@ In value order:
    checkpoint isolation + `write(0)` with [W3](w3-checkpoint-monotonicity-and-ownership.md),
    the UoW spec with [W4](w4-nested-transaction-footgun.md), a shredding-over-
    Postgres composition spec with [M2](m2-master-key-rotation-impossible.md)/[M4](m4-aad-omits-stream-position.md).
+
+## Progress
+
+- **Issue 3 fixed** by [#21](https://github.com/willehpeh/market-miam/pull/21):
+  CI runs the full pipeline (including `test:container`) on every PR. The
+  fragile `github.event.before` base is also gone for PRs — a PR compares
+  against its base branch's sha — though pushes to `main` still use it
+  (suggested fix 1's merge-base refinement remains open for that path).
+- **First INSERT-stage failure injection** landed with the W1 fix
+  ([#22](https://github.com/willehpeh/market-miam/pull/22)): a container spec
+  drives a mid-batch jsonb rejection through `append()` and asserts
+  nothing persisted. Handler-side poison-event injection (issue 1) is still
+  missing.
+- **Dropped promises now fail lint**
+  ([#23](https://github.com/willehpeh/market-miam/pull/23)):
+  `@typescript-eslint/no-floating-promises` workspace-wide, type-aware — the
+  static half of the net that would have flagged W1 outright. Six existing
+  violations were fixed with it, including a missing `await` in
+  `subscriptions.spec.ts` that only passed by stub timing.
+
+Still open: issues 1 (handler-failure injection), 2 (Postgres adapters outside
+the mutation net), 4 (no Stryker thresholds or CI mutation job), and the
+smaller gaps in 5.
