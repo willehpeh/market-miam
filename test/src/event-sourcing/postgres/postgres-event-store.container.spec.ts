@@ -39,6 +39,21 @@ describe('PostgresEventStore under real concurrency', () => {
     expect((rejected[0] as PromiseRejectedResult).reason).toBeInstanceOf(ConcurrencyError);
     expect(await store.load('stream-1')).toHaveLength(1);
   });
+
+  it('rejects the whole batch and persists nothing when an INSERT fails', async () => {
+    const store = new PostgresEventStore(pg.pool);
+    await store.append('stream-1', [dummyEvent('Good')], 0);
+
+    // jsonb rejects \u0000 in strings — a user-controllable INSERT-stage failure (W1)
+    const poison: DomainEvent = { type: 'Bad', payload: { note: 'nul \u0000 byte' }, version: 1 };
+
+    await expect(
+      store.append('stream-1', [dummyEvent('AlsoGood'), poison], 1),
+    ).rejects.toThrow();
+
+    const types = (await store.load('stream-1')).map((e) => e.type);
+    expect(types).toEqual(['Good']);
+  });
 });
 
 function dummyEvent(type: string): DomainEvent {

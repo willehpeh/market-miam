@@ -26,15 +26,36 @@ export class AppendTransaction {
     metadata?: Record<string, unknown>
   ): Promise<void> {
     await this.performConcurrencyCheck(expectedStreamPosition);
-    events.forEach((event) => this.appendEvent(event, metadata));
-  }
-
-  private async appendEvent(event: DomainEvent, metadata: Record<string, unknown> | undefined) {
+    if (events.length === 0) {
+      return;
+    }
+    const { ids, positions, types, payloads, versions } = events.reduce(
+      (columns, event) => {
+        columns.ids.push(randomUUID());
+        columns.positions.push(++this.currentStreamPosition);
+        columns.types.push(event.type);
+        columns.payloads.push(JSON.stringify(event.payload));
+        columns.versions.push(event.version);
+        return columns;
+      },
+      {
+        ids: [] as string[],
+        positions: [] as number[],
+        types: [] as string[],
+        payloads: [] as string[],
+        versions: [] as number[],
+      },
+    );
+    // Single statement: all-or-nothing, one round-trip under the advisory lock, and no
+    // per-event promise to lose. ORDER BY ord pins global_position assignment to batch order.
     await this.client.query(
       `INSERT INTO events
              (id, stream_id, stream_position, event_type, payload, metadata, version, created_at)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-      [randomUUID(), this.streamId, ++this.currentStreamPosition, event.type, event.payload, metadata ?? null, event.version, Date.now()]
+       SELECT e.id, $2, e.stream_position, e.event_type, e.payload, $6::jsonb, e.version, $8
+         FROM unnest($1::uuid[], $3::integer[], $4::text[], $5::jsonb[], $7::integer[])
+                WITH ORDINALITY AS e(id, stream_position, event_type, payload, version, ord)
+        ORDER BY e.ord`,
+      [ids, this.streamId, positions, types, payloads, metadata ? JSON.stringify(metadata) : null, versions, Date.now()]
     );
   }
 
@@ -50,7 +71,13 @@ export class AppendTransaction {
   }
 
   async commit(): Promise<QueryResult> {
-    return this.client.query('COMMIT');
+    // Postgres resolves COMMIT on an aborted transaction successfully, with a ROLLBACK
+    // command tag — any swallowed in-transaction error would otherwise read as a durable write.
+    const result = await this.client.query('COMMIT');
+    if (result.command !== 'COMMIT') {
+      throw new Error(`append transaction was rolled back: COMMIT returned ${result.command}`);
+    }
+    return result;
   }
 
   async rollback(): Promise<QueryResult | undefined> {
