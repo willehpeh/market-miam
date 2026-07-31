@@ -1,5 +1,6 @@
-import { Span, SpanStatusCode, trace } from '@opentelemetry/api';
+import { Span, trace } from '@opentelemetry/api';
 import { DomainEvent, Events, EventStore, StoredEvent } from '@market-miam/event-sourcing';
+import { withSpan } from './with-span';
 
 const tracer = trace.getTracer('event-store');
 
@@ -19,7 +20,7 @@ export class TracingEventStore extends EventStore implements Events {
     expectedStreamPosition: number,
     metadata?: Record<string, unknown>,
   ): Promise<void> {
-    return tracer.startActiveSpan('event-store append', async (span) => {
+    return tracer.startActiveSpan('event-store append', (span) => {
       span.setAttributes({
         'event.type': events[0]?.type,
         'event.count': events.length,
@@ -27,32 +28,23 @@ export class TracingEventStore extends EventStore implements Events {
         'vendor.id': metadata?.['vendorId'] as string,
       });
       const enrichedMetadata = { ...metadata, traceparent: traceparentOf(span) };
-      try {
-        return await this.inner.append(streamId, events, expectedStreamPosition, enrichedMetadata);
-      } catch (error) {
-        span.setAttribute('exception.slug', 'event-store-append-failed');
-        span.recordException(error as Error);
-        span.setStatus({ code: SpanStatusCode.ERROR });
-        throw error;
-      } finally {
-        span.end();
-      }
+      return withSpan(span, 'event-store-append-failed', () =>
+        this.inner.append(streamId, events, expectedStreamPosition, enrichedMetadata),
+      );
     });
   }
 
   load(streamId: string): Promise<StoredEvent[]> {
-    return tracer.startActiveSpan('event-store load', async (span) => {
-      try {
+    return tracer.startActiveSpan('event-store load', (span) =>
+      withSpan(span, 'event-store-load-failed', async () => {
         const events = await this.inner.load(streamId);
         span.setAttributes({
           stream_id: streamId,
           'event.count': events.length,
         });
         return events;
-      } finally {
-        span.end();
-      }
-    });
+      }),
+    );
   }
 
   loadFrom(globalPosition: number, limit: number): Promise<StoredEvent[]> {
