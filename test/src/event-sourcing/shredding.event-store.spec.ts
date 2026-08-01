@@ -103,6 +103,42 @@ describe('ShreddingEventStore', () => {
     await expect(store.append('vendor-v1', [registered(123)], 0, v1)).rejects.toThrow(/must be a string/);
   });
 
+  it('passes a null PII field through untouched on append and load', async () => {
+    const { store, inner } = shreddingOver();
+
+    await store.append('vendor-v1', [registered(null)], 0, v1);
+
+    const [atRest] = await inner.load('vendor-v1');
+    expect(atRest.payload['email']).toBeNull();
+
+    const [loaded] = await store.load('vendor-v1');
+    expect(loaded.payload['email']).toBeNull();
+  });
+
+  it('reads PII as SHREDDED when a stored event carries no subject metadata', async () => {
+    const { store, inner } = shreddingOver();
+    await store.append('vendor-v1', [registered('vendor@example.com')], 0, v1);
+
+    const [stored] = await inner.load('vendor-v1');
+    delete stored.metadata;
+
+    const [loaded] = await store.load('vendor-v1');
+    expect(loaded.payload['email']).toBe(SHREDDED);
+    expect(loaded.payload['vendorId']).toBe('v1');
+  });
+
+  it('lets the catch-up path read past an event with no subject metadata', async () => {
+    const { store, inner } = shreddingOver();
+    await store.append('vendor-v1', [registered('vendor@example.com')], 0, v1);
+    await store.append('vendor-v2', [registered('other@example.com')], 0, { vendorId: 'v2' });
+
+    const [broken] = await inner.load('vendor-v1');
+    delete broken.metadata;
+
+    const fromCatchUp = await store.loadFrom(0, 10);
+    expect(fromCatchUp.map((e) => e.payload['email'])).toEqual([SHREDDED, 'other@example.com']);
+  });
+
   it('throws on load when a ciphertext has been tampered with', async () => {
     const { store, inner } = shreddingOver();
     await store.append('vendor-v1', [registered('vendor@example.com')], 0, v1);
