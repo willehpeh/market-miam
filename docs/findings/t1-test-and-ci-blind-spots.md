@@ -107,6 +107,14 @@ In value order:
   static half of the net that would have flagged W1 outright. Six existing
   violations were fixed with it, including a missing `await` in
   `subscriptions.spec.ts` that only passed by stub timing.
+- **The UoW slice of gap 5 closed across the W2 and W4 fixes**: the direct
+  `postgres-unit-of-work.spec.ts` landed with W2
+  ([ADR 0035](../adr/0035-appends-join-the-ambient-unit-of-work.md)) — commit,
+  rollback-and-rethrow, the verified-COMMIT tag check, both `inTransaction`
+  placements — and the W4 fix
+  ([ADR 0037](../adr/0037-nested-transactions-join-the-ambient-unit-of-work.md))
+  added nested-`transaction()` join semantics, outer-throw-discards-inner-work,
+  and `query()` routing.
 - **The checkpoint slice of gap 5 closed with the W3 fix**
   ([ADR 0036](../adr/0036-checkpoint-advances-are-compare-and-set.md)):
   `checkpointContract` grew from two tests to eight — per-name isolation,

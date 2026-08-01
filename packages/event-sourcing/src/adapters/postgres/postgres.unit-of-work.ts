@@ -15,8 +15,11 @@ export class PostgresUnitOfWork extends UnitOfWork implements Queryable {
     super();
   }
 
+  // A nested transaction() joins the ambient transaction rather than opening a
+  // second, independent one (ADR 0037): the owner's verified COMMIT alone decides
+  // durability, and an outer rollback discards inner work.
   transaction<T>(fn: () => Promise<T>): Promise<T> {
-    return this.ownTransaction(() => fn());
+    return this.inTransaction(() => fn());
   }
 
   // The tell for multi-statement work that must pin one connection (an append:

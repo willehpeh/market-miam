@@ -4,9 +4,10 @@
 |---|---|
 | Severity | Medium-High |
 | Area | Persistence seam |
-| Files | `packages/event-sourcing/src/adapters/postgres/postgres.unit-of-work.ts:18-31` |
-| Status | Open |
+| Files | `packages/event-sourcing/src/adapters/postgres/postgres.unit-of-work.ts:18-31` (at `eec797b`) |
+| Status | **Fixed** — see [Fix](#fix-2026-08-01) below; decision recorded in [ADR 0037](../adr/0037-nested-transactions-join-the-ambient-unit-of-work.md) |
 | Found | 2026-07-31 evaluation @ `eec797b` |
+| Reviewed | 2026-08-01 — core claim confirmed still live after the W2 fix; evidence and the W2 relation corrected (see [Review](#review-2026-08-01)) |
 
 ## Issue
 
@@ -74,3 +75,56 @@ transactions).
 Related: [W2](w2-appends-bypass-unit-of-work.md) — wiring the event store
 through the UoW makes processor appends *rely* on well-defined nesting
 semantics, so this finding is a prerequisite for that fix's correctness.
+
+## Review (2026-08-01)
+
+The core claim held against the post-W2 code: `transaction(fn)` still
+unconditionally acquired a client and opened its own transaction, so a nested
+call still got a second connection, a replaced ALS scope, and an independent
+commit. Three parts of the finding had gone stale or needed correction:
+
+- **The W2 relation resolved the other way round.** W2 was fixed *without*
+  fixing W4 first: [ADR 0035](../adr/0035-appends-join-the-ambient-unit-of-work.md)
+  added `inTransaction(work)`, which joins the ambient transaction — sidestepping
+  nested `transaction()` entirely rather than depending on it. This finding was
+  not, in the end, a prerequisite.
+- **That fix strengthened this finding.** After W2, the same class answered
+  "what does nesting mean" two contradictory ways: `inTransaction` joined,
+  `transaction()` opened an independent second transaction. The inconsistency
+  made the footgun sharper than at `eec797b`, and it also settled the
+  suggested-fix choice — option 2 (throw) would have preserved the split
+  semantics ADR 0035 had already decided against.
+- **The evidence section was stale.** A direct spec
+  (`test/src/event-sourcing/postgres-unit-of-work.spec.ts`) landed with the W2
+  fix, pinning commit/rollback/verified-COMMIT and both `inTransaction` cases —
+  but nested `transaction()` remained unpinned, exactly the gap this finding
+  named.
+
+One caveat the review adds: no nested `transaction()` call site actually exists
+in the codebase — the only callers are `PollingSubscription.poll()` and
+`Subscriptions.rebuild()`, and everything inside their scopes enlists via
+`Queryable` or `inTransaction`. The hazard was latent, which argues the
+severity toward plain Medium; it stays worth fixing because the polling path
+wraps *every* handler invocation, so the trap sat one refactor away from every
+projection and processor.
+
+## Fix (2026-08-01)
+
+Option 1 from the suggested fix, implemented as a one-line delegation:
+`transaction(fn)` now routes through `inTransaction(() => fn())`, so the
+placement decision — join the ambient transaction, or own a fresh
+BEGIN / verified COMMIT / ROLLBACK — lives once, in the seam the W2 fix
+already built. Inner failures abort the shared transaction; an outer rollback
+discards inner work; durability is decided exactly once, by the owner's
+verified COMMIT (ADR 0034). Rationale and rejected alternatives (throw,
+savepoints) are in
+[ADR 0037](../adr/0037-nested-transactions-join-the-ambient-unit-of-work.md).
+
+The regression tests suggested above are pinned in the fast
+`postgres-unit-of-work.spec.ts`: (a) nested `transaction()` — one connection,
+one BEGIN/COMMIT, and inner work discarded by an outer throw; (b) `query()`
+outside any transaction routes to the pool (and to the transaction's client
+inside one); (c) release-on-error was already pinned by the spec's
+`releasedTimes()` assertions. What was correct before the fix and did not
+regress: connection release on every path, and the ROLLBACK that swallows its
+own error.
