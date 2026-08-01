@@ -31,9 +31,21 @@ fresh BEGIN / verified COMMIT / ROLLBACK when none does. One method —
 
 Consequences of joining, all deliberate:
 
-- An inner failure aborts the *shared* transaction — the semantics the name
-  promises. There is no partial rollback; savepoints can come later if a
-  caller ever legitimately needs one (none does).
+- An inner failure aborts the *shared* transaction **provided the error
+  propagates to the owner or a SQL statement failed**. Stated precisely,
+  because the remaining case is a real, accepted gap: a joined scope that does
+  some writes and then throws a *pure JS* error (validation, a bug — no failed
+  SQL) does not abort the Postgres transaction; if the outer caller catches
+  that error and continues to a successful COMMIT, the inner scope's partial
+  writes are durable despite the inner "transaction" having failed. Before
+  this decision that scope owned its transaction and would have rolled itself
+  back. The trade is deliberate: the old footgun (inner commits surviving an
+  outer rollback) needed only a nested caller and was silent; this one needs a
+  nested caller *plus* an outer that catches-and-continues across it, and
+  neither exists today. The SQL-error half of the gap is closed by the
+  ADR 0034 verified COMMIT — an aborted transaction's COMMIT resolves with a
+  ROLLBACK tag and the owner throws. There is no partial rollback; savepoints
+  can come later if a caller ever legitimately needs one (none does).
 - Durability is decided exactly once, by the owner's verified COMMIT
   (ADR 0034). A joined `transaction()` returning successfully does **not**
   mean the work is durable — the outer commit decides later. This matches the
@@ -50,6 +62,14 @@ Rejected:
 - **Savepoints** (`SAVEPOINT` / `ROLLBACK TO` for the nested scope) —
   machinery for partial-rollback semantics nothing needs; join-or-own covers
   every current and foreseeable caller.
+- **Rollback-only marking** (a poisoned flag in the ALS scope set when a
+  joined scope throws, checked by the owner before COMMIT — Spring's answer
+  to the swallowed-inner-failure gap above) — rejected *for now*, not on
+  principle: it guards a path reachable only through a call shape the
+  codebase doesn't contain, at the cost of mutable cross-scope state in the
+  one class whose simplicity the verified COMMIT depends on. Revisit if a
+  nested `transaction()` caller ever lands under an error boundary that
+  catches and continues.
 - **Keep independent nesting, documented** — the failure is silent and only
   surfaces as inconsistent data after an error path; documentation does not
   fix a footgun whose whole hazard is that composition looks correct.
@@ -60,6 +80,13 @@ Rejected:
   implementations: `NoOpUnitOfWork` trivially so, `PostgresUnitOfWork` by
   joining. Callers may wrap without knowing whether they are already inside a
   transaction.
+- Concurrent `transaction()` calls *inside* an ambient transaction (e.g. a
+  `Promise.all` of two wrapped scopes) now share the one client instead of
+  running as independent transactions on separate connections. pg serializes
+  queries per client, so this is safe — but the scopes are no longer isolated
+  from each other, and their fates are joined to the owner's commit. Sibling
+  `transaction()` calls *outside* any transaction are unchanged: each async
+  context owns its own client and transaction.
 - Pinned by the fast `postgres-unit-of-work.spec.ts`: a nested `transaction()`
   acquires no second connection and issues one BEGIN/COMMIT; an outer throw
   discards inner work; `query()` routes to the pool outside a transaction and

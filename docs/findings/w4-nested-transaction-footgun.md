@@ -114,10 +114,13 @@ Option 1 from the suggested fix, implemented as a one-line delegation:
 `transaction(fn)` now routes through `inTransaction(() => fn())`, so the
 placement decision — join the ambient transaction, or own a fresh
 BEGIN / verified COMMIT / ROLLBACK — lives once, in the seam the W2 fix
-already built. Inner failures abort the shared transaction; an outer rollback
-discards inner work; durability is decided exactly once, by the owner's
-verified COMMIT (ADR 0034). Rationale and rejected alternatives (throw,
-savepoints) are in
+already built. An outer rollback discards inner work; durability is decided
+exactly once, by the owner's verified COMMIT (ADR 0034); and inner failures
+abort the shared transaction provided the error propagates or a SQL statement
+failed — the one remaining gap (a pure-JS inner throw swallowed by an outer
+catch commits the inner scope's partial writes) is stated and accepted in the
+ADR, unreachable without a call shape the codebase doesn't contain. Rationale
+and rejected alternatives (throw, savepoints, rollback-only marking) are in
 [ADR 0037](../adr/0037-nested-transactions-join-the-ambient-unit-of-work.md).
 
 The regression tests suggested above are pinned in the fast
