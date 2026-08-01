@@ -5,7 +5,7 @@
 | Severity | Low-Medium |
 | Area | Crypto-shredding |
 | Files | `packages/event-sourcing/src/adapters/shredding.event-store.ts:91-93` |
-| Status | Open |
+| Status | **Fixed** ([ADR 0041](../adr/0041-aad-v2-binds-stream-position.md)) |
 | Found | 2026-07-31 evaluation @ `eec797b` |
 
 ## Issue
@@ -75,7 +75,21 @@ surviving mutants). The separator ambiguity (a NUL inside a component) is
 theoretical for UUID-based stream ids, but length-prefixing the components
 while versioning the AAD closes it for free.
 
-## Update (2026-08-01)
+## Update (2026-08-01): fixed
+
+Fixed as suggested ([ADR 0041](../adr/0041-aad-v2-binds-stream-position.md)):
+`encrypt` now writes `enc:v2:`, whose AAD adds the stream position and
+length-prefixes every component (the separator-ambiguity closure this finding
+predicted would come for free). The position is bound pre-insert from
+`expectedStreamPosition + offset`, exactly as suggested; `enc:v1:` values
+decrypt under the old AAD verbatim, forever. Both regression tests this
+finding asked for are pinned in `shredding.event-store.spec.ts` — the
+same-stream swap now throws (killing the surviving AAD mutants), plus a
+cross-stream move under a shared subject key that isolates the streamId
+binding. The versioning rode on the discriminator pattern of
+[M2](m2-master-key-rotation-impossible.md)'s fix (ADR 0040), as anticipated.
+
+## Update (2026-08-01): separator correction
 
 This finding originally quoted the separator as `\n`. The actual separator is
 a NUL — and it was a **literal 0x00 byte embedded in the source file**, which

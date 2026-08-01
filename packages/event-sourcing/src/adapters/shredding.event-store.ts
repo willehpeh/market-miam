@@ -11,7 +11,12 @@ export type PiiFields = Record<string, string[]>;
 // columns stay NOT NULL and value objects never see null.
 export const SHREDDED = '<shredded>';
 
-const ENVELOPE_PREFIX = 'enc:v1:';
+// The envelope version names the AAD that sealed the value: v1 bound
+// stream/type/field, v2 adds the stream position. Encrypt always writes the
+// current version; decrypt dispatches on the prefix — the log is append-only,
+// so v1 values never rewrite and their AAD is kept verbatim forever.
+const V1_PREFIX = 'enc:v1:';
+const V2_PREFIX = 'enc:v2:';
 
 export class ShreddingEventStore implements EventStore, Events {
   constructor(
@@ -27,7 +32,12 @@ export class ShreddingEventStore implements EventStore, Events {
     expectedStreamPosition: number,
     metadata?: Record<string, unknown>,
   ): Promise<void> {
-    const encrypted = await Promise.all(events.map((event) => this.encrypt(event, streamId, metadata)));
+    // Event i of the batch will land at expectedStreamPosition + i + 1; if the
+    // concurrency check later rejects the append, nothing persists, so binding
+    // the position into the AAD before the row exists cannot go stale.
+    const encrypted = await Promise.all(
+      events.map((event, index) => this.encrypt(event, streamId, expectedStreamPosition + index + 1, metadata)),
+    );
     return this.inner.append(streamId, encrypted, expectedStreamPosition, metadata);
   }
 
@@ -43,7 +53,7 @@ export class ShreddingEventStore implements EventStore, Events {
     return this.inner.head();
   }
 
-  private async encrypt(event: DomainEvent, streamId: string, metadata?: Record<string, unknown>): Promise<DomainEvent> {
+  private async encrypt(event: DomainEvent, streamId: string, streamPosition: number, metadata?: Record<string, unknown>): Promise<DomainEvent> {
     // null and undefined mean "nothing to encrypt" and pass through untouched;
     // any other non-string PII value still fails loudly below.
     const fields = (this.pii[event.type] ?? []).filter((field) => event.payload[field] != null);
@@ -57,7 +67,7 @@ export class ShreddingEventStore implements EventStore, Events {
       if (typeof value !== 'string') {
         throw new Error(`ShreddingEventStore: PII field "${field}" of "${event.type}" must be a string to encrypt`);
       }
-      payload[field] = encryptValue(value, key, aad(streamId, event.type, field));
+      payload[field] = encryptValue(value, key, aadV2(streamId, event.type, field, streamPosition));
     }
     return { ...event, payload };
   }
@@ -69,13 +79,13 @@ export class ShreddingEventStore implements EventStore, Events {
     let changed = false;
     for (const field of fields) {
       const value = payload[field];
-      if (typeof value !== 'string' || !value.startsWith(ENVELOPE_PREFIX)) {
+      if (typeof value !== 'string' || !isEnvelope(value)) {
         continue;
       }
       if (key === undefined) {
         key = await this.readKeyFor(event);
       }
-      payload[field] = key === null ? SHREDDED : decryptValue(value, key, aad(event.streamId, event.type, field));
+      payload[field] = key === null ? SHREDDED : decryptValue(value, key, aadFor(value, event, field));
       changed = true;
     }
     return changed ? { ...event, payload } : event;
@@ -102,8 +112,39 @@ export class ShreddingEventStore implements EventStore, Events {
   }
 }
 
-function aad(streamId: string, eventType: string, field: string): Buffer {
+function isEnvelope(value: string): boolean {
+  return value.startsWith(V1_PREFIX) || value.startsWith(V2_PREFIX);
+}
+
+function aadFor(envelope: string, event: StoredEvent, field: string): Buffer {
+  return envelope.startsWith(V1_PREFIX)
+    ? aadV1(event.streamId, event.type, field)
+    : aadV2(event.streamId, event.type, field, event.streamPosition);
+}
+
+// v1 bound whose field a ciphertext is (stream, type, field, NUL-separated) but
+// not which occurrence: two same-type events in one stream had interchangeable
+// ciphertexts. Kept verbatim to decrypt values sealed before v2.
+function aadV1(streamId: string, eventType: string, field: string): Buffer {
   return Buffer.from(`${streamId}\u0000${eventType}\u0000${field}`, 'utf8');
+}
+
+// v2 adds the stream position — a ciphertext moved to any other event fails
+// authentication — and length-prefixes each component, so no separator
+// ambiguity exists regardless of component content.
+function aadV2(streamId: string, eventType: string, field: string, streamPosition: number): Buffer {
+  return lengthPrefixed(streamId, eventType, field, String(streamPosition));
+}
+
+function lengthPrefixed(...components: string[]): Buffer {
+  return Buffer.concat(
+    components.flatMap((component) => {
+      const bytes = Buffer.from(component, 'utf8');
+      const length = Buffer.alloc(4);
+      length.writeUInt32BE(bytes.length);
+      return [length, bytes];
+    }),
+  );
 }
 
 function encryptValue(value: string, key: Buffer, additional: Buffer): string {
@@ -112,7 +153,7 @@ function encryptValue(value: string, key: Buffer, additional: Buffer): string {
   cipher.setAAD(additional);
   const ciphertext = Buffer.concat([cipher.update(value, 'utf8'), cipher.final()]);
   const tag = cipher.getAuthTag();
-  return `${ENVELOPE_PREFIX}${iv.toString('base64')}:${tag.toString('base64')}:${ciphertext.toString('base64')}`;
+  return `${V2_PREFIX}${iv.toString('base64')}:${tag.toString('base64')}:${ciphertext.toString('base64')}`;
 }
 
 function decryptValue(envelope: string, key: Buffer, additional: Buffer): string {
