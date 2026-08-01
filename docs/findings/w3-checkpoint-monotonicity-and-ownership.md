@@ -5,7 +5,7 @@
 | Severity | High |
 | Area | Read path / operations |
 | Files | `packages/event-sourcing/src/adapters/postgres/postgres.checkpoint.ts:19-27`, `apps/api/src/app/event-sourcing/subscriptions.ts:95-108` |
-| Status | Open |
+| Status | **Fixed** — CAS checkpoints, [ADR 0035](../adr/0035-checkpoint-advances-are-compare-and-set.md) (pending merge) |
 | Found | 2026-07-31 evaluation @ `eec797b` |
 | Analysed | 2026-08-01 @ `028b6f7` — confirmed with corrections ([below](#analysis--2026-08-01-challenge)) |
 
@@ -195,3 +195,46 @@ window, rare manual erasures) makes the probability low. The urgency inside
 that rating is driven less by the erasure race than by challenge 1 — every
 deploy already runs the two-instance interleave, and the first non-idempotent
 processor turns it from latent to live.
+
+## Resolution
+
+Fixed by making the checkpoint a fencing token —
+[ADR 0035](../adr/0035-checkpoint-advances-are-compare-and-set.md) — rather
+than by any of the mechanisms proposed above. The landed shape supersedes the
+revised fix order: during review, the gate + guard + advisory-lock plan was
+challenged as three coordination mechanisms (plus a "don't run erasure
+mid-deploy" process rule) compensating for one root weakness — the
+unconditional checkpoint write.
+
+What landed:
+
+- `Checkpoint.write(position)` became `advance(from, to)`: the Postgres
+  adapter compiles it to `UPDATE … WHERE subscription_name = $1 AND
+  position = $2`, throwing `CheckpointConflictError` on zero rows; the
+  in-memory adapter mirrors it. `reset()` (unconditional, to 0) is the one
+  legitimate non-forward move, used only by `rebuild()`.
+- `PollingSubscription` threads the expected position through its per-event
+  transaction, so a conflict rolls the handler's effects back with it. A
+  stale in-flight poll — including one holding a pre-shred plaintext batch —
+  can neither land effects nor move the checkpoint after a rebuild's reset;
+  both failure scenarios above die at the database, on any number of
+  instances, with no locks, no in-process gate, and no deploy constraints.
+- `Subscriptions` treats `CheckpointConflictError` as yield-not-failure
+  (quiet log; the existing backoff retry re-reads the checkpoint).
+- The checkpoint contract grew from two tests to eight (per-name isolation,
+  stale-advance rejection, first-advance-from-nonzero rejection, `reset()`
+  semantics, and the W3 fence: advance-from-pre-reset-position rejected),
+  running against both adapters; a container spec proves on real pg that a
+  stale writer's view write rolls back with its rejected advance. This closes
+  the checkpoint slice of [T1](t1-test-and-ci-blind-spots.md) gap 5.
+
+Residuals, tracked elsewhere:
+
+- Processor exactly-once remains conditional on
+  [W2](w2-appends-bypass-unit-of-work.md): a conflict rolls back a
+  processor's checkpoint but not its already-appended commands until appends
+  enlist in the ambient UnitOfWork. Today's only processor is
+  idempotent-guarded, so this is latent.
+- External side effects (none exist yet) are outside any transactional
+  guarantee; ADR 0035's consequences record the idempotency-key rule
+  (`${subscriptionName}:${event.id}`) that must accompany the first one.

@@ -377,15 +377,23 @@ sequenceDiagram
             alt eventTypes() includes event.type
                 Sub->>H: handle(event)
             end
-            Sub->>CP: write(event.globalPosition)
+            Sub->>CP: advance(position, event.globalPosition)
             deactivate UoW
         end
     end
 ```
 
-Handle and checkpoint-write commit **atomically**. A throw rolls both back, so a
+Handle and checkpoint-advance commit **atomically**. A throw rolls both back, so a
 poison event replays rather than being silently skipped. Per-event dead-lettering
 needs a durable attempt count and is deferred.
+
+The advance is **compare-and-set** (ADR 0035): `advance(from, to)` names the
+position this loop last saw, and a mismatch throws `CheckpointConflictError`,
+aborting the transaction — handler effects and all. The checkpoint is therefore a
+fencing token: a stale writer (another instance during a deploy overlap, or a poll
+in flight across a rebuild's reset) can neither land effects nor move the
+position. A conflict is a yield, not a failure — the retry below re-reads the
+checkpoint and continues from wherever it actually is.
 
 ### 7.4 Schedule and failure
 
@@ -405,7 +413,7 @@ transient store outage should recover, not kill the consumer.
 ```ts
 async rebuild(name) {
   if (kind !== 'projection') throw   // a processor re-runs its side effects
-  await unitOfWork.transaction(() => { projection.reset(); checkpoint.write(0) })
+  await unitOfWork.transaction(() => { projection.reset(); checkpoint.reset() })
   await subscription.poll()
 }
 ```
@@ -639,7 +647,7 @@ flowchart TB
     B --> C["gauge lag: head() - checkpoint.read()"]
     C --> D["PollingSubscription.poll()"]
     D --> E{"event matches<br/>eventTypes()?"}
-    E -->|no| F["checkpoint.write — still suppressed"]
+    E -->|no| F["checkpoint.advance — still suppressed"]
     E -->|yes| G["TracingEventHandler<br/>unsuppressTracing(context)"]
     G --> H["handler + its pg spans visible"]
     H --> F
@@ -661,7 +669,7 @@ takes down the thing it measures is the worse failure.
    only. This is the largest gap by surface area.
 
 2. **The projection⇄checkpoint transaction is invisible.** `PollingSubscription` wraps
-   `handle` + `checkpoint.write` in `unitOfWork.transaction`, but only the inner
+   `handle` + `checkpoint.advance` in `unitOfWork.transaction`, but only the inner
    `handle` un-suppresses. `BEGIN`, `COMMIT` and the checkpoint `UPDATE` produce no
    spans. The mechanism that makes projection writes atomic — the thing most worth
    watching for lock contention — is the one thing you cannot see.

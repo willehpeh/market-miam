@@ -20,7 +20,7 @@ reading them, not running them.
 |---|---|---|---|---|
 | [W1](w1-silent-append-failure.md) | **Critical** | **Fixed** [#22](https://github.com/willehpeh/market-miam/pull/22) | A failed INSERT yields a successful `append()` | `append-transaction.ts` |
 | [W2](w2-appends-bypass-unit-of-work.md) | High | Open | Appends bypass the ambient UnitOfWork; processor exactly-once broken | `postgres.event-store.ts` |
-| [W3](w3-checkpoint-monotonicity-and-ownership.md) | High | Open | Checkpoints accept backwards writes and have no owner | `postgres.checkpoint.ts` |
+| [W3](w3-checkpoint-monotonicity-and-ownership.md) | High | **Fixed** — CAS, [ADR 0035](../adr/0035-checkpoint-advances-are-compare-and-set.md) (pending merge) | Checkpoints accept backwards writes and have no owner | `postgres.checkpoint.ts` |
 | [T1](t1-test-and-ci-blind-spots.md) | High | Partially fixed [#21](https://github.com/willehpeh/market-miam/pull/21)/[#22](https://github.com/willehpeh/market-miam/pull/22)/[#23](https://github.com/willehpeh/market-miam/pull/23) | Poison-event rollback untested; Postgres adapters outside the mutation net; ~~CI not on PRs~~ | `stryker.conf.mjs`, `ci.yml` |
 | [W4](w4-nested-transaction-footgun.md) | Med-High | Open | Nested `transaction()` silently opens a second, independent transaction | `postgres.unit-of-work.ts` |
 | [M2](m2-master-key-rotation-impossible.md) | Medium | Open | The master key can never be rotated | `postgres.data-keys.ts` |
