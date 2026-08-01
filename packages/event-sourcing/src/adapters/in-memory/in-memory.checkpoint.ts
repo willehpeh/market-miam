@@ -1,4 +1,5 @@
 import { Checkpoint } from '../../ports/checkpoint';
+import { CheckpointConflictError } from '../../domain/checkpoint-conflict.error';
 
 export class InMemoryCheckpoint implements Checkpoint {
   private position = 0;
@@ -9,8 +10,16 @@ export class InMemoryCheckpoint implements Checkpoint {
     return Promise.resolve(this.position);
   }
 
-  write(position: number): Promise<void> {
-    this.position = position;
+  advance(from: number, to: number): Promise<void> {
+    if (this.position !== from) {
+      return Promise.reject(new CheckpointConflictError(this.name, from));
+    }
+    this.position = to;
+    return Promise.resolve();
+  }
+
+  reset(): Promise<void> {
+    this.position = 0;
     return Promise.resolve();
   }
 }

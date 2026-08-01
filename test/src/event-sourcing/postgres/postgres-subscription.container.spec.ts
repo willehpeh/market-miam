@@ -22,7 +22,7 @@ beforeEach(async () => {
   await pg.reset();
 });
 
-checkpointContract('PostgresCheckpoint', () => new PostgresCheckpoint(pg.pool, 'test'));
+checkpointContract('PostgresCheckpoint', (name) => new PostgresCheckpoint(pg.pool, name));
 
 subscriptionContract('PollingSubscription over Postgres', () => {
   const store = new PostgresEventStore(pg.pool);

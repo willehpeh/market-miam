@@ -18,7 +18,7 @@ export class PollingSubscription implements Subscription {
   async poll(): Promise<void> {
     let batch: StoredEvent[];
     do {
-      const position = await this.checkpoint.read();
+      let position = await this.checkpoint.read();
       batch = await this.events.loadFrom(position, BATCH_SIZE);
       for (const event of batch) {
         // handle + checkpoint commit atomically: a throw rolls both back, so a poison
@@ -26,12 +26,18 @@ export class PollingSubscription implements Subscription {
         // backoff only slows it). Per-event dead-lettering — retry K times, then record
         // the event and write the checkpoint past it — needs a durable attempt count,
         // so it lands with Postgres, not in-memory.
+        // The advance is compare-and-set from the position this loop last saw
+        // (ADR 0036): if a concurrent writer — another instance, or a rebuild's
+        // reset — moved the checkpoint since, the conflict aborts the transaction,
+        // this batch's remaining (possibly stale) events never land, and the retry
+        // re-reads the checkpoint wherever it actually is.
         await this.unitOfWork.transaction(async () => {
           if (this.handler.eventTypes().includes(event.type)) {
             await this.handler.handle(event);
           }
-          await this.checkpoint.write(event.globalPosition);
+          await this.checkpoint.advance(position, event.globalPosition);
         });
+        position = event.globalPosition;
       }
     } while (batch.length === BATCH_SIZE);
   }

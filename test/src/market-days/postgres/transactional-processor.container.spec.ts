@@ -50,8 +50,11 @@ class FailingCheckpoint extends Checkpoint {
   read(): Promise<number> {
     return Promise.resolve(0);
   }
-  write(_position: number): Promise<void> {
-    return Promise.reject(new Error('checkpoint write failed'));
+  advance(_from: number, _to: number): Promise<void> {
+    return Promise.reject(new Error('checkpoint advance failed'));
+  }
+  reset(): Promise<void> {
+    return Promise.reject(new Error('checkpoint reset failed'));
   }
 }
 
@@ -74,7 +77,7 @@ describe('transactional processor ↔ checkpoint', () => {
     const processor = new OpeningProcessor(events);
     await events.append('vendor-v1', [registered], 0, { vendorId: 'v1' });
 
-    // First poll: the checkpoint write throws inside the per-event tx → the appended
+    // First poll: the checkpoint advance throws inside the per-event tx → the appended
     // events roll back with it, exactly the W2 hole (they used to stay durable).
     await expect(new PollingSubscription(events, processor, new FailingCheckpoint(), uow).poll()).rejects.toThrow();
     expect(await events.load('storefront-v1')).toHaveLength(0);

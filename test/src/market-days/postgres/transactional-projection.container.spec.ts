@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import {
   Checkpoint,
+  CheckpointConflictError,
   DomainEvent,
   PollingSubscription,
   PostgresCheckpoint,
@@ -27,14 +28,17 @@ beforeEach(async () => {
 const opened: DomainEvent = { type: 'StorefrontOpened', payload: { vendorId: 'v1' }, version: 1 };
 const emptyView = { name: '', description: '', phone: '', imageReference: '', published: false };
 
-// A checkpoint that fails its write — simulates a crash after the view write, inside
-// the per-event transaction.
+// A checkpoint that fails its writes — simulates a crash after the view write,
+// inside the per-event transaction.
 class FailingCheckpoint extends Checkpoint {
   read(): Promise<number> {
     return Promise.resolve(0);
   }
-  write(_position: number): Promise<void> {
-    return Promise.reject(new Error('checkpoint write failed'));
+  advance(_from: number, _to: number): Promise<void> {
+    return Promise.reject(new Error('checkpoint advance failed'));
+  }
+  reset(): Promise<void> {
+    return Promise.reject(new Error('checkpoint reset failed'));
   }
 }
 
@@ -71,9 +75,32 @@ describe('transactional projection ↔ checkpoint', () => {
     expect(await views.findByVendor('v1')).toEqual(emptyView);
     expect(await checkpoint.read()).toBeGreaterThan(0);
   });
+
+  // The W3 mechanism on real pg: a writer whose checkpoint expectation is stale
+  // cannot land effects — the CAS advance conflicts inside its transaction and
+  // the view write rolls back with it. This is what makes a batch decrypted
+  // before an erasure harmless: none of it can commit after the reset.
+  it('rolls back a stale writer’s view write along with its rejected advance', async () => {
+    const uow = new PostgresUnitOfWork(pg.pool);
+    const events = new PostgresEventStore(pg.pool);
+    const views = new PostgresVendorStorefrontViews(uow);
+    const checkpoint = new PostgresCheckpoint(uow, 'vendor-storefront-view');
+
+    await events.append('storefront-v1', [opened], 0, { vendorId: 'v1' });
+    await new PollingSubscription(events, new VendorStorefrontViewProjection(views), checkpoint, uow).poll();
+
+    await expect(
+      uow.transaction(async () => {
+        await views.open('v2');
+        await checkpoint.advance(0, 1); // read its position before the poll above moved it
+      }),
+    ).rejects.toBeInstanceOf(CheckpointConflictError);
+
+    expect(await views.findByVendor('v2')).toBeUndefined();
+  });
 });
 
-// Subscriptions.rebuild wraps projection.reset() + checkpoint.write(0) in one
+// Subscriptions.rebuild wraps projection.reset() + checkpoint.reset() in one
 // uow.transaction. The in-memory Subscriptions test proves rebuild uses that shape;
 // these prove the shape is atomic on real pg — the no-op UnitOfWork can't.
 describe('rebuild ↔ checkpoint reset', () => {
@@ -100,7 +127,7 @@ describe('rebuild ↔ checkpoint reset', () => {
 
     await uow.transaction(async () => {
       await projection.reset();
-      await checkpoint.write(0);
+      await checkpoint.reset();
     });
 
     expect(await views.findByVendor('v1')).toBeUndefined();
@@ -120,7 +147,7 @@ describe('rebuild ↔ checkpoint reset', () => {
     await expect(
       uow.transaction(async () => {
         await projection.reset();
-        await new FailingCheckpoint().write(0);
+        await new FailingCheckpoint().reset();
       }),
     ).rejects.toThrow();
 

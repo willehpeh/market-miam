@@ -107,7 +107,13 @@ In value order:
   static half of the net that would have flagged W1 outright. Six existing
   violations were fixed with it, including a missing `await` in
   `subscriptions.spec.ts` that only passed by stub timing.
+- **The checkpoint slice of gap 5 closed with the W3 fix**
+  ([ADR 0036](../adr/0036-checkpoint-advances-are-compare-and-set.md)):
+  `checkpointContract` grew from two tests to eight — per-name isolation,
+  stale-advance rejection (including from a pre-reset position, the W3 fence),
+  and `reset()` semantics — run against both adapters, plus a container spec
+  proving a stale writer's view write rolls back with its rejected advance.
 
 Still open: issues 1 (handler-failure injection), 2 (Postgres adapters outside
 the mutation net), 4 (no Stryker thresholds or CI mutation job), and the
-smaller gaps in 5.
+remaining smaller gaps in 5.
