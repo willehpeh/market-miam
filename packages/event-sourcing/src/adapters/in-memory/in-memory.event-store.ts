@@ -8,19 +8,24 @@ import { StoredEvent } from '../../domain/stored-event';
 
 export class InMemoryEventStore implements EventStore, Events {
 
-  private seededEvents: StoredEvent[] = [];
-  private appendedEvents: StoredEvent[] = [];
+  // One log is the sole source of ordering: positions are assigned from the
+  // log's state at insertion, so array order and globalPosition order cannot
+  // diverge no matter how seedWith and append interleave.
+  private readonly log: StoredEvent[] = [];
+  // References into `log` for events stored via append() — an assertion
+  // affordance for specs (newEvents/lastEvent), never a source of ordering.
+  private readonly appended: StoredEvent[] = [];
   // Mirrors PostgresNotifications' poke stream: fires "poll now" on every append so
   // subscriptions get read-after-write latency instead of waiting for the timer.
   private readonly pokes = new Subject<void>();
 
   append(streamId: string, events: DomainEvent[], expectedStreamPosition: number, metadata?: Record<string, unknown>): Promise<void> {
-    const stream = this.allEvents().filter(e => e.streamId === streamId);
-    if (stream.length !== expectedStreamPosition) {
-      return Promise.reject(new ConcurrencyError(expectedStreamPosition, stream.length));
+    const streamLength = this.streamOf(streamId).length;
+    if (streamLength !== expectedStreamPosition) {
+      return Promise.reject(new ConcurrencyError(expectedStreamPosition, streamLength));
     }
 
-    this.appendedEvents.push(...this.toStoredEvents(events, streamId, stream, metadata));
+    this.appended.push(...events.map(event => this.store(event, streamId, metadata)));
     this.pokes.next();
     return Promise.resolve();
   }
@@ -30,49 +35,49 @@ export class InMemoryEventStore implements EventStore, Events {
   }
 
   load(streamId: string): Promise<StoredEvent[]> {
-    return Promise.resolve(this.allEvents().filter(e => e.streamId === streamId));
+    return Promise.resolve(this.streamOf(streamId));
   }
 
   seedWith(streamId: string, events: DomainEvent[], metadata?: Record<string, unknown>): void {
-    const stream = this.allEvents().filter(e => e.streamId === streamId);
-    this.seededEvents.push(...this.toStoredEvents(events, streamId, stream, metadata));
+    events.forEach(event => this.store(event, streamId, metadata));
   }
 
-  private toStoredEvents(events: DomainEvent[], streamId: string, stream: StoredEvent[], metadata?: Record<string, unknown>) {
-    return events.map((event, index) => ({
+  private store(event: DomainEvent, streamId: string, metadata?: Record<string, unknown>): StoredEvent {
+    const stored: StoredEvent = {
       id: randomUUID(),
       streamId,
       ...event,
       ...metadata ? { metadata } : {},
-      streamPosition: stream.length + index + 1,
-      globalPosition: this.allEvents().length + index + 1,
+      streamPosition: this.streamOf(streamId).length + 1,
+      globalPosition: this.log.length + 1,
       timestamp: Date.now(),
-    }));
+    };
+    this.log.push(stored);
+    return stored;
   }
 
-  private allEvents(): StoredEvent[] {
-    return [...this.seededEvents, ...this.appendedEvents];
+  private streamOf(streamId: string): StoredEvent[] {
+    return this.log.filter(e => e.streamId === streamId);
   }
 
   newEvents(): StoredEvent[] {
-    return [...this.appendedEvents];
+    return [...this.appended];
   }
 
   lastEvent(): StoredEvent {
-    return this.appendedEvents[this.appendedEvents.length - 1];
+    return this.appended[this.appended.length - 1];
   }
 
   loadFrom(globalPosition: number, limit: number): Promise<StoredEvent[]> {
     return Promise.resolve(
-      this.allEvents()
+      this.log
         .filter(event => event.globalPosition > globalPosition)
         .slice(0, limit),
     );
   }
 
   head(): Promise<number> {
-    const all = this.allEvents();
-    return Promise.resolve(all.length === 0 ? 0 : all[all.length - 1].globalPosition);
+    return Promise.resolve(this.log.length === 0 ? 0 : this.log[this.log.length - 1].globalPosition);
   }
 
 }
