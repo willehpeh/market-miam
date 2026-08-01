@@ -108,7 +108,7 @@ In value order:
   violations were fixed with it, including a missing `await` in
   `subscriptions.spec.ts` that only passed by stub timing.
 - **The checkpoint slice of gap 5 closed with the W3 fix**
-  ([ADR 0035](../adr/0035-checkpoint-advances-are-compare-and-set.md)):
+  ([ADR 0036](../adr/0036-checkpoint-advances-are-compare-and-set.md)):
   `checkpointContract` grew from two tests to eight — per-name isolation,
   stale-advance rejection (including from a pre-reset position, the W3 fence),
   and `reset()` semantics — run against both adapters, plus a container spec

@@ -89,3 +89,15 @@ ceiling 1 now contains a single INSERT round-trip regardless of batch size —
 "the round trips inside the hold" are down to lock + count + INSERT + COMMIT.
 Ceilings 2 (O(n) count) and 3 (unbounded `load()`, no snapshots) are
 unchanged, as is the "gap-free" comment nit at `append-transaction.ts:10-11`.
+
+The [W2](w2-appends-bypass-unit-of-work.md) fix (ADR 0035) moves ceiling 1 the
+other way for one path: an append dispatched inside a processor's transaction
+joins it, so the advisory lock is held until the *outer* commit — the whole
+handle + checkpoint transaction, not just the INSERT round-trip. Every writer
+in the cluster can queue behind an appending processor's slowest per-event
+transaction. Accepted at current volume (one processor, one cheap command);
+this is the first number to look at if append latency ever climbs. The
+"gap-free" comment nit is also now fixed — the comment says monotonic commit
+order and names the burned-identity-values caveat (the class is now
+`SerializedAppend` in `serialized-append.ts`; this finding's
+`append-transaction.ts` line references are anchored to the evaluated commit).

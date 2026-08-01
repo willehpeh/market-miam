@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { Query, QueryBus } from '@nestjs/cqrs';
-import { SpanStatusCode, trace } from '@opentelemetry/api';
+import { trace } from '@opentelemetry/api';
 import { QueryGateway } from '@market-miam/event-sourcing';
+import { withSpan } from './with-span';
 
 const tracer = trace.getTracer('query-gateway');
 
@@ -10,18 +11,9 @@ export class TracingQueryGateway implements QueryGateway {
   constructor(private readonly queryBus: QueryBus) {}
 
   execute<R>(query: Query<R>): Promise<R> {
-    return tracer.startActiveSpan(query.constructor.name, async (span) => {
+    return tracer.startActiveSpan(query.constructor.name, (span) => {
       span.setAttribute('query.name', query.constructor.name);
-      try {
-        return await this.queryBus.execute(query);
-      } catch (error) {
-        span.setAttribute('exception.slug', 'query-dispatch-failed');
-        span.recordException(error as Error);
-        span.setStatus({ code: SpanStatusCode.ERROR });
-        throw error;
-      } finally {
-        span.end();
-      }
+      return withSpan(span, 'query-dispatch-failed', () => this.queryBus.execute(query));
     });
   }
 }

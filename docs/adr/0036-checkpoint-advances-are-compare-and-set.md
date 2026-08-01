@@ -1,4 +1,4 @@
-# 0035. Checkpoint advances are compare-and-set; the checkpoint is a fencing token
+# 0036. Checkpoint advances are compare-and-set; the checkpoint is a fencing token
 
 Date: 2026-08-01 · Status: Accepted
 
@@ -61,8 +61,9 @@ Rejected:
   after a reset are forward writes); prevents only the third-replay symptom.
 - **Per-subscription advisory locks** — real ownership, but session-scoped
   locks demand a dedicated pinned connection with its own lifecycle, and
-  prevention adds nothing CAS doesn't already give projections. Revisit only
-  if per-event conflict contention ever becomes a measured problem.
+  prevention adds nothing CAS doesn't already give transactional consumers.
+  Revisit only if per-event conflict contention ever becomes a measured
+  problem.
 
 ## Consequences
 
@@ -70,11 +71,12 @@ Rejected:
   an unconditional write, reopens W3 — the contract test "rejects an advance
   from a pre-reset position" pins the fencing behaviour in both adapters.
 - Exactly-once holds for effects that live **inside** the per-event
-  transaction. For processors this is conditional on W2 (appends must enlist
-  in the ambient UnitOfWork so a rolled-back dispatch takes its appends with
-  it). Until W2 lands, a conflict can roll back a processor's checkpoint but
-  not its already-appended commands; today's only processor
-  (`opens-storefronts`) is idempotent-guarded, so this is latent, not live.
+  transaction. With ADR 0035 (appends join the ambient unit of work), that
+  includes a processor's dispatched command appends: a conflict rolls back
+  handler effects, appends, and checkpoint as one unit, so CAS contention —
+  a rebuild, a deploy overlap — re-dispatches nothing. The two decisions
+  compose: 0035 widens what the per-event transaction contains; this one
+  decides who may commit it.
 - **External side effects are the boundary of the guarantee.** An email or
   payment call cannot roll back, so CAS demotes it to at-least-once. The rule
   for the first processor that performs one: the effect must carry the

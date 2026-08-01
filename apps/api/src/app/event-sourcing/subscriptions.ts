@@ -92,7 +92,7 @@ export class Subscriptions implements OnApplicationBootstrap, OnApplicationShutd
   // re-dispatches its commands, re-running side effects (not replay-safe).
   // Leaves the background poller running deliberately: the reset fences out any
   // poll in flight — its next checkpoint advance expects a pre-reset position,
-  // conflicts, and rolls its whole per-event transaction back (ADR 0035) — so a
+  // conflicts, and rolls its whole per-event transaction back (ADR 0036) — so a
   // stale batch can neither land effects nor move the checkpoint past unreplayed
   // events. Concurrent polls after the reset just contend per event via the same
   // CAS; each event's effects commit exactly once.

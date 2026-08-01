@@ -1,6 +1,7 @@
-import { context, Span, SpanContext, SpanStatusCode, trace } from '@opentelemetry/api';
+import { context, Span, SpanContext, trace } from '@opentelemetry/api';
 import { unsuppressTracing } from '@opentelemetry/core';
 import { EventHandler, StoredEvent } from '@market-miam/event-sourcing';
+import { withSpan } from './with-span';
 
 const tracer = trace.getTracer('event-handler');
 
@@ -20,22 +21,13 @@ export class TracingEventHandler implements EventHandler {
       // idle cycle costs one span. Real work is the exception to that: lift it here,
       // or handling an event would be as invisible as finding nothing to handle.
       unsuppressTracing(context.active()),
-      async (span: Span) => {
+      (span: Span) => {
         span.setAttributes({
           'event.type': event.type,
           'processing.lag_ms': Date.now() - event.timestamp,
           'vendor.id': event.metadata?.['vendorId'] as string,
         });
-        try {
-          return await this.inner.handle(event);
-        } catch (error) {
-          span.setAttribute('exception.slug', 'event-handler-failed');
-          span.recordException(error as Error);
-          span.setStatus({ code: SpanStatusCode.ERROR });
-          throw error;
-        } finally {
-          span.end();
-        }
+        return withSpan(span, 'event-handler-failed', async () => this.inner.handle(event));
       },
     );
   }

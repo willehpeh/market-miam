@@ -5,7 +5,7 @@
 | Severity | High |
 | Area | Read path / operations |
 | Files | `packages/event-sourcing/src/adapters/postgres/postgres.checkpoint.ts:19-27`, `apps/api/src/app/event-sourcing/subscriptions.ts:95-108` |
-| Status | **Fixed** — CAS checkpoints, [ADR 0035](../adr/0035-checkpoint-advances-are-compare-and-set.md) (pending merge) |
+| Status | **Fixed** — CAS checkpoints, [ADR 0036](../adr/0036-checkpoint-advances-are-compare-and-set.md) (pending merge) |
 | Found | 2026-07-31 evaluation @ `eec797b` |
 | Analysed | 2026-08-01 @ `028b6f7` — confirmed with corrections ([below](#analysis--2026-08-01-challenge)) |
 
@@ -199,7 +199,7 @@ processor turns it from latent to live.
 ## Resolution
 
 Fixed by making the checkpoint a fencing token —
-[ADR 0035](../adr/0035-checkpoint-advances-are-compare-and-set.md) — rather
+[ADR 0036](../adr/0036-checkpoint-advances-are-compare-and-set.md) — rather
 than by any of the mechanisms proposed above. The landed shape supersedes the
 revised fix order: during review, the gate + guard + advisory-lock plan was
 challenged as three coordination mechanisms (plus a "don't run erasure
@@ -228,13 +228,15 @@ What landed:
   stale writer's view write rolls back with its rejected advance. This closes
   the checkpoint slice of [T1](t1-test-and-ci-blind-spots.md) gap 5.
 
-Residuals, tracked elsewhere:
+Residuals:
 
-- Processor exactly-once remains conditional on
-  [W2](w2-appends-bypass-unit-of-work.md): a conflict rolls back a
-  processor's checkpoint but not its already-appended commands until appends
-  enlist in the ambient UnitOfWork. Today's only processor is
-  idempotent-guarded, so this is latent.
+- ~~Processor exactly-once remains conditional on
+  [W2](w2-appends-bypass-unit-of-work.md).~~ Resolved: W2's fix
+  ([#24](https://github.com/willehpeh/market-miam/pull/24),
+  [ADR 0035](../adr/0035-appends-join-the-ambient-unit-of-work.md)) landed
+  alongside this one — appends join the ambient unit of work, so a conflict
+  rolls back a processor's dispatched appends with its checkpoint. The two
+  fixes compose into full processor exactly-once for in-database effects.
 - External side effects (none exist yet) are outside any transactional
-  guarantee; ADR 0035's consequences record the idempotency-key rule
+  guarantee; ADR 0036's consequences record the idempotency-key rule
   (`${subscriptionName}:${event.id}`) that must accompany the first one.

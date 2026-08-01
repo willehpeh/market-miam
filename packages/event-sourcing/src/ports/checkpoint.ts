@@ -1,4 +1,4 @@
-// A checkpoint is a fencing token, not a mutable cell (ADR 0035): advancing it
+// A checkpoint is a fencing token, not a mutable cell (ADR 0036): advancing it
 // requires naming the position you believe it holds, and a mismatch throws
 // CheckpointConflictError. Called inside the per-event transaction, a conflict
 // therefore rolls the handler's effects back with it — a stale writer (another

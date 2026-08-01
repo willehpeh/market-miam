@@ -27,7 +27,7 @@ export class PollingSubscription implements Subscription {
         // the event and write the checkpoint past it — needs a durable attempt count,
         // so it lands with Postgres, not in-memory.
         // The advance is compare-and-set from the position this loop last saw
-        // (ADR 0035): if a concurrent writer — another instance, or a rebuild's
+        // (ADR 0036): if a concurrent writer — another instance, or a rebuild's
         // reset — moved the checkpoint since, the conflict aborts the transaction,
         // this batch's remaining (possibly stale) events never land, and the retry
         // re-reads the checkpoint wherever it actually is.
