@@ -66,6 +66,19 @@ export function subscriptionContract(
       expect(handler.handled.map((e) => e.type)).toEqual(['First', 'Second', 'Third']);
     });
 
+    it('drains a backlog larger than one batch in a single poll, in order', async () => {
+      const handler = new RecordingHandler(['Bulk']);
+      const subscription = subscribe(handler);
+      const backlog = Array.from({ length: 120 }, () => dummyEvent('Bulk'));
+
+      await writer.append('stream-1', backlog, 0);
+      await subscription.poll();
+
+      expect(handler.handled).toHaveLength(120);
+      const positions = handler.handled.map((e) => e.globalPosition);
+      expect(positions).toEqual([...positions].sort((a, b) => a - b));
+    });
+
     it('advances past non-matching events, delivering a later matching event', async () => {
       const handler = new RecordingHandler(['Wanted']);
       const subscription = subscribe(handler);

@@ -1,0 +1,32 @@
+name: Mutation
+
+# Nightly mutation run over the fast suite (scope defined in stryker.conf.mjs —
+# container-only Postgres adapters are deliberately excluded). Informational:
+# no break threshold, so this job only fails on a broken run, not a low score.
+# The HTML report is uploaded as an artifact for inspection.
+on:
+  schedule:
+    - cron: '17 3 * * *'
+  workflow_dispatch:
+
+jobs:
+  mutation:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - run: npx nx run test:mutation
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mutation-report
+          path: reports/mutation/mutation.html
