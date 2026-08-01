@@ -11,11 +11,11 @@
 ## Issue
 
 The GCM additional authenticated data is built from stream, type, and field
-(newline-separated template literal):
+(NUL-separated template literal):
 
 ```ts
 function aad(streamId: string, eventType: string, field: string): Buffer {
-  return Buffer.from(`${streamId}\n${eventType}\n${field}`, 'utf8');
+  return Buffer.from(`${streamId}\u0000${eventType}\u0000${field}`, 'utf8');
 }
 ```
 
@@ -55,7 +55,7 @@ Include the event's position (or its `id`) in the AAD:
 
 ```ts
 aad(streamId, event.type, field, streamPosition)
-// `${streamId}\n${eventType}\n${field}\n${streamPosition}`
+// `${streamId}\u0000${eventType}\u0000${field}\u0000${streamPosition}`
 ```
 
 Cost is near zero on the write path. Two things to handle:
@@ -71,6 +71,18 @@ Cost is near zero on the write path. Two things to handle:
 Regression tests to pin it: (a) a decrypt-side spec that swaps two same-field
 ciphertexts between same-type events in one stream and asserts load **throws**;
 (b) a spec asserting the AAD is non-empty and position-sensitive (kills the
-surviving mutants). The separator ambiguity (newline inside a component) is
+surviving mutants). The separator ambiguity (a NUL inside a component) is
 theoretical for UUID-based stream ids, but length-prefixing the components
 while versioning the AAD closes it for free.
+
+## Update (2026-08-01)
+
+This finding originally quoted the separator as `\n`. The actual separator is
+a NUL — and it was a **literal 0x00 byte embedded in the source file**, which
+is why the misquote happened: the byte is invisible in editors and made git
+classify `shredding.event-store.ts` as binary (no diffs rendered anywhere).
+The literal bytes have been replaced with visible `\u0000` escapes — the
+identical runtime string, so no behaviour change and no compatibility impact
+on existing ciphertexts; the file diffs as text again. The finding itself
+(position omitted from the AAD, surviving AAD mutants) is unchanged and still
+open; the AAD-content regression test belongs to this finding's fix.
