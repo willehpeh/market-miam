@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { Command, CommandBus } from '@nestjs/cqrs';
-import { SpanStatusCode, trace } from '@opentelemetry/api';
+import { trace } from '@opentelemetry/api';
 import { CommandGateway, Lineage } from '@market-miam/event-sourcing';
+import { withSpan } from './with-span';
 
 const tracer = trace.getTracer('command-gateway');
 
@@ -13,7 +14,7 @@ export class TracingCommandGateway implements CommandGateway {
   ) {}
 
   execute<R>(command: Command<R>): Promise<R> {
-    return tracer.startActiveSpan(command.constructor.name, async (span) => {
+    return tracer.startActiveSpan(command.constructor.name, (span) => {
       const ids = this.lineage.current();
       span.setAttributes({
         'command.name': command.constructor.name,
@@ -22,16 +23,7 @@ export class TracingCommandGateway implements CommandGateway {
           'app.causation_id': ids.causationId,
         }),
       });
-      try {
-        return await this.commandBus.execute(command);
-      } catch (error) {
-        span.setAttribute('exception.slug', 'command-dispatch-failed');
-        span.recordException(error as Error);
-        span.setStatus({ code: SpanStatusCode.ERROR });
-        throw error;
-      } finally {
-        span.end();
-      }
+      return withSpan(span, 'command-dispatch-failed', () => this.commandBus.execute(command));
     });
   }
 }

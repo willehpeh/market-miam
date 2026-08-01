@@ -1,6 +1,7 @@
-import { context, Span, SpanStatusCode, trace } from '@opentelemetry/api';
+import { context, Span, trace } from '@opentelemetry/api';
 import { suppressTracing } from '@opentelemetry/core';
 import { Subscription } from '@market-miam/event-sourcing';
+import { withSpan } from './with-span';
 
 const tracer = trace.getTracer('subscription');
 
@@ -18,28 +19,17 @@ export class TracingSubscription implements Subscription {
   ) {}
 
   poll(): Promise<void> {
-    return tracer.startActiveSpan(
-      'subscription poll',
-      { root: true },
-      async (span: Span) => {
-        span.setAttribute('subscription.name', this.name);
-        try {
-          return await context.with(suppressTracing(context.active()), async () => {
-            // Before the poll, not after: poll() drains before it returns, so reading
-            // afterwards would always gauge zero and measure nothing.
-            await this.gauge(span);
-            return this.inner.poll();
-          });
-        } catch (error) {
-          span.setAttribute('exception.slug', 'subscription-poll-failed');
-          span.recordException(error as Error);
-          span.setStatus({ code: SpanStatusCode.ERROR });
-          throw error;
-        } finally {
-          span.end();
-        }
-      },
-    );
+    return tracer.startActiveSpan('subscription poll', { root: true }, (span: Span) => {
+      span.setAttribute('subscription.name', this.name);
+      return withSpan(span, 'subscription-poll-failed', () =>
+        context.with(suppressTracing(context.active()), async () => {
+          // Before the poll, not after: poll() drains before it returns, so reading
+          // afterwards would always gauge zero and measure nothing.
+          await this.gauge(span);
+          return this.inner.poll();
+        }),
+      );
+    });
   }
 
   private async gauge(span: Span): Promise<void> {

@@ -15,12 +15,35 @@ export class PostgresUnitOfWork extends UnitOfWork implements Queryable {
     super();
   }
 
-  async transaction<T>(fn: () => Promise<T>): Promise<T> {
+  transaction<T>(fn: () => Promise<T>): Promise<T> {
+    return this.ownTransaction(() => fn());
+  }
+
+  // The tell for multi-statement work that must pin one connection (an append:
+  // lock, check, INSERT): run it in the ambient transaction when one exists — its
+  // owner's COMMIT decides durability — or in a fresh one when none does. The
+  // caller hands over the work and never learns which case applied.
+  inTransaction<T>(work: (client: PoolClient) => Promise<T>): Promise<T> {
+    const ambient = this.active.getStore();
+    return ambient ? work(ambient) : this.ownTransaction(work);
+  }
+
+  query<R extends QueryResultRow = QueryResultRow>(text: string, params?: unknown[]): Promise<QueryResult<R>> {
+    return (this.active.getStore() ?? this.pool).query<R>(text, params);
+  }
+
+  private async ownTransaction<T>(fn: (client: PoolClient) => Promise<T>): Promise<T> {
     const client = await this.pool.connect();
     try {
       await client.query('BEGIN');
-      const result = await this.active.run(client, fn);
-      await client.query('COMMIT');
+      const result = await this.active.run(client, () => fn(client));
+      // Postgres resolves COMMIT on an aborted transaction successfully, with a ROLLBACK
+      // command tag — an error swallowed inside fn would otherwise read as a durable unit
+      // of work (verified commit, ADR 0034).
+      const commit = await client.query('COMMIT');
+      if (commit.command !== 'COMMIT') {
+        throw new Error(`unit of work was rolled back: COMMIT returned ${commit.command}`);
+      }
       return result;
     } catch (error) {
       await client.query('ROLLBACK').catch(() => undefined);
@@ -28,9 +51,5 @@ export class PostgresUnitOfWork extends UnitOfWork implements Queryable {
     } finally {
       client.release();
     }
-  }
-
-  query<R extends QueryResultRow = QueryResultRow>(text: string, params?: unknown[]): Promise<QueryResult<R>> {
-    return (this.active.getStore() ?? this.pool).query<R>(text, params);
   }
 }

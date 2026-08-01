@@ -1,38 +1,38 @@
-import type { PoolClient, QueryResult } from 'pg';
+import type { PoolClient } from 'pg';
 import { DomainEvent } from '../../domain/domain-event';
 import { randomUUID } from 'node:crypto';
 import { ConcurrencyError } from '../../domain/concurrency.error';
 
-export class AppendTransaction {
+// ponytail: one global advisory lock serialises appends so global_position commits
+// in order — monotonic commit order, which is all the single-bigint cursor needs
+// (ADR 0028; rollbacks still burn identity values, so positions are not gap-free).
+const APPEND_LOCK_KEY = 4_827_193;
 
-  private currentStreamPosition = 0;
-
-  // ponytail: one global advisory lock serialises appends so global_position commits
-  // in order — the single-bigint cursor stays gap-free (ADR 0028).
-  private readonly APPEND_LOCK_KEY = 4_827_193;
+// The append protocol — lock, concurrency check, one multi-row INSERT — runnable on
+// any client inside any open transaction. Transaction lifecycle belongs to the
+// caller: PostgresEventStore runs this through PostgresUnitOfWork.inTransaction,
+// which joins an ambient transaction or owns a fresh one, so the lock
+// (pg_advisory_xact_lock) scopes to whichever transaction this lands in.
+export class SerializedAppend {
 
   constructor(private readonly client: PoolClient,
               private readonly streamId: string) {
   }
 
-  async open(): Promise<void> {
-    await this.client.query('BEGIN');
-    await this.client.query('SELECT pg_advisory_xact_lock($1)', [this.APPEND_LOCK_KEY]);
-  }
-
-  async append(
+  async execute(
     events: DomainEvent[],
     expectedStreamPosition: number,
     metadata?: Record<string, unknown>
   ): Promise<void> {
-    await this.performConcurrencyCheck(expectedStreamPosition);
+    await this.client.query('SELECT pg_advisory_xact_lock($1)', [APPEND_LOCK_KEY]);
+    let streamPosition = await this.checkedStreamPosition(expectedStreamPosition);
     if (events.length === 0) {
       return;
     }
     const { ids, positions, types, payloads, versions } = events.reduce(
       (columns, event) => {
         columns.ids.push(randomUUID());
-        columns.positions.push(++this.currentStreamPosition);
+        columns.positions.push(++streamPosition);
         columns.types.push(event.type);
         columns.payloads.push(JSON.stringify(event.payload));
         columns.versions.push(event.version);
@@ -59,32 +59,14 @@ export class AppendTransaction {
     );
   }
 
-  private async performConcurrencyCheck(expectedStreamPosition: number): Promise<void> {
+  private async checkedStreamPosition(expectedStreamPosition: number): Promise<number> {
     const { rows } = await this.client.query<{ len: number }>(
       'SELECT count(*)::int AS len FROM events WHERE stream_id = $1',
       [this.streamId]
     );
-    this.currentStreamPosition = rows[0].len;
-    if (this.currentStreamPosition !== expectedStreamPosition) {
-      throw new ConcurrencyError(expectedStreamPosition, this.currentStreamPosition);
+    if (rows[0].len !== expectedStreamPosition) {
+      throw new ConcurrencyError(expectedStreamPosition, rows[0].len);
     }
-  }
-
-  async commit(): Promise<QueryResult> {
-    // Postgres resolves COMMIT on an aborted transaction successfully, with a ROLLBACK
-    // command tag — any swallowed in-transaction error would otherwise read as a durable write.
-    const result = await this.client.query('COMMIT');
-    if (result.command !== 'COMMIT') {
-      throw new Error(`append transaction was rolled back: COMMIT returned ${result.command}`);
-    }
-    return result;
-  }
-
-  async rollback(): Promise<QueryResult | undefined> {
-    return this.client.query('ROLLBACK').catch(() => undefined);
-  }
-
-  release(): void {
-    this.client.release();
+    return rows[0].len;
   }
 }
