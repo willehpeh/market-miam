@@ -27,9 +27,9 @@ describe('vendorPiiFields', () => {
     await store.append('storefront-v1', [edited], 0, { vendorId: 'v1' });
 
     const [atRest] = await inner.load('storefront-v1');
-    expect(atRest.payload['name']).toMatch(/^enc:v1:/);
-    expect(atRest.payload['description']).toMatch(/^enc:v1:/);
-    expect(atRest.payload['phone']).toMatch(/^enc:v1:/);
+    expect(atRest.payload['name']).toMatch(/^enc:v2:/);
+    expect(atRest.payload['description']).toMatch(/^enc:v2:/);
+    expect(atRest.payload['phone']).toMatch(/^enc:v2:/);
 
     const [loaded] = await store.load('storefront-v1');
     expect(loaded.payload).toEqual({ name: 'Chez Marie', description: 'Pains et viennoiseries', phone: '0600000000' });

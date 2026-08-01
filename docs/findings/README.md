@@ -26,7 +26,7 @@ reading them, not running them.
 | [M2](m2-master-key-rotation-impossible.md) | Medium | **Fixed** ([ADR 0040](../adr/0040-master-keyring-lazy-rewrap.md)) | The master key can never be rotated | `postgres.data-keys.ts` |
 | [M1](m1-in-memory-ordering-infidelity.md) | Medium | **Fixed** ([ADR 0038](../adr/0038-in-memory-store-single-log.md)) | The in-memory adapter can violate global ordering Postgres cannot | `in-memory.event-store.ts` |
 | [M3](m3-shredding-hard-throws-on-legal-input.md) | Medium | **Fixed** ([ADR 0039](../adr/0039-shredding-reads-degrade-writes-stay-strict.md)) | Shredding hard-throws on legal inputs; one path bricks a stream | `shredding.event-store.ts` |
-| [M4](m4-aad-omits-stream-position.md) | Low-Med | Open | AAD binds identity but not position; ciphertexts swappable within a stream | `shredding.event-store.ts` |
+| [M4](m4-aad-omits-stream-position.md) | Low-Med | **Fixed** ([ADR 0041](../adr/0041-aad-v2-binds-stream-position.md)) | AAD binds identity but not position; ciphertexts swappable within a stream | `shredding.event-store.ts` |
 | [M7](m7-listen-boot-and-stop-issues.md) | Low | Open | LISTEN boot resolves on failure; `stop()` never completes its subjects | `postgres.notifications.ts` |
 | [M5](m5-read-path-write-amplification.md) | Low (tradeoff) | Open (accepted) | Read-path write amplification: one transaction per event per consumer | `polling.subscription.ts` |
 | [M6](m6-write-path-scaling-ceilings.md) | Low (tradeoff) | Open (accepted) | Write-path scaling ceilings: global lock, O(n) check, unbounded load | `append-transaction.ts` |

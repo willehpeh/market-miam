@@ -46,3 +46,4 @@ deferred decisions in `docs/DEFERRED.md` (see ADR 0017).
 | [0038](0038-in-memory-store-single-log.md) | The in-memory store keeps one log; "appended" is a view, not storage | 2026-08-01 |
 | [0039](0039-shredding-reads-degrade-writes-stay-strict.md) | Shredding reads degrade to the sentinel; writes stay strict | 2026-08-01 |
 | [0040](0040-master-keyring-lazy-rewrap.md) | Master keys form a versioned keyring; rows re-wrap lazily on read | 2026-08-01 |
+| [0041](0041-aad-v2-binds-stream-position.md) | enc:v2 — the AAD binds the event's stream position | 2026-08-01 |

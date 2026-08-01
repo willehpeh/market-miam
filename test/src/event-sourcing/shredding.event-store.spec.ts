@@ -1,3 +1,4 @@
+import { createCipheriv, randomBytes } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 import {
   DomainEvent,
@@ -29,7 +30,7 @@ describe('ShreddingEventStore', () => {
     await store.append('vendor-v1', [registered('vendor@example.com')], 0, v1);
 
     const [atRest] = await inner.load('vendor-v1');
-    expect(atRest.payload['email']).toMatch(/^enc:v1:/);
+    expect(atRest.payload['email']).toMatch(/^enc:v2:/);
 
     const [loaded] = await store.load('vendor-v1');
     expect(loaded.payload).toEqual({
@@ -147,8 +148,55 @@ describe('ShreddingEventStore', () => {
     const [, , iv, tag, ct] = (stored.payload['email'] as string).split(':');
     const bytes = Buffer.from(ct, 'base64');
     bytes[0] ^= 0xff;
-    stored.payload['email'] = `enc:v1:${iv}:${tag}:${bytes.toString('base64')}`;
+    stored.payload['email'] = `enc:v2:${iv}:${tag}:${bytes.toString('base64')}`;
 
     await expect(store.load('vendor-v1')).rejects.toThrow();
   });
+
+  it('detects a ciphertext swapped between two same-type events in one stream', async () => {
+    const { store, inner } = shreddingOver();
+    await store.append('vendor-v1', [registered('first@example.com')], 0, v1);
+    await store.append('vendor-v1', [registered('second@example.com')], 1, v1);
+
+    const [first, second] = await inner.load('vendor-v1');
+    const swapped = first.payload['email'];
+    first.payload['email'] = second.payload['email'];
+    second.payload['email'] = swapped;
+
+    await expect(store.load('vendor-v1')).rejects.toThrow();
+  });
+
+  it('detects a ciphertext moved to a same-position event in another stream', async () => {
+    // Same subject on both streams, so both seal under one key — only the AAD's
+    // streamId component can tell the ciphertexts apart.
+    const { store, inner } = shreddingOver();
+    await store.append('vendor-v1', [registered('vendor@example.com')], 0, v1);
+    await store.append('vendor-v1-other', [registered('other@example.com')], 0, v1);
+
+    const [ours] = await inner.load('vendor-v1');
+    const [theirs] = await inner.load('vendor-v1-other');
+    ours.payload['email'] = theirs.payload['email'];
+
+    await expect(store.load('vendor-v1')).rejects.toThrow();
+  });
+
+  it('still decrypts values sealed under the enc:v1 envelope', async () => {
+    const { store, inner, keys } = shreddingOver();
+    const key = await keys.getOrCreateKeyFor('v1');
+    const sealed = sealV1('legacy@example.com', key, 'vendor-v1', 'VendorRegistered', 'email');
+    await inner.append('vendor-v1', [{ type: 'VendorRegistered', payload: { vendorId: 'v1', email: sealed }, version: 1 }], 0, v1);
+
+    const [loaded] = await store.load('vendor-v1');
+    expect(loaded.payload['email']).toBe('legacy@example.com');
+  });
 });
+
+// Seals a value the way the pre-v2 write path did: 3-part NUL-separated AAD,
+// enc:v1 prefix. Pins that historical ciphertexts stay readable forever.
+function sealV1(value: string, key: Buffer, streamId: string, eventType: string, field: string): string {
+  const iv = randomBytes(12);
+  const cipher = createCipheriv('aes-256-gcm', key, iv);
+  cipher.setAAD(Buffer.from(`${streamId}\u0000${eventType}\u0000${field}`, 'utf8'));
+  const ciphertext = Buffer.concat([cipher.update(value, 'utf8'), cipher.final()]);
+  return `enc:v1:${iv.toString('base64')}:${cipher.getAuthTag().toString('base64')}:${ciphertext.toString('base64')}`;
+}
