@@ -5,7 +5,7 @@
 | Severity | Medium |
 | Area | Crypto-shredding / GDPR |
 | Files | `packages/event-sourcing/src/adapters/postgres/postgres.data-keys.ts:56-72`, `database/migrations/0003` (data_keys table) |
-| Status | Open |
+| Status | **Fixed** ([ADR 0040](../adr/0040-master-keyring-lazy-rewrap.md)) |
 | Found | 2026-07-31 evaluation @ `eec797b` |
 
 ## Issue
@@ -69,3 +69,25 @@ missing version (not a bare GCM error).
 Related: [M4](m4-aad-omits-stream-position.md) (AAD hygiene in the same
 adapter); `docs/POSTGRES-PLAN.md` tracks crypto-shredding work and is the
 natural home for scheduling this.
+
+## Update (2026-08-01)
+
+Fixed as suggested ([ADR 0040](../adr/0040-master-keyring-lazy-rewrap.md)),
+with the column variant: `data_keys.key_version integer NOT NULL DEFAULT 1`
+(migration 0011) rather than a blob prefix — existing blobs have no prefix to
+parse, and the `DEFAULT 1` retroactively declares every existing row wrapped
+under version 1, which a lone `MASTER_KEY` config makes true by landing in
+the ring as version 1. `PostgresDataKeys` takes a validated `MasterKeyring`
+(`{version → key}` + explicit current marker); `wrap` uses current, `unwrap`
+selects by the row's version, and an old-version row is re-wrapped in place
+after a successful read via a `key_version`-guarded compare-and-set (so a
+racing shred's DELETE wins). A version absent from the ring fails loudly
+naming the version. Config stays backward compatible: `MASTER_KEY` alone
+builds the single-key ring; rotation uses
+`MASTER_KEYS="1:<b64>;2:<b64>"` + `MASTER_KEY_CURRENT`.
+
+All three regression tests this finding asked for are pinned in
+`postgres-data-keys.container.spec.ts` (authored statically — no Docker in
+the fix environment, same caveat as the evaluation), plus ring validation and
+config parsing in fast specs. The `DataKeys` port is unchanged;
+`InMemoryDataKeys` wraps nothing and is untouched.
