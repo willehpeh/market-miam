@@ -3,6 +3,7 @@ import { DiscoveryService } from '@nestjs/core';
 import { EMPTY, exhaustMap, from, mergeMap, Observable, retry, Subject, takeUntil, timer } from 'rxjs';
 import {
   Checkpoint,
+  CheckpointConflictError,
   checkpointMetadata,
   EventHandler,
   Events,
@@ -89,9 +90,12 @@ export class Subscriptions implements OnApplicationBootstrap, OnApplicationShutd
   // Rebuild a projection from zero: clear its read model and reset its checkpoint
   // atomically, then replay. Refused for processors — replaying a processor
   // re-dispatches its commands, re-running side effects (not replay-safe).
-  // ponytail: leaves the background poller running; a concurrent replay from 0 is
-  // safe only because projections upsert idempotently. Pause polling here if a
-  // non-idempotent projection ever lands.
+  // Leaves the background poller running deliberately: the reset fences out any
+  // poll in flight — its next checkpoint advance expects a pre-reset position,
+  // conflicts, and rolls its whole per-event transaction back (ADR 0035) — so a
+  // stale batch can neither land effects nor move the checkpoint past unreplayed
+  // events. Concurrent polls after the reset just contend per event via the same
+  // CAS; each event's effects commit exactly once.
   async rebuild(name: string): Promise<void> {
     const consumer = this.consumers.find((candidate) => candidate.name === name);
     if (!consumer) {
@@ -102,7 +106,7 @@ export class Subscriptions implements OnApplicationBootstrap, OnApplicationShutd
     }
     await this.unitOfWork.transaction(async () => {
       await (consumer.handler as Projection).reset();
-      await consumer.checkpoint.write(0);
+      await consumer.checkpoint.reset();
     });
     await consumer.subscription.poll();
   }
@@ -164,10 +168,18 @@ export class Subscriptions implements OnApplicationBootstrap, OnApplicationShutd
       // the consumer. A poison event (handler throws on the same event every time)
       // still replays forever; skipping it needs per-event dead-lettering inside
       // poll(), which is a durable-store concern — deferred until Postgres.
+      // A checkpoint conflict is not a failure: it means a concurrent writer — a
+      // rebuild's reset, or another instance during a deploy overlap — owns the
+      // position this poll expected. The retry re-reads and continues from wherever
+      // the checkpoint actually is, so it logs quietly, not as an error.
       retry({
         resetOnSuccess: true,
         delay: (error, retryCount) => {
-          this.logger.error('Subscription poll failed', error);
+          if (error instanceof CheckpointConflictError) {
+            this.logger.log(`Subscription poll yielded to a concurrent writer: ${error.message}`);
+          } else {
+            this.logger.error('Subscription poll failed', error);
+          }
           return timer(Math.min(RETRY_BACKOFF_MS * 2 ** (retryCount - 1), MAX_RETRY_BACKOFF_MS));
         },
       }),

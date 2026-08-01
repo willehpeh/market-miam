@@ -28,6 +28,7 @@ export { PostgresEventStore } from './adapters/postgres/postgres.event-store';
 export { PostgresCheckpoint } from './adapters/postgres/postgres.checkpoint';
 export { PostgresNotifications, ListenState, ListenStatus } from './adapters/postgres/postgres.notifications';
 export { ConcurrencyError } from './domain/concurrency.error';
+export { CheckpointConflictError } from './domain/checkpoint-conflict.error';
 export { InMemoryCheckpoint } from './adapters/in-memory/in-memory.checkpoint';
 export { PollingSubscription } from './adapters/polling.subscription';
 export { UnitOfWork } from './ports/unit-of-work';
