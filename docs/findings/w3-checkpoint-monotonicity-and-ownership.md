@@ -7,6 +7,7 @@
 | Files | `packages/event-sourcing/src/adapters/postgres/postgres.checkpoint.ts:19-27`, `apps/api/src/app/event-sourcing/subscriptions.ts:95-108` |
 | Status | Open |
 | Found | 2026-07-31 evaluation @ `eec797b` |
+| Analysed | 2026-08-01 @ `028b6f7` — confirmed with corrections ([below](#analysis--2026-08-01-challenge)) |
 
 ## Issue
 
@@ -78,3 +79,119 @@ Regression tests to pin it: checkpoint contract gains (a) per-name isolation,
 (b) lower-position write is a no-op, (c) `reset()` goes to 0; a container spec
 races `rebuild()` against an in-flight poll and asserts the replay completes
 from 0.
+
+## Analysis — 2026-08-01 challenge
+
+Re-examined at `028b6f7`. Every factual claim was re-verified against the code;
+the finding stands, with one corrected mechanism, one understated exposure, and
+a revised fix ordering. One assumption the finding leaves implicit was also
+confirmed: checkpoint writes really are transactional with handler effects —
+`CHECKPOINT_FACTORY` hands `PostgresCheckpoint` the UoW-backed `Queryable`
+(`postgres-persistence.module.ts:124-127`), so the per-event
+`handle + write` at `polling.subscription.ts:29-34` commits or rolls back as
+one.
+
+### Confirmed
+
+The upsert text, the absence of any ownership construct, and the test blind
+spot are all as described — the shared checkpoint contract
+(`test/src/event-sourcing/checkpoint.contract.ts`) is exactly two tests, run
+against both adapters, with no per-name isolation and no backwards-write case.
+`POLLING_ENABLED` is hardwired `true` for every instance
+(`event-sourcing.module.ts:42`); nothing conditions polling on identity.
+
+### Challenged
+
+**1. "Multi-instance deploy" understates the exposure — the overlap happens on
+every deploy.** `render.yaml` runs one `api` instance (starter plan, no
+scaling block), so read literally the scenario sounds hypothetical. It isn't:
+Render replaces web-service instances with a zero-downtime rollout, so the old
+instance keeps running — and polling — until the new one is live, and
+`autoDeployTrigger: checksPass` makes that overlap frequent and unattended.
+(`onApplicationShutdown` stops the *stream*, but an in-flight `poll()` promise
+is not cancelled by `takeUntil` and can land writes until process exit.) The
+counterweight: today's only processor is `opens-storefronts`, and
+`Storefront.open()` no-ops when already open (`storefront.ts:36-39`), so a
+double-dispatched `OpenStorefront` is currently benign. Double-processing is a
+landmine armed by the *next* processor (email, payment, webhook), not an active
+fire — nothing marks "processors must tolerate double-dispatch" anywhere.
+
+**2. The stated GDPR mechanism is incomplete; the conclusion survives via
+load-time decryption.** As written, the causal chain does not produce plaintext
+survival. `rebuild()` clears the read model and resets the checkpoint in one
+real transaction (`subscriptions.ts:103-106` — both the view store and the
+checkpoint route through the shared `PostgresUnitOfWork`), so the old plaintext
+rows are gone regardless of any checkpoint race; and any event *re-handled*
+after `keys.shred()` decrypts to the `SHREDDED` sentinel. A late forward
+checkpoint write alone therefore produces a **hollowed-out read model** — rows
+silently missing below the stale checkpoint — which is a real failure (silent
+partial rebuild) but an availability one, not PII survival. Plaintext survives
+only via a sharper path the finding skips: `loadFrom` decrypts **at load time**
+(`shredding.event-store.ts:38-40`), so an in-flight poll holds up to
+`BATCH_SIZE` decrypted events in memory. A batch loaded *before* the shred
+whose per-event transactions land *after* the reset re-inserts plaintext rows
+**and** advances the checkpoint past them, so the replay never overwrites them.
+Same headline, but it means the fix must eliminate the interleaving itself —
+guarding the backwards write does nothing here.
+
+**3. "Cheapest first" inverts the dependency between the parts.** The
+monotonic guard never fires in the erasure race: after reset-to-0, every stale
+in-flight write is a *forward* write and passes the guard. The guard only
+prevents the third replay in the steady-state interleave — the mildest scenario
+in this finding (projections are idempotent; processors are already
+double-processing before any backwards move). What closes the reported
+compliance failure is part 2's "pause or drain the poller" (same instance) plus
+part 3's ownership (other instances) — presented in the finding as optional
+hardening and documentation respectively. The parts are not independent
+improvements; parts 2–3 are the fix and part 1 is defense-in-depth.
+
+**4. Fix-shape corrections.**
+
+- The suggested SQL drops `updated_at = now()` from the `SET` clause — keep it.
+- The guard must land in `InMemoryCheckpoint` too, or the adapters diverge and
+  the shared contract test can't hold for both.
+- `pg_try_advisory_lock(hash(name))` through a pooled `query()` is a footgun:
+  session-level advisory locks belong to the *connection* that served the
+  query, which the pool immediately hands to someone else, and unlock must hit
+  that same connection. Done properly this is a dedicated pinned client per
+  instance — acquire per-subscription locks at bootstrap (key via
+  `hashtextextended(name, 0)`), poll only what you hold, retry acquisition on a
+  timer. That shape also degrades gracefully across deploy overlaps: the new
+  instance skips until the old session dies.
+- Considered and rejected for now: compare-and-set on the checkpoint row
+  (`DO UPDATE … WHERE checkpoints.position = $expected`, rowcount 0 → abort)
+  would make the checkpoint its own fencing token — monotonicity and effect
+  exclusion in one mechanism, no lock lifetimes. But CAS *detects and rolls
+  back*, and with [W2](w2-appends-bypass-unit-of-work.md) open a processor's
+  dispatched commands don't roll back — prevention (the lock) beats detection
+  until W2 lands.
+- The cleanest shape for part 2 is a per-consumer async gate serialising
+  `poll()` and `rebuild()`, not "pausing" the stream: the per-subscription
+  `exhaustMap` (`subscriptions.ts:162`) already prevents background polls from
+  overlapping each other, so the only same-instance overlaps are direct calls —
+  `rebuild()`, `drain()` — racing the stream, and one gate closes all of them.
+
+### Revised fix order
+
+1. **Per-consumer gate** making `poll()` and `rebuild()` mutually exclusive.
+   Closes the single-instance erasure race outright, including the
+   stale-decrypted-batch path (a poll queued behind the gate loads its batch
+   after the shred and writes sentinels).
+2. **Monotonic guard** in both adapters + a distinct `Checkpoint.reset()` used
+   by `rebuild()`, pinned by the contract tests already listed (per-name
+   isolation, backwards no-op, reset-to-0).
+3. **Ownership** via bootstrap-acquired advisory locks on a dedicated pinned
+   connection. Until it lands, document the single-instance constraint *and*
+   the deploy-overlap caveat: an erasure run during a deploy retains a residual
+   cross-instance window that only ownership (or re-running the erasure)
+   closes.
+4. **Regression**: the container spec racing `rebuild()` against an in-flight
+   poll, asserting the replay completes from 0 and the read model holds only
+   sentinels for the erased vendor.
+
+Severity stays **High**: silent success on a compliance path earns it on
+consequence, even though today's topology (one instance, millisecond-wide
+window, rare manual erasures) makes the probability low. The urgency inside
+that rating is driven less by the erasure race than by challenge 1 — every
+deploy already runs the two-instance interleave, and the first non-idempotent
+processor turns it from latent to live.
