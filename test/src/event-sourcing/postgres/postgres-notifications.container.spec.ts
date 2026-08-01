@@ -117,6 +117,30 @@ describe('PostgresNotifications', () => {
     expect(statuses.map((status) => status.state)).toEqual(['connected', 'dropped', 'reconnected']);
     expect(statuses.find((status) => status.state === 'reconnected')?.attempt).toBe(1);
   });
+
+  it('completes pokes and statuses on stop()', async () => {
+    let pokesCompleted = false;
+    let statusesCompleted = false;
+    notifications.notifications().subscribe({ complete: () => (pokesCompleted = true) });
+    notifications.status().subscribe({ complete: () => (statusesCompleted = true) });
+
+    await notifications.stop();
+
+    expect(pokesCompleted).toBe(true);
+    expect(statusesCompleted).toBe(true);
+  });
+
+  it('delivers an event appended during a disconnect window via the catch-up poke', async () => {
+    await terminateListener();
+    // The NOTIFY for this append fires while no one is listening — its poke is lost.
+    await append('AppendedWhileDown');
+
+    // The catch-up poke after reconnect is the delivery trigger for the gap.
+    await waitUntil(() => pokes >= 1);
+
+    const events = await new PostgresEventStore(pg.pool).load('stream-1');
+    expect(events.map((event) => event.type)).toContain('AppendedWhileDown');
+  });
 });
 
 const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));

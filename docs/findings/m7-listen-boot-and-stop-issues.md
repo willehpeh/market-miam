@@ -5,7 +5,7 @@
 | Severity | Low |
 | Area | Notifications / operations |
 | Files | `packages/event-sourcing/src/adapters/postgres/postgres.notifications.ts:53-56,77-84,121-123` |
-| Status | Open |
+| Status | **Fixed** ([ADR 0042](../adr/0042-listen-lifecycle-single-use-connection-object.md)) |
 | Found | 2026-07-31 evaluation @ `eec797b` |
 
 ## Issue
@@ -65,3 +65,28 @@ delivery of events appended during a disconnect window.
    window (kill the connection, append, reconnect, assert the catch-up poke
    causes delivery) — the one reconnect scenario the otherwise-thorough suite
    doesn't cover.
+
+## Update (2026-08-01)
+
+Fixed ([ADR 0042](../adr/0042-listen-lifecycle-single-use-connection-object.md)),
+taking the *reject* branch of suggested fix 1: `start()` now rejects on first-
+connect failure and schedules nothing — the caller (`onApplicationBootstrap`)
+decides, so a misconfigured LISTEN connection fails the deploy instead of
+lagging read models silently. The `never-connected`-status alternative was
+rejected because nothing alerts on statuses today (the O11Y gap this finding
+cites), making it silent in practice.
+
+Fixes 2 and 3 landed structurally rather than as patches: instances are now
+**single-use** (restart = new instance — a stop/start cycle on one instance,
+which this finding's issue 3 presumed, turned out to be a silent no-op anyway
+since `stopped` was never cleared: a fourth defect found during the fix), so
+`stop()` completing both subjects is the object's natural end of life, and
+the `attempt` counter became a loop-local variable in a private
+`ListeningConnection`-based supervisor that cannot leak across lifetimes.
+
+The suggested specs are pinned twice over: a new fast spec
+(`postgres-notifications.spec.ts`, stub client — no database needed) covers
+boot rejection, `attempt ≥ 2` numbering, double-fire collapse, and stop
+semantics; the container spec gains terminal-events-on-stop and the
+disconnect-window delivery scenario (authored without Docker, same caveat as
+the evaluation).
