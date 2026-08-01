@@ -5,7 +5,7 @@
 | Severity | Medium |
 | Area | Crypto-shredding |
 | Files | `packages/event-sourcing/src/adapters/shredding.event-store.ts:47,55-57` (encrypt side), `:74,82-88` (decrypt side) |
-| Status | Open |
+| Status | **Fixed** ([ADR 0039](../adr/0039-shredding-reads-degrade-writes-stay-strict.md)) |
 | Found | 2026-07-31 evaluation @ `eec797b` |
 
 ## Issue
@@ -69,3 +69,23 @@ Regression tests to pin it: append with `{ field: null }` succeeds and stores
 null untouched; a hand-stored event with `enc:v1:` payload and no `vendorId`
 metadata loads with the sentinel instead of throwing, and a subscription polls
 past it.
+
+## Update (2026-08-01)
+
+Fixed ([ADR 0039](../adr/0039-shredding-reads-degrade-writes-stay-strict.md)),
+with one deviation from this finding's suggested fix 1: the encrypt filter was
+narrowed to non-nullish (`!= null`), **not** to `typeof value === 'string'` —
+the latter would have made the write-time type guard unreachable, silently
+storing a numeric PII value in plaintext instead of rejecting it. As written
+here, null/undefined pass through untouched and every other non-string still
+fails the append loudly.
+
+On the decrypt side, a private `readKeyFor(event)` makes read-path key
+resolution total: an unresolvable subject yields a `null` key and flows into
+the existing `key === null → SHREDDED` branch — no new sentinel (the
+`UNRECOVERABLE` option was rejected; the distinction belongs in logs/spans,
+not the data channel). Write-path strictness is unchanged: `subjectOf` still
+throws in `encrypt`. Pinned in `shredding.event-store.spec.ts`: null
+pass-through at rest and on load, `SHREDDED` for an event stripped of subject
+metadata, and `loadFrom` reading past such an event while decrypting healthy
+neighbours.

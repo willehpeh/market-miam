@@ -24,8 +24,8 @@ reading them, not running them.
 | [T1](t1-test-and-ci-blind-spots.md) | High | Partially fixed [#21](https://github.com/willehpeh/market-miam/pull/21)/[#22](https://github.com/willehpeh/market-miam/pull/22)/[#23](https://github.com/willehpeh/market-miam/pull/23) | Poison-event rollback untested; Postgres adapters outside the mutation net; ~~CI not on PRs~~ | `stryker.conf.mjs`, `ci.yml` |
 | [W4](w4-nested-transaction-footgun.md) | Med-High | **Fixed** — joins, [ADR 0037](../adr/0037-nested-transactions-join-the-ambient-unit-of-work.md) | Nested `transaction()` silently opens a second, independent transaction | `postgres.unit-of-work.ts` |
 | [M2](m2-master-key-rotation-impossible.md) | Medium | Open | The master key can never be rotated | `postgres.data-keys.ts` |
-| [M1](m1-in-memory-ordering-infidelity.md) | Medium | Open | The in-memory adapter can violate global ordering Postgres cannot | `in-memory.event-store.ts` |
-| [M3](m3-shredding-hard-throws-on-legal-input.md) | Medium | Open | Shredding hard-throws on legal inputs; one path bricks a stream | `shredding.event-store.ts` |
+| [M1](m1-in-memory-ordering-infidelity.md) | Medium | **Fixed** ([ADR 0038](../adr/0038-in-memory-store-single-log.md)) | The in-memory adapter can violate global ordering Postgres cannot | `in-memory.event-store.ts` |
+| [M3](m3-shredding-hard-throws-on-legal-input.md) | Medium | **Fixed** ([ADR 0039](../adr/0039-shredding-reads-degrade-writes-stay-strict.md)) | Shredding hard-throws on legal inputs; one path bricks a stream | `shredding.event-store.ts` |
 | [M4](m4-aad-omits-stream-position.md) | Low-Med | Open | AAD binds identity but not position; ciphertexts swappable within a stream | `shredding.event-store.ts` |
 | [M7](m7-listen-boot-and-stop-issues.md) | Low | Open | LISTEN boot resolves on failure; `stop()` never completes its subjects | `postgres.notifications.ts` |
 | [M5](m5-read-path-write-amplification.md) | Low (tradeoff) | Open (accepted) | Read-path write amplification: one transaction per event per consumer | `polling.subscription.ts` |

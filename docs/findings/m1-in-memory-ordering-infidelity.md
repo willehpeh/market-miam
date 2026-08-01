@@ -5,7 +5,7 @@
 | Severity | Medium |
 | Area | Test infrastructure fidelity |
 | Files | `packages/event-sourcing/src/adapters/in-memory/in-memory.event-store.ts:47-76` |
-| Status | Open |
+| Status | **Fixed** ([ADR 0038](../adr/0038-in-memory-store-single-log.md)) |
 | Found | 2026-07-31 evaluation @ `eec797b` |
 
 ## Issue
@@ -66,3 +66,20 @@ them: (a) interleaved seed/append still yields `loadFrom` in strictly ascending
 (If `seedWith` is intentionally a test-only affordance that must never follow
 `append`, the honest alternative is to make that ordering throw — but then the
 constraint is enforced, not assumed.)
+
+## Update (2026-08-01)
+
+Fixed via a refinement of option 1 ([ADR 0038](../adr/0038-in-memory-store-single-log.md)):
+a single `log` array is now the sole source of ordering, with one private
+`store()` insertion path shared by `append` and `seedWith`; `appended`
+survives only as a reference view serving `newEvents()`/`lastEvent()`, which
+seventeen command specs rely on. Ordering fidelity is now structural —
+insertion order equals position order by construction, so `loadFrom` needs no
+sort and last-element `head()` is exact.
+
+One correction to this finding's suggested regression tests: they cannot live
+in `eventsContract`, because `seedWith` is not on any port and Postgres has no
+seeding affordance to interleave. The invariants are pinned in the in-memory
+specific `in-memory-event-store.seeding.spec.ts` instead (ascending `loadFrom`
+order and max-based `head()` under seed-after-append, one shared position
+sequence, `streamPosition` continuity, `newEvents()` scoping).
