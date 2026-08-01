@@ -43,3 +43,5 @@ deferred decisions in `docs/DEFERRED.md` (see ADR 0017).
 | [0035](0035-appends-join-the-ambient-unit-of-work.md) | Appends join the ambient unit of work | 2026-07-31 |
 | [0036](0036-checkpoint-advances-are-compare-and-set.md) | Checkpoint advances are compare-and-set; the checkpoint is a fencing token | 2026-08-01 |
 | [0037](0037-nested-transactions-join-the-ambient-unit-of-work.md) | A nested transaction() joins the ambient unit of work | 2026-08-01 |
+| [0038](0038-in-memory-store-single-log.md) | The in-memory store keeps one log; "appended" is a view, not storage | 2026-08-01 |
+| [0039](0039-shredding-reads-degrade-writes-stay-strict.md) | Shredding reads degrade to the sentinel; writes stay strict | 2026-08-01 |
