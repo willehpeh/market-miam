@@ -26,7 +26,7 @@ import {
 import { PERSISTED_EVENTS } from '../event-sourcing/application.event-store';
 import { CHECKPOINT_FACTORY, EVENT_NOTIFICATIONS } from '../event-sourcing/subscriptions';
 import { TracingPostgresNotifications } from '../event-sourcing/tracing/postgres-notifications';
-import { masterKey } from '../event-sourcing/master-key';
+import { masterKeyring } from '../event-sourcing/master-keyring';
 import { Migrations } from '../database/migrations';
 
 const pool = {
@@ -125,7 +125,7 @@ const views = [
     },
     {
       provide: DataKeys,
-      useFactory: (p: Pool, config: ConfigService) => new PostgresDataKeys(p, masterKey(config)),
+      useFactory: (p: Pool, config: ConfigService) => new PostgresDataKeys(p, masterKeyring(config)),
       inject: [Pool, ConfigService],
     },
     { provide: PostgresUnitOfWork, useFactory: (p: Pool) => new PostgresUnitOfWork(p), inject: [Pool] },
