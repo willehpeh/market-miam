@@ -26,13 +26,17 @@ jobs:
 
       - run: npm ci
 
-      # github.event.before only exists on push events; a PR compares against its base branch.
+      # A PR compares against its base branch. A push to main compares against
+      # the previous main commit — not github.event.before, which is the
+      # all-zeros sha on force-push and branch creation, silently changing what
+      # "affected" means. HEAD~1 is identical for the ordinary merge flow and
+      # well-defined in every case (fetch-depth: 0 above guarantees it exists).
       - name: Set affected range
         run: |
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             echo "NX_BASE=${{ github.event.pull_request.base.sha }}" >> "$GITHUB_ENV"
           else
-            echo "NX_BASE=${{ github.event.before }}" >> "$GITHUB_ENV"
+            echo "NX_BASE=$(git rev-parse HEAD~1)" >> "$GITHUB_ENV"
           fi
           echo "NX_HEAD=${{ github.sha }}" >> "$GITHUB_ENV"
 

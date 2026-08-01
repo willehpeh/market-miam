@@ -94,8 +94,70 @@ describe('ShreddingEventStore', () => {
   it('rejects an append that carries PII with no vendorId in metadata', async () => {
     const { store, inner } = shreddingOver();
 
-    await expect(store.append('vendor-v1', [registered('vendor@example.com')], 0)).rejects.toThrow(/vendorId/);
+    await expect(store.append('vendor-v1', [registered('vendor@example.com')], 0)).rejects.toThrow(
+      /ShreddingEventStore: no vendorId/,
+    );
     expect(await inner.load('vendor-v1')).toEqual([]);
+  });
+
+  it('rejects a PII append whose subject id is empty', async () => {
+    const { store } = shreddingOver();
+
+    await expect(store.append('vendor-v1', [registered('vendor@example.com')], 0, { vendorId: '' })).rejects.toThrow(
+      /ShreddingEventStore: no vendorId/,
+    );
+  });
+
+  it('appends an event outside the registry without requiring subject metadata', async () => {
+    const { store, inner } = shreddingOver();
+    const opened: DomainEvent = { type: 'StorefrontOpened', payload: { note: 'plain' }, version: 1 };
+
+    await store.append('storefront-v1', [opened], 0);
+
+    expect(await inner.load('storefront-v1')).toHaveLength(1);
+  });
+
+  it('round-trips a multi-event PII batch appended in one call', async () => {
+    const { store } = shreddingOver();
+
+    await store.append(
+      'vendor-v1',
+      [registered('first@example.com'), registered('second@example.com')],
+      0,
+      v1,
+    );
+
+    const loaded = await store.load('vendor-v1');
+    expect(loaded.map((e) => e.payload['email'])).toEqual(['first@example.com', 'second@example.com']);
+  });
+
+  it('resolves the data key once per event, not once per field', async () => {
+    class CountingKeys extends InMemoryDataKeys {
+      finds = 0;
+      override findKeyFor(subjectId: string): Promise<Buffer | null> {
+        this.finds++;
+        return super.findKeyFor(subjectId);
+      }
+    }
+    const keys = new CountingKeys();
+    const store = new ShreddingEventStore(new InMemoryEventStore(), keys, { Edited: ['name', 'phone'] }, 'vendorId');
+    await store.append('vendor-v1', [{ type: 'Edited', payload: { name: 'N', phone: 'P' }, version: 1 }], 0, v1);
+
+    keys.finds = 0;
+    await store.load('vendor-v1');
+
+    expect(keys.finds).toBe(1);
+  });
+
+  it('returns the stored event instance untouched when nothing needed decrypting', async () => {
+    const { store, inner } = shreddingOver();
+    const opened: DomainEvent = { type: 'StorefrontOpened', payload: {}, version: 1 };
+    await store.append('storefront-v1', [opened], 0, v1);
+
+    const [stored] = await inner.load('storefront-v1');
+    const [loaded] = await store.load('storefront-v1');
+
+    expect(loaded).toBe(stored);
   });
 
   it('rejects encrypting a PII field whose value is not a string', async () => {
@@ -114,6 +176,17 @@ describe('ShreddingEventStore', () => {
 
     const [loaded] = await store.load('vendor-v1');
     expect(loaded.payload['email']).toBeNull();
+  });
+
+  it('reads PII as SHREDDED when a stored event carries an empty subject id', async () => {
+    const { store, inner } = shreddingOver();
+    await store.append('vendor-v1', [registered('vendor@example.com')], 0, v1);
+
+    const [stored] = await inner.load('vendor-v1');
+    stored.metadata = { vendorId: '' };
+
+    const [loaded] = await store.load('vendor-v1');
+    expect(loaded.payload['email']).toBe(SHREDDED);
   });
 
   it('reads PII as SHREDDED when a stored event carries no subject metadata', async () => {

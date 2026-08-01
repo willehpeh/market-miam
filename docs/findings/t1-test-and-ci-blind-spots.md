@@ -122,6 +122,48 @@ In value order:
   and `reset()` semantics — run against both adapters, plus a container spec
   proving a stale writer's view write rolls back with its rejected advance.
 
-Still open: issues 1 (handler-failure injection), 2 (Postgres adapters outside
-the mutation net), 4 (no Stryker thresholds or CI mutation job), and the
-remaining smaller gaps in 5.
+- **Re-measured 2026-08-01** (after the M1–M4/M7 fixes): the event-sourcing
+  package is at **69.43% total / 91.28% covered** (422 mutants) versus the
+  evaluation's 50.00% / 89.95% (331) — and two of the three diagnostic
+  survivor clusters are dead as side effects of ordinary fix work (the
+  `seedWith` mutants fell to the M1 rewrite, the AAD mutants to the M4 swap
+  specs). The same run also showed the sharper version of this finding's
+  thesis: 26 *new* survivors arrived inside the mutation net via the M4/M7
+  PRs themselves — the gap is that nothing makes a new survivor visible, not
+  that the score decays.
+- **Suggested fix 3 done**: `subscriptionContract` gained the >100-event
+  batch case (120 events through one `poll()`, order asserted), run against
+  both adapters — a targeted Stryker run confirms `polling.subscription.ts`
+  at 100%, killing the last of the original diagnostic survivors.
+- **Issue 2 resolved as an explicit boundary**: the container-only Postgres
+  adapters are now excluded from the `mutate` globs (per-file, with the
+  fast-tested `postgres.notifications`/`postgres.unit-of-work`/
+  `master-keyring` deliberately kept in the net), so the score measures how
+  well the fast suite owns the code it claims instead of being dominated by
+  no-coverage mutants. The adapters' instrument remains the container suite
+  in CI.
+- **Issue 4 addressed**: reporting thresholds (`high: 90, low: 80`, no
+  `break` — a timing-flaky run must not fail a build) and a nightly
+  `mutation.yml` workflow (schedule + manual dispatch) that uploads the HTML
+  report as an artifact. Gate on the score only if the nightly number proves
+  stable.
+
+- **Gap-5 remainder and survivor cleanup, 2026-08-01**: `eventStoreContract`
+  now runs over `ShreddingEventStore` (pinning the decorator's transparency,
+  including the enc:v2 position threading); coverage reports with
+  `all: true`; and `Subscriptions` gained the four missing runner specs —
+  `exhaustMap` overlap suppression, the 30s retry cap, `resetOnSuccess`, and
+  shutdown. The 26 survivors introduced by the M4/M7 PRs were hunted:
+  notifications 12 → 2, shredding 14 → 9 (targeted Stryker runs), with the
+  remainder documented equivalents — Node treats a falsy `Buffer.from`
+  encoding as utf8; an unknown PII field name filters out regardless; the
+  `readKeyFor` fallthroughs are indistinguishable under `InMemoryDataKeys`
+  semantics. The main-push CI path also moved off `github.event.before` to
+  `HEAD~1`, closing the original issue-3 residual.
+
+Still open: issue 1 — reframed: the *rollback* half is already pinned by the
+checkpoint-side injection (the transaction cannot tell who threw); what
+remains unpinned is the poison-event **loop semantics** (stall-forever,
+at-least-once retry, no skip/DLQ/alerting — see the comment at
+`polling.subscription.ts:24-28`), which is as much a design decision to
+surface as a spec to write.
