@@ -42,3 +42,4 @@ deferred decisions in `docs/DEFERRED.md` (see ADR 0017).
 | [0034](0034-atomic-appends-verified-commit.md) | Appends are one atomic statement; COMMIT tags are verified | 2026-07-31 |
 | [0035](0035-appends-join-the-ambient-unit-of-work.md) | Appends join the ambient unit of work | 2026-07-31 |
 | [0036](0036-checkpoint-advances-are-compare-and-set.md) | Checkpoint advances are compare-and-set; the checkpoint is a fencing token | 2026-08-01 |
+| [0037](0037-nested-transactions-join-the-ambient-unit-of-work.md) | A nested transaction() joins the ambient unit of work | 2026-08-01 |

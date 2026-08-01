@@ -22,7 +22,7 @@ reading them, not running them.
 | [W2](w2-appends-bypass-unit-of-work.md) | High | **Fixed** ([ADR 0035](../adr/0035-appends-join-the-ambient-unit-of-work.md)) | Appends bypass the ambient UnitOfWork; processor exactly-once broken | `postgres.event-store.ts` |
 | [W3](w3-checkpoint-monotonicity-and-ownership.md) | High | **Fixed** — CAS, [ADR 0036](../adr/0036-checkpoint-advances-are-compare-and-set.md) (pending merge) | Checkpoints accept backwards writes and have no owner | `postgres.checkpoint.ts` |
 | [T1](t1-test-and-ci-blind-spots.md) | High | Partially fixed [#21](https://github.com/willehpeh/market-miam/pull/21)/[#22](https://github.com/willehpeh/market-miam/pull/22)/[#23](https://github.com/willehpeh/market-miam/pull/23) | Poison-event rollback untested; Postgres adapters outside the mutation net; ~~CI not on PRs~~ | `stryker.conf.mjs`, `ci.yml` |
-| [W4](w4-nested-transaction-footgun.md) | Med-High | Open | Nested `transaction()` silently opens a second, independent transaction | `postgres.unit-of-work.ts` |
+| [W4](w4-nested-transaction-footgun.md) | Med-High | **Fixed** — joins, [ADR 0037](../adr/0037-nested-transactions-join-the-ambient-unit-of-work.md) | Nested `transaction()` silently opens a second, independent transaction | `postgres.unit-of-work.ts` |
 | [M2](m2-master-key-rotation-impossible.md) | Medium | Open | The master key can never be rotated | `postgres.data-keys.ts` |
 | [M1](m1-in-memory-ordering-infidelity.md) | Medium | Open | The in-memory adapter can violate global ordering Postgres cannot | `in-memory.event-store.ts` |
 | [M3](m3-shredding-hard-throws-on-legal-input.md) | Medium | Open | Shredding hard-throws on legal inputs; one path bricks a stream | `shredding.event-store.ts` |
