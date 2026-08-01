@@ -22,7 +22,10 @@ export default defineConfig(() => ({
     coverage: {
       reportsDirectory: 'coverage/test',
       provider: 'v8' as const,
-      include: ['packages/**/src/**/*.ts']
+      include: ['packages/**/src/**/*.ts'],
+      // Report wholly-untested files at 0% instead of omitting them — an
+      // uncovered file should be visible, not invisible.
+      all: true,
     },
   },
 }));

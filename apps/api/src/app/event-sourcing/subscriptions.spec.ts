@@ -189,6 +189,186 @@ describe('Subscriptions', () => {
     expect(polls).toBeGreaterThan(afterStart);
   });
 
+  it('does not start a second poll while one is in flight', async () => {
+    vi.useFakeTimers();
+    let polls = 0;
+    let inFlight = 0;
+    let maxInFlight = 0;
+    let release!: () => void;
+    const slowEvents: Events = {
+      head: () => Promise.resolve(0),
+      loadFrom: () => {
+        polls++;
+        inFlight++;
+        maxInFlight = Math.max(maxInFlight, inFlight);
+        return new Promise((resolve) => {
+          release = () => {
+            inFlight--;
+            resolve([] as StoredEvent[]);
+          };
+        });
+      },
+    };
+    const notifications = new Subject<void>();
+
+    const moduleRef = await Test.createTestingModule({
+      imports: [DiscoveryModule],
+      providers: [
+        Subscriptions,
+        Lineage,
+        StorefrontProjection,
+        { provide: Events, useValue: slowEvents },
+        { provide: POLLING_ENABLED, useValue: true },
+        { provide: POLL_INTERVAL, useValue: 30000 },
+        { provide: EVENT_NOTIFICATIONS, useValue: notifications },
+      ],
+    }).compile();
+
+    app = moduleRef.createNestApplication();
+    await app.init();
+
+    await vi.advanceTimersByTimeAsync(0);
+    expect(polls).toBe(1); // first poll started, still pending
+
+    notifications.next();
+    notifications.next();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(polls).toBe(1); // pokes during an in-flight poll start nothing
+    expect(maxInFlight).toBe(1);
+
+    release();
+    await vi.advanceTimersByTimeAsync(0);
+    notifications.next();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(polls).toBe(2); // the stream is still alive after the slow poll
+    release();
+  });
+
+  it('caps the retry backoff at 30 seconds', async () => {
+    vi.useFakeTimers();
+    let polls = 0;
+    const alwaysFails: Events = {
+      head: () => Promise.resolve(0),
+      loadFrom: () => {
+        polls++;
+        return Promise.reject(new Error('boom'));
+      },
+    };
+
+    const moduleRef = await Test.createTestingModule({
+      imports: [DiscoveryModule],
+      providers: [
+        Subscriptions,
+        Lineage,
+        StorefrontProjection,
+        { provide: Events, useValue: alwaysFails },
+        { provide: POLLING_ENABLED, useValue: true },
+        { provide: POLL_INTERVAL, useValue: 600000 },
+        { provide: Logger, useValue: new RecordingLogger() },
+      ],
+    }).compile();
+
+    app = moduleRef.createNestApplication();
+    await app.init();
+
+    await vi.advanceTimersByTimeAsync(0);
+    for (const delay of [1000, 2000, 4000, 8000, 16000]) {
+      // The retry timer fires at the window end; the resubscribed schedule's
+      // immediate emission needs one more real tick to drive the next poll.
+      await vi.advanceTimersByTimeAsync(delay);
+      await vi.advanceTimersByTimeAsync(1);
+    }
+    expect(polls).toBe(6); // uncapped, the next delay would be 32s
+
+    await vi.advanceTimersByTimeAsync(29_998);
+    expect(polls).toBe(6);
+    await vi.advanceTimersByTimeAsync(4);
+    expect(polls).toBe(7); // capped at 30s — uncapped would wait until 32s
+  });
+
+  it('resets the retry backoff after a successful poll', async () => {
+    vi.useFakeTimers();
+    let polls = 0;
+    const failSucceedFail: Events = {
+      head: () => Promise.resolve(0),
+      loadFrom: () => {
+        polls++;
+        return polls === 2 ? Promise.resolve([] as StoredEvent[]) : Promise.reject(new Error('boom'));
+      },
+    };
+    const notifications = new Subject<void>();
+
+    const moduleRef = await Test.createTestingModule({
+      imports: [DiscoveryModule],
+      providers: [
+        Subscriptions,
+        Lineage,
+        StorefrontProjection,
+        { provide: Events, useValue: failSucceedFail },
+        { provide: POLLING_ENABLED, useValue: true },
+        { provide: POLL_INTERVAL, useValue: 600000 },
+        { provide: EVENT_NOTIFICATIONS, useValue: notifications },
+        { provide: Logger, useValue: new RecordingLogger() },
+      ],
+    }).compile();
+
+    app = moduleRef.createNestApplication();
+    await app.init();
+
+    await vi.advanceTimersByTimeAsync(0); // poll 1 fails
+    await vi.advanceTimersByTimeAsync(1000); // retry fires…
+    await vi.advanceTimersByTimeAsync(1); // …and poll 2 succeeds, resetting the count
+    expect(polls).toBe(2);
+
+    notifications.next();
+    await vi.advanceTimersByTimeAsync(1); // poll 3 fails
+    expect(polls).toBe(3);
+
+    // Without resetOnSuccess this would be the second failure ever → 2s backoff.
+    await vi.advanceTimersByTimeAsync(1000);
+    await vi.advanceTimersByTimeAsync(2);
+    expect(polls).toBe(4);
+  });
+
+  it('stops polling after shutdown', async () => {
+    vi.useFakeTimers();
+    let polls = 0;
+    const countingEvents: Events = {
+      head: () => Promise.resolve(0),
+      loadFrom: () => {
+        polls++;
+        return Promise.resolve([] as StoredEvent[]);
+      },
+    };
+    const notifications = new Subject<void>();
+
+    const moduleRef = await Test.createTestingModule({
+      imports: [DiscoveryModule],
+      providers: [
+        Subscriptions,
+        Lineage,
+        StorefrontProjection,
+        { provide: Events, useValue: countingEvents },
+        { provide: POLLING_ENABLED, useValue: true },
+        { provide: POLL_INTERVAL, useValue: 30000 },
+        { provide: EVENT_NOTIFICATIONS, useValue: notifications },
+      ],
+    }).compile();
+
+    app = moduleRef.createNestApplication();
+    await app.init();
+    await vi.advanceTimersByTimeAsync(0);
+    const before = polls;
+    expect(before).toBeGreaterThan(0);
+
+    await app.close();
+    app = undefined;
+
+    notifications.next();
+    await vi.advanceTimersByTimeAsync(60000);
+    expect(polls).toBe(before); // neither pokes nor the timer poll after shutdown
+  });
+
   it('backs off exponentially between failed polls', async () => {
     vi.useFakeTimers();
     let polls = 0;

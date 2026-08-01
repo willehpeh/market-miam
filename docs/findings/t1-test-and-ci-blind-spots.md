@@ -148,12 +148,22 @@ In value order:
   report as an artifact. Gate on the score only if the nightly number proves
   stable.
 
+- **Gap-5 remainder and survivor cleanup, 2026-08-01**: `eventStoreContract`
+  now runs over `ShreddingEventStore` (pinning the decorator's transparency,
+  including the enc:v2 position threading); coverage reports with
+  `all: true`; and `Subscriptions` gained the four missing runner specs —
+  `exhaustMap` overlap suppression, the 30s retry cap, `resetOnSuccess`, and
+  shutdown. The 26 survivors introduced by the M4/M7 PRs were hunted:
+  notifications 12 → 2, shredding 14 → 9 (targeted Stryker runs), with the
+  remainder documented equivalents — Node treats a falsy `Buffer.from`
+  encoding as utf8; an unknown PII field name filters out regardless; the
+  `readKeyFor` fallthroughs are indistinguishable under `InMemoryDataKeys`
+  semantics. The main-push CI path also moved off `github.event.before` to
+  `HEAD~1`, closing the original issue-3 residual.
+
 Still open: issue 1 — reframed: the *rollback* half is already pinned by the
 checkpoint-side injection (the transaction cannot tell who threw); what
 remains unpinned is the poison-event **loop semantics** (stall-forever,
 at-least-once retry, no skip/DLQ/alerting — see the comment at
 `polling.subscription.ts:24-28`), which is as much a design decision to
-surface as a spec to write. Also open from gap 5: `eventStoreContract` over
-`ShreddingEventStore` (more valuable since enc:v2 binds stream positions),
-`all: true` coverage reporting, and the `exhaustMap`/backoff-cap/shutdown
-assertions in `Subscriptions`.
+surface as a spec to write.
