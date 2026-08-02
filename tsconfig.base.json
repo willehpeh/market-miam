@@ -12,6 +12,7 @@
     "module": "esnext",
     "lib": [
       "es2020",
+      "es2022.error",
       "dom"
     ],
     "skipLibCheck": true,
