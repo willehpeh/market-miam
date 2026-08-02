@@ -12,7 +12,6 @@ import {
   PollingSubscription,
   Projection,
   Subscription,
-  TracingEventHandler,
   UnitOfWork
 } from '@market-miam/event-sourcing';
 import { ContinuedLineageHandler } from '../lineage/continued-lineage.handler';
@@ -122,7 +121,7 @@ export class Subscriptions implements OnApplicationBootstrap, OnApplicationShutd
         kind === 'processor' ? new ContinuedLineageHandler(handler, this.lineage) : handler;
       const subscription = new PollingSubscription(
         this.events,
-        new TracingEventHandler(driven),
+        driven,
         checkpoint,
         this.unitOfWork,
         name,
