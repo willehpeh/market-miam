@@ -430,7 +430,7 @@ patch `@nestjs`, `express`, `http`, `pg`. Exporter: `OTLPTraceExporter`
 | `event-store append` | `TracingEventStore` | child of dispatch | `event.type`, `event.count`, `stream_id`, `vendor.id` |
 | `event-store load` | `TracingEventStore` | active | `stream_id`, `event.count` |
 | `subscription poll` | `TracingSubscription` | **root** | `subscription.name`, `subscription.lag` |
-| `event-handler handle` | `TracingEventHandler` | **root + link to producer** | `event.type`, `processing.lag_ms`, `vendor.id` |
+| `event-handler handle` | `TracingEventHandler` | **root + link to producer** | `event.type`, `processing.lag_ms`, `vendor.id`, `app.correlation_id`, `app.causation_id` |
 | `pg-listen <state>` | `TracingPostgresNotifications` | marker | `listen.state`, `reconnect.attempt`, `error.message` |
 
 Everything else comes from auto-instrumentation. Failure enrichment is one
@@ -445,9 +445,11 @@ command contents — pinned by an exact-match attribute assertion in
 ### 10.3 Trace continuity across the commit boundary
 
 The write path is one trace. `TracingEventStore` serialises its own span context
-as `00-<traceId>-<spanId>-<flags>` into metadata; `TracingEventHandler` starts a
-**new root** trace per consumed event with a *link* back (strict-regex parse;
-malformed/absent → no link, so replay never resurrects a dead trace). Links, not
+as `00-<traceId>-<spanId>-<flags>` into metadata — skipped when the context is
+invalid (no SDK registered → no-op tracer → all-zero ids), so a garbage
+traceparent never reaches the log. `TracingEventHandler` starts a **new root**
+trace per consumed event with a *link* back (strict-regex parse;
+malformed/absent/all-zero → no link, so replay never resurrects a dead trace). Links, not
 parents, keep traces bounded under processor→command fan-out.
 `processing.lag_ms` = handle-time − commit-time — the read-model freshness SLO
 (ADR 0026).

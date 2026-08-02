@@ -1,4 +1,4 @@
-import { context, Span, SpanContext, trace } from '@opentelemetry/api';
+import { context, isSpanContextValid, Span, SpanContext, trace } from '@opentelemetry/api';
 import { unsuppressTracing } from '@opentelemetry/core';
 import { EventHandler, StoredEvent } from '@market-miam/event-sourcing';
 import { withSpan } from './with-span';
@@ -26,6 +26,10 @@ export class TracingEventHandler implements EventHandler {
           'event.type': event.type,
           'processing.lag_ms': Date.now() - event.timestamp,
           'vendor.id': event.metadata?.['vendorId'] as string,
+          // The same names the dispatch spans carry, so one correlation-id
+          // query follows a request across the commit boundary.
+          'app.correlation_id': event.metadata?.['correlationId'] as string,
+          'app.causation_id': event.metadata?.['causationId'] as string,
         });
         return withSpan(span, 'event-handler-failed', async () => this.inner.handle(event));
       },
@@ -43,5 +47,8 @@ function producerContextOf(metadata?: Record<string, unknown>): SpanContext | un
     return undefined;
   }
   const [, traceId, spanId, flags] = match;
-  return { traceId, spanId, traceFlags: parseInt(flags, 16), isRemote: true };
+  const producer: SpanContext = { traceId, spanId, traceFlags: parseInt(flags, 16), isRemote: true };
+  // All-zero ids are well-formed but invalid per W3C — degrade to no link,
+  // same as a malformed traceparent.
+  return isSpanContextValid(producer) ? producer : undefined;
 }

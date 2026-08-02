@@ -50,7 +50,7 @@ describe('TracingEventHandler', () => {
     const traceparent = `00-${producerContext.traceId}-${producerContext.spanId}-01`;
 
     await new TracingEventHandler(new StubHandler()).handle(
-      storedEvent({ traceparent, vendorId: 'vendor-1' }),
+      storedEvent({ traceparent, vendorId: 'vendor-1', correlationId: 'corr-1', causationId: 'cause-1' }),
     );
 
     const span = handleSpan();
@@ -60,6 +60,8 @@ describe('TracingEventHandler', () => {
       'event.type': 'TestEvent',
       'vendor.id': 'vendor-1',
       'processing.lag_ms': expect.any(Number),
+      'app.correlation_id': 'corr-1',
+      'app.causation_id': 'cause-1',
     });
   });
 
@@ -67,6 +69,8 @@ describe('TracingEventHandler', () => {
     ['no traceparent', undefined],
     ['no traceparent in metadata', {}],
     ['a malformed traceparent', { traceparent: 'not-a-real-traceparent' }],
+    // Well-formed but invalid per W3C — what a no-op tracer used to produce.
+    ['an all-zero traceparent', { traceparent: `00-${'0'.repeat(32)}-${'0'.repeat(16)}-01` }],
   ])('handles the event on its own trace with no link given %s', async (_label, metadata) => {
     await new TracingEventHandler(new StubHandler()).handle(storedEvent(metadata));
 

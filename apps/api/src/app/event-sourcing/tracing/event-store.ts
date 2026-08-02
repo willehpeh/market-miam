@@ -1,11 +1,16 @@
-import { Span, trace } from '@opentelemetry/api';
+import { isSpanContextValid, Span, trace } from '@opentelemetry/api';
 import { DomainEvent, Events, EventStore, StoredEvent } from '@market-miam/event-sourcing';
 import { withSpan } from './with-span';
 
 const tracer = trace.getTracer('event-store');
 
-function traceparentOf(span: Span): string {
+// With no SDK registered the tracer is a no-op whose spans carry the W3C
+// invalid all-zero context — not a trace id to persist into the log.
+function traceparentOf(span: Span): string | undefined {
   const { traceId, spanId, traceFlags } = span.spanContext();
+  if (!isSpanContextValid(span.spanContext())) {
+    return undefined;
+  }
   return `00-${traceId}-${spanId}-${traceFlags.toString(16).padStart(2, '0')}`;
 }
 
@@ -27,7 +32,8 @@ export class TracingEventStore extends EventStore implements Events {
         stream_id: streamId,
         'vendor.id': metadata?.['vendorId'] as string,
       });
-      const enrichedMetadata = { ...metadata, traceparent: traceparentOf(span) };
+      const traceparent = traceparentOf(span);
+      const enrichedMetadata = traceparent ? { ...metadata, traceparent } : metadata;
       return withSpan(span, 'event-store-append-failed', () =>
         this.inner.append(streamId, events, expectedStreamPosition, enrichedMetadata),
       );
