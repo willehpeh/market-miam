@@ -6,8 +6,8 @@ import {
   LineageEventStore,
   PiiFields,
   ShreddingEventStore,
+  TracingEventStore,
 } from '@market-miam/event-sourcing';
-import { TracingEventStore } from './tracing/event-store';
 
 // The leaf adapter this wraps. One token for "whatever store the profile plugs in",
 // so the wrapping stays written once instead of once per profile.

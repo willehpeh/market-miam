@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DomainEvent, Events, EventStore, StoredEvent } from '@market-miam/event-sourcing';
-import { TracingEventStore } from './event-store';
+import { DomainEvent, Events, EventStore, StoredEvent, TracingEventStore } from '@market-miam/event-sourcing';
 
 // Deliberately no registerSpanCapture: this file pins the no-SDK case, where the
 // global tracer is a no-op whose spans carry the W3C invalid all-zero context.
