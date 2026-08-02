@@ -135,16 +135,18 @@ export class Dashboard {
   readonly steps = computed(() => {
     const view = this.storefront.view();
     const fields = [
-      { label: 'nom', set: !!view?.name },
-      { label: 'description', set: !!view?.description },
-      { label: 'photo', set: !!view?.imageReference },
+      { label: 'nom', set: !!view?.name, required: true },
+      { label: 'description', set: !!view?.description, required: false },
+      { label: 'photo', set: !!view?.imageReference, required: true },
+      { label: 'téléphone', set: !!view?.phone, required: false },
     ];
     const present = fields.filter((field) => field.set).map((field) => field.label);
-    const missing = fields.filter((field) => !field.set).map((field) => field.label);
+    const missing = fields.filter((field) => !field.set && field.required).map((field) => field.label);
+    const optional = fields.filter((field) => !field.set && !field.required).map((field) => field.label);
     const dishCount = this.catalogue.items().length;
     const scheduleCount = this.markets.schedules().length;
     const steps = [
-      { number: 1, title: 'Informations de la vitrine', detail: summarise(present, missing), done: missing.length === 0, link: '/onboarding/storefront' },
+      { number: 1, title: 'Informations de la vitrine', detail: summarise(present, missing, optional), done: missing.length === 0, link: '/onboarding/storefront' },
       { number: 2, title: 'Composez votre catalogue', detail: dishCount ? dishesAdded(dishCount) : 'Ajoutez au moins un plat à proposer.', done: dishCount > 0, link: '/dashboard/catalogue' },
       { number: 3, title: 'Indiquez vos marchés', detail: scheduleCount ? marketsAdded(scheduleCount) : 'Où et quand vous vendez.', done: scheduleCount > 0, link: '/dashboard/markets' },
     ];
@@ -204,13 +206,16 @@ function marketsAdded(count: number): string {
   return `${count} marché${plural} ajouté${plural}`;
 }
 
-function summarise(present: string[], missing: string[]): string {
+function summarise(present: string[], missing: string[], optional: string[]): string {
   const parts: string[] = [];
   if (present.length) {
     parts.push(`Renseigné${present.length > 1 ? 's' : ''} : ${present.join(', ')}`);
   }
   if (missing.length) {
     parts.push(`Manquant${missing.length > 1 ? 's' : ''} : ${missing.join(', ')}`);
+  }
+  if (optional.length) {
+    parts.push(`Optionnel${optional.length > 1 ? 's' : ''} : ${optional.join(', ')}`);
   }
   return parts.join(' · ');
 }

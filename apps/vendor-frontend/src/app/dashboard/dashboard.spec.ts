@@ -85,15 +85,15 @@ describe('Dashboard', () => {
     expect(screen.getByRole('link', { name: /composez votre catalogue/i })).toHaveAttribute('href', '/dashboard/catalogue');
     expect(screen.getByRole('link', { name: /indiquez vos marchés/i })).toHaveAttribute('href', '/dashboard/markets');
     expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '0');
-    expect(screen.getByText('Manquants : nom, description, photo')).toBeInTheDocument();
+    expect(screen.getByText('Manquants : nom, photo · Optionnels : description, téléphone')).toBeInTheDocument();
   });
 
-  it('marks the storefront step done once name, description and photo are set', async () => {
+  it('marks the storefront step done once name and photo are set', async () => {
     const { view, storefront } = await renderDashboard();
     storefront.view.set(completeStorefront);
     view.detectChanges();
 
-    expect(screen.getByText('Renseignés : nom, description, photo')).toBeInTheDocument();
+    expect(screen.getByText('Renseignés : nom, description, photo · Optionnel : téléphone')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /informations de la vitrine/i })).toHaveAttribute('href', '/onboarding/storefront');
     expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '1');
     expect(screen.getByRole('link', { name: /composez votre catalogue/i })).toBeInTheDocument();
@@ -164,7 +164,14 @@ describe('Dashboard', () => {
 
     expect(screen.getByRole('link', { name: /informations de la vitrine/i })).toHaveAttribute('href', '/onboarding/storefront');
     expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '0');
-    expect(screen.getByText('Renseignés : nom, description · Manquant : photo')).toBeInTheDocument();
+    expect(screen.getByText('Renseignés : nom, description · Manquant : photo · Optionnel : téléphone')).toBeInTheDocument();
+  });
+
+  it('offers publication even when the optional description and phone are empty', async () => {
+    await renderReady({ description: '', phone: '' });
+
+    expect(screen.getByRole('button', { name: 'Publier' })).toBeInTheDocument();
+    expect(screen.getByText('Renseignés : nom, photo · Optionnels : description, téléphone')).toBeInTheDocument();
   });
 
   it('shows the storefront URL as a link once the vitrine is ready', async () => {

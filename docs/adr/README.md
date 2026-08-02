@@ -48,3 +48,4 @@ deferred decisions in `docs/DEFERRED.md` (see ADR 0017).
 | [0040](0040-master-keyring-lazy-rewrap.md) | Master keys form a versioned keyring; rows re-wrap lazily on read | 2026-08-01 |
 | [0041](0041-aad-v2-binds-stream-position.md) | enc:v2 — the AAD binds the event's stream position | 2026-08-01 |
 | [0042](0042-listen-lifecycle-single-use-connection-object.md) | LISTEN lifecycle: single-use adapter, reified connection, boot rejects | 2026-08-01 |
+| [0043](0043-description-optional-for-publication.md) | A description is no longer a publication requirement | 2026-08-02 |

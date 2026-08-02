@@ -12,7 +12,6 @@ export class Storefront extends Aggregate {
   private _opened = false;
   private _coverPhoto: CoverPhoto = new NoCoverPhoto();
   private _name?: StorefrontName;
-  private _description: StorefrontDescription = new StorefrontDescription('');
   private _published = false;
 
   apply(event: StorefrontEvent): void {
@@ -25,7 +24,6 @@ export class Storefront extends Aggregate {
         break;
       case 'StorefrontInformationEdited':
         this._name = new StorefrontName(event.payload.name);
-        this._description = new StorefrontDescription(event.payload.description);
         break;
       case 'StorefrontPublished':
         this._published = true;
@@ -86,10 +84,6 @@ export class Storefront extends Aggregate {
 
   hasTitle(): boolean {
     return this._name !== undefined;
-  }
-
-  hasDescription(): boolean {
-    return this._description.hasContent();
   }
 
   hasCoverPhoto(): boolean {

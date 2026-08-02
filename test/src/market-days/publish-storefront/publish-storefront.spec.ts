@@ -22,16 +22,6 @@ describe('Publish Storefront', () => {
     await expect(handler.execute(TestPublishStorefront.valid())).rejects.toThrow(StorefrontNotReadyToPublish);
   });
 
-  it('rejects publishing a storefront whose description is empty', async () => {
-    openStorefrontWithInformation({ description: '' });
-
-    const failure = await handler.execute(TestPublishStorefront.valid()).catch((e: unknown) => e);
-
-    expect(failure).toBeInstanceOf(StorefrontNotReadyToPublish);
-    expect((failure as StorefrontNotReadyToPublish).missing).toContain('description');
-    expect((failure as StorefrontNotReadyToPublish).missing).not.toContain('title');
-  });
-
   it('rejects publishing a storefront without a cover photo', async () => {
     openStorefrontWithInformation();
 
@@ -39,7 +29,7 @@ describe('Publish Storefront', () => {
 
     expect(failure).toBeInstanceOf(StorefrontNotReadyToPublish);
     expect((failure as StorefrontNotReadyToPublish).missing).toContain('cover');
-    expect((failure as StorefrontNotReadyToPublish).missing).not.toContain('description');
+    expect((failure as StorefrontNotReadyToPublish).missing).not.toContain('title');
   });
 
   it('rejects publishing a storefront with no dishes', async () => {
@@ -101,6 +91,19 @@ describe('Publish Storefront', () => {
     ]);
   });
 
+  it('publishes a storefront whose description is empty', async () => {
+    openStorefrontWithCover({ description: '' });
+    addDish();
+    addSchedule();
+    await assignSubdomain();
+
+    await handler.execute(TestPublishStorefront.valid());
+
+    expect(store.newEvents()).toEqual([
+      expect.objectContaining({ type: 'StorefrontPublished' }),
+    ]);
+  });
+
   it('is idempotent, raising no new event when the storefront is already published', async () => {
     publishedStorefront();
     addDish();
@@ -149,7 +152,7 @@ describe('Publish Storefront', () => {
     const failure = await handler.execute(TestPublishStorefront.valid()).catch((e: unknown) => e);
 
     expect(failure).toBeInstanceOf(StorefrontNotReadyToPublish);
-    expect((failure as StorefrontNotReadyToPublish).missing).toEqual(['title', 'description', 'cover', 'catalogue', 'schedule', 'url']);
+    expect((failure as StorefrontNotReadyToPublish).missing).toEqual(['title', 'cover', 'catalogue', 'schedule', 'url']);
   });
 
   it('stamps the vendor id into the published event metadata', async () => {
@@ -178,10 +181,10 @@ describe('Publish Storefront', () => {
     ], { vendorId: 'vendor-id' });
   }
 
-  function openStorefrontWithCover() {
+  function openStorefrontWithCover(overrides: { description?: string } = {}) {
     store.seedWith('storefront-vendor-id', [
       { type: 'StorefrontOpened', payload: { vendorId: 'vendor-id' }, version: 1 },
-      { type: 'StorefrontInformationEdited', payload: { name: 'Chez Demo', description: 'Cuisine maison', phone: '0102030405' }, version: 1 },
+      { type: 'StorefrontInformationEdited', payload: { name: 'Chez Demo', description: overrides.description ?? 'Cuisine maison', phone: '0102030405' }, version: 1 },
       { type: 'StorefrontCoverPhotoSet', payload: { imageReference: 'v1/cover' }, version: 1 },
     ], { vendorId: 'vendor-id' });
   }

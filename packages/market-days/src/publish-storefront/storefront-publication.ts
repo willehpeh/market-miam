@@ -7,7 +7,6 @@ export class StorefrontPublication {
   publish(storefront: Storefront, catalogue: Catalogue, calendar: Calendar, hasSubdomain: boolean): void {
     const missing: string[] = [];
     if (!storefront.hasTitle()) missing.push('title');
-    if (!storefront.hasDescription()) missing.push('description');
     if (!storefront.hasCoverPhoto()) missing.push('cover');
     if (!catalogue.hasAtLeastOneItem()) missing.push('catalogue');
     if (!calendar.hasAtLeastOneSchedule()) missing.push('schedule');
