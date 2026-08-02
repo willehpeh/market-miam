@@ -211,6 +211,7 @@ Capture: same demo account as the storefront shot so names match; ~1200px wide; 
 
 ## Doc drift to fix elsewhere
 
-- `docs/MARKET_MIAM.md` post-market tracking (*brought*/*left* quantities → derived sell-through and waste %) is superseded by three outcomes per dish per market day — did well / did not do well / sold out — folded into the menu du jour rather than a separate phase.
-- `docs/MARKET_MIAM.md` still lists *pricing tiers and feature gating* as an Open Item. It blocks the 50 € tier above, and it's the reason that tier stays off the page.
+*(2026-08-02: `MARKET_MIAM.md` was refreshed — the superseded brought/left post-market model is corrected there.)*
+
+- `docs/MARKET_MIAM.md` lists *pricing tiers and feature gating* as an Open Item. It blocks the 50 € tier above, and it's the reason that tier stays off the page.
 - INPI/EUIPO check on the "Market Miam" name still outstanding (`docs/MARKET_MIAM.md`).
