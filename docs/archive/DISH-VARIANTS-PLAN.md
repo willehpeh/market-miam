@@ -1,5 +1,7 @@
 # Dish variants — remaining work
 
+> **Archived 2026-08-02** — feature complete; nothing remaining. Design rationale lives in ADR 0033. The out-of-scope follow-ups listed under "Deferred" below stay valid as future ideas.
+
 Design decisions: ADR 0033. This file tracks what's left; the ADR is the source of truth for *why*.
 
 ## Done

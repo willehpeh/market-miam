@@ -4,7 +4,7 @@ Vendors build a catalogue of dishes, reached from dashboard step 2 (`/dashboard/
 
 ## Item shape (locked)
 
-5 fields only: `itemId, name, description, price, imageReference`. Domain in `packages/market-days/src/catalogue/` (aggregate, `item/` VOs) + `catalogue-view/` (read model). Commands `AddItemToCatalogue` / `ReviseItem` / `ChangeItemPhoto` / `RetireItem`; add, list, revise and re-photo are wired to HTTP.
+5 fields only: `itemId, name, description, price, imageReference` (price has since widened to price-XOR-variants — ADR 0033). Domain in `packages/market-days/src/catalogue/` (aggregate, `item/` VOs) + `catalogue-view/` (read model). Commands `AddItemToCatalogue` / `ReviseItem` / `ChangeItemPhoto` / `RetireItem` / `ReorderItems`; all are wired to HTTP (`catalogue.controller.ts`: add/list, `PUT :itemId` revise, `PUT :itemId/photo`, `DELETE :itemId` retire, `PUT order` reorder).
 
 | field | rule |
 |-------|------|
@@ -29,6 +29,7 @@ Vendors build a catalogue of dishes, reached from dashboard step 2 (`/dashboard/
 - `add-dish.ts` at `/dashboard/catalogue/new` (replaced the `ComingSoon` stub). Signal Forms; camera-first photo — a `capture="environment"` input for shooting one, a second input without `capture` for the photo roll — name (required), price (text → cents), description (optional). Submit disabled until name+price valid and a photo is uploaded. Mints `itemId` once, reuses it for sign + add. Write path added to the slice: port `photoSignature`/`add`, `UploadDishPhoto`/`AddDish` flows, `navigateOnAdded$` → list. Reuses storefront's `PhotoUploads`/`CloudinaryPhotoUploads` as-is.
 - Photos are re-encoded before upload (`PhotoDownscale`/`CanvasPhotoDownscale`, alongside the upload port): JPEG, long edge capped at 2000 to match the API's incoming `c_limit,w_2000`, anything under 1 Mo left alone. A photo the browser cannot decode passes through untouched. `uploadDishPhoto$` owns every size judgment — 50 Mo before decoding, 10 Mo after — since the only size that matters is the one after shrinking.
 - Two test layers: component (fake facade) + slice integration (real facade+effects+http, Cloudinary boundary faked via `FakePhotoUploads`).
+- *(Since this plan was written)* retire and reorder shipped end-to-end: `DELETE :itemId` / `PUT order` on the API, `reorder-dishes.ts` + retire flows in the vendor frontend.
 - `dashboard.ts` step 2 ("Composez votre catalogue") shows FAIT once the catalogue holds ≥1 dish, with the dish count as its detail ("N plat(s) ajouté(s)"): injects `CatalogueFacade`, `load()`s on arrival (constructor), derives `done` + count from `items()` (store selector). Guard spec (all-fake facades) provides `FakeCatalogueFacade`; the launch spec (all-real) wires the real catalogue slice and flushes `GET /api/catalogue` on the dashboard-landing tests.
 
 ## Decisions (don't re-litigate)
@@ -37,7 +38,7 @@ Vendors build a catalogue of dishes, reached from dashboard step 2 (`/dashboard/
 - **`itemId` client-supplied** so the future photo `public_id` (`dishes/{vendorId}/{itemId}`) is known before the add call.
 - **Category + tags deferred** — the design wants them, the domain has neither. Add later as an `ItemAddedToCatalogue` v2 (new VOs + payload fields + read-model columns).
 - **List page shipped before the add form** — read path needs no photo; write path needs the whole Cloudinary flow.
-- **`RetireItem` has no controller.** Its handler + projection branch exist but nothing dispatches it. (`ChangeItemPrice` was in the same state and has been deleted — `ReviseItem` carries the price, so a price-only command had no route left to arrive on.)
+- **`RetireItem` is now wired to HTTP** (`DELETE /api/catalogue/:itemId`) — this superseded the earlier "no controller" state. (`ChangeItemPrice` was deleted — `ReviseItem` carries the price, so a price-only command had no route left to arrive on.)
 - **Read model in both branches** (in-memory + Postgres) so prod (postgres) boots — the query handler + projection instantiate in every mode.
 - **API tests are acceptance tests** (`bootApiTestApp` + supertest), not controller unit tests. Postgres store held to the same `catalogueViewsContract` as in-memory, via testcontainers.
 
@@ -51,5 +52,5 @@ Vendors build a catalogue of dishes, reached from dashboard step 2 (`/dashboard/
 
 - **vitest strips types without checking.** Angular's compiler plugin *does* typecheck the frontend build (a bad import fails the `nx test vendor-frontend` run); the `market-days`/`api`/`test` projects need `nx typecheck` — vitest alone won't catch type errors.
 - **Container specs run separately:** `nx run test:test:container` (needs Docker), excluded from `nx test test`. New read-model tables must be added to `test/src/event-sourcing/postgres/testcontainer.ts` `reset()` TRUNCATE list.
-- **`Catalogue.apply` ignores `ItemRetired` — deliberate, and the last gap.** `ItemAddedToCatalogue`, `ItemRevised` and `ItemPhotoChanged` are all applied, so live and replayed state now agree (ADR 0008: mutation happens only by applying events). `ItemRetired` is left unapplied on purpose: applying it would remove the item from `_items`, which *does* change behaviour — a second retire would throw `NoSuchItemError` instead of re-emitting, revise/re-photo of a retired item would start failing, and `hasAtLeastOneItem()` would go false for an all-retired catalogue, blocking storefront publication. Decide that product rule (can a vendor publish with a fully retired menu?) before applying it. Related: `NEXT_BEHAVIOURS.md` — "retiring item doesn't check if it's been planned".
+- **`Catalogue.apply` now applies `ItemRetired`** (resolved — the "last gap" is closed). All catalogue events are applied, so live and replayed state agree (ADR 0008). The product rule this implied has been decided by the implementation: retiring removes the item from `_items`, so a second retire throws `NoSuchItemError`, revise/re-photo of a retired item fails, and a fully retired catalogue makes `hasAtLeastOneItem()` false — blocking storefront publication. Still open, related: `NEXT_BEHAVIOURS.md` — "retiring item doesn't check if it's been planned".
 - Parallel `git add -A` commits on `main` have twice swept staged catalogue files into unrelated commits — commit frontend work before staging elsewhere.

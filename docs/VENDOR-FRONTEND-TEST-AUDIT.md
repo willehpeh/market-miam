@@ -7,7 +7,7 @@ Rubric: [ADR 0006 — Outside-in TDD with fakes at boundaries](adr/0006-outside-
 Recording an interaction on a boundary fake (`fake.loaded`, `fake.loggedIn`) is
 **correct** here and is not counted as a finding on its own.
 
-This is a follow-up to the repo-wide [`TEST_AUDIT.md`](TEST_AUDIT.md) (2026-07-09),
+This is a follow-up to the repo-wide [`TEST_AUDIT.md`](archive/TEST_AUDIT.md) (2026-07-09, archived),
 narrowed to vendor-frontend and re-verified. Findings 1–3 were **proved by
 mutating the production code and re-running the suite**, not by reading alone.
 

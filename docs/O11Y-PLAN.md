@@ -15,7 +15,8 @@ Read side — `QueryGateway` span: `QueryGateway` port (`event-sourcing`) mirror
    **Ready design** (pick-up-and-go when the trigger fires): two new files in `apps/api/src/app/event-sourcing/` — `command-attributes.ts` + `event-attributes.ts`, each a `Record<string, (msg) => Record<string, AttributeValue>>`, default empty, opt-in per type (`registry[key]?.(msg)` → missing key adds nothing, baseline unchanged). Spread the lookup into the existing `setAttributes` at `tracing.command-gateway.ts:18` (key `command.constructor.name`) and `tracing.event-store.ts:23` append (key `events[0].type`, read `events[0].payload`). May import domain types from `@market-miam/market-days`; never import `@opentelemetry/*` into `packages/*` (ADR-0026). Rules: raw value OK for non-PII public data (`item.price` raw — list price, not sensitive revenue); free-text → derived scalars only (`*.has_image`, `schedule.day_count`, `plan.total_quantity`), never raw text. Guard: extend the exact-match `toEqual({...})` assertions in `command-dispatch-tracing.spec.ts`; each instrumented command gets a social test through its real production entry point (no entry point ⇒ not ready). Optional later: ESLint `no-restricted-imports` banning `@opentelemetry/*` in `packages/*` (matches the `projection-decorator` / `processor-decorator` custom-rule pattern; today the invariant is structural/ADR only).
 
 5. **Stuck-subscription alert** — page when a subscription (esp. a **processor**) stops making
-   forward progress. Motivation + kind-awareness: **POSTGRES-PLAN item 4**.
+   forward progress. Motivation + kind-awareness: **`DEFERRED.md` "Per-event dead-lettering"**
+   (formerly POSTGRES-PLAN item 4).
 
    **Deferred — evidence-gated.** Detection already works today: each failed poll emits a
    `logger.error` (Render logs) **and** a `TracingEventHandler` error span in Honeycomb

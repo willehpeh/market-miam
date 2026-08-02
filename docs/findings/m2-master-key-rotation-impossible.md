@@ -67,8 +67,8 @@ a version present in no keyring entry fails loudly with a message naming the
 missing version (not a bare GCM error).
 
 Related: [M4](m4-aad-omits-stream-position.md) (AAD hygiene in the same
-adapter); `docs/POSTGRES-PLAN.md` tracks crypto-shredding work and is the
-natural home for scheduling this.
+adapter); `docs/archive/POSTGRES-PLAN.md` (archived) tracked the
+crypto-shredding work.
 
 ## Update (2026-08-01)
 

@@ -6,7 +6,7 @@ Date: 2026-07-25 · Scope: all 5 spec files (23 test cases) in
 
 Rubric: [ADR 0006 — Outside-in TDD with fakes at boundaries](adr/0006-outside-in-tdd-with-fakes.md).
 Companion to [`VENDOR-FRONTEND-TEST-AUDIT.md`](VENDOR-FRONTEND-TEST-AUDIT.md)
-and the repo-wide [`TEST_AUDIT.md`](TEST_AUDIT.md). Findings marked **Proved**
+and the repo-wide [`TEST_AUDIT.md`](archive/TEST_AUDIT.md) (archived). Findings marked **Proved**
 were verified by mutating production code and re-running the suite, not by
 reading alone.
 

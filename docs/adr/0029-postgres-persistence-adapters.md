@@ -44,5 +44,5 @@ stays Docker-free.
   fast unit suite. Local dev runs Postgres via `docker-compose.yml`.
 - `apps/api/tsconfig.app.json` uses `moduleResolution: bundler` so `tsc` can read
   `node-pg-migrate`'s exports-only types.
-- Step-by-step build + remaining work: `POSTGRES-PLAN.md`. Ordering: ADR 0028.
+- Step-by-step build record: `archive/POSTGRES-PLAN.md` (complete, archived; deferred items in `DEFERRED.md`). Ordering: ADR 0028.
   Schema: ADR 0005.
