@@ -1,5 +1,7 @@
 # OO smell audit
 
+> **Archived 2026-08-02** — the open items (#2–4, #7–12) are tracked as one line in the root `NEXT_BEHAVIOURS.md`; this file keeps the per-item locations and fixes. #1, #5 and #6 are fixed.
+
 Source: fan-out review (9 regions, one finder each) + per-finding adversarial verify. 22 raised → **12 confirmed**; 10 rejected as intentional (VO `value()`, deliberate constructor work, ponytail shortcuts, single-interface ports). `md-readmodels` and `customer-frontend` clean.
 
 Ranked by severity. #1 (the `Pricing` VO), #5 (the ADR 0035 refactor) and #6

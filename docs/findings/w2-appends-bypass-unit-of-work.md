@@ -157,7 +157,7 @@ flag are recorded as rejected in the ADR); the decision and its tradeoffs are in
 - `AppendTransaction` became `SerializedAppend`: no lifecycle, no mode flag,
   one `execute(events, expected, metadata)` owning lock + concurrency check +
   INSERT on whatever client it is handed — which also resolves
-  `docs/OO-SMELL-AUDIT.md` #5 (temporal coupling of the five-call protocol).
+  `docs/archive/OO-SMELL-AUDIT.md` #5 (temporal coupling of the five-call protocol).
 - `PostgresEventStore.append` is a single tell —
   `unitOfWork.inTransaction(client => new SerializedAppend(client, streamId)
   .execute(…))` — and reads route through the UoW so a command dispatched

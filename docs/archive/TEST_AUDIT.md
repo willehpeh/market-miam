@@ -1,12 +1,12 @@
 # Test Suite Audit — behaviour, implementation coupling & overlap
 
-> **Archived 2026-08-02** — point-in-time snapshot; the suite has since grown from 78 to 133 spec files, so the inventory and overlap map no longer describe the current suite. The newer, narrower successors are `../VENDOR-FRONTEND-TEST-AUDIT.md` and `../CUSTOMER-FRONTEND-TEST-AUDIT.md` (both 2026-07-25).
+> **Archived 2026-08-02** — point-in-time snapshot; the suite has since grown from 78 to 133 spec files, so the inventory and overlap map no longer describe the current suite. The newer, narrower successors are `VENDOR-FRONTEND-TEST-AUDIT.md` and `CUSTOMER-FRONTEND-TEST-AUDIT.md` (both 2026-07-25).
 
 Date: 2026-07-09 · Scope: all 78 spec files (403 test cases) across `apps/*`,
 `packages/*` and the shared `test/` package.
 
 Rubric: the project's own testing doctrine,
-[ADR 0006 — Outside-in TDD with fakes at boundaries](adr/0006-outside-in-tdd-with-fakes.md).
+[ADR 0006 — Outside-in TDD with fakes at boundaries](../adr/0006-outside-in-tdd-with-fakes.md).
 A test scores well when it exercises a whole use case / public behaviour through
 its public surface, substitutes **only infrastructure ports** with hand-written
 in-memory fakes, and asserts on **observable outcomes** (emitted events,

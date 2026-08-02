@@ -39,7 +39,7 @@ deadlock.
   `ROLLBACK` tag, and the unit of work would report success while nothing
   persisted. `SerializedAppend` (née `AppendTransaction`) keeps no lifecycle
   at all: one `execute()` owns the append protocol, which also resolves the
-  temporal-coupling smell in `docs/OO-SMELL-AUDIT.md` #5.
+  temporal-coupling smell in `docs/archive/OO-SMELL-AUDIT.md` #5.
 - **Reads route through the unit of work** (`Queryable` falls back to the pool
   outside a transaction), so a command dispatched inside a transaction
   load-then-saves against its own uncommitted appends.

@@ -1,13 +1,15 @@
 # vendor-frontend test audit — low-value, redundant & non-behavioural tests
 
+> **Archived 2026-08-02** — acting on the findings is tracked as one line in the root `NEXT_BEHAVIOURS.md`; this file keeps the per-finding detail.
+
 Date: 2026-07-25 · Scope: all 22 spec files (176 test cases) in
 `apps/vendor-frontend`. Baseline: whole suite green, 97.2% statement coverage.
 
-Rubric: [ADR 0006 — Outside-in TDD with fakes at boundaries](adr/0006-outside-in-tdd-with-fakes.md).
+Rubric: [ADR 0006 — Outside-in TDD with fakes at boundaries](../adr/0006-outside-in-tdd-with-fakes.md).
 Recording an interaction on a boundary fake (`fake.loaded`, `fake.loggedIn`) is
 **correct** here and is not counted as a finding on its own.
 
-This is a follow-up to the repo-wide [`TEST_AUDIT.md`](archive/TEST_AUDIT.md) (2026-07-09, archived),
+This is a follow-up to the repo-wide [`TEST_AUDIT.md`](TEST_AUDIT.md) (2026-07-09, archived),
 narrowed to vendor-frontend and re-verified. Findings 1–3 were **proved by
 mutating the production code and re-running the suite**, not by reading alone.
 

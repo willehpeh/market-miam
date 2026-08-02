@@ -20,6 +20,8 @@ doc. Legal and website work track their own remaining sections:
 * dish eager rendition (`ponytail:` in `catalogue.controller.ts` — still warms the cover-photo size)
 * add/revise error banners (`AddDishFailure`/`ReviseDishFailure` emitted but unreduced)
 * variant follow-ups: per-variant photos · per-variant sold-out · incremental variant commands · drag-drop reorder (`docs/archive/DISH-VARIANTS-PLAN.md`)
+* nine small OO refactors (#2–4, #7–12 — per-item fixes in `docs/archive/OO-SMELL-AUDIT.md`)
+* act on the frontend test-audit findings — vacuous tests, untested seams, customer-frontend coverage config (`docs/archive/VENDOR-FRONTEND-TEST-AUDIT.md` · `docs/archive/CUSTOMER-FRONTEND-TEST-AUDIT.md`)
 
 ## Deferred — trigger-gated (rationale: `docs/archive/DEFERRED.md`)
 

@@ -1,12 +1,14 @@
 # customer-frontend test audit — low-value, redundant & non-behavioural tests
 
+> **Archived 2026-08-02** — acting on the findings is tracked as one line in the root `NEXT_BEHAVIOURS.md`; this file keeps the per-finding detail.
+
 Date: 2026-07-25 · Scope: all 5 spec files (23 test cases) in
 `apps/customer-frontend`. Baseline: whole suite green, 95.2% statements /
 84.9% branches.
 
-Rubric: [ADR 0006 — Outside-in TDD with fakes at boundaries](adr/0006-outside-in-tdd-with-fakes.md).
+Rubric: [ADR 0006 — Outside-in TDD with fakes at boundaries](../adr/0006-outside-in-tdd-with-fakes.md).
 Companion to [`VENDOR-FRONTEND-TEST-AUDIT.md`](VENDOR-FRONTEND-TEST-AUDIT.md)
-and the repo-wide [`TEST_AUDIT.md`](archive/TEST_AUDIT.md) (archived). Findings marked **Proved**
+and the repo-wide [`TEST_AUDIT.md`](TEST_AUDIT.md) (archived). Findings marked **Proved**
 were verified by mutating production code and re-running the suite, not by
 reading alone.
 
@@ -73,7 +75,7 @@ recommendation; it is still unfixed.
 tag, no `twitter:` card is ever set — leaves **all 23 tests green**.
 
 This app is server-rendered *specifically* so shared links render rich cards
-([ADR 0019](adr/0019-ssr-customer-frontend-only.md)). The service is well
+([ADR 0019](../adr/0019-ssr-customer-frontend-only.md)). The service is well
 covered; the one line that makes it matter is not.
 
 **Fix:** in `storefront-page.spec`, provide a fake/spy `StorefrontMetadata` and
