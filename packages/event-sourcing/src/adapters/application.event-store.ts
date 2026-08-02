@@ -1,22 +1,13 @@
-import { isSpanContextValid, Span, trace } from '@opentelemetry/api';
+import { trace } from '@opentelemetry/api';
 import { DomainEvent } from '../domain/domain-event';
 import { Events } from '../ports/events';
 import { EventStore } from '../ports/event-store';
 import { Lineage } from '../ports/lineage';
 import { StoredEvent } from '../domain/stored-event';
+import { traceparentOf } from './traceparent';
 import { withSpan } from './with-span';
 
 const tracer = trace.getTracer('event-store');
-
-// With no SDK registered the tracer is a no-op whose spans carry the W3C
-// invalid all-zero context — not a trace id to persist into the log.
-function traceparentOf(span: Span): string | undefined {
-  const { traceId, spanId, traceFlags } = span.spanContext();
-  if (!isSpanContextValid(span.spanContext())) {
-    return undefined;
-  }
-  return `00-${traceId}-${spanId}-${traceFlags.toString(16).padStart(2, '0')}`;
-}
 
 // The event store an application should be wired to: the cross-cutting stamps —
 // lineage (correlation/causation) and tracing (span per append/load, traceparent

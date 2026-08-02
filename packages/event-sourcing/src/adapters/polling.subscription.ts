@@ -1,4 +1,4 @@
-import { context, isSpanContextValid, Span, SpanContext, trace } from '@opentelemetry/api';
+import { context, Span, trace } from '@opentelemetry/api';
 import { suppressTracing, unsuppressTracing } from '@opentelemetry/core';
 import { Checkpoint } from '../ports/checkpoint';
 import { EventHandler } from '../ports/event-handler';
@@ -6,6 +6,7 @@ import { Events } from '../ports/events';
 import { StoredEvent } from '../domain/stored-event';
 import { Subscription } from '../ports/subscription';
 import { UnitOfWork } from '../ports/unit-of-work';
+import { producerLinks } from './traceparent';
 import { withSpan } from './with-span';
 
 const subscriptionTracer = trace.getTracer('subscription');
@@ -74,10 +75,9 @@ export class PollingSubscription implements Subscription {
   // is a new root linked (not parented) to the producer — the async consumer is
   // deliberately its own trace.
   private handleTraced(event: StoredEvent): Promise<void> {
-    const producer = producerContextOf(event.metadata);
     return handlerTracer.startActiveSpan(
       'event-handler handle',
-      { root: true, links: producer ? [{ context: producer }] : [] },
+      { root: true, links: producerLinks(event.metadata) },
       unsuppressTracing(context.active()),
       (span: Span) => {
         span.setAttributes({
@@ -108,18 +108,3 @@ export class PollingSubscription implements Subscription {
   }
 }
 
-function producerContextOf(metadata?: Record<string, unknown>): SpanContext | undefined {
-  const traceparent = metadata?.['traceparent'];
-  if (typeof traceparent !== 'string') {
-    return undefined;
-  }
-  const match = /^00-([0-9a-f]{32})-([0-9a-f]{16})-([0-9a-f]{2})$/.exec(traceparent);
-  if (!match) {
-    return undefined;
-  }
-  const [, traceId, spanId, flags] = match;
-  const producer: SpanContext = { traceId, spanId, traceFlags: parseInt(flags, 16), isRemote: true };
-  // All-zero ids are well-formed but invalid per W3C — degrade to no link,
-  // same as a malformed traceparent.
-  return isSpanContextValid(producer) ? producer : undefined;
-}
