@@ -131,6 +131,27 @@ describe('ShreddingEventStore', () => {
     expect(loaded.map((e) => e.payload['email'])).toEqual(['first@example.com', 'second@example.com']);
   });
 
+  it('round-trips a PII batch appended at a non-zero stream position', async () => {
+    // The one shape that pins the whole AAD position prediction: at expected 0
+    // the base term vanishes, and a single-event batch hides the index term.
+    const { store } = shreddingOver();
+    await store.append('vendor-v1', [registered('first@example.com')], 0, v1);
+
+    await store.append(
+      'vendor-v1',
+      [registered('second@example.com'), registered('third@example.com')],
+      1,
+      v1,
+    );
+
+    const loaded = await store.load('vendor-v1');
+    expect(loaded.map((e) => e.payload['email'])).toEqual([
+      'first@example.com',
+      'second@example.com',
+      'third@example.com',
+    ]);
+  });
+
   it('resolves the data key once per event, not once per field', async () => {
     class CountingKeys extends InMemoryDataKeys {
       finds = 0;

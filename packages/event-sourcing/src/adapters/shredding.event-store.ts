@@ -85,10 +85,28 @@ export class ShreddingEventStore implements EventStore, Events {
       if (key === undefined) {
         key = await this.readKeyFor(event);
       }
-      payload[field] = key === null ? SHREDDED : decryptValue(value, key, aadFor(value, event, field));
+      payload[field] = key === null ? SHREDDED : this.decryptField(value, key, event, field);
       changed = true;
     }
     return changed ? { ...event, payload } : event;
+  }
+
+  // Still strict on purpose — an authentication failure is the tamper signal,
+  // not a degradable read (ADR 0039 covers missing keys, not bad seals). The
+  // message names the second possible cause: the AAD binds the stream position
+  // predicted at encrypt time, so a store that broke the append position
+  // promise fails here identically to tampering.
+  private decryptField(envelope: string, key: Buffer, event: StoredEvent, field: string): string {
+    try {
+      return decryptValue(envelope, key, aadFor(envelope, event, field));
+    } catch (error) {
+      throw new Error(
+        `ShreddingEventStore: authentication failed for "${field}" of "${event.type}" at ` +
+          `${event.streamId}#${event.streamPosition} — the ciphertext was tampered with, or its ` +
+          'AAD no longer matches the stored position',
+        { cause: error },
+      );
+    }
   }
 
   // Total on purpose: a stored event without a resolvable subject has no

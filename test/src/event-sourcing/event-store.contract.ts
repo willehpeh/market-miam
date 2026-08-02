@@ -56,6 +56,18 @@ export function eventStoreContract(
       expect(positions).toEqual([1, 2, 3]);
     });
 
+    it('assigns a batch the positions expectedStreamPosition + 1 through + batch length', async () => {
+      // The position promise ShreddingEventStore seals into its AAD before the
+      // store assigns anything — pinned here in the exact shape that exposes
+      // both terms: a multi-event batch at a non-zero expected position.
+      await store.append('stream-1', [dummyEvent('First')], 0);
+      await store.append('stream-1', [dummyEvent('Second'), dummyEvent('Third')], 1);
+
+      const positions = (await store.load('stream-1')).map((e) => e.streamPosition);
+
+      expect(positions).toEqual([1, 2, 3]);
+    });
+
     it('enforces optimistic concurrency, persisting nothing on a stale expected position', async () => {
       await store.append('stream-1', [dummyEvent('First'), dummyEvent('Second')], 0);
 
