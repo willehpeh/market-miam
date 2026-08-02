@@ -1,16 +1,16 @@
 # Event Store Architecture
 
 How the event store, its ports, subscriptions, projections and observability fit
-together. Descriptive, not aspirational: everything below is in the code today.
-Decisions and their rationale live in [`adr/`](adr/); remaining o11y work in
-[`O11Y-PLAN.md`](O11Y-PLAN.md); open questions in [`DEFERRED.md`](DEFERRED.md).
+together. Descriptive, not aspirational. Rationale lives in [`adr/`](adr/);
+remaining o11y work in [`O11Y-PLAN.md`](O11Y-PLAN.md); open questions in
+[`DEFERRED.md`](DEFERRED.md).
 
 - **`packages/event-sourcing`** — the mechanism. Framework-free: no Nest, no OTel.
 - **`packages/market-days`** — the domain. Aggregates, projections, read models.
 - **`apps/api`** — the composition root. Nest wiring, tracing, profile selection.
 
-That split is load-bearing and recurs at every layer: a plain class in the package,
-a decorator in the app that adds framework lifecycle and instrumentation around it.
+The split recurs at every layer: a plain class in the package, a decorator in the
+app adding framework lifecycle and instrumentation.
 
 ---
 
@@ -43,37 +43,26 @@ flowchart TB
     QH --> HTTP2["HTTP response"]
 ```
 
-The only coupling between the two halves is the log. Nothing pushes; subscriptions
+The only coupling between the halves is the log. Nothing pushes; subscriptions
 pull. At-least-once delivery falls out of the checkpoint protocol (ADR 0015).
 
 ---
 
-## 2. Two kinds of abstraction, and how to tell them apart
+## 2. Ports vs contracts
 
-This codebase uses `abstract class` where most TypeScript uses `interface`. That is
-**not** an inheritance decision — it is a dependency-injection decision. An interface
-is erased at runtime and cannot be a Nest injection token; an abstract class survives
-as a value you can write `inject: [EventStore]` against.
+`abstract class` here is a dependency-injection decision, not inheritance: an
+interface is erased at runtime and cannot be a Nest injection token.
 
-The rule:
+| Kind | Declared as | Examples |
+|---|---|---|
+| **Port** — injected under this token | `abstract class` | `EventStore`, `Events`, `Checkpoint`, `DataKeys`, `UnitOfWork`, `CommandGateway`, `QueryGateway`, `Subscription`, `*ViewStore`, `*Views` |
+| **Contract** — a shape implementations satisfy, never injected | `interface` | `EventHandler`, `Projection`, `Processor`, `Queryable` |
 
-| Kind | Declared as | Why | Examples |
-|---|---|---|---|
-| **Port** — something gets injected under this token | `abstract class` | must exist at runtime | `EventStore`, `Events`, `Checkpoint`, `DataKeys`, `UnitOfWork`, `CommandGateway`, `QueryGateway`, `Subscription`, `*ViewStore`, `*Views` |
-| **Contract** — a shape implementations satisfy | `interface` | never injected, never `instanceof` | `EventHandler`, `Projection`, `Processor`, `Queryable` |
-
-`Projection` earned its way into the second row the hard way. As an abstract class it
-could carry a concrete default `reset()`, and two of three projections silently
-inherited it — see [§7.5](#75-rebuild) and the amendment to ADR 0015.
-
-Composition, meanwhile, comes in three forms, and it helps to name which is which:
-
-- **Decorator chains** — same port, wrapped repeatedly, each layer adding one concern
-  (the event store, the subscription, the event handler).
-- **Template method** — a base owning mechanics with exactly one hole
-  (`Aggregate.apply`, `ProjectionFor.handlers`, `VendorScopedRepository`).
-- **Runtime metadata** — facts the type system cannot carry, kept in a `WeakMap`
-  keyed by constructor (`@CheckpointedProjection` / `@CheckpointedProcessor`).
+Composition comes in three named forms: **decorator chains** (same port, wrapped
+repeatedly, one concern per layer), **template method** (a base with exactly one
+hole: `Aggregate.apply`, `ProjectionFor.handlers`, `VendorScopedRepository`), and
+**runtime metadata** (a `WeakMap` keyed by constructor:
+`@CheckpointedProjection` / `@CheckpointedProcessor`).
 
 ---
 
@@ -84,7 +73,7 @@ Composition, meanwhile, comes in three forms, and it helps to name which is whic
 ```ts
 abstract class Aggregate {
   abstract apply(event: DomainEvent): void;   // the one hole
-  rehydrate(events: StoredEvent[]): this      // replay, remembering stream position
+  rehydrate(events: StoredEvent[]): this
   protected raise(event: DomainEvent): void   // apply + record
   raisedEvents(): DomainEvent[]
   currentStreamPosition(): number             // doubles as the expected version
@@ -92,44 +81,31 @@ abstract class Aggregate {
 ```
 
 `currentStreamPosition()` is captured at rehydration and passed to `append` as
-`expectedStreamPosition`. That is the whole of optimistic concurrency: if another
-writer moved the stream in between, the append throws `ConcurrencyError`.
+`expectedStreamPosition`. That is the whole of optimistic concurrency: a moved
+stream makes the append throw `ConcurrencyError`.
 
 ### 3.2 Repositories
 
-```mermaid
-flowchart LR
-    ES["EventStore"] --> VSE["VendorScopedEvents"]
-    VSE --> VSR["VendorScopedRepository&lt;A&gt;"]
-    VSR --> V["Vendors"]
-    VSR --> C["Catalogues"]
-    VSR --> CAL["Calendars"]
-    VSR --> S["Storefronts"]
-    VSE --> MD["MarketDays"]
-```
+`VendorScopedEvents` is the thin waist over `EventStore`. It owns the two
+policies every aggregate shares: skip the append when nothing was raised, and
+always stamp `{ vendorId }` into metadata — which feeds shredding's subject
+lookup, `vendorIdFrom(event)` in projections, and the `vendor.id` span attribute.
 
-`VendorScopedEvents` is the thin waist. It owns the two policies every aggregate
-shares: **skip the append when nothing was raised**, and **always stamp
-`{ vendorId }` into metadata**. That second one is load-bearing far downstream — it
-feeds shredding's subject lookup, `vendorIdFrom(event)` in every projection, and the
-`vendor.id` span attribute.
-
-`VendorScopedRepository` is a template: subclasses supply only a stream-id prefix and
-a factory. `MarketDays` deliberately does *not* extend it — its stream id needs
-`date + vendor + market`, so it composes `VendorScopedEvents` directly. Composition
-where the shape doesn't fit, rather than bending the base class.
+`VendorScopedRepository<A>` is a template over it: subclasses (`Vendors`,
+`Catalogues`, `Calendars`, `Storefronts`) supply a stream-id prefix and a
+factory. `MarketDays` composes `VendorScopedEvents` directly instead — its
+stream id needs `date + vendor + market`.
 
 ### 3.3 The event store decorator chain
 
-Two ports, deliberately separate:
+Two ports, deliberately separate; every wrapper implements both
+(`EventStore & Events`) so it is transparent to the write path and the catch-up
+path alike:
 
 ```ts
 EventStore  →  append(streamId, events, expectedStreamPosition, metadata) / load(streamId)
 Events      →  loadFrom(globalPosition, limit) / head()
 ```
-
-Every wrapper implements **both** (`EventStore & Events`), because it must be
-transparent to both the write path and the catch-up path.
 
 ```mermaid
 flowchart TB
@@ -145,42 +121,30 @@ flowchart TB
     S --> LEAF
 ```
 
-`ApplicationEventStore` **extends** the outermost decorator and **composes** the rest
-in its constructor, so the composition root stays a single `new`.
+Ordering is not arbitrary: **tracing outermost** (mints the span and writes
+`traceparent` into metadata before delegating, so the trace id reaches the row),
+**lineage next** (stamps ambient ids; adds nothing outside a dispatch, staying a
+faithful `EventStore`), **shredding innermost** (encrypts closest to
+persistence, so plaintext never reaches the leaf). Only `append` and `load` are
+meaningfully decorated; `loadFrom`/`head` pass through untouched ([§10.5](#105-gaps)).
 
-Ordering is not arbitrary:
-
-| Layer | Why here |
-|---|---|
-| Tracing **outermost** | it mints the span and writes `traceparent` into metadata *before* delegating, so the trace id reaches the database row and consumers can link back |
-| Lineage next | stamps ambient `correlationId`/`causationId`; adds nothing when there is no ambient lineage, so it stays a faithful `EventStore` |
-| Shredding **innermost** | encrypts closest to persistence, so **plaintext never reaches the leaf** |
-
-Only `append` and `load` are meaningfully decorated. `loadFrom` and `head` pass
-straight through Tracing untouched — deliberate, and a known blind spot ([§10.5](#105-gaps)).
-
-One instance is exposed under both tokens:
-
-```ts
-{ provide: EventStore, useFactory: … }
-{ provide: Events, useExisting: EventStore }
-```
+One instance under both tokens:
+`{ provide: EventStore, useFactory } · { provide: Events, useExisting: EventStore }`.
 
 ### 3.4 Appending
 
 `PostgresEventStore.append` runs a `SerializedAppend` through
-`unitOfWork.inTransaction(...)` — the ambient transaction when one exists, a fresh
-one (BEGIN … tag-verified COMMIT, ADR 0034/0035) when none does:
+`unitOfWork.inTransaction(...)` — joining the ambient transaction when one
+exists, owning a fresh BEGIN … tag-verified COMMIT when none does (ADR 0034/0035):
 
-1. `SELECT pg_advisory_xact_lock(4827193)` — one global lock so `global_position`
-   commits in order: monotonic commit order, which is all the single-bigint cursor
-   needs (ADR 0028; rollbacks burn identity values, so positions are not gap-free)
-2. count the stream, compare to `expectedStreamPosition`, throw `ConcurrencyError` on
-   mismatch
-3. one multi-row `INSERT` for the whole batch (ADR 0034)
+1. `SELECT pg_advisory_xact_lock(4827193)` — one global lock so
+   `global_position` commits in order (ADR 0028; rollbacks burn identity values,
+   so positions are not gap-free)
+2. count the stream vs `expectedStreamPosition`; mismatch → `ConcurrencyError`
+3. one multi-row `INSERT` for the batch (ADR 0034)
 
-Serialised appends are a deliberate throughput ceiling bought in exchange for
-monotonic commit order, which is what makes the checkpoint a single number.
+Serialised appends are a deliberate throughput ceiling bought for monotonic
+commit order — what makes the checkpoint a single bigint.
 
 ---
 
@@ -197,7 +161,9 @@ type StoredEvent = DomainEvent & {
 };
 ```
 
-Metadata accumulates as the append descends the chain:
+Metadata accumulates as the append descends the chain (ADR 0014: payload is
+domain fact, metadata is plumbing; optional on rehydration, so replay tolerates
+its absence):
 
 | Key | Written by | Used by |
 |---|---|---|
@@ -205,136 +171,62 @@ Metadata accumulates as the append descends the chain:
 | `correlationId` / `causationId` | `LineageEventStore` | `ContinuedLineageHandler`, dispatch spans |
 | `traceparent` | `TracingEventStore` | `TracingEventHandler` span link |
 
-ADR 0014 governs the split: payload is domain fact, metadata is plumbing. Metadata is
-optional on rehydration, so replay tolerates its absence.
-
 ---
 
 ## 5. Read models
 
-Each read model has **two ports** (ADR 0016), and one adapter implements both:
+Each read model has two ports (ADR 0016), one adapter implementing both:
+`*.store.ts` is the write surface (projection-only; `clear()` lives here to
+serve rebuild), the plural `*s.ts` is the read surface (query-only). Three
+projection-backed models: `vendor-storefront-view`, `catalogue-view`,
+`market-schedule-view`.
 
-```mermaid
-flowchart LR
-    P["CatalogueViewProjection"] -->|writes| WS["CatalogueViewStore<br/><i>write surface</i>"]
-    QH["FindVendorCatalogueHandler"] -->|reads| RS["CatalogueViews<br/><i>read surface</i>"]
-    WS --> AD["InMemoryCatalogueViews<br/>PostgresCatalogueViews"]
-    RS --> AD
-```
+Three things look like projections and aren't:
 
-Naming convention: `*.store.ts` is the write surface; the plural `*s.ts`
-(`catalogue-views.ts`) is the read surface. Query code physically cannot mutate;
-projection code cannot grow query features. `clear()` lives on the write surface
-because it exists to serve rebuild.
-
-Not every durable read is a projection. Three look like one and aren't:
-
-- **`upcoming-market-days`** has a view type and a query handler but no store — it is
-  computed from `MarketScheduleViews` at query time.
-- **`customer-storefront`** is the same shape one level up: `FindCustomerStorefrontHandler`
-  composes `SubdomainRegistry`, `VendorStorefrontViews`, `CatalogueViews` and the
-  upcoming-market-days handler into the public page per request. No store, no projection,
-  nothing to rebuild — the composition is the view.
-- **`SubdomainRegistry`** is written by command handlers, not fed by events. It is
-  **not derivable from the log** and can never be rebuilt — which is exactly why
-  `VendorErasure` deletes from it explicitly instead of relying on a replay.
+- **`upcoming-market-days`** — computed from `MarketScheduleViews` at query time; no store.
+- **`customer-storefront`** — `FindCustomerStorefrontHandler` composes registry,
+  views and the upcoming-market-days handler per request; the composition is the view.
+- **`SubdomainRegistry`** — written by command handlers, **not derivable from the
+  log**, never rebuildable — which is why `VendorErasure` deletes from it explicitly.
 
 ---
 
 ## 6. Handlers
 
-```mermaid
-classDiagram
-    class EventHandler {
-        <<interface>>
-        handle(event) void|Promise
-        eventTypes() string[]
-    }
-    class Projection {
-        <<interface>>
-        reset() Promise
-    }
-    class Processor {
-        <<type alias>>
-    }
-    class ProjectionFor~E~ {
-        <<abstract>>
-        #handlers()* EventHandlerMap~E~
-        +reset()* Promise
-        +eventTypes() string[]
-        +handle(event) Promise
-    }
-
-    EventHandler <|-- Projection
-    EventHandler <|-- Processor
-    Projection <|.. ProjectionFor
-    ProjectionFor <|-- CatalogueViewProjection
-    ProjectionFor <|-- VendorStorefrontViewProjection
-    ProjectionFor <|-- MarketScheduleViewProjection
-    Processor <|.. OpensStorefronts
-```
-
-### 6.1 `ProjectionFor` and exhaustiveness
+`EventHandler` (`handle`, `eventTypes`) is the base contract; `Projection` adds
+`reset()`; `Processor` is an alias. `ProjectionFor<E>` is the template all three
+projections extend:
 
 ```ts
 type EventHandlerMap<T extends DomainEvent> =
   Record<T['type'], (event: StoredEvent) => Promise<void>>;
 ```
 
-`E` is the domain's discriminated union (`CatalogueEvent = ItemAddedToCatalogue |
-ItemRetired | …`). `T['type']` distributes over it, so `Record` demands **exactly one
-key per member — no fewer, no extras**. Adding an event to the union is a compile
-error in every projection over it until handled. `eventTypes()` is *derived* from
-`Object.keys()` of the same map, so the subscription's filter cannot drift from the
-dispatch table.
+`E` is the domain's discriminated union, so the `Record` demands exactly one key
+per member: adding an event to the union is a compile error in every projection
+over it until handled. `eventTypes()` is derived from `Object.keys()` of the
+same map, so the subscription's filter cannot drift from the dispatch table.
+`handle()` indexes the map with a cast — safe only because
+`PollingSubscription` filters on `eventTypes()` first. That is a
+**collaboration invariant**: every handler decorator must forward `eventTypes()`
+faithfully, not just `handle()`.
 
-`handle()` indexes the map with a cast:
-
-```ts
-return this.map()[event.type as E['type']](event);
-```
-
-That is safe only because `PollingSubscription` filters on `eventTypes()` first — a
-**collaboration invariant** between two classes, not a local property. It is why every
-handler decorator must forward `eventTypes()` faithfully, not just `handle()`.
-
-### 6.2 The kind is metadata, not type
-
-`Subscriptions` does not read the class hierarchy. It reads a `WeakMap` populated by
-the decorators:
-
-```ts
-@CheckpointedProjection('catalogue-view')   // kind: 'projection', replay-safe
-@CheckpointedProcessor('opens-storefronts') // kind: 'processor', NOT replay-safe
-```
-
-The checkpoint name is the **durable resume key**. Rename it and you orphan the old
-checkpoint and replay from zero.
-
-Because the hierarchy is structural (a class may `implements` rather than `extends`),
-there is no reliable `instanceof`, so a **custom ESLint rule** in `eslint.config.mjs`
-enforces the correspondence in both directions:
-
-- a concrete class related to `Projection`/`ProjectionFor` **must** carry
-  `@CheckpointedProjection` — otherwise it silently never runs;
-- a `@CheckpointedProjection` class **must** be related to one of them.
-
-Known limits of that rule: it matches *identifiers* in `extends`/`implements` clauses,
-so an intermediate abstract base is a false positive, and an aliased import
-(`import { Projection as View }`) defeats it in both directions.
+Consumer kind is runtime metadata, not type: `@CheckpointedProjection('name')` /
+`@CheckpointedProcessor('name')` populate a `WeakMap`. The checkpoint name is
+the durable resume key — rename it and you replay from zero. A custom ESLint
+rule enforces the decorator⇄hierarchy correspondence both ways (known limits: it
+matches identifiers in `extends`/`implements`, so intermediate bases false-positive
+and aliased imports defeat it).
 
 ---
 
 ## 7. Subscriptions
 
-`Subscriptions` (`apps/api/.../subscriptions.ts`) is the runner.
+`Subscriptions` (`apps/api/.../subscriptions.ts`) is the runner. Discovery
+walks `DiscoveryService.getProviders()`, keeps checkpoint-decorated instances,
+rejects duplicate names at bootstrap.
 
-### 7.1 Discovery
-
-Walks `DiscoveryService.getProviders()`, keeps instances whose constructor carries
-checkpoint metadata, and rejects duplicate checkpoint names at bootstrap.
-
-### 7.2 The per-consumer stack
+### 7.1 The per-consumer stack
 
 ```mermaid
 flowchart TB
@@ -349,63 +241,30 @@ flowchart TB
     TEH --> CLH
     CLH --> H
     TEH -.->|"projections skip CLH"| H
-
-    PS -.-> EVP["Events"]
-    PS -.-> CP["Checkpoint"]
-    PS -.-> UOW["UnitOfWork"]
 ```
 
-### 7.3 The poll cycle
+### 7.2 The poll cycle
 
-```mermaid
-sequenceDiagram
-    participant Sch as pollSchedule
-    participant Sub as PollingSubscription
-    participant CP as Checkpoint
-    participant Ev as Events
-    participant UoW as UnitOfWork
-    participant H as EventHandler
+`poll()` loops while batches are full (100): read checkpoint → `loadFrom` →
+for each event, inside one `unitOfWork.transaction`: handle (if the type
+matches) then `checkpoint.advance(from, to)`. Handle and advance commit
+**atomically** — a throw rolls both back, so a poison event replays rather than
+being skipped (per-event dead-lettering is deferred).
 
-    Sch->>Sub: poll()
-    loop while batch is full (100)
-        Sub->>CP: read()
-        CP-->>Sub: position
-        Sub->>Ev: loadFrom(position, 100)
-        Ev-->>Sub: batch
-        loop each event
-            Sub->>UoW: transaction
-            activate UoW
-            alt eventTypes() includes event.type
-                Sub->>H: handle(event)
-            end
-            Sub->>CP: advance(position, event.globalPosition)
-            deactivate UoW
-        end
-    end
-```
+The advance is **compare-and-set** (ADR 0036): a mismatch throws
+`CheckpointConflictError`, aborting the transaction, effects and all. The
+checkpoint is a fencing token — a stale writer (deploy overlap, poll in flight
+across a rebuild reset) can neither land effects nor move the position. A
+conflict is a yield, not a failure: the retry re-reads and continues.
 
-Handle and checkpoint-advance commit **atomically**. A throw rolls both back, so a
-poison event replays rather than being silently skipped. Per-event dead-lettering
-needs a durable attempt count and is deferred.
+For a **processor** the unit is wider than it looks: its dispatched command's
+appends join the ambient transaction (ADR 0035), so command effects and the
+checkpoint commit together. Exactly-once holds for side effects that are writes
+to this database; anything leaving it is at-least-once and must tolerate
+redelivery (ADR 0036 records the idempotency-key rule for the first one — none
+exists yet).
 
-The advance is **compare-and-set** (ADR 0036): `advance(from, to)` names the
-position this loop last saw, and a mismatch throws `CheckpointConflictError`,
-aborting the transaction — handler effects and all. The checkpoint is therefore a
-fencing token: a stale writer (another instance during a deploy overlap, or a poll
-in flight across a rebuild's reset) can neither land effects nor move the
-position. A conflict is a yield, not a failure — the retry below re-reads the
-checkpoint and continues from wherever it actually is.
-
-For a **processor** the unit is wider than it looks: its dispatched command
-appends events, and `PostgresEventStore` joins the ambient transaction when one
-exists (ADR 0035) — so the command's appends and the checkpoint commit together
-or not at all. Exactly-once therefore holds for side effects that are writes to
-this database. A processor whose side effect *leaves* the database (an email, an
-external API call) is still at-least-once and must tolerate redelivery; no such
-processor exists today (ADR 0036 records the idempotency-key rule for the first
-one).
-
-### 7.4 Schedule and failure
+### 7.3 Schedule and failure
 
 ```ts
 pollSchedule = merge(timer(0, intervalMs), notifications)   // 300_000 ms default; 1_000 in dev
@@ -413,111 +272,85 @@ pollSchedule = merge(timer(0, intervalMs), notifications)   // 300_000 ms defaul
         retry({ resetOnSuccess: true, delay: exponential capped at 30_000 }))
 ```
 
-The notification stream is the actual drive — LISTEN/NOTIFY in Postgres, a `Subject`
-poked on append in memory. The timer is a backstop for the narrow race where a poke
-lands mid-poll and `exhaustMap` discards it. Retries are infinite by design: a
-transient store outage should recover, not kill the consumer.
+The notification stream (LISTEN/NOTIFY in Postgres, a `Subject` poked on append
+in memory) is the actual drive; the timer is a backstop for a poke discarded
+mid-poll by `exhaustMap`. Retries are infinite by design; a
+`CheckpointConflictError` logs quietly, everything else as an error.
 
-### 7.5 Rebuild
+### 7.4 Rebuild
 
-```ts
-async rebuild(name) {
-  if (kind !== 'projection') throw   // a processor re-runs its side effects
-  await unitOfWork.transaction(() => { projection.reset(); checkpoint.reset() })
-  await subscription.poll()
-}
-```
+`rebuild(name)` refuses processors (replay re-runs side effects), then
+atomically `projection.reset()` + `checkpoint.reset()` in one transaction, then
+polls. The poller stays running: the CAS advance fences out any in-flight poll.
+`reset()` is `abstract` on `ProjectionFor` — a store-backed projection must
+state what a rebuild clears (all three: `store.clear()`), because a replay onto
+an uncleared model can never remove rows the log no longer produces. Each
+rebuild path is pinned by an integration spec seeding an **orphan row with no
+backing events** — the one assertion a no-op `reset()` cannot pass — plus a
+replay-fidelity case.
 
-`reset()` is `abstract` on `ProjectionFor`, so a store-backed projection **must** state
-what a rebuild clears. This is enforced by the compiler rather than by review, because
-the previous concrete default was silently inherited twice: a replay onto an uncleared
-read model can overwrite what the events re-assert but can never remove a row the log
-no longer produces — and reports success either way.
-
-All three projections implement it as `store.clear()`. Each rebuild path is pinned by
-an integration spec that seeds an **orphan row with no backing events** — the one
-assertion a no-op `reset()` cannot pass — plus a replay-fidelity case:
-
-| projection | clear proven by | replay proven by |
-|---|---|---|
-| `vendor-storefront-view` | orphan row | pre-existing view assertions |
-| `catalogue-view` | orphan row | a chosen order survives (`ItemsReordered`) |
-| `market-schedule-view` | orphan row | absences replay once, not twice |
+`drain()` (tests only) runs N polling rounds, N = consumer count, so a
+processor's events reach downstream projections within one call.
 
 ---
 
 ## 8. Profiles
 
-`AppModule` picks exactly one `@Global()` persistence module; everything downstream
-asks for the port and never learns which answered.
+`AppModule` picks one `@Global()` persistence module; everything downstream asks
+for the port and never learns which answered. `EventSourcingModule.forRoot(piiFields)`
+is profile-agnostic — it wraps whatever `PERSISTED_EVENTS` answered.
 
-```mermaid
-flowchart LR
-    subgraph tok["Tokens"]
-        PE["PERSISTED_EVENTS"]
-        DK["DataKeys"]
-        UOW["UnitOfWork"]
-        EN["EVENT_NOTIFICATIONS"]
-        CF["CHECKPOINT_FACTORY"]
-    end
-    subgraph mem["InMemoryPersistenceModule"]
-        M1["InMemoryEventStore"]
-        M2["InMemoryDataKeys"]
-        M3["UnitOfWork.none()"]
-        M4["Subject poked on append"]
-        M5["(absent → InMemoryCheckpoint)"]
-    end
-    subgraph pg["PostgresPersistenceModule"]
-        P1["PostgresEventStore"]
-        P2["PostgresDataKeys"]
-        P3["PostgresUnitOfWork"]
-        P4["LISTEN/NOTIFY"]
-        P5["PostgresCheckpoint"]
-    end
-    PE --- M1
-    PE --- P1
-    DK --- M2
-    DK --- P2
-    UOW --- M3
-    UOW --- P3
-    EN --- M4
-    EN --- P4
-    CF --- M5
-    CF --- P5
-```
+| Token | In-memory | Postgres |
+|---|---|---|
+| `PERSISTED_EVENTS` | `InMemoryEventStore` | `PostgresEventStore` |
+| `DataKeys` | `InMemoryDataKeys` | `PostgresDataKeys` + `MasterKeyring` |
+| `UnitOfWork` | `UnitOfWork.none()` | `PostgresUnitOfWork` |
+| `EVENT_NOTIFICATIONS` | `Subject` poked on append | LISTEN/NOTIFY |
+| `CHECKPOINT_FACTORY` | (absent → `InMemoryCheckpoint`) | `PostgresCheckpoint` |
 
-`EventSourcingModule.forRoot(piiFields)` is entirely profile-agnostic — it wraps
-whatever `PERSISTED_EVENTS` answered, so the decorator chain is written once.
+### `InMemoryEventStore`
+
+One log array is the sole source of ordering; positions are assigned at
+insertion, so `seedWith` and `append` can interleave without `loadFrom`/`head`
+ever disagreeing (ADR 0038 — the old two-array design let the fake be *looser*
+than Postgres). `newEvents()`/`lastEvent()` are assertion views over appended
+events, never a source of ordering.
 
 ### `PostgresUnitOfWork` — the transactional seam
 
-```ts
-class PostgresUnitOfWork extends UnitOfWork implements Queryable {
-  transaction(fn) { /* BEGIN on a pooled client stashed in AsyncLocalStorage;
-                       COMMIT's command tag is verified (ADR 0034) */ }
-  inTransaction(work) { /* run work(client) in the ambient transaction, else own one */ }
-  query(text, params) { return (this.active.getStore() ?? this.pool).query(…) }
-}
-```
+Simultaneously the transaction boundary and the query router:
 
-It is simultaneously the transaction boundary **and** the query router. Because the
-Postgres view adapters are constructed with the UoW *as their `Queryable`* — not with
-the raw `Pool` — a projection write and its checkpoint write land in one physical
-transaction with no adapter knowing it. `Queryable` is what makes the swap invisible:
-`Pool` satisfies it too, so tests can pass a raw pool.
+- `transaction(fn)` — delegates to `inTransaction`: a **nested `transaction()`
+  joins the ambient transaction** rather than opening an independent one
+  (ADR 0037); the owner's COMMIT alone decides durability, and its command tag
+  is verified — Postgres resolves COMMIT on an aborted transaction as ROLLBACK
+  (ADR 0034).
+- `inTransaction(work)` — run multi-statement work on the ambient client, else
+  own a fresh transaction. The append path's seam (ADR 0035).
+- `query(text, params)` — routes to the ambient client, else the pool.
 
-`PostgresEventStore` needs more than query routing: an append is multi-statement
-work that must pin one connection. So it *tells* the UoW —
-`inTransaction(client => new SerializedAppend(client, streamId).execute(…))` — and
-never learns which case applied. Inside a transaction the lock, check, and INSERT
-run on the ambient client and the outer, tag-verified commit decides durability
-(ADR 0035); outside one, the UoW owns a fresh transaction around the same
-statements. All transaction lifecycle lives in one place, `PostgresUnitOfWork`,
-which is also the only holder of the ADR 0034 verified-commit check.
+The pg view adapters take the UoW *as their `Queryable`* — not the raw `Pool` —
+so a projection write and its checkpoint write share one physical transaction
+with no adapter knowing it. (`Pool` satisfies `Queryable` too, so tests can pass
+a raw pool.)
 
-`PostgresDataKeys` deliberately bypasses this and takes the raw `Pool`: a minted key
-must survive even if the surrounding append rolls back, and `shred()` is its own
-commit.
+`PostgresDataKeys` deliberately bypasses the UoW and takes the raw `Pool`: a
+minted key must survive even if the surrounding append rolls back, and `shred()`
+is its own commit.
+
+### LISTEN/NOTIFY
+
+`PostgresNotifications` (package, framework-free) is one long-lived `LISTEN
+events` connection exposed as a poke stream plus a `status()` stream
+(`connected` / `dropped` / `reconnected`). Per ADR 0042: instances are
+**single-use** (one `start()`, one `stop()`; restart = new instance), `start()`
+**rejects** if the first connection fails — a misconfigured LISTEN fails the
+deploy instead of surfacing as read-model lag — and each connection is reified
+as a `ListeningConnection` whose `lost` promise settles exactly once, so pg's
+double-firing failure events need no debounce. Losses after a successful start
+reconnect with capped exponential backoff and poke once on reconnect to cover
+the gap. `TracingPostgresNotifications` (app) wraps it with lifecycle wiring and
+`pg-listen <state>` marker spans.
 
 ---
 
@@ -525,247 +358,162 @@ commit.
 
 ### 9.1 Lineage
 
-```mermaid
-sequenceDiagram
-    participant MW as LineageMiddleware
-    participant CG as CommandGateway
-    participant ES as LineageEventStore
-    participant Sub as Subscription
-    participant CLH as ContinuedLineageHandler
-    participant Proc as Processor
-
-    MW->>CG: dispatch(): correlationId = causationId = uuid
-    CG->>ES: append
-    Note over ES: metadata += {correlationId, causationId}
-    ES-->>Sub: (later) event
-    Sub->>CLH: handle(event)
-    Note over CLH: correlationId ← event.metadata<br/>causationId ← event.id
-    CLH->>Proc: handle
-    Proc->>CG: execute(OpenStorefront)
-    CG->>ES: append — same correlationId
-```
-
 `Lineage` is an `AsyncLocalStorage` wrapper; domain code never sees it.
-`ContinuedLineageHandler` wraps **processors only** — projections dispatch nothing, so
-there is nothing downstream to attribute.
+`LineageMiddleware` mints `correlationId = causationId = uuid` per dispatch;
+`LineageEventStore` stamps the ambient ids into append metadata;
+`ContinuedLineageHandler` wraps **processors only** (projections dispatch
+nothing), setting `correlationId` from the consumed event's metadata and
+`causationId = event.id` — so a processor's dispatched commands append with the
+originating request's correlation id.
 
 ### 9.2 Crypto-shredding erasure
 
-PII is encrypted per-vendor with a data key, wrapped under a master key that never
-touches the database. Model A: `ShreddingEventStore` decrypts on `load` *and*
-`loadFrom`, so **projections cache plaintext PII in the read model**. Deleting the key
-is therefore not sufficient — the rebuild is the erasure.
+PII payload fields are encrypted per-vendor (AES-256-GCM) by
+`ShreddingEventStore`; deleting the vendor's data key makes them unreadable
+(ADR 0025 — the log itself is never touched).
 
-```mermaid
-sequenceDiagram
-    participant VE as VendorErasure
-    participant DK as DataKeys
-    participant S as Subscriptions
-    participant P as Projection
-    participant SR as SubdomainRegistry
+**Value envelope** — `enc:v2:iv:tag:ciphertext`. The version names the AAD that
+sealed the value (ADR 0041): v1 bound (streamId, type, field) NUL-separated —
+two same-type events in one stream had interchangeable ciphertexts; v2 adds the
+**stream position** and length-prefixes each component, so a ciphertext moved to
+any other event fails authentication. Encrypt always writes v2; decrypt
+dispatches on the prefix — v1 values are decodable forever since the log never
+rewrites. The position for a batch is `expectedStreamPosition + i + 1`, bound
+before the row exists; a concurrency rejection persists nothing, so it cannot
+go stale.
 
-    VE->>DK: shred(vendorId)
-    Note over DK: key gone → PII now decrypts to SHREDDED
-    VE->>S: rebuild('vendor-storefront-view')
-    S->>P: reset() + checkpoint 0, then replay
-    Note over P: plaintext replaced by the sentinel
-    VE->>SR: removeFor(vendorId)
-    Note over SR: not event-derived — deleted explicitly
-```
+**Writes strict, reads total** (ADR 0039). Encrypt: `null`/`undefined` PII
+fields pass through untouched; any other non-string throws; a PII-bearing event
+with no `vendorId` in metadata throws. Decrypt: an event whose subject is
+unresolvable or whose key is gone degrades to the `SHREDDED` sentinel instead of
+throwing — the log is append-only, so a throw on read would be a permanent
+poison pill for the stream and every catch-up. The sentinel is a string, not
+null, so read-model columns stay `NOT NULL`.
 
-The sentinel is a string, not null, so read-model columns stay `NOT NULL` and value
-objects never see null. The event log itself is untouched (ADR 0025).
+**Key envelope** (ADR 0040). Data keys are stored wrapped
+(`iv ‖ authTag ‖ ciphertext`, subject id as AAD) under a master key from a
+versioned `MasterKeyring`; `data_keys.key_version` names the wrapping version.
+Wrapping uses the ring's current version; unwrapping selects by the row's; a row
+read under an old version is lazily re-wrapped (compare-and-set on
+`key_version`, so a racing shred's DELETE wins — an erased key is never
+resurrected). Rotation is config: add a key, flip `MASTER_KEY_CURRENT`, deploy;
+retire a version once no row references it. Config shapes: `MASTER_KEY=<base64>`
+(single, version 1) or `MASTER_KEYS="1:<b64>;2:<b64>"` + `MASTER_KEY_CURRENT`.
+On Render they live in a Secret File read off disk, never `process.env`. The
+ring validates at boot.
+
+**Erasure** = `DataKeys.shred(vendorId)` → `rebuild('vendor-storefront-view')`
+(decrypt-on-load means projections cache plaintext, so the rebuild — replaying
+into `SHREDDED` — *is* the erasure) → `SubdomainRegistry.removeFor(vendorId)`
+(not event-derived, deleted explicitly).
 
 ---
 
 ## 10. Observability
 
-ADR 0026: **a span is a wide event.** Fat spans, not many thin logs. Domain packages
-carry no OTel dependency — every annotation lives in `apps/api/.../tracing/`.
+ADR 0026: a span is a wide event — fat spans, not many thin logs. Domain
+packages carry no OTel; every annotation lives in `apps/api/.../tracing/`.
 
 ### 10.1 Bootstrap
 
-`apps/api/src/tracing.ts` is imported as the **first statement** of `main.ts`, before
-any instrumented library loads, so `NodeSDK` can patch `@nestjs`, `express`, `http`
-and `pg`. Exporter is `OTLPTraceExporter` (protobuf) reading endpoint and headers from
-`OTEL_EXPORTER_OTLP_*`. `RENDER_GIT_COMMIT` is stamped as `service.version` plus
-`render.git_commit`, giving per-deploy comparison. `SIGTERM`/`SIGINT` trigger
-`sdk.shutdown()` so the final spans of a request are flushed on deploy.
+`apps/api/src/tracing.ts` is the first import of `main.ts`, so `NodeSDK` can
+patch `@nestjs`, `express`, `http`, `pg`. Exporter: `OTLPTraceExporter`
+(protobuf) via `OTEL_EXPORTER_OTLP_*`. `RENDER_GIT_COMMIT` stamps
+`service.version`. `SIGTERM`/`SIGINT` flush via `sdk.shutdown()`.
 
 ### 10.2 Span inventory
 
-Every span the application creates itself — there are seven sites:
-
 | Span | Created by | Kind | Attributes |
 |---|---|---|---|
-| `<CommandName>` | `TracingCommandGateway` | active, child of request | `command.name`, `app.correlation_id`, `app.causation_id` |
-| `<QueryName>` | `TracingQueryGateway` | active, child of request | `query.name` |
-| `event-store append` | `TracingEventStore` | active, child of dispatch | `event.type`, `event.count`, `stream_id`, `vendor.id` |
+| `<CommandName>` | `TracingCommandGateway` | child of request | `command.name`, `app.correlation_id`, `app.causation_id` |
+| `<QueryName>` | `TracingQueryGateway` | child of request | `query.name` |
+| `event-store append` | `TracingEventStore` | child of dispatch | `event.type`, `event.count`, `stream_id`, `vendor.id` |
 | `event-store load` | `TracingEventStore` | active | `stream_id`, `event.count` |
 | `subscription poll` | `TracingSubscription` | **root** | `subscription.name`, `subscription.lag` |
-| `event-handler handle` | `TracingEventHandler` | **root + link to producer** | `event.type`, `processing.lag_ms`, `vendor.id` |
-| `pg-listen <state>` | `TracingPostgresNotifications` | standalone marker | `listen.state`, `reconnect.attempt`, `error.message` |
+| `event-handler handle` | `TracingEventHandler` | **root + link to producer** | `event.type`, `processing.lag_ms`, `vendor.id`, `app.correlation_id`, `app.causation_id` |
+| `pg-listen <state>` | `TracingPostgresNotifications` | marker | `listen.state`, `reconnect.attempt`, `error.message` |
 
-Everything else — HTTP, pg, dns, tcp — comes from auto-instrumentation.
-
-Failure enrichment follows one shape at five of the six sites: set `exception.slug`,
-`recordException(error)`, `setStatus(ERROR)`, rethrow, `end()` in `finally`. The slugs
-are `command-dispatch-failed`, `query-dispatch-failed`, `event-store-append-failed`,
-`event-handler-failed`, `subscription-poll-failed`.
-
-`event-store load` is the exception: `try`/`finally` with **no `catch`**, so a failed
-aggregate rehydration ends a span carrying neither a slug, an exception, nor ERROR
-status ([§10.5](#105-gaps)).
-
-Spans are deliberately **payload-blind**: `command.name` but never command contents.
-`tracing/command-gateway.spec.ts` pins this with an exact-match assertion on the whole
-attribute bag, proving the dispatch span does not carry `RegisterVendor.email`.
+Everything else comes from auto-instrumentation. Failure enrichment is one
+protocol, centralised in `withSpan(span, slug, work)`: on throw set
+`exception.slug`, record the exception, set ERROR, rethrow; always `end()`. Six
+slugs: `command-dispatch-failed`, `query-dispatch-failed`,
+`event-store-append-failed`, `event-store-load-failed`, `event-handler-failed`,
+`subscription-poll-failed`. Spans are payload-blind — `command.name`, never
+command contents — pinned by an exact-match attribute assertion in
+`tracing/command-gateway.spec.ts`.
 
 ### 10.3 Trace continuity across the commit boundary
 
-The write path is one trace. Each consumed event starts a **new** trace with a *link*
-back, rather than continuing the request — which keeps traces bounded under
-processor→command fan-out.
-
-```mermaid
-sequenceDiagram
-    autonumber
-    participant R as HTTP request<br/>(trace A)
-    participant CG as CommandGateway
-    participant TES as TracingEventStore
-    participant DB as events table
-    participant TS as TracingSubscription<br/>(trace B)
-    participant TEH as TracingEventHandler<br/>(trace C)
-
-    R->>CG: span "RegisterVendor"
-    CG->>TES: span "event-store append"
-    Note over TES: traceparent = this span's context<br/>written into event metadata
-    TES->>DB: INSERT (metadata.traceparent)
-    DB-->>TS: loadFrom → event
-    TS->>TEH: handle
-    Note over TEH: root: true + link → the append span
-    TEH-->>TES: link (dashed, not parent)
-```
-
-`TracingEventStore` serialises its *own* span context as `00-<traceId>-<spanId>-<flags>`
-into metadata; `TracingEventHandler` parses it back with a strict regex and attaches it
-as a **link**. A malformed or absent `traceparent` degrades to no link — replay of old
-events never resurrects a dead trace.
-
-`processing.lag_ms` = `Date.now() - event.timestamp`, i.e. commit-time to handle-time.
-Per ADR 0026 this is the read-model freshness SLO — a signal a CRUD system has no
-equivalent of.
+The write path is one trace. `TracingEventStore` serialises its own span context
+as `00-<traceId>-<spanId>-<flags>` into metadata — skipped when the context is
+invalid (no SDK registered → no-op tracer → all-zero ids), so a garbage
+traceparent never reaches the log. `TracingEventHandler` starts a **new root**
+trace per consumed event with a *link* back (strict-regex parse;
+malformed/absent/all-zero → no link, so replay never resurrects a dead trace). Links, not
+parents, keep traces bounded under processor→command fan-out.
+`processing.lag_ms` = handle-time − commit-time — the read-model freshness SLO
+(ADR 0026).
 
 ### 10.4 The suppression dance
 
-Idle polls are two "is there anything new?" queries. Their auto-instrumented pg/dns/tcp
-spans outnumbered every other span in production **~1000:1**, each its own root trace
-because the poller runs outside any request context.
-
-```mermaid
-flowchart TB
-    A["TracingSubscription.poll()<br/>span: subscription poll"] --> B["suppressTracing(context)"]
-    B --> C["gauge lag: head() - checkpoint.read()"]
-    C --> D["PollingSubscription.poll()"]
-    D --> E{"event matches<br/>eventTypes()?"}
-    E -->|no| F["checkpoint.advance — still suppressed"]
-    E -->|yes| G["TracingEventHandler<br/>unsuppressTracing(context)"]
-    G --> H["handler + its pg spans visible"]
-    H --> F
-```
-
-So detail is dropped exactly when nothing happened, and restored the moment there is
-real work. The lag gauge is read **before** the poll deliberately — `poll()` drains
-before returning, so reading afterwards would always gauge zero. A failure in the gauge
-sets `subscription.lag_unavailable` rather than failing the poll: a measurement that
-takes down the thing it measures is the worse failure.
+Idle polls' auto-instrumented pg/dns/tcp spans outnumbered real spans ~1000:1.
+`TracingSubscription.poll()` runs the whole poll under `suppressTracing`;
+`TracingEventHandler` lifts suppression exactly when an event is actually
+handled. Detail is dropped when nothing happened, restored when there is work.
+The lag gauge (`head() − checkpoint.read()`) is read before the poll — `poll()`
+drains, so after would always gauge zero; a gauge failure sets
+`subscription.lag_unavailable` rather than failing the poll.
 
 ### 10.5 Gaps
 
-**Not tracked anywhere — these are new observations.**
+1. **`admin-api` has no tracing at all** — no bootstrap, no spans, yet it writes
+   `SubdomainRegistry` and creates Auth0 users. Largest gap by surface area.
+2. **The projection⇄checkpoint transaction is invisible**: only the inner
+   `handle` un-suppresses; `BEGIN`/`COMMIT`/checkpoint `UPDATE` produce no spans.
+3. **`loadFrom`/`head` are unspanned** and suppressed — the most-executed store
+   operations are opaque. Deliberate (§10.4's trade), but real.
+4. **`Subscriptions.rebuild()` emits no span** — the most impactful operation
+   (and the GDPR-erasure path) leaves no trace of what/how long/how many events.
+5. **`VendorErasure.erase()` emits no span** tying shred → rebuild → subdomain
+   removal together on a compliance-critical path.
+6. **`exception.slug` values are unenforced convention** — string literals at
+   call sites; a typo'd seventh slug would silently escape Honeycomb queries.
+7. **No metrics pipeline** — traces only; every SLO is a query over span
+   attributes.
+8. **No sampling** — `ParentBased(AlwaysOn)`; 100% export. Fine at current
+   volume; a cost cliff later.
 
-1. **`admin-api` has no tracing at all.** No `tracing.ts`, no OTel import, no SDK
-   bootstrap. It writes to the same Postgres (`SubdomainRegistry`) and creates Auth0
-   users entirely untraced. Every span-based invariant above applies to `apps/api`
-   only. This is the largest gap by surface area.
-
-2. **The projection⇄checkpoint transaction is invisible.** `PollingSubscription` wraps
-   `handle` + `checkpoint.advance` in `unitOfWork.transaction`, but only the inner
-   `handle` un-suppresses. `BEGIN`, `COMMIT` and the checkpoint `UPDATE` produce no
-   spans. The mechanism that makes projection writes atomic — the thing most worth
-   watching for lock contention — is the one thing you cannot see.
-
-3. **`loadFrom` and `head` are unspanned**, and run under suppression, so their pg
-   spans are dropped too. A slow or failing catch-up query surfaces only as a slow
-   `subscription poll` span with no detail. Deliberate (it is what §10.4 buys) but the
-   cost is real: the most-executed store operation in the system is opaque.
-
-4. **`Subscriptions.rebuild()` emits no span of its own.** A rebuild clears a read
-   model and replays the entire log — the single most impactful operation available,
-   and the one behind GDPR erasure. Nothing records that a rebuild happened, which
-   projection, how long `reset()` took, or how many events were replayed. Given the
-   documented read-availability window during a rebuild ([`DEFERRED.md`](DEFERRED.md)
-   § Scoped projection reset), this is worth a span.
-
-5. **`VendorErasure.erase()` emits no span.** Three steps — shred, rebuild, remove
-   subdomain — on a compliance-critical path, with no trace tying them together. A
-   partial failure has to be reconstructed from pg spans.
-
-6. **`event-store load` has no error path.** Alone among the application spans it wraps
-   its work in `try`/`finally` with no `catch`, so a failing rehydration produces a span
-   that looks successful — no `exception.slug`, no recorded exception, no ERROR status.
-   Any "which store operations are failing?" query silently excludes reads.
-
-7. **`exception.slug` is an unenforced convention.** Five slugs, five string literals,
-   no shared constant and no lint rule. A sixth spelled differently would silently
-   escape any Honeycomb query built on the field.
-
-8. **`DomainErrorFilter` annotates nothing.** It converts a `DomainError` into a 400
-   without touching the active span. In practice the dispatch span already recorded the
-   exception on the way out, so this is minor — but the filter is the last place that
-   knows the error became a *client* error rather than a server fault, and it drops
-   that distinction.
-
-9. **No metrics pipeline.** The exporter is `exporter-trace-otlp-proto` — traces only.
-   `subscription.lag` and `processing.lag_ms` are span attributes, so every SLO is a
-   query over spans. Any true counter or gauge needs a new pipeline.
-
-10. **No sampling.** No `OTEL_TRACES_SAMPLER` is set in `render.yaml` or anywhere else,
-    so `NodeSDK` falls back to `ParentBased(AlwaysOn)` and 100% of spans are exported to
-    Honeycomb. Fine at current volume; a cost cliff later.
-
-**Already tracked in [`O11Y-PLAN.md`](O11Y-PLAN.md)** — not repeated here beyond the
-pointer: per-type payload attribute extractors (step 4, value-gated); stuck-subscription
-alerting (step 5, evidence-gated, with a ready design); OTel Collector and tail-based
-sampling (deferred per ADR 0026).
+Tracked separately in [`O11Y-PLAN.md`](O11Y-PLAN.md): payload attribute
+extractors, stuck-subscription alerting, Collector/tail-sampling.
 
 ### 10.6 Testing spans
 
 `apps/api/src/app/testing/span-capture.ts` registers a hermetic test-only
-`NodeTracerProvider` + `InMemorySpanExporter` + `SimpleSpanProcessor`, once per process,
-with no auto-instrumentation — so `getFinishedSpans()` contains only application spans.
-Mechanism is tested synthetically at the decorator level; real-domain social tests are
-reserved for spans handed content-bearing messages, where an exact-match assertion is a
-genuine PII guard.
+provider + `InMemorySpanExporter`, no auto-instrumentation, so
+`getFinishedSpans()` contains only application spans.
 
 ---
 
 ## 11. Testing strategy
 
-- **Contract suites** (`test/src/**/*.contract.ts`) — one suite, run against both the
-  in-memory and Postgres adapters, so the fake and the real thing cannot drift. Eight of
-  them: `eventStoreContract`, `eventsContract`, `checkpointContract`,
-  `subscriptionContract`, `dataKeysContract` over the ports, plus
-  `catalogueViewsContract`, `marketScheduleViewsContract` and
-  `vendorStorefrontViewsContract` over the read models.
-- **Container specs** (`*.container.spec.ts`) — real Postgres via testcontainers, run
-  from a separate vitest config (`test:container`), excluded from the fast suite.
+- **Contract suites** (`test/src/**/*.contract.ts`) — one suite run against both
+  the in-memory and Postgres adapters, so the fake and the real thing cannot
+  drift: `eventStoreContract` (also instantiated over the `LineageEventStore`
+  and `ShreddingEventStore` compositions), `eventsContract`,
+  `checkpointContract`, `subscriptionContract` (includes a >1-batch backlog
+  drain case), `dataKeysContract`, plus the three read-model contracts.
+- **Container specs** (`*.container.spec.ts`) — real Postgres via
+  testcontainers, separate vitest config (`test:container`), excluded from the
+  fast suite.
 - **API specs** (`apps/api/**/*.spec.ts`) — full Nest app over supertest on the
-  in-memory profile, with `POLLING_ENABLED` overridden to `false` and
-  `Subscriptions.drain()` driving delivery deterministically.
-
-`drain()` runs N rounds where N is the consumer count, so a processor's events reach
-downstream projections within one call.
+  in-memory profile, `POLLING_ENABLED` off, `Subscriptions.drain()` driving
+  delivery deterministically.
+- **Mutation testing** — nightly Stryker over the fast suite
+  (`stryker.conf.mjs`, `.github/workflows/mutation.yml`), informational (no
+  break threshold). Scope is honest by design: container-only Postgres adapters
+  are excluded so the score means "how well does the fast suite own the code it
+  claims"; coverage reports `all: true` so wholly-untested files show as 0%
+  instead of vanishing.
 
 ---
 
@@ -777,6 +525,7 @@ downstream projections within one call.
 | Domain primitives | `packages/event-sourcing/src/domain/` |
 | Adapters | `packages/event-sourcing/src/adapters/{in-memory,postgres}/` |
 | Cross-cutting stores | `packages/event-sourcing/src/adapters/{lineage,shredding}.event-store.ts` |
+| Master keyring | `packages/event-sourcing/src/adapters/postgres/master-keyring.ts` + `apps/api/.../event-sourcing/master-keyring.ts` (config parsing) |
 | Aggregates + repositories | `packages/market-days/src/<aggregate>/` |
 | Projections + read models | `packages/market-days/src/<name>-view/` |
 | Composition root | `apps/api/src/app/app.module.ts` |
@@ -787,8 +536,13 @@ downstream projections within one call.
 
 ### Related ADRs
 
-0002 (event sourcing + CQRS) · 0005 (single events table) · 0009 (stream-per-aggregate)
-· 0010 (repositories) · 0014 (payload vs metadata) · 0015 (polling subscriptions,
-amended) · 0016 (read-model port segregation) · 0025 (crypto-shredding) · 0026
-(observability) · 0028 (serialised appends) · 0029 (Postgres adapters) · 0030
-(LISTEN/NOTIFY)
+0002 (event sourcing + CQRS) · 0005 (single events table) · 0009
+(stream-per-aggregate) · 0010 (repositories) · 0014 (payload vs metadata) ·
+0015 (polling subscriptions, amended) · 0016 (read-model port segregation) ·
+0025 (crypto-shredding) · 0026 (observability) · 0028 (serialised appends) ·
+0029 (Postgres adapters) · 0030 (LISTEN/NOTIFY) · 0034 (atomic appends,
+verified commit) · 0035 (appends join the ambient unit of work) · 0036
+(compare-and-set checkpoints) · 0037 (nested transactions join) · 0038
+(in-memory single log) · 0039 (shredding reads degrade, writes strict) · 0040
+(master keyring, lazy re-wrap) · 0041 (AAD v2 binds stream position) · 0042
+(LISTEN lifecycle)
