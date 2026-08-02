@@ -15,13 +15,18 @@ const handlerTracer = trace.getTracer('event-handler');
 const BATCH_SIZE = 100;
 
 export class PollingSubscription implements Subscription {
+  private readonly unitOfWork: UnitOfWork;
+  private readonly name: string;
+
   constructor(
     private readonly events: Events,
     private readonly handler: EventHandler,
     private readonly checkpoint: Checkpoint,
-    private readonly unitOfWork: UnitOfWork = UnitOfWork.none(),
-    private readonly name = 'subscription',
-  ) {}
+    { unitOfWork = UnitOfWork.none(), name = 'subscription' }: { unitOfWork?: UnitOfWork; name?: string } = {},
+  ) {
+    this.unitOfWork = unitOfWork;
+    this.name = name;
+  }
 
   // One span per polling cycle, and only one: an idle poll is two "is there anything
   // new?" queries whose auto-instrumented spans (pg, dns, tcp) outnumbered every other

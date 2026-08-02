@@ -11,6 +11,7 @@ export {
   CheckpointedProcessor,
   checkpointMetadata,
 } from './domain/checkpointed.decorator';
+export type { CheckpointKind } from './domain/checkpointed.decorator';
 export type { Processor } from './domain/processor';
 export { CommandGateway } from './ports/command-gateway';
 export { QueryGateway } from './ports/query-gateway';

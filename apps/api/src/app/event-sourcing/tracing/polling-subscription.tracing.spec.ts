@@ -57,7 +57,7 @@ function storedEvent(metadata?: Record<string, unknown>): StoredEvent {
 }
 
 function subscription(events: Events, handler: EventHandler = new StubHandler()) {
-  return new PollingSubscription(events, handler, new InMemoryCheckpoint('sub-1'), undefined, 'catalogue');
+  return new PollingSubscription(events, handler, new InMemoryCheckpoint('sub-1'), { name: 'catalogue' });
 }
 
 function deliver(event: StoredEvent, handler?: EventHandler) {

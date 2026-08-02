@@ -1,4 +1,4 @@
-type CheckpointKind = 'projection' | 'processor';
+export type CheckpointKind = 'projection' | 'processor';
 
 type CheckpointMetadata = { name: string; kind: CheckpointKind };
 
