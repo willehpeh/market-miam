@@ -18,7 +18,6 @@ export { Subscription } from './ports/subscription';
 export { Checkpoint } from './ports/checkpoint';
 export { Lineage, LineageIds } from './ports/lineage';
 export { LineageDispatcher } from './adapters/lineage.dispatcher';
-export { LineageEventStore } from './adapters/lineage.event-store';
 export { InMemoryEventStore } from './adapters/in-memory/in-memory.event-store';
 export { DataKeys } from './ports/data-keys';
 export { InMemoryDataKeys } from './adapters/in-memory/in-memory.data-keys';
