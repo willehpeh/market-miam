@@ -35,6 +35,7 @@ export { PollingSubscription } from './adapters/polling.subscription';
 export { UnitOfWork } from './ports/unit-of-work';
 export { withSpan } from './adapters/with-span';
 export { TracingEventStore } from './adapters/tracing.event-store';
+export { ApplicationEventStore } from './adapters/application.event-store';
 export { PostgresUnitOfWork } from './adapters/postgres/postgres.unit-of-work';
 export { Queryable } from './adapters/postgres/queryable';
 export * from './domain/event-handler-map';

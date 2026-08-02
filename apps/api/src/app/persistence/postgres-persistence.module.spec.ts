@@ -16,7 +16,7 @@ import {
 } from '@market-miam/market-days';
 import { StaticTokenVerifier } from '@market-miam/auth';
 import { AuthModule } from '@market-miam/auth-nestjs';
-import { ApplicationEventStore } from '../event-sourcing/application.event-store';
+import { ApplicationEventStore } from '@market-miam/event-sourcing';
 import { EventSourcingModule } from '../event-sourcing/event-sourcing.module';
 import { MarketDaysModule } from '../market-days/market-days.module';
 import { testVendor } from '../testing/api-test-app';
