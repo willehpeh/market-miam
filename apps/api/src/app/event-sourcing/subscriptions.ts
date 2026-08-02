@@ -12,10 +12,10 @@ import {
   PollingSubscription,
   Projection,
   Subscription,
+  TracingEventHandler,
+  TracingSubscription,
   UnitOfWork
 } from '@market-miam/event-sourcing';
-import { TracingEventHandler } from './tracing/event-handler';
-import { TracingSubscription } from './tracing/subscription';
 import { ContinuedLineageHandler } from '../lineage/continued-lineage.handler';
 import { pollSchedule } from './poll-schedule';
 

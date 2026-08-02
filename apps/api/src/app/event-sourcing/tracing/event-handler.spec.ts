@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { context, SpanStatusCode, trace } from '@opentelemetry/api';
 import { suppressTracing } from '@opentelemetry/core';
-import { EventHandler, StoredEvent } from '@market-miam/event-sourcing';
-import { TracingEventHandler } from './event-handler';
+import { EventHandler, StoredEvent, TracingEventHandler } from '@market-miam/event-sourcing';
+
 import { registerSpanCapture } from '../../testing/span-capture';
 
 const exporter = registerSpanCapture();
