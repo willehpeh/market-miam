@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
   ApplicationEventStore,
-  InMemoryDataKeys,
   InMemoryEventStore,
   Lineage,
   LineageDispatcher,
@@ -12,7 +11,7 @@ describe('Lineage propagation', () => {
     const ids = stubIds(['root-1']);
     const store = new InMemoryEventStore();
     const context = new Lineage();
-    const contextualStore = new ApplicationEventStore(store, new InMemoryDataKeys(), {}, context);
+    const contextualStore = new ApplicationEventStore(store, context);
     const dispatcher = new LineageDispatcher(context, ids);
 
     await dispatcher.dispatch(async () => {

@@ -1,11 +1,9 @@
 import { isSpanContextValid, Span, trace } from '@opentelemetry/api';
-import { DataKeys } from '../ports/data-keys';
 import { DomainEvent } from '../domain/domain-event';
 import { Events } from '../ports/events';
 import { EventStore } from '../ports/event-store';
 import { Lineage } from '../ports/lineage';
 import { StoredEvent } from '../domain/stored-event';
-import { PiiFields, ShreddingEventStore } from './shredding.event-store';
 import { withSpan } from './with-span';
 
 const tracer = trace.getTracer('event-store');
@@ -20,18 +18,20 @@ function traceparentOf(span: Span): string | undefined {
   return `00-${traceId}-${spanId}-${traceFlags.toString(16).padStart(2, '0')}`;
 }
 
-// The event store an application should be wired to: a leaf adapter (in-memory or
-// postgres) behind PII shredding, with the cross-cutting stamps — lineage
-// (correlation/causation) and tracing (span per append/load, traceparent into
-// metadata) — applied inline. Tracing and lineage carry their own off switches
-// (no SDK → no-op tracer, no dispatch → no ids), so neither needs a seam of its
-// own; shredding stays a separate object for its isolated crypto tests.
+// The event store an application should be wired to: the cross-cutting stamps —
+// lineage (correlation/causation) and tracing (span per append/load, traceparent
+// into metadata) — applied inline over whatever store the composition root
+// injects (in production: the PII shredder around a leaf adapter). Tracing and
+// lineage carry their own off switches (no SDK → no-op tracer, no dispatch → no
+// ids), so neither needs a seam of its own. The shredder is injected, not built
+// here: which metadata key names the PII subject is application policy, and it
+// stays in the composition root.
 export class ApplicationEventStore extends EventStore implements Events {
-  private readonly store: ShreddingEventStore;
-
-  constructor(inner: EventStore & Events, keys: DataKeys, pii: PiiFields, private readonly lineage: Lineage) {
+  constructor(
+    private readonly store: EventStore & Events,
+    private readonly lineage: Lineage,
+  ) {
     super();
-    this.store = new ShreddingEventStore(inner, keys, pii, 'vendorId');
   }
 
   append(

@@ -26,8 +26,9 @@ opinion (ADR 0044) — it instruments itself via the no-op-safe
   environment (the app wires in-memory only for local dev); exported and
   contract-tested.
 - **Composed store** — `ApplicationEventStore`: the store an app wires in.
-  Tracing spans, `traceparent` and lineage ids inline, PII shredding
-  (`ShreddingEventStore`) around the injected leaf adapter.
+  Tracing spans, `traceparent` and lineage ids inline, over an injected
+  inner store (in production: `ShreddingEventStore` around a leaf adapter,
+  composed by the app — the PII subject key is application policy).
 - **Decorators / wrappers** — `@CheckpointedProjection` / `@CheckpointedProcessor`
   (discovery + checkpoint name), `LineageDispatcher`.
 

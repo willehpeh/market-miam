@@ -10,6 +10,7 @@ import {
   Lineage,
   PiiFields,
   QueryGateway,
+  ShreddingEventStore,
 } from '@market-miam/event-sourcing';
 import { LineageModule } from '../lineage/lineage.module';
 import { TracingCommandGateway } from './tracing/command-gateway';
@@ -33,9 +34,11 @@ export class EventSourcingModule {
       imports: [CqrsModule, DiscoveryModule, LineageModule],
       providers: [
         {
+          // 'vendorId' names the PII subject in append metadata — application
+          // policy, decided here, not in the package.
           provide: EventStore,
           useFactory: (inner: EventStore & Events, keys: DataKeys, lineage: Lineage) =>
-            new ApplicationEventStore(inner, keys, piiFields, lineage),
+            new ApplicationEventStore(new ShreddingEventStore(inner, keys, piiFields, 'vendorId'), lineage),
           inject: [PERSISTED_EVENTS, DataKeys, Lineage],
         },
         { provide: Events, useExisting: EventStore },

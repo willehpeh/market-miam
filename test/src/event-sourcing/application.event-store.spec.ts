@@ -4,7 +4,6 @@ import {
   DomainEvent,
   Events,
   EventStore,
-  InMemoryDataKeys,
   Lineage,
   StoredEvent,
 } from '@market-miam/event-sourcing';
@@ -41,8 +40,7 @@ class RecordingStore extends EventStore implements Events {
 
 const event: DomainEvent = { type: 'TestEvent', payload: {}, version: 1 };
 
-const composed = (inner: EventStore & Events) =>
-  new ApplicationEventStore(inner, new InMemoryDataKeys(), {}, new Lineage());
+const composed = (inner: EventStore & Events) => new ApplicationEventStore(inner, new Lineage());
 
 describe('ApplicationEventStore without a tracing SDK', () => {
   it('does not persist the no-op tracer’s invalid all-zero context as a traceparent', async () => {

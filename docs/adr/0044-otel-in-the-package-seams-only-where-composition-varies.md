@@ -49,7 +49,9 @@ a span id. The two systems disagree at the commit boundary on purpose.
   continues to mean Nest-free.
 - **`ApplicationEventStore` (package) is the composed store**: span per
   append/load, `traceparent` and lineage ids stamped inline, delegating to
-  a `ShreddingEventStore` it constructs around the injected leaf.
+  the store the composition root injects — in production a
+  `ShreddingEventStore` around the leaf, built by the api because the PII
+  subject key (`'vendorId'`) is application policy, not package knowledge.
   `TracingEventStore` and `LineageEventStore` are dissolved into it.
 - **`PollingSubscription` owns both spans of the consumer cycle**: the
   suppressed poll span (with the lag gauge it can now compute itself —
