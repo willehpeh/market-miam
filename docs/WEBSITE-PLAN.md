@@ -214,4 +214,4 @@ Capture: same demo account as the storefront shot so names match; ~1200px wide; 
 *(2026-08-02: `MARKET_MIAM.md` was refreshed — the superseded brought/left post-market model is corrected there.)*
 
 - `docs/MARKET_MIAM.md` lists *pricing tiers and feature gating* as an Open Item. It blocks the 50 € tier above, and it's the reason that tier stays off the page.
-- INPI/EUIPO check on the "Market Miam" name still outstanding (`docs/MARKET_MIAM.md`).
+- Trademark: INPI check clear, registration requested 2026-08, confirmation pending (`docs/MARKET_MIAM.md`).

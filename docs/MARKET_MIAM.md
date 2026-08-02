@@ -151,14 +151,14 @@ Subscription-based (monthly fee) rather than transaction-based (commission per o
 
 ## Trademark Note
 
-The original name “Market Monster” carried a minor risk from Monster Beverage Corporation, which has filed over 1,000 trademark cases (including forcing Ubisoft to rename “Gods & Monsters”). The project was renamed to “Market Miam” to sidestep this; a formal check on INPI and EUIPO is **still outstanding**.
+The original name “Market Monster” carried a minor risk from Monster Beverage Corporation, which has filed over 1,000 trademark cases (including forcing Ubisoft to rename “Gods & Monsters”). The project was renamed to “Market Miam” to sidestep this. The INPI check came back **clear** (2026-08); trademark registration has been **requested and is awaiting confirmation**.
 
 ## Open Items
 
 - Customer-facing bounded context design (when customer signals land)
 - Notification mechanics (for item requests, sold-out alerts)
 - Pricing tiers and feature gating — blocks any public tier split (`WEBSITE-PLAN.md`)
-- INPI/EUIPO check on the name
+- Trademark registration confirmation (requested 2026-08; INPI check came back clear)
 
 *(Resolved since the vision draft: aggregate boundaries and invariants — see the
 aggregates above and `adr/`; projection strategy — polling subscriptions +
