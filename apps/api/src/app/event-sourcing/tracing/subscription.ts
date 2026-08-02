@@ -1,7 +1,6 @@
 import { context, Span, trace } from '@opentelemetry/api';
 import { suppressTracing } from '@opentelemetry/core';
-import { Subscription } from '@market-miam/event-sourcing';
-import { withSpan } from './with-span';
+import { Subscription, withSpan } from '@market-miam/event-sourcing';
 
 const tracer = trace.getTracer('subscription');
 

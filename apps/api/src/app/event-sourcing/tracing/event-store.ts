@@ -1,6 +1,5 @@
 import { isSpanContextValid, Span, trace } from '@opentelemetry/api';
-import { DomainEvent, Events, EventStore, StoredEvent } from '@market-miam/event-sourcing';
-import { withSpan } from './with-span';
+import { DomainEvent, Events, EventStore, StoredEvent, withSpan } from '@market-miam/event-sourcing';
 
 const tracer = trace.getTracer('event-store');
 

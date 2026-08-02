@@ -1,7 +1,6 @@
 import { context, isSpanContextValid, Span, SpanContext, trace } from '@opentelemetry/api';
 import { unsuppressTracing } from '@opentelemetry/core';
-import { EventHandler, StoredEvent } from '@market-miam/event-sourcing';
-import { withSpan } from './with-span';
+import { EventHandler, StoredEvent, withSpan } from '@market-miam/event-sourcing';
 
 const tracer = trace.getTracer('event-handler');
 

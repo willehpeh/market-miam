@@ -1,8 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Query, QueryBus } from '@nestjs/cqrs';
 import { trace } from '@opentelemetry/api';
-import { QueryGateway } from '@market-miam/event-sourcing';
-import { withSpan } from './with-span';
+import { QueryGateway, withSpan } from '@market-miam/event-sourcing';
 
 const tracer = trace.getTracer('query-gateway');
 
