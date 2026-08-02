@@ -13,7 +13,6 @@ import {
   Projection,
   Subscription,
   TracingEventHandler,
-  TracingSubscription,
   UnitOfWork
 } from '@market-miam/event-sourcing';
 import { ContinuedLineageHandler } from '../lineage/continued-lineage.handler';
@@ -121,20 +120,12 @@ export class Subscriptions implements OnApplicationBootstrap, OnApplicationShutd
       const checkpoint = this.checkpointFor(name);
       const driven =
         kind === 'processor' ? new ContinuedLineageHandler(handler, this.lineage) : handler;
-      const subscription = new TracingSubscription(
-        new PollingSubscription(
-          this.events,
-          new TracingEventHandler(driven),
-          checkpoint,
-          this.unitOfWork,
-        ),
+      const subscription = new PollingSubscription(
+        this.events,
+        new TracingEventHandler(driven),
+        checkpoint,
+        this.unitOfWork,
         name,
-        // Checkpoint before head: both only advance, so reading the consumer's
-        // position first cannot make it look ahead of a log read later.
-        async () => {
-          const position = await checkpoint.read();
-          return (await this.events.head()) - position;
-        },
       );
       return { name, kind, handler, checkpoint, subscription };
     });
