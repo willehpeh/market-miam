@@ -13,7 +13,7 @@ import {
   VendorStorefrontViews,
   VendorStorefrontViewStore,
 } from '@market-miam/market-days';
-import { PERSISTED_EVENTS } from '../event-sourcing/application.event-store';
+import { PERSISTED_EVENTS } from '../event-sourcing/event-sourcing.module';
 import { EVENT_NOTIFICATIONS, POLL_INTERVAL } from '../event-sourcing/subscriptions';
 
 // Every adapter the memory profile plugs in — nothing here survives a restart.

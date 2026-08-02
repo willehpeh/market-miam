@@ -6,12 +6,15 @@ remaining o11y work in [`O11Y-PLAN.md`](O11Y-PLAN.md); open questions in the
 root [`NEXT_BEHAVIOURS.md`](../NEXT_BEHAVIOURS.md) (rationale:
 [`archive/DEFERRED.md`](archive/DEFERRED.md)).
 
-- **`packages/event-sourcing`** — the mechanism. Framework-free: no Nest, no OTel.
+- **`packages/event-sourcing`** — the mechanism. Nest-free; OTel is its opinion
+  (the `@opentelemetry/api` facade is no-op safe without an SDK, so the package
+  instruments itself and stays inert in tests).
 - **`packages/market-days`** — the domain. Aggregates, projections, read models.
-- **`apps/api`** — the composition root. Nest wiring, tracing, profile selection.
+- **`apps/api`** — the composition root. Nest wiring, gateway tracing, profile
+  selection, and the OTel SDK bootstrap that makes the package's spans real.
 
-The split recurs at every layer: a plain class in the package, a decorator in the
-app adding framework lifecycle and instrumentation.
+The split at every layer: plain classes in the package, Nest lifecycle and DI in
+the app. Seams exist only where composition actually varies (ADR 0044).
 
 ---
 
@@ -59,11 +62,14 @@ interface is erased at runtime and cannot be a Nest injection token.
 | **Port** — injected under this token | `abstract class` | `EventStore`, `Events`, `Checkpoint`, `DataKeys`, `UnitOfWork`, `CommandGateway`, `QueryGateway`, `Subscription`, `*ViewStore`, `*Views` |
 | **Contract** — a shape implementations satisfy, never injected | `interface` | `EventHandler`, `Projection`, `Processor`, `Queryable` |
 
-Composition comes in three named forms: **decorator chains** (same port, wrapped
-repeatedly, one concern per layer), **template method** (a base with exactly one
-hole: `Aggregate.apply`, `ProjectionFor.handlers`, `VendorScopedRepository`), and
-**runtime metadata** (a `WeakMap` keyed by constructor:
-`@CheckpointedProjection` / `@CheckpointedProcessor`).
+Composition comes in three named forms: **seams where composition varies** (the
+leaf store behind `PERSISTED_EVENTS`, the shredder as a separate object for its
+isolated crypto tests, `ContinuedLineageHandler` applied per handler kind —
+unconditional concerns like tracing and lineage stamping are inlined instead,
+ADR 0044), **template method** (a base with exactly one hole: `Aggregate.apply`,
+`ProjectionFor.handlers`, `VendorScopedRepository`), and **runtime metadata**
+(a `WeakMap` keyed by constructor: `@CheckpointedProjection` /
+`@CheckpointedProcessor`).
 
 ---
 
@@ -97,9 +103,9 @@ lookup, `vendorIdFrom(event)` in projections, and the `vendor.id` span attribute
 factory. `MarketDays` composes `VendorScopedEvents` directly instead — its
 stream id needs `date + vendor + market`.
 
-### 3.3 The event store decorator chain
+### 3.3 The composed event store
 
-Two ports, deliberately separate; every wrapper implements both
+Two ports, deliberately separate; every layer implements both
 (`EventStore & Events`) so it is transparent to the write path and the catch-up
 path alike:
 
@@ -110,24 +116,22 @@ Events      →  loadFrom(globalPosition, limit) / head()
 
 ```mermaid
 flowchart TB
-    APP["ApplicationEventStore<br/><i>extends TracingEventStore</i>"]
-    T["TracingEventStore<br/>+ span, + traceparent into metadata"]
-    L["LineageEventStore<br/>+ correlationId / causationId"]
+    APP["ApplicationEventStore<br/>span per append/load, traceparent +<br/>correlationId/causationId into metadata"]
     S["ShreddingEventStore<br/>+ encrypt PII payload fields"]
     LEAF["PERSISTED_EVENTS<br/>InMemoryEventStore | PostgresEventStore"]
 
-    APP -.->|is| T
-    T --> L
-    L --> S
+    APP --> S
     S --> LEAF
 ```
 
-Ordering is not arbitrary: **tracing outermost** (mints the span and writes
-`traceparent` into metadata before delegating, so the trace id reaches the row),
-**lineage next** (stamps ambient ids; adds nothing outside a dispatch, staying a
-faithful `EventStore`), **shredding innermost** (encrypts closest to
-persistence, so plaintext never reaches the leaf). Only `append` and `load` are
-meaningfully decorated; `loadFrom`/`head` pass through untouched ([§10.5](#105-gaps)).
+`ApplicationEventStore` owns the cross-cutting stamps inline — tracing and
+lineage were once separate decorators, but their optionality was never
+compositional: no SDK → no-op tracer, no dispatch → no ids (ADR 0044). The two
+seams that remain vary in fact: **shredding** stays a separate object so its
+crypto edge cases (AAD versions, tamper detection, key-miss degradation) test in
+isolation, and encrypts closest to persistence so plaintext never reaches the
+leaf; the **leaf** is the profile seam. Only `append` and `load` are
+meaningfully instrumented; `loadFrom`/`head` pass through untouched ([§10.5](#105-gaps)).
 
 One instance under both tokens:
 `{ provide: EventStore, useFactory } · { provide: Events, useExisting: EventStore }`.
@@ -169,8 +173,8 @@ its absence):
 | Key | Written by | Used by |
 |---|---|---|
 | `vendorId` | `VendorScopedEvents` | shredding subject, `vendorIdFrom`, `vendor.id` attribute |
-| `correlationId` / `causationId` | `LineageEventStore` | `ContinuedLineageHandler`, dispatch spans |
-| `traceparent` | `TracingEventStore` | `TracingEventHandler` span link |
+| `correlationId` / `causationId` | `ApplicationEventStore` | `ContinuedLineageHandler`, dispatch spans |
+| `traceparent` | `ApplicationEventStore` | handler span link (`PollingSubscription`) |
 
 ---
 
@@ -209,8 +213,8 @@ over it until handled. `eventTypes()` is derived from `Object.keys()` of the
 same map, so the subscription's filter cannot drift from the dispatch table.
 `handle()` indexes the map with a cast — safe only because
 `PollingSubscription` filters on `eventTypes()` first. That is a
-**collaboration invariant**: every handler decorator must forward `eventTypes()`
-faithfully, not just `handle()`.
+**collaboration invariant**: any handler wrapper (`ContinuedLineageHandler` is
+the one that exists) must forward `eventTypes()` faithfully, not just `handle()`.
 
 Consumer kind is runtime metadata, not type: `@CheckpointedProjection('name')` /
 `@CheckpointedProcessor('name')` populate a `WeakMap`. The checkpoint name is
@@ -231,18 +235,20 @@ rejects duplicate names at bootstrap.
 
 ```mermaid
 flowchart TB
-    TS["TracingSubscription<br/>one span per poll + lag gauge"]
-    PS["PollingSubscription<br/>batch loop, type filter, checkpoint"]
-    TEH["TracingEventHandler<br/>span per handled event + producer link"]
+    PS["PollingSubscription<br/>poll span + lag gauge, batch loop, type filter,<br/>checkpoint, handler span + producer link"]
     CLH["ContinuedLineageHandler<br/><i>processors only</i>"]
     H["the Projection / Processor"]
 
-    TS --> PS
-    PS --> TEH
-    TEH --> CLH
+    PS --> CLH
     CLH --> H
-    TEH -.->|"projections skip CLH"| H
+    PS -.->|"projections skip CLH"| H
 ```
+
+`PollingSubscription` owns both spans of the cycle — the suppressed poll span
+and the per-event handler span that lifts the suppression — so the pairing that
+was once a cross-class collaboration is two visible lines in one file
+(ADR 0044). `ContinuedLineageHandler` stays a wrapper because it is the one
+genuinely conditional layer, chosen per handler kind at discovery time.
 
 ### 7.2 The poll cycle
 
@@ -359,9 +365,13 @@ the gap. `TracingPostgresNotifications` (app) wraps it with lifecycle wiring and
 
 ### 9.1 Lineage
 
-`Lineage` is an `AsyncLocalStorage` wrapper; domain code never sees it.
+`Lineage` is an `AsyncLocalStorage` wrapper; domain code never sees it. It is
+deliberately **not** OTel context: lineage is durable provenance written into
+the log, total and unconditional, where traces are sampled, retention-bound and
+absent without an SDK — and the consumer side deliberately breaks the trace
+(new root per handled event) exactly where lineage must survive (ADR 0044).
 `LineageMiddleware` mints `correlationId = causationId = uuid` per dispatch;
-`LineageEventStore` stamps the ambient ids into append metadata;
+`ApplicationEventStore` stamps the ambient ids into append metadata;
 `ContinuedLineageHandler` wraps **processors only** (projections dispatch
 nothing), setting `correlationId` from the consumed event's metadata and
 `causationId = event.id` — so a processor's dispatched commands append with the
@@ -428,10 +438,10 @@ patch `@nestjs`, `express`, `http`, `pg`. Exporter: `OTLPTraceExporter`
 |---|---|---|---|
 | `<CommandName>` | `TracingCommandGateway` | child of request | `command.name`, `app.correlation_id`, `app.causation_id` |
 | `<QueryName>` | `TracingQueryGateway` | child of request | `query.name` |
-| `event-store append` | `TracingEventStore` | child of dispatch | `event.type`, `event.count`, `stream_id`, `vendor.id` |
-| `event-store load` | `TracingEventStore` | active | `stream_id`, `event.count` |
-| `subscription poll` | `TracingSubscription` | **root** | `subscription.name`, `subscription.lag` |
-| `event-handler handle` | `TracingEventHandler` | **root + link to producer** | `event.type`, `processing.lag_ms`, `vendor.id`, `app.correlation_id`, `app.causation_id` |
+| `event-store append` | `ApplicationEventStore` | child of dispatch | `event.type`, `event.count`, `stream_id`, `vendor.id` |
+| `event-store load` | `ApplicationEventStore` | active | `stream_id`, `event.count` |
+| `subscription poll` | `PollingSubscription` | **root** | `subscription.name`, `subscription.lag` |
+| `event-handler handle` | `PollingSubscription` | **root + link to producer** | `event.type`, `processing.lag_ms`, `vendor.id`, `app.correlation_id`, `app.causation_id` |
 | `pg-listen <state>` | `TracingPostgresNotifications` | marker | `listen.state`, `reconnect.attempt`, `error.message` |
 
 Everything else comes from auto-instrumentation. Failure enrichment is one
@@ -445,11 +455,11 @@ command contents — pinned by an exact-match attribute assertion in
 
 ### 10.3 Trace continuity across the commit boundary
 
-The write path is one trace. `TracingEventStore` serialises its own span context
-as `00-<traceId>-<spanId>-<flags>` into metadata — skipped when the context is
-invalid (no SDK registered → no-op tracer → all-zero ids), so a garbage
-traceparent never reaches the log. `TracingEventHandler` starts a **new root**
-trace per consumed event with a *link* back (strict-regex parse;
+The write path is one trace. `ApplicationEventStore` serialises its own span
+context as `00-<traceId>-<spanId>-<flags>` into metadata — skipped when the
+context is invalid (no SDK registered → no-op tracer → all-zero ids), so a
+garbage traceparent never reaches the log. `PollingSubscription` starts a
+**new root** trace per consumed event with a *link* back (strict-regex parse;
 malformed/absent/all-zero → no link, so replay never resurrects a dead trace). Links, not
 parents, keep traces bounded under processor→command fan-out.
 `processing.lag_ms` = handle-time − commit-time — the read-model freshness SLO
@@ -458,9 +468,10 @@ parents, keep traces bounded under processor→command fan-out.
 ### 10.4 The suppression dance
 
 Idle polls' auto-instrumented pg/dns/tcp spans outnumbered real spans ~1000:1.
-`TracingSubscription.poll()` runs the whole poll under `suppressTracing`;
-`TracingEventHandler` lifts suppression exactly when an event is actually
-handled. Detail is dropped when nothing happened, restored when there is work.
+`PollingSubscription.poll()` runs the whole poll under `suppressTracing` and
+lifts the suppression exactly when an event is actually handled — both halves
+of the pairing live in that one class. Detail is dropped when nothing
+happened, restored when there is work.
 The lag gauge (`head() − checkpoint.read()`) is read before the poll — `poll()`
 drains, so after would always gauge zero; a gauge failure sets
 `subscription.lag_unavailable` rather than failing the poll.
@@ -499,7 +510,7 @@ provider + `InMemorySpanExporter`, no auto-instrumentation, so
 
 - **Contract suites** (`test/src/**/*.contract.ts`) — one suite run against both
   the in-memory and Postgres adapters, so the fake and the real thing cannot
-  drift: `eventStoreContract` (also instantiated over the `LineageEventStore`
+  drift: `eventStoreContract` (also instantiated over the `ApplicationEventStore`
   and `ShreddingEventStore` compositions), `eventsContract`,
   `checkpointContract`, `subscriptionContract` (includes a >1-batch backlog
   drain case), `dataKeysContract`, plus the three read-model contracts.
@@ -525,14 +536,14 @@ provider + `InMemorySpanExporter`, no auto-instrumentation, so
 | Ports | `packages/event-sourcing/src/ports/` |
 | Domain primitives | `packages/event-sourcing/src/domain/` |
 | Adapters | `packages/event-sourcing/src/adapters/{in-memory,postgres}/` |
-| Cross-cutting stores | `packages/event-sourcing/src/adapters/{lineage,shredding}.event-store.ts` |
+| Cross-cutting stores | `packages/event-sourcing/src/adapters/{application,shredding}.event-store.ts` |
 | Master keyring | `packages/event-sourcing/src/adapters/postgres/master-keyring.ts` + `apps/api/.../event-sourcing/master-keyring.ts` (config parsing) |
 | Aggregates + repositories | `packages/market-days/src/<aggregate>/` |
 | Projections + read models | `packages/market-days/src/<name>-view/` |
 | Composition root | `apps/api/src/app/app.module.ts` |
 | Profiles | `apps/api/src/app/persistence/` |
 | Subscription runner | `apps/api/src/app/event-sourcing/subscriptions.ts` |
-| Tracing decorators | `apps/api/src/app/event-sourcing/tracing/` |
+| Gateway tracing + LISTEN lifecycle | `apps/api/src/app/event-sourcing/tracing/` |
 | OTel bootstrap | `apps/api/src/tracing.ts` |
 
 ### Related ADRs

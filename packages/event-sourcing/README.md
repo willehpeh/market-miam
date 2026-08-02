@@ -1,8 +1,10 @@
 # event-sourcing
 
 A small event-sourcing kernel: ports (abstract classes used as DI tokens),
-in-memory adapters, and the `Aggregate` base. Framework-agnostic apart from the
-`CommandGateway` port, which types over `@nestjs/cqrs`.
+in-memory adapters, and the `Aggregate` base. Nest-free apart from the
+`CommandGateway` port, which types over `@nestjs/cqrs`; OTel is the package's
+opinion (ADR 0044) — it instruments itself via the no-op-safe
+`@opentelemetry/api` facade and stays inert wherever no SDK is registered.
 
 ## What's here
 
@@ -23,9 +25,12 @@ in-memory adapters, and the `Aggregate` base. Framework-agnostic apart from the
   key, for crypto-shredding). The runtime default in every non-development
   environment (the app wires in-memory only for local dev); exported and
   contract-tested.
+- **Composed store** — `ApplicationEventStore`: the store an app wires in.
+  Tracing spans, `traceparent` and lineage ids inline, over an injected
+  inner store (in production: `ShreddingEventStore` around a leaf adapter,
+  composed by the app — the PII subject key is application policy).
 - **Decorators / wrappers** — `@CheckpointedProjection` / `@CheckpointedProcessor`
-  (discovery + checkpoint name), `LineageEventStore`,
-  `LineageDispatcher`.
+  (discovery + checkpoint name), `LineageDispatcher`.
 
 ## Testing
 

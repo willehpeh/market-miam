@@ -2,6 +2,7 @@ import { DynamicModule, Module } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
 import { DiscoveryModule } from '@nestjs/core';
 import {
+  ApplicationEventStore,
   CommandGateway,
   DataKeys,
   Events,
@@ -9,12 +10,16 @@ import {
   Lineage,
   PiiFields,
   QueryGateway,
+  ShreddingEventStore,
 } from '@market-miam/event-sourcing';
-import { ApplicationEventStore, PERSISTED_EVENTS } from './application.event-store';
 import { LineageModule } from '../lineage/lineage.module';
 import { TracingCommandGateway } from './tracing/command-gateway';
 import { TracingQueryGateway } from './tracing/query-gateway';
 import { Subscriptions, POLLING_ENABLED } from './subscriptions';
+
+// The leaf adapter ApplicationEventStore wraps. One token for "whatever store the
+// profile plugs in", so the wrapping stays written once instead of once per profile.
+export const PERSISTED_EVENTS = Symbol('PERSISTED_EVENTS');
 
 // The profile-independent half of event sourcing: wrap whichever leaf store the
 // imported persistence module provides, and expose it as both the write port
@@ -29,9 +34,11 @@ export class EventSourcingModule {
       imports: [CqrsModule, DiscoveryModule, LineageModule],
       providers: [
         {
+          // 'vendorId' names the PII subject in append metadata — application
+          // policy, decided here, not in the package.
           provide: EventStore,
           useFactory: (inner: EventStore & Events, keys: DataKeys, lineage: Lineage) =>
-            new ApplicationEventStore(inner, keys, piiFields, lineage),
+            new ApplicationEventStore(new ShreddingEventStore(inner, keys, piiFields, 'vendorId'), lineage),
           inject: [PERSISTED_EVENTS, DataKeys, Lineage],
         },
         { provide: Events, useExisting: EventStore },

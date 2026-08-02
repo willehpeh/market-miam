@@ -1,8 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Command, CommandBus } from '@nestjs/cqrs';
 import { trace } from '@opentelemetry/api';
-import { CommandGateway, Lineage } from '@market-miam/event-sourcing';
-import { withSpan } from './with-span';
+import { CommandGateway, Lineage, withSpan } from '@market-miam/event-sourcing';
 
 const tracer = trace.getTracer('command-gateway');
 

@@ -50,3 +50,4 @@ detailed rationale in `docs/archive/DEFERRED.md`).
 | [0041](0041-aad-v2-binds-stream-position.md) | enc:v2 — the AAD binds the event's stream position | 2026-08-01 |
 | [0042](0042-listen-lifecycle-single-use-connection-object.md) | LISTEN lifecycle: single-use adapter, reified connection, boot rejects | 2026-08-01 |
 | [0043](0043-description-optional-for-publication.md) | A description is no longer a publication requirement | 2026-08-02 |
+| [0044](0044-otel-in-the-package-seams-only-where-composition-varies.md) | OTel is the package's opinion; seams only where composition varies | 2026-08-02 |

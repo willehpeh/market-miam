@@ -48,7 +48,7 @@ describe('transactional projection ↔ checkpoint', () => {
     const events = new PostgresEventStore(pg.pool);
     const views = new PostgresVendorStorefrontViews(uow);
     const checkpoint = new PostgresCheckpoint(uow, 'vendor-storefront-view');
-    const subscription = new PollingSubscription(events, new VendorStorefrontViewProjection(views), checkpoint, uow);
+    const subscription = new PollingSubscription(events, new VendorStorefrontViewProjection(views), checkpoint, { unitOfWork: uow });
 
     await events.append('storefront-v1', [opened], 0, { vendorId: 'v1' });
     await subscription.poll();
@@ -65,12 +65,12 @@ describe('transactional projection ↔ checkpoint', () => {
     await events.append('storefront-v1', [opened], 0, { vendorId: 'v1' });
 
     // First poll: the checkpoint write throws inside the per-event tx → both roll back.
-    await expect(new PollingSubscription(events, projection, new FailingCheckpoint(), uow).poll()).rejects.toThrow();
+    await expect(new PollingSubscription(events, projection, new FailingCheckpoint(), { unitOfWork: uow }).poll()).rejects.toThrow();
     expect(await views.findByVendor('v1')).toBeUndefined();
 
     // The checkpoint never advanced, so a clean retry replays and applies exactly once.
     const checkpoint = new PostgresCheckpoint(uow, 'vendor-storefront-view');
-    await new PollingSubscription(events, projection, checkpoint, uow).poll();
+    await new PollingSubscription(events, projection, checkpoint, { unitOfWork: uow }).poll();
 
     expect(await views.findByVendor('v1')).toEqual(emptyView);
     expect(await checkpoint.read()).toBeGreaterThan(0);
@@ -87,7 +87,7 @@ describe('transactional projection ↔ checkpoint', () => {
     const checkpoint = new PostgresCheckpoint(uow, 'vendor-storefront-view');
 
     await events.append('storefront-v1', [opened], 0, { vendorId: 'v1' });
-    await new PollingSubscription(events, new VendorStorefrontViewProjection(views), checkpoint, uow).poll();
+    await new PollingSubscription(events, new VendorStorefrontViewProjection(views), checkpoint, { unitOfWork: uow }).poll();
 
     await expect(
       uow.transaction(async () => {
@@ -111,7 +111,7 @@ describe('rebuild ↔ checkpoint reset', () => {
     uow: PostgresUnitOfWork,
   ): Promise<void> {
     await events.append('storefront-v1', [opened], 0, { vendorId: 'v1' });
-    await new PollingSubscription(events, projection, checkpoint, uow).poll();
+    await new PollingSubscription(events, projection, checkpoint, { unitOfWork: uow }).poll();
   }
 
   it('clears the view and resets the checkpoint together on success', async () => {

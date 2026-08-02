@@ -23,7 +23,7 @@ import {
   VendorStorefrontViews,
   VendorStorefrontViewStore,
 } from '@market-miam/market-days';
-import { PERSISTED_EVENTS } from '../event-sourcing/application.event-store';
+import { PERSISTED_EVENTS } from '../event-sourcing/event-sourcing.module';
 import { CHECKPOINT_FACTORY, EVENT_NOTIFICATIONS } from '../event-sourcing/subscriptions';
 import { TracingPostgresNotifications } from '../event-sourcing/tracing/postgres-notifications';
 import { masterKeyring } from '../event-sourcing/master-keyring';

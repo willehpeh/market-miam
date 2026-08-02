@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { DomainEvent, Events, EventStore, StoredEvent } from '@market-miam/event-sourcing';
-import { TracingEventStore } from './event-store';
+import {
+  ApplicationEventStore,
+  DomainEvent,
+  Events,
+  EventStore,
+  Lineage,
+  StoredEvent,
+} from '@market-miam/event-sourcing';
 
 // Deliberately no registerSpanCapture: this file pins the no-SDK case, where the
 // global tracer is a no-op whose spans carry the W3C invalid all-zero context.
@@ -34,11 +40,13 @@ class RecordingStore extends EventStore implements Events {
 
 const event: DomainEvent = { type: 'TestEvent', payload: {}, version: 1 };
 
-describe('TracingEventStore without a tracing SDK', () => {
+const composed = (inner: EventStore & Events) => new ApplicationEventStore(inner, new Lineage());
+
+describe('ApplicationEventStore without a tracing SDK', () => {
   it('does not persist the no-op tracer’s invalid all-zero context as a traceparent', async () => {
     const inner = new RecordingStore();
 
-    await new TracingEventStore(inner).append('stream-1', [event], 0, { vendorId: 'vendor-1' });
+    await composed(inner).append('stream-1', [event], 0, { vendorId: 'vendor-1' });
 
     expect(inner.appendedMetadata).toEqual([{ vendorId: 'vendor-1' }]);
   });
@@ -46,7 +54,7 @@ describe('TracingEventStore without a tracing SDK', () => {
   it('stays a faithful EventStore: absent metadata stays absent', async () => {
     const inner = new RecordingStore();
 
-    await new TracingEventStore(inner).append('stream-1', [event], 0);
+    await composed(inner).append('stream-1', [event], 0);
 
     expect(inner.appendedMetadata).toEqual([undefined]);
   });

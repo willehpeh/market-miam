@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
+  ApplicationEventStore,
   InMemoryEventStore,
   Lineage,
   LineageDispatcher,
-  LineageEventStore
 } from '@market-miam/event-sourcing';
 
 describe('Lineage propagation', () => {
@@ -11,7 +11,7 @@ describe('Lineage propagation', () => {
     const ids = stubIds(['root-1']);
     const store = new InMemoryEventStore();
     const context = new Lineage();
-    const contextualStore = new LineageEventStore(store, context);
+    const contextualStore = new ApplicationEventStore(store, context);
     const dispatcher = new LineageDispatcher(context, ids);
 
     await dispatcher.dispatch(async () => {

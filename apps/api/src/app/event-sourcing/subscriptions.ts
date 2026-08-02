@@ -4,6 +4,7 @@ import { EMPTY, exhaustMap, from, mergeMap, Observable, retry, Subject, takeUnti
 import {
   Checkpoint,
   CheckpointConflictError,
+  CheckpointKind,
   checkpointMetadata,
   EventHandler,
   Events,
@@ -14,8 +15,6 @@ import {
   Subscription,
   UnitOfWork
 } from '@market-miam/event-sourcing';
-import { TracingEventHandler } from './tracing/event-handler';
-import { TracingSubscription } from './tracing/subscription';
 import { ContinuedLineageHandler } from '../lineage/continued-lineage.handler';
 import { pollSchedule } from './poll-schedule';
 
@@ -40,13 +39,19 @@ export type CheckpointFactory = (name: string) => Checkpoint;
 const RETRY_BACKOFF_MS = 1000;
 const MAX_RETRY_BACKOFF_MS = 30_000;
 
-interface CheckpointedConsumer {
+interface ConsumerShape {
   readonly name: string;
-  readonly kind: string;
-  readonly handler: EventHandler;
   readonly checkpoint: Checkpoint;
   readonly subscription: Subscription;
 }
+
+// The kind discriminates what rebuild may do: only a projection carries reset().
+// Narrowed once, in buildConsumers, where the decorator metadata is read — the
+// runtime guarantee that a @CheckpointedProjection class implements Projection
+// is the lint rule in eslint.config.mjs, not the type system.
+type CheckpointedConsumer =
+  | (ConsumerShape & { readonly kind: 'projection'; readonly handler: Projection })
+  | (ConsumerShape & { readonly kind: 'processor'; readonly handler: EventHandler });
 
 @Injectable()
 export class Subscriptions implements OnApplicationBootstrap, OnApplicationShutdown {
@@ -105,7 +110,7 @@ export class Subscriptions implements OnApplicationBootstrap, OnApplicationShutd
       throw new Error(`Refusing to replay '${name}': a ${consumer.kind} re-runs its side effects`);
     }
     await this.unitOfWork.transaction(async () => {
-      await (consumer.handler as Projection).reset();
+      await consumer.handler.reset();
       await consumer.checkpoint.reset();
     });
     await consumer.subscription.poll();
@@ -113,7 +118,7 @@ export class Subscriptions implements OnApplicationBootstrap, OnApplicationShutd
 
   private buildConsumers(): CheckpointedConsumer[] {
     const checkpoints = new Set<string>();
-    return this.handlers().map(({ handler, name, kind }) => {
+    return this.handlers().map(({ handler, name, kind }): CheckpointedConsumer => {
       if (checkpoints.has(name)) {
         throw new Error(`Duplicate checkpoint '${name}'`);
       }
@@ -121,33 +126,27 @@ export class Subscriptions implements OnApplicationBootstrap, OnApplicationShutd
       const checkpoint = this.checkpointFor(name);
       const driven =
         kind === 'processor' ? new ContinuedLineageHandler(handler, this.lineage) : handler;
-      const subscription = new TracingSubscription(
-        new PollingSubscription(
-          this.events,
-          new TracingEventHandler(driven),
-          checkpoint,
-          this.unitOfWork,
-        ),
+      const subscription = new PollingSubscription(this.events, driven, checkpoint, {
+        unitOfWork: this.unitOfWork,
         name,
-        // Checkpoint before head: both only advance, so reading the consumer's
-        // position first cannot make it look ahead of a log read later.
-        async () => {
-          const position = await checkpoint.read();
-          return (await this.events.head()) - position;
-        },
-      );
-      return { name, kind, handler, checkpoint, subscription };
+      });
+      const shape = { name, checkpoint, subscription };
+      // The one cast, at the one narrowing point: @CheckpointedProjection's
+      // decorator⇄hierarchy lint rule is what makes it sound.
+      return kind === 'projection'
+        ? { ...shape, kind, handler: handler as Projection }
+        : { ...shape, kind, handler };
     });
   }
 
-  private handlers(): { handler: EventHandler; name: string; kind: string }[] {
+  private handlers(): { handler: EventHandler; name: string; kind: CheckpointKind }[] {
     return this.discovery
       .getProviders()
       .map((wrapper) => wrapper.instance)
       .filter((instance): instance is EventHandler => isCheckpointed(instance))
       .map((handler) => {
         const metadata = checkpointMetadata(handler.constructor);
-        return { handler, name: metadata?.name as string, kind: metadata?.kind as string };
+        return { handler, name: metadata?.name as string, kind: metadata?.kind as CheckpointKind };
       });
   }
 

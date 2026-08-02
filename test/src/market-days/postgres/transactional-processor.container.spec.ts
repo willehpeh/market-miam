@@ -65,7 +65,7 @@ describe('transactional processor ↔ checkpoint', () => {
     const checkpoint = new PostgresCheckpoint(uow, 'opens-storefronts');
     await events.append('vendor-v1', [registered], 0, { vendorId: 'v1' });
 
-    await new PollingSubscription(events, new OpeningProcessor(events), checkpoint, uow).poll();
+    await new PollingSubscription(events, new OpeningProcessor(events), checkpoint, { unitOfWork: uow }).poll();
 
     expect((await events.load('storefront-v1')).map((e) => e.type)).toEqual(['StorefrontOpened']);
     expect(await checkpoint.read()).toBeGreaterThan(0);
@@ -79,12 +79,12 @@ describe('transactional processor ↔ checkpoint', () => {
 
     // First poll: the checkpoint advance throws inside the per-event tx → the appended
     // events roll back with it, exactly the W2 hole (they used to stay durable).
-    await expect(new PollingSubscription(events, processor, new FailingCheckpoint(), uow).poll()).rejects.toThrow();
+    await expect(new PollingSubscription(events, processor, new FailingCheckpoint(), { unitOfWork: uow }).poll()).rejects.toThrow();
     expect(await events.load('storefront-v1')).toHaveLength(0);
 
     // The checkpoint never advanced, so a clean retry re-dispatches and appends exactly once.
     const checkpoint = new PostgresCheckpoint(uow, 'opens-storefronts');
-    await new PollingSubscription(events, processor, checkpoint, uow).poll();
+    await new PollingSubscription(events, processor, checkpoint, { unitOfWork: uow }).poll();
 
     expect((await events.load('storefront-v1')).map((e) => e.type)).toEqual(['StorefrontOpened']);
     expect(await checkpoint.read()).toBeGreaterThan(0);
@@ -100,7 +100,7 @@ describe('transactional processor ↔ checkpoint', () => {
       const checkpoint = new PostgresCheckpoint(uow, 'opens-storefronts');
       await events.append('vendor-v1', [registered], 0, { vendorId: 'v1' });
 
-      await new PollingSubscription(events, new OpeningProcessor(events), checkpoint, uow).poll();
+      await new PollingSubscription(events, new OpeningProcessor(events), checkpoint, { unitOfWork: uow }).poll();
 
       expect((await events.load('storefront-v1')).map((e) => e.type)).toEqual(['StorefrontOpened']);
       expect(await checkpoint.read()).toBeGreaterThan(0);
