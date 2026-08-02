@@ -1,6 +1,6 @@
 # Market Schedule — Registration & Remaining Work
 
-> **Archived 2026-08-02** — every slice in this plan is built (register, calendar list, cancel, declare-absence, amend, upcoming-days read model). Remaining work is tracked in `../MARKET-SCHEDULE-FOLLOWUPS.md`. Note: file paths below predate the package flattening — the per-command slices now sit at the top of `packages/market-days/src/`, not under `calendar/`.
+> **Archived 2026-08-02** — every slice in this plan is built (register, calendar list, cancel, declare-absence, amend, upcoming-days read model). Remaining work is tracked in `MARKET-SCHEDULE-FOLLOWUPS.md`. Note: file paths below predate the package flattening — the per-command slices now sit at the top of `packages/market-days/src/`, not under `calendar/`.
 
 `RegisterMarketSchedule` now carries a full **market object** instead of a bare `marketId`. Built outside-in TDD, one behaviour per RED→GREEN. Package: `packages/market-days`. Tests: `test/src/market-days/register-market-schedule/`.
 

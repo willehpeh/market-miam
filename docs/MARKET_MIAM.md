@@ -102,8 +102,8 @@ A single bounded context, five aggregates: **Vendor**, **Storefront**,
 read side (vendor storefront, catalogue, market-schedule and customer-storefront
 views). A customer-facing bounded context may emerge later as the language
 diverges between vendor operations and customer discovery/intent. Billing, when
-it comes, is its own context (see `DEFERRED.md`, "Subscription as a publication
-requirement").
+it comes, is its own context (see `archive/DEFERRED.md`, "Subscription as a
+publication requirement").
 
 ## Event Catalog (as built)
 

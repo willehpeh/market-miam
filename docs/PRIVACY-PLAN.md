@@ -59,9 +59,9 @@ prose for Render.
   so it's personal data the vendor is deliberately exposing. Say so at the point they
   type it, not only in a policy — a sole trader typing a mobile number should know it
   lands on a public page.
-- **`description` is in the PII registry** but is free text about the business. Encrypting
-  it is harmless; claiming it's personal data in the register is a stretch. Decide which
-  it is before writing the art. 30 entry.
-- **ADR 0025's context mentions a vendor address**; no address field exists in the code
-  today. Either the ADR is ahead of the implementation or the field was dropped — worth a
-  look before the register claims one way or the other.
+- **Decided (2026-08-02): `description` counts as personal data** — vendors are sole
+  traders, so free text about the business is text about the person. The art. 30 entry
+  claims it as such; the encryption already matches.
+- **Decided (2026-08-02): the address field was dropped** — ADR 0025's context was ahead
+  of the implementation (noted there); no address exists in the code or events, and the
+  register must not claim one.

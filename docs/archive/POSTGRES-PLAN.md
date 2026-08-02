@@ -1,6 +1,6 @@
 # Database — Remaining Work
 
-> **Archived 2026-08-02** — all actionable items are DONE (prod cutover, read models, crypto-shredding 2a+2b, replay). The three deferred/conditional items (3 orphan detection, 4 dead-lettering, 6 composite cursor) moved to `../DEFERRED.md`. Detail drift note: the "next free migration number `0004`" in the conventions below is stale — migrations have since reached `0009`+.
+> **Archived 2026-08-02** — all actionable items are DONE (prod cutover, read models, crypto-shredding 2a+2b, replay). The three deferred/conditional items (3 orphan detection, 4 dead-lettering, 6 composite cursor) folded into the root `NEXT_BEHAVIOURS.md` (rationale in `DEFERRED.md`, this folder). Detail drift note: the "next free migration number `0004`" in the conventions below is stale — migrations have since reached `0009`+.
 
 The event-store build is **done and proven live** — this plan now tracks what's
 left on the database: read-model persistence, crypto-shredding, and ops safety

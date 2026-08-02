@@ -1,5 +1,7 @@
 # Market Schedule — Follow-ups
 
+> **Archived 2026-08-02** — items 2 and 3 built; item 4's public view shipped. The two remaining items (cadence/one-off picker, prepared-state overlay) moved to the root `NEXT_BEHAVIOURS.md`; §5 below keeps the overlay's design notes.
+
 Deferred after the schedule slice shipped (register, calendar list, cancel, declare-absence as ranges, amend, upcoming-days read model + `GET /market-schedules/upcoming`, vendor edit path). Ordered by leverage; 1–3 are small, 4–5 are slices.
 
 ## 1. Interactive frequency / one-off picker — frontend only, medium

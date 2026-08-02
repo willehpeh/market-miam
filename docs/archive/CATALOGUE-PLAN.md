@@ -1,5 +1,7 @@
 # Catalogue ("Ajoutez vos plats") — Status & Remaining Work
 
+> **Archived 2026-08-02** — the feature shipped end-to-end (add, revise, re-photo, retire, reorder, variants). The three open items under "Next / not done" moved to the root `NEXT_BEHAVIOURS.md`; durable decisions live in the ADRs.
+
 Vendors build a catalogue of dishes, reached from dashboard step 2 (`/dashboard/catalogue`). Design: `docs/design/add-dishes.png` (list) + `docs/design/add-dish.png` (form). Built outside-in TDD, thin vertical slices, backend-first.
 
 ## Item shape (locked)

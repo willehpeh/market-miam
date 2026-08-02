@@ -1,6 +1,6 @@
 # 0017. A register for deferred decisions
 
-Date: 2026-06-06 · Status: Accepted
+Date: 2026-06-06 · Status: Accepted · Amended 2026-08-02 — the register merged into the root `NEXT_BEHAVIOURS.md` (the single backlog); the detailed per-entry rationale is preserved in `docs/archive/DEFERRED.md`
 
 ## Context
 

@@ -2,7 +2,8 @@
 
 Ordered chronologically by when each decision entered the codebase.
 Product-level decisions live in `docs/MARKET_MIAM.md`; deliberately
-deferred decisions in `docs/DEFERRED.md` (see ADR 0017).
+deferred decisions in the root `NEXT_BEHAVIOURS.md` (see ADR 0017;
+detailed rationale in `docs/archive/DEFERRED.md`).
 
 | # | Title | Date |
 |---|-------|------|

@@ -2,8 +2,9 @@
 
 How the event store, its ports, subscriptions, projections and observability fit
 together. Descriptive, not aspirational. Rationale lives in [`adr/`](adr/);
-remaining o11y work in [`O11Y-PLAN.md`](O11Y-PLAN.md); open questions in
-[`DEFERRED.md`](DEFERRED.md).
+remaining o11y work in [`O11Y-PLAN.md`](O11Y-PLAN.md); open questions in the
+root [`NEXT_BEHAVIOURS.md`](../NEXT_BEHAVIOURS.md) (rationale:
+[`archive/DEFERRED.md`](archive/DEFERRED.md)).
 
 - **`packages/event-sourcing`** — the mechanism. Framework-free: no Nest, no OTel.
 - **`packages/market-days`** — the domain. Aggregates, projections, read models.

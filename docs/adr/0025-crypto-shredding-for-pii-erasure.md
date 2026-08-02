@@ -6,7 +6,9 @@ Date: 2026-06-10 · Status: Accepted · Amended 2026-07-07 — shredded-read rep
 
 Vendor profiles hold real PII (name, email, address, phone — vendors are
 often sole traders), and GDPR erasure must coexist with an immutable event
-log. Rejected alternatives: deleting the stream (breaks once PII leaks into
+log. *(2026-08-02: the address field was dropped before implementation —
+no address exists in the code or events; the registered fields are the
+vendor email and the storefront name/description/phone.)* Rejected alternatives: deleting the stream (breaks once PII leaks into
 cross-vendor streams) and storing PII outside events in a mutable store
 (profile stops being event-sourced; events stop being self-describing).
 
