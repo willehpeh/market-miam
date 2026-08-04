@@ -33,6 +33,17 @@ the standing carte, and the menu du jour isn't built.
 
 Also swapped in `Base.astro`'s meta description, which is what Google shows.
 
+### SEO plumbing
+
+- `site` in `astro.config.mjs` is the one place the origin lives; `Base.astro` builds
+  canonical/og/JSON-LD URLs from `Astro.site` instead of a hard-coded string.
+- `@astrojs/sitemap` generates `sitemap-index.xml` + `sitemap-0.xml` at build;
+  `public/robots.txt` allows everything and points at the index.
+- JSON-LD in `Base.astro`: `Organization` (name, logo, email) + `WebSite`, linked by
+  `@id` — the brand-panel signals, nothing page-specific.
+- Still open, deliberately: keyword-bearing `<title>` (collides with the slogan
+  decision below) and content pages — both are marketing calls, not plumbing.
+
 ### CTAs (`55073a6`, `d233015`)
 
 Both in-page CTAs read *Rejoignez les premiers traiteurs*, matching the title of the Tally

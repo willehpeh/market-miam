@@ -9,8 +9,31 @@ const {
   description = 'L’adresse de votre stand : une vitrine à votre nom pour votre carte, vos marchés et vos horaires. Pour les traiteurs de marché.',
 } = Astro.props;
 
-const canonical = new URL(Astro.url.pathname, 'https://marketmiam.fr');
-const ogImage = new URL('/og.jpg', 'https://marketmiam.fr');
+// Astro.site comes from `site` in astro.config.mjs — the one place the origin lives.
+const canonical = new URL(Astro.url.pathname, Astro.site);
+const ogImage = new URL('/og.jpg', Astro.site);
+
+const schema = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'Organization',
+      '@id': new URL('/#organization', Astro.site).href,
+      name: 'Market Miam',
+      url: Astro.site?.href,
+      logo: new URL('/logo.webp', Astro.site).href,
+      email: 'contact@marketmiam.fr',
+    },
+    {
+      '@type': 'WebSite',
+      '@id': new URL('/#website', Astro.site).href,
+      name: 'Market Miam',
+      url: Astro.site?.href,
+      inLanguage: 'fr',
+      publisher: { '@id': new URL('/#organization', Astro.site).href },
+    },
+  ],
+};
 ---
 
 <!doctype html>
@@ -43,6 +66,7 @@ const ogImage = new URL('/og.jpg', 'https://marketmiam.fr');
       crossorigin
     />
     <title>{title}</title>
+    <script is:inline type="application/ld+json" set:html={JSON.stringify(schema)} />
   </head>
   <body>
     <slot />
