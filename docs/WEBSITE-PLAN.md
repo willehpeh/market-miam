@@ -212,6 +212,11 @@ Capture: same demo account as the storefront shot so names match; ~1200px wide; 
 - **Tally over Formspree** — unlimited responses free, and Belgium-based, so French vendors' data stays in the EU. Free tier shows Tally branding; Pro (€20/mo) removes it, not needed yet.
 - **Popup, not inline iframe** — page stays on-brand, branding is less visible in an overlay.
 - **Price named before it's charged** — *gratuit … puis 15 € HT/mois*. Stating it now avoids a cold ask at conversion and filters people who were never customers.
+- **The pilot ends when the roadmap features ship — the two *gratuit* statements are one
+  period, two angles.** Hero note: *pendant la phase pilote*; pilot terms: *jusqu'à la
+  sortie des fonctionnalités en cours de développement* (echoing the roadmap section's
+  eyebrow so the referent stays local). The feature gate is the promise a traiteur can
+  verify from outside; don't reword either side to a period that can drift from the other.
 - **Storefront shot in the hero, not the dashboard** — it's what a vendor is buying.
 - **"Market Miam" appears in one on-page heading** — the *Disponible aujourd'hui* h2, *Ce que Market Miam vous donne dès l'inscription*. Before that, the name was in `<title>`, metas, alt text and body copy but in no `h1`–`h6` on the whole site — a weak signal for brand queries. The hero h1 stays a brand-free hook; that section is the natural home because it's literally what Market Miam gives you.
 - **`public/` holds generated assets, not originals.** Regeneration recipe in the app README.
