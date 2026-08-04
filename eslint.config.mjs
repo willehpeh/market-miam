@@ -1,54 +1,5 @@
 import nx from '@nx/eslint-plugin';
-
-// A projection/processor only runs if Subscriptions discovers it by its
-// @Checkpointed* decorator. A concrete handler missing the decorator silently
-// never runs, and at runtime it's undetectable (handlers relate to their base
-// only structurally, so no reliable instanceof). So enforce base <-> decorator
-// at lint time, matching any of the base names in an `extends` superclass (real
-// projections extend ProjectionFor) or an `implements` clause (Projection and
-// Processor are bare markers) — the structural truth, not the class name.
-// Abstract base classes are skipped.
-function checkpointDecoratorRule(interfaceNames, decoratorName) {
-  const relation = interfaceNames.join(' or ');
-  return {
-    meta: {
-      type: 'problem',
-      docs: {
-        description: `Concrete ${relation} classes must carry @${decoratorName}, and vice versa.`,
-      },
-      schema: [],
-    },
-    create(context) {
-      return {
-        ClassDeclaration(node) {
-          if (node.abstract || !node.id) {
-            return;
-          }
-          const relatesToBase =
-            interfaceNames.includes(node.superClass?.name) ||
-            (node.implements ?? []).some((clause) => interfaceNames.includes(clause.expression?.name));
-          const decorated = (node.decorators ?? []).some(
-            (decorator) =>
-              decorator.expression?.type === 'CallExpression' &&
-              decorator.expression.callee?.name === decoratorName,
-          );
-          if (relatesToBase && !decorated) {
-            context.report({
-              node: node.id,
-              message: `A class extending or implementing ${relation} must be annotated with @${decoratorName} so Subscriptions discovers it.`,
-            });
-          }
-          if (decorated && !relatesToBase) {
-            context.report({
-              node: node.id,
-              message: `A @${decoratorName} class must extend or implement ${relation}.`,
-            });
-          }
-        },
-      };
-    },
-  };
-}
+import { checkpointDecoratorRule } from './eslint-rules/checkpoint-decorator.mjs';
 
 const eventSourcingConventions = {
   rules: {
@@ -71,7 +22,12 @@ export default [
         'error',
         {
           enforceBuildableLibDependency: true,
-          allow: ['^.*/eslint(\\.base)?\\.config\\.[cm]?[jt]s$'],
+          allow: [
+            '^.*/eslint(\\.base)?\\.config\\.[cm]?[jt]s$',
+            // The custom rule module lives at the workspace root so both the
+            // flat config and its spec (test project) can import it.
+            '^.*/eslint-rules/.*$',
+          ],
           depConstraints: [
             {
               sourceTag: '*',

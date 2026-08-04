@@ -47,8 +47,8 @@ interface ConsumerShape {
 
 // The kind discriminates what rebuild may do: only a projection carries reset().
 // Narrowed once, in buildConsumers, where the decorator metadata is read — the
-// runtime guarantee that a @CheckpointedProjection class implements Projection
-// is the lint rule in eslint.config.mjs, not the type system.
+// guarantee that a @CheckpointedProjection class implements Projection is the
+// decorator's constrained signature, checked by the compiler at every use site.
 type CheckpointedConsumer =
   | (ConsumerShape & { readonly kind: 'projection'; readonly handler: Projection })
   | (ConsumerShape & { readonly kind: 'processor'; readonly handler: EventHandler });
@@ -131,8 +131,8 @@ export class Subscriptions implements OnApplicationBootstrap, OnApplicationShutd
         name,
       });
       const shape = { name, checkpoint, subscription };
-      // The one cast, at the one narrowing point: @CheckpointedProjection's
-      // decorator⇄hierarchy lint rule is what makes it sound.
+      // Sound: only @CheckpointedProjection stamps kind 'projection', and its
+      // signature only accepts classes implementing Projection.
       return kind === 'projection'
         ? { ...shape, kind, handler: handler as Projection }
         : { ...shape, kind, handler };
@@ -140,14 +140,19 @@ export class Subscriptions implements OnApplicationBootstrap, OnApplicationShutd
   }
 
   private handlers(): { handler: EventHandler; name: string; kind: CheckpointKind }[] {
-    return this.discovery
-      .getProviders()
-      .map((wrapper) => wrapper.instance)
-      .filter((instance): instance is EventHandler => isCheckpointed(instance))
-      .map((handler) => {
-        const metadata = checkpointMetadata(handler.constructor);
-        return { handler, name: metadata?.name as string, kind: metadata?.kind as CheckpointKind };
-      });
+    return this.discovery.getProviders().flatMap((wrapper) => {
+      const instance: unknown = wrapper.instance;
+      if (typeof instance !== 'object' || instance === null) {
+        return [];
+      }
+      const metadata = checkpointMetadata(instance.constructor);
+      if (!metadata) {
+        return [];
+      }
+      // Sound: only the @Checkpointed* decorators stamp metadata, and their
+      // signatures only accept EventHandler classes.
+      return [{ handler: instance as EventHandler, ...metadata }];
+    });
   }
 
   private startPolling(): void {
@@ -196,12 +201,4 @@ function poll(subscription: Subscription): Promise<void> {
       throw error;
     }
   });
-}
-
-function isCheckpointed(instance: unknown): instance is EventHandler {
-  return (
-    typeof instance === 'object' &&
-    instance !== null &&
-    checkpointMetadata(instance.constructor) !== undefined
-  );
 }
