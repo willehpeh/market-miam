@@ -4,6 +4,7 @@ import { Test } from '@nestjs/testing';
 import { DiscoveryModule } from '@nestjs/core';
 import { Subject } from 'rxjs';
 import {
+  CheckpointConflictError,
   CheckpointedProcessor,
   CheckpointedProjection,
   EventHandler,
@@ -91,6 +92,29 @@ const noEvents: Events = {
   loadFrom: () => Promise.resolve([] as StoredEvent[]),
   head: () => Promise.resolve(0),
 };
+
+const event: StoredEvent = {
+  id: 'e1',
+  type: 'Thing',
+  payload: {},
+  version: 1,
+  streamId: 'stream',
+  streamPosition: 1,
+  globalPosition: 1,
+  timestamp: 0,
+};
+
+const oneEvent: Events = {
+  loadFrom: (position) => Promise.resolve(position === 0 ? [event] : []),
+  head: () => Promise.resolve(1),
+};
+
+// A checkpoint some other poll always beats to the CAS.
+class ContendedCheckpoint extends InMemoryCheckpoint {
+  override advance(from: number): Promise<void> {
+    return Promise.reject(new CheckpointConflictError(this.name, from));
+  }
+}
 
 describe('Subscriptions', () => {
   let app: INestApplication | undefined;
@@ -482,6 +506,44 @@ describe('Subscriptions', () => {
     await app.get(Subscriptions).drain();
 
     expect(app.get(Recorder).handled).toHaveLength(250);
+  });
+
+  it('yields to a concurrent writer rather than failing a drain', async () => {
+    const moduleRef = await Test.createTestingModule({
+      imports: [DiscoveryModule],
+      providers: [
+        Subscriptions,
+        Lineage,
+        Recorder,
+        { provide: Events, useValue: oneEvent },
+        { provide: POLLING_ENABLED, useValue: false },
+        { provide: CHECKPOINT_FACTORY, useValue: (name: string) => new ContendedCheckpoint(name) },
+      ],
+    }).compile();
+
+    app = moduleRef.createNestApplication();
+    await app.init();
+
+    await expect(app.get(Subscriptions).drain()).resolves.toBeUndefined();
+  });
+
+  it('yields to a concurrent writer rather than failing a rebuild', async () => {
+    const moduleRef = await Test.createTestingModule({
+      imports: [DiscoveryModule],
+      providers: [
+        Subscriptions,
+        Lineage,
+        Recorder,
+        { provide: Events, useValue: oneEvent },
+        { provide: POLLING_ENABLED, useValue: false },
+        { provide: CHECKPOINT_FACTORY, useValue: (name: string) => new ContendedCheckpoint(name) },
+      ],
+    }).compile();
+
+    app = moduleRef.createNestApplication();
+    await app.init();
+
+    await expect(app.get(Subscriptions).rebuild('recorder')).resolves.toBeUndefined();
   });
 
   it('rebuilds a projection: clears its read model and replays from zero', async () => {

@@ -88,7 +88,7 @@ export class Subscriptions implements OnApplicationBootstrap, OnApplicationShutd
     // max cascade depth (today: 1). If cascades ever chain deeper than the
     // subscription count, loop until a round produces no new events instead.
     for (let i = 0; i < this.consumers.length; i++) {
-      await Promise.all(this.consumers.map((consumer) => consumer.subscription.poll()));
+      await Promise.all(this.consumers.map((consumer) => poll(consumer.subscription)));
     }
   }
 
@@ -113,7 +113,7 @@ export class Subscriptions implements OnApplicationBootstrap, OnApplicationShutd
       await consumer.handler.reset();
       await consumer.checkpoint.reset();
     });
-    await consumer.subscription.poll();
+    await poll(consumer.subscription);
   }
 
   private buildConsumers(): CheckpointedConsumer[] {
@@ -184,6 +184,18 @@ export class Subscriptions implements OnApplicationBootstrap, OnApplicationShutd
       }),
     );
   }
+}
+
+// The background poller treats a checkpoint conflict as a retry signal; a poll asked
+// for directly — drain(), rebuild() — treats it as done. It means a concurrent poll
+// owns the position and is draining the same backlog: whichever poll wins each event's
+// CAS carries the drain to the end, and the loser has nothing left to do (ADR 0036).
+function poll(subscription: Subscription): Promise<void> {
+  return subscription.poll().catch((error: unknown) => {
+    if (!(error instanceof CheckpointConflictError)) {
+      throw error;
+    }
+  });
 }
 
 function isCheckpointed(instance: unknown): instance is EventHandler {
