@@ -42,10 +42,11 @@ Also swapped in `Base.astro`'s meta description, which is what Google shows.
 - JSON-LD in `Base.astro`: `Organization` (name, logo, email) + `WebSite`, linked by
   `@id` — the brand-panel signals, nothing page-specific.
 - Default meta description front-loads the audience (*Traiteurs de marché*) and names
-  the roadmap as roadmap (*Bientôt : le menu du jour et les envies de vos clients avant
-  le marché*), 154 chars — the same sells-today/names-tomorrow split as the page, so it
-  doesn't read vitrine-only and doesn't date when those ship. The slogan isn't repeated
-  there — it's already in the `<title>` right above it in a search result.
+  the roadmap as roadmap but feature-agnostically — *Et bientôt, de quoi ne plus préparer
+  à l'aveugle*, the roadmap section's own lede. 146 chars. Same sells-today/names-tomorrow
+  split as the page, and outcome wording rather than feature names, so it neither reads
+  vitrine-only nor dates as features ship. The slogan isn't repeated there — it's already
+  in the `<title>` right above it in a search result.
 - A keyword-bearing `<title>` (*vitrine en ligne pour traiteurs de marché*) was
   considered and rejected: the roadmap makes Market Miam more than a vitrine, so a
   feature-keyword title would undersell it and date at every launch. The slogan title
