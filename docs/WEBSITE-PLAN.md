@@ -193,6 +193,7 @@ Capture: same demo account as the storefront shot so names match; ~1200px wide; 
 - **Popup, not inline iframe** — page stays on-brand, branding is less visible in an overlay.
 - **Price named before it's charged** — *gratuit … puis 15 € HT/mois*. Stating it now avoids a cold ask at conversion and filters people who were never customers.
 - **Storefront shot in the hero, not the dashboard** — it's what a vendor is buying.
+- **"Market Miam" appears in one on-page heading** — the *Disponible aujourd'hui* h2, *Ce que Market Miam vous donne dès l'inscription*. Before that, the name was in `<title>`, metas, alt text and body copy but in no `h1`–`h6` on the whole site — a weak signal for brand queries. The hero h1 stays a brand-free hook; that section is the natural home because it's literally what Market Miam gives you.
 - **`public/` holds generated assets, not originals.** Regeneration recipe in the app README.
 
 ## Astro traps hit here (save the next person the debugging)
