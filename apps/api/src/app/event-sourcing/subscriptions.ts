@@ -1,6 +1,6 @@
 import { Inject, Injectable, Logger, OnApplicationBootstrap, OnApplicationShutdown, Optional } from '@nestjs/common';
 import { DiscoveryService } from '@nestjs/core';
-import { EMPTY, exhaustMap, from, mergeMap, Observable, retry, Subject, takeUntil, timer } from 'rxjs';
+import { exhaustMap, from, mergeMap, retry, Subject, takeUntil, timer } from 'rxjs';
 import {
   Checkpoint,
   CheckpointConflictError,
@@ -16,19 +16,7 @@ import {
   UnitOfWork
 } from '@market-miam/event-sourcing';
 import { ContinuedLineageHandler } from '../lineage/continued-lineage.handler';
-import { pollSchedule } from './poll-schedule';
-
-export const POLLING_ENABLED = Symbol('POLLING_ENABLED');
-
-// Poll interval override (ms). Unprovided → pollSchedule's default. Dev shortens it
-// so the timer backstop is tight when there's no LISTEN/NOTIFY to poke the poller.
-export const POLL_INTERVAL = Symbol('POLL_INTERVAL');
-
-// A stream of pokes that ask Subscriptions to poll now. Default is EMPTY, but both
-// real profiles provide a source — Postgres LISTEN, in-memory pokes on append — and in
-// production this, not the timer, is what carries every append: a week of handler spans
-// showed 4-275ms from commit to handler, with no interval-length tail.
-export const EVENT_NOTIFICATIONS = Symbol('EVENT_NOTIFICATIONS');
+import { PollSchedule } from './poll-schedule';
 
 // The durability seam. Default builds in-memory checkpoints; provide a factory that
 // returns PostgresCheckpoint to make checkpoints survive restart. The runner depends
@@ -62,9 +50,9 @@ export class Subscriptions implements OnApplicationBootstrap, OnApplicationShutd
     private readonly discovery: DiscoveryService,
     private readonly events: Events,
     private readonly lineage: Lineage,
-    @Inject(POLLING_ENABLED) private readonly pollingEnabled: boolean,
-    @Optional() @Inject(POLL_INTERVAL) private readonly pollIntervalMs?: number,
-    @Optional() @Inject(EVENT_NOTIFICATIONS) private readonly notifications: Observable<void> = EMPTY,
+    // Required, not optional: every profile must state its wake policy. A module
+    // that forgets fails at boot instead of silently never polling.
+    private readonly schedule: PollSchedule,
     @Optional() @Inject(CHECKPOINT_FACTORY) private readonly checkpointFor: CheckpointFactory = (name) => new InMemoryCheckpoint(name),
     @Optional() @Inject(UnitOfWork) private readonly unitOfWork: UnitOfWork = UnitOfWork.none(),
     @Optional() private readonly logger: Logger = new Logger(Subscriptions.name),
@@ -72,9 +60,7 @@ export class Subscriptions implements OnApplicationBootstrap, OnApplicationShutd
 
   onApplicationBootstrap(): void {
     this.consumers = this.buildConsumers();
-    if (this.pollingEnabled) {
-      this.startPolling();
-    }
+    this.startPolling();
   }
 
   onApplicationShutdown(): void {
@@ -165,7 +151,7 @@ export class Subscriptions implements OnApplicationBootstrap, OnApplicationShutd
   }
 
   private wakeSubscription() {
-    return (subscription: Subscription) => pollSchedule(this.notifications, this.pollIntervalMs).pipe(
+    return (subscription: Subscription) => this.schedule.pokes().pipe(
       exhaustMap(() => subscription.poll()),
       // ponytail: exponential backoff, capped, reset once a poll succeeds. Infinite
       // retries are deliberate — a transient store outage should recover, not kill

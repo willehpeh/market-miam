@@ -274,7 +274,8 @@ exists yet).
 ### 7.3 Schedule and failure
 
 ```ts
-pollSchedule = merge(timer(0, intervalMs), notifications)   // 300_000 ms default; 1_000 in dev
+PollSchedule.pokedWithBackstop(pokes, backstopMs)           // 300_000 ms default; 1_000 in dev
+  .pokes()
   .pipe(exhaustMap(() => subscription.poll()),              // polls never overlap
         retry({ resetOnSuccess: true, delay: exponential capped at 30_000 }))
 ```
@@ -312,7 +313,7 @@ is profile-agnostic — it wraps whatever `PERSISTED_EVENTS` answered.
 | `PERSISTED_EVENTS` | `InMemoryEventStore` | `PostgresEventStore` |
 | `DataKeys` | `InMemoryDataKeys` | `PostgresDataKeys` + `MasterKeyring` |
 | `UnitOfWork` | `UnitOfWork.none()` | `PostgresUnitOfWork` |
-| `EVENT_NOTIFICATIONS` | `Subject` poked on append | LISTEN/NOTIFY |
+| `PollSchedule` | pokes on append, 1s backstop | LISTEN/NOTIFY pokes, 5min backstop |
 | `CHECKPOINT_FACTORY` | (absent → `InMemoryCheckpoint`) | `PostgresCheckpoint` |
 
 ### `InMemoryEventStore`
@@ -518,7 +519,7 @@ provider + `InMemorySpanExporter`, no auto-instrumentation, so
   testcontainers, separate vitest config (`test:container`), excluded from the
   fast suite.
 - **API specs** (`apps/api/**/*.spec.ts`) — full Nest app over supertest on the
-  in-memory profile, `POLLING_ENABLED` off, `Subscriptions.drain()` driving
+  in-memory profile, `PollSchedule.never()`, `Subscriptions.drain()` driving
   delivery deterministically.
 - **Mutation testing** — nightly Stryker over the fast suite
   (`stryker.conf.mjs`, `.github/workflows/mutation.yml`), informational (no

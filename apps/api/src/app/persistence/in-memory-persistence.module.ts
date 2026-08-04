@@ -14,7 +14,7 @@ import {
   VendorStorefrontViewStore,
 } from '@market-miam/market-days';
 import { PERSISTED_EVENTS } from '../event-sourcing/event-sourcing.module';
-import { EVENT_NOTIFICATIONS, POLL_INTERVAL } from '../event-sourcing/subscriptions';
+import { PollSchedule } from '../event-sourcing/poll-schedule';
 
 // Every adapter the memory profile plugs in — nothing here survives a restart.
 // Global so the composition root is the only place that names a profile: everything
@@ -28,14 +28,13 @@ import { EVENT_NOTIFICATIONS, POLL_INTERVAL } from '../event-sourcing/subscripti
     { provide: DataKeys, useClass: InMemoryDataKeys },
     { provide: UnitOfWork, useValue: UnitOfWork.none() },
     // Poke the poller on every append (no LISTEN/NOTIFY here) so read-after-write is
-    // instant in dev; the poll timer stays the backstop. Tests disable polling and
-    // drain() directly, so no one subscribes to this there.
+    // instant in dev, with a tight 1s backstop. Tests override this with
+    // PollSchedule.never() and drain() directly.
     {
-      provide: EVENT_NOTIFICATIONS,
-      useFactory: (store: InMemoryEventStore) => store.notifications(),
+      provide: PollSchedule,
+      useFactory: (store: InMemoryEventStore) => PollSchedule.pokedWithBackstop(store.notifications(), 1000),
       inject: [InMemoryEventStore],
     },
-    { provide: POLL_INTERVAL, useValue: 1000 },
     // No CHECKPOINT_FACTORY → Subscriptions falls back to its in-memory default.
     InMemoryVendorStorefrontViews,
     { provide: VendorStorefrontViews, useExisting: InMemoryVendorStorefrontViews },
@@ -53,8 +52,7 @@ import { EVENT_NOTIFICATIONS, POLL_INTERVAL } from '../event-sourcing/subscripti
     PERSISTED_EVENTS,
     DataKeys,
     UnitOfWork,
-    EVENT_NOTIFICATIONS,
-    POLL_INTERVAL,
+    PollSchedule,
     VendorStorefrontViews,
     VendorStorefrontViewStore,
     CatalogueViews,

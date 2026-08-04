@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { INestApplication, Logger } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { DiscoveryModule } from '@nestjs/core';
-import { Subject } from 'rxjs';
+import { EMPTY, Subject } from 'rxjs';
 import {
   CheckpointConflictError,
   CheckpointedProcessor,
@@ -15,13 +15,8 @@ import {
   Projection,
   StoredEvent,
 } from '@market-miam/event-sourcing';
-import {
-  Subscriptions,
-  CHECKPOINT_FACTORY,
-  EVENT_NOTIFICATIONS,
-  POLL_INTERVAL,
-  POLLING_ENABLED,
-} from './subscriptions';
+import { Subscriptions, CHECKPOINT_FACTORY } from './subscriptions';
+import { PollSchedule } from './poll-schedule';
 
 class NoopHandler implements EventHandler {
   eventTypes(): string[] {
@@ -134,7 +129,7 @@ describe('Subscriptions', () => {
         StorefrontProjection,
         CollidingProjection,
         { provide: Events, useValue: noEvents },
-        { provide: POLLING_ENABLED, useValue: false },
+        { provide: PollSchedule, useValue: PollSchedule.never() },
       ],
     }).compile();
 
@@ -161,8 +156,7 @@ describe('Subscriptions', () => {
         Lineage,
         StorefrontProjection,
         { provide: Events, useValue: countingEvents },
-        { provide: POLLING_ENABLED, useValue: true },
-        { provide: POLL_INTERVAL, useValue: 30000 },
+        { provide: PollSchedule, useValue: PollSchedule.pokedWithBackstop(EMPTY, 30000) },
       ],
     }).compile();
 
@@ -196,8 +190,7 @@ describe('Subscriptions', () => {
         Lineage,
         StorefrontProjection,
         { provide: Events, useValue: countingEvents },
-        { provide: POLLING_ENABLED, useValue: true },
-        { provide: EVENT_NOTIFICATIONS, useValue: notifications },
+        { provide: PollSchedule, useValue: PollSchedule.pokedWithBackstop(notifications) },
       ],
     }).compile();
 
@@ -242,9 +235,7 @@ describe('Subscriptions', () => {
         Lineage,
         StorefrontProjection,
         { provide: Events, useValue: slowEvents },
-        { provide: POLLING_ENABLED, useValue: true },
-        { provide: POLL_INTERVAL, useValue: 30000 },
-        { provide: EVENT_NOTIFICATIONS, useValue: notifications },
+        { provide: PollSchedule, useValue: PollSchedule.pokedWithBackstop(notifications, 30000) },
       ],
     }).compile();
 
@@ -286,8 +277,7 @@ describe('Subscriptions', () => {
         Lineage,
         StorefrontProjection,
         { provide: Events, useValue: alwaysFails },
-        { provide: POLLING_ENABLED, useValue: true },
-        { provide: POLL_INTERVAL, useValue: 600000 },
+        { provide: PollSchedule, useValue: PollSchedule.pokedWithBackstop(EMPTY, 600000) },
         { provide: Logger, useValue: new RecordingLogger() },
       ],
     }).compile();
@@ -329,9 +319,7 @@ describe('Subscriptions', () => {
         Lineage,
         StorefrontProjection,
         { provide: Events, useValue: failSucceedFail },
-        { provide: POLLING_ENABLED, useValue: true },
-        { provide: POLL_INTERVAL, useValue: 600000 },
-        { provide: EVENT_NOTIFICATIONS, useValue: notifications },
+        { provide: PollSchedule, useValue: PollSchedule.pokedWithBackstop(notifications, 600000) },
         { provide: Logger, useValue: new RecordingLogger() },
       ],
     }).compile();
@@ -373,9 +361,7 @@ describe('Subscriptions', () => {
         Lineage,
         StorefrontProjection,
         { provide: Events, useValue: countingEvents },
-        { provide: POLLING_ENABLED, useValue: true },
-        { provide: POLL_INTERVAL, useValue: 30000 },
-        { provide: EVENT_NOTIFICATIONS, useValue: notifications },
+        { provide: PollSchedule, useValue: PollSchedule.pokedWithBackstop(notifications, 30000) },
       ],
     }).compile();
 
@@ -411,7 +397,7 @@ describe('Subscriptions', () => {
         Lineage,
         StorefrontProjection,
         { provide: Events, useValue: alwaysFails },
-        { provide: POLLING_ENABLED, useValue: true },
+        { provide: PollSchedule, useValue: PollSchedule.pokedWithBackstop(EMPTY) },
         { provide: Logger, useValue: new RecordingLogger() },
       ],
     }).compile();
@@ -455,7 +441,7 @@ describe('Subscriptions', () => {
         Lineage,
         StorefrontProjection,
         { provide: Events, useValue: flakyEvents },
-        { provide: POLLING_ENABLED, useValue: true },
+        { provide: PollSchedule, useValue: PollSchedule.pokedWithBackstop(EMPTY) },
         { provide: Logger, useValue: logger },
       ],
     }).compile();
@@ -497,7 +483,7 @@ describe('Subscriptions', () => {
         Lineage,
         Recorder,
         { provide: Events, useValue: backlog },
-        { provide: POLLING_ENABLED, useValue: false },
+        { provide: PollSchedule, useValue: PollSchedule.never() },
       ],
     }).compile();
 
@@ -516,7 +502,7 @@ describe('Subscriptions', () => {
         Lineage,
         Recorder,
         { provide: Events, useValue: oneEvent },
-        { provide: POLLING_ENABLED, useValue: false },
+        { provide: PollSchedule, useValue: PollSchedule.never() },
         { provide: CHECKPOINT_FACTORY, useValue: (name: string) => new ContendedCheckpoint(name) },
       ],
     }).compile();
@@ -535,7 +521,7 @@ describe('Subscriptions', () => {
         Lineage,
         Recorder,
         { provide: Events, useValue: oneEvent },
-        { provide: POLLING_ENABLED, useValue: false },
+        { provide: PollSchedule, useValue: PollSchedule.never() },
         { provide: CHECKPOINT_FACTORY, useValue: (name: string) => new ContendedCheckpoint(name) },
       ],
     }).compile();
@@ -570,7 +556,7 @@ describe('Subscriptions', () => {
         Lineage,
         Recorder,
         { provide: Events, useValue: backlog },
-        { provide: POLLING_ENABLED, useValue: false },
+        { provide: PollSchedule, useValue: PollSchedule.never() },
       ],
     }).compile();
 
@@ -614,7 +600,7 @@ describe('Subscriptions', () => {
         Lineage,
         SideEffectProcessor,
         { provide: Events, useValue: backlog },
-        { provide: POLLING_ENABLED, useValue: false },
+        { provide: PollSchedule, useValue: PollSchedule.never() },
       ],
     }).compile();
 
@@ -636,7 +622,7 @@ describe('Subscriptions', () => {
         Lineage,
         Recorder,
         { provide: Events, useValue: noEvents },
-        { provide: POLLING_ENABLED, useValue: false },
+        { provide: PollSchedule, useValue: PollSchedule.never() },
       ],
     }).compile();
 
@@ -656,7 +642,7 @@ describe('Subscriptions', () => {
         StorefrontProjection,
         Recorder,
         { provide: Events, useValue: noEvents },
-        { provide: POLLING_ENABLED, useValue: false },
+        { provide: PollSchedule, useValue: PollSchedule.never() },
         {
           provide: CHECKPOINT_FACTORY,
           useValue: (name: string) => {

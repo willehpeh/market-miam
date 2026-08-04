@@ -7,7 +7,7 @@ const tracer = trace.getTracer('pg-notifications');
 
 // Nest + OTel boundary around the framework-free PostgresNotifications: drives its
 // start/stop lifecycle, turns each LISTEN state transition into a marker span plus a
-// log line, and re-exposes the poke stream for the EVENT_NOTIFICATIONS token.
+// log line, and re-exposes the poke stream that drives the profile's PollSchedule.
 @Injectable()
 export class TracingPostgresNotifications implements OnApplicationBootstrap, OnApplicationShutdown {
   private statusSubscription?: Subscription;

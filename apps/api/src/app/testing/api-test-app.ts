@@ -11,7 +11,7 @@ import { MarketDaysModule } from '../market-days/market-days.module';
 import { EventSourcingModule } from '../event-sourcing/event-sourcing.module';
 import { InMemoryPersistenceModule } from '../persistence/in-memory-persistence.module';
 import { DomainErrorFilter } from '../domain-error.filter';
-import { POLLING_ENABLED } from '../event-sourcing/subscriptions';
+import { PollSchedule } from '../event-sourcing/poll-schedule';
 import { FakeSignedUploads, SignedUploads } from '../signed-uploads';
 
 export const testVendor: VerifiedVendor = {
@@ -30,10 +30,13 @@ export interface ApiTestOptions {
   vendor?: VerifiedVendor;
   clock?: Clock;
   signer?: SignedUploads;
+  // 'disabled' (default): tests drive projections explicitly via drain().
+  // 'live': keep the profile's real poke-driven polling — for tests of that wiring.
+  polling?: 'live' | 'disabled';
 }
 
 export function apiTestModule(options: ApiTestOptions = {}): TestingModuleBuilder {
-  const { vendor = testVendor, clock, signer = new FakeSignedUploads() } = options;
+  const { vendor = testVendor, clock, signer = new FakeSignedUploads(), polling = 'disabled' } = options;
   const builder = Test.createTestingModule({
     imports: [
       AuthModule.forRootAsync({ useFactory: () => new StaticTokenVerifier(vendor) }),
@@ -43,7 +46,9 @@ export function apiTestModule(options: ApiTestOptions = {}): TestingModuleBuilde
     ],
     providers: [{ provide: APP_FILTER, useClass: DomainErrorFilter }],
   });
-  builder.overrideProvider(POLLING_ENABLED).useValue(false);
+  if (polling === 'disabled') {
+    builder.overrideProvider(PollSchedule).useValue(PollSchedule.never());
+  }
   builder.overrideProvider(SignedUploads).useValue(signer);
   if (clock) {
     builder.overrideProvider(Clock).useValue(clock);
