@@ -3,6 +3,7 @@ import {
   CheckpointedProcessor,
   CheckpointedProjection,
   checkpointMetadata,
+  EventHandler,
   Processor,
   Projection,
 } from '@market-miam/event-sourcing';
@@ -34,6 +35,23 @@ describe('@CheckpointedProjection', () => {
     class UndecoratedHandler {}
 
     expect(checkpointMetadata(UndecoratedHandler)).toBeUndefined();
+  });
+
+  it('rejects a class that cannot honour a rebuild', () => {
+    // @ts-expect-error — no reset(): only a class implementing Projection may carry the decorator
+    @CheckpointedProjection('no-reset')
+    class HandlerWithoutReset implements EventHandler {
+      eventTypes(): string[] {
+        return [];
+      }
+
+      handle(): Promise<void> {
+        return Promise.resolve();
+      }
+    }
+
+    // The guard is compile-time only — at runtime the decorator still stamps.
+    expect(checkpointMetadata(HandlerWithoutReset)).toEqual({ name: 'no-reset', kind: 'projection' });
   });
 });
 

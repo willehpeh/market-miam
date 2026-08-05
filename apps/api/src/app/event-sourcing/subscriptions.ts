@@ -1,6 +1,6 @@
 import { Inject, Injectable, Logger, OnApplicationBootstrap, OnApplicationShutdown, Optional } from '@nestjs/common';
 import { DiscoveryService } from '@nestjs/core';
-import { EMPTY, exhaustMap, from, mergeMap, Observable, retry, Subject, takeUntil, timer } from 'rxjs';
+import { exhaustMap, from, mergeMap, retry, Subject, takeUntil, timer } from 'rxjs';
 import {
   Checkpoint,
   CheckpointConflictError,
@@ -16,19 +16,7 @@ import {
   UnitOfWork
 } from '@market-miam/event-sourcing';
 import { ContinuedLineageHandler } from '../lineage/continued-lineage.handler';
-import { pollSchedule } from './poll-schedule';
-
-export const POLLING_ENABLED = Symbol('POLLING_ENABLED');
-
-// Poll interval override (ms). Unprovided → pollSchedule's default. Dev shortens it
-// so the timer backstop is tight when there's no LISTEN/NOTIFY to poke the poller.
-export const POLL_INTERVAL = Symbol('POLL_INTERVAL');
-
-// A stream of pokes that ask Subscriptions to poll now. Default is EMPTY, but both
-// real profiles provide a source — Postgres LISTEN, in-memory pokes on append — and in
-// production this, not the timer, is what carries every append: a week of handler spans
-// showed 4-275ms from commit to handler, with no interval-length tail.
-export const EVENT_NOTIFICATIONS = Symbol('EVENT_NOTIFICATIONS');
+import { PollSchedule } from './poll-schedule';
 
 // The durability seam. Default builds in-memory checkpoints; provide a factory that
 // returns PostgresCheckpoint to make checkpoints survive restart. The runner depends
@@ -47,8 +35,8 @@ interface ConsumerShape {
 
 // The kind discriminates what rebuild may do: only a projection carries reset().
 // Narrowed once, in buildConsumers, where the decorator metadata is read — the
-// runtime guarantee that a @CheckpointedProjection class implements Projection
-// is the lint rule in eslint.config.mjs, not the type system.
+// guarantee that a @CheckpointedProjection class implements Projection is the
+// decorator's constrained signature, checked by the compiler at every use site.
 type CheckpointedConsumer =
   | (ConsumerShape & { readonly kind: 'projection'; readonly handler: Projection })
   | (ConsumerShape & { readonly kind: 'processor'; readonly handler: EventHandler });
@@ -62,9 +50,9 @@ export class Subscriptions implements OnApplicationBootstrap, OnApplicationShutd
     private readonly discovery: DiscoveryService,
     private readonly events: Events,
     private readonly lineage: Lineage,
-    @Inject(POLLING_ENABLED) private readonly pollingEnabled: boolean,
-    @Optional() @Inject(POLL_INTERVAL) private readonly pollIntervalMs?: number,
-    @Optional() @Inject(EVENT_NOTIFICATIONS) private readonly notifications: Observable<void> = EMPTY,
+    // Required, not optional: every profile must state its wake policy. A module
+    // that forgets fails at boot instead of silently never polling.
+    private readonly schedule: PollSchedule,
     @Optional() @Inject(CHECKPOINT_FACTORY) private readonly checkpointFor: CheckpointFactory = (name) => new InMemoryCheckpoint(name),
     @Optional() @Inject(UnitOfWork) private readonly unitOfWork: UnitOfWork = UnitOfWork.none(),
     @Optional() private readonly logger: Logger = new Logger(Subscriptions.name),
@@ -72,9 +60,7 @@ export class Subscriptions implements OnApplicationBootstrap, OnApplicationShutd
 
   onApplicationBootstrap(): void {
     this.consumers = this.buildConsumers();
-    if (this.pollingEnabled) {
-      this.startPolling();
-    }
+    this.startPolling();
   }
 
   onApplicationShutdown(): void {
@@ -131,8 +117,8 @@ export class Subscriptions implements OnApplicationBootstrap, OnApplicationShutd
         name,
       });
       const shape = { name, checkpoint, subscription };
-      // The one cast, at the one narrowing point: @CheckpointedProjection's
-      // decorator⇄hierarchy lint rule is what makes it sound.
+      // Sound: only @CheckpointedProjection stamps kind 'projection', and its
+      // signature only accepts classes implementing Projection.
       return kind === 'projection'
         ? { ...shape, kind, handler: handler as Projection }
         : { ...shape, kind, handler };
@@ -140,14 +126,19 @@ export class Subscriptions implements OnApplicationBootstrap, OnApplicationShutd
   }
 
   private handlers(): { handler: EventHandler; name: string; kind: CheckpointKind }[] {
-    return this.discovery
-      .getProviders()
-      .map((wrapper) => wrapper.instance)
-      .filter((instance): instance is EventHandler => isCheckpointed(instance))
-      .map((handler) => {
-        const metadata = checkpointMetadata(handler.constructor);
-        return { handler, name: metadata?.name as string, kind: metadata?.kind as CheckpointKind };
-      });
+    return this.discovery.getProviders().flatMap((wrapper) => {
+      const instance: unknown = wrapper.instance;
+      if (typeof instance !== 'object' || instance === null) {
+        return [];
+      }
+      const metadata = checkpointMetadata(instance.constructor);
+      if (!metadata) {
+        return [];
+      }
+      // Sound: only the @Checkpointed* decorators stamp metadata, and their
+      // signatures only accept EventHandler classes.
+      return [{ handler: instance as EventHandler, ...metadata }];
+    });
   }
 
   private startPolling(): void {
@@ -160,7 +151,7 @@ export class Subscriptions implements OnApplicationBootstrap, OnApplicationShutd
   }
 
   private wakeSubscription() {
-    return (subscription: Subscription) => pollSchedule(this.notifications, this.pollIntervalMs).pipe(
+    return (subscription: Subscription) => this.schedule.pokes().pipe(
       exhaustMap(() => subscription.poll()),
       // ponytail: exponential backoff, capped, reset once a poll succeeds. Infinite
       // retries are deliberate — a transient store outage should recover, not kill
@@ -196,12 +187,4 @@ function poll(subscription: Subscription): Promise<void> {
       throw error;
     }
   });
-}
-
-function isCheckpointed(instance: unknown): instance is EventHandler {
-  return (
-    typeof instance === 'object' &&
-    instance !== null &&
-    checkpointMetadata(instance.constructor) !== undefined
-  );
 }

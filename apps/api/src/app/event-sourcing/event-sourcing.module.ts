@@ -15,7 +15,7 @@ import {
 import { LineageModule } from '../lineage/lineage.module';
 import { TracingCommandGateway } from './tracing/command-gateway';
 import { TracingQueryGateway } from './tracing/query-gateway';
-import { Subscriptions, POLLING_ENABLED } from './subscriptions';
+import { Subscriptions } from './subscriptions';
 
 // The leaf adapter ApplicationEventStore wraps. One token for "whatever store the
 // profile plugs in", so the wrapping stays written once instead of once per profile.
@@ -46,7 +46,8 @@ export class EventSourcingModule {
         { provide: CommandGateway, useExisting: TracingCommandGateway },
         TracingQueryGateway,
         { provide: QueryGateway, useExisting: TracingQueryGateway },
-        { provide: POLLING_ENABLED, useValue: true },
+        // PollSchedule comes from the persistence profile — the wake policy is
+        // inseparable from where the pokes come from.
         Subscriptions,
       ],
       exports: [EventStore, Events, CommandGateway, QueryGateway, Subscriptions],

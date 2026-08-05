@@ -1,5 +1,6 @@
 import { INestApplication } from '@nestjs/common';
 import { CommandGateway } from '@market-miam/event-sourcing';
+import { Subscriptions } from './event-sourcing/subscriptions';
 import {
   AddItemToCatalogue,
   DeclareAbsence,
@@ -26,10 +27,12 @@ const DEV_SUBDOMAIN = 'dev';
 // anything on the memory profile. Dev-only — main.ts calls it under
 // NODE_ENV=development; production (postgres) never runs it.
 // Opens the storefront directly rather than registering a vendor, so the
-// OpensStorefronts processor never fires. drain() here contends with the poller the
-// appends poke — Subscriptions.drain() yields to it rather than failing the boot.
+// OpensStorefronts processor never fires. The closing drain() is what projects the
+// seed when there is no poller (the test harness disables polling); under dev's
+// live poller it contends per event and yields rather than failing the boot.
 export async function seedDev(app: INestApplication): Promise<void> {
   const commands = app.get(CommandGateway);
+  const subscriptions = app.get(Subscriptions);
   const registry = app.get(InMemorySubdomainRegistry);
 
   // Give the local sign-in vendor a subdomain so its publish gate passes and the
@@ -58,6 +61,7 @@ export async function seedDev(app: INestApplication): Promise<void> {
   // Subdomain must exist before publishing — it's now a publication requirement (step 14).
   await registry.register(DEMO_SUBDOMAIN, DEMO_VENDOR);
   await commands.execute(new PublishStorefront(DEMO_VENDOR));
+  await subscriptions.drain();
 }
 
 // The 2nd upcoming Saturday (UTC, matching LocalDate's day-of-week math), so the

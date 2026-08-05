@@ -24,7 +24,8 @@ import {
   VendorStorefrontViewStore,
 } from '@market-miam/market-days';
 import { PERSISTED_EVENTS } from '../event-sourcing/event-sourcing.module';
-import { CHECKPOINT_FACTORY, EVENT_NOTIFICATIONS } from '../event-sourcing/subscriptions';
+import { CHECKPOINT_FACTORY } from '../event-sourcing/subscriptions';
+import { PollSchedule } from '../event-sourcing/poll-schedule';
 import { TracingPostgresNotifications } from '../event-sourcing/tracing/postgres-notifications';
 import { masterKeyring } from '../event-sourcing/master-keyring';
 import { Migrations } from '../database/migrations';
@@ -55,7 +56,7 @@ const pool = {
   inject: [ConfigService],
 };
 
-// LISTEN/NOTIFY pokes (their own dedicated pg client) → EVENT_NOTIFICATIONS.
+// LISTEN/NOTIFY pokes (their own dedicated pg client) drive the poll schedule.
 const notifications = [
   {
     provide: PostgresNotifications,
@@ -71,8 +72,8 @@ const notifications = [
     inject: [PostgresNotifications],
   },
   {
-    provide: EVENT_NOTIFICATIONS,
-    useFactory: (traced: TracingPostgresNotifications) => traced.notifications(),
+    provide: PollSchedule,
+    useFactory: (traced: TracingPostgresNotifications) => PollSchedule.pokedWithBackstop(traced.notifications()),
     inject: [TracingPostgresNotifications],
   },
 ];
@@ -143,7 +144,7 @@ const views = [
     PERSISTED_EVENTS,
     DataKeys,
     UnitOfWork,
-    EVENT_NOTIFICATIONS,
+    PollSchedule,
     CHECKPOINT_FACTORY,
     VendorStorefrontViews,
     VendorStorefrontViewStore,
