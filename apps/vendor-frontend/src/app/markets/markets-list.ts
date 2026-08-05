@@ -2,7 +2,6 @@ import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/c
 import { RouterLink } from '@angular/router';
 import { Card } from '../core/card';
 import { MarketScheduleFacade } from './market-schedule.facade';
-import { StorefrontFacade } from '../storefront/storefront.facade';
 import { MarketScheduleView } from './market-schedules';
 
 const DAY_LABELS: Record<string, string> = {
@@ -24,7 +23,7 @@ type ScheduleCard = { scheduleId: string; marketName: string; cadence: string; d
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterLink, Card],
   template: `
-    <mm-card [back]="backTo()">
+    <mm-card back="/dashboard">
       <h1 class="text-xl leading-tight">Vos marchés</h1>
       <p class="mt-3 text-sm text-ink-soft">Où et quand vos clients vous trouvent.</p>
 
@@ -66,8 +65,6 @@ type ScheduleCard = { scheduleId: string; marketName: string; cadence: string; d
 })
 export class MarketsList {
   private readonly markets = inject(MarketScheduleFacade);
-
-  readonly backTo = inject(StorefrontFacade).backTo;
 
   readonly scheduleCards = computed<ScheduleCard[]>(() =>
     this.markets.schedules().map((schedule) => ({

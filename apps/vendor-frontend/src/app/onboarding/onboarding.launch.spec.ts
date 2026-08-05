@@ -121,7 +121,8 @@ describe('Onboarding launch', () => {
     httpCtrl.expectOne('/api/market-schedules').flush({ schedules: [] });
   });
 
-  it('sends a vendor who has only added a photo to the form', async () => {
+  // The steps card names what is still missing; a half-filled form does not.
+  it('sends a vendor who has only added a photo to the dashboard', async () => {
     const { view, auth, router } = await launch();
     auth.login();
 
@@ -129,7 +130,9 @@ describe('Onboarding launch', () => {
     httpCtrl.expectOne('/api/storefront').flush(PHOTO_ONLY);
     await view.fixture.whenStable();
 
-    expect(router.url).toBe('/dashboard/information');
+    expect(router.url).toBe('/dashboard');
+    httpCtrl.expectOne('/api/catalogue').flush({ items: [] });
+    httpCtrl.expectOne('/api/market-schedules').flush({ schedules: [] });
   });
 
   it('sends the vendor to the dashboard once they confirm their storefront', async () => {
@@ -142,6 +145,12 @@ describe('Onboarding launch', () => {
     expect(router.url).toBe('/onboarding');
 
     fireEvent.click(screen.getByRole('button', { name: /créer ma vitrine/i }));
+    await view.fixture.whenStable();
+    expect(router.url).toBe('/dashboard');
+    httpCtrl.expectOne('/api/catalogue').flush({ items: [] });
+    httpCtrl.expectOne('/api/market-schedules').flush({ schedules: [] });
+
+    fireEvent.click(screen.getByRole('link', { name: /informations de la vitrine/i }));
     await view.fixture.whenStable();
     expect(router.url).toBe('/dashboard/information');
 

@@ -11,7 +11,6 @@ export class FakeStorefrontFacade implements StorefrontFacade {
   readonly coverPhotoError = signal(false);
   readonly publishing = signal(false);
   readonly publishError = signal(false);
-  readonly backTo = signal('/dashboard');
   savedInfo: { name: string; description: string; phone: string } | undefined;
   uploadedFile: File | undefined;
   publishCalled = false;

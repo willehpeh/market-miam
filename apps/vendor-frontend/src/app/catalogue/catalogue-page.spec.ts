@@ -8,14 +8,9 @@ import { CatalogueFacade } from './catalogue.facade';
 import { FakeCatalogueFacade } from './fake.catalogue.facade';
 import { AuthFacade } from '../core/auth/auth.facade';
 import { FakeAuthFacade } from '../core/auth/fake.auth.facade';
-import { StorefrontFacade } from '../storefront/storefront.facade';
-import { FakeStorefrontFacade } from '../storefront/fake.storefront.facade';
 
 async function renderPage() {
-  const view = await render(CataloguePage, {
-    providers: [provideRouter([]), { provide: StorefrontFacade, useClass: FakeStorefrontFacade }],
-  });
-  return { view, storefront: TestBed.inject(StorefrontFacade) as FakeStorefrontFacade };
+  return render(CataloguePage, { providers: [provideRouter([])] });
 }
 
 describe('CataloguePage', () => {
@@ -25,13 +20,10 @@ describe('CataloguePage', () => {
     expect(screen.getByRole('heading', { name: 'Votre catalogue' })).toBeInTheDocument();
   });
 
-  // Which destination that is belongs to the storefront: see its own spec.
-  it('returns wherever the storefront says pages beneath the vitrine go', async () => {
-    const { view, storefront } = await renderPage();
-    storefront.backTo.set('/dashboard/storefront');
-    view.detectChanges();
+  it('returns to the dashboard', async () => {
+    await renderPage();
 
-    expect(screen.getByRole('link', { name: /retour/i })).toHaveAttribute('href', '/dashboard/storefront');
+    expect(screen.getByRole('link', { name: /retour/i })).toHaveAttribute('href', '/dashboard');
   });
 
   // The reordering is a state of the catalogue, not a page of its own: the real routes
@@ -42,7 +34,6 @@ describe('CataloguePage', () => {
         provideRouter(appRoutes),
         { provide: CatalogueFacade, useClass: FakeCatalogueFacade },
         { provide: AuthFacade, useClass: FakeAuthFacade },
-        { provide: StorefrontFacade, useClass: FakeStorefrontFacade },
       ],
     });
     (TestBed.inject(AuthFacade) as FakeAuthFacade).status.set('authenticated');

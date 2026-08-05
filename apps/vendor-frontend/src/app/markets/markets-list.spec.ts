@@ -5,20 +5,13 @@ import { MarketsList } from './markets-list';
 import { MarketScheduleFacade } from './market-schedule.facade';
 import { FakeMarketScheduleFacade } from './fake.market-schedule.facade';
 import { MarketScheduleView } from './market-schedules';
-import { StorefrontFacade } from '../storefront/storefront.facade';
-import { FakeStorefrontFacade } from '../storefront/fake.storefront.facade';
 
 async function renderList() {
   const view = await render(MarketsList, {
-    providers: [
-      provideRouter([]),
-      { provide: MarketScheduleFacade, useClass: FakeMarketScheduleFacade },
-      { provide: StorefrontFacade, useClass: FakeStorefrontFacade },
-    ],
+    providers: [provideRouter([]), { provide: MarketScheduleFacade, useClass: FakeMarketScheduleFacade }],
   });
   const markets = TestBed.inject(MarketScheduleFacade) as FakeMarketScheduleFacade;
-  const storefront = TestBed.inject(StorefrontFacade) as FakeStorefrontFacade;
-  return { view, markets, storefront };
+  return { view, markets };
 }
 
 const schedule = (overrides: Partial<MarketScheduleView> = {}): MarketScheduleView => ({
@@ -41,11 +34,7 @@ describe('MarketsList', () => {
     const markets = new FakeMarketScheduleFacade();
     markets.schedules.set([schedule()]);
     await render(MarketsList, {
-      providers: [
-        provideRouter([]),
-        { provide: MarketScheduleFacade, useValue: markets },
-        { provide: StorefrontFacade, useClass: FakeStorefrontFacade },
-      ],
+      providers: [provideRouter([]), { provide: MarketScheduleFacade, useValue: markets }],
     });
 
     expect(markets.loaded).toBe(false);
@@ -125,13 +114,9 @@ describe('MarketsList', () => {
     expect(screen.getByRole('link', { name: /ajouter/i })).toHaveAttribute('href', '/dashboard/markets/new');
   });
 
-  // Which destination that is belongs to the storefront: see its own spec.
-  it('returns wherever the storefront says pages beneath the vitrine go', async () => {
-    const { view, storefront } = await renderList();
-    storefront.backTo.set('/dashboard/storefront');
-    view.detectChanges();
-
-    expect(screen.getByRole('link', { name: /retour/i })).toHaveAttribute('href', '/dashboard/storefront');
+  it('returns to the dashboard', async () => {
+    await renderList();
+    expect(screen.getByRole('link', { name: /retour/i })).toHaveAttribute('href', '/dashboard');
   });
 
   it('shows only the add button when there are no schedules', async () => {

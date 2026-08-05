@@ -30,7 +30,7 @@ import { environment } from '../../environments/environment';
         }
 
         <div class="mt-4 grid grid-cols-2 gap-3">
-          <a routerLink="/dashboard/storefront" class="btn-soft">
+          <a routerLink="/dashboard/information" class="btn-soft">
             <i class="fa-solid fa-pen" aria-hidden="true"></i> Modifier
           </a>
           <button type="button" class="btn-soft" (click)="share()">
@@ -38,6 +38,19 @@ import { environment } from '../../environments/environment';
             {{ copied() ? 'Lien copié' : 'Partager' }}
           </button>
         </div>
+      </mm-card>
+
+      <mm-card>
+        <ul class="divide-y divide-line">
+          @for (destination of destinations; track destination.title) {
+            <li>
+              <a [routerLink]="destination.link" class="flex items-center gap-4 py-5 no-underline">
+                <p class="flex-1 font-bold text-ink">{{ destination.title }}</p>
+                <span aria-hidden="true" class="text-2xl leading-none text-muted">›</span>
+              </a>
+            </li>
+          }
+        </ul>
       </mm-card>
     } @else {
       <mm-card>
@@ -128,6 +141,13 @@ import { environment } from '../../environments/environment';
 })
 export class Dashboard {
   readonly copied = signal(false);
+
+  // The vitrine's own card edits the vitrine; these are the other two things a customer
+  // sees on it, and a vendor changes them far more often than their description.
+  readonly destinations = [
+    { title: 'Votre catalogue', link: '/dashboard/catalogue' },
+    { title: 'Vos marchés', link: '/dashboard/markets' },
+  ];
   readonly doneCount = computed(() => this.steps().filter((step) => step.done).length);
   readonly allDone = computed(() => this.doneCount() === this.steps().length);
   readonly title = computed(() => this.allDone() ? 'Votre vitrine est prête !' : 'Terminez votre installation');

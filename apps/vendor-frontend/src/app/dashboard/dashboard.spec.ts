@@ -246,7 +246,14 @@ describe('Dashboard', () => {
     await renderReady({ published: true });
 
     expect(screen.getByText('Votre vitrine')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /modifier/i })).toHaveAttribute('href', '/dashboard/storefront');
+    expect(screen.getByRole('link', { name: /modifier/i })).toHaveAttribute('href', '/dashboard/information');
+  });
+
+  it('opens the catalogue and the markets straight from the published home', async () => {
+    await renderReady({ published: true });
+
+    expect(screen.getByRole('link', { name: 'Votre catalogue' })).toHaveAttribute('href', '/dashboard/catalogue');
+    expect(screen.getByRole('link', { name: 'Vos marchés' })).toHaveAttribute('href', '/dashboard/markets');
   });
 
   it('links to the live storefront once published', async () => {

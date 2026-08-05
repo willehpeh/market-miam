@@ -41,11 +41,10 @@ export class OnboardingEffects {
       this.actions$.pipe(
         ofType(LoadStorefrontSuccess),
         tap(({ view }) => {
-          const destination = view.name
-            ? '/dashboard'
-            : view.imageReference
-              ? '/dashboard/information'
-              : '/onboarding';
+          // A vendor who got as far as a photo has a dashboard worth landing on: the
+          // steps card names what is left. Only someone who has done nothing at all
+          // still needs the welcome.
+          const destination = view.name || view.imageReference ? '/dashboard' : '/onboarding';
           void this.router.navigate([destination]);
         }),
       ),

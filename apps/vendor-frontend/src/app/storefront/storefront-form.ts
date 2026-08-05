@@ -1,5 +1,4 @@
 import { ChangeDetectionStrategy, Component, inject, linkedSignal, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
 import { form, FormField, required } from '@angular/forms/signals';
 import { StorefrontFacade } from './storefront.facade';
 import { CloudinaryUrlPipe } from '../core/cloudinary-url.pipe';
@@ -10,19 +9,10 @@ const MAX_PHOTO_BYTES = 10 * 1024 * 1024;
 @Component({
   selector: 'mm-storefront-form',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [Card, FormField, CloudinaryUrlPipe, RouterLink],
+  imports: [Card, FormField, CloudinaryUrlPipe],
   template: `
-    <mm-card>
-      <form class="relative" (submit)="submit($event)">
-        @if (view()?.published) {
-          <a
-            routerLink="/dashboard/storefront"
-            aria-label="Fermer"
-            class="absolute right-0 top-0 grid place-items-center rounded-full text-brand"
-          >
-            <i class="fa-solid fa-xmark" aria-hidden="true"></i>
-          </a>
-        }
+    <mm-card back="/dashboard">
+      <form (submit)="submit($event)">
         <p class="kicker">Votre vitrine</p>
         <h1 class="mt-2 text-xl leading-tight">Présentez votre stand</h1>
         <p class="mt-2 text-sm text-ink-soft">C'est ce que vos clients voient en premier.</p>
