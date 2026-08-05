@@ -7,6 +7,8 @@ import { editableSchedule } from './editable-schedule.guard';
 import { MarketScheduleFacade } from './market-schedule.facade';
 import { FakeMarketScheduleFacade } from './fake.market-schedule.facade';
 import { MarketScheduleView } from './market-schedules';
+import { StorefrontFacade } from '../storefront/storefront.facade';
+import { FakeStorefrontFacade } from '../storefront/fake.storefront.facade';
 
 const existing: MarketScheduleView = {
   scheduleId: 'schedule-1',
@@ -35,6 +37,7 @@ describe('editableSchedule guard', () => {
           { path: 'dashboard/markets/:scheduleId/edit', component: AddSchedule, canActivate: [editableSchedule] },
         ]),
         { provide: MarketScheduleFacade, useValue: fake },
+        { provide: StorefrontFacade, useClass: FakeStorefrontFacade },
       ],
     });
     harness = await RouterTestingHarness.create();

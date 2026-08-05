@@ -1,4 +1,4 @@
-import { inject, Injectable } from '@angular/core';
+import { computed, inject, Injectable } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { StorefrontFacade } from './storefront.facade';
 import { EditStorefront, PublishStorefront, storefrontFeature, UploadCoverPhoto } from './storefront.state';
@@ -14,6 +14,7 @@ export class StoreStorefrontFacade implements StorefrontFacade {
   readonly coverPhotoError = this.store.selectSignal(storefrontFeature.selectCoverPhotoError);
   readonly publishing = this.store.selectSignal(storefrontFeature.selectPublishing);
   readonly publishError = this.store.selectSignal(storefrontFeature.selectPublishError);
+  readonly backTo = computed(() => (this.view()?.published ? '/dashboard/storefront' : '/dashboard'));
 
   save(name: string, description: string, phone: string): void {
     this.store.dispatch(EditStorefront({ name, description, phone }));

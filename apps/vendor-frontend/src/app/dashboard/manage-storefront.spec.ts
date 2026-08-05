@@ -11,8 +11,8 @@ describe('ManageStorefront', () => {
     await renderHub();
 
     expect(screen.getByRole('link', { name: 'Informations' })).toHaveAttribute('href', '/dashboard/information');
-    expect(screen.getByRole('link', { name: 'Mon catalogue' })).toHaveAttribute('href', '/dashboard/catalogue');
-    expect(screen.getByRole('link', { name: 'Mes marchés' })).toHaveAttribute('href', '/dashboard/markets');
+    expect(screen.getByRole('link', { name: 'Catalogue' })).toHaveAttribute('href', '/dashboard/catalogue');
+    expect(screen.getByRole('link', { name: 'Marchés' })).toHaveAttribute('href', '/dashboard/markets');
   });
 
   it('returns to the dashboard', async () => {

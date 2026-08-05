@@ -245,7 +245,7 @@ describe('Dashboard', () => {
   it('offers the storefront as online once published', async () => {
     await renderReady({ published: true });
 
-    expect(screen.getByText('En ligne')).toBeInTheDocument();
+    expect(screen.getByText('Votre vitrine')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /modifier/i })).toHaveAttribute('href', '/dashboard/storefront');
   });
 

@@ -95,6 +95,24 @@ describe('Storefront', () => {
     expect(facade.view()?.published).toBe(true);
   });
 
+  it('returns the pages beneath a published vitrine to the management hub', () => {
+    store.dispatch(LoadStorefront());
+
+    httpCtrl.expectOne('/api/storefront').flush({ ...ACME, published: true });
+
+    expect(facade.backTo()).toBe('/dashboard/storefront');
+  });
+
+  // Mid-setup the vendor arrives from the steps on the dashboard and has never opened
+  // the hub — returning them to it would drop them somewhere they have never been.
+  it('returns them to the dashboard while the vitrine is unpublished', () => {
+    store.dispatch(LoadStorefront());
+
+    httpCtrl.expectOne('/api/storefront').flush(ACME);
+
+    expect(facade.backTo()).toBe('/dashboard');
+  });
+
   it('retries after a 404 and loads once the storefront is projected', async () => {
     store.dispatch(LoadStorefront());
 

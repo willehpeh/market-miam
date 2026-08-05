@@ -1,7 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Card } from '../core/card';
-import { Badge } from '../core/badge';
 import { COPIED_NOTICE_DELAY, Share } from '../core/share';
 import { StorefrontFacade } from '../storefront/storefront.facade';
 import { CatalogueFacade } from '../catalogue/catalogue.facade';
@@ -10,7 +9,7 @@ import { environment } from '../../environments/environment';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, Card, Badge],
+  imports: [RouterLink, Card],
   template: `
     @if (!loaded()) {
       <mm-card>
@@ -24,13 +23,10 @@ import { environment } from '../../environments/environment';
       </mm-card>
     } @else if (published()) {
       <mm-card>
-        <div class="flex items-center justify-between gap-4">
-          <p class="kicker">Votre vitrine</p>
-          <mm-badge>En ligne</mm-badge>
-        </div>
+        <p class="kicker">Votre vitrine</p>
 
         @if (storefrontUrl(); as url) {
-          <a [href]="url.href" target="_blank" rel="noopener" class="mt-4 block font-mono text-brand">{{ url.label }}</a>
+          <a [href]="url.href" target="_blank" rel="noopener" class="mt-4 block text-brand-deep">{{ url.label }}</a>
         }
 
         <div class="mt-4 grid grid-cols-2 gap-3">
@@ -54,7 +50,7 @@ import { environment } from '../../environments/environment';
             {{ doneCount() }}<span class="text-lg font-normal text-muted">/{{ steps().length }}</span>
           </p>
         </div>
-  
+
         <div
           class="mt-4 h-1.5 overflow-hidden rounded-pill bg-surface-sunk"
           role="progressbar"
@@ -63,15 +59,17 @@ import { environment } from '../../environments/environment';
           [attr.aria-valuemax]="steps().length"
           [attr.aria-valuenow]="doneCount()"
         >
-          <div class="h-full rounded-pill bg-brand transition-all" [style.width.%]="doneCount() / steps().length * 100"></div>
+          <div class="h-full rounded-pill bg-brand transition-all"
+               [style.width.%]="doneCount() / steps().length * 100"></div>
         </div>
-  
+
         <ul class="mt-2 divide-y divide-line">
           @for (step of steps(); track step.title) {
             <li>
               @if (step.done) {
                 <a [routerLink]="step.link" class="flex items-center gap-4 py-5 no-underline">
-                  <span aria-hidden="true" class="grid size-9 shrink-0 place-items-center rounded-field border border-brand text-brand">✓</span>
+                  <span aria-hidden="true"
+                        class="grid size-9 shrink-0 place-items-center rounded-field border border-brand text-brand">✓</span>
                   <div class="flex-1">
                     <p class="text-lg font-bold text-ink">{{ step.title }}</p>
                     <p class="text-sm text-muted">{{ step.detail }}</p>
@@ -100,7 +98,7 @@ import { environment } from '../../environments/environment';
             </li>
           }
         </ul>
-  
+
         @if (allDone()) {
           @if (storefrontUrl(); as url) {
             <p class="mt-6 text-center text-ink">
@@ -126,24 +124,40 @@ import { environment } from '../../environments/environment';
         }
       </mm-card>
     }
-  `,
+  `
 })
 export class Dashboard {
+  readonly copied = signal(false);
+  readonly doneCount = computed(() => this.steps().filter((step) => step.done).length);
+  readonly allDone = computed(() => this.doneCount() === this.steps().length);
+  readonly title = computed(() => this.allDone() ? 'Votre vitrine est prête !' : 'Terminez votre installation');
+  readonly subtitle = computed(() =>
+    this.allDone()
+      ? 'Si vous êtes satisfait·e de votre configuration, cliquez sur Publier.'
+      : 'Vous pourrez publier votre vitrine dès que ce sera fait.'
+  );
   private readonly storefront = inject(StorefrontFacade);
+  readonly storefrontUrl = computed(() => {
+    const subdomain = this.storefront.view()?.subdomain;
+    if (!subdomain) {
+      return null;
+    }
+    const domain = `${ subdomain }.${ environment.storefrontBaseDomain }`;
+    return { href: `https://${ domain }`, label: domain };
+  });
+  readonly loaded = computed(() => !!this.storefront.view());
+  readonly published = computed(() => this.storefront.view()?.published === true);
+  readonly publishing = this.storefront.publishing;
+  readonly publishError = this.storefront.publishError;
   private readonly catalogue = inject(CatalogueFacade);
   private readonly markets = inject(MarketScheduleFacade);
-  private readonly sharing = inject(Share);
-  private readonly copiedNoticeDelay = inject(COPIED_NOTICE_DELAY);
-
-  readonly copied = signal(false);
-
   readonly steps = computed(() => {
     const view = this.storefront.view();
     const fields = [
       { label: 'nom', set: !!view?.name, required: true },
       { label: 'description', set: !!view?.description, required: false },
       { label: 'photo', set: !!view?.imageReference, required: true },
-      { label: 'téléphone', set: !!view?.phone, required: false },
+      { label: 'téléphone', set: !!view?.phone, required: false }
     ];
     const present = fields.filter((field) => field.set).map((field) => field.label);
     const missing = fields.filter((field) => !field.set && field.required).map((field) => field.label);
@@ -151,39 +165,38 @@ export class Dashboard {
     const dishCount = this.catalogue.items().length;
     const scheduleCount = this.markets.schedules().length;
     const steps = [
-      { number: 1, title: 'Informations de la vitrine', detail: summarise(present, missing, optional), done: missing.length === 0, link: '/dashboard/information' },
-      { number: 2, title: 'Composez votre catalogue', detail: dishCount ? dishesAdded(dishCount) : 'Ajoutez au moins un plat à proposer.', done: dishCount > 0, link: '/dashboard/catalogue' },
-      { number: 3, title: 'Indiquez vos marchés', detail: scheduleCount ? marketsAdded(scheduleCount) : 'Où et quand vous vendez.', done: scheduleCount > 0, link: '/dashboard/markets' },
+      {
+        number: 1,
+        title: 'Informations de la vitrine',
+        detail: summarise(present, missing, optional),
+        done: missing.length === 0,
+        link: '/dashboard/information'
+      },
+      {
+        number: 2,
+        title: 'Composez votre catalogue',
+        detail: dishCount ? dishesAdded(dishCount) : 'Ajoutez au moins un plat à proposer.',
+        done: dishCount > 0,
+        link: '/dashboard/catalogue'
+      },
+      {
+        number: 3,
+        title: 'Indiquez vos marchés',
+        detail: scheduleCount ? marketsAdded(scheduleCount) : 'Où et quand vous vendez.',
+        done: scheduleCount > 0,
+        link: '/dashboard/markets'
+      }
     ];
     const nextIndex = steps.findIndex((step) => !step.done);
     return steps.map((step, index) => ({ ...step, active: index === nextIndex }));
   });
+  private readonly sharing = inject(Share);
+  private readonly copiedNoticeDelay = inject(COPIED_NOTICE_DELAY);
 
-  readonly doneCount = computed(() => this.steps().filter((step) => step.done).length);
-
-  readonly allDone = computed(() => this.doneCount() === this.steps().length);
-
-  readonly title = computed(() => this.allDone() ? 'Votre vitrine est prête !' : 'Terminez votre installation');
-
-  readonly subtitle = computed(() =>
-    this.allDone()
-      ? 'Si vous êtes satisfait·e de votre configuration, cliquez sur Publier.'
-      : 'Vous pourrez publier votre vitrine dès que ce sera fait.',
-  );
-
-  readonly storefrontUrl = computed(() => {
-    const subdomain = this.storefront.view()?.subdomain;
-    if (!subdomain) return null;
-    const domain = `${subdomain}.${environment.storefrontBaseDomain}`;
-    return { href: `https://${domain}`, label: domain };
-  });
-
-  readonly loaded = computed(() => !!this.storefront.view());
-
-  readonly published = computed(() => this.storefront.view()?.published === true);
-
-  readonly publishing = this.storefront.publishing;
-  readonly publishError = this.storefront.publishError;
+  constructor() {
+    this.catalogue.load();
+    this.markets.load();
+  }
 
   publish(): void {
     this.storefront.publish();
@@ -191,39 +204,38 @@ export class Dashboard {
 
   async share(): Promise<void> {
     const url = this.storefrontUrl();
-    if (!url) return;
+    if (!url) {
+      return;
+    }
     const outcome = await this.sharing.link(this.storefront.view()?.name ?? '', url.href);
-    if (outcome !== 'copied') return;
+    if (outcome !== 'copied') {
+      return;
+    }
     this.copied.set(true);
     setTimeout(() => this.copied.set(false), this.copiedNoticeDelay);
-  }
-
-  constructor() {
-    this.catalogue.load();
-    this.markets.load();
   }
 }
 
 function dishesAdded(count: number): string {
   const plural = count > 1 ? 's' : '';
-  return `${count} plat${plural} ajouté${plural}`;
+  return `${ count } plat${ plural } ajouté${ plural }`;
 }
 
 function marketsAdded(count: number): string {
   const plural = count > 1 ? 's' : '';
-  return `${count} marché${plural} ajouté${plural}`;
+  return `${ count } marché${ plural } ajouté${ plural }`;
 }
 
 function summarise(present: string[], missing: string[], optional: string[]): string {
   const parts: string[] = [];
   if (present.length) {
-    parts.push(`Renseigné${present.length > 1 ? 's' : ''} : ${present.join(', ')}`);
+    parts.push(`Renseigné${ present.length > 1 ? 's' : '' } : ${ present.join(', ') }`);
   }
   if (missing.length) {
-    parts.push(`Manquant${missing.length > 1 ? 's' : ''} : ${missing.join(', ')}`);
+    parts.push(`Manquant${ missing.length > 1 ? 's' : '' } : ${ missing.join(', ') }`);
   }
   if (optional.length) {
-    parts.push(`Optionnel${optional.length > 1 ? 's' : ''} : ${optional.join(', ')}`);
+    parts.push(`Optionnel${ optional.length > 1 ? 's' : '' } : ${ optional.join(', ') }`);
   }
   return parts.join(' · ');
 }

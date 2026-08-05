@@ -8,16 +8,28 @@ import { CatalogueFacade } from './catalogue.facade';
 import { FakeCatalogueFacade } from './fake.catalogue.facade';
 import { AuthFacade } from '../core/auth/auth.facade';
 import { FakeAuthFacade } from '../core/auth/fake.auth.facade';
+import { StorefrontFacade } from '../storefront/storefront.facade';
+import { FakeStorefrontFacade } from '../storefront/fake.storefront.facade';
+
+async function renderPage() {
+  const view = await render(CataloguePage, {
+    providers: [provideRouter([]), { provide: StorefrontFacade, useClass: FakeStorefrontFacade }],
+  });
+  return { view, storefront: TestBed.inject(StorefrontFacade) as FakeStorefrontFacade };
+}
 
 describe('CataloguePage', () => {
   it('titles the catalogue, whatever is going on beneath it', async () => {
-    await render(CataloguePage, { providers: [provideRouter([])] });
+    await renderPage();
 
     expect(screen.getByRole('heading', { name: 'Votre catalogue' })).toBeInTheDocument();
   });
 
-  it('links back to the storefront hub', async () => {
-    await render(CataloguePage, { providers: [provideRouter([])] });
+  // Which destination that is belongs to the storefront: see its own spec.
+  it('returns wherever the storefront says pages beneath the vitrine go', async () => {
+    const { view, storefront } = await renderPage();
+    storefront.backTo.set('/dashboard/storefront');
+    view.detectChanges();
 
     expect(screen.getByRole('link', { name: /retour/i })).toHaveAttribute('href', '/dashboard/storefront');
   });
@@ -30,6 +42,7 @@ describe('CataloguePage', () => {
         provideRouter(appRoutes),
         { provide: CatalogueFacade, useClass: FakeCatalogueFacade },
         { provide: AuthFacade, useClass: FakeAuthFacade },
+        { provide: StorefrontFacade, useClass: FakeStorefrontFacade },
       ],
     });
     (TestBed.inject(AuthFacade) as FakeAuthFacade).status.set('authenticated');

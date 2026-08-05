@@ -140,7 +140,7 @@
   }
   /* quiet filled control — pairs an <a> and a <button> that must look identical */
   .btn-soft {
-    @apply inline-flex items-center justify-center gap-2 rounded-field bg-surface-sunk px-4 py-3 text-base font-bold text-ink no-underline shadow-none transition-colors;
+    @apply inline-flex items-center justify-center gap-2 rounded-field bg-canvas px-4 py-3 text-base font-bold text-ink-soft no-underline shadow-none transition-colors;
     @apply hover:bg-line active:bg-line active:scale-[0.98];
     @apply focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand;
   }

@@ -5,13 +5,20 @@ import { MarketsList } from './markets-list';
 import { MarketScheduleFacade } from './market-schedule.facade';
 import { FakeMarketScheduleFacade } from './fake.market-schedule.facade';
 import { MarketScheduleView } from './market-schedules';
+import { StorefrontFacade } from '../storefront/storefront.facade';
+import { FakeStorefrontFacade } from '../storefront/fake.storefront.facade';
 
 async function renderList() {
   const view = await render(MarketsList, {
-    providers: [provideRouter([]), { provide: MarketScheduleFacade, useClass: FakeMarketScheduleFacade }],
+    providers: [
+      provideRouter([]),
+      { provide: MarketScheduleFacade, useClass: FakeMarketScheduleFacade },
+      { provide: StorefrontFacade, useClass: FakeStorefrontFacade },
+    ],
   });
   const markets = TestBed.inject(MarketScheduleFacade) as FakeMarketScheduleFacade;
-  return { view, markets };
+  const storefront = TestBed.inject(StorefrontFacade) as FakeStorefrontFacade;
+  return { view, markets, storefront };
 }
 
 const schedule = (overrides: Partial<MarketScheduleView> = {}): MarketScheduleView => ({
@@ -34,7 +41,11 @@ describe('MarketsList', () => {
     const markets = new FakeMarketScheduleFacade();
     markets.schedules.set([schedule()]);
     await render(MarketsList, {
-      providers: [provideRouter([]), { provide: MarketScheduleFacade, useValue: markets }],
+      providers: [
+        provideRouter([]),
+        { provide: MarketScheduleFacade, useValue: markets },
+        { provide: StorefrontFacade, useClass: FakeStorefrontFacade },
+      ],
     });
 
     expect(markets.loaded).toBe(false);
@@ -114,9 +125,14 @@ describe('MarketsList', () => {
     expect(screen.getByRole('link', { name: /ajouter un marché/i })).toHaveAttribute('href', '/dashboard/markets/new');
   });
 
-  it('links back to the storefront hub', async () => {
-    await renderList();
+  // Which destination that is belongs to the storefront: see its own spec.
+  it('returns wherever the storefront says pages beneath the vitrine go', async () => {
+    const { view, storefront } = await renderList();
+    storefront.backTo.set('/dashboard/storefront');
+    view.detectChanges();
+
     expect(screen.getByRole('link', { name: /retour/i })).toHaveAttribute('href', '/dashboard/storefront');
+    expect(screen.getByRole('link', { name: /fermer/i })).toHaveAttribute('href', '/dashboard/storefront');
   });
 
   it('shows only the add-market affordance when there are no schedules', async () => {
