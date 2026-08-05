@@ -146,7 +146,7 @@ export class Dashboard {
     const dishCount = this.catalogue.items().length;
     const scheduleCount = this.markets.schedules().length;
     const steps = [
-      { number: 1, title: 'Informations de la vitrine', detail: summarise(present, missing, optional), done: missing.length === 0, link: '/onboarding/storefront' },
+      { number: 1, title: 'Informations de la vitrine', detail: summarise(present, missing, optional), done: missing.length === 0, link: '/dashboard/information' },
       { number: 2, title: 'Composez votre catalogue', detail: dishCount ? dishesAdded(dishCount) : 'Ajoutez au moins un plat à proposer.', done: dishCount > 0, link: '/dashboard/catalogue' },
       { number: 3, title: 'Indiquez vos marchés', detail: scheduleCount ? marketsAdded(scheduleCount) : 'Où et quand vous vendez.', done: scheduleCount > 0, link: '/dashboard/markets' },
     ];
@@ -178,7 +178,7 @@ export class Dashboard {
   readonly published = computed(() => this.storefront.view()?.published === true);
 
   readonly destinations = [
-    { title: 'Ma vitrine', link: '/onboarding/storefront' },
+    { title: 'Ma vitrine', link: '/dashboard/information' },
     { title: 'Mon catalogue', link: '/dashboard/catalogue' },
     { title: 'Mes marchés', link: '/dashboard/markets' },
   ];

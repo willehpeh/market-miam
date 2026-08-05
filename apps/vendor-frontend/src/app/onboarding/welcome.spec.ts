@@ -6,13 +6,13 @@ import { Welcome } from './welcome';
 describe('Welcome', () => {
   it('sends the vendor to the vitrine form to create their storefront', async () => {
     const view = await render(Welcome, {
-      providers: [provideRouter([{ path: 'onboarding/storefront', component: Welcome }])],
+      providers: [provideRouter([{ path: 'dashboard/information', component: Welcome }])],
     });
     const router = TestBed.inject(Router);
 
     fireEvent.click(screen.getByRole('button', { name: /créer ma vitrine/i }));
     await view.fixture.whenStable();
 
-    expect(router.url).toBe('/onboarding/storefront');
+    expect(router.url).toBe('/dashboard/information');
   });
 });

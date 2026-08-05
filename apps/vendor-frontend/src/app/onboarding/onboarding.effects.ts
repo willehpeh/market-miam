@@ -44,7 +44,7 @@ export class OnboardingEffects {
           const destination = view.name
             ? '/dashboard'
             : view.imageReference
-              ? '/onboarding/storefront'
+              ? '/dashboard/information'
               : '/onboarding';
           void this.router.navigate([destination]);
         }),

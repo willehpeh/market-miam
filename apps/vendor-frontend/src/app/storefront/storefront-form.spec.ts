@@ -1,8 +1,8 @@
 import { TestBed } from '@angular/core/testing';
 import { render, screen, fireEvent } from '@testing-library/angular';
 import { StorefrontForm } from './storefront-form';
-import { StorefrontFacade } from '../storefront/storefront.facade';
-import { FakeStorefrontFacade } from '../storefront/fake.storefront.facade';
+import { StorefrontFacade } from './storefront.facade';
+import { FakeStorefrontFacade } from './fake.storefront.facade';
 
 async function renderForm() {
   const view = await render(StorefrontForm, {

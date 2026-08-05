@@ -126,7 +126,7 @@ describe('Onboarding launch', () => {
     httpCtrl.expectOne('/api/storefront').flush(PHOTO_ONLY);
     await view.fixture.whenStable();
 
-    expect(router.url).toBe('/onboarding/storefront');
+    expect(router.url).toBe('/dashboard/information');
   });
 
   it('sends the vendor to the dashboard once they confirm their storefront', async () => {
@@ -140,7 +140,7 @@ describe('Onboarding launch', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /créer ma vitrine/i }));
     await view.fixture.whenStable();
-    expect(router.url).toBe('/onboarding/storefront');
+    expect(router.url).toBe('/dashboard/information');
 
     fireEvent.input(screen.getByLabelText(/nom du stand/i), { target: { value: 'La Table de Margaux' } });
     fireEvent.click(screen.getByRole('button', { name: /enregistrer/i }));

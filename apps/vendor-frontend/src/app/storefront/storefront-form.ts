@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, linkedSignal, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { form, FormField, required } from '@angular/forms/signals';
-import { StorefrontFacade } from '../storefront/storefront.facade';
+import { StorefrontFacade } from './storefront.facade';
 import { CloudinaryUrlPipe } from '../core/cloudinary-url.pipe';
 import { Card } from '../core/card';
 

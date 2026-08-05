@@ -81,7 +81,7 @@ describe('Dashboard', () => {
   it('leaves every setup step to do for a vendor who has filled nothing in', async () => {
     await renderBlank();
 
-    expect(screen.getByRole('link', { name: /informations de la vitrine/i })).toHaveAttribute('href', '/onboarding/storefront');
+    expect(screen.getByRole('link', { name: /informations de la vitrine/i })).toHaveAttribute('href', '/dashboard/information');
     expect(screen.getByRole('link', { name: /composez votre catalogue/i })).toHaveAttribute('href', '/dashboard/catalogue');
     expect(screen.getByRole('link', { name: /indiquez vos marchés/i })).toHaveAttribute('href', '/dashboard/markets');
     expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '0');
@@ -94,7 +94,7 @@ describe('Dashboard', () => {
     view.detectChanges();
 
     expect(screen.getByText('Renseignés : nom, description, photo · Optionnel : téléphone')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /informations de la vitrine/i })).toHaveAttribute('href', '/onboarding/storefront');
+    expect(screen.getByRole('link', { name: /informations de la vitrine/i })).toHaveAttribute('href', '/dashboard/information');
     expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '1');
     expect(screen.getByRole('link', { name: /composez votre catalogue/i })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /indiquez vos marchés/i })).toBeInTheDocument();
@@ -162,7 +162,7 @@ describe('Dashboard', () => {
     storefront.view.set({ ...completeStorefront, imageReference: '' });
     view.detectChanges();
 
-    expect(screen.getByRole('link', { name: /informations de la vitrine/i })).toHaveAttribute('href', '/onboarding/storefront');
+    expect(screen.getByRole('link', { name: /informations de la vitrine/i })).toHaveAttribute('href', '/dashboard/information');
     expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '0');
     expect(screen.getByText('Renseignés : nom, description · Manquant : photo · Optionnel : téléphone')).toBeInTheDocument();
   });
@@ -211,7 +211,7 @@ describe('Dashboard', () => {
   it('keeps the vitrine, catalogue and markets reachable once published', async () => {
     await renderReady({ published: true });
 
-    expect(screen.getByRole('link', { name: 'Ma vitrine' })).toHaveAttribute('href', '/onboarding/storefront');
+    expect(screen.getByRole('link', { name: 'Ma vitrine' })).toHaveAttribute('href', '/dashboard/information');
     expect(screen.getByRole('link', { name: 'Mon catalogue' })).toHaveAttribute('href', '/dashboard/catalogue');
     expect(screen.getByRole('link', { name: 'Mes marchés' })).toHaveAttribute('href', '/dashboard/markets');
   });
