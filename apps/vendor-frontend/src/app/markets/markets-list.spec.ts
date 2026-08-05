@@ -120,9 +120,9 @@ describe('MarketsList', () => {
     );
   });
 
-  it('links the add-market card to the new-market route', async () => {
+  it('links the add button to the new-market route', async () => {
     await renderList();
-    expect(screen.getByRole('link', { name: /ajouter un marché/i })).toHaveAttribute('href', '/dashboard/markets/new');
+    expect(screen.getByRole('link', { name: /ajouter/i })).toHaveAttribute('href', '/dashboard/markets/new');
   });
 
   // Which destination that is belongs to the storefront: see its own spec.
@@ -132,12 +132,24 @@ describe('MarketsList', () => {
     view.detectChanges();
 
     expect(screen.getByRole('link', { name: /retour/i })).toHaveAttribute('href', '/dashboard/storefront');
-    expect(screen.getByRole('link', { name: /fermer/i })).toHaveAttribute('href', '/dashboard/storefront');
   });
 
-  it('shows only the add-market affordance when there are no schedules', async () => {
+  it('shows only the add button when there are no schedules', async () => {
     await renderList();
-    expect(screen.getByRole('link', { name: /ajouter un marché/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /ajouter/i })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /retour/i })).toBeInTheDocument();
+  });
+
+  it('says the calendar is empty when there are no schedules', async () => {
+    await renderList();
+    expect(screen.getByText(/calendrier est vide/i)).toBeInTheDocument();
+  });
+
+  it('drops the empty line once a market is scheduled', async () => {
+    const { view, markets } = await renderList();
+    markets.schedules.set([schedule()]);
+    view.detectChanges();
+
+    expect(screen.queryByText(/calendrier est vide/i)).toBeNull();
   });
 });

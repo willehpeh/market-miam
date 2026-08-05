@@ -24,34 +24,18 @@ type ScheduleCard = { scheduleId: string; marketName: string; cadence: string; d
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterLink, Card],
   template: `
-    <mm-card>
-      <div class="relative">
-        <a
-          [routerLink]="backTo()"
-          aria-label="Fermer"
-          class="absolute right-0 top-0 grid place-items-center rounded-full text-brand"
-        >
-          <i class="fa-solid fa-xmark" aria-hidden="true"></i>
-        </a>
-      <p class="kicker">Votre calendrier</p>
-      <h1 class="mt-2 text-2xl leading-tight">Vos marchés</h1>
+    <mm-card [back]="backTo()">
+      <h1 class="text-2xl leading-tight">Vos marchés</h1>
       <p class="mt-3 text-sm text-ink-soft">Où et quand vos clients vous trouvent.</p>
 
-      <ul class="mt-6 space-y-3">
-        <li>
-          <a
-            routerLink="/dashboard/markets/new"
-            class="flex items-center gap-4 rounded-card border border-dashed border-line-strong bg-surface-sunk p-3 no-underline"
-          >
-            <span class="grid size-11 shrink-0 place-items-center rounded-field bg-brand-soft text-xl text-brand">+</span>
-            <div class="flex-1">
-              <p class="font-bold text-ink">Ajouter un marché</p>
-              <p class="text-xs text-muted">Récurrent chaque semaine ou date ponctuelle.</p>
-            </div>
-            <span aria-hidden="true" class="text-2xl leading-none text-muted">›</span>
-          </a>
-        </li>
+      <div class="mt-4 flex flex-wrap gap-2">
+        <a routerLink="/dashboard/markets/new" class="btn-link">
+          <i class="fa-solid fa-plus" aria-hidden="true"></i>
+          Ajouter
+        </a>
+      </div>
 
+      <ul class="mt-6 space-y-3">
         @for (card of scheduleCards(); track card.scheduleId) {
           <li>
             <a
@@ -73,16 +57,10 @@ type ScheduleCard = { scheduleId: string; marketName: string; cadence: string; d
               </dl>
             </a>
           </li>
+        } @empty {
+          <li class="text-sm text-ink-soft">Votre calendrier est vide pour l'instant.</li>
         }
       </ul>
-
-      <a
-        [routerLink]="backTo()"
-        class="mt-6 flex w-full max-w-xs mx-auto items-center justify-center rounded-lg border border-brand px-4 py-2 text-sm font-bold text-brand no-underline hover:bg-brand-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
-      >
-        Retour
-      </a>
-      </div>
     </mm-card>
   `,
 })
