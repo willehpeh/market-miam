@@ -25,7 +25,7 @@ type ScheduleCard = { scheduleId: string; marketName: string; cadence: string; d
   imports: [RouterLink, Card],
   template: `
     <mm-card [back]="backTo()">
-      <h1 class="text-2xl leading-tight">Vos marchés</h1>
+      <h1 class="text-xl leading-tight">Vos marchés</h1>
       <p class="mt-3 text-sm text-ink-soft">Où et quand vos clients vous trouvent.</p>
 
       <div class="mt-4 flex flex-wrap gap-2">

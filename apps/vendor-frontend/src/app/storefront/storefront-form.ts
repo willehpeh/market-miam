@@ -24,7 +24,7 @@ const MAX_PHOTO_BYTES = 10 * 1024 * 1024;
           </a>
         }
         <p class="kicker">Votre vitrine</p>
-        <h1 class="mt-2 text-2xl leading-tight">Présentez votre stand</h1>
+        <h1 class="mt-2 text-xl leading-tight">Présentez votre stand</h1>
         <p class="mt-2 text-sm text-ink-soft">C'est ce que vos clients voient en premier.</p>
 
         <div class="mt-5 rounded-card border border-dashed border-line-strong bg-surface-sunk p-4 text-center">
