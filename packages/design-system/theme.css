@@ -50,7 +50,8 @@
   --font-mono: var(--mm-font-mono);
 
   /* ---- Tailwind-only knobs (no plain-CSS consumer) ---- */
-  /* mono is used for kickers / labels / data — small + tracked */
+  /* mono is for data and badges — small + tracked. Not for prose or headings:
+     at this size the tracking that makes a date block scan makes a sentence work. */
   --tracking-kicker: 0.14em;
   --tracking-label:  0.10em;
 
@@ -109,7 +110,8 @@
 
 /* ---- a few opinionated component shortcuts (optional) -------------------- */
 @layer components {
-  /* mono kicker / eyebrow */
+  /* date blocks and badges — customer-frontend only. The vendor app dropped its
+     eyebrows: above a heading they repeated it, and alone they were unreadable. */
   .kicker {
     font-family: var(--font-mono);
     font-size: 0.65rem;
@@ -125,7 +127,7 @@
     font-weight: 700;
     letter-spacing: var(--tracking-label);
     text-transform: uppercase;
-    color: var(--color-ink-soft);
+    color: var(--color-brand);
   }
   /* anchors dressed as buttons — the base layer above only reaches <button> */
   .btn-link {

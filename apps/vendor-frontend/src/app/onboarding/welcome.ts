@@ -8,8 +8,7 @@ import { Card } from '../core/card';
   imports: [RouterLink, Card],
   template: `
     <mm-card>
-      <p class="kicker">Bienvenue sur Market Miam</p>
-      <h1 class="mt-2 text-2xl leading-tight">Votre stand de marché, en ligne en 10 minutes.</h1>
+      <h1 class="text-2xl leading-tight">Votre stand de marché, en ligne en 10 minutes.</h1>
       <p class="mt-3 text-sm text-ink-soft">
         Depuis votre téléphone — on vous guide pas à pas, photo après photo.
       </p>

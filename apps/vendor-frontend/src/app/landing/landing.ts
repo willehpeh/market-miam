@@ -19,7 +19,7 @@ import { LoginButton } from '../core/auth/login-button';
         <button class="mt-5" (click)="retry()">Réessayer</button>
       </section>
     } @else {
-      <p class="kicker" role="status">Nous préparons votre stand…</p>
+      <p class="text-sm text-ink-soft" role="status">Nous préparons votre stand…</p>
     }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,

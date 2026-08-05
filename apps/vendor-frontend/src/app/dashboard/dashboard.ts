@@ -23,7 +23,7 @@ import { environment } from '../../environments/environment';
       </mm-card>
     } @else if (published()) {
       <mm-card>
-        <p class="kicker">Votre vitrine</p>
+        <h1 class="text-xl leading-tight">Votre vitrine</h1>
 
         @if (storefrontUrl(); as url) {
           <a [href]="url.href" target="_blank" rel="noopener" class="mt-4 block text-brand-deep">{{ url.label }}</a>

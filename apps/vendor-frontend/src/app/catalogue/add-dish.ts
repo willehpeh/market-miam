@@ -111,7 +111,7 @@ const DISH_PREVIEW_TRANSFORMATION = 'c_fill,w_600,h_400,q_auto,f_webp';
     <mm-card>
       <form (submit)="submit($event)">
         <div class="flex items-center justify-between">
-          <p class="kicker">{{ isEditing ? 'Modifier le plat' : 'Nouveau plat' }}</p>
+          <h1 class="text-xl leading-tight">{{ isEditing ? 'Modifier le plat' : 'Nouveau plat' }}</h1>
           <a routerLink="/dashboard/catalogue" class="text-sm font-bold text-brand no-underline">Annuler</a>
         </div>
 

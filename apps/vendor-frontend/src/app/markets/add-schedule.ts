@@ -23,10 +23,9 @@ type DayEntry = { day: string; startTime: string; endTime: string };
     <mm-card>
       <form (submit)="submit($event)">
         <div class="flex items-center justify-between">
-          <p class="kicker">{{ isEditing ? 'Modifier le marché' : 'Nouveau marché' }}</p>
+          <h1 class="text-xl leading-tight">{{ isEditing ? 'Modifier le marché' : 'Nouveau marché' }}</h1>
           <a routerLink="/dashboard/markets" class="text-sm font-bold text-brand no-underline">Annuler</a>
         </div>
-        <h1 class="mt-2 text-2xl leading-tight">Où et quand ?</h1>
         <p class="mt-2 text-sm text-ink-soft">Ces informations disent à vos clients où vous retrouver.</p>
 
         <div class="mt-5">
