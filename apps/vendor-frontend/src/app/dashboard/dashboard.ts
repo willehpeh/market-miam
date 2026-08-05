@@ -1,7 +1,8 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Card } from '../core/card';
 import { Badge } from '../core/badge';
+import { COPIED_NOTICE_DELAY, Share } from '../core/share';
 import { StorefrontFacade } from '../storefront/storefront.facade';
 import { CatalogueFacade } from '../catalogue/catalogue.facade';
 import { MarketScheduleFacade } from '../markets/market-schedule.facade';
@@ -36,6 +37,10 @@ import { environment } from '../../environments/environment';
           <a routerLink="/dashboard/storefront" class="btn-soft">
             <i class="fa-solid fa-pen" aria-hidden="true"></i> Modifier
           </a>
+          <button type="button" class="btn-soft" (click)="share()">
+            <i class="fa-solid" [class.fa-share-nodes]="!copied()" [class.fa-check]="copied()" aria-hidden="true"></i>
+            {{ copied() ? 'Lien copié' : 'Partager' }}
+          </button>
         </div>
       </mm-card>
     } @else {
@@ -127,6 +132,10 @@ export class Dashboard {
   private readonly storefront = inject(StorefrontFacade);
   private readonly catalogue = inject(CatalogueFacade);
   private readonly markets = inject(MarketScheduleFacade);
+  private readonly sharing = inject(Share);
+  private readonly copiedNoticeDelay = inject(COPIED_NOTICE_DELAY);
+
+  readonly copied = signal(false);
 
   readonly steps = computed(() => {
     const view = this.storefront.view();
@@ -178,6 +187,15 @@ export class Dashboard {
 
   publish(): void {
     this.storefront.publish();
+  }
+
+  async share(): Promise<void> {
+    const url = this.storefrontUrl();
+    if (!url) return;
+    const outcome = await this.sharing.link(this.storefront.view()?.name ?? '', url.href);
+    if (outcome !== 'copied') return;
+    this.copied.set(true);
+    setTimeout(() => this.copied.set(false), this.copiedNoticeDelay);
   }
 
   constructor() {

@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { fireEvent, render, screen, within } from '@testing-library/angular';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/angular';
 import { provideRouter } from '@angular/router';
 import { Dashboard } from './dashboard';
 import { StorefrontFacade } from '../storefront/storefront.facade';
@@ -11,6 +11,8 @@ import { CatalogueItemView } from '../catalogue/catalogue';
 import { MarketScheduleFacade } from '../markets/market-schedule.facade';
 import { FakeMarketScheduleFacade } from '../markets/fake.market-schedule.facade';
 import { MarketScheduleView } from '../markets/market-schedules';
+import { COPIED_NOTICE_DELAY, Share } from '../core/share';
+import { FakeShare } from '../core/fake.share';
 
 async function renderDashboard() {
   const view = await render(Dashboard, {
@@ -19,12 +21,15 @@ async function renderDashboard() {
       { provide: StorefrontFacade, useClass: FakeStorefrontFacade },
       { provide: CatalogueFacade, useClass: FakeCatalogueFacade },
       { provide: MarketScheduleFacade, useClass: FakeMarketScheduleFacade },
+      { provide: Share, useClass: FakeShare },
+      { provide: COPIED_NOTICE_DELAY, useValue: 0 },
     ],
   });
   const storefront = TestBed.inject(StorefrontFacade) as FakeStorefrontFacade;
   const catalogue = TestBed.inject(CatalogueFacade) as FakeCatalogueFacade;
   const markets = TestBed.inject(MarketScheduleFacade) as FakeMarketScheduleFacade;
-  return { view, storefront, catalogue, markets };
+  const sharing = TestBed.inject(Share) as FakeShare;
+  return { view, storefront, catalogue, markets, sharing };
 }
 
 const completeStorefront: StorefrontView = {
@@ -206,6 +211,35 @@ describe('Dashboard', () => {
     expect(screen.queryByText(/votre vitrine est prête/i)).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /publier|publication/i })).not.toBeInTheDocument();
     expect(screen.getByText('Votre vitrine')).toBeInTheDocument();
+  });
+
+  it('offers the live storefront to the share sheet', async () => {
+    const { sharing } = await renderReady({ published: true });
+
+    fireEvent.click(screen.getByRole('button', { name: /partager/i }));
+
+    await waitFor(() => expect(sharing.offered).toEqual({ title: 'Acme Bakery', url: 'https://acme.marketmiam.fr' }));
+    expect(screen.queryByText('Lien copié')).not.toBeInTheDocument();
+  });
+
+  it('confirms the copy, then returns to Partager, where there is no share sheet', async () => {
+    const { sharing } = await renderReady({ published: true });
+    sharing.outcome = 'copied';
+
+    fireEvent.click(screen.getByRole('button', { name: /partager/i }));
+
+    await waitFor(() => expect(screen.getByText('Lien copié')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByRole('button', { name: /partager/i })).toBeInTheDocument());
+  });
+
+  it('says nothing when the vendor backs out of the share sheet', async () => {
+    const { sharing } = await renderReady({ published: true });
+    sharing.outcome = null;
+
+    fireEvent.click(screen.getByRole('button', { name: /partager/i }));
+
+    await waitFor(() => expect(sharing.offered).not.toBeNull());
+    expect(screen.queryByText('Lien copié')).not.toBeInTheDocument();
   });
 
   it('offers the storefront as online once published', async () => {

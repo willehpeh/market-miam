@@ -44,6 +44,8 @@ import { OnboardingEffects, SAVED_REDIRECT_DELAY } from './onboarding.effects';
 import { OnboardingFacade } from './onboarding.facade';
 import { StoreOnboardingFacade } from './store.onboarding.facade';
 import { provideNotifications } from '../core/notifications/notifications.providers';
+import { Share } from '../core/share';
+import { FakeShare } from '../core/fake.share';
 
 const EMPTY = { name: '', description: '', phone: '', imageReference: '', subdomain: null };
 const PHOTO_ONLY = { name: '', description: '', phone: '', imageReference: 'v1/storefronts/acme/cover-photo', subdomain: null };
@@ -71,6 +73,7 @@ describe('Onboarding launch', () => {
         { provide: MarketSchedules, useClass: HttpMarketSchedules },
         { provide: PhotoUploads, useClass: FakePhotoUploads },
         { provide: PhotoDownscale, useClass: FakePhotoDownscale },
+        { provide: Share, useClass: FakeShare },
         { provide: AuthFacade, useClass: StoreAuthFacade },
         VendorFacade,
         { provide: StorefrontFacade, useClass: StoreStorefrontFacade },

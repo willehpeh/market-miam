@@ -13,6 +13,8 @@ import { provideCatalogue } from './catalogue/catalogue.providers';
 import { provideMarketSchedules } from './markets/market-schedule.providers';
 import { provideOnboarding } from './onboarding/onboarding.providers';
 import { provideNgrx } from './core/ngrx.providers';
+import { Share } from './core/share';
+import { WebShare } from './core/web.share';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -27,6 +29,7 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient(
       withInterceptors(isDevMode() ? [devAuthInterceptor, errorInterceptor] : [authHttpInterceptorFn, errorInterceptor]),
     ),
+    { provide: Share, useClass: WebShare },
     provideNotifications(),
     provideAuth(),
     provideVendor(),
