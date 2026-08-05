@@ -16,10 +16,10 @@ describe('CataloguePage', () => {
     expect(screen.getByRole('heading', { name: 'Votre catalogue' })).toBeInTheDocument();
   });
 
-  it('links back to the dashboard', async () => {
+  it('links back to the storefront hub', async () => {
     await render(CataloguePage, { providers: [provideRouter([])] });
 
-    expect(screen.getByRole('link', { name: /retour/i })).toHaveAttribute('href', '/dashboard');
+    expect(screen.getByRole('link', { name: /retour/i })).toHaveAttribute('href', '/dashboard/storefront');
   });
 
   // The reordering is a state of the catalogue, not a page of its own: the real routes

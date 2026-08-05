@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Card } from '../core/card';
+import { Badge } from '../core/badge';
 import { StorefrontFacade } from '../storefront/storefront.facade';
 import { CatalogueFacade } from '../catalogue/catalogue.facade';
 import { MarketScheduleFacade } from '../markets/market-schedule.facade';
@@ -8,7 +9,7 @@ import { environment } from '../../environments/environment';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, Card],
+  imports: [RouterLink, Card, Badge],
   template: `
     @if (!loaded()) {
       <mm-card>
@@ -22,25 +23,20 @@ import { environment } from '../../environments/environment';
       </mm-card>
     } @else if (published()) {
       <mm-card>
-        <h2 class="text-2xl font-bold tracking-tight text-ink">
-          <span aria-hidden="true" class="text-brand">✓</span> Votre vitrine est en ligne
-        </h2>
+        <div class="flex items-center justify-between gap-4">
+          <p class="kicker">Votre vitrine</p>
+          <mm-badge>En ligne</mm-badge>
+        </div>
+
         @if (storefrontUrl(); as url) {
-          <a [href]="url.href" target="_blank" rel="noopener" class="mt-1 inline-block font-bold text-brand">
-            {{ url.label }}<span aria-hidden="true"> ↗</span>
-          </a>
+          <a [href]="url.href" target="_blank" rel="noopener" class="mt-4 block font-mono text-brand">{{ url.label }}</a>
         }
 
-        <ul class="mt-2 divide-y divide-line">
-          @for (destination of destinations; track destination.title) {
-            <li>
-              <a [routerLink]="destination.link" class="flex items-center gap-4 py-5 no-underline">
-                <p class="flex-1 text-lg font-bold text-ink">{{ destination.title }}</p>
-                <span aria-hidden="true" class="text-2xl leading-none text-muted">›</span>
-              </a>
-            </li>
-          }
-        </ul>
+        <div class="mt-4 grid grid-cols-2 gap-3">
+          <a routerLink="/dashboard/storefront" class="btn-soft">
+            <i class="fa-solid fa-pen" aria-hidden="true"></i> Modifier
+          </a>
+        </div>
       </mm-card>
     } @else {
       <mm-card>
@@ -176,12 +172,6 @@ export class Dashboard {
   readonly loaded = computed(() => !!this.storefront.view());
 
   readonly published = computed(() => this.storefront.view()?.published === true);
-
-  readonly destinations = [
-    { title: 'Ma vitrine', link: '/dashboard/information' },
-    { title: 'Mon catalogue', link: '/dashboard/catalogue' },
-    { title: 'Mes marchés', link: '/dashboard/markets' },
-  ];
 
   readonly publishing = this.storefront.publishing;
   readonly publishError = this.storefront.publishError;

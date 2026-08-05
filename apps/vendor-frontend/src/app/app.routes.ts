@@ -1,6 +1,7 @@
 import { Route } from '@angular/router';
 import { Landing } from './landing/landing';
 import { Dashboard } from './dashboard/dashboard';
+import { ManageStorefront } from './dashboard/manage-storefront';
 import { CataloguePage } from './catalogue/catalogue-page';
 import { CatalogueList } from './catalogue/catalogue-list';
 import { AddDish } from './catalogue/add-dish';
@@ -24,6 +25,7 @@ export const appRoutes: Route[] = [
     canActivateChild: [authenticated],
     children: [
       { path: '', component: Dashboard },
+      { path: 'storefront', component: ManageStorefront },
       { path: 'information', component: StorefrontForm },
       {
         path: 'catalogue',

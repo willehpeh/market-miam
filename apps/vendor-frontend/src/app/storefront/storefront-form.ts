@@ -16,7 +16,7 @@ const MAX_PHOTO_BYTES = 10 * 1024 * 1024;
       <form class="relative" (submit)="submit($event)">
         @if (view()?.published) {
           <a
-            routerLink="/dashboard"
+            routerLink="/dashboard/storefront"
             aria-label="Fermer"
             class="absolute right-0 top-0 grid place-items-center rounded-full text-brand"
           >

@@ -205,15 +205,14 @@ describe('Dashboard', () => {
     expect(screen.queryByText(/terminez votre installation/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/votre vitrine est prête/i)).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /publier|publication/i })).not.toBeInTheDocument();
-    expect(screen.getByText(/votre vitrine est en ligne/i)).toBeInTheDocument();
+    expect(screen.getByText('Votre vitrine')).toBeInTheDocument();
   });
 
-  it('keeps the vitrine, catalogue and markets reachable once published', async () => {
+  it('offers the storefront as online once published', async () => {
     await renderReady({ published: true });
 
-    expect(screen.getByRole('link', { name: 'Ma vitrine' })).toHaveAttribute('href', '/dashboard/information');
-    expect(screen.getByRole('link', { name: 'Mon catalogue' })).toHaveAttribute('href', '/dashboard/catalogue');
-    expect(screen.getByRole('link', { name: 'Mes marchés' })).toHaveAttribute('href', '/dashboard/markets');
+    expect(screen.getByText('En ligne')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /modifier/i })).toHaveAttribute('href', '/dashboard/storefront');
   });
 
   it('links to the live storefront once published', async () => {

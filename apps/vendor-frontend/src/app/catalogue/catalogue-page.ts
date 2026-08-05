@@ -6,7 +6,7 @@ import { Card } from '../core/card';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterOutlet, Card],
   template: `
-    <mm-card back="/dashboard">
+    <mm-card back="/dashboard/storefront">
       <h1 class="text-2xl leading-tight">Votre catalogue</h1>
       <router-outlet />
     </mm-card>

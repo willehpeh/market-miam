@@ -26,7 +26,7 @@ type ScheduleCard = { scheduleId: string; marketName: string; cadence: string; d
     <mm-card>
       <div class="relative">
         <a
-          routerLink="/dashboard"
+          routerLink="/dashboard/storefront"
           aria-label="Fermer"
           class="absolute right-0 top-0 grid place-items-center rounded-full text-brand"
         >
@@ -76,7 +76,7 @@ type ScheduleCard = { scheduleId: string; marketName: string; cadence: string; d
       </ul>
 
       <a
-        routerLink="/dashboard"
+        routerLink="/dashboard/storefront"
         class="mt-6 flex w-full max-w-xs mx-auto items-center justify-center rounded-lg border border-brand px-4 py-2 text-sm font-bold text-brand no-underline hover:bg-brand-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
       >
         Retour

@@ -114,9 +114,9 @@ describe('MarketsList', () => {
     expect(screen.getByRole('link', { name: /ajouter un marché/i })).toHaveAttribute('href', '/dashboard/markets/new');
   });
 
-  it('links back to the dashboard', async () => {
+  it('links back to the storefront hub', async () => {
     await renderList();
-    expect(screen.getByRole('link', { name: /retour/i })).toHaveAttribute('href', '/dashboard');
+    expect(screen.getByRole('link', { name: /retour/i })).toHaveAttribute('href', '/dashboard/storefront');
   });
 
   it('shows only the add-market affordance when there are no schedules', async () => {
