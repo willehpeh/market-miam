@@ -45,6 +45,7 @@ import { environment } from '../../environments/environment';
           @for (destination of destinations; track destination.title) {
             <li>
               <a [routerLink]="destination.link" class="flex items-center gap-4 py-5 no-underline">
+                <i class="fa-solid {{ destination.icon }} w-5 shrink-0 text-center text-brand" aria-hidden="true"></i>
                 <p class="flex-1 font-bold text-ink">{{ destination.title }}</p>
                 <span aria-hidden="true" class="text-2xl leading-none text-muted">›</span>
               </a>
@@ -145,8 +146,8 @@ export class Dashboard {
   // The vitrine's own card edits the vitrine; these are the other two things a customer
   // sees on it, and a vendor changes them far more often than their description.
   readonly destinations = [
-    { title: 'Votre catalogue', link: '/dashboard/catalogue' },
-    { title: 'Vos marchés', link: '/dashboard/markets' },
+    { title: 'Votre catalogue', link: '/dashboard/catalogue', icon: 'fa-utensils' },
+    { title: 'Vos marchés', link: '/dashboard/markets', icon: 'fa-calendar-days' },
   ];
   readonly doneCount = computed(() => this.steps().filter((step) => step.done).length);
   readonly allDone = computed(() => this.doneCount() === this.steps().length);
