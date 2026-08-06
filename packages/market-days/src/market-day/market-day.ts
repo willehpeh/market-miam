@@ -33,10 +33,16 @@ export class MarketDay extends Aggregate {
       case 'ItemUnplannedFromMarketDay':
         this._items = this._items.filter(itemId => !itemId.equals(new ItemId(event.payload.itemId)));
         break;
+      case 'MarketDayMenuSet':
+        this._items = event.payload.itemIds.map(itemId => new ItemId(itemId));
+        break;
     }
   }
 
   setMenu(itemIds: ItemId[]) {
+    if (this.unchanged(itemIds)) {
+      return;
+    }
     const event: MarketDayMenuSet = {
       type: 'MarketDayMenuSet',
       payload: {
@@ -109,6 +115,11 @@ export class MarketDay extends Aggregate {
       version: 1
     };
     this.raise(event);
+  }
+
+  private unchanged(itemIds: ItemId[]): boolean {
+    return this._items.length === itemIds.length
+      && this._items.every((item, index) => item.equals(itemIds[index]));
   }
 
   private notPlanned(itemId: ItemId): boolean {

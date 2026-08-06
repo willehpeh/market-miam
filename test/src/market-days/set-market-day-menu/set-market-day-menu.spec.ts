@@ -2,6 +2,7 @@ import { InMemoryEventStore } from '@market-miam/event-sourcing';
 import { Instant, LocalDate } from '@market-miam/common';
 import { Catalogues, MarketDays, SetMarketDayMenu, SetMarketDayMenuHandler, VendorScopedEvents } from '@market-miam/market-days';
 import { seedCatalogue } from '../../seed-catalogue';
+import { expectVendorScopedEvents } from '../../shared-kernel';
 
 describe('Set Market Day Menu', () => {
   const TODAY = '2026-06-19';
@@ -28,6 +29,31 @@ describe('Set Market Day Menu', () => {
       marketId: 'market-1',
       date: SATURDAY,
     }));
+
+    expect(store.newEvents()).toEqual([
+      expect.objectContaining({
+        type: 'MarketDayMenuSet',
+        payload: { itemIds: ['item-1', 'item-2'], marketId: 'market-1', date: SATURDAY },
+      }),
+    ]);
+  });
+
+  it('stamps the vendor id into the event metadata', async () => {
+    await handler.execute(new SetMarketDayMenu({
+      vendorId: 'vendor-1',
+      itemIds: ['item-1'],
+      marketId: 'market-1',
+      date: SATURDAY,
+    }));
+
+    expectVendorScopedEvents(store.newEvents(), 'vendor-1');
+  });
+
+  it('raises nothing when the menu is unchanged', async () => {
+    const menu = { vendorId: 'vendor-1', itemIds: ['item-1', 'item-2'], marketId: 'market-1', date: SATURDAY };
+    await handler.execute(new SetMarketDayMenu(menu));
+
+    await handler.execute(new SetMarketDayMenu(menu));
 
     expect(store.newEvents()).toEqual([
       expect.objectContaining({
