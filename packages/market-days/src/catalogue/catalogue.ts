@@ -128,6 +128,10 @@ export class Catalogue extends Aggregate {
     return this._items.length > 0;
   }
 
+  confirmAll(itemIds: ItemId[]): void {
+    itemIds.forEach(itemId => this.assertHasItem(itemId));
+  }
+
   private hasItem(itemId: ItemId): boolean {
     return this._items.some(item => item.hasId(itemId));
   }

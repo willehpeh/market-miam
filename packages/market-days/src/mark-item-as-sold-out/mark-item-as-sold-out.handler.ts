@@ -14,10 +14,10 @@ export class MarkItemAsSoldOutHandler implements ICommandHandler<MarkItemAsSoldO
     const { vendorId, marketId, date, time } = this.contextFrom(command);
     const itemId = new ItemId(command.itemId);
 
-    const marketDay = await this.marketDays.forVendorAtMarket(vendorId, marketId).on(date);
+    const marketDay = await this.marketDays.forVendorAtMarketOn(vendorId, marketId, date);
     marketDay.markItemAsSoldOut(itemId, time);
 
-    await this.marketDays.save(marketDay, vendorId);
+    await this.marketDays.save(marketDay, vendorId, marketId, date);
   }
 
   private contextFrom(command: MarkItemAsSoldOut) {

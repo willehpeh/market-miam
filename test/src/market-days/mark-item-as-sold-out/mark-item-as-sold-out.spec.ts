@@ -1,105 +1,109 @@
 import { InMemoryEventStore } from '@market-miam/event-sourcing';
-import { VendorScopedEvents } from '@market-miam/market-days';
 import {
-  Catalogues, MarketDays, PlanItemsForMarketDayHandler, MarkItemAsSoldOutHandler, MarkItemAsSoldOut,
-  ItemNotPlannedError, ItemAlreadySoldOutError, UnplanItemFromMarketDayHandler, UnplanItemFromMarketDay
+  Catalogues,
+  ItemAlreadySoldOutError,
+  ItemNotPlannedError,
+  MarketDays,
+  MarkItemAsSoldOut,
+  MarkItemAsSoldOutHandler,
+  SetMarketDayMenuHandler,
+  VendorScopedEvents
 } from '@market-miam/market-days';
-import { TestPlanItemsForMarketDay } from '../plan-items-for-market-day/test-data';
 import { Instant, LocalDate } from '@market-miam/common';
+import { SATURDAY, TestSetMarketDayMenu, TODAY } from '../set-market-day-menu/test-data';
 import { seedCatalogue } from '../../seed-catalogue';
 import { expectVendorScopedEvents } from '../../shared-kernel';
 
 describe('Mark Item As Sold Out', () => {
   let store: InMemoryEventStore;
-  let marketDays: MarketDays;
   let handler: MarkItemAsSoldOutHandler;
-  let unplanHandler: UnplanItemFromMarketDayHandler;
-
-  const TEST_TODAY = '2026-06-19';
-  const TEST_FUTURE = '2026-07-01';
+  let menus: SetMarketDayMenuHandler;
 
   beforeEach(() => {
     store = new InMemoryEventStore();
-    marketDays = new MarketDays(new VendorScopedEvents(store), {
-      today: () => new LocalDate(TEST_TODAY),
-      now: () => new Instant(`${TEST_TODAY}T09:00:00.000Z`),
+    const events = new VendorScopedEvents(store);
+    const marketDays = new MarketDays(events, {
+      today: () => new LocalDate(TODAY),
+      now: () => new Instant(`${TODAY}T09:00:00.000Z`),
     });
+    seedCatalogue(store, 'vendor-1', 'item-1', 'item-2');
     handler = new MarkItemAsSoldOutHandler(marketDays);
-    unplanHandler = new UnplanItemFromMarketDayHandler(marketDays);
+    menus = new SetMarketDayMenuHandler(marketDays, new Catalogues(events));
   });
 
-  async function addItemToCatalogueAndPlanIt(date: string) {
-    const itemId = 'item1';
-    const previousCommand = TestPlanItemsForMarketDay.forItemsWith([{ itemId }], {
-      date
-    });
-    seedCatalogue(store, previousCommand.vendorId, itemId);
-    const planItemsHandler = new PlanItemsForMarketDayHandler(marketDays, new Catalogues(new VendorScopedEvents(store)));
-    await planItemsHandler.execute(previousCommand);
-    return { itemId, previousCommand };
+  function setMenu(date: string, ...itemIds: string[]): Promise<void> {
+    return menus.execute(TestSetMarketDayMenu.with({ date, itemIds }));
   }
 
-  it('should mark an item available today as sold out', async () => {
-    const { itemId, previousCommand } = await addItemToCatalogueAndPlanIt(TEST_TODAY);
+  function markSoldOut(date: string, itemId = 'item-1'): Promise<void> {
+    return handler.execute(new MarkItemAsSoldOut('vendor-1', itemId, 'market-1', date, '10:00'));
+  }
 
-    const command = new MarkItemAsSoldOut(previousCommand.vendorId, itemId, previousCommand.marketId, TEST_TODAY, '10:00');
+  it("marks an item on today's menu as sold out", async () => {
+    await setMenu(TODAY, 'item-1');
 
-    await handler.execute(command);
+    await markSoldOut(TODAY);
 
     expect(store.newEvents()).toEqual([
-      expect.objectContaining({ type: 'ItemsPlannedForMarketDay' }),
+      expect.objectContaining({ type: 'MarketDayMenuSet' }),
       expect.objectContaining({
         type: 'ItemMarkedAsSoldOut',
-        payload: {
-          itemId,
-          marketId: previousCommand.marketId,
-          date: TEST_TODAY,
-          time: '10:00'
-        }
-      })
+        payload: { itemId: 'item-1', marketId: 'market-1', date: TODAY, time: '10:00' },
+      }),
     ]);
   });
 
   it('stamps the vendor id into the event metadata', async () => {
-    const { itemId, previousCommand } = await addItemToCatalogueAndPlanIt(TEST_TODAY);
-    await handler.execute(new MarkItemAsSoldOut(previousCommand.vendorId, itemId, previousCommand.marketId, TEST_TODAY, '10:00'));
+    await setMenu(TODAY, 'item-1');
+
+    await markSoldOut(TODAY);
 
     expectVendorScopedEvents(store.newEvents(), 'vendor-1');
   });
 
-  it('should reject marking an item that is already sold out', async () => {
-    const { itemId, previousCommand } = await addItemToCatalogueAndPlanIt(TEST_TODAY);
-    const command = new MarkItemAsSoldOut(previousCommand.vendorId, itemId, previousCommand.marketId, TEST_TODAY, '10:00');
-    await handler.execute(command);
+  it('rejects an item that is already sold out', async () => {
+    await setMenu(TODAY, 'item-1');
+    await markSoldOut(TODAY);
 
-    await expect(() => handler.execute(command)).rejects.toThrow(ItemAlreadySoldOutError);
+    await expect(() => markSoldOut(TODAY)).rejects.toThrow(ItemAlreadySoldOutError);
     expect(store.newEvents()).toEqual([
-      expect.objectContaining({ type: 'ItemsPlannedForMarketDay' }),
-      expect.objectContaining({ type: 'ItemMarkedAsSoldOut' })
+      expect.objectContaining({ type: 'MarketDayMenuSet' }),
+      expect.objectContaining({ type: 'ItemMarkedAsSoldOut' }),
     ]);
   });
 
-  it('should reject marking an item not available today as sold out', async () => {
-    const plan = TestPlanItemsForMarketDay.withDefaults();
-    const command = new MarkItemAsSoldOut(plan.vendorId, plan.items[0].itemId, plan.marketId, TEST_TODAY, '10:00');
-
-    await expect(() => handler.execute(command)).rejects.toThrow(ItemNotPlannedError);
+  it("rejects an item that is not on today's menu", async () => {
+    await expect(() => markSoldOut(TODAY)).rejects.toThrow(ItemNotPlannedError);
     expect(store.newEvents()).toEqual([]);
   });
 
-  it('should reject marking an item that was planned for today then unplanned as sold out', async () => {
-    const { itemId, previousCommand } = await addItemToCatalogueAndPlanIt(TEST_TODAY);
-    const unplanCommand = new UnplanItemFromMarketDay(previousCommand.vendorId, itemId, previousCommand.marketId, TEST_TODAY);
-    await unplanHandler.execute(unplanCommand);
+  it('rejects an item that has been taken off the menu', async () => {
+    await setMenu(TODAY, 'item-1');
+    await setMenu(TODAY, 'item-2');
 
-    const command = new MarkItemAsSoldOut(previousCommand.vendorId, itemId, previousCommand.marketId, TEST_TODAY, '10:00');
-    await expect(() => handler.execute(command)).rejects.toThrow(ItemNotPlannedError);
+    await expect(() => markSoldOut(TODAY)).rejects.toThrow(ItemNotPlannedError);
   });
 
-  it('should reject marking an item planned for a different day as sold out', async () => {
-    const { itemId, previousCommand } = await addItemToCatalogueAndPlanIt(TEST_FUTURE);
+  it('marks an item sold out again once it returns to the menu', async () => {
+    await setMenu(TODAY, 'item-1');
+    await markSoldOut(TODAY);
+    await setMenu(TODAY, 'item-2');
 
-    const command = new MarkItemAsSoldOut(previousCommand.vendorId, itemId, previousCommand.marketId, TEST_TODAY, '10:00');
-    await expect(() => handler.execute(command)).rejects.toThrow(ItemNotPlannedError);
+    await setMenu(TODAY, 'item-1');
+
+    await markSoldOut(TODAY);
+    expect(store.newEvents()).toEqual([
+      expect.objectContaining({ type: 'MarketDayMenuSet' }),
+      expect.objectContaining({ type: 'ItemMarkedAsSoldOut' }),
+      expect.objectContaining({ type: 'MarketDayMenuSet' }),
+      expect.objectContaining({ type: 'MarketDayMenuSet' }),
+      expect.objectContaining({ type: 'ItemMarkedAsSoldOut' }),
+    ]);
+  });
+
+  it("rejects an item that is on another day's menu", async () => {
+    await setMenu(SATURDAY, 'item-1');
+
+    await expect(() => markSoldOut(TODAY)).rejects.toThrow(ItemNotPlannedError);
   });
 });

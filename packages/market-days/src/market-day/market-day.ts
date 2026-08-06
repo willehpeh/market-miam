@@ -1,19 +1,14 @@
 import { Aggregate } from '@market-miam/event-sourcing';
 import { LocalDate, LocalTime } from '@market-miam/common';
 import { MarketId } from '@market-miam/shared-kernel';
-import { ItemMarkedAsSoldOut, ItemsPlannedForMarketDay, ItemUnplannedFromMarketDay, MarketDayEvent, MarketDayMenuSet } from './events';
-import { PlannedItem } from './planned-item';
+import { ItemMarkedAsSoldOut, MarketDayEvent, MarketDayMenuSet } from './events';
 import { ItemAlreadySoldOutError, ItemNotPlannedError, MarketDayInThePastError } from './errors';
+import { Menu } from './menu';
 import { ItemId } from '../catalogue';
-
-type MarketDaySnapshot = {
-  marketId: string;
-  date: string;
-};
 
 export class MarketDay extends Aggregate {
 
-  private _items: ItemId[] = [];
+  private _menu = new Menu([]);
   private _soldOut: ItemId[] = [];
 
   constructor(private readonly _marketId: MarketId,
@@ -24,62 +19,37 @@ export class MarketDay extends Aggregate {
 
   apply(event: MarketDayEvent): void {
     switch (event.type) {
-      case 'ItemsPlannedForMarketDay':
-        this._items.push(...event.payload.items.map(item => new ItemId(item.itemId)));
+      case 'MarketDayMenuSet':
+        this._menu = new Menu(event.payload.itemIds.map(itemId => new ItemId(itemId)));
+        this._soldOut = this._soldOut.filter(itemId => this._menu.includes(itemId));
         break;
       case 'ItemMarkedAsSoldOut':
         this._soldOut.push(new ItemId(event.payload.itemId));
         break;
-      case 'ItemUnplannedFromMarketDay':
-        this._items = this._items.filter(itemId => !itemId.equals(new ItemId(event.payload.itemId)));
-        break;
-      case 'MarketDayMenuSet':
-        this._items = event.payload.itemIds.map(itemId => new ItemId(itemId));
-        break;
     }
   }
 
-  setMenu(itemIds: ItemId[]) {
-    if (this.unchanged(itemIds)) {
+  setMenu(menu: Menu) {
+    if (this.inThePast()) {
+      throw new MarketDayInThePastError();
+    }
+    if (menu.equals(this._menu)) {
       return;
     }
     const event: MarketDayMenuSet = {
       type: 'MarketDayMenuSet',
       payload: {
-        itemIds: itemIds.map(itemId => itemId.value()),
+        itemIds: menu.value(),
         marketId: this._marketId.value(),
         date: this._date.value()
       },
       version: 1
     };
     this.raise(event);
-  }
-
-  planItems(items: PlannedItem[]) {
-    if (this._date.isBefore(this._today)) {
-      throw new MarketDayInThePastError();
-    }
-    const event: ItemsPlannedForMarketDay = {
-      type: 'ItemsPlannedForMarketDay',
-      payload: {
-        items: items.map(item => item.value()),
-        marketId: this._marketId.value(),
-        date: this._date.value()
-      },
-      version: 1
-    };
-    this.raise(event);
-  }
-
-  snapshot(): MarketDaySnapshot {
-    return {
-      marketId: this._marketId.value(),
-      date: this._date.value()
-    };
   }
 
   markItemAsSoldOut(itemId: ItemId, time: LocalTime) {
-    if (this.notPlanned(itemId)) {
+    if (!this._menu.includes(itemId)) {
       throw new ItemNotPlannedError();
     }
     if (this._soldOut.some(id => id.equals(itemId))) {
@@ -98,31 +68,7 @@ export class MarketDay extends Aggregate {
     this.raise(event);
   }
 
-  unplanItem(itemId: ItemId) {
-    if (this._date.isBefore(this._today)) {
-      throw new MarketDayInThePastError();
-    }
-    if (this.notPlanned(itemId)) {
-      return;
-    }
-    const event: ItemUnplannedFromMarketDay = {
-      type: 'ItemUnplannedFromMarketDay',
-      payload: {
-        itemId: itemId.value(),
-        marketId: this._marketId.value(),
-        date: this._date.value()
-      },
-      version: 1
-    };
-    this.raise(event);
-  }
-
-  private unchanged(itemIds: ItemId[]): boolean {
-    return this._items.length === itemIds.length
-      && this._items.every((item, index) => item.equals(itemIds[index]));
-  }
-
-  private notPlanned(itemId: ItemId): boolean {
-    return !this._items.some(id => id.equals(itemId));
+  private inThePast(): boolean {
+    return this._date.isBefore(this._today);
   }
 }
