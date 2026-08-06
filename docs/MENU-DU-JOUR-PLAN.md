@@ -1,7 +1,7 @@
 # Menu du jour — plan
 
 Vendors compose each market day's offering from their catalogue; customers see it on the
-storefront. Slice 1 (domain) shipped; slices 2–7 remain.
+storefront. Slices 1–2 (domain, read model) shipped; slices 3–7 remain.
 
 ## Decisions
 
@@ -50,19 +50,26 @@ Deleted: `plan-items-for-market-day/`, `unplan-item-from-market-day/`, `PlannedI
 `MarketDay` public surface is now `apply` · `setMenu` · `markItemAsSoldOut`. No accessors,
 one private helper. `market-day/` and `set-market-day-menu/` at 100% coverage.
 
-## Slice 2 — read model
+## Slice 2 — read model (done)
 
-New `packages/market-days/src/market-day-view/`, mirroring `catalogue-view/`:
+`packages/market-days/src/market-day-view/`, mirroring `catalogue-view/`:
 
-- `market-day-view.ts` (type), `market-day-views.ts` (read port), `market-day-view.store.ts` (write port)
-- `market-day-view.projection.ts` — `@CheckpointedProjection('market-day-view')`, handles `MarketDayMenuSet`
-- `in-memory-market-day.views.ts`, `postgres-market-day.views.ts`, `index.ts`
-- Barrel export in `packages/market-days/src/index.ts`
+| Path | |
+|---|---|
+| `market-day-view.ts` | `MarketDayView = { marketId, date, itemIds }` — the event payload verbatim |
+| `market-day-views.ts` | read port: `menuFor(vendorId, marketId, date)`, empty menu for an unplanned day |
+| `market-day-view.store.ts` | write port: `setMenu(menu, vendorId)` · `clear()` |
+| `market-day-view.projection.ts` | `@CheckpointedProjection('market-day-view')`, `MarketDayMenuSet` only — one-line pass-through |
+| `in-memory-market-day.views.ts` | keyed `vendorId\|marketId\|date` |
+| `postgres-market-day.views.ts` | upsert on PK `(vendor_id, market_id, day)` |
 
-Also: migration `database/migrations/0012_market_day_views.sql`; provider in
-`market-days.module.ts` (`projections`); store providers in **both**
-`apps/api/src/app/persistence/{in-memory,postgres}-persistence.module.ts`;
-contract spec + projection spec + rebuild spec under `test/src/market-days/`.
+Also: migration `0012_market_day_views.sql` (`day` is text, not date — pg would hand back a JS
+Date and the view speaks ISO strings); providers in `market-days.module.ts` and **both**
+persistence modules; barrel export.
+
+Tests: `market-day-views.contract.ts` (6, run against both adapters), `market-day-view.spec.ts`
+(4, projection), `apps/api/.../market-day-rebuild.spec.ts` (1, clear + replay — drives the
+command gateway, since the endpoint arrives in slice 4).
 
 Erasure needs no change — market-day events carry no PII, so `VendorErasure` does not rebuild this.
 

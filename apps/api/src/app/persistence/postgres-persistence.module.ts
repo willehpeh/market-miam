@@ -13,9 +13,12 @@ import {
 import {
   CatalogueViews,
   CatalogueViewStore,
+  MarketDayViews,
+  MarketDayViewStore,
   MarketScheduleViews,
   MarketScheduleViewStore,
   PostgresCatalogueViews,
+  PostgresMarketDayViews,
   PostgresMarketScheduleViews,
   PostgresSubdomainRegistry,
   PostgresVendorStorefrontViews,
@@ -101,6 +104,13 @@ const views = [
   { provide: MarketScheduleViews, useExisting: PostgresMarketScheduleViews },
   { provide: MarketScheduleViewStore, useExisting: PostgresMarketScheduleViews },
   {
+    provide: PostgresMarketDayViews,
+    useFactory: (uow: PostgresUnitOfWork) => new PostgresMarketDayViews(uow),
+    inject: [PostgresUnitOfWork],
+  },
+  { provide: MarketDayViews, useExisting: PostgresMarketDayViews },
+  { provide: MarketDayViewStore, useExisting: PostgresMarketDayViews },
+  {
     provide: PostgresSubdomainRegistry,
     useFactory: (uow: PostgresUnitOfWork) => new PostgresSubdomainRegistry(uow),
     inject: [PostgresUnitOfWork],
@@ -152,6 +162,8 @@ const views = [
     CatalogueViewStore,
     MarketScheduleViews,
     MarketScheduleViewStore,
+    MarketDayViews,
+    MarketDayViewStore,
     SubdomainRegistry,
   ],
 })

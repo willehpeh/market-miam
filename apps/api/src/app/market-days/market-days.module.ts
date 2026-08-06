@@ -18,6 +18,8 @@ import {
   FindVendorStorefrontHandler,
   FindVendorSchedulesHandler,
   FindUpcomingMarketDaysHandler,
+  MarketDayViewProjection,
+  MarketDayViewStore,
   MarketScheduleViewProjection,
   MarketScheduleViewStore,
   MarkItemAsSoldOutHandler,
@@ -83,6 +85,11 @@ const projections = [
     provide: MarketScheduleViewProjection,
     useFactory: (store: MarketScheduleViewStore) => new MarketScheduleViewProjection(store),
     inject: [MarketScheduleViewStore],
+  },
+  {
+    provide: MarketDayViewProjection,
+    useFactory: (store: MarketDayViewStore) => new MarketDayViewProjection(store),
+    inject: [MarketDayViewStore],
   },
 ];
 
