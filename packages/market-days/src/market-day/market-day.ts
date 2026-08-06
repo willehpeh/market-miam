@@ -1,7 +1,7 @@
 import { Aggregate } from '@market-miam/event-sourcing';
 import { LocalDate, LocalTime } from '@market-miam/common';
 import { MarketId } from '@market-miam/shared-kernel';
-import { ItemMarkedAsSoldOut, ItemsPlannedForMarketDay, ItemUnplannedFromMarketDay, MarketDayEvent } from './events';
+import { ItemMarkedAsSoldOut, ItemsPlannedForMarketDay, ItemUnplannedFromMarketDay, MarketDayEvent, MarketDayMenuSet } from './events';
 import { PlannedItem } from './planned-item';
 import { ItemAlreadySoldOutError, ItemNotPlannedError, MarketDayInThePastError } from './errors';
 import { ItemId } from '../catalogue';
@@ -34,6 +34,19 @@ export class MarketDay extends Aggregate {
         this._items = this._items.filter(itemId => !itemId.equals(new ItemId(event.payload.itemId)));
         break;
     }
+  }
+
+  setMenu(itemIds: ItemId[]) {
+    const event: MarketDayMenuSet = {
+      type: 'MarketDayMenuSet',
+      payload: {
+        itemIds: itemIds.map(itemId => itemId.value()),
+        marketId: this._marketId.value(),
+        date: this._date.value()
+      },
+      version: 1
+    };
+    this.raise(event);
   }
 
   planItems(items: PlannedItem[]) {
