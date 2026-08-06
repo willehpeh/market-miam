@@ -123,8 +123,7 @@ publication requirement").
 |MarketScheduleAmended      |Calendar  |Setup          |
 |MarketScheduleCancelled    |Calendar  |Lifecycle      |
 |AbsenceDeclared            |Calendar  |Operational    |
-|ItemsPlannedForMarketDay   |MarketDay |Before market  |
-|ItemUnplannedFromMarketDay |MarketDay |Before market  |
+|MarketDayMenuSet           |MarketDay |Before market  |
 |ItemMarkedAsSoldOut        |MarketDay |During market  |
 
 ### Events still to come
@@ -138,7 +137,7 @@ publication requirement").
 The MVP is **vendor-facing first**: the catalogue and market day planning tool, with the customer-facing published page as the visible output.
 
 1. **Build the catalogue** — ✅ shipped end-to-end (add, revise, re-photo, retire, reorder, variants)
-1. **Plan market days** — domain built (`ItemsPlannedForMarketDay` / unplan); **no UI, no HTTP endpoint**
+1. **Plan market days** — domain built (`SetMarketDayMenu` → `MarketDayMenuSet`, the whole day's menu in one command); **no read model, no HTTP endpoint, no UI** — see `MENU-DU-JOUR-PLAN.md`
 1. **Publish** — ✅ shipped: publication readiness + public storefront (carte, upcoming markets, absences) at the vendor's subdomain
 1. **Sold-out tracking** — domain built (`ItemMarkedAsSoldOut`); **no UI**. Cheapest public-roadmap item to ship — a frontend job, not a domain one
 1. **Post-market review** — not built (three-outcomes model, above)

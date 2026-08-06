@@ -6,14 +6,14 @@ doc. Legal and website work track their own remaining sections:
 
 ## Product
 
-* menu du jour UI — plan/unplan + mark-as-sold-out are domain-built; no HTTP endpoint, no UI in either frontend
+* menu du jour — `SetMarketDayMenu` + mark-as-sold-out are domain-built; read model, HTTP and UI remain (`docs/MENU-DU-JOUR-PLAN.md`)
 * open market day · close market day
 * item rated for market day (the miam)
 * remove item photo · clear storefront cover photo
 * retiring an item doesn't check if it's been planned
 * category + tags for dishes (`ItemAddedToCatalogue` v2, form + list cards)
 * schedule cadence picker: every-N-weeks + one-off (domain/API/read model support both; the UI pins weekly)
-* prepared-state overlay — join actual market-day events onto expanded occurrences (needs a design pass; `docs/archive/MARKET-SCHEDULE-FOLLOWUPS.md` §5)
+* prepared-state overlay — design pass done: menus join onto occurrences (`docs/MENU-DU-JOUR-PLAN.md`, decisions 4–5). Attended state waits on open/close market day
 
 ## Polish
 

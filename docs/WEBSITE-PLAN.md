@@ -87,7 +87,7 @@ The bullets sit at deliberately different distances. What's actually behind each
 
 | Bullet | Reality |
 |---|---|
-| menu du jour + *il n'y en a plus* | Domain built — `market-day/`, `plan-items-for-market-day`, `mark-item-as-sold-out`, `ItemMarkedAsSoldOut`. **No UI in either frontend.** Cheapest roadmap item to actually ship, and it's a frontend job, not a domain one. |
+| menu du jour + *il n'y en a plus* | Domain built — `market-day/`, `set-market-day-menu`, `mark-item-as-sold-out`, `MarketDayMenuSet`, `ItemMarkedAsSoldOut`. **No read model, no HTTP, no UI in either frontend.** Cheapest roadmap item to actually ship, and it's mostly a frontend job (`docs/MENU-DU-JOUR-PLAN.md`). |
 | le miam | **Nothing built.** No aggregate, no event, no handler; `NEXT_BEHAVIOURS.md` has *item rated for market day* unstarted. Furthest-out thing on the page — have an answer ready for *"when?"* |
 | post-market feedback per dish | Not built |
 | repères over time | Not built |

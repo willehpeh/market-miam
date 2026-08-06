@@ -93,10 +93,13 @@ the Marchés page lists schedules, not days. That screen is part of this slice.
 
 ## Slice 7 — docs
 
-- `docs/MARKET_MIAM.md` — event catalog: three market-day events became two
-- `NEXT_BEHAVIOURS.md` — **currently names deleted commands** (`plan/unplan`); stale as written
-- `docs/WEBSITE-PLAN.md:90` — same
-- Consider an ADR for the whole-set replace
+Done for slice 1: `MARKET_MIAM.md` (event catalog, MVP status), `NEXT_BEHAVIOURS.md`,
+`WEBSITE-PLAN.md:90`, `O11Y-PLAN.md` (`SetMarketDayMenu` gains an entry point in slice 4;
+`plan.total_quantity` → `menu.item_count`, since `Quantity` no longer exists).
+
+`docs/archive/*` deliberately left naming the retired commands — those are point-in-time records.
+
+Remaining: re-check these after each slice; consider an ADR for the whole-set replace (decision 2).
 
 ## Open
 
