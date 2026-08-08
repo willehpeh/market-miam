@@ -11,6 +11,12 @@ export type UpcomingMarket = {
   town: string;
   pitch?: string;
   cancelled: boolean;
+  // The market is happening right now — the "En cours" badge. Never true for a
+  // cancelled day.
+  inProgress: boolean;
+  // The day's menu, joined from the catalogue upstream; empty when nothing is planned
+  // or the day is cancelled.
+  dishes: CatalogueViewItem[];
 };
 
 export type CustomerStorefront =

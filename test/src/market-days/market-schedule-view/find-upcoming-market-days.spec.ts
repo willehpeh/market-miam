@@ -1,6 +1,9 @@
 import {
+  CatalogueViewItem,
   FindUpcomingMarketDays,
   FindUpcomingMarketDaysHandler,
+  InMemoryCatalogueViews,
+  InMemoryMarketDayViews,
   InMemoryMarketScheduleViews,
   MarketScheduleView,
   UpcomingMarketDaysView
@@ -32,15 +35,23 @@ function scheduleWith(overrides: Partial<MarketScheduleView>): MarketScheduleVie
   };
 }
 
+function dish(itemId: string, name: string): CatalogueViewItem {
+  return { itemId, name, description: '', price: 500, imageReference: '' };
+}
+
 describe('FindUpcomingMarketDays', () => {
   let views: InMemoryMarketScheduleViews;
+  let menus: InMemoryMarketDayViews;
+  let catalogues: InMemoryCatalogueViews;
 
   beforeEach(() => {
     views = new InMemoryMarketScheduleViews();
+    menus = new InMemoryMarketDayViews();
+    catalogues = new InMemoryCatalogueViews();
   });
 
   function upcoming(vendorId: string, today = '2024-01-01') {
-    return new FindUpcomingMarketDaysHandler(views, clockAt(today)).execute(new FindUpcomingMarketDays(vendorId));
+    return new FindUpcomingMarketDaysHandler(views, menus, catalogues, clockAt(today)).execute(new FindUpcomingMarketDays(vendorId));
   }
 
   const dates = (view: UpcomingMarketDaysView) => view.marketDays.map(d => ({ date: d.date, day: d.day }));
@@ -61,6 +72,7 @@ describe('FindUpcomingMarketDays', () => {
         startTime: '08:00',
         endTime: '14:00',
         absent: false,
+        dishes: [],
         market,
       })),
     });
@@ -138,5 +150,55 @@ describe('FindUpcomingMarketDays', () => {
       { date: '2024-02-17', absent: true },
       { date: '2024-02-24', absent: false },
     ]);
+  });
+
+  it('joins the day\'s menu from the catalogue, in catalogue order', async () => {
+    await views.recordSchedule(scheduleWith({ startDate: '2024-02-05' }), 'vendor-id');
+    await catalogues.addItemToCatalogue(dish('item-1', 'Bourguignon'), 'vendor-id');
+    await catalogues.addItemToCatalogue(dish('item-2', 'Tatin'), 'vendor-id');
+    await menus.setMenu({ marketId: 'market-1', date: '2024-02-10', itemIds: ['item-2', 'item-1'] }, 'vendor-id');
+
+    const { marketDays } = await upcoming('vendor-id');
+
+    expect(marketDays.map(d => ({ date: d.date, dishes: d.dishes.map(item => item.name) }))).toEqual([
+      { date: '2024-02-10', dishes: ['Bourguignon', 'Tatin'] },
+      { date: '2024-02-17', dishes: [] },
+      { date: '2024-02-24', dishes: [] },
+    ]);
+  });
+
+  it('serves the menu with the dish\'s current catalogue detail, not what it was when planned', async () => {
+    await views.recordSchedule(scheduleWith({ startDate: '2024-02-05' }), 'vendor-id');
+    await catalogues.addItemToCatalogue(dish('item-1', 'Bourguignon'), 'vendor-id');
+    await menus.setMenu({ marketId: 'market-1', date: '2024-02-10', itemIds: ['item-1'] }, 'vendor-id');
+
+    await catalogues.reviseItem('item-1', { name: 'Bœuf bourguignon', description: 'Mijoté', price: 1300, variants: undefined }, 'vendor-id');
+
+    const { marketDays } = await upcoming('vendor-id');
+    expect(marketDays[0].dishes).toEqual([
+      { itemId: 'item-1', name: 'Bœuf bourguignon', description: 'Mijoté', price: 1300, imageReference: '', variants: undefined },
+    ]);
+  });
+
+  it('drops a planned dish the catalogue has since retired', async () => {
+    await views.recordSchedule(scheduleWith({ startDate: '2024-02-05' }), 'vendor-id');
+    await catalogues.addItemToCatalogue(dish('item-1', 'Bourguignon'), 'vendor-id');
+    await catalogues.addItemToCatalogue(dish('item-2', 'Tatin'), 'vendor-id');
+    await menus.setMenu({ marketId: 'market-1', date: '2024-02-10', itemIds: ['item-1', 'item-2'] }, 'vendor-id');
+
+    await catalogues.retireItem('item-1', 'vendor-id');
+
+    const { marketDays } = await upcoming('vendor-id');
+    expect(marketDays[0].dishes.map(item => item.itemId)).toEqual(['item-2']);
+  });
+
+  it('suppresses the menu on a day the vendor is absent', async () => {
+    await views.recordSchedule(scheduleWith({ startDate: '2024-02-05' }), 'vendor-id');
+    await catalogues.addItemToCatalogue(dish('item-1', 'Bourguignon'), 'vendor-id');
+    await menus.setMenu({ marketId: 'market-1', date: '2024-02-10', itemIds: ['item-1'] }, 'vendor-id');
+    await views.recordAbsence('schedule-1', 'vendor-id', { from: '2024-02-10', to: '2024-02-10' });
+
+    const { marketDays } = await upcoming('vendor-id');
+    expect(marketDays[0]).toMatchObject({ date: '2024-02-10', absent: true, dishes: [] });
   });
 });

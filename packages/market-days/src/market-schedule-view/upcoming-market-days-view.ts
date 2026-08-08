@@ -1,3 +1,5 @@
+import { CatalogueViewItem } from '../catalogue-view/catalogue-view';
+
 export type MarketDayOccurrence = {
   scheduleId: string;
   marketId: string;
@@ -6,6 +8,9 @@ export type MarketDayOccurrence = {
   startTime?: string;
   endTime?: string;
   absent: boolean;
+  // The day's menu joined from the catalogue at query time — current names and prices,
+  // in catalogue order. Empty when nothing is planned; suppressed when absent.
+  dishes: CatalogueViewItem[];
   market: {
     name: string;
     town: string;

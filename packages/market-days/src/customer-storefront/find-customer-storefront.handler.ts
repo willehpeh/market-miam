@@ -44,13 +44,22 @@ export class FindCustomerStorefrontHandler implements IQueryHandler<FindCustomer
     const { marketDays } = await this.upcoming.execute(new FindUpcomingMarketDays(vendorId));
     const now = this.parisWallClock(this.clock.now());
     return marketDays
-      .filter(day => this.hasNotStarted(day, now))
+      .filter(day => this.notYetEnded(day, now))
       .slice(0, MAX_UPCOMING)
-      .map(day => this.asUpcomingMarket(day));
+      .map(day => this.asUpcomingMarket(day, now));
   }
 
-  private hasNotStarted(day: MarketDayOccurrence, now: string): boolean {
-    return !day.startTime || `${day.date}T${day.startTime}` >= now;
+  // A market day serves customers until it ends, not until it starts — they want the
+  // menu during the market. No endTime falls back to the end of the calendar day.
+  private notYetEnded(day: MarketDayOccurrence, now: string): boolean {
+    return now <= (day.endTime ? `${day.date}T${day.endTime}` : `${day.date}T23:59`);
+  }
+
+  // ISO prefix ordering makes a bare date compare before any instant within it, so a
+  // day with no startTime counts as started once its date arrives.
+  private inProgress(day: MarketDayOccurrence, now: string): boolean {
+    const started = day.startTime ? `${day.date}T${day.startTime}` <= now : day.date <= now;
+    return !day.absent && started && this.notYetEnded(day, now);
   }
 
   // ponytail: Europe/Paris is the single-region calendar constant (plan §"Start-time cutoff");
@@ -64,7 +73,7 @@ export class FindCustomerStorefrontHandler implements IQueryHandler<FindCustomer
     return `${at('year')}-${at('month')}-${at('day')}T${at('hour')}:${at('minute')}`;
   }
 
-  private asUpcomingMarket(day: MarketDayOccurrence): UpcomingMarket {
+  private asUpcomingMarket(day: MarketDayOccurrence, now: string): UpcomingMarket {
     return {
       date: day.date,
       weekday: day.day,
@@ -76,6 +85,8 @@ export class FindCustomerStorefrontHandler implements IQueryHandler<FindCustomer
       town: day.market.town,
       pitch: day.market.pitch,
       cancelled: day.absent,
+      inProgress: this.inProgress(day, now),
+      dishes: day.dishes,
     };
   }
 }

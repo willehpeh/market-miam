@@ -154,6 +154,7 @@ describe('Managing market schedules over HTTP', () => {
       startTime: '07:00',
       endTime: '14:30',
       absent: false,
+      dishes: [],
       market: { name: 'Marché de Belleville', town: 'Paris', codePostal: '75011', streetAddress: 'Boulevard de Belleville', pitch: 'B12' },
     });
   });

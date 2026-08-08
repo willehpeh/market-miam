@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import { DomainEvent, EventStore } from '@market-miam/event-sourcing';
-import { InMemorySubdomainRegistry } from '@market-miam/market-days';
+import { CommandGateway, DomainEvent, EventStore } from '@market-miam/event-sourcing';
+import { InMemorySubdomainRegistry, SetMarketDayMenu } from '@market-miam/market-days';
 import { bootApiTestApp, fixedClock } from '../testing/api-test-app';
 import { Subscriptions } from '../event-sourcing/subscriptions';
 
@@ -65,20 +65,69 @@ describe('Public storefront', () => {
     });
   });
 
-  it('includes the upcoming market days, dropping today\'s already-started market, keeping the first five', async () => {
+  // fixedClock is 2026-06-23T09:00Z — 11:00 in Paris, mid-market for a 07:00–14:30 day.
+  it('keeps today\'s market until it ends, badged in progress, keeping the first five days', async () => {
     await seedStorefront([opened, infoEdited, coverSet, published]);
     await seedSchedule([scheduleRegistered]);
+
+    const res = await request(app.getHttpServer()).get('/public/storefront/acme').expect(200);
+    expect(res.body.upcomingMarkets.map((m: { date: string; inProgress: boolean }) => [m.date, m.inProgress])).toEqual([
+      ['2026-06-23', true], ['2026-06-30', false], ['2026-07-07', false], ['2026-07-14', false], ['2026-07-21', false],
+    ]);
+    expect(res.body.upcomingMarkets[0]).toEqual({
+      date: '2026-06-23', weekday: 'TUE', marketName: 'Marché de Belleville',
+      startTime: '07:00', endTime: '14:30',
+      street: 'Boulevard de Belleville', postalCode: '75011', town: 'Paris', pitch: 'B12',
+      cancelled: false, inProgress: true, dishes: [],
+    });
+  });
+
+  it('drops today\'s market once it has ended', async () => {
+    await seedStorefront([opened, infoEdited, coverSet, published]);
+    // Same weekly Tuesday market, but over by 09:00 Paris — 11:00 is past its end.
+    await seedSchedule([{
+      ...scheduleRegistered,
+      payload: { ...scheduleRegistered.payload, days: [{ day: 'TUE', startTime: '06:00', endTime: '09:00' }] },
+    }]);
 
     const res = await request(app.getHttpServer()).get('/public/storefront/acme').expect(200);
     expect(res.body.upcomingMarkets.map((m: { date: string }) => m.date)).toEqual([
       '2026-06-30', '2026-07-07', '2026-07-14', '2026-07-21', '2026-07-28',
     ]);
-    expect(res.body.upcomingMarkets[0]).toEqual({
-      date: '2026-06-30', weekday: 'TUE', marketName: 'Marché de Belleville',
-      startTime: '07:00', endTime: '14:30',
-      street: 'Boulevard de Belleville', postalCode: '75011', town: 'Paris', pitch: 'B12',
-      cancelled: false,
-    });
+  });
+
+  it('keeps an untimed market day through its whole calendar day', async () => {
+    await seedStorefront([opened, infoEdited, coverSet, published]);
+    await seedSchedule([{
+      ...scheduleRegistered,
+      payload: { ...scheduleRegistered.payload, days: [{ day: 'TUE' }] },
+    }]);
+
+    const res = await request(app.getHttpServer()).get('/public/storefront/acme').expect(200);
+    expect(res.body.upcomingMarkets[0]).toMatchObject({ date: '2026-06-23', inProgress: true });
+  });
+
+  it('lists the menu the vendor set for a market day, keeping the carte separate', async () => {
+    await seedStorefront([opened, infoEdited, coverSet, published]);
+    await seedSchedule([scheduleRegistered]);
+    await seedCatalogue([
+      { type: 'ItemAddedToCatalogue', payload: { itemId: 'dish-1', name: 'Bœuf bourguignon', description: 'Mijoté 7 heures', price: 1300, imageReference: 'v7/dish-1' }, version: 1 },
+      { type: 'ItemAddedToCatalogue', payload: { itemId: 'dish-2', name: 'Tarte tatin', description: 'Aux pommes', price: 600 }, version: 1 },
+    ]);
+    await app.get(CommandGateway).execute(new SetMarketDayMenu({
+      vendorId: 'acme-bakery', itemIds: ['dish-1'], marketId: 'market-1', date: '2026-06-30',
+    }));
+    await app.get(Subscriptions).drain();
+
+    const res = await request(app.getHttpServer()).get('/public/storefront/acme').expect(200);
+    expect(res.body.upcomingMarkets.map((m: { date: string; dishes: { name: string }[] }) => ({ date: m.date, dishes: m.dishes.map(dish => dish.name) }))).toEqual([
+      { date: '2026-06-23', dishes: [] },
+      { date: '2026-06-30', dishes: ['Bœuf bourguignon'] },
+      { date: '2026-07-07', dishes: [] },
+      { date: '2026-07-14', dishes: [] },
+      { date: '2026-07-21', dishes: [] },
+    ]);
+    expect(res.body.dishes).toHaveLength(2);
   });
 
   it('keeps a market day the vendor declared absent from, flagged as cancelled', async () => {
@@ -90,7 +139,7 @@ describe('Public storefront', () => {
 
     const res = await request(app.getHttpServer()).get('/public/storefront/acme').expect(200);
     expect(res.body.upcomingMarkets.map((m: { date: string; cancelled: boolean }) => [m.date, m.cancelled])).toEqual([
-      ['2026-06-30', true], ['2026-07-07', false], ['2026-07-14', false], ['2026-07-21', false], ['2026-07-28', false],
+      ['2026-06-23', false], ['2026-06-30', true], ['2026-07-07', false], ['2026-07-14', false], ['2026-07-21', false],
     ]);
   });
 

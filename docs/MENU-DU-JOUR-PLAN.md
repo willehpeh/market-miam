@@ -1,7 +1,7 @@
 # Menu du jour — plan
 
 Vendors compose each market day's offering from their catalogue; customers see it on the
-storefront. Slices 1–2 (domain, read model) shipped; slices 3–7 remain.
+storefront. Slices 1–3 (domain, read model, query) shipped; slices 4–7 remain.
 
 ## Decisions
 
@@ -73,12 +73,19 @@ command gateway, since the endpoint arrives in slice 4).
 
 Erasure needs no change — market-day events carry no PII, so `VendorErasure` does not rebuild this.
 
-## Slice 3 — query
+## Slice 3 — query (done)
 
-- `MarketDayOccurrence` (`market-schedule-view/upcoming-market-days-view.ts`) gains the day's dishes
-- `FindUpcomingMarketDaysHandler` takes `MarketDayViews`, joins per occurrence, suppresses when `absent`
-- `FindCustomerStorefrontHandler`: replace `hasNotStarted` with the `endTime` rule, add `inProgress`,
-  fold dishes into `UpcomingMarket`
+- `MarketDayOccurrence` gains `dishes: CatalogueViewItem[]` — joined at query time, catalogue
+  order, current names/prices; empty when unplanned, suppressed when `absent`
+- `FindUpcomingMarketDaysHandler` takes `MarketDayViews` + `CatalogueViews`; one `menuFor`
+  point lookup per non-absent occurrence, catalogue loaded once per query
+- `FindCustomerStorefrontHandler`: `hasNotStarted` replaced by `notYetEnded` (no `endTime` →
+  end of calendar day, settling that open question); `UpcomingMarket` gains `inProgress`
+  (never true when cancelled; no `startTime` → started once the date arrives) and `dishes`
+
+Tests: 5 new in `find-upcoming-market-days.spec.ts` (join order, current-detail, retired-dish
+drop, absence suppression); `public-storefront.spec.ts` reworked for the `endTime` rule
+(+3: ended-today drop, untimed day, menu vs carte).
 
 ## Slice 4 — HTTP
 
@@ -112,7 +119,7 @@ Remaining: re-check these after each slice; consider an ADR for the whole-set re
 
 | Question | Working assumption |
 |---|---|
-| `endTime` unset on a schedule day | Fall back to end of calendar day |
+| ~~`endTime` unset on a schedule day~~ | ~~Fall back to end of calendar day~~ — implemented as assumed (slice 3) |
 | Where the upcoming-days port lives in vendor-frontend | Extend `markets/http.market-schedules.ts`; new feature depends on its facade |
 | Does Prochains-marchés repeat the day shown in the top card? | Undecided |
 | Top card when nothing is planned | Show it — date and place are useful anyway |
