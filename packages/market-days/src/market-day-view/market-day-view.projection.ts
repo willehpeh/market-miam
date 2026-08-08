@@ -22,7 +22,7 @@ export class MarketDayViewProjection extends ProjectionFor<MarketDayMenuSet> {
 
   // The event payload is the view: catalogue detail is joined at query time, so nothing
   // here needs reshaping.
-  private handleMenuSet(event: StoredEvent): Promise<void> {
-    return this.store.setMenu(event.payload as MarketDayMenuSet['payload'], vendorIdFrom(event));
+  private handleMenuSet(event: StoredEvent<MarketDayMenuSet>): Promise<void> {
+    return this.store.setMenu(event.payload, vendorIdFrom(event));
   }
 }

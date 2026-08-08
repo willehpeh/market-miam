@@ -24,14 +24,12 @@ export class MarketScheduleViewProjection extends ProjectionFor<CalendarEvent> {
     return this.store.clear();
   }
 
-  private handleRegistered(event: StoredEvent): Promise<void> {
-    const payload = event.payload as MarketScheduleRegistered['payload'];
-    return this.store.recordSchedule(this.viewOf(payload), vendorIdFrom(event));
+  private handleRegistered(event: StoredEvent<MarketScheduleRegistered>): Promise<void> {
+    return this.store.recordSchedule(this.viewOf(event.payload), vendorIdFrom(event));
   }
 
-  private handleAmended(event: StoredEvent): Promise<void> {
-    const payload = event.payload as MarketScheduleAmended['payload'];
-    return this.store.amendSchedule(this.viewOf(payload), vendorIdFrom(event));
+  private handleAmended(event: StoredEvent<MarketScheduleAmended>): Promise<void> {
+    return this.store.amendSchedule(this.viewOf(event.payload), vendorIdFrom(event));
   }
 
   private viewOf(payload: MarketScheduleRegistered['payload'] | MarketScheduleAmended['payload']): MarketScheduleView {
@@ -46,13 +44,12 @@ export class MarketScheduleViewProjection extends ProjectionFor<CalendarEvent> {
     };
   }
 
-  private handleCancelled(event: StoredEvent): Promise<void> {
-    const payload = event.payload as MarketScheduleCancelled['payload'];
-    return this.store.cancelSchedule(payload.scheduleId, vendorIdFrom(event));
+  private handleCancelled(event: StoredEvent<MarketScheduleCancelled>): Promise<void> {
+    return this.store.cancelSchedule(event.payload.scheduleId, vendorIdFrom(event));
   }
 
-  private handleAbsenceDeclared(event: StoredEvent): Promise<void> {
-    const payload = event.payload as AbsenceDeclared['payload'];
-    return this.store.recordAbsence(payload.scheduleId, vendorIdFrom(event), { from: payload.from, to: payload.to });
+  private handleAbsenceDeclared(event: StoredEvent<AbsenceDeclared>): Promise<void> {
+    const { scheduleId, from, to } = event.payload;
+    return this.store.recordAbsence(scheduleId, vendorIdFrom(event), { from, to });
   }
 }

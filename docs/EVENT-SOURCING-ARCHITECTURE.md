@@ -199,19 +199,26 @@ Three things look like projections and aren't:
 ## 6. Handlers
 
 `EventHandler` (`handle`, `eventTypes`) is the base contract; `Projection` adds
-`reset()`; `Processor` is an alias. `ProjectionFor<E>` is the template all three
-projections extend:
+`reset()`; `Processor` is an alias. `ProjectionFor<E>` is the template every
+projection extends:
 
 ```ts
-type EventHandlerMap<T extends DomainEvent> =
-  Record<T['type'], (event: StoredEvent) => Promise<void>>;
+type HandlerFor<E extends DomainEvent> = (event: StoredEvent<E>) => Promise<void>;
+
+type EventHandlerMap<T extends DomainEvent> = {
+  [K in T['type']]: HandlerFor<EventOfType<T, K>>;
+};
 ```
 
-`E` is the domain's discriminated union, so the `Record` demands exactly one key
-per member: adding an event to the union is a compile error in every projection
-over it until handled. `eventTypes()` is derived from `Object.keys()` of the
-same map, so the subscription's filter cannot drift from the dispatch table.
-`handle()` indexes the map with a cast — safe only because
+`E` is the domain's discriminated union, so the mapped type demands exactly one
+key per member: adding an event to the union is a compile error in every
+projection over it until handled. Each handler receives the `StoredEvent` of its
+own union member (`EventOfType` is the type-level twin of `switch (event.type)`
+narrowing), so projections read `event.payload` fully typed — no casts.
+`eventTypes()` is derived from `Object.keys()` of the same map, so the
+subscription's filter cannot drift from the dispatch table. `handle()` widens
+the selected handler back to the plain envelope (`handlerFor`) — which map entry
+a runtime event selects is a fact the compiler cannot check — safe only because
 `PollingSubscription` filters on `eventTypes()` first. That is a
 **collaboration invariant**: any handler wrapper (`ContinuedLineageHandler` is
 the one that exists) must forward `eventTypes()` faithfully, not just `handle()`.

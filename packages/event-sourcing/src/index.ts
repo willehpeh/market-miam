@@ -1,6 +1,7 @@
 export * from './ports/event-store';
 export { StoredEvent } from './domain/stored-event';
-export { DomainEvent } from './domain/domain-event';
+export { DomainEvent, EventOfType } from './domain/domain-event';
+export type { HandlerFor } from './domain/event-handler-map';
 export { Aggregate } from './domain/aggregate';
 export { Events } from './ports/events';
 export type { EventHandler } from './ports/event-handler';

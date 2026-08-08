@@ -24,8 +24,8 @@ export class CatalogueViewProjection extends ProjectionFor<CatalogueEvent> {
     return this.store.clear();
   }
 
-  private async handleItemAdded(event: StoredEvent): Promise<void> {
-    const payload = event.payload as ItemAddedToCatalogue['payload'];
+  private async handleItemAdded(event: StoredEvent<ItemAddedToCatalogue>): Promise<void> {
+    const payload = event.payload;
     return this.store.addItemToCatalogue({
       itemId: payload.itemId,
       name: payload.name,
@@ -35,13 +35,12 @@ export class CatalogueViewProjection extends ProjectionFor<CatalogueEvent> {
     }, vendorIdFrom(event));
   }
 
-  private handleItemRetired(event: StoredEvent): Promise<void> {
-    const payload = event.payload as ItemRetired['payload'];
-    return this.store.retireItem(payload.itemId, vendorIdFrom(event));
+  private handleItemRetired(event: StoredEvent<ItemRetired>): Promise<void> {
+    return this.store.retireItem(event.payload.itemId, vendorIdFrom(event));
   }
 
-  private handleItemRevised(event: StoredEvent): Promise<void> {
-    const payload = event.payload as ItemRevised['payload'];
+  private handleItemRevised(event: StoredEvent<ItemRevised>): Promise<void> {
+    const payload = event.payload;
     return this.store.reviseItem(
       payload.itemId,
       { name: payload.name, description: payload.description, price: payload.price, variants: payload.variants },
@@ -49,13 +48,12 @@ export class CatalogueViewProjection extends ProjectionFor<CatalogueEvent> {
     );
   }
 
-  private handleItemsReordered(event: StoredEvent): Promise<void> {
-    const payload = event.payload as ItemsReordered['payload'];
-    return this.store.reorderItems(payload.itemIds, vendorIdFrom(event));
+  private handleItemsReordered(event: StoredEvent<ItemsReordered>): Promise<void> {
+    return this.store.reorderItems(event.payload.itemIds, vendorIdFrom(event));
   }
 
-  private handleItemPhotoChanged(event: StoredEvent): Promise<void> {
-    const payload = event.payload as ItemPhotoChanged['payload'];
+  private handleItemPhotoChanged(event: StoredEvent<ItemPhotoChanged>): Promise<void> {
+    const payload = event.payload;
     return this.store.updateItemPhoto(payload.itemId, payload.imageReference, vendorIdFrom(event));
   }
 }

@@ -27,13 +27,11 @@ export class VendorStorefrontViewProjection extends ProjectionFor<StorefrontEven
     return this.store.open(vendorIdFrom(event));
   }
 
-  private async handleStorefrontCoverPhotoSet(event: StoredEvent): Promise<void> {
-    const payload = event.payload as StorefrontCoverPhotoSet['payload'];
-    return this.store.setCoverPhoto(vendorIdFrom(event), payload.imageReference);
+  private async handleStorefrontCoverPhotoSet(event: StoredEvent<StorefrontCoverPhotoSet>): Promise<void> {
+    return this.store.setCoverPhoto(vendorIdFrom(event), event.payload.imageReference);
   }
 
-  private async handleStorefrontInformationEdited(event: StoredEvent): Promise<void> {
-    const payload = event.payload as StorefrontInformationEdited['payload'];
-    return this.store.editInformation(vendorIdFrom(event), payload);
+  private async handleStorefrontInformationEdited(event: StoredEvent<StorefrontInformationEdited>): Promise<void> {
+    return this.store.editInformation(vendorIdFrom(event), event.payload);
   }
 }

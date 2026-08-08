@@ -1,5 +1,5 @@
 import { DomainEvent } from './domain-event';
-import { EventHandlerMap } from './event-handler-map';
+import { EventHandlerMap, HandlerFor } from './event-handler-map';
 import { StoredEvent } from './stored-event';
 import { Projection } from './projection';
 
@@ -19,7 +19,14 @@ export abstract class ProjectionFor<E extends DomainEvent = DomainEvent> impleme
   }
 
   handle(event: StoredEvent): Promise<void> {
-    return this.map()[event.type as E['type']](event);
+    return this.handlerFor(event)(event);
+  }
+
+  // Which map entry a runtime event selects is a fact the compiler cannot check, so the
+  // per-event handler types widen back to the plain envelope here — and only here. Safe
+  // because subscriptions filter on eventTypes() before dispatching.
+  private handlerFor(event: StoredEvent): HandlerFor {
+    return this.map()[event.type as E['type']] as HandlerFor;
   }
 
   private map(): EventHandlerMap<E> {
