@@ -19,14 +19,16 @@ export abstract class ProjectionFor<E extends DomainEvent = DomainEvent> impleme
   }
 
   handle(event: StoredEvent): Promise<void> {
-    return this.handlerFor(event)(event);
+    const handler = this.handlerFor(event);
+    return handler(event);
   }
 
   // Which map entry a runtime event selects is a fact the compiler cannot check, so the
   // per-event handler types widen back to the plain envelope here — and only here. Safe
   // because subscriptions filter on eventTypes() before dispatching.
   private handlerFor(event: StoredEvent): HandlerFor {
-    return this.map()[event.type as E['type']] as HandlerFor;
+    const handlers = this.map();
+    return handlers[event.type as E['type']] as HandlerFor;
   }
 
   private map(): EventHandlerMap<E> {
