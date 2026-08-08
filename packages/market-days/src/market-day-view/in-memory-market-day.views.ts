@@ -5,8 +5,10 @@ import { MarketDayViewStore } from './market-day-view.store';
 export class InMemoryMarketDayViews implements MarketDayViews, MarketDayViewStore {
   private readonly menus = new Map<string, string[]>();
 
+  // Copied both ways: the store must not share array identity with writers or readers,
+  // or a caller mutating its menu would silently mutate the store.
   async setMenu(menu: MarketDayView, vendorId: string): Promise<void> {
-    this.menus.set(this.key(vendorId, menu.marketId, menu.date), menu.itemIds);
+    this.menus.set(this.key(vendorId, menu.marketId, menu.date), [...menu.itemIds]);
   }
 
   async clear(): Promise<void> {
@@ -14,7 +16,8 @@ export class InMemoryMarketDayViews implements MarketDayViews, MarketDayViewStor
   }
 
   async menuFor(vendorId: string, marketId: string, date: string): Promise<MarketDayView> {
-    return { marketId, date, itemIds: this.menus.get(this.key(vendorId, marketId, date)) ?? [] };
+    const itemIds = this.menus.get(this.key(vendorId, marketId, date)) ?? [];
+    return { marketId, date, itemIds: [...itemIds] };
   }
 
   private key(vendorId: string, marketId: string, date: string): string {
