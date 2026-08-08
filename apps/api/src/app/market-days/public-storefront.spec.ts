@@ -96,6 +96,41 @@ describe('Public storefront', () => {
     ]);
   });
 
+  it('keeps today\'s market before it starts, not yet badged in progress', async () => {
+    await seedStorefront([opened, infoEdited, coverSet, published]);
+    // Evening market: at 11:00 Paris it hasn't started — listed, but not "En cours".
+    await seedSchedule([{
+      ...scheduleRegistered,
+      payload: { ...scheduleRegistered.payload, days: [{ day: 'TUE', startTime: '18:00', endTime: '22:00' }] },
+    }]);
+
+    const res = await request(app.getHttpServer()).get('/public/storefront/acme').expect(200);
+    expect(res.body.upcomingMarkets[0]).toMatchObject({ date: '2026-06-23', inProgress: false });
+  });
+
+  it('never badges a cancelled market day in progress, even during its hours', async () => {
+    await seedStorefront([opened, infoEdited, coverSet, published]);
+    await seedSchedule([
+      scheduleRegistered,
+      { type: 'AbsenceDeclared', payload: { scheduleId: 'schedule-1', from: '2026-06-23', to: '2026-06-23' }, version: 1 },
+    ]);
+
+    const res = await request(app.getHttpServer()).get('/public/storefront/acme').expect(200);
+    expect(res.body.upcomingMarkets[0]).toMatchObject({ date: '2026-06-23', cancelled: true, inProgress: false });
+  });
+
+  it('keeps a market through its final minute — gone only after endTime', async () => {
+    await seedStorefront([opened, infoEdited, coverSet, published]);
+    // endTime 11:00 is exactly the fixed clock's Paris wall time: still on, still badged.
+    await seedSchedule([{
+      ...scheduleRegistered,
+      payload: { ...scheduleRegistered.payload, days: [{ day: 'TUE', startTime: '07:00', endTime: '11:00' }] },
+    }]);
+
+    const res = await request(app.getHttpServer()).get('/public/storefront/acme').expect(200);
+    expect(res.body.upcomingMarkets[0]).toMatchObject({ date: '2026-06-23', inProgress: true });
+  });
+
   it('keeps an untimed market day through its whole calendar day', async () => {
     await seedStorefront([opened, infoEdited, coverSet, published]);
     await seedSchedule([{
