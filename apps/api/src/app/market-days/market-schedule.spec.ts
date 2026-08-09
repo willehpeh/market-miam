@@ -67,9 +67,11 @@ describe('Managing market schedules over HTTP', () => {
       .send(body);
   }
 
+  // Schedule behaviour, observed through the market-days read: absences and amendments
+  // are only visible once the schedule is expanded into days.
   function upcoming() {
     return request(app.getHttpServer())
-      .get('/market-schedules/upcoming')
+      .get('/market-days/upcoming')
       .set('Authorization', 'Bearer any-token');
   }
 
@@ -135,28 +137,6 @@ describe('Managing market schedules over HTTP', () => {
     await post(schedule).expect(201);
 
     await declareAbsence(schedule.scheduleId, { from: '2026-07-28', to: '2026-07-21' }).expect(400);
-  });
-
-  it('lists the upcoming market days for the authenticated vendor', async () => {
-    await post(schedule).expect(201);
-    await app.get(Subscriptions).drain();
-
-    const response = await upcoming().expect(200);
-
-    expect(response.body.marketDays.map((day: { date: string }) => day.date)).toEqual([
-      '2026-07-21', '2026-07-28', '2026-08-04', '2026-08-11', '2026-08-18',
-    ]);
-    expect(response.body.marketDays[0]).toEqual({
-      scheduleId: 'schedule-1',
-      marketId: 'market-1',
-      date: '2026-07-21',
-      day: 'TUE',
-      startTime: '07:00',
-      endTime: '14:30',
-      absent: false,
-      dishes: [],
-      market: { name: 'Marché de Belleville', town: 'Paris', codePostal: '75011', streetAddress: 'Boulevard de Belleville', pitch: 'B12' },
-    });
   });
 
   it('marks an occurrence absent after an absence is declared over it', async () => {

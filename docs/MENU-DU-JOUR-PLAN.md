@@ -104,7 +104,9 @@ Commits `60d2542`, `79c462a`, `2f6686c`. Came out of a design review of slices 2
 
 ## Slice 4 — HTTP
 
-`PUT /market-days/:marketId/:date/menu`. Reading is free — it rides `GET /market-schedules/upcoming`.
+`PUT /market-days/:marketId/:date/menu`. Reading is free — it rides `GET /market-days/upcoming`,
+moved off `/market-schedules` while it still had no HTTP client, so days are read and written
+under one resource.
 
 ## Slice 5 — vendor frontend
 
@@ -112,7 +114,7 @@ New feature dir mirroring `apps/vendor-frontend/src/app/catalogue/`: port, http 
 effects, facade, store facade, fake facade, providers. Plus the dashboard card and the editor
 route/component.
 
-`GET /market-schedules/upcoming` exists but **nothing in the vendor frontend consumes it yet** —
+`GET /market-days/upcoming` exists but **nothing in the vendor frontend consumes it yet** —
 the Marchés page lists schedules, not days. That screen is part of this slice.
 
 ## Slice 6 — customer frontend

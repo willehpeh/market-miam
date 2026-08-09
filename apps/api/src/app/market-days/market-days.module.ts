@@ -45,6 +45,7 @@ import { SignedUploads, signedUploadsFor } from '../signed-uploads';
 import { VendorsController } from './vendors.controller';
 import { StorefrontController } from './storefront.controller';
 import { CatalogueController } from './catalogue.controller';
+import { MarketDayController } from './market-day.controller';
 import { MarketScheduleController } from './market-schedule.controller';
 import { PublicStorefrontController } from './public-storefront.controller';
 import { VendorErasure } from './vendor-erasure';
@@ -128,7 +129,7 @@ const queryHandlers = [FindCustomerStorefrontHandler, FindVendorStorefrontHandle
 // EventSourcingModule; the view stores from the global persistence module the
 // composition root picked. Nothing here knows which profile is running.
 @Module({
-  controllers: [VendorsController, StorefrontController, CatalogueController, MarketScheduleController, PublicStorefrontController],
+  controllers: [VendorsController, StorefrontController, CatalogueController, MarketScheduleController, MarketDayController, PublicStorefrontController],
   providers: [
     ...clock,
     ...signedUploads,
