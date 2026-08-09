@@ -1,8 +1,8 @@
 import { Aggregate } from '@market-miam/event-sourcing';
 import { LocalDate, LocalTime } from '@market-miam/common';
-import { MarketId } from '@market-miam/shared-kernel';
 import { ItemMarkedAsSoldOut, MarketDayEvent, MarketDayMenuSet } from './events';
 import { ItemAlreadySoldOutError, ItemNotPlannedError, MarketDayInThePastError } from './errors';
+import { MarketDayId } from './market-day-id';
 import { Menu } from './menu';
 import { ItemId } from '../catalogue';
 
@@ -11,8 +11,7 @@ export class MarketDay extends Aggregate {
   private _menu = new Menu([]);
   private _soldOut: ItemId[] = [];
 
-  constructor(private readonly _marketId: MarketId,
-              private readonly _date: LocalDate,
+  constructor(private readonly _id: MarketDayId,
               private readonly _today: LocalDate) {
     super();
   }
@@ -40,8 +39,7 @@ export class MarketDay extends Aggregate {
       type: 'MarketDayMenuSet',
       payload: {
         itemIds: menu.value(),
-        marketId: this._marketId.value(),
-        date: this._date.value()
+        ...this._id.snapshot()
       },
       version: 1
     };
@@ -59,8 +57,7 @@ export class MarketDay extends Aggregate {
       type: 'ItemMarkedAsSoldOut',
       payload: {
         itemId: itemId.value(),
-        marketId: this._marketId.value(),
-        date: this._date.value(),
+        ...this._id.snapshot(),
         time: time.value()
       },
       version: 1
@@ -69,6 +66,6 @@ export class MarketDay extends Aggregate {
   }
 
   private inThePast(): boolean {
-    return this._date.isBefore(this._today);
+    return this._id.isBefore(this._today);
   }
 }

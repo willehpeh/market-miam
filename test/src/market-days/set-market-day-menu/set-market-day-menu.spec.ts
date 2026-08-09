@@ -135,6 +135,15 @@ describe('Set Market Day Menu', () => {
     ]);
   });
 
+  // A persisted address, not an implementation detail: once vendors have set menus, an
+  // edit here orphans every stream they wrote.
+  it('addresses the market day by vendor, market and date', async () => {
+    await handler.execute(TestSetMarketDayMenu.valid());
+
+    expect(store.newEvents().map(event => event.streamId))
+      .toEqual([`market-day/vendor-1/market-1/${SATURDAY}`]);
+  });
+
   it('collapses a repeated item into a single menu entry', async () => {
     await handler.execute(TestSetMarketDayMenu.with({ itemIds: ['item-1', 'item-2', 'item-1'] }));
 
