@@ -29,11 +29,20 @@ export async function startPostgres(): Promise<PostgresHarness> {
 
   const pool = new Pool({ connectionString: databaseUrl });
 
+  // Read the table list from the migrated schema rather than naming tables here: a hand-kept
+  // list silently stops truncating the newest read model, and a stale row only shows up in
+  // whichever test later reads a range instead of a key it just wrote.
+  const { rows } = await pool.query<{ tables: string }>(
+    `SELECT string_agg(quote_ident(tablename), ', ') AS tables
+     FROM pg_tables WHERE schemaname = 'public' AND tablename <> 'pgmigrations'`,
+  );
+  const tables = rows[0].tables;
+
   return {
     pool,
     connectionString: databaseUrl,
     reset: async () => {
-      await pool.query('TRUNCATE events, checkpoints, data_keys, vendor_storefront_views, catalogue_view_items, market_schedule_views, subdomain_registry RESTART IDENTITY');
+      await pool.query(`TRUNCATE ${tables} RESTART IDENTITY`);
     },
     stop: async () => {
       await pool.end();
