@@ -3,17 +3,21 @@ import { MarketDayView } from './market-day-view';
 import { MarketDayViews } from './market-day-views';
 import { MarketDayViewStore } from './market-day-view.store';
 
-type Row = { item_ids: string[] };
+type Row = { market_id: string; day: string; item_ids: string[] };
 
 export class PostgresMarketDayViews implements MarketDayViews, MarketDayViewStore {
   constructor(private readonly db: Queryable) {}
 
-  async menuFor(vendorId: string, marketId: string, date: string): Promise<MarketDayView> {
+  // Prefix scan on the primary key: vendor_id equality then a range over day, which ISO
+  // dates sort correctly as text.
+  async menusFor(vendorId: string, from: string, to: string): Promise<MarketDayView[]> {
     const { rows } = await this.db.query<Row>(
-      'SELECT item_ids FROM market_day_views WHERE vendor_id = $1 AND market_id = $2 AND day = $3',
-      [vendorId, marketId, date],
+      `SELECT market_id, day, item_ids FROM market_day_views
+       WHERE vendor_id = $1 AND day BETWEEN $2 AND $3
+       ORDER BY day, market_id`,
+      [vendorId, from, to],
     );
-    return { marketId, date, itemIds: rows[0]?.item_ids ?? [] };
+    return rows.map(row => ({ marketId: row.market_id, date: row.day, itemIds: row.item_ids }));
   }
 
   async setMenu(menu: MarketDayView, vendorId: string): Promise<void> {

@@ -15,9 +15,16 @@ export class InMemoryMarketDayViews implements MarketDayViews, MarketDayViewStor
     this.menus.clear();
   }
 
-  async menuFor(vendorId: string, marketId: string, date: string): Promise<MarketDayView> {
-    const itemIds = this.menus.get(this.key(vendorId, marketId, date)) ?? [];
-    return { marketId, date, itemIds: [...itemIds] };
+  async menusFor(vendorId: string, from: string, to: string): Promise<MarketDayView[]> {
+    return [...this.menus]
+      .flatMap(([key, itemIds]) => this.within(key, vendorId, from, to, itemIds))
+      .sort((a, b) => a.date.localeCompare(b.date) || a.marketId.localeCompare(b.marketId));
+  }
+
+  private within(key: string, vendorId: string, from: string, to: string, itemIds: string[]): MarketDayView[] {
+    const [keyVendorId, marketId, date] = key.split('|');
+    const inWindow = keyVendorId === vendorId && from <= date && date <= to;
+    return inWindow ? [{ marketId, date, itemIds: [...itemIds] }] : [];
   }
 
   private key(vendorId: string, marketId: string, date: string): string {

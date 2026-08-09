@@ -51,11 +51,9 @@ describe('Rebuilding the market day projection', () => {
 
     await app.get(Subscriptions).rebuild('market-day-view');
 
-    expect(await app.get(MarketDayViews).menuFor('acme-bakery', 'market-1', SATURDAY)).toEqual({
-      marketId: 'market-1',
-      date: SATURDAY,
-      itemIds: [dish.itemId],
-    });
-    expect((await app.get(MarketDayViews).menuFor('ghost-vendor', 'market-1', SATURDAY)).itemIds).toEqual([]);
+    expect(await app.get(MarketDayViews).menusFor('acme-bakery', SATURDAY, SATURDAY)).toEqual([
+      { marketId: 'market-1', date: SATURDAY, itemIds: [dish.itemId] },
+    ]);
+    expect(await app.get(MarketDayViews).menusFor('ghost-vendor', SATURDAY, SATURDAY)).toEqual([]);
   });
 });

@@ -207,6 +207,20 @@ describe('FindUpcomingMarketDays', () => {
     ]);
   });
 
+  // Menus are read as one window now, so that window has to span the same period the
+  // occurrences do — a narrower one would quietly strip the far end of the horizon.
+  it('joins menus across the whole horizon, not just the days nearest today', async () => {
+    await views.recordSchedule(scheduleWith({ startDate: '2023-06-01' }), 'vendor-id');
+    await catalogues.addItemToCatalogue(dish('item-1', 'Bourguignon'), 'vendor-id');
+    await menus.setMenu({ marketId: 'market-1', date: '2024-02-24', itemIds: ['item-1'] }, 'vendor-id');
+
+    const { marketDays } = await upcoming('vendor-id');
+
+    const last = marketDays[marketDays.length - 1];
+    expect({ date: last.date, dishes: last.dishes.map(item => item.name) })
+      .toEqual({ date: '2024-02-24', dishes: ['Bourguignon'] });
+  });
+
   it('suppresses the menu on a day the vendor is absent', async () => {
     await views.recordSchedule(scheduleWith({ startDate: '2024-02-05' }), 'vendor-id');
     await catalogues.addItemToCatalogue(dish('item-1', 'Bourguignon'), 'vendor-id');
