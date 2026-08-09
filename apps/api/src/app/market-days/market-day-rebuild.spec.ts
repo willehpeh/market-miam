@@ -1,8 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import { CommandGateway } from '@market-miam/event-sourcing';
-import { MarketDayViews, MarketDayViewStore, SetMarketDayMenu } from '@market-miam/market-days';
+import { MarketDayViews, MarketDayViewStore } from '@market-miam/market-days';
 import { bootApiTestApp, fixedClock } from '../testing/api-test-app';
 import { Subscriptions } from '../event-sourcing/subscriptions';
 
@@ -27,19 +26,17 @@ describe('Rebuilding the market day projection', () => {
     await app.close();
   });
 
-  // No menu endpoint yet (slice 4) — the command gateway is the public way in until then.
   it('clears the read model and replays it from the event log', async () => {
     await request(app.getHttpServer())
       .post('/catalogue')
       .set('Authorization', 'Bearer any-token')
       .send(dish)
       .expect(201);
-    await app.get(CommandGateway).execute(new SetMarketDayMenu({
-      vendorId: 'acme-bakery',
-      itemIds: [dish.itemId],
-      marketId: 'market-1',
-      date: SATURDAY,
-    }));
+    await request(app.getHttpServer())
+      .put(`/market-days/market-1/${SATURDAY}/menu`)
+      .set('Authorization', 'Bearer any-token')
+      .send({ itemIds: [dish.itemId] })
+      .expect(200);
     await app.get(Subscriptions).drain();
 
     // An orphan row with no backing events — only a real clear removes it, since
