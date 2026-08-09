@@ -17,7 +17,7 @@ Settled by grilling before slice 1. Do not re-litigate without a reason.
 | 5 | Menus ride on `MarketDayOccurrence` (enrich `FindUpcomingMarketDays`) | `FindCustomerStorefrontHandler` already composes that handler → one change serves vendor list, editor and storefront. This is `archive/MARKET-SCHEDULE-FOLLOWUPS.md` §5 |
 | 6 | Customer: **"Prochain marché" card above the carte** + menus listed inside each Prochains-marchés card | Puts the day's offering above the standing carte without redesigning the hero |
 | 7 | Vendor: dashboard card listing the **next 14 days**, tap a day → editor route | Removes an intermediate list screen |
-| 8 | Editor opens **blank**. Prefill from last menu at that market deferred | Nothing needs a single-day read; revisit once vendors have used it |
+| 8 | Editor opens **blank** *for an unplanned day*. Prefill from the **last menu at that market** deferred | Nothing needs a single-day read; revisit once vendors have used it. **Not** "an already-planned day opens empty" — a planned day prefills from `dishes` on the upcoming payload, or saving would silently wipe the menu |
 | 9 | Market day survives until `endTime`, badged **"En cours"** | Customers want the menu *during* the market. Interim — superseded by live mode |
 | 10 | Absent days: menu suppressed **in the query**, editor read-only | Occurrence already carries `absent`; no cross-aggregate coupling |
 
@@ -119,7 +119,7 @@ empty array, not a `DELETE`. Returns void like every other command route.
 | No schedule or absence validation | Would read calendar state from the market-day write path, off an eventually consistent read model — a vendor could be rejected on a schedule registered moments earlier. A menu for a market the vendor never attends is stored and never surfaces |
 | Void response, not the updated view | Read-your-writes is handled by the editor patching its own store: it already holds the catalogue to render the picker, so it has the same ingredients the query joins with |
 | `ConcurrencyError` → 409 (`f8511e0`) | Pre-existing app-wide; a lost append arrived as a 500, so every double-submit read as an incident. Filters now come from one shared list — registered separately, a filter added to only the test module passed the whole suite |
-| `TZ=Europe/Paris` on the api service (`75e4ad8`) | `DateClock.today()` reads the host's local date, and it also starts the upcoming window: on a UTC host, for an hour or two after Paris midnight the vendor's list showed yesterday's market |
+| `TZ=Europe/Paris` on the api service (`75e4ad8`) | `DateClock.today()` reads the host's local date, and it also starts the upcoming window: on a UTC host, for an hour or two after Paris midnight the vendor's list showed yesterday's market. **Verified live** — local hour runs +2 against the ISO hour (CEST), which also proves `render.yaml` is a synced Blueprint rather than the export its header suggests, so env vars can be set from the repo |
 | `menu.item_count` shipped ahead of its value gate (`d97f626`) | The dish count per day is the baseline waste-watch measures against — wanted from the pilot's first day, not retrofitted over empty history. See `O11Y-PLAN.md` step 4 |
 
 Past-day guard **kept**, against the instinct to drop it: backfill needs a past-days read path
@@ -131,7 +131,11 @@ Tests: `market-day-menu.spec.ts` (3 — vertical through both consumers, and unk
 `market-day-upcoming.spec.ts` (1, moved), `concurrency-conflict.spec.ts` (1),
 `tracing/command-gateway.spec.ts` (+1). `market-day-rebuild.spec.ts` now drives the real route.
 
-## Slice 5 — vendor frontend
+## Slice 5 — vendor frontend (next)
+
+**Stopping point: the backend is complete and no browser has touched any of it.** Slice 5 is
+the first slice with a UI, and the first that exercises `PUT /market-days/:marketId/:date/menu`
+outside a spec.
 
 New feature dir mirroring `apps/vendor-frontend/src/app/catalogue/`: port, http adapter, state,
 effects, facade, store facade, fake facade, providers. Plus the dashboard card and the editor
@@ -139,6 +143,28 @@ route/component.
 
 `GET /market-days/upcoming` exists but **nothing in the vendor frontend consumes it yet** —
 the Marchés page lists schedules, not days. That screen is part of this slice.
+
+Carried in from slice 4's grilling, already decided:
+
+- **Patch the store optimistically after a save; do not refetch.** The projection lags the
+  response by 4–275ms, so an SPA navigating straight back would render the stale menu until
+  something forced a refetch. The editor already holds the catalogue to draw the picker, so it
+  can derive the display the same way the query does — filter the catalogue by the chosen ids
+- **A planned day prefills** — see decision 8, which does not say what its first three words
+  look like they say
+- The port is its own thing next to `markets/`, not an extension of
+  `http.market-schedules.ts` — the read moved resource in `c8ced12`
+
+Open, in rough order of when they bite:
+
+- Dashboard wants **14 days**, the endpoint serves a **56-day** horizon. Filter client-side, or
+  parameterise the query? Client-side is smaller and costs one oversized payload
+- Does Prochains-marchés repeat the day shown in the top card? Undecided
+- French copy — "Vos menus" fits "Votre vitrine / Votre catalogue / Vos marchés"
+
+House rules that apply: Signal Forms (`@angular/forms/signals`), components depend only on
+facades, ports expose Observables, functional NgRx effects bridge port↔store, no lifecycle
+hooks.
 
 ## Slice 6 — customer frontend
 
