@@ -6,7 +6,7 @@ doc. Legal and website work track their own remaining sections:
 
 ## Product
 
-* menu du jour — `SetMarketDayMenu` + mark-as-sold-out are domain-built; read model, HTTP and UI remain (`docs/MENU-DU-JOUR-PLAN.md`)
+* menu du jour — backend shipped through HTTP; both UIs remain (`docs/MENU-DU-JOUR-PLAN.md`, slices 5–6). Mark-as-sold-out is still domain-only, with no read model or route
 * open market day · close market day
 * item rated for market day (the miam)
 * remove item photo · clear storefront cover photo

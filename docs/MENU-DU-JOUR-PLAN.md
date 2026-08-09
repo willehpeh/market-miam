@@ -1,7 +1,8 @@
 # Menu du jour — plan
 
 Vendors compose each market day's offering from their catalogue; customers see it on the
-storefront. Slices 1–3 (domain, read model, query) shipped; slices 4–7 remain.
+storefront. Slices 1–4 (domain, read model, query, HTTP) shipped, plus follow-ups in 3a; the
+backend is complete and untouched by a browser. Slices 5–7 remain — both frontends and docs.
 
 ## Decisions
 
@@ -102,11 +103,33 @@ Commits `60d2542`, `79c462a`, `2f6686c`. Came out of a design review of slices 2
 - The container harness truncated a hand-written table list that never gained
   `market_day_views`; it now reads the list from `pg_tables` after migrating
 
-## Slice 4 — HTTP
+## Slice 4 — HTTP (done)
 
-`PUT /market-days/:marketId/:date/menu`. Reading is free — it rides `GET /market-days/upcoming`,
-moved off `/market-schedules` while it still had no HTTP client, so days are read and written
-under one resource.
+Commits `75e4ad8`, `f8511e0`, `c8ced12`, `078f4d2`, `d97f626`. Shape settled by grilling first;
+the decisions below are the ones that came out of it.
+
+`PUT /market-days/:marketId/:date/menu` on a new `MarketDayController`, alongside
+`GET /market-days/upcoming` — moved off `/market-schedules` while it still had no HTTP client,
+so days are read and written under one resource. Body is `{ itemIds }`; clearing a day is an
+empty array, not a `DELETE`. Returns void like every other command route.
+
+| Decision | |
+|---|---|
+| No single-day GET | The editor prefills from `dishes` on the upcoming payload. Retired dishes silently drop from the prefill (correct — they can't be sold); an absent day prefills empty, inert while absence is permanent |
+| No schedule or absence validation | Would read calendar state from the market-day write path, off an eventually consistent read model — a vendor could be rejected on a schedule registered moments earlier. A menu for a market the vendor never attends is stored and never surfaces |
+| Void response, not the updated view | Read-your-writes is handled by the editor patching its own store: it already holds the catalogue to render the picker, so it has the same ingredients the query joins with |
+| `ConcurrencyError` → 409 (`f8511e0`) | Pre-existing app-wide; a lost append arrived as a 500, so every double-submit read as an incident. Filters now come from one shared list — registered separately, a filter added to only the test module passed the whole suite |
+| `TZ=Europe/Paris` on the api service (`75e4ad8`) | `DateClock.today()` reads the host's local date, and it also starts the upcoming window: on a UTC host, for an hour or two after Paris midnight the vendor's list showed yesterday's market |
+| `menu.item_count` shipped ahead of its value gate (`d97f626`) | The dish count per day is the baseline waste-watch measures against — wanted from the pilot's first day, not retrofitted over empty history. See `O11Y-PLAN.md` step 4 |
+
+Past-day guard **kept**, against the instinct to drop it: backfill needs a past-days read path
+that doesn't exist, so removing it would enable data entry nobody can see. Revisit with
+waste-watch, which is retrospective by nature and will want "no editing a day with recorded
+outcomes" rather than "no past days".
+
+Tests: `market-day-menu.spec.ts` (3 — vertical through both consumers, and unknown dish → 400),
+`market-day-upcoming.spec.ts` (1, moved), `concurrency-conflict.spec.ts` (1),
+`tracing/command-gateway.spec.ts` (+1). `market-day-rebuild.spec.ts` now drives the real route.
 
 ## Slice 5 — vendor frontend
 
@@ -125,10 +148,18 @@ the Marchés page lists schedules, not days. That screen is part of this slice.
 ## Slice 7 — docs
 
 Done for slice 1: `MARKET_MIAM.md` (event catalog, MVP status), `NEXT_BEHAVIOURS.md`,
-`WEBSITE-PLAN.md:90`, `O11Y-PLAN.md` (`SetMarketDayMenu` gains an entry point in slice 4;
-`plan.total_quantity` → `menu.item_count`, since `Quantity` no longer exists).
+`WEBSITE-PLAN.md:90`, `O11Y-PLAN.md` (`plan.total_quantity` → `menu.item_count`, since
+`Quantity` no longer exists).
 
-`docs/archive/*` deliberately left naming the retired commands — those are point-in-time records.
+Done for 3a: `MARKET_MIAM.md` and `EVENT-SOURCING-ARCHITECTURE.md` both named the old market-day
+stream key.
+
+Done for slice 4: `O11Y-PLAN.md` step 4 — the command half of the extractor design is built, not
+deferred, and its guard pointed at a spec file (`command-dispatch-tracing.spec.ts`) that doesn't
+exist under that name.
+
+`docs/archive/*` deliberately left naming the retired commands and the old
+`GET /market-schedules/upcoming` — those are point-in-time records.
 
 Remaining: re-check these after each slice; consider an ADR for the whole-set replace (decision 2).
 
@@ -137,7 +168,7 @@ Remaining: re-check these after each slice; consider an ADR for the whole-set re
 | Question | Working assumption |
 |---|---|
 | ~~`endTime` unset on a schedule day~~ | ~~Fall back to end of calendar day~~ — implemented as assumed (slice 3) |
-| Where the upcoming-days port lives in vendor-frontend | Extend `markets/http.market-schedules.ts`; new feature depends on its facade |
+| Where the upcoming-days port lives in vendor-frontend | Reopened by slice 4: the read is now `GET /market-days/upcoming`, a different resource from `/market-schedules`, so extending `markets/http.market-schedules.ts` no longer follows. A `market-days` port next to it fits the URL and the new feature dir |
 | Does Prochains-marchés repeat the day shown in the top card? | Undecided |
 | Top card when nothing is planned | Show it — date and place are useful anyway |
 | Dashboard card window | 14 days |
@@ -145,10 +176,16 @@ Remaining: re-check these after each slice; consider an ADR for the whole-set re
 
 ## Known issues (not blockers)
 
-- **`apps/api` catalogue.spec transport flake**, ~3% per run. Three symptoms across three different
-  tests (`ECONNRESET`, `301` from a server that isn't ours, 5s timeout), never an assertion diff.
-  Cause: `startApp` leaves the app unbound, so supertest binds/tears down an ephemeral listener per
-  request. `app.listen(0)` and `keepAlive:false` were both tried and **neither changed the rate**.
+- **`apps/api` transport flake**, on whichever test it lands on — not only `catalogue.spec`.
+  Recorded at ~3% per run, but slice 4 saw **three incidents in roughly fifteen full runs** on one
+  machine, so the rate is either higher than recorded or load-dependent — worth re-measuring before
+  assuming a fix worked. Symptoms seen: `ECONNRESET`, `301` from a server that isn't ours, 5s timeout,
+  and during slice 4 two more — a **`401`** where the static verifier always passes, and a failed
+  **span assertion** in `tracing/command-gateway.spec.ts`. The 401 fits the existing hypothesis
+  (`startApp` leaves the app unbound, so supertest binds an ephemeral listener per request and
+  occasionally reaches something foreign); the span one does not, so **"never an assertion diff"
+  is no longer true** and shouldn't be used to rule the flake out.
+  `app.listen(0)` and `keepAlive:false` were both tried and **neither changed the rate**.
   Next: log the 301's `Location`/remote port; try single-threaded; hoist boot to `beforeAll`.
   Unrelated to this feature.
 - **`markItemAsSoldOut` has no past-day guard** while `setMenu` does — you can mark a dish sold out
