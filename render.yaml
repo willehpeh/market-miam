@@ -11,6 +11,14 @@ projects:
             repo: https://github.com/willehpeh/market-miam
             plan: starter
             envVars:
+              # The domain assumes a single region, Europe/Paris (see the ponytail note in
+              # find-customer-storefront.handler.ts). DateClock.today() reads the host's local
+              # date, and the host is UTC, so for the hour or two after Paris midnight "today"
+              # is still yesterday — which is where FindUpcomingMarketDays starts its window.
+              # Node resolves this at startup through its bundled ICU; a typo silently falls
+              # back to UTC rather than failing, so check the zone in the boot log after a change.
+              - key: TZ
+                value: Europe/Paris
               - key: AUTH0_ISSUER
                 sync: false
               - key: AUTH0_AUDIENCE
