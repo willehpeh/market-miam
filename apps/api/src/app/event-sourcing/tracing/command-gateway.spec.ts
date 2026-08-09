@@ -58,6 +58,35 @@ describe('Command dispatch tracing', () => {
     });
   });
 
+  // Opt-in per command type: RegisterVendor above stays payload-blind, while a menu carries
+  // how many dishes it named. A count aggregates; the ids it counts would not, and would put
+  // catalogue contents on a span.
+  it('carries the dish count on a menu dispatch', async () => {
+    await boot();
+    for (const itemId of ['item-1', 'item-2']) {
+      await request(app.getHttpServer())
+        .post('/catalogue')
+        .set('Authorization', 'Bearer any-token')
+        .send({ itemId, name: `Dish ${itemId}`, description: '', price: 500 })
+        .expect(201);
+    }
+
+    await request(app.getHttpServer())
+      .put('/market-days/market-1/2026-06-27/menu')
+      .set('Authorization', 'Bearer any-token')
+      .send({ itemIds: ['item-1', 'item-2'] })
+      .expect(200);
+
+    const spans = exporter.getFinishedSpans().filter((span) => span.name === 'SetMarketDayMenu');
+    expect(spans).toHaveLength(1);
+    expect(spans[0].attributes).toEqual({
+      'command.name': 'SetMarketDayMenu',
+      'app.correlation_id': expect.any(String),
+      'app.causation_id': expect.any(String),
+      'menu.item_count': 2,
+    });
+  });
+
   it('opens an append span on the same trace, carrying the persisted event facts', async () => {
     await boot();
 

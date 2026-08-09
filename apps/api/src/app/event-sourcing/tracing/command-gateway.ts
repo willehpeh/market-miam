@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Command, CommandBus } from '@nestjs/cqrs';
 import { trace } from '@opentelemetry/api';
 import { CommandGateway, Lineage, withSpan } from '@market-miam/event-sourcing';
+import { commandAttributes } from '../command-attributes';
 
 const tracer = trace.getTracer('command-gateway');
 
@@ -17,6 +18,7 @@ export class TracingCommandGateway implements CommandGateway {
       const ids = this.lineage.current();
       span.setAttributes({
         'command.name': command.constructor.name,
+        ...commandAttributes(command),
         ...(ids && {
           'app.correlation_id': ids.correlationId,
           'app.causation_id': ids.causationId,
