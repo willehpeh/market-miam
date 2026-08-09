@@ -1,5 +1,4 @@
 import { INestApplication } from '@nestjs/common';
-import { APP_FILTER } from '@nestjs/core';
 import { Test, TestingModuleBuilder } from '@nestjs/testing';
 import { Clock, Email, Instant, LocalDate } from '@market-miam/common';
 import { VendorId } from '@market-miam/shared-kernel';
@@ -10,7 +9,7 @@ import { AuthModule } from '@market-miam/auth-nestjs';
 import { MarketDaysModule } from '../market-days/market-days.module';
 import { EventSourcingModule } from '../event-sourcing/event-sourcing.module';
 import { InMemoryPersistenceModule } from '../persistence/in-memory-persistence.module';
-import { DomainErrorFilter } from '../domain-error.filter';
+import { globalFilters } from '../global-filters';
 import { PollSchedule } from '../event-sourcing/poll-schedule';
 import { FakeSignedUploads, SignedUploads } from '../signed-uploads';
 
@@ -44,7 +43,7 @@ export function apiTestModule(options: ApiTestOptions = {}): TestingModuleBuilde
       EventSourcingModule.forRoot(vendorPiiFields),
       MarketDaysModule,
     ],
-    providers: [{ provide: APP_FILTER, useClass: DomainErrorFilter }],
+    providers: [...globalFilters],
   });
   if (polling === 'disabled') {
     builder.overrideProvider(PollSchedule).useValue(PollSchedule.never());

@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common';
-import { APP_FILTER } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthModule } from '@market-miam/auth-nestjs';
 import { vendorPiiFields } from '@market-miam/market-days';
@@ -7,7 +6,7 @@ import { MarketDaysModule } from './market-days/market-days.module';
 import { EventSourcingModule } from './event-sourcing/event-sourcing.module';
 import { InMemoryPersistenceModule } from './persistence/in-memory-persistence.module';
 import { PostgresPersistenceModule } from './persistence/postgres-persistence.module';
-import { DomainErrorFilter } from './domain-error.filter';
+import { globalFilters } from './global-filters';
 import { tokenVerifierFor } from './token-verifier.factory';
 
 @Module({
@@ -29,6 +28,6 @@ import { tokenVerifierFor } from './token-verifier.factory';
     EventSourcingModule.forRoot(vendorPiiFields),
     MarketDaysModule,
   ],
-  providers: [{ provide: APP_FILTER, useClass: DomainErrorFilter }],
+  providers: [...globalFilters],
 })
 export class AppModule {}
