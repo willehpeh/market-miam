@@ -12,11 +12,11 @@ Settled by grilling before slice 1. Do not re-litigate without a reason.
 | 1 | Feature ends when a customer sees the menu. Sold-out is a **later** slice | A menu nobody sees is worthless to a pilot vendor |
 | 2 | One whole-set command `SetMarketDayMenu` → one `MarketDayMenuSet`. Plan/unplan retired | The menu *is* a set; `ItemsReordered` precedent. No prod events existed → no migration, no upcast |
 | 3 | Event payload is **thin**: `{ itemIds: string[], marketId, date }`. Catalogue joined at **query** time | Renames/re-pricing propagate to already-planned days. Costs historical record; nothing renders a past menu, and the future three-outcomes event can carry its own snapshot |
-| 4 | Full `market-day-view` projection, **point lookup** by (vendorId, marketId, date) | Consistent with ADR 0016 and every other read |
+| 4 | Full `market-day-view` projection, read as a **window** by (vendorId, from, to) | Consistent with ADR 0016 and every other read. ~~Point lookup~~ — revised after slice 3: the only consumer expands a schedule over a period, so N lookups became one range scan |
 | 5 | Menus ride on `MarketDayOccurrence` (enrich `FindUpcomingMarketDays`) | `FindCustomerStorefrontHandler` already composes that handler → one change serves vendor list, editor and storefront. This is `archive/MARKET-SCHEDULE-FOLLOWUPS.md` §5 |
 | 6 | Customer: **"Prochain marché" card above the carte** + menus listed inside each Prochains-marchés card | Puts the day's offering above the standing carte without redesigning the hero |
 | 7 | Vendor: dashboard card listing the **next 14 days**, tap a day → editor route | Removes an intermediate list screen |
-| 8 | Editor opens **blank**. Prefill from last menu at that market deferred | Keeps the projection a point lookup; revisit once vendors have used it |
+| 8 | Editor opens **blank**. Prefill from last menu at that market deferred | Nothing needs a single-day read; revisit once vendors have used it |
 | 9 | Market day survives until `endTime`, badged **"En cours"** | Customers want the menu *during* the market. Interim — superseded by live mode |
 | 10 | Absent days: menu suppressed **in the query**, editor read-only | Occurrence already carries `absent`; no cross-aggregate coupling |
 
@@ -57,18 +57,18 @@ one private helper. `market-day/` and `set-market-day-menu/` at 100% coverage.
 | Path | |
 |---|---|
 | `market-day-view.ts` | `MarketDayView = { marketId, date, itemIds }` — the event payload verbatim |
-| `market-day-views.ts` | read port: `menuFor(vendorId, marketId, date)`, empty menu for an unplanned day |
+| `market-day-views.ts` | read port: `menusFor(vendorId, from, to)`, inclusive both ends, ordered by date then market; days nobody planned are absent rather than empty, a day cleared on purpose reads back empty |
 | `market-day-view.store.ts` | write port: `setMenu(menu, vendorId)` · `clear()` |
 | `market-day-view.projection.ts` | `@CheckpointedProjection('market-day-view')`, `MarketDayMenuSet` only — one-line pass-through |
-| `in-memory-market-day.views.ts` | keyed `vendorId\|marketId\|date` |
-| `postgres-market-day.views.ts` | upsert on PK `(vendor_id, market_id, day)` |
+| `in-memory-market-day.views.ts` | keyed by vendor, then `marketId\|date` |
+| `postgres-market-day.views.ts` | upsert on PK `(vendor_id, market_id, day)`; the window read is a prefix scan on that key |
 
 Also: migration `0012_market_day_views.sql` (`day` is text, not date — pg would hand back a JS
 Date and the view speaks ISO strings); providers in `market-days.module.ts` and **both**
 persistence modules; barrel export.
 
-Tests: `market-day-views.contract.ts` (6, run against both adapters), `market-day-view.spec.ts`
-(4, projection), `apps/api/.../market-day-rebuild.spec.ts` (1, clear + replay — drives the
+Tests: `market-day-views.contract.ts` (9, run against both adapters), `market-day-view.spec.ts`
+(3, projection), `apps/api/.../market-day-rebuild.spec.ts` (1, clear + replay — drives the
 command gateway, since the endpoint arrives in slice 4).
 
 Erasure needs no change — market-day events carry no PII, so `VendorErasure` does not rebuild this.
@@ -77,15 +77,30 @@ Erasure needs no change — market-day events carry no PII, so `VendorErasure` d
 
 - `MarketDayOccurrence` gains `dishes: CatalogueViewItem[]` — joined at query time, catalogue
   order, current names/prices; empty when unplanned, suppressed when `absent`
-- `FindUpcomingMarketDaysHandler` takes `MarketDayViews` + `CatalogueViews`; one `menuFor`
-  point lookup per non-absent occurrence, catalogue loaded once per query
+- `FindUpcomingMarketDaysHandler` takes `MarketDayViews` + `CatalogueViews`; catalogue and
+  the whole window of menus load once per query, so the query costs three reads flat
 - `FindCustomerStorefrontHandler`: `hasNotStarted` replaced by `notYetEnded` (no `endTime` →
   end of calendar day, settling that open question); `UpcomingMarket` gains `inProgress`
   (never true when cancelled; no `startTime` → started once the date arrives) and `dishes`
 
-Tests: 5 new in `find-upcoming-market-days.spec.ts` (join order, current-detail, retired-dish
-drop, absence suppression); `public-storefront.spec.ts` reworked for the `endTime` rule
-(+3: ended-today drop, untimed day, menu vs carte).
+Tests: 6 new in `find-upcoming-market-days.spec.ts` (join order, current-detail, retired-dish
+drop, absence suppression, whole-horizon join); `public-storefront.spec.ts` reworked for the
+`endTime` rule (+3: ended-today drop, untimed day, menu vs carte).
+
+## Slice 3a — read model and identity follow-ups (done)
+
+Commits `60d2542`, `79c462a`, `2f6686c`. Came out of a design review of slices 2–3.
+
+- `MarketDayId` (`market-day/market-day-id.ts`) owns the natural key: `streamIdFor(vendorId)`,
+  `isBefore(date)`, `snapshot()`. `MarketDay` takes it in place of `marketId` + `date` and
+  spreads `snapshot()` into both payloads, so payload and stream address are fed by one
+  object. `MarketDays` is down to load and save; `MarkItemAsSoldOutHandler.contextFrom` gone
+- Stream key changed to `market-day/${vendorId}/${marketId}/${date}` — free to change while
+  no route reaches the handlers, and pinned by a test now that slice 4 will make it permanent
+- Rules pinned that had shipped green: store copies menus both ways, `vendorIdFrom` refuses
+  an unstamped event, the menu window spans the whole horizon
+- The container harness truncated a hand-written table list that never gained
+  `market_day_views`; it now reads the list from `pg_tables` after migrating
 
 ## Slice 4 — HTTP
 

@@ -100,8 +100,9 @@ lookup, `vendorIdFrom(event)` in projections, and the `vendor.id` span attribute
 
 `VendorScopedRepository<A>` is a template over it: subclasses (`Vendors`,
 `Catalogues`, `Calendars`, `Storefronts`) supply a stream-id prefix and a
-factory. `MarketDays` composes `VendorScopedEvents` directly instead — its
-stream id needs `date + vendor + market`.
+factory. `MarketDays` composes `VendorScopedEvents` directly instead — its stream
+id needs `vendor + market + date`, which `MarketDayId` owns and joins as
+`market-day/<vendor>/<market>/<date>`.
 
 ### 3.3 The composed event store
 

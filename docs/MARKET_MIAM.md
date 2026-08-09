@@ -62,8 +62,9 @@ time** from the schedule — never eagerly materialised (see
 ### MarketDay
 
 A specific vendor, at a specific market, on a specific date — stream key
-`market-day-${date}-${vendorId}-${marketId}`. Born lazily on first planning
-action, not materialised from the schedule. The operational heart of the system:
+`market-day/${vendorId}/${marketId}/${date}`, built by `MarketDayId`. Born lazily
+on first planning action, not materialised from the schedule; having no creation
+moment is why it is addressed by a natural key rather than a minted id. The operational heart of the system:
 vendors assemble each day's offering (the *menu du jour*) by selecting items
 from their catalogue.
 
