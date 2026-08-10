@@ -36,6 +36,7 @@ export default defineConfig(() => ({
       include: ['src/**/*.ts'],
       exclude: [
         'src/**/*.spec.ts',
+        'src/**/*.scenario.ts', // exploratory, run by hand via `nx scenario api`
         'src/main.ts', // bootstrap
         'src/app/app.module.ts', // composition root: prod-only Auth0 + config wiring
         'src/tracing.ts', // OTel SDK bootstrap (side-effect import)

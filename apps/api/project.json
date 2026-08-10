@@ -13,6 +13,12 @@
         "cwd": "apps/api"
       }
     },
+    "scenario": {
+      "command": "vitest run --config vitest.scenario.config.mts",
+      "options": {
+        "cwd": "apps/api"
+      }
+    },
     "build": {
       "executor": "nx:run-commands",
       "options": {
