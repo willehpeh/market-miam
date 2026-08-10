@@ -69,8 +69,8 @@ Date and the view speaks ISO strings); providers in `market-days.module.ts` and 
 persistence modules; barrel export.
 
 Tests: `market-day-views.contract.ts` (9, run against both adapters), `market-day-view.spec.ts`
-(3, projection), `apps/api/.../market-day-rebuild.spec.ts` (1, clear + replay — drives the
-command gateway, since the endpoint arrives in slice 4).
+(3, projection), `apps/api/.../market-day-rebuild.spec.ts` (1, clear + replay — drove the command
+gateway until slice 4 gave it a route to drive).
 
 Erasure needs no change — market-day events carry no PII, so `VendorErasure` does not rebuild this.
 
