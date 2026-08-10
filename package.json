@@ -2,7 +2,9 @@
   "name": "@market-miam/source",
   "version": "0.0.0",
   "license": "AGPL-3.0-or-later",
-  "scripts": {},
+  "scripts": {
+    "test:all": "node tools/test-all.mjs"
+  },
   "private": true,
   "dependencies": {
     "@angular-devkit/build-angular": "~21.2.0",
