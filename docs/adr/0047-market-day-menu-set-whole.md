@@ -47,7 +47,10 @@ the whole ordering rather than a move-from/move-to.
   per-item meaning (the three-outcomes sale event) will carry its own
   snapshot rather than leaning on menu history (decision 3).
 - Editors must send the whole set, so a stale editor can silently drop a
-  dish another session added. Accepted at pilot scale: one vendor, one
-  phone, and the 409 covers the simultaneous case.
+  dish another session added. Accepted structurally, not provisionally: the
+  contention surface is one vendor's one day, a vendor is at most two or
+  three people, and simultaneous edits of the same day's menu are
+  vanishingly rare — odds that do not change as the platform gains vendors.
+  The 409 turns a genuinely simultaneous save into a retry.
 - Quantity is gone from the domain. If stock ever matters, it returns as its
   own concept with its own consumer, not as a field riding the menu.
