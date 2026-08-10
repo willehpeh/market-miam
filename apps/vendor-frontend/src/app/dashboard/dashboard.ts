@@ -21,10 +21,15 @@ import { SetupSteps } from './setup-steps';
           ></div>
         </div>
       </mm-card>
-    } @else if (published()) {
-      <mm-storefront-home />
     } @else {
-      <mm-setup-steps />
+      <!-- The cards are siblings, so none of them is the page. Without this the document
+           has two competing h1s and no name of its own. -->
+      <h1 class="sr-only">Tableau de bord</h1>
+      @if (published()) {
+        <mm-storefront-home />
+      } @else {
+        <mm-setup-steps />
+      }
     }
   `
 })

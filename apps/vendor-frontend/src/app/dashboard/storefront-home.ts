@@ -15,7 +15,7 @@ import { NextMenuCard } from '../market-days/next-menu-card';
     <mm-next-menu-card />
 
     <mm-card>
-      <h1 class="text-xl leading-tight">Votre vitrine</h1>
+      <h2 class="text-xl leading-tight">Votre vitrine</h2>
 
       @if (storefrontUrl(); as url) {
         <a [href]="url.href" target="_blank" rel="noopener" class="mt-4 block text-brand-deep">{{ url.label }}</a>

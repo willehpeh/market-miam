@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Card } from '../core/card';
-import { DAY_LABELS } from '../core/french-date';
+import { DAY_LABELS, timeRange } from '../core/french-date';
 import { MarketScheduleFacade } from './market-schedule.facade';
 import { MarketScheduleView } from './market-schedules';
 
@@ -87,16 +87,3 @@ function sortedDays(days: MarketScheduleView['days']): MarketScheduleView['days'
   return [...days].sort((a, b) => DAY_ORDER.indexOf(a.day) - DAY_ORDER.indexOf(b.day));
 }
 
-function timeRange(day: { startTime?: string; endTime?: string }): string {
-  if (!day.startTime) {
-    return '';
-  }
-  const start = formatTime(day.startTime);
-  return day.endTime ? `${start} – ${formatTime(day.endTime)}` : start;
-}
-
-function formatTime(time: string): string {
-  const [hours, minutes] = time.split(':');
-  const hour = String(Number(hours));
-  return minutes === '00' ? `${hour}h` : `${hour}h${minutes}`;
-}

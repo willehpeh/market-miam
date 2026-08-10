@@ -28,24 +28,35 @@ async function renderCard(days: MarketDayView[]) {
 }
 
 describe('NextMenuCard', () => {
-  it('names the next market day', async () => {
+  it('names the next market day, with the hours a vendor plans quantities around', async () => {
     await renderCard([day()]);
 
     expect(screen.getByRole('heading', { name: /prochain marché/i })).toBeTruthy();
     expect(screen.getByText(/samedi 15 août/i)).toBeTruthy();
     expect(screen.getByText(/Marché de la Croix-Rousse/)).toBeTruthy();
+    expect(screen.getByText('8h – 13h')).toBeTruthy();
   });
 
   it('counts the dishes once the day has a menu', async () => {
     await renderCard([day({ itemIds: ['item-1', 'item-2', 'item-3'] })]);
 
-    expect(screen.getByText('3 plats')).toBeTruthy();
+    expect(screen.getByText('3 plats au menu')).toBeTruthy();
+    expect(screen.getByRole('link', { name: /modifier le menu/i })).toBeTruthy();
   });
 
   it('counts a single dish in the singular', async () => {
     await renderCard([day({ itemIds: ['item-1'] })]);
 
-    expect(screen.getByText('1 plat')).toBeTruthy();
+    expect(screen.getByText('1 plat au menu')).toBeTruthy();
+  });
+
+  // Without this the card looks identical whether the vendor has not planned the day yet or
+  // planned it and cleared it — and both are legal.
+  it('says outright when the day carries no dishes', async () => {
+    await renderCard([day()]);
+
+    expect(screen.getByText('Aucun plat au menu')).toBeTruthy();
+    expect(screen.getByRole('link', { name: /planifier le menu/i })).toBeTruthy();
   });
 
   // A day the vendor has declared themselves away from cannot carry a menu — the query
@@ -67,14 +78,14 @@ describe('NextMenuCard', () => {
   it('opens the day it names', async () => {
     await renderCard([day()]);
 
-    expect(screen.getByRole('link', { name: /planifier menu/i }).getAttribute('href'))
+    expect(screen.getByRole('link', { name: /le menu/i }).getAttribute('href'))
       .toBe('/dashboard/menus/market-1/2026-08-15');
   });
 
   it('offers nothing to plan when there is no market day', async () => {
     await renderCard([]);
 
-    expect(screen.queryByRole('link', { name: /planifier menu/i })).toBeNull();
+    expect(screen.queryByRole('link', { name: /le menu/i })).toBeNull();
   });
 
   it('loads the days it needs', async () => {

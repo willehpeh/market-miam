@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Card } from '../core/card';
-import { longDate } from '../core/french-date';
+import { longDate, timeRange } from '../core/french-date';
 import { MarketDayFacade } from './market-day.facade';
 
 @Component({
@@ -10,18 +10,21 @@ import { MarketDayFacade } from './market-day.facade';
   imports: [RouterLink, Card],
   template: `
     <mm-card>
-      <h1 class="text-xl leading-tight">Prochain marché</h1>
+      <h2 class="text-xl leading-tight">Prochain marché</h2>
 
       @if (next(); as day) {
-
         <p class="mt-4 font-bold text-ink">{{ day.label }}</p>
         <p class="text-sm text-muted">{{ day.marketName }}</p>
-        @if (day.dishCount) {
-          <p class="mt-2 font-mono text-xs uppercase tracking-label text-brand-deep">{{ day.dishCount }}</p>
+        @if (day.hours) {
+          <p class="text-sm text-muted">{{ day.hours }}</p>
         }
+        <!-- Stated either way: an unplanned day and a deliberately cleared one are both
+             legal, and without this line they look identical. -->
+        <p class="mt-3 text-sm text-ink-soft">{{ day.menu }}</p>
+
         <a [routerLink]="['/dashboard/menus', day.marketId, day.date]" class="btn-link mt-4">
-          <i class="fa-solid fa-utensils" aria-hidden="true"></i>
-          Planifier menu
+          <i class="fa-solid fa-calendar-check" aria-hidden="true"></i>
+          {{ day.action }}
         </a>
       } @else {
         <p class="mt-3 text-sm text-ink-soft">Aucun marché dans les 8 prochaines semaines.</p>
@@ -37,12 +40,15 @@ export class NextMenuCard {
     if (!day) {
       return null;
     }
+    const dishes = day.itemIds.length;
     return {
       marketId: day.marketId,
       date: day.date,
       label: longDate(day.day, day.date),
       marketName: day.market.name,
-      dishCount: day.itemIds.length ? `${day.itemIds.length} plat${day.itemIds.length > 1 ? 's' : ''}` : '',
+      hours: timeRange(day),
+      menu: dishes ? `${dishes} plat${dishes > 1 ? 's' : ''} au menu` : 'Aucun plat au menu',
+      action: dishes ? 'Modifier le menu' : 'Planifier le menu',
     };
   });
 

@@ -20,3 +20,17 @@ export function longDate(weekday: string, isoDate: string): string {
   const [, month, day] = isoDate.split('-');
   return `${DAY_LABELS[weekday] ?? weekday} ${Number(day)} ${MONTHS[Number(month) - 1] ?? ''}`;
 }
+
+export function timeRange(day: { startTime?: string; endTime?: string }): string {
+  if (!day.startTime) {
+    return '';
+  }
+  const start = formatTime(day.startTime);
+  return day.endTime ? `${start} – ${formatTime(day.endTime)}` : start;
+}
+
+function formatTime(time: string): string {
+  const [hours, minutes] = time.split(':');
+  const hour = String(Number(hours));
+  return minutes === '00' ? `${hour}h` : `${hour}h${minutes}`;
+}

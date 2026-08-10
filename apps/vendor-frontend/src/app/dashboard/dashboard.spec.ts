@@ -282,6 +282,15 @@ describe('Dashboard', () => {
     expect(screen.getByRole('heading', { name: /prochain marché/i })).toBeInTheDocument();
   });
 
+  // Sibling cards, so none of them is the page. Without a heading of its own the document
+  // has two competing h1s and no name.
+  it('gives the page one top-level heading, not one per card', async () => {
+    await renderReady({ published: true });
+
+    expect(screen.getAllByRole('heading', { level: 1 }).map((heading) => heading.textContent))
+      .toEqual(['Tableau de bord']);
+  });
+
   it('keeps the next menu off the setup home, where there is no audience yet', async () => {
     await renderBlank();
 
