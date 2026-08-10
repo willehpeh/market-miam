@@ -2,8 +2,8 @@
 
 Vendors compose each market day's offering from their catalogue; customers see it on the
 storefront. Slices 1–4 (domain, read model, query, HTTP) shipped, plus follow-ups in 3a; the
-backend is complete and untouched by a browser. Slices 5–7 remain — both frontends and docs.
-Slice 5 is designed but not started, and opens with two backend changes rather than frontend work.
+backend is complete. Slice 5 shipped, so a vendor can now plan a day's menu in a browser.
+Slices 6–7 remain — the customer frontend and docs.
 
 ## Decisions
 
@@ -132,12 +132,14 @@ Tests: `market-day-menu.spec.ts` (3 — vertical through both consumers, and unk
 `market-day-upcoming.spec.ts` (1, moved), `concurrency-conflict.spec.ts` (1),
 `tracing/command-gateway.spec.ts` (+1). `market-day-rebuild.spec.ts` now drives the real route.
 
-## Slice 5 — vendor frontend (designed, not started)
+## Slice 5 — vendor frontend (done)
 
-**Stopping point: the backend is complete and no browser has touched any of it.** Slice 5 is
-the first slice with a UI, and the first that exercises `PUT /market-days/:marketId/:date/menu`
-outside a spec. Shape settled by grilling. Refactors it deliberately does **not** do, and why:
+Commits `d0e6814`, `0c70f8c`, `aa3c1a9`, `687ce68`, `cd217ff`. Shape settled by grilling first;
+what follows is what shipped. Refactors it deliberately does **not** do, and why:
 `VENDOR-FRONTEND-FOLLOWUPS.md`.
+
+The first slice with a UI, and the first to exercise `PUT /market-days/:marketId/:date/menu`
+outside a spec. It opened with two backend changes rather than frontend work.
 
 House rules that apply: components depend only on facades, ports expose Observables, functional
 NgRx effects bridge port↔store, no lifecycle hooks. Signal Forms does **not** apply here — see below.
@@ -162,9 +164,10 @@ New feature dir `market-days/` beside `markets/` — port, http adapter, state, 
 store facade, fake facade, providers. Not an extension of `http.market-schedules.ts`; the read
 moved resource in `c8ced12`.
 
-**Dashboard card** — `next-menu-card.ts`, its own component (`dashboard.ts` is already the app's
-largest at 262 lines, and the next-day rule is the card's own reason to exist), at the **top** of
-the published branch only. An unpublished vendor sees onboarding steps and has no audience yet.
+**Dashboard card** — `next-menu-card.ts`, its own component, at the **top** of the published
+branch only; an unpublished vendor sees onboarding steps and has no audience yet. `dashboard.ts`
+was split into `storefront-home.ts` / `setup-steps.ts` in `471c4f5` while this was being built,
+so the card sits in `storefront-home.ts`.
 
 | State | Renders |
 |---|---|
@@ -208,8 +211,13 @@ so the prefill inherits slice 4's behaviour, and the store ends up mirroring the
 loaded. `length` is a bad cache key here — empty is a real answer, unlike catalogue or schedules —
 so the feature carries an explicit `loaded` flag. `Dashboard`'s existing spinner gate extends to
 `!!storefront.view() && !marketDays.loading()`, so the card can never flash the warning before its
-data lands. It must **not** copy `dashboard.ts:218`'s unconditional `load()` calls: a re-GET on
-returning from a save would clobber the optimistic patch with a projection lagging 4–275ms.
+data lands. It must **not** copy the unconditional `load()` calls beside it: a re-GET on returning
+from a save would clobber the optimistic patch with a projection lagging 4–275ms.
+
+Found while building: the days must be warmed in `Dashboard`'s constructor, **not** only in the
+card. Loading from inside the published branch flips `loaded()` back to false on first paint —
+spinner, card destroyed, card rebuilt. The card keeps its own `load()` so it stands alone; the
+facade makes the second call a no-op.
 
 Navigate to `/dashboard` on success, mirroring `navigateToMarkets$`. The card turning into a dish
 count is a better receipt than a toast, because it is the actual state.
@@ -225,14 +233,17 @@ once published.
 
 | Spec | Level | Covers |
 |---|---|---|
-| `market-day.spec.ts` | facade → effects → HTTP, as `catalogue.spec.ts` | payload → `itemIds`, warm-only `load()` firing one request, PUT url and body, optimistic patch, navigate on success |
-| `next-menu-card.spec.ts` | component + fake facade | absent day skipped, count vs prompt, empty warning |
-| `menu-editor.spec.ts` | component + fake facade | three branches, toggle, seeding, save payload |
-| `dashboard.spec.ts` | extend | card hidden until days load |
-| `find-upcoming-market-days.spec.ts` | extend | ended day dropped, in-progress day kept, missing `endTime` survives to 23:59 |
-| `add-schedule.spec.ts` | extend | `endTime` required |
+| `market-day.spec.ts` (9) | facade → effects → HTTP, as `catalogue.spec.ts` | payload → `itemIds`, warm-only `load()` firing one request, empty list counts as loaded, PUT url and body, optimistic patch, other days untouched, navigate on success, failure |
+| `next-menu-card.spec.ts` (7) | component + fake facade | absent day skipped, count and its singular, empty warning, link target, load |
+| `menu-editor.spec.ts` (8) | component + fake facade | three branches, ticking, whole-set save, clearing, cold load, warm catalogue left alone |
+| `dashboard.spec.ts` (+3) | extend | card on the published home only, hidden until days load |
+| `find-upcoming-market-days.spec.ts` (+3) | extend | ended day dropped, in-progress day kept, missing `endTime` survives to 23:59 |
+| `add-schedule.spec.ts` (+2, −1) | extend | both times required; the old "accepts a day with its hours cleared" inverted |
+| `onboarding.launch.spec.ts`, `authenticated.guard.spec.ts` | extend | reach `Dashboard`, so they had to learn the new facade and its GET |
 
-## Slice 6 — customer frontend
+953 tests pass across all six projects.
+
+## Slice 6 — customer frontend (next)
 
 `CustomerStorefront` DTO through `storefront-view-model.ts`; "Prochain marché" card;
 `market-card.ts` lists its day's menu.
@@ -252,6 +263,10 @@ exist under that name.
 
 `docs/archive/*` deliberately left naming the retired commands and the old
 `GET /market-schedules/upcoming` — those are point-in-time records.
+
+Slice 5 left two doc claims to re-check: `MARKET_MIAM.md` and `WEBSITE-PLAN.md` both describe the
+vendor dashboard, which gained a card and split into two components (`471c4f5`), and neither yet
+mentions that a market schedule day now requires both times.
 
 Remaining: re-check these after each slice; consider an ADR for the whole-set replace (decision 2).
 

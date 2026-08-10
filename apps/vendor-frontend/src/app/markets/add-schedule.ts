@@ -204,11 +204,12 @@ export class AddSchedule {
   );
   private readonly codePostalValid = computed(() => /^\d{5}$/.test(this.fields().value().codePostal.trim()));
   protected readonly codePostalInvalid = computed(() => !this.codePostalValid());
-  
+
   private readonly daysValid = computed(() => {
     const days = this.days();
     return days.length > 0 && this.allDaysHaveStartAndEndTimes(days);
   });
+
   protected readonly cannotSubmit = computed(
     () => this.fields().invalid() || !this.codePostalValid() || !this.daysValid()
   );
