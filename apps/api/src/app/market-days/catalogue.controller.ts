@@ -1,13 +1,29 @@
 import { Body, Controller, Delete, Get, Param, Post, Put, UseGuards } from '@nestjs/common';
+import { z } from 'zod';
 import { CurrentVendor, JwtAuthGuard } from '@market-miam/auth-nestjs';
 import type { VerifiedVendor } from '@market-miam/auth';
 import { CommandGateway, QueryGateway } from '@market-miam/event-sourcing';
 import { AddItemToCatalogue, CatalogueView, ChangeItemPhoto, FindVendorCatalogue, ReorderItems, RetireItem, ReviseItem } from '@market-miam/market-days';
 import { CloudinarySignedUpload, SignedUploads } from '../signed-uploads';
+import { shapeOf } from '../shape-of.pipe';
 
 function dishPhotoPublicId(vendorId: string, itemId: string): string {
   return `vendors/${vendorId}/dishes/${itemId}`;
 }
+
+const VariantBody = z.object({ name: z.string(), description: z.string(), price: z.number() });
+const DishBody = z.object({
+  itemId: z.string(),
+  name: z.string(),
+  description: z.string(),
+  price: z.number().optional(),
+  imageReference: z.string().optional(),
+  variants: z.array(VariantBody).optional(),
+});
+const RevisionBody = DishBody.omit({ itemId: true, imageReference: true });
+const ReorderBody = z.object({ itemIds: z.array(z.string()) });
+const PhotoBody = z.object({ imageReference: z.string() });
+const PhotoSignatureBody = z.object({ itemId: z.string() });
 
 @Controller('catalogue')
 export class CatalogueController {
@@ -27,7 +43,7 @@ export class CatalogueController {
   @UseGuards(JwtAuthGuard)
   signPhotoUpload(
     @CurrentVendor() vendor: VerifiedVendor,
-    @Body() body: { itemId: string },
+    @Body(shapeOf(PhotoSignatureBody)) body: z.infer<typeof PhotoSignatureBody>,
   ): CloudinarySignedUpload {
     // ponytail: reuses the cover-photo eager rendition. Warms the wrong size for a dish
     // card, so the first paint may race Cloudinary. Add a dish eager transform once the
@@ -39,7 +55,7 @@ export class CatalogueController {
   @UseGuards(JwtAuthGuard)
   async add(
     @CurrentVendor() vendor: VerifiedVendor,
-    @Body() body: { itemId: string; name: string; description: string; price?: number; imageReference?: string; variants?: { name: string; description: string; price: number }[] },
+    @Body(shapeOf(DishBody)) body: z.infer<typeof DishBody>,
   ): Promise<void> {
     await this.commands.execute(
       new AddItemToCatalogue({
@@ -60,7 +76,7 @@ export class CatalogueController {
   @UseGuards(JwtAuthGuard)
   async reorder(
     @CurrentVendor() vendor: VerifiedVendor,
-    @Body() body: { itemIds: string[] },
+    @Body(shapeOf(ReorderBody)) body: z.infer<typeof ReorderBody>,
   ): Promise<void> {
     await this.commands.execute(new ReorderItems({ vendorId: vendor.vendorId.value(), itemIds: body.itemIds }));
   }
@@ -70,7 +86,7 @@ export class CatalogueController {
   async revise(
     @CurrentVendor() vendor: VerifiedVendor,
     @Param('itemId') itemId: string,
-    @Body() body: { name: string; description: string; price?: number; variants?: { name: string; description: string; price: number }[] },
+    @Body(shapeOf(RevisionBody)) body: z.infer<typeof RevisionBody>,
   ): Promise<void> {
     await this.commands.execute(
       new ReviseItem({
@@ -98,7 +114,7 @@ export class CatalogueController {
   async changePhoto(
     @CurrentVendor() vendor: VerifiedVendor,
     @Param('itemId') itemId: string,
-    @Body() body: { imageReference: string },
+    @Body(shapeOf(PhotoBody)) body: z.infer<typeof PhotoBody>,
   ): Promise<void> {
     await this.commands.execute(
       new ChangeItemPhoto(itemId, vendor.vendorId.value(), body.imageReference),

@@ -1,8 +1,12 @@
 import { Body, Controller, Get, Param, Put, UseGuards } from '@nestjs/common';
+import { z } from 'zod';
 import { CurrentVendor, JwtAuthGuard } from '@market-miam/auth-nestjs';
 import type { VerifiedVendor } from '@market-miam/auth';
 import { CommandGateway, QueryGateway } from '@market-miam/event-sourcing';
 import { FindUpcomingMarketDays, SetMarketDayMenu, UpcomingMarketDaysView } from '@market-miam/market-days';
+import { shapeOf } from '../shape-of.pipe';
+
+const MenuBody = z.object({ itemIds: z.array(z.string()) });
 
 // Market days are derived from the schedule, but what this returns is days and their
 // menus, not schedules — so they get their own resource rather than hanging off
@@ -29,7 +33,7 @@ export class MarketDayController {
     @CurrentVendor() vendor: VerifiedVendor,
     @Param('marketId') marketId: string,
     @Param('date') date: string,
-    @Body() body: { itemIds: string[] },
+    @Body(shapeOf(MenuBody)) body: z.infer<typeof MenuBody>,
   ): Promise<void> {
     await this.commands.execute(
       new SetMarketDayMenu({ vendorId: vendor.vendorId.value(), itemIds: body.itemIds, marketId, date }),

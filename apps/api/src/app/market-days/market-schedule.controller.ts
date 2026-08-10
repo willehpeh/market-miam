@@ -1,27 +1,33 @@
 import { Body, Controller, Delete, Get, Param, Post, Put, UseGuards } from '@nestjs/common';
+import { z } from 'zod';
 import { CurrentVendor, JwtAuthGuard } from '@market-miam/auth-nestjs';
 import type { VerifiedVendor } from '@market-miam/auth';
 import { CommandGateway, QueryGateway } from '@market-miam/event-sourcing';
 import { AmendMarketSchedule, CancelMarketSchedule, DeclareAbsence, FindVendorSchedules, MarketSchedulesView, RegisterMarketSchedule } from '@market-miam/market-days';
+import { shapeOf } from '../shape-of.pipe';
 
-type MarketBody = {
-  id: string;
-  name: string;
-  streetAddress?: string;
-  codePostal: string;
-  town: string;
-  pitch?: string;
-};
+const MarketBody = z.object({
+  id: z.string(),
+  name: z.string(),
+  streetAddress: z.string().optional(),
+  codePostal: z.string(),
+  town: z.string(),
+  pitch: z.string().optional(),
+});
 
-type ScheduleBody = {
-  scheduleId: string;
-  startDate: string;
-  market: MarketBody;
-  days: { day: string; startTime?: string; endTime?: string }[];
-  frequency?: { weeks: number } | 'once';
-};
+const ScheduleBody = z.object({
+  scheduleId: z.string(),
+  startDate: z.string(),
+  market: MarketBody,
+  days: z.array(z.object({ day: z.string(), startTime: z.string().optional(), endTime: z.string().optional() })),
+  frequency: z.union([z.object({ weeks: z.number() }), z.literal('once')]).optional(),
+});
 
-type AmendBody = Omit<ScheduleBody, 'scheduleId'>;
+const AmendBody = ScheduleBody.omit({ scheduleId: true });
+const AbsenceBody = z.object({ from: z.string(), to: z.string() });
+
+type ScheduleBody = z.infer<typeof ScheduleBody>;
+type AmendBody = z.infer<typeof AmendBody>;
 
 @Controller('market-schedules')
 export class MarketScheduleController {
@@ -38,7 +44,7 @@ export class MarketScheduleController {
 
   @Post()
   @UseGuards(JwtAuthGuard)
-  async register(@CurrentVendor() vendor: VerifiedVendor, @Body() body: ScheduleBody): Promise<void> {
+  async register(@CurrentVendor() vendor: VerifiedVendor, @Body(shapeOf(ScheduleBody)) body: ScheduleBody): Promise<void> {
     await this.commands.execute(
       new RegisterMarketSchedule({ vendorId: vendor.vendorId.value(), ...body }),
     );
@@ -46,7 +52,7 @@ export class MarketScheduleController {
 
   @Put(':scheduleId')
   @UseGuards(JwtAuthGuard)
-  async amend(@CurrentVendor() vendor: VerifiedVendor, @Param('scheduleId') scheduleId: string, @Body() body: AmendBody): Promise<void> {
+  async amend(@CurrentVendor() vendor: VerifiedVendor, @Param('scheduleId') scheduleId: string, @Body(shapeOf(AmendBody)) body: AmendBody): Promise<void> {
     await this.commands.execute(
       new AmendMarketSchedule({ vendorId: vendor.vendorId.value(), scheduleId, ...body }),
     );
@@ -65,7 +71,7 @@ export class MarketScheduleController {
   async declareAbsence(
     @CurrentVendor() vendor: VerifiedVendor,
     @Param('scheduleId') scheduleId: string,
-    @Body() body: { from: string; to: string },
+    @Body(shapeOf(AbsenceBody)) body: z.infer<typeof AbsenceBody>,
   ): Promise<void> {
     await this.commands.execute(
       new DeclareAbsence({ vendorId: vendor.vendorId.value(), scheduleId, ...body }),

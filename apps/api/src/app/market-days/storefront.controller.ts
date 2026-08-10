@@ -1,4 +1,5 @@
 import { Body, Controller, Get, HttpCode, HttpStatus, NotFoundException, Post, Put, UseGuards } from '@nestjs/common';
+import { z } from 'zod';
 import { CurrentVendor, JwtAuthGuard } from '@market-miam/auth-nestjs';
 import type { VerifiedVendor } from '@market-miam/auth';
 import { CommandGateway, QueryGateway } from '@market-miam/event-sourcing';
@@ -10,6 +11,10 @@ import {
   VendorStorefront,
 } from '@market-miam/market-days';
 import { CloudinarySignedUpload, SignedUploads } from '../signed-uploads';
+import { shapeOf } from '../shape-of.pipe';
+
+const InformationBody = z.object({ name: z.string(), description: z.string(), phone: z.string().optional() });
+const CoverPhotoBody = z.object({ version: z.number() });
 
 function coverPhotoPublicId(vendorId: string): string {
   return `vendors/${vendorId}/storefront/cover-photo`;
@@ -42,7 +47,7 @@ export class StorefrontController {
   @UseGuards(JwtAuthGuard)
   async edit(
     @CurrentVendor() vendor: VerifiedVendor,
-    @Body() body: { name: string; description: string; phone?: string },
+    @Body(shapeOf(InformationBody)) body: z.infer<typeof InformationBody>,
   ): Promise<void> {
     await this.commands.execute(
       new EditStorefrontInformation(vendor.vendorId.value(), body.name, body.description, body.phone ?? ''),
@@ -59,7 +64,7 @@ export class StorefrontController {
   @UseGuards(JwtAuthGuard)
   async setCoverPhoto(
     @CurrentVendor() vendor: VerifiedVendor,
-    @Body() body: { version: number },
+    @Body(shapeOf(CoverPhotoBody)) body: z.infer<typeof CoverPhotoBody>,
   ): Promise<void> {
     const vendorId = vendor.vendorId.value();
     await this.commands.execute(
