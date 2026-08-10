@@ -29,7 +29,8 @@ vendor app and the customer storefront.
 **carte vs menu is a deliberate split.** *Carte* is the standing list (the catalogue),
 *menu* is the day's offering (the market day). So *Le menu du jour* is right and *carte
 du jour* is not — the hero alt text says *sa carte* because what's in the screenshot is
-the standing carte, and the menu du jour isn't built.
+the standing carte. The menu du jour has since shipped and now renders **above** the carte
+on a storefront, so a fresh hero screenshot would show both.
 
 Also swapped in `Base.astro`'s meta description, which is what Google shows.
 
@@ -87,7 +88,8 @@ The bullets sit at deliberately different distances. What's actually behind each
 
 | Bullet | Reality |
 |---|---|
-| menu du jour + *il n'y en a plus* | Domain built — `market-day/`, `set-market-day-menu`, `mark-item-as-sold-out`, `MarketDayMenuSet`, `ItemMarkedAsSoldOut`. **No read model, no HTTP, no UI in either frontend.** Cheapest roadmap item to actually ship, and it's mostly a frontend job (`docs/MENU-DU-JOUR-PLAN.md`). |
+| menu du jour | **Shipped end-to-end** — a vendor plans the next market day from their dashboard, and it shows on the storefront above the carte (`docs/MENU-DU-JOUR-PLAN.md`). Safe to talk about in the present tense. |
+| *il n'y en a plus* | Domain only — `mark-item-as-sold-out`, `ItemMarkedAsSoldOut`. No read model, no HTTP, no UI. Now the cheapest roadmap item to ship, and mostly a frontend job. |
 | le miam | **Nothing built.** No aggregate, no event, no handler; `NEXT_BEHAVIOURS.md` has *item rated for market day* unstarted. Furthest-out thing on the page — have an answer ready for *"when?"* |
 | post-market feedback per dish | Not built |
 | repères over time | Not built |

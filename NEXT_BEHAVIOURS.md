@@ -6,7 +6,7 @@ doc. Legal and website work track their own remaining sections:
 
 ## Product
 
-* menu du jour — backend shipped through HTTP; both UIs remain (`docs/MENU-DU-JOUR-PLAN.md`, slices 5–6). Mark-as-sold-out is still domain-only, with no read model or route
+* mark as sold out — still domain-only, with no read model, route or UI. Now the smallest thing left in the menu du jour picture, which otherwise shipped end-to-end (`docs/MENU-DU-JOUR-PLAN.md`)
 * open market day · close market day
 * item rated for market day (the miam)
 * remove item photo · clear storefront cover photo

@@ -2,8 +2,9 @@
 
 Vendors compose each market day's offering from their catalogue; customers see it on the
 storefront. Slices 1–4 (domain, read model, query, HTTP) shipped, plus follow-ups in 3a; the
-backend is complete. Slice 5 shipped, so a vendor can now plan a day's menu in a browser.
-Slices 6–7 remain — the customer frontend and docs.
+**All seven slices shipped.** A vendor plans a day's menu from their dashboard and a customer sees
+it on the storefront above the carte. What is deliberately *not* built: sold-out (domain only),
+past-day editing, and planning further ahead than the next market.
 
 ## Decisions
 
@@ -243,12 +244,28 @@ once published.
 
 953 tests pass across all six projects.
 
-## Slice 6 — customer frontend (next)
+## Slice 6 — customer frontend (done)
 
-`CustomerStorefront` DTO through `storefront-view-model.ts`; "Prochain marché" card;
-`market-card.ts` lists its day's menu.
+Commit `a0cf20a`. The DTO had carried `dishes` and `inProgress` on each upcoming market since
+slice 3; the customer app's own `UpcomingMarket` type had never learnt about them, so nothing
+read them.
 
-## Slice 7 — docs
+- `upcoming-market.ts` gains `dishes` + `inProgress`; `MarketViewModel` gains a light
+  `{ name, priceLabel }[]` — names and prices only, since the carte below carries the photos and
+  descriptions. `priceLabelFor` extracted so a menu line and a carte line cannot drift apart
+- `market-card.ts` lists its day's menu under a rule, and badges **En cours** when `inProgress`
+- **"Prochain marché"** section above the carte, rendering `upcomingMarkets[0]` through the *same*
+  `MarketCard` — the top card is the first list entry promoted, not a second design
+
+**Cancelled days are not skipped here**, unlike the vendor card. The vendor skips them because an
+absent day cannot hold a menu; a customer heading out needs to know the next market is off more
+than they need the one after it, so it leads, greyed and struck through.
+
+Prochains marchés **repeats** the promoted day (decided while grilling slice 5's follow-ups):
+a list that silently began at the second market would read as a bug. Revisit if it looks
+redundant with real vendors.
+
+## Slice 7 — docs (done)
 
 Done for slice 1: `MARKET_MIAM.md` (event catalog, MVP status), `NEXT_BEHAVIOURS.md`,
 `WEBSITE-PLAN.md:90`, `O11Y-PLAN.md` (`plan.total_quantity` → `menu.item_count`, since
@@ -264,11 +281,15 @@ exist under that name.
 `docs/archive/*` deliberately left naming the retired commands and the old
 `GET /market-schedules/upcoming` — those are point-in-time records.
 
-Slice 5 left two doc claims to re-check: `MARKET_MIAM.md` and `WEBSITE-PLAN.md` both describe the
-vendor dashboard, which gained a card and split into two components (`471c4f5`), and neither yet
-mentions that a market schedule day now requires both times.
+Done for slices 5–6: `MARKET_MIAM.md` (MVP step 2 now shipped end-to-end), `WEBSITE-PLAN.md` (the
+menu du jour bullet split from *il n'y en a plus*, which is now the cheapest roadmap item; the
+carte-vs-menu note no longer says the menu isn't built), `NEXT_BEHAVIOURS.md` (menu du jour line
+replaced by mark-as-sold-out).
 
-Remaining: re-check these after each slice; consider an ADR for the whole-set replace (decision 2).
+`docs/archive/ADD-SCHEDULE-FORM-PLAN.md` still calls day times **optional**, which slice 5a
+changed. Left as-is: archive files are point-in-time records.
+
+Remaining: consider an ADR for the whole-set replace (decision 2).
 
 ## Open
 
@@ -276,7 +297,7 @@ Remaining: re-check these after each slice; consider an ADR for the whole-set re
 |---|---|
 | ~~`endTime` unset on a schedule day~~ | ~~Fall back to end of calendar day~~ — implemented as assumed (slice 3) |
 | ~~Where the upcoming-days port lives in vendor-frontend~~ | ~~A `market-days` port next to `markets/`~~ — settled for slice 5, own feature dir |
-| Does Prochains-marchés repeat the day shown in the top card? | Undecided — slice 6, customer side |
+| ~~Does Prochains-marchés repeat the day shown in the top card?~~ | ~~Undecided~~ — yes, for now. A list starting at the second market reads as a bug |
 | ~~Top card when nothing is planned~~ | ~~Show it~~ — shows date and market name; a planned day adds a dish count |
 | ~~Dashboard card window~~ | ~~14 days~~ — one day (decision 7) |
 | French copy | Vendor card settled: "Planifier le prochain menu" / "Aucun marché dans les 8 prochaines semaines" / "Ce marché n'est plus programmé". "Vos menus" unused — decision 7 leaves no list screen to name |
