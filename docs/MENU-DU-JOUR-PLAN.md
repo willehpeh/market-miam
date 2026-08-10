@@ -313,6 +313,10 @@ Remaining: consider an ADR for the whole-set replace (decision 2).
   (`startApp` leaves the app unbound, so supertest binds an ephemeral listener per request and
   occasionally reaches something foreign); the span one does not, so **"never an assertion diff"
   is no longer true** and shouldn't be used to rule the flake out.
+  Slices 5–6: **one incident in roughly four full `run-many` passes** — two tests failed on a
+  run where the only change since the previous green run was Markdown, so it cannot have been a
+  real regression. The failing test names weren't captured, and three uncached re-runs
+  (all 13 projects, then `api` twice) came back green. Lower than slice 4's rate; still there.
   `app.listen(0)` and `keepAlive:false` were both tried and **neither changed the rate**.
   Next: log the 301's `Location`/remote port; try single-threaded; hoist boot to `beforeAll`.
   Unrelated to this feature.
