@@ -10,20 +10,20 @@ import { MarketDayFacade } from './market-day.facade';
   imports: [RouterLink, Card],
   template: `
     <mm-card>
+      <h1 class="text-xl leading-tight">Prochain marché</h1>
+
       @if (next(); as day) {
-        <a [routerLink]="['/dashboard/menus', day.marketId, day.date]" class="block no-underline">
-          <div class="flex items-start justify-between gap-3">
-            <h1 class="text-xl leading-tight">Planifier le prochain menu</h1>
-            <span aria-hidden="true" class="text-2xl leading-none text-muted">›</span>
-          </div>
-          <p class="mt-3 font-bold text-ink">{{ day.label }}</p>
-          <p class="text-sm text-muted">{{ day.marketName }}</p>
-          @if (day.dishCount) {
-            <p class="mt-2 font-mono text-xs uppercase tracking-label text-brand-deep">{{ day.dishCount }}</p>
-          }
+        <a [routerLink]="['/dashboard/menus', day.marketId, day.date]" class="btn-link-alt mt-4">
+          <i class="fa-solid fa-utensils" aria-hidden="true"></i>
+          Planifier menu
         </a>
+
+        <p class="mt-4 font-bold text-ink">{{ day.label }}</p>
+        <p class="text-sm text-muted">{{ day.marketName }}</p>
+        @if (day.dishCount) {
+          <p class="mt-2 font-mono text-xs uppercase tracking-label text-brand-deep">{{ day.dishCount }}</p>
+        }
       } @else {
-        <h1 class="text-xl leading-tight">Planifier le prochain menu</h1>
         <p class="mt-3 text-sm text-ink-soft">Aucun marché dans les 8 prochaines semaines.</p>
       }
     </mm-card>

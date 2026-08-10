@@ -28,10 +28,10 @@ async function renderCard(days: MarketDayView[]) {
 }
 
 describe('NextMenuCard', () => {
-  it('names the next market day and invites a menu', async () => {
+  it('names the next market day', async () => {
     await renderCard([day()]);
 
-    expect(screen.getByRole('heading', { name: /planifier le prochain menu/i })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: /prochain marché/i })).toBeTruthy();
     expect(screen.getByText(/samedi 15 août/i)).toBeTruthy();
     expect(screen.getByText(/Marché de la Croix-Rousse/)).toBeTruthy();
   });
@@ -67,7 +67,14 @@ describe('NextMenuCard', () => {
   it('opens the day it names', async () => {
     await renderCard([day()]);
 
-    expect(screen.getByRole('link').getAttribute('href')).toBe('/dashboard/menus/market-1/2026-08-15');
+    expect(screen.getByRole('link', { name: /planifier menu/i }).getAttribute('href'))
+      .toBe('/dashboard/menus/market-1/2026-08-15');
+  });
+
+  it('offers nothing to plan when there is no market day', async () => {
+    await renderCard([]);
+
+    expect(screen.queryByRole('link', { name: /planifier menu/i })).toBeNull();
   });
 
   it('loads the days it needs', async () => {

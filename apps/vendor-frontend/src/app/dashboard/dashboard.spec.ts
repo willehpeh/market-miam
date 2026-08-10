@@ -279,13 +279,13 @@ describe('Dashboard', () => {
   it('puts the next menu at the top of the published home', async () => {
     await renderReady({ published: true });
 
-    expect(screen.getByRole('heading', { name: /planifier le prochain menu/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /prochain marché/i })).toBeInTheDocument();
   });
 
   it('keeps the next menu off the setup home, where there is no audience yet', async () => {
     await renderBlank();
 
-    expect(screen.queryByRole('heading', { name: /planifier le prochain menu/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: /prochain marché/i })).not.toBeInTheDocument();
   });
 
   // The card's empty state is a warning. Painting it before the days land would be a false
