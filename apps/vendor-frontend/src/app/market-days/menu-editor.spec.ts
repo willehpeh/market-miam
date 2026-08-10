@@ -54,6 +54,18 @@ describe('MenuEditor', () => {
     expect(screen.getByRole('status', { name: /chargement/i })).toBeTruthy();
   });
 
+  // Days can land before the carte: without gating on both, the editor briefly claims
+  // "Votre carte est vide" while the catalogue is still on the wire.
+  it('keeps waiting while the catalogue is still arriving', async () => {
+    await renderEditor((marketDays, catalogue) => {
+      marketDays.days.set([day()]);
+      catalogue.loading.set(true);
+    });
+
+    expect(screen.getByRole('status', { name: /chargement/i })).toBeTruthy();
+    expect(screen.queryByText(/votre carte est vide/i)).toBeNull();
+  });
+
   // A stale bookmark, or a schedule amended since. Saying so beats a silent bounce, and
   // there is no save button in this branch to wipe a menu with.
   it('says so when the day is no longer scheduled', async () => {

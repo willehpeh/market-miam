@@ -63,7 +63,9 @@ export class MenuEditor {
   private readonly marketId = this.route.snapshot.paramMap.get('marketId') ?? '';
   private readonly date = this.route.snapshot.paramMap.get('date') ?? '';
 
-  readonly loading = this.marketDays.loading;
+  // Both feeds gate the spinner: days can land before the carte, and rendering on days
+  // alone would briefly claim an empty carte while the catalogue is still on the wire.
+  readonly loading = computed(() => this.marketDays.loading() || this.catalogue.loading());
 
   private readonly occurrence = computed(() =>
     this.marketDays.days().find((candidate) => candidate.marketId === this.marketId && candidate.date === this.date),
