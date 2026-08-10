@@ -4,13 +4,16 @@ import { Card } from '../core/card';
 import { COPIED_NOTICE_DELAY, Share } from '../core/share';
 import { StorefrontFacade } from '../storefront/storefront.facade';
 import { storefrontUrl } from '../storefront/storefront-url';
+import { NextMenuCard } from '../market-days/next-menu-card';
 
 @Component({
   selector: 'mm-storefront-home',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, Card],
+  imports: [RouterLink, Card, NextMenuCard],
   host: { class: 'contents' },
   template: `
+    <mm-next-menu-card />
+
     <mm-card>
       <h1 class="text-xl leading-tight">Votre vitrine</h1>
 

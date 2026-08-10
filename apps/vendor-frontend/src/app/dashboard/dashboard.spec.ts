@@ -11,6 +11,8 @@ import { CatalogueItemView } from '../catalogue/catalogue';
 import { MarketScheduleFacade } from '../markets/market-schedule.facade';
 import { FakeMarketScheduleFacade } from '../markets/fake.market-schedule.facade';
 import { MarketScheduleView } from '../markets/market-schedules';
+import { MarketDayFacade } from '../market-days/market-day.facade';
+import { FakeMarketDayFacade } from '../market-days/fake.market-day.facade';
 import { COPIED_NOTICE_DELAY, Share } from '../core/share';
 import { FakeShare } from '../core/fake.share';
 
@@ -21,6 +23,7 @@ async function renderDashboard() {
       { provide: StorefrontFacade, useClass: FakeStorefrontFacade },
       { provide: CatalogueFacade, useClass: FakeCatalogueFacade },
       { provide: MarketScheduleFacade, useClass: FakeMarketScheduleFacade },
+      { provide: MarketDayFacade, useClass: FakeMarketDayFacade },
       { provide: Share, useClass: FakeShare },
       { provide: COPIED_NOTICE_DELAY, useValue: 0 },
     ],
@@ -28,8 +31,9 @@ async function renderDashboard() {
   const storefront = TestBed.inject(StorefrontFacade) as FakeStorefrontFacade;
   const catalogue = TestBed.inject(CatalogueFacade) as FakeCatalogueFacade;
   const markets = TestBed.inject(MarketScheduleFacade) as FakeMarketScheduleFacade;
+  const marketDays = TestBed.inject(MarketDayFacade) as FakeMarketDayFacade;
   const sharing = TestBed.inject(Share) as FakeShare;
-  return { view, storefront, catalogue, markets, sharing };
+  return { view, storefront, catalogue, markets, marketDays, sharing };
 }
 
 const completeStorefront: StorefrontView = {
@@ -270,6 +274,29 @@ describe('Dashboard', () => {
     view.detectChanges();
 
     expect(screen.getByText(/la publication a échoué/i)).toBeInTheDocument();
+  });
+
+  it('puts the next menu at the top of the published home', async () => {
+    await renderReady({ published: true });
+
+    expect(screen.getByRole('heading', { name: /planifier le prochain menu/i })).toBeInTheDocument();
+  });
+
+  it('keeps the next menu off the setup home, where there is no audience yet', async () => {
+    await renderBlank();
+
+    expect(screen.queryByRole('heading', { name: /planifier le prochain menu/i })).not.toBeInTheDocument();
+  });
+
+  // The card's empty state is a warning. Painting it before the days land would be a false
+  // alarm, so the whole dashboard waits rather than the card flashing.
+  it('waits for the market days before showing anything', async () => {
+    const { storefront, marketDays, view } = await renderDashboard();
+    marketDays.loading.set(true);
+    storefront.view.set({ ...completeStorefront, subdomain: 'acme', published: true });
+    view.detectChanges();
+
+    expect(screen.getByRole('status', { name: /chargement/i })).toBeInTheDocument();
   });
 
   it('explains the URL is pending and offers no button when no subdomain is assigned', async () => {

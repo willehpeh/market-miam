@@ -1,18 +1,9 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Card } from '../core/card';
+import { DAY_LABELS } from '../core/french-date';
 import { MarketScheduleFacade } from './market-schedule.facade';
 import { MarketScheduleView } from './market-schedules';
-
-const DAY_LABELS: Record<string, string> = {
-  MON: 'Lundi',
-  TUE: 'Mardi',
-  WED: 'Mercredi',
-  THU: 'Jeudi',
-  FRI: 'Vendredi',
-  SAT: 'Samedi',
-  SUN: 'Dimanche',
-};
 
 const DAY_ORDER = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
 

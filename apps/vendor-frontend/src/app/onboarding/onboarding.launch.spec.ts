@@ -39,6 +39,12 @@ import { marketScheduleFeature } from '../markets/market-schedule.state';
 import { MarketScheduleEffects } from '../markets/market-schedule.effects';
 import { MarketScheduleFacade } from '../markets/market-schedule.facade';
 import { StoreMarketScheduleFacade } from '../markets/store.market-schedule.facade';
+import { MarketDays } from '../market-days/market-days';
+import { HttpMarketDays } from '../market-days/http.market-days';
+import { marketDayFeature } from '../market-days/market-day.state';
+import { MarketDayEffects } from '../market-days/market-day.effects';
+import { MarketDayFacade } from '../market-days/market-day.facade';
+import { StoreMarketDayFacade } from '../market-days/store.market-day.facade';
 import { onboardingFeature } from './onboarding.state';
 import { OnboardingEffects, SAVED_REDIRECT_DELAY } from './onboarding.effects';
 import { OnboardingFacade } from './onboarding.facade';
@@ -64,13 +70,15 @@ describe('Onboarding launch', () => {
         provideState(storefrontFeature),
         provideState(catalogueFeature),
         provideState(marketScheduleFeature),
+        provideState(marketDayFeature),
         provideState(onboardingFeature),
-        provideEffects(AuthEffects, VendorEffects, StorefrontEffects, CatalogueEffects, MarketScheduleEffects, OnboardingEffects),
+        provideEffects(AuthEffects, VendorEffects, StorefrontEffects, CatalogueEffects, MarketScheduleEffects, MarketDayEffects, OnboardingEffects),
         { provide: Auth, useClass: FakeAuth },
         { provide: Vendor, useClass: HttpVendor },
         { provide: Storefront, useClass: HttpStorefront },
         { provide: Catalogue, useClass: HttpCatalogue },
         { provide: MarketSchedules, useClass: HttpMarketSchedules },
+        { provide: MarketDays, useClass: HttpMarketDays },
         { provide: PhotoUploads, useClass: FakePhotoUploads },
         { provide: PhotoDownscale, useClass: FakePhotoDownscale },
         { provide: Share, useClass: FakeShare },
@@ -79,6 +87,7 @@ describe('Onboarding launch', () => {
         { provide: StorefrontFacade, useClass: StoreStorefrontFacade },
         { provide: CatalogueFacade, useClass: StoreCatalogueFacade },
         { provide: MarketScheduleFacade, useClass: StoreMarketScheduleFacade },
+        { provide: MarketDayFacade, useClass: StoreMarketDayFacade },
         { provide: OnboardingFacade, useClass: StoreOnboardingFacade },
         provideNotifications(),
         provideHttpClientTesting(),
@@ -119,6 +128,7 @@ describe('Onboarding launch', () => {
     expect(router.url).toBe('/dashboard');
     httpCtrl.expectOne('/api/catalogue').flush({ items: [] });
     httpCtrl.expectOne('/api/market-schedules').flush({ schedules: [] });
+    httpCtrl.expectOne('/api/market-days/upcoming').flush({ marketDays: [] });
   });
 
   // The steps card names what is still missing; a half-filled form does not.
@@ -133,6 +143,7 @@ describe('Onboarding launch', () => {
     expect(router.url).toBe('/dashboard');
     httpCtrl.expectOne('/api/catalogue').flush({ items: [] });
     httpCtrl.expectOne('/api/market-schedules').flush({ schedules: [] });
+    httpCtrl.expectOne('/api/market-days/upcoming').flush({ marketDays: [] });
   });
 
   it('sends the vendor to the dashboard once they confirm their storefront', async () => {
@@ -149,6 +160,8 @@ describe('Onboarding launch', () => {
     expect(router.url).toBe('/dashboard');
     httpCtrl.expectOne('/api/catalogue').flush({ items: [] });
     httpCtrl.expectOne('/api/market-schedules').flush({ schedules: [] });
+    httpCtrl.expectOne('/api/market-days/upcoming').flush({ marketDays: [] });
+    await view.fixture.whenStable();
 
     fireEvent.click(screen.getByRole('link', { name: /informations de la vitrine/i }));
     await view.fixture.whenStable();
@@ -161,6 +174,9 @@ describe('Onboarding launch', () => {
     await waitFor(() => expect(router.url).toBe('/dashboard'));
     httpCtrl.expectOne('/api/catalogue').flush({ items: [] });
     httpCtrl.expectOne('/api/market-schedules').flush({ schedules: [] });
+    // No second market-days GET: that load is warm-only, so returning to the dashboard
+    // keeps what the store already holds instead of re-reading a lagging projection.
+    httpCtrl.expectNone('/api/market-days/upcoming');
   });
 
   it('surfaces the load error code and stays on the landing page', async () => {
