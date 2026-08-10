@@ -60,6 +60,10 @@ export class MenuEditor {
   private readonly catalogue = inject(CatalogueFacade);
   private readonly route = inject(ActivatedRoute);
 
+  // One entry point (the dashboard card), so params are read once — and `touched` below
+  // is keyed to them. Before adding any second link to this route, go reactive:
+  // toSignal(paramMap) + a linkedSignal reset, or day A's ticks silently become day B's
+  // saved menu on a param-only navigation. VENDOR-FRONTEND-FOLLOWUPS.md §3.
   private readonly marketId = this.route.snapshot.paramMap.get('marketId') ?? '';
   private readonly date = this.route.snapshot.paramMap.get('date') ?? '';
 

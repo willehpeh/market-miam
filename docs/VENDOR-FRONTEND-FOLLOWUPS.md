@@ -1,8 +1,9 @@
 # Vendor frontend — deferred refactors
 
-Two patterns settled while designing slice 5 of `MENU-DU-JOUR-PLAN.md`. Both apply to shipped
-features and are deliberately **not** part of that slice: the menu screens are greenfield and prove
-the pattern for free, converting the others is its own change.
+§1–2 settled while designing slice 5 of `MENU-DU-JOUR-PLAN.md`: both apply to shipped features and
+are deliberately **not** part of that slice — the menu screens are greenfield and prove the pattern
+for free, converting the others is its own change. §3 came out of the post-slice design review and
+waits on a feature rather than a refactor window.
 
 ## 1. Route-id screens: drop the guards, load reactively
 
@@ -54,3 +55,26 @@ flag for that reason. Catalogue and schedules can keep `length` (a published ven
 adopt the flag for consistency.
 
 Blocked on: nothing technical. Kept out of slice 5 to avoid touching two shipped features mid-slice.
+
+## 3. Menu editor: reactive params before a second link
+
+`menu-editor.ts` reads its route params from the **snapshot** and keys the vendor's tick state
+(`touched`) to nothing. Angular reuses a component instance on a param-only navigation, so the day
+an editor→editor link exists, navigating from day A to day B keeps A's component alive with stale
+params — and A's ticks silently become B's saved menu. Today this is unreachable: the dashboard
+card is the only way in and it links to one day.
+
+The fix, when it arms:
+
+- `params = toSignal(route.paramMap, { initialValue: route.snapshot.paramMap })`, with
+  `marketId` / `date` as `computed()` — everything downstream already derives
+- `touched` becomes a `linkedSignal` with `params` as its source, so a param change resets it to
+  `null` and `selected` falls back to the new day's `itemIds`. Resetting is the half that matters;
+  reactive params alone would carry A's ticks into B
+- The natural test arrives with the feature: navigate day A → day B in a router harness, assert
+  B's menu renders and A's ticks did not bleed. Written today it would exercise a path no user can
+  reach, which is why this waits
+
+Armed by: any second link to `/dashboard/menus/:marketId/:date` — the deferred "plan later in
+time" day list is the expected trigger (decision 7 narrowed the card to one day; the 56-day window
+the store already holds makes the list cheap).
