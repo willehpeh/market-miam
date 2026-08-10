@@ -11,6 +11,7 @@ import { provideVendor } from './vendor/vendor.providers';
 import { provideStorefront } from './storefront/storefront.providers';
 import { provideCatalogue } from './catalogue/catalogue.providers';
 import { provideMarketSchedules } from './markets/market-schedule.providers';
+import { provideMarketDays } from './market-days/market-day.providers';
 import { provideOnboarding } from './onboarding/onboarding.providers';
 import { provideNgrx } from './core/ngrx.providers';
 import { Share } from './core/share';
@@ -36,6 +37,7 @@ export const appConfig: ApplicationConfig = {
     provideStorefront(),
     provideCatalogue(),
     provideMarketSchedules(),
+    provideMarketDays(),
     provideOnboarding(),
     provideNgrx()
   ],

@@ -1,0 +1,147 @@
+import { TestBed } from '@angular/core/testing';
+import { waitFor } from '@testing-library/angular';
+import { provideRouter, Router } from '@angular/router';
+import { provideState, provideStore } from '@ngrx/store';
+import { provideEffects } from '@ngrx/effects';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { MarketDays } from './market-days';
+import { HttpMarketDays } from './http.market-days';
+import { marketDayFeature } from './market-day.state';
+import { MarketDayEffects } from './market-day.effects';
+import { MarketDayFacade } from './market-day.facade';
+import { StoreMarketDayFacade } from './store.market-day.facade';
+
+const day = {
+  scheduleId: 'schedule-1',
+  marketId: 'market-1',
+  date: '2026-08-15',
+  day: 'SAT',
+  startTime: '08:00',
+  endTime: '13:00',
+  absent: false,
+  market: { name: 'Marché de la Croix-Rousse', town: 'Lyon', codePostal: '69004' },
+};
+
+const asSent = (dishes: Record<string, unknown>[]) => ({ marketDays: [{ ...day, dishes }] });
+
+describe('MarketDays', () => {
+  let facade: MarketDayFacade;
+  let httpCtrl: HttpTestingController;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      providers: [
+        { provide: MarketDays, useClass: HttpMarketDays },
+        provideStore(),
+        provideState(marketDayFeature),
+        provideEffects(MarketDayEffects),
+        provideHttpClientTesting(),
+        provideRouter([{ path: 'dashboard', children: [] }]),
+        { provide: MarketDayFacade, useClass: StoreMarketDayFacade },
+      ],
+    });
+    facade = TestBed.inject(MarketDayFacade);
+    httpCtrl = TestBed.inject(HttpTestingController);
+  });
+
+  afterEach(() => {
+    httpCtrl.verify();
+  });
+
+  it('requests the upcoming days when asked to load', () => {
+    facade.load();
+
+    const req = httpCtrl.expectOne('/api/market-days/upcoming');
+    expect(req.request.method).toBe('GET');
+  });
+
+  // The API joins each day's menu to the catalogue. Nothing here renders that join: the
+  // card counts ids, the editor ticks them, and both take names and prices from the
+  // catalogue store.
+  it('keeps the dish ids and drops the detail joined onto them', () => {
+    facade.load();
+
+    httpCtrl.expectOne('/api/market-days/upcoming').flush(
+      asSent([{ itemId: 'item-1', name: 'Bourguignon', description: '', price: 1300, imageReference: 'v1/x' }]),
+    );
+
+    expect(facade.days()).toEqual([{ ...day, itemIds: ['item-1'] }]);
+    expect(facade.loading()).toBe(false);
+  });
+
+  // A second GET would land after the optimistic patch and overwrite it with a projection
+  // that lags the response by 4–275ms, putting the stale menu back.
+  it('does not ask again once loaded', () => {
+    facade.load();
+    httpCtrl.expectOne('/api/market-days/upcoming').flush(asSent([]));
+
+    facade.load();
+
+    httpCtrl.expectNone('/api/market-days/upcoming');
+  });
+
+  // Emptiness is a real answer — every day absent, or the schedule run dry — so it must
+  // not read as "never fetched" and refetch on every visit.
+  it('treats an empty list as loaded', () => {
+    facade.load();
+    httpCtrl.expectOne('/api/market-days/upcoming').flush({ marketDays: [] });
+
+    facade.load();
+
+    httpCtrl.expectNone('/api/market-days/upcoming');
+  });
+
+  // The menu is a set replaced whole, so clearing a day is an empty array, not a DELETE.
+  it('puts the whole menu for the day', () => {
+    facade.setMenu('market-1', '2026-08-15', ['item-2', 'item-1']);
+
+    const req = httpCtrl.expectOne('/api/market-days/market-1/2026-08-15/menu');
+    expect(req.request.method).toBe('PUT');
+    expect(req.request.body).toEqual({ itemIds: ['item-2', 'item-1'] });
+  });
+
+  it('patches the saved day in place rather than refetching', async () => {
+    facade.load();
+    httpCtrl.expectOne('/api/market-days/upcoming').flush(asSent([{ itemId: 'item-1' }]));
+
+    facade.setMenu('market-1', '2026-08-15', ['item-2', 'item-3']);
+    httpCtrl.expectOne('/api/market-days/market-1/2026-08-15/menu').flush(null);
+
+    await waitFor(() => expect(facade.days()).toEqual([{ ...day, itemIds: ['item-2', 'item-3'] }]));
+    httpCtrl.expectNone('/api/market-days/upcoming');
+  });
+
+  it('leaves other days alone when one is saved', async () => {
+    const other = { ...day, marketId: 'market-2', dishes: [] };
+    facade.load();
+    httpCtrl.expectOne('/api/market-days/upcoming').flush({ marketDays: [{ ...day, dishes: [] }, other] });
+
+    facade.setMenu('market-1', '2026-08-15', ['item-9']);
+    httpCtrl.expectOne('/api/market-days/market-1/2026-08-15/menu').flush(null);
+
+    await waitFor(() =>
+      expect(facade.days().map(d => ({ marketId: d.marketId, itemIds: d.itemIds }))).toEqual([
+        { marketId: 'market-1', itemIds: ['item-9'] },
+        { marketId: 'market-2', itemIds: [] },
+      ]),
+    );
+  });
+
+  it('returns to the dashboard once the menu is saved', async () => {
+    const router = TestBed.inject(Router);
+    facade.setMenu('market-1', '2026-08-15', []);
+
+    httpCtrl.expectOne('/api/market-days/market-1/2026-08-15/menu').flush(null);
+
+    await waitFor(() => expect(router.url).toBe('/dashboard'));
+  });
+
+  it('stops loading and stays empty when the request fails', () => {
+    facade.load();
+
+    httpCtrl.expectOne('/api/market-days/upcoming').flush(null, { status: 500, statusText: 'Server Error' });
+
+    expect(facade.loading()).toBe(false);
+    expect(facade.days()).toEqual([]);
+  });
+});

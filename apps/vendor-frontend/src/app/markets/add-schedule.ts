@@ -11,7 +11,7 @@ const DAYS = [
   { code: 'THU', short: 'J', label: 'Jeudi' },
   { code: 'FRI', short: 'V', label: 'Vendredi' },
   { code: 'SAT', short: 'S', label: 'Samedi' },
-  { code: 'SUN', short: 'D', label: 'Dimanche' },
+  { code: 'SUN', short: 'D', label: 'Dimanche' }
 ];
 type DayEntry = { day: string; startTime: string; endTime: string };
 
@@ -67,7 +67,8 @@ type DayEntry = { day: string; startTime: string; endTime: string };
 
           <div>
             <label for="streetAddress" class="field-label">Adresse · optionnel</label>
-            <input id="streetAddress" type="text" class="mt-1" [formField]="fields.streetAddress" placeholder="ex. Place du Prado" />
+            <input id="streetAddress" type="text" class="mt-1" [formField]="fields.streetAddress"
+                   placeholder="ex. Place du Prado" />
           </div>
 
           <div>
@@ -155,7 +156,8 @@ type DayEntry = { day: string; startTime: string; endTime: string };
 
         <div class="mt-4">
           <label for="pitch" class="field-label">Emplacement · optionnel</label>
-          <input id="pitch" type="text" class="mt-1" [formField]="fields.pitch" placeholder="ex. Allée centrale, stand 24" />
+          <input id="pitch" type="text" class="mt-1" [formField]="fields.pitch"
+                 placeholder="ex. Allée centrale, stand 24" />
         </div>
 
         <button type="submit" class="mt-6 flex w-full max-w-xs mx-auto justify-center" [disabled]="cannotSubmit()">
@@ -163,36 +165,10 @@ type DayEntry = { day: string; startTime: string; endTime: string };
         </button>
       </form>
     </mm-card>
-  `,
+  `
 })
 export class AddSchedule {
-  private readonly markets = inject(MarketScheduleFacade);
-  private readonly route = inject(ActivatedRoute);
-
-  private readonly editing = this.markets
-    .schedules()
-    .find((schedule) => schedule.scheduleId === this.route.snapshot.paramMap.get('scheduleId'));
-  protected readonly isEditing = this.editing !== undefined;
-
   protected readonly allDays = DAYS;
-  protected readonly days = signal<DayEntry[]>(
-    this.editing?.days.map((day) => ({ day: day.day, startTime: day.startTime ?? '', endTime: day.endTime ?? '' })) ?? [],
-  );
-
-  protected readonly fields = form(
-    signal({
-      name: this.editing?.market.name ?? '',
-      streetAddress: this.editing?.market.streetAddress ?? '',
-      codePostal: this.editing?.market.codePostal ?? '',
-      town: this.editing?.market.town ?? '',
-      pitch: this.editing?.market.pitch ?? '',
-    }),
-    (path) => {
-      required(path.name);
-      required(path.town);
-    },
-  );
-
   protected readonly rows = computed(() => {
     const entries = this.days();
     return DAYS.flatMap((day) => {
@@ -200,20 +176,41 @@ export class AddSchedule {
       return entry ? [{ ...entry, label: day.label }] : [];
     });
   });
-
+  private readonly markets = inject(MarketScheduleFacade);
+  private readonly route = inject(ActivatedRoute);
+  private readonly editing = this.markets
+    .schedules()
+    .find((schedule) => schedule.scheduleId === this.route.snapshot.paramMap.get('scheduleId'));
+  protected readonly isEditing = this.editing !== undefined;
+  protected readonly days = signal<DayEntry[]>(
+    this.editing?.days.map((day) => ({
+      day: day.day,
+      startTime: day.startTime ?? '',
+      endTime: day.endTime ?? ''
+    })) ?? []
+  );
+  protected readonly fields = form(
+    signal({
+      name: this.editing?.market.name ?? '',
+      streetAddress: this.editing?.market.streetAddress ?? '',
+      codePostal: this.editing?.market.codePostal ?? '',
+      town: this.editing?.market.town ?? '',
+      pitch: this.editing?.market.pitch ?? ''
+    }),
+    (path) => {
+      required(path.name);
+      required(path.town);
+    }
+  );
   private readonly codePostalValid = computed(() => /^\d{5}$/.test(this.fields().value().codePostal.trim()));
   protected readonly codePostalInvalid = computed(() => !this.codePostalValid());
-
-  // Both times are required. A day with no closing time never ends: it holds the vendor's
-  // "prochain menu" card on a market that finished hours ago, and keeps a packed-up stall
-  // on the customer storefront until midnight.
+  
   private readonly daysValid = computed(() => {
     const days = this.days();
-    return days.length > 0 && days.every((day) => !!day.startTime && !!day.endTime && day.endTime > day.startTime);
+    return days.length > 0 && this.allDaysHaveStartAndEndTimes(days);
   });
-
   protected readonly cannotSubmit = computed(
-    () => this.fields().invalid() || !this.codePostalValid() || !this.daysValid(),
+    () => this.fields().invalid() || !this.codePostalValid() || !this.daysValid()
   );
 
   protected selected(code: string): boolean {
@@ -225,7 +222,7 @@ export class AddSchedule {
     this.days.set(
       this.selected(code)
         ? current.filter((day) => day.day !== code)
-        : [...current, { day: code, startTime: '08:00', endTime: '13:00' }],
+        : [...current, { day: code, startTime: '08:00', endTime: '13:00' }]
     );
   }
 
@@ -249,19 +246,23 @@ export class AddSchedule {
         streetAddress: streetAddress.trim() || undefined,
         codePostal: codePostal.trim(),
         town: town.trim(),
-        pitch: pitch.trim() || undefined,
+        pitch: pitch.trim() || undefined
       },
       days: this.rows().map((day) => ({
         day: day.day,
         startTime: day.startTime || undefined,
-        endTime: day.endTime || undefined,
+        endTime: day.endTime || undefined
       })),
-      frequency: this.editing?.frequency ?? { weeks: 1 },
+      frequency: this.editing?.frequency ?? { weeks: 1 }
     };
     if (this.editing) {
       this.markets.amendSchedule(this.editing.scheduleId, schedule);
     } else {
       this.markets.registerSchedule(schedule);
     }
+  }
+
+  private allDaysHaveStartAndEndTimes(days: DayEntry[]) {
+    return days.every((day) => !!day.startTime && !!day.endTime && day.endTime > day.startTime);
   }
 }
