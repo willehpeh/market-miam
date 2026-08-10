@@ -9,7 +9,7 @@ export type DishViewModel = {
   description: string;
   priceLabel: string;
   variants?: { name: string; description: string; priceLabel: string }[];
-  photo: { cardUrl: string; sheetUrl: string } | null;
+  photo: { cardUrl: string; sheetUrl: string; thumbUrl: string } | null;
 };
 
 export type MarketViewModel = {
@@ -75,6 +75,7 @@ function toDishViewModel(dish: CatalogueDish): DishViewModel {
     ? {
         cardUrl: cloudinaryUrl(dish.imageReference, 'c_fill,w_800,h_500,q_auto,f_auto'),
         sheetUrl: cloudinaryUrl(dish.imageReference, 'c_fill,w_1200,h_900,q_auto,f_auto'),
+        thumbUrl: cloudinaryUrl(dish.imageReference, 'c_fill,w_200,h_200,q_auto,f_auto'),
       }
     : null;
   const base = { itemId: dish.itemId, name: dish.name, description: dish.description, photo, priceLabel: priceLabelFor(dish) };

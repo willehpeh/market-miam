@@ -15,7 +15,11 @@ const ACME: StorefrontViewModel = {
       name: 'Bœuf bourguignon',
       description: 'Mijoté 7 heures',
       priceLabel: '13,00 €',
-      photo: { cardUrl: 'https://cdn.test/card/dish-1', sheetUrl: 'https://cdn.test/sheet/dish-1' },
+      photo: {
+        cardUrl: 'https://cdn.test/card/dish-1',
+        sheetUrl: 'https://cdn.test/sheet/dish-1',
+        thumbUrl: 'https://cdn.test/thumb/dish-1',
+      },
     },
     {
       itemId: 'dish-2',
@@ -103,7 +107,7 @@ describe('StorefrontPage', () => {
     expect(text).toContain('6,00 €');
     const thumbs = Array.from(fixture.nativeElement.querySelectorAll('img'))
       .map(img => (img as HTMLImageElement).src);
-    expect(thumbs).toContain('https://cdn.test/card/dish-1');
+    expect(thumbs).toContain('https://cdn.test/thumb/dish-1');
     expect(thumbs.some(src => src.includes('dish-2'))).toBe(false);
   });
 
@@ -174,6 +178,46 @@ describe('StorefrontPage', () => {
     const dialog = fixture.nativeElement.querySelector('dialog') as HTMLDialogElement;
     expect(dialog.open).toBe(true);
     expect(dialog.textContent).toContain('Mijoté 7 heures');
+  });
+
+  // The carte is a reference list you scan; the day's menu is what you can actually buy.
+  // Rendering both as the same big card left them tied, with the wrong one winning on size.
+  it('renders the carte as rows, keeping the big cards for the day\'s menu', () => {
+    const fixture = TestBed.createComponent(StorefrontPage);
+    fixture.componentRef.setInput('storefront', {
+      ...ACME,
+      upcomingMarkets: [{ ...ACME.upcomingMarkets[0], dishes: [ACME.dishes[0]] }],
+    });
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelectorAll('app-dish-row').length).toBe(2);
+    const cards = Array.from(fixture.nativeElement.querySelectorAll('app-dish-card')) as HTMLElement[];
+    expect(cards.length).toBe(1);
+    expect(cards.every((card) => card.closest('app-market-card') !== null)).toBe(true);
+  });
+
+  it('gives a carte row a thumbnail when the dish has a photo, and a placeholder when it does not', () => {
+    const fixture = TestBed.createComponent(StorefrontPage);
+    fixture.componentRef.setInput('storefront', ACME);
+    fixture.detectChanges();
+
+    const rows = fixture.nativeElement.querySelectorAll('app-dish-row');
+    expect((rows[0].querySelector('img') as HTMLImageElement).src).toBe('https://cdn.test/thumb/dish-1');
+    expect(rows[1].querySelector('img')).toBeNull();
+    expect(rows[1].querySelector('.hatch')).not.toBeNull();
+  });
+
+  it('opens the dish sheet from a carte row', () => {
+    const fixture = TestBed.createComponent(StorefrontPage);
+    fixture.componentRef.setInput('storefront', ACME);
+    fixture.detectChanges();
+
+    (fixture.nativeElement.querySelector('app-dish-row [data-dish="dish-2"]') as HTMLElement).click();
+    fixture.detectChanges();
+
+    const dialog = fixture.nativeElement.querySelector('dialog') as HTMLDialogElement;
+    expect(dialog.open).toBe(true);
+    expect(dialog.textContent).toContain('Aux pommes');
   });
 
   it('keeps the upcoming list to names and prices, without dish cards', () => {

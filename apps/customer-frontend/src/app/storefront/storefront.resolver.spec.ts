@@ -71,6 +71,7 @@ describe('storefrontResolver', () => {
           photo: {
             cardUrl: 'https://res.cloudinary.com/test-cloud/image/upload/c_fill,w_800,h_500,q_auto,f_auto/v7/dish-1',
             sheetUrl: 'https://res.cloudinary.com/test-cloud/image/upload/c_fill,w_1200,h_900,q_auto,f_auto/v7/dish-1',
+            thumbUrl: 'https://res.cloudinary.com/test-cloud/image/upload/c_fill,w_200,h_200,q_auto,f_auto/v7/dish-1',
           },
         },
         {

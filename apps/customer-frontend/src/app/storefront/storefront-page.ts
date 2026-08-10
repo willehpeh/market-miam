@@ -4,7 +4,7 @@ import { StorefrontMetadata } from './storefront-metadata';
 import { currentOrigin } from '../core/request-url';
 import { ComingSoonPage } from './coming-soon/coming-soon-page';
 import { StorefrontHero } from './layout/storefront-hero';
-import { DishCard } from './dishes/dish-card';
+import { DishRow } from './dishes/dish-row';
 import { DishSheet } from './dishes/dish-sheet';
 import { MarketCard } from './markets/market-card';
 import { StorefrontFooter } from './layout/storefront-footer';
@@ -12,7 +12,7 @@ import { StorefrontFooter } from './layout/storefront-footer';
 @Component({
   selector: 'app-storefront-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ComingSoonPage, StorefrontHero, DishCard, DishSheet, MarketCard, StorefrontFooter],
+  imports: [ComingSoonPage, StorefrontHero, DishRow, DishSheet, MarketCard, StorefrontFooter],
   template: `
     @if (storefront(); as storefront) {
       @switch (storefront.status) {
@@ -46,9 +46,9 @@ import { StorefrontFooter } from './layout/storefront-footer';
 
             <section class="px-5 py-8">
               <h2 class="kicker">Notre carte</h2>
-              <ul class="mt-5 space-y-4">
+              <ul class="mt-5 space-y-3">
                 @for (dish of storefront.dishes; track dish.itemId) {
-                  <li><app-dish-card [dish]="dish" (chosen)="openDish($event)" /></li>
+                  <li><app-dish-row [dish]="dish" (chosen)="openDish($event)" /></li>
                 }
               </ul>
             </section>
