@@ -1,4 +1,5 @@
-import { MAX_UPLOAD_EDGE, scaledSize } from './photo-downscale';
+import { PHOTO_UPLOAD_MAX_EDGE } from '@market-miam/common';
+import { scaledSize } from './photo-downscale';
 
 describe('scaledSize', () => {
   it('leaves a photo already within the cap at its own size', () => {
@@ -6,7 +7,7 @@ describe('scaledSize', () => {
   });
 
   it('leaves a photo sitting exactly on the cap alone', () => {
-    expect(scaledSize(MAX_UPLOAD_EDGE, 1000)).toEqual({ width: MAX_UPLOAD_EDGE, height: 1000 });
+    expect(scaledSize(PHOTO_UPLOAD_MAX_EDGE, 1000)).toEqual({ width: PHOTO_UPLOAD_MAX_EDGE, height: 1000 });
   });
 
   it('caps the long edge of a landscape photo, keeping its ratio', () => {

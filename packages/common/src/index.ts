@@ -8,4 +8,5 @@ export * from './date-clock';
 export * from './email';
 export * from './phone-number';
 export * from './image-reference';
+export * from './photo-upload';
 export * from './week';

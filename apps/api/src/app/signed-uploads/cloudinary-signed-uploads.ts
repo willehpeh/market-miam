@@ -1,4 +1,4 @@
-import { Clock } from '@market-miam/common';
+import { Clock, PHOTO_UPLOAD_MAX_EDGE } from '@market-miam/common';
 import { cloudinarySignature } from './cloudinary-signature';
 import { CloudinaryUploadParams, CloudinarySignedUpload, SignedUploads } from './signed-uploads';
 
@@ -37,7 +37,7 @@ export class CloudinarySignedUploads extends SignedUploads {
       overwrite: true,
       invalidate: true,
       allowed_formats: 'jpg,png,webp',
-      transformation: 'c_limit,w_2000',
+      transformation: `c_limit,w_${PHOTO_UPLOAD_MAX_EDGE}`,
       eager: COVER_PHOTO_DISPLAY_TRANSFORMATION,
     };
     return {
