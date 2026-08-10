@@ -18,5 +18,15 @@ export default defineConfig(() => ({
     testTimeout: 60_000,
     hookTimeout: 180_000,
     reporters: ['default'],
+    coverage: {
+      enabled: true,
+      reportsDirectory: 'coverage/test-container',
+      provider: 'v8' as const,
+      include: ['packages/**/src/**/*.ts'],
+      // `all: false` — this suite speaks only for the adapters it drives. The
+      // files it never touches are the unit suite's story, and reporting them
+      // at 0% here is what made the postgres adapters look untested.
+      all: false,
+    },
   },
 }));
