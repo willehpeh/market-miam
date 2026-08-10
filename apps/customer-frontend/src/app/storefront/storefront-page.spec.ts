@@ -26,8 +26,8 @@ const ACME: StorefrontViewModel = {
     },
   ],
   upcomingMarkets: [
-    { weekday: 'JEU', day: '18', month: 'JUIN', marketName: 'Marché Saint-Antoine', hours: '8h – 13h30', address: 'Quai Saint-Antoine, Lyon', cancelled: false },
-    { weekday: 'MAR', day: '23', month: 'JUIN', marketName: 'Marché de la Croix-Rousse', hours: '8h – 13h', address: 'Lyon', cancelled: true },
+    { weekday: 'JEU', day: '18', month: 'JUIN', marketName: 'Marché Saint-Antoine', hours: '8h – 13h30', address: 'Quai Saint-Antoine, Lyon', cancelled: false, inProgress: false, dishes: [] },
+    { weekday: 'MAR', day: '23', month: 'JUIN', marketName: 'Marché de la Croix-Rousse', hours: '8h – 13h', address: 'Lyon', cancelled: true, inProgress: false, dishes: [] },
   ],
 };
 
@@ -122,6 +122,57 @@ describe('StorefrontPage', () => {
     expect(text).toContain('Quai Saint-Antoine, Lyon');
     expect(text).toContain('Marché de la Croix-Rousse');
     expect(text).toContain('Annulé');
+  });
+
+  // The day's offering belongs above the standing carte: it is what a customer can
+  // actually buy on the next market day, and the carte is everything the vendor ever makes.
+  it('leads with the next market and its menu, above the carte', () => {
+    const fixture = TestBed.createComponent(StorefrontPage);
+    fixture.componentRef.setInput('storefront', {
+      ...ACME,
+      upcomingMarkets: [
+        { ...ACME.upcomingMarkets[0], dishes: [{ name: 'Bœuf bourguignon', priceLabel: '13,00 €' }] },
+        ACME.upcomingMarkets[1],
+      ],
+    });
+    fixture.detectChanges();
+
+    const text = fixture.nativeElement.textContent as string;
+    expect(text).toContain('Prochain marché');
+    expect(text.indexOf('Prochain marché')).toBeLessThan(text.indexOf('Notre carte'));
+  });
+
+  it('lists each market day\'s menu inside its own card', () => {
+    const fixture = TestBed.createComponent(StorefrontPage);
+    fixture.componentRef.setInput('storefront', {
+      ...ACME,
+      upcomingMarkets: [{ ...ACME.upcomingMarkets[0], dishes: [{ name: 'Tarte tatin', priceLabel: '6,00 €' }] }],
+    });
+    fixture.detectChanges();
+
+    const cards = fixture.nativeElement.querySelectorAll('app-market-card');
+    expect(cards.length).toBe(2);
+    expect((cards[1].textContent as string)).toContain('Tarte tatin');
+    expect((cards[1].textContent as string)).toContain('6,00 €');
+  });
+
+  it('says nothing about a menu on a day with none planned', () => {
+    const fixture = TestBed.createComponent(StorefrontPage);
+    fixture.componentRef.setInput('storefront', ACME);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-menu]')).toBeNull();
+  });
+
+  it('badges a market that is under way', () => {
+    const fixture = TestBed.createComponent(StorefrontPage);
+    fixture.componentRef.setInput('storefront', {
+      ...ACME,
+      upcomingMarkets: [{ ...ACME.upcomingMarkets[0], inProgress: true }],
+    });
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent as string).toContain('En cours');
   });
 
   it('opens the dish sheet with the full details when a dish is clicked', () => {

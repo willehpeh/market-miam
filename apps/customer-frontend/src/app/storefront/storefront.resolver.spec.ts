@@ -19,8 +19,8 @@ const ACME: CustomerStorefront = {
     { itemId: 'dish-2', name: 'Tarte tatin', description: 'Aux pommes', price: 600, imageReference: '' },
   ],
   upcomingMarkets: [
-    { date: '2026-06-18', weekday: 'THU', marketName: 'Marché Saint-Antoine', startTime: '08:00', endTime: '13:30', street: 'Quai Saint-Antoine', postalCode: '69002', town: 'Lyon', pitch: 'A3', cancelled: false },
-    { date: '2026-06-23', weekday: 'TUE', marketName: 'Marché de la Croix-Rousse', startTime: '08:00', endTime: '13:00', postalCode: '69004', town: 'Lyon', cancelled: true },
+    { date: '2026-06-18', weekday: 'THU', marketName: 'Marché Saint-Antoine', startTime: '08:00', endTime: '13:30', street: 'Quai Saint-Antoine', postalCode: '69002', town: 'Lyon', pitch: 'A3', cancelled: false, inProgress: false, dishes: [] },
+    { date: '2026-06-23', weekday: 'TUE', marketName: 'Marché de la Croix-Rousse', startTime: '08:00', endTime: '13:00', postalCode: '69004', town: 'Lyon', cancelled: true, inProgress: false, dishes: [] },
   ],
 };
 
@@ -82,8 +82,8 @@ describe('storefrontResolver', () => {
         },
       ],
       upcomingMarkets: [
-        { weekday: 'JEU', day: '18', month: 'JUIN', marketName: 'Marché Saint-Antoine', hours: '8h – 13h30', address: 'Quai Saint-Antoine, Lyon', cancelled: false },
-        { weekday: 'MAR', day: '23', month: 'JUIN', marketName: 'Marché de la Croix-Rousse', hours: '8h – 13h', address: 'Lyon', cancelled: true },
+        { weekday: 'JEU', day: '18', month: 'JUIN', marketName: 'Marché Saint-Antoine', hours: '8h – 13h30', address: 'Quai Saint-Antoine, Lyon', cancelled: false, inProgress: false, dishes: [] },
+        { weekday: 'MAR', day: '23', month: 'JUIN', marketName: 'Marché de la Croix-Rousse', hours: '8h – 13h', address: 'Lyon', cancelled: true, inProgress: false, dishes: [] },
       ],
     });
   });

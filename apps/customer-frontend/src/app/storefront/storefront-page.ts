@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, input, OnInit, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, OnInit, viewChild } from '@angular/core';
 import { DishViewModel, StorefrontViewModel } from './storefront-view-model';
 import { StorefrontMetadata } from './storefront-metadata';
 import { currentOrigin } from '../core/request-url';
@@ -29,6 +29,16 @@ import { StorefrontFooter } from './layout/storefront-footer';
                 <!-- pre-line, not pre-wrap: honours the paragraph breaks a vendor typed
                      without also preserving stray runs of spaces from a paste. -->
                 <p class="whitespace-pre-line text-ink-soft">{{ storefront.description }}</p>
+              </section>
+            }
+
+            <!-- The day's offering sits above the standing carte: it is what a customer
+                 can buy at the next market, where the carte is everything ever made. The
+                 same day repeats in Prochains marchés below, which keeps that list whole. -->
+            @if (nextMarket(); as market) {
+              <section class="px-5 pt-6">
+                <h2 class="kicker">Prochain marché</h2>
+                <div class="mt-5"><app-market-card [market]="market" /></div>
               </section>
             }
 
@@ -70,6 +80,13 @@ import { StorefrontFooter } from './layout/storefront-footer';
 })
 export class StorefrontPage implements OnInit {
   readonly storefront = input<StorefrontViewModel | null>(null);
+
+  // Cancelled days are not skipped, unlike the vendor's card: a customer heading out needs
+  // to know the next market is off more than they need the one after it.
+  protected readonly nextMarket = computed(() => {
+    const storefront = this.storefront();
+    return storefront?.status === 'published' ? storefront.upcomingMarkets[0] : undefined;
+  });
   private readonly sheet = viewChild.required(DishSheet);
   private readonly metadata = inject(StorefrontMetadata);
   // Captured here in the injection context; read in ngOnInit.

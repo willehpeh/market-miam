@@ -33,4 +33,45 @@ describe('toViewModel', () => {
       { name: 'Pepperoni', description: 'spicy', priceLabel: '12,00 €' },
     ]);
   });
+
+  // The menu is the day's offering, so it carries names and prices — the carte below
+  // already has the photos and the descriptions.
+  it('lists a market day\'s menu with the same price labels as the carte', () => {
+    const storefront: CustomerStorefront = {
+      status: 'published',
+      name: 'Chez Test',
+      description: '',
+      phone: '',
+      coverPhoto: null,
+      dishes: [],
+      upcomingMarkets: [
+        {
+          date: '2026-06-18',
+          weekday: 'THU',
+          marketName: 'Marché Saint-Antoine',
+          postalCode: '69002',
+          town: 'Lyon',
+          cancelled: false,
+          inProgress: false,
+          dishes: [
+            { itemId: 'boeuf', name: 'Bourguignon', description: '', price: 1300, imageReference: '' },
+            {
+              itemId: 'pizza',
+              name: 'Pizza',
+              description: '',
+              imageReference: '',
+              variants: [{ name: 'Margherita', description: '', price: 900 }],
+            },
+          ],
+        },
+      ],
+    };
+
+    const view = toViewModel(storefront) as Extract<StorefrontViewModel, { status: 'published' }>;
+
+    expect(view.upcomingMarkets[0].dishes).toEqual([
+      { name: 'Bourguignon', priceLabel: '13,00 €' },
+      { name: 'Pizza', priceLabel: 'dès 9,00 €' },
+    ]);
+  });
 });

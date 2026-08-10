@@ -1,5 +1,6 @@
 import { environment } from '../../environments/environment';
 import { CustomerStorefront } from './customer-storefront';
+import { CatalogueDish } from './dishes/catalogue-dish';
 import { UpcomingMarket } from './markets/upcoming-market';
 
 export type DishViewModel = {
@@ -19,6 +20,9 @@ export type MarketViewModel = {
   hours: string;
   address: string;
   cancelled: boolean;
+  inProgress: boolean;
+  // Names and prices only: the carte below carries the photos and the descriptions.
+  dishes: { name: string; priceLabel: string }[];
 };
 
 export type StorefrontViewModel =
@@ -57,15 +61,14 @@ export function toViewModel(storefront: CustomerStorefront): StorefrontViewModel
             sheetUrl: cloudinaryUrl(dish.imageReference, 'c_fill,w_1200,h_900,q_auto,f_auto'),
           }
         : null;
-      const base = { itemId: dish.itemId, name: dish.name, description: dish.description, photo };
+      const base = { itemId: dish.itemId, name: dish.name, description: dish.description, photo, priceLabel: priceLabelFor(dish) };
       if (dish.variants) {
         return {
           ...base,
-          priceLabel: `dès ${formatEuros(Math.min(...dish.variants.map(variant => variant.price)))}`,
           variants: dish.variants.map(variant => ({ name: variant.name, description: variant.description, priceLabel: formatEuros(variant.price) })),
         };
       }
-      return { ...base, priceLabel: formatEuros(dish.price ?? 0) };
+      return base;
     }),
     upcomingMarkets: storefront.upcomingMarkets.map(toMarketViewModel),
   };
@@ -77,6 +80,12 @@ function cloudinaryUrl(reference: string, transform: string): string {
 
 function formatEuros(cents: number): string {
   return `${(cents / 100).toFixed(2).replace('.', ',')} €`;
+}
+
+function priceLabelFor(dish: CatalogueDish): string {
+  return dish.variants
+    ? `dès ${formatEuros(Math.min(...dish.variants.map(variant => variant.price)))}`
+    : formatEuros(dish.price ?? 0);
 }
 
 // ponytail: French single-region labels, keyed off the DTO's own weekday + date parts
@@ -94,6 +103,8 @@ function toMarketViewModel(market: UpcomingMarket): MarketViewModel {
     hours: marketHours(market),
     address: [market.street, market.town].filter(Boolean).join(', '),
     cancelled: market.cancelled,
+    inProgress: market.inProgress,
+    dishes: market.dishes.map(dish => ({ name: dish.name, priceLabel: priceLabelFor(dish) })),
   };
 }
 
