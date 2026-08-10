@@ -196,7 +196,9 @@ describe('StorefrontPage', () => {
     expect(cards.every((card) => card.closest('app-market-card') !== null)).toBe(true);
   });
 
-  it('gives a carte row a thumbnail when the dish has a photo, and a placeholder when it does not', () => {
+  // Dish photos are optional, so a real carte mixes the two. Without something occupying
+  // the square, those rows start at a different left edge and read as broken.
+  it('gives a carte row a thumbnail when the dish has a photo, and an icon when it does not', () => {
     const fixture = TestBed.createComponent(StorefrontPage);
     fixture.componentRef.setInput('storefront', ACME);
     fixture.detectChanges();
@@ -204,7 +206,7 @@ describe('StorefrontPage', () => {
     const rows = fixture.nativeElement.querySelectorAll('app-dish-row');
     expect((rows[0].querySelector('img') as HTMLImageElement).src).toBe('https://cdn.test/thumb/dish-1');
     expect(rows[1].querySelector('img')).toBeNull();
-    expect(rows[1].querySelector('.hatch')).not.toBeNull();
+    expect(rows[1].querySelector('.fa-utensils')).not.toBeNull();
   });
 
   it('opens the dish sheet from a carte row', () => {

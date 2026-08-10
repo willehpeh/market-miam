@@ -18,7 +18,12 @@ import { DishViewModel } from '../storefront-view-model';
       @if (dish().photo; as photo) {
         <img [src]="photo.thumbUrl" alt="" class="size-16 shrink-0 rounded-card object-cover" />
       } @else {
-        <span class="hatch size-16 shrink-0 rounded-card"></span>
+        <!-- Dish photos are optional, so the square is held either way: rows that skipped
+             it would start at a different left edge and read as broken rather than as
+             "no photo". Quieter than the hatch, which is loud at 64px. -->
+        <span class="grid size-16 shrink-0 place-items-center rounded-card bg-surface-sunk text-line-strong">
+          <i class="fa-solid fa-utensils" aria-hidden="true"></i>
+        </span>
       }
       <span class="min-w-0 flex-1">
         <span class="line-clamp-2 block font-bold text-ink">{{ dish().name }}</span>
