@@ -14,10 +14,6 @@ export class Item {
   ) {
   }
 
-  name(): ItemName {
-    return this._name;
-  }
-
   hasId(itemId: ItemId): boolean {
     return this._itemId.value() === itemId.value();
   }

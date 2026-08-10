@@ -24,15 +24,6 @@ export class Schedule {
     this._recurrence = new Recurrence(params.startDate, params.days, params.frequency);
   }
 
-  static fromSnapshot(snapshot: ScheduleSnapshot): Schedule {
-    return new Schedule({
-      id: new ScheduleId(snapshot.scheduleId),
-      startDate: new LocalDate(snapshot.startDate),
-      days: snapshot.days.map(d => new ScheduleDay(d.day, d.startTime, d.endTime)),
-      frequency: new ScheduleFrequency(snapshot.frequency)
-    });
-  }
-
   snapshot(): ScheduleSnapshot {
     return {
       scheduleId: this._id.value(),
