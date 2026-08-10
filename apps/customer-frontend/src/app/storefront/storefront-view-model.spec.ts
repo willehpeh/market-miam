@@ -70,8 +70,15 @@ describe('toViewModel', () => {
     const view = toViewModel(storefront) as Extract<StorefrontViewModel, { status: 'published' }>;
 
     expect(view.upcomingMarkets[0].dishes).toEqual([
-      { name: 'Bourguignon', priceLabel: '13,00 €' },
-      { name: 'Pizza', priceLabel: 'dès 9,00 €' },
+      { itemId: 'boeuf', name: 'Bourguignon', description: '', priceLabel: '13,00 €', photo: null },
+      {
+        itemId: 'pizza',
+        name: 'Pizza',
+        description: '',
+        priceLabel: 'dès 9,00 €',
+        photo: null,
+        variants: [{ name: 'Margherita', description: '', priceLabel: '9,00 €' }],
+      },
     ]);
   });
 });

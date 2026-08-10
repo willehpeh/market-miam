@@ -131,7 +131,7 @@ describe('StorefrontPage', () => {
     fixture.componentRef.setInput('storefront', {
       ...ACME,
       upcomingMarkets: [
-        { ...ACME.upcomingMarkets[0], dishes: [{ name: 'Bœuf bourguignon', priceLabel: '13,00 €' }] },
+        { ...ACME.upcomingMarkets[0], dishes: [ACME.dishes[0]] },
         ACME.upcomingMarkets[1],
       ],
     });
@@ -146,7 +146,7 @@ describe('StorefrontPage', () => {
     const fixture = TestBed.createComponent(StorefrontPage);
     fixture.componentRef.setInput('storefront', {
       ...ACME,
-      upcomingMarkets: [{ ...ACME.upcomingMarkets[0], dishes: [{ name: 'Tarte tatin', priceLabel: '6,00 €' }] }],
+      upcomingMarkets: [{ ...ACME.upcomingMarkets[0], dishes: [ACME.dishes[1]] }],
     });
     fixture.detectChanges();
 
@@ -154,6 +154,39 @@ describe('StorefrontPage', () => {
     expect(cards.length).toBe(2);
     expect((cards[1].textContent as string)).toContain('Tarte tatin');
     expect((cards[1].textContent as string)).toContain('6,00 €');
+  });
+
+  // The day's menu is browsable like the carte, not a price list: same cards, same sheet.
+  // Only the featured card goes this far — repeating full cards for every upcoming market
+  // would bury the page.
+  it('opens the dish sheet from a dish on the next market\'s menu', () => {
+    const fixture = TestBed.createComponent(StorefrontPage);
+    fixture.componentRef.setInput('storefront', {
+      ...ACME,
+      upcomingMarkets: [{ ...ACME.upcomingMarkets[0], dishes: [ACME.dishes[0]] }],
+    });
+    fixture.detectChanges();
+
+    const menuDish = fixture.nativeElement.querySelector('app-market-card [data-dish="dish-1"]') as HTMLElement;
+    menuDish.click();
+    fixture.detectChanges();
+
+    const dialog = fixture.nativeElement.querySelector('dialog') as HTMLDialogElement;
+    expect(dialog.open).toBe(true);
+    expect(dialog.textContent).toContain('Mijoté 7 heures');
+  });
+
+  it('keeps the upcoming list to names and prices, without dish cards', () => {
+    const fixture = TestBed.createComponent(StorefrontPage);
+    fixture.componentRef.setInput('storefront', {
+      ...ACME,
+      upcomingMarkets: [ACME.upcomingMarkets[0], { ...ACME.upcomingMarkets[1], dishes: [ACME.dishes[0]] }],
+    });
+    fixture.detectChanges();
+
+    const listCards = fixture.nativeElement.querySelectorAll('app-market-card');
+    expect(listCards[2].querySelector('[data-dish]')).toBeNull();
+    expect(listCards[2].textContent as string).toContain('Bœuf bourguignon');
   });
 
   it('says nothing about a menu on a day with none planned', () => {

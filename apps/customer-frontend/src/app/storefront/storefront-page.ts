@@ -38,7 +38,9 @@ import { StorefrontFooter } from './layout/storefront-footer';
             @if (nextMarket(); as market) {
               <section class="px-5 pt-6">
                 <h2 class="kicker">Prochain marché</h2>
-                <div class="mt-5"><app-market-card [market]="market" /></div>
+                <div class="mt-5">
+                  <app-market-card [market]="market" [featured]="true" (chosen)="openDish($event)" />
+                </div>
               </section>
             }
 
