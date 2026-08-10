@@ -17,21 +17,6 @@ const app = express();
 // .onrender.com host instead of the real *.marketmiam.fr one.
 const angularApp = new AngularNodeAppEngine({ trustProxyHeaders: true });
 
-/**
- * Example Express Rest API endpoints can be defined here.
- * Uncomment and define endpoints as necessary.
- *
- * Example:
- * ```ts
- * app.get('/api/**', (req, res) => {
- *   // Handle API request
- * });
- * ```
- */
-
-/**
- * Serve static files from /browser
- */
 app.use(
   express.static(browserDistFolder, {
     maxAge: '1y',
@@ -40,9 +25,6 @@ app.use(
   }),
 );
 
-/**
- * Handle all other requests by rendering the Angular application.
- */
 app.use('/**', (req, res, next) => {
   angularApp
     .handle(req)
@@ -52,10 +34,7 @@ app.use('/**', (req, res, next) => {
     .catch(next);
 });
 
-/**
- * Start the server if this module is the main entry point, or it is ran via PM2.
- * The server listens on the port defined by the `PORT` environment variable, or defaults to 4000.
- */
+// pm_id is set when PM2 is the parent, which isMainModule can't detect.
 if (isMainModule(import.meta.url) || process.env['pm_id']) {
   const port = process.env['PORT'] || 4000;
   app.listen(port, () => {
@@ -63,7 +42,5 @@ if (isMainModule(import.meta.url) || process.env['pm_id']) {
   });
 }
 
-/**
- * Request handler used by the Angular CLI (for dev-server and during build) or Firebase Cloud Functions.
- */
+// Unreferenced in the repo, but the Angular CLI dev-server and build import it.
 export const reqHandler = createNodeRequestHandler(app);
