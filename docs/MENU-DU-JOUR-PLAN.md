@@ -289,7 +289,7 @@ replaced by mark-as-sold-out).
 `docs/archive/ADD-SCHEDULE-FORM-PLAN.md` still calls day times **optional**, which slice 5a
 changed. Left as-is: archive files are point-in-time records.
 
-Remaining: consider an ADR for the whole-set replace (decision 2).
+~~Remaining: consider an ADR for the whole-set replace (decision 2)~~ — written, ADR 0047.
 
 ## Open
 

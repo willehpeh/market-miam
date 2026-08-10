@@ -53,3 +53,4 @@ detailed rationale in `docs/archive/DEFERRED.md`).
 | [0044](0044-otel-in-the-package-seams-only-where-composition-varies.md) | OTel is the package's opinion; seams only where composition varies | 2026-08-02 |
 | [0045](0045-domain-errors-to-http-via-shared-global-filters.md) | Domain errors reach HTTP through one shared filter list | 2026-08-10 |
 | [0046](0046-request-shape-gated-by-zod-at-the-transport-edge.md) | Request shape gated by zod at the transport edge | 2026-08-10 |
+| [0047](0047-market-day-menu-set-whole.md) | A market day's menu is set whole — one command, one event | 2026-08-10 |
