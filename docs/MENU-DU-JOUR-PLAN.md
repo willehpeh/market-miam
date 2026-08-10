@@ -64,7 +64,7 @@ one private helper. `market-day/` and `set-market-day-menu/` at 100% coverage.
 | `market-day-view.store.ts` | write port: `setMenu(menu, vendorId)` · `clear()` |
 | `market-day-view.projection.ts` | `@CheckpointedProjection('market-day-view')`, `MarketDayMenuSet` only — one-line pass-through |
 | `in-memory-market-day.views.ts` | keyed by vendor, then `marketId\|date` |
-| `postgres-market-day.views.ts` | upsert on PK `(vendor_id, market_id, day)`; the window read is a prefix scan on that key |
+| `postgres-market-day.views.ts` | upsert on the PK; the window read is a prefix scan on it since 0013 reordered it to `(vendor_id, day, market_id)` — 0012's order left `day` third, so the "prefix scan" the adapter claimed was really a filtered walk of the vendor's entries |
 
 Also: migration `0012_market_day_views.sql` (`day` is text, not date — pg would hand back a JS
 Date and the view speaks ISO strings); providers in `market-days.module.ts` and **both**
