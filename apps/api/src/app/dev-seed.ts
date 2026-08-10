@@ -11,15 +11,14 @@ import {
   RegisterMarketSchedule,
   SetStorefrontCoverPhoto
 } from '@market-miam/market-days';
+import { DEV_FALLBACK_VENDOR_ID } from '@market-miam/auth';
 
 const DEMO_VENDOR = 'demo-vendor';
 const DEMO_SUBDOMAIN = 'demo';
 const DEMO_COVER = 'v1784235195/demo-cover_ghvwt5';
 
-// The vendor you sign in as locally by default — DevelopmentTokenVerifier resolves
-// a plain `dev` token to this id. Keep in sync with that verifier. Load the vendor
-// app with ?vendor=demo-vendor to sign in as the published demo vendor below instead.
-const DEV_VENDOR = 'dev-vendor';
+// Load the vendor app with ?vendor=demo-vendor to sign in as the published demo
+// vendor below instead of the plain-`dev`-token vendor.
 const DEV_SUBDOMAIN = 'dev';
 
 // Local-dev convenience: the subdomain registry has no command or UI in v1, so
@@ -38,7 +37,7 @@ export async function seedDev(app: INestApplication): Promise<void> {
   // Give the local sign-in vendor a subdomain so its publish gate passes and the
   // storefront URL shows once you finish onboarding through the app. Its storefront,
   // catalogue and schedule you build yourself in the vendor-frontend.
-  await registry.register(DEV_SUBDOMAIN, DEV_VENDOR);
+  await registry.register(DEV_SUBDOMAIN, DEV_FALLBACK_VENDOR_ID);
 
   await commands.execute(new OpenStorefront(DEMO_VENDOR));
   await commands.execute(

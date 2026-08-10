@@ -8,8 +8,10 @@ import { Email } from '@market-miam/common';
 // whole point and is safe only because this verifier is constructed solely when
 // NODE_ENV=development (see tokenVerifierFor) — production always verifies real
 // Auth0 signatures, which `dev:anything` fails.
+export const DEV_FALLBACK_VENDOR_ID = 'dev-vendor';
+
 export class DevelopmentTokenVerifier extends TokenVerifier {
-  constructor(private readonly fallbackVendorId = 'dev-vendor') {
+  constructor(private readonly fallbackVendorId = DEV_FALLBACK_VENDOR_ID) {
     super();
   }
 
