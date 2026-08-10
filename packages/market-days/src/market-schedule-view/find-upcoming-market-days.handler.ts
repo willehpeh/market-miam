@@ -9,6 +9,7 @@ import { MarketDayViews } from '../market-day-view/market-day-views';
 import { CatalogueViewItem } from '../catalogue-view/catalogue-view';
 import { CatalogueViews } from '../catalogue-view/catalogue-views';
 import { Recurrence } from '../calendar/schedule/recurrence';
+import { notYetEnded, parisWallClock } from './market-day-clock';
 
 type Dishes = Map<string, CatalogueViewItem[]>;
 
@@ -32,9 +33,14 @@ export class FindUpcomingMarketDaysHandler implements IQueryHandler<FindUpcoming
     return { marketDays: this.marketDaysFrom(schedules, today, horizon, dishes) };
   }
 
+  // Upcoming means still to come: a day that has ended leaves, so a vendor whose market
+  // finished this afternoon is offered tomorrow rather than a day they can no longer sell on.
+  // Days are dropped, not flagged — no past-day read path exists to list them with.
   private marketDaysFrom(schedules: MarketScheduleView[], today: LocalDate, horizon: LocalDate, dishes: Dishes) {
+    const now = parisWallClock(this.clock.now());
     return schedules
       .flatMap(schedule => this.occurrencesOf(schedule, today, horizon, dishes))
+      .filter(day => notYetEnded(day, now))
       .sort((a, b) => a.date.localeCompare(b.date));
   }
 

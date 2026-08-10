@@ -10,9 +10,9 @@ import {
 } from '@market-miam/market-days';
 import { Clock, Instant, LocalDate } from '@market-miam/common';
 
-const clockAt = (date: string): Clock => ({
+const clockAt = (date: string, now = '2024-01-01T00:00:00.000Z'): Clock => ({
   today: () => new LocalDate(date),
-  now: () => new Instant('2024-01-01T00:00:00.000Z'),
+  now: () => new Instant(now),
 });
 
 const market = {
@@ -50,8 +50,8 @@ describe('FindUpcomingMarketDays', () => {
     catalogues = new InMemoryCatalogueViews();
   });
 
-  function upcoming(vendorId: string, today = '2024-01-01') {
-    return new FindUpcomingMarketDaysHandler(views, menus, catalogues, clockAt(today)).execute(new FindUpcomingMarketDays(vendorId));
+  function upcoming(vendorId: string, today = '2024-01-01', now?: string) {
+    return new FindUpcomingMarketDaysHandler(views, menus, catalogues, clockAt(today, now)).execute(new FindUpcomingMarketDays(vendorId));
   }
 
   const dates = (view: UpcomingMarketDaysView) => view.marketDays.map(d => ({ date: d.date, day: d.day }));
@@ -219,6 +219,44 @@ describe('FindUpcomingMarketDays', () => {
     const last = marketDays[marketDays.length - 1];
     expect({ date: last.date, dishes: last.dishes.map(item => item.name) })
       .toEqual({ date: '2024-02-24', dishes: ['Bourguignon'] });
+  });
+
+  // A vendor with markets on consecutive days has to be able to plan tomorrow's menu the
+  // evening today's market ends. Instants are UTC; January is CET, so Paris reads +1.
+  it('drops today once its market has ended', async () => {
+    await views.recordSchedule(
+      scheduleWith({ startDate: '2024-01-06', days: [{ day: 'SAT', startTime: '08:00', endTime: '14:00' }] }),
+      'vendor-id',
+    );
+
+    const { marketDays } = await upcoming('vendor-id', '2024-01-06', '2024-01-06T14:30:00.000Z');
+
+    expect(marketDays.map(d => d.date)).toEqual([
+      '2024-01-13', '2024-01-20', '2024-01-27', '2024-02-03',
+      '2024-02-10', '2024-02-17', '2024-02-24', '2024-03-02',
+    ]);
+  });
+
+  it('keeps a market that has started but not ended', async () => {
+    await views.recordSchedule(
+      scheduleWith({ startDate: '2024-01-06', days: [{ day: 'SAT', startTime: '08:00', endTime: '14:00' }] }),
+      'vendor-id',
+    );
+
+    const { marketDays } = await upcoming('vendor-id', '2024-01-06', '2024-01-06T12:00:00.000Z');
+
+    expect(marketDays[0].date).toEqual('2024-01-06');
+  });
+
+  it('keeps a day with no end time until its calendar day is over', async () => {
+    await views.recordSchedule(
+      scheduleWith({ startDate: '2024-01-06', days: [{ day: 'SAT' }] }),
+      'vendor-id',
+    );
+
+    const { marketDays } = await upcoming('vendor-id', '2024-01-06', '2024-01-06T21:00:00.000Z');
+
+    expect(marketDays[0].date).toEqual('2024-01-06');
   });
 
   it('suppresses the menu on a day the vendor is absent', async () => {
