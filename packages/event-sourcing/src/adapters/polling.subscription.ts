@@ -7,7 +7,7 @@ import { StoredEvent } from '../domain/stored-event';
 import { Subscription } from '../ports/subscription';
 import { UnitOfWork } from '../ports/unit-of-work';
 import { producerLinks } from './traceparent';
-import { withSpan } from './with-span';
+import { traced } from './with-span';
 
 const subscriptionTracer = trace.getTracer('subscription');
 const handlerTracer = trace.getTracer('event-handler');
@@ -34,17 +34,15 @@ export class PollingSubscription implements Subscription {
   // any request context. Suppression is context-wide; handleTraced lifts it again the
   // moment a real event is found — the detail is only dropped when nothing happened.
   poll(): Promise<void> {
-    return subscriptionTracer.startActiveSpan('subscription poll', { root: true }, (span: Span) => {
+    return traced(subscriptionTracer, 'subscription poll', 'subscription-poll-failed', { root: true }, (span) => {
       span.setAttribute('subscription.name', this.name);
-      return withSpan(span, 'subscription-poll-failed', () =>
-        context.with(suppressTracing(context.active()), async () => {
-          // Before the poll, not after: drain() empties the backlog before it
-          // returns, so reading afterwards would always gauge zero and measure
-          // nothing.
-          await this.gauge(span);
-          return this.drain();
-        }),
-      );
+      return context.with(suppressTracing(context.active()), async () => {
+        // Before the poll, not after: drain() empties the backlog before it
+        // returns, so reading afterwards would always gauge zero and measure
+        // nothing.
+        await this.gauge(span);
+        return this.drain();
+      });
     });
   }
 
@@ -80,11 +78,13 @@ export class PollingSubscription implements Subscription {
   // is a new root linked (not parented) to the producer — the async consumer is
   // deliberately its own trace.
   private handleTraced(event: StoredEvent): Promise<void> {
-    return handlerTracer.startActiveSpan(
+    return traced(
+      handlerTracer,
       'event-handler handle',
+      'event-handler-failed',
       { root: true, links: producerLinks(event.metadata) },
       unsuppressTracing(context.active()),
-      (span: Span) => {
+      async (span) => {
         span.setAttributes({
           'event.type': event.type,
           'processing.lag_ms': Date.now() - event.timestamp,
@@ -94,7 +94,7 @@ export class PollingSubscription implements Subscription {
           'app.correlation_id': event.metadata?.['correlationId'] as string,
           'app.causation_id': event.metadata?.['causationId'] as string,
         });
-        return withSpan(span, 'event-handler-failed', async () => this.handler.handle(event));
+        return this.handler.handle(event);
       },
     );
   }

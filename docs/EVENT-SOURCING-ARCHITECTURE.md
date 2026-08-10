@@ -454,8 +454,10 @@ patch `@nestjs`, `express`, `http`, `pg`. Exporter: `OTLPTraceExporter`
 | `pg-listen <state>` | `TracingPostgresNotifications` | marker | `listen.state`, `reconnect.attempt`, `error.message` |
 
 Everything else comes from auto-instrumentation. Failure enrichment is one
-protocol, centralised in `withSpan(span, slug, work)`: on throw set
-`exception.slug`, record the exception, set ERROR, rethrow; always `end()`. Six
+protocol, centralised in `traced(tracer, name, slug, work)` — the only way to
+open a work-wrapping span (a lint rule restricts raw `startActiveSpan` to
+`with-span.ts`): on throw set `exception.slug`, record the exception, set
+ERROR, rethrow; always `end()`. Six
 slugs: `command-dispatch-failed`, `query-dispatch-failed`,
 `event-store-append-failed`, `event-store-load-failed`, `event-handler-failed`,
 `subscription-poll-failed`. Spans are payload-blind — `command.name`, never

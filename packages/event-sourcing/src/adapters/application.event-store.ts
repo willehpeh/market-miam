@@ -5,7 +5,7 @@ import { EventStore } from '../ports/event-store';
 import { Lineage } from '../ports/lineage';
 import { StoredEvent } from '../domain/stored-event';
 import { traceparentOf } from './traceparent';
-import { withSpan } from './with-span';
+import { traced } from './with-span';
 
 const tracer = trace.getTracer('event-store');
 
@@ -23,12 +23,10 @@ export class ApplicationEventStore extends EventStore implements Events {
     expectedStreamPosition: number,
     metadata?: Record<string, unknown>,
   ): Promise<void> {
-    return tracer.startActiveSpan('event-store append', (span) => {
+    return traced(tracer, 'event-store append', 'event-store-append-failed', (span) => {
       span.setAttributes(this.attributesForAppend(events, streamId, metadata));
 
-      return withSpan(span, 'event-store-append-failed', () =>
-        this.store.append(streamId, events, expectedStreamPosition, this.mergedMetadata(span, metadata)),
-      );
+      return this.store.append(streamId, events, expectedStreamPosition, this.mergedMetadata(span, metadata));
     });
   }
 
@@ -50,13 +48,11 @@ export class ApplicationEventStore extends EventStore implements Events {
   }
 
   load(streamId: string): Promise<StoredEvent[]> {
-    return tracer.startActiveSpan('event-store load', (span) =>
-      withSpan(span, 'event-store-load-failed', async () => {
-        const events = await this.store.load(streamId);
-        span.setAttributes(this.attributesForLoad(streamId, events));
-        return events;
-      }),
-    );
+    return traced(tracer, 'event-store load', 'event-store-load-failed', async (span) => {
+      const events = await this.store.load(streamId);
+      span.setAttributes(this.attributesForLoad(streamId, events));
+      return events;
+    });
   }
 
   private attributesForLoad(streamId: string, events: StoredEvent[]) {

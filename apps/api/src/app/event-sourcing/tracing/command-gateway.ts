@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Command, CommandBus } from '@nestjs/cqrs';
 import { trace } from '@opentelemetry/api';
-import { CommandGateway, Lineage, withSpan } from '@market-miam/event-sourcing';
+import { CommandGateway, Lineage, traced } from '@market-miam/event-sourcing';
 import { commandAttributes } from '../command-attributes';
 
 const tracer = trace.getTracer('command-gateway');
@@ -14,7 +14,7 @@ export class TracingCommandGateway implements CommandGateway {
   ) {}
 
   execute<R>(command: Command<R>): Promise<R> {
-    return tracer.startActiveSpan(command.constructor.name, (span) => {
+    return traced(tracer, command.constructor.name, 'command-dispatch-failed', (span) => {
       const ids = this.lineage.current();
       span.setAttributes({
         'command.name': command.constructor.name,
@@ -24,7 +24,7 @@ export class TracingCommandGateway implements CommandGateway {
           'app.causation_id': ids.causationId,
         }),
       });
-      return withSpan(span, 'command-dispatch-failed', () => this.commandBus.execute(command));
+      return this.commandBus.execute(command);
     });
   }
 }
