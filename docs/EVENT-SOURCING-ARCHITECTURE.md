@@ -183,13 +183,14 @@ its absence):
 
 Each read model has two ports (ADR 0016), one adapter implementing both:
 `*.store.ts` is the write surface (projection-only; `clear()` lives here to
-serve rebuild), the plural `*s.ts` is the read surface (query-only). Three
+serve rebuild), the plural `*s.ts` is the read surface (query-only). Four
 projection-backed models: `vendor-storefront-view`, `catalogue-view`,
-`market-schedule-view`.
+`market-schedule-view`, `market-day-view`.
 
 Three things look like projections and aren't:
 
-- **`upcoming-market-days`** — computed from `MarketScheduleViews` at query time; no store.
+- **`upcoming-market-days`** — computed at query time from `MarketScheduleViews`,
+  joined with `MarketDayViews` and `CatalogueViews` (the day's menu); no store of its own.
 - **`customer-storefront`** — `FindCustomerStorefrontHandler` composes registry,
   views and the upcoming-market-days handler per request; the composition is the view.
 - **`SubdomainRegistry`** — written by command handlers, **not derivable from the
