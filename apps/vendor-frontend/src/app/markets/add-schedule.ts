@@ -204,12 +204,12 @@ export class AddSchedule {
   private readonly codePostalValid = computed(() => /^\d{5}$/.test(this.fields().value().codePostal.trim()));
   protected readonly codePostalInvalid = computed(() => !this.codePostalValid());
 
+  // Both times are required. A day with no closing time never ends: it holds the vendor's
+  // "prochain menu" card on a market that finished hours ago, and keeps a packed-up stall
+  // on the customer storefront until midnight.
   private readonly daysValid = computed(() => {
     const days = this.days();
-    return (
-      days.length > 0 &&
-      days.every((day) => !(day.endTime && !day.startTime) && !(day.startTime && day.endTime && day.endTime <= day.startTime))
-    );
+    return days.length > 0 && days.every((day) => !!day.startTime && !!day.endTime && day.endTime > day.startTime);
   });
 
   protected readonly cannotSubmit = computed(

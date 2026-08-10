@@ -132,18 +132,28 @@ describe('AddSchedule', () => {
     expect(submitButton()).toBeDisabled();
   });
 
-  it('accepts a day with its hours cleared', async () => {
-    const { view, markets } = await renderForm();
+  // A day with no closing time never ends: it hides the next day from the vendor's menu
+  // card until midnight, and lists a packed-up market to customers all evening.
+  it('will not submit a day with no closing time', async () => {
+    const { view } = await renderForm();
+    fillRequired();
+    fireEvent.click(screen.getByRole('button', { name: /^mardi$/i }));
+    view.detectChanges();
+    fireEvent.input(screen.getByLabelText(/fin mardi/i), { target: { value: '' } });
+    view.detectChanges();
+
+    expect(submitButton()).toBeDisabled();
+  });
+
+  it('will not submit a day with no opening time', async () => {
+    const { view } = await renderForm();
     fillRequired();
     fireEvent.click(screen.getByRole('button', { name: /^mardi$/i }));
     view.detectChanges();
     fireEvent.input(screen.getByLabelText(/début mardi/i), { target: { value: '' } });
-    fireEvent.input(screen.getByLabelText(/fin mardi/i), { target: { value: '' } });
     view.detectChanges();
 
-    fireEvent.click(submitButton());
-
-    expect(markets.registered?.days).toEqual([{ day: 'TUE' }]);
+    expect(submitButton()).toBeDisabled();
   });
 
   describe('editing an existing schedule', () => {
