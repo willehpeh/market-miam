@@ -84,4 +84,4 @@ separately). Storefront is display-only today (dish-card → dish-sheet, no cart
 - Builds on ADR 0007 (VO constructor validation), 0008 (no getters — the flat/
   variant self-queries), 0009 (one event per command / vendor-scoped streams),
   0020 (catalogue naming), 0029 (postgres adapters), and the domain-error → 400
-  filter.
+  filter (ADR 0045).

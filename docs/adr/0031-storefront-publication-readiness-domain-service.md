@@ -53,7 +53,7 @@ from several vendor-scoped streams.
 - **`Storefront.publish()` guards only what is local** — must be open,
   idempotent (already-published → no-op) — and raises the event. The service
   gates readiness and throws `StorefrontNotReadyToPublish(missing)` (extends
-  `DomainError` → 400 with reasons; ADR on domain-error mapping).
+  `DomainError` → 400 with reasons; ADR 0045).
 
 - **Thin handler**: load storefront/catalogue/calendar, delegate to the service,
   save the storefront. One aggregate mutated, one event — ADR 0009 preserved;
