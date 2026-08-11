@@ -102,9 +102,11 @@ A single bounded context, five aggregates: **Vendor**, **Storefront**,
 **Catalogue**, **Calendar**, **MarketDay** — plus the subdomain registry and the
 read side (vendor storefront, catalogue, market-schedule and customer-storefront
 views). A customer-facing bounded context may emerge later as the language
-diverges between vendor operations and customer discovery/intent. Billing, when
-it comes, is its own context (see `archive/DEFERRED.md`, "Subscription as a
-publication requirement").
+diverges between vendor operations and customer discovery/intent. Billing is
+its own context on the shared event log (ADR 0048; integration seam in
+`archive/DEFERRED.md`, "Subscription as a publication requirement") — not yet
+built. If vendors ever sell to their customers through the platform, that is a
+further Ordering context, not an extension of Billing (ADR 0048).
 
 ## Event Catalog (as built)
 

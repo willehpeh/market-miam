@@ -1,6 +1,6 @@
 # 0004. Single bounded context for market operations
 
-Date: 2026-05-01 · Status: Accepted
+Date: 2026-05-01 · Status: Accepted · Amended 2026-08-11 by [0048](0048-billing-bounded-context-shared-event-log.md) — Billing joins as a second context; this decision now scopes Market Days, not the system
 
 ## Context
 

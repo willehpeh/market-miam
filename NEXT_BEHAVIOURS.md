@@ -27,7 +27,7 @@ doc. Legal and website work track their own remaining sections:
 
 * `vendorIdFrom` validation — when a failure scenario justifies it
 * client-supplied idempotency — on the first relative mutation or non-repeatable side effect
-* subscription as a publication requirement — when the first paid plan ships
+* subscription as a publication requirement — when the first paid plan ships (context decisions taken: ADR 0048)
 * scoped projection reset — when full-log replay gets slow or erasure volume gets user-visible
 * orphan-checkpoint detection — if a checkpoint is ever renamed
 * per-event dead-lettering — on the first real poison event (alert design ready: `docs/O11Y-PLAN.md`)
