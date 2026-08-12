@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { StorefrontPage } from './storefront-page';
 import { StorefrontViewModel } from './storefront-view-model';
 
@@ -35,28 +36,11 @@ const ACME: StorefrontViewModel = {
   ],
 };
 
-function drag(type: string, clientY: number): Event {
-  const event = new Event(type, { bubbles: true });
-  Object.assign(event, { clientY, pointerType: 'mouse', pointerId: 1 });
-  return event;
-}
-
-// jsdom's scrollTop is a plain property, so it would accept a write the browser drops. CSSOM
-// ignores scrollTop on an element with no layout box, and a closed <dialog> is display:none.
-function trackScrollTop(scroller: HTMLElement, dialog: HTMLDialogElement): void {
-  let position = 0;
-  Object.defineProperty(scroller, 'scrollTop', {
-    configurable: true,
-    get: () => position,
-    set: (value: number) => {
-      if (dialog.open) {
-        position = value;
-      }
-    },
-  });
-}
-
 describe('StorefrontPage', () => {
+  beforeEach(() => {
+    TestBed.configureTestingModule({ providers: [provideRouter([])] });
+  });
+
   it('renders the vendor name, description and phone for a published storefront', () => {
     const fixture = TestBed.createComponent(StorefrontPage);
     fixture.componentRef.setInput('storefront', ACME);
@@ -94,21 +78,17 @@ describe('StorefrontPage', () => {
     expect(link.textContent?.trim()).toBe('Market Miam');
   });
 
-  it('renders the catalogue dishes with prices, and thumbnails only for dishes with a photo', () => {
+  // The carte is a page of its own: this one is "should I go", the carte is "what can they
+  // make". Listing both left the page repeating every dish it had already shown.
+  it('points to the carte instead of listing it', () => {
     const fixture = TestBed.createComponent(StorefrontPage);
     fixture.componentRef.setInput('storefront', ACME);
     fixture.detectChanges();
 
-    const text = fixture.nativeElement.textContent as string;
-    expect(text).toContain('Notre carte');
-    expect(text).toContain('Bœuf bourguignon');
-    expect(text).toContain('13,00 €');
-    expect(text).toContain('Tarte tatin');
-    expect(text).toContain('6,00 €');
-    const thumbs = Array.from(fixture.nativeElement.querySelectorAll('img'))
-      .map(img => (img as HTMLImageElement).src);
-    expect(thumbs).toContain('https://cdn.test/thumb/dish-1');
-    expect(thumbs.some(src => src.includes('dish-2'))).toBe(false);
+    const link = fixture.nativeElement.querySelector('a[href="/carte"]') as HTMLAnchorElement;
+    expect(link.textContent).toContain('Notre carte');
+    expect(fixture.nativeElement.querySelectorAll('[data-dish]').length).toBe(0);
+    expect(fixture.nativeElement.textContent as string).not.toContain('Bœuf bourguignon');
   });
 
   it('renders the upcoming markets with a date badge and details, flagging cancelled ones', () => {
@@ -117,7 +97,7 @@ describe('StorefrontPage', () => {
     fixture.detectChanges();
 
     const text = fixture.nativeElement.textContent as string;
-    expect(text).toContain('Prochains marchés');
+    expect(text).toContain('Marchés suivants');
     expect(text).toContain('JEU');
     expect(text).toContain('18');
     expect(text).toContain('JUIN');
@@ -128,7 +108,7 @@ describe('StorefrontPage', () => {
     expect(text).toContain('Annulé');
   });
 
-  // The day's offering belongs above the standing carte: it is what a customer can
+  // The day's offering belongs above the way into the carte: it is what a customer can
   // actually buy on the next market day, and the carte is everything the vendor ever makes.
   it('leads with the next market and its menu, above the carte', () => {
     const fixture = TestBed.createComponent(StorefrontPage);
@@ -150,7 +130,7 @@ describe('StorefrontPage', () => {
     const fixture = TestBed.createComponent(StorefrontPage);
     fixture.componentRef.setInput('storefront', {
       ...ACME,
-      upcomingMarkets: [{ ...ACME.upcomingMarkets[0], dishes: [ACME.dishes[1]] }],
+      upcomingMarkets: [ACME.upcomingMarkets[0], { ...ACME.upcomingMarkets[1], dishes: [ACME.dishes[1]] }],
     });
     fixture.detectChanges();
 
@@ -158,6 +138,28 @@ describe('StorefrontPage', () => {
     expect(cards.length).toBe(2);
     expect((cards[1].textContent as string)).toContain('Tarte tatin');
     expect((cards[1].textContent as string)).toContain('6,00 €');
+  });
+
+  // The card at the top and the first card of the list were the same market a screen apart —
+  // identical down to the pixel on a day with no menu planned. tmp/too-much.png.
+  it('lists only the markets after the one it leads with', () => {
+    const fixture = TestBed.createComponent(StorefrontPage);
+    fixture.componentRef.setInput('storefront', ACME);
+    fixture.detectChanges();
+
+    const text = fixture.nativeElement.textContent as string;
+    expect(text.split('Marché Saint-Antoine').length - 1).toBe(1);
+    expect(text.indexOf('Marchés suivants')).toBeLessThan(text.indexOf('Marché de la Croix-Rousse'));
+  });
+
+  it('says nothing about later markets when the vendor has only the next one', () => {
+    const fixture = TestBed.createComponent(StorefrontPage);
+    fixture.componentRef.setInput('storefront', { ...ACME, upcomingMarkets: [ACME.upcomingMarkets[0]] });
+    fixture.detectChanges();
+
+    const text = fixture.nativeElement.textContent as string;
+    expect(text).toContain('Prochain marché');
+    expect(text).not.toContain('Marchés suivants');
   });
 
   // The day's menu is browsable like the carte, not a price list: same cards, same sheet.
@@ -180,48 +182,6 @@ describe('StorefrontPage', () => {
     expect(dialog.textContent).toContain('Mijoté 7 heures');
   });
 
-  // The carte is a reference list you scan; the day's menu is what you can actually buy.
-  // Rendering both as the same big card left them tied, with the wrong one winning on size.
-  it('renders the carte as rows, keeping the big cards for the day\'s menu', () => {
-    const fixture = TestBed.createComponent(StorefrontPage);
-    fixture.componentRef.setInput('storefront', {
-      ...ACME,
-      upcomingMarkets: [{ ...ACME.upcomingMarkets[0], dishes: [ACME.dishes[0]] }],
-    });
-    fixture.detectChanges();
-
-    expect(fixture.nativeElement.querySelectorAll('app-dish-row').length).toBe(2);
-    const cards = Array.from(fixture.nativeElement.querySelectorAll('app-dish-card')) as HTMLElement[];
-    expect(cards.length).toBe(1);
-    expect(cards.every((card) => card.closest('app-market-card') !== null)).toBe(true);
-  });
-
-  // Dish photos are optional, so a real carte mixes the two. Without something occupying
-  // the square, those rows start at a different left edge and read as broken.
-  it('gives a carte row a thumbnail when the dish has a photo, and an icon when it does not', () => {
-    const fixture = TestBed.createComponent(StorefrontPage);
-    fixture.componentRef.setInput('storefront', ACME);
-    fixture.detectChanges();
-
-    const rows = fixture.nativeElement.querySelectorAll('app-dish-row');
-    expect((rows[0].querySelector('img') as HTMLImageElement).src).toBe('https://cdn.test/thumb/dish-1');
-    expect(rows[1].querySelector('img')).toBeNull();
-    expect(rows[1].querySelector('.fa-utensils')).not.toBeNull();
-  });
-
-  it('opens the dish sheet from a carte row', () => {
-    const fixture = TestBed.createComponent(StorefrontPage);
-    fixture.componentRef.setInput('storefront', ACME);
-    fixture.detectChanges();
-
-    (fixture.nativeElement.querySelector('app-dish-row [data-dish="dish-2"]') as HTMLElement).click();
-    fixture.detectChanges();
-
-    const dialog = fixture.nativeElement.querySelector('dialog') as HTMLDialogElement;
-    expect(dialog.open).toBe(true);
-    expect(dialog.textContent).toContain('Aux pommes');
-  });
-
   it('keeps the upcoming list to names and prices, without dish cards', () => {
     const fixture = TestBed.createComponent(StorefrontPage);
     fixture.componentRef.setInput('storefront', {
@@ -231,8 +191,8 @@ describe('StorefrontPage', () => {
     fixture.detectChanges();
 
     const listCards = fixture.nativeElement.querySelectorAll('app-market-card');
-    expect(listCards[2].querySelector('[data-dish]')).toBeNull();
-    expect(listCards[2].textContent as string).toContain('Bœuf bourguignon');
+    expect(listCards[1].querySelector('[data-dish]')).toBeNull();
+    expect(listCards[1].textContent as string).toContain('Bœuf bourguignon');
   });
 
   it('says nothing about a menu on a day with none planned', () => {
@@ -252,190 +212,6 @@ describe('StorefrontPage', () => {
     fixture.detectChanges();
 
     expect(fixture.nativeElement.textContent as string).toContain('En cours');
-  });
-
-  it('opens the dish sheet with the full details when a dish is clicked', () => {
-    const fixture = TestBed.createComponent(StorefrontPage);
-    fixture.componentRef.setInput('storefront', ACME);
-    fixture.detectChanges();
-
-    (fixture.nativeElement.querySelector('[data-dish="dish-1"]') as HTMLElement).click();
-    fixture.detectChanges();
-
-    const dialog = fixture.nativeElement.querySelector('dialog') as HTMLDialogElement;
-    expect(dialog.open).toBe(true);
-    expect(dialog.textContent).toContain('Bœuf bourguignon');
-    expect(dialog.textContent).toContain('Mijoté 7 heures');
-    expect(dialog.textContent).toContain('13,00 €');
-    expect((dialog.querySelector('img') as HTMLImageElement).src).toBe('https://cdn.test/sheet/dish-1');
-  });
-
-  it('lists the variants in the sheet for a dish with variants', () => {
-    const withVariantDish: StorefrontViewModel = {
-      ...ACME,
-      dishes: [
-        {
-          itemId: 'pizza',
-          name: 'Pizza',
-          description: 'Wood-fired',
-          priceLabel: 'dès 9,00 €',
-          variants: [
-            { name: 'Margherita', description: 'tomato & basil', priceLabel: '9,00 €' },
-            { name: 'Pepperoni', description: 'spicy', priceLabel: '12,00 €' },
-          ],
-          photo: null,
-        },
-      ],
-    };
-    const fixture = TestBed.createComponent(StorefrontPage);
-    fixture.componentRef.setInput('storefront', withVariantDish);
-    fixture.detectChanges();
-
-    (fixture.nativeElement.querySelector('[data-dish="pizza"]') as HTMLElement).click();
-    fixture.detectChanges();
-
-    const dialog = fixture.nativeElement.querySelector('dialog') as HTMLDialogElement;
-    const text = dialog.textContent as string;
-    expect(text).toMatch(/formats/i);
-    expect(text).toContain('Margherita');
-    expect(text).toContain('tomato & basil');
-    expect(text).toContain('9,00 €');
-    expect(text).toContain('Pepperoni');
-    expect(text).toContain('spicy');
-    expect(text).toContain('12,00 €');
-  });
-
-  // Same reasoning as the storefront description: jsdom lays nothing out, so the class is
-  // the only observable trace.
-  it('keeps the paragraph breaks a vendor typed into a dish and its formats', () => {
-    const multiline: StorefrontViewModel = {
-      ...ACME,
-      dishes: [
-        {
-          itemId: 'pizza',
-          name: 'Pizza',
-          description: 'Pâte maturée 48 h.\n\nFour à bois.',
-          priceLabel: 'dès 9,00 €',
-          variants: [{ name: 'Margherita', description: '250 g\npour une personne', priceLabel: '9,00 €' }],
-          photo: null,
-        },
-      ],
-    };
-    const fixture = TestBed.createComponent(StorefrontPage);
-    fixture.componentRef.setInput('storefront', multiline);
-    fixture.detectChanges();
-
-    (fixture.nativeElement.querySelector('[data-dish="pizza"]') as HTMLElement).click();
-    fixture.detectChanges();
-
-    const dialog = fixture.nativeElement.querySelector('dialog') as HTMLDialogElement;
-    const description = Array.from(dialog.querySelectorAll('p')).find((p) => p.textContent?.includes('Pâte maturée'));
-    const detail = Array.from(dialog.querySelectorAll('span')).find((s) => s.textContent?.includes('250 g'));
-    expect(description?.textContent).toContain('\n\n');
-    expect(description?.className).toContain('whitespace-pre-line');
-    expect(detail?.className).toContain('whitespace-pre-line');
-  });
-
-  it('scrolls the whole sheet content, photo and title included', () => {
-    const fixture = TestBed.createComponent(StorefrontPage);
-    fixture.componentRef.setInput('storefront', ACME);
-    fixture.detectChanges();
-
-    (fixture.nativeElement.querySelector('[data-dish="dish-1"]') as HTMLElement).click();
-    fixture.detectChanges();
-
-    const scroller = fixture.nativeElement.querySelector('dialog .overflow-y-auto') as HTMLElement;
-    expect(scroller.querySelector('img')).not.toBeNull();
-    expect(scroller.textContent).toContain('Bœuf bourguignon');
-    expect(scroller.textContent).toContain('13,00 €');
-    expect(scroller.textContent).toContain('Mijoté 7 heures');
-  });
-
-  it('resets the scroll position when a dish is opened, once the sheet is on screen', () => {
-    const fixture = TestBed.createComponent(StorefrontPage);
-    fixture.componentRef.setInput('storefront', ACME);
-    fixture.detectChanges();
-
-    (fixture.nativeElement.querySelector('[data-dish="dish-1"]') as HTMLElement).click();
-    fixture.detectChanges();
-    const dialog = fixture.nativeElement.querySelector('dialog') as HTMLDialogElement;
-    const scroller = fixture.nativeElement.querySelector('dialog .overflow-y-auto') as HTMLElement;
-    trackScrollTop(scroller, dialog);
-    scroller.scrollTop = 200;
-    dialog.click();
-    fixture.detectChanges();
-
-    (fixture.nativeElement.querySelector('[data-dish="dish-2"]') as HTMLElement).click();
-    fixture.detectChanges();
-
-    expect(scroller.scrollTop).toBe(0);
-  });
-
-  it('closes the dish sheet on a backdrop click, but not when its content is clicked', () => {
-    const fixture = TestBed.createComponent(StorefrontPage);
-    fixture.componentRef.setInput('storefront', ACME);
-    fixture.detectChanges();
-
-    (fixture.nativeElement.querySelector('[data-dish="dish-1"]') as HTMLElement).click();
-    fixture.detectChanges();
-
-    const dialog = fixture.nativeElement.querySelector('dialog') as HTMLDialogElement;
-    expect(dialog.open).toBe(true);
-
-    (dialog.querySelector('h3') as HTMLElement).click();
-    fixture.detectChanges();
-    expect(dialog.open).toBe(true);
-
-    dialog.click();
-    fixture.detectChanges();
-    expect(dialog.open).toBe(false);
-  });
-
-  it('dismisses the dish sheet when its content is dragged past the threshold, but snaps back on a small drag', () => {
-    const fixture = TestBed.createComponent(StorefrontPage);
-    fixture.componentRef.setInput('storefront', ACME);
-    fixture.detectChanges();
-
-    (fixture.nativeElement.querySelector('[data-dish="dish-1"]') as HTMLElement).click();
-    fixture.detectChanges();
-
-    const dialog = fixture.nativeElement.querySelector('dialog') as HTMLDialogElement;
-    Object.defineProperty(dialog, 'offsetHeight', { value: 400, configurable: true });
-    const title = dialog.querySelector('h3') as HTMLElement;
-
-    title.dispatchEvent(drag('pointerdown', 100));
-    title.dispatchEvent(drag('pointermove', 120));
-    title.dispatchEvent(drag('pointerup', 120));
-    fixture.detectChanges();
-    expect(dialog.open).toBe(true);
-
-    title.dispatchEvent(drag('pointerdown', 100));
-    title.dispatchEvent(drag('pointermove', 400));
-    title.dispatchEvent(drag('pointerup', 400));
-    fixture.detectChanges();
-    expect(dialog.open).toBe(false);
-  });
-
-  it('scrolls instead of dragging when the sheet content is not at the top', () => {
-    const fixture = TestBed.createComponent(StorefrontPage);
-    fixture.componentRef.setInput('storefront', ACME);
-    fixture.detectChanges();
-
-    (fixture.nativeElement.querySelector('[data-dish="dish-1"]') as HTMLElement).click();
-    fixture.detectChanges();
-
-    const dialog = fixture.nativeElement.querySelector('dialog') as HTMLDialogElement;
-    Object.defineProperty(dialog, 'offsetHeight', { value: 400, configurable: true });
-    const scroller = dialog.querySelector('.overflow-y-auto') as HTMLElement;
-    scroller.scrollTop = 200;
-
-    scroller.dispatchEvent(drag('pointerdown', 100));
-    scroller.dispatchEvent(drag('pointermove', 400));
-    scroller.dispatchEvent(drag('pointerup', 400));
-    fixture.detectChanges();
-
-    expect(dialog.open).toBe(true);
-    expect(dialog.style.transform).toBe('');
   });
 
   it('shows a coming-soon message with the title for an unpublished storefront', () => {

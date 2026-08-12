@@ -1,25 +1,31 @@
 import { DOCUMENT, inject, REQUEST } from '@angular/core';
 import { ResolveFn } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
-import { catchError, map, Observable, of } from 'rxjs';
+import { catchError, map, Observable, of, tap } from 'rxjs';
 import { environment } from '../../environments/environment';
+import { currentOrigin } from '../core/request-url';
 import { CustomerStorefront } from './customer-storefront';
+import { StorefrontMetadata } from './storefront-metadata';
 import { StorefrontViewModel, toViewModel } from './storefront-view-model';
 
 export const storefrontResolver: ResolveFn<StorefrontViewModel | null> = (route): Observable<StorefrontViewModel | null> => {
   const request = inject(REQUEST, { optional: true });
   const http = inject(HttpClient);
+  const metadata = inject(StorefrontMetadata);
+  const origin = currentOrigin();
   // Server: use request.url — behind a trusted proxy Angular resolves it from
   // X-Forwarded-Host, whereas the raw `host` header is the internal .onrender.com name.
   // Client: REQUEST is null on the hydration re-run, so read the browser's location.
   const host = request ? new URL(request.url).host : inject(DOCUMENT).location.host;
   const subdomain = subdomainFrom(host, route.queryParamMap.get('subdomain'));
-  if (!subdomain) {
-    return of(null);
-  }
-  return http
-    .get<CustomerStorefront>(`${environment.apiBaseUrl}/api/public/storefront/${subdomain}`)
-    .pipe(map(toViewModel), catchError(() => of(null)));
+  const storefront = subdomain
+    ? http
+        .get<CustomerStorefront>(`${environment.apiBaseUrl}/api/public/storefront/${subdomain}`)
+        .pipe(map(toViewModel), catchError(() => of(null)))
+    : of(null);
+  // The card is set here rather than in a page, so every route under this resolve is
+  // indexable as itself — and the tags are written during the SSR render pass either way.
+  return storefront.pipe(tap(view => metadata.set(view, origin)));
 };
 
 function subdomainFrom(host: string, queryParam: string | null): string | null {

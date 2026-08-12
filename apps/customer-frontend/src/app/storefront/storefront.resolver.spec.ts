@@ -6,6 +6,7 @@ import { ActivatedRouteSnapshot, RouterStateSnapshot, convertToParamMap } from '
 import { firstValueFrom, Observable } from 'rxjs';
 import { storefrontResolver } from './storefront.resolver';
 import { CustomerStorefront } from './customer-storefront';
+import { StorefrontMetadata } from './storefront-metadata';
 import { StorefrontViewModel } from './storefront-view-model';
 
 const ACME: CustomerStorefront = {
@@ -45,6 +46,9 @@ describe('storefrontResolver', () => {
         provideHttpClientTesting(),
         { provide: DOCUMENT, useValue: { location } },
         { provide: REQUEST, useFactory: () => request },
+        // The document here is a bare location stub, which Meta cannot read. What the
+        // resolver does with the tags is app.routes.spec's business.
+        { provide: StorefrontMetadata, useValue: { set: () => undefined } },
       ],
     });
     http = TestBed.inject(HttpTestingController);

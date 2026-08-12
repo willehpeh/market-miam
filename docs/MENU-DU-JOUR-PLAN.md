@@ -261,9 +261,10 @@ read them.
 absent day cannot hold a menu; a customer heading out needs to know the next market is off more
 than they need the one after it, so it leads, greyed and struck through.
 
-Prochains marchés **repeats** the promoted day (decided while grilling slice 5's follow-ups):
+~~Prochains marchés **repeats** the promoted day (decided while grilling slice 5's follow-ups):
 a list that silently began at the second market would read as a bug. Revisit if it looks
-redundant with real vendors.
+redundant with real vendors.~~ Revisited: the list now drops the promoted day and is titled
+*Marchés suivants* — `LIVE-MODE-PLAN.md` decision 33.
 
 ## Slice 7 — docs (done)
 

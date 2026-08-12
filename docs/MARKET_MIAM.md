@@ -150,8 +150,8 @@ further Ordering context, not an extension of Billing (ADR 0048).
 The MVP is **vendor-facing first**: the catalogue and market day planning tool, with the customer-facing published page as the visible output.
 
 1. **Build the catalogue** — ✅ shipped end-to-end (add, revise, re-photo, retire, reorder, variants)
-1. **Plan market days** — ✅ shipped end-to-end (`SetMarketDayMenu` → `MarketDayMenuSet`, the whole day's menu in one command; read model, `PUT /market-days/:marketId/:date/menu`, the menu joined onto upcoming days, a *Prochain marché* card and menu editor in the vendor app, and the day's menu on the storefront above the carte) — see `MENU-DU-JOUR-PLAN.md`
-1. **Publish** — ✅ shipped: publication readiness + public storefront (carte, upcoming markets, absences) at the vendor's subdomain
+1. **Plan market days** — ✅ shipped end-to-end (`SetMarketDayMenu` → `MarketDayMenuSet`, the whole day's menu in one command; read model, `PUT /market-days/:marketId/:date/menu`, the menu joined onto upcoming days, a *Prochain marché* card and menu editor in the vendor app, and the day's menu leading the storefront) — see `MENU-DU-JOUR-PLAN.md`
+1. **Publish** — ✅ shipped: publication readiness + public storefront (next market, upcoming markets, absences) at the vendor's subdomain, with the carte on its own `/carte` page — see `LIVE-MODE-PLAN.md` slice 0
 1. **Sold-out tracking** — domain built (`ItemMarkedAsSoldOut`); **no UI**. Cheapest public-roadmap item to ship — a frontend job, not a domain one
 1. **Post-market review** — not built (three-outcomes model, above)
 

@@ -98,6 +98,12 @@ import { DragToDismiss } from '../../core/drag-to-dismiss';
           </div>
           @if (dish.photo; as photo) {
             <img [src]="photo.sheetUrl" alt="" class="aspect-4/3 w-full rounded-card object-cover" />
+          } @else {
+            <!-- Surface here, canvas on the card: the placeholder is the quiet panel against
+                 whatever it sits on, and the sheet itself is canvas. -->
+            <span class="grid aspect-4/3 w-full place-items-center rounded-card bg-surface text-4xl text-line-strong">
+              <i class="fa-solid fa-utensils" aria-hidden="true"></i>
+            </span>
           }
           <div class="mt-5 flex items-baseline justify-between gap-3">
             <h3 class="text-2xl font-bold text-ink">{{ dish.name }}</h3>
