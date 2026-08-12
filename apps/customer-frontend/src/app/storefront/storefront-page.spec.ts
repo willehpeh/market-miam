@@ -17,9 +17,8 @@ const ACME: StorefrontViewModel = {
       description: 'Mijoté 7 heures',
       priceLabel: '13,00 €',
       photo: {
-        cardUrl: 'https://cdn.test/card/dish-1',
-        sheetUrl: 'https://cdn.test/sheet/dish-1',
-        thumbUrl: 'https://cdn.test/thumb/dish-1',
+        src: 'https://cdn.test/photo/dish-1',
+        srcset: 'https://cdn.test/photo/dish-1 800w, https://cdn.test/photo/dish-1-big 1600w',
       },
     },
     {

@@ -15,7 +15,15 @@ import { DishViewModel } from '../storefront-view-model';
       (click)="chosen.emit(dish())"
     >
       @if (dish().photo; as photo) {
-        <img [src]="photo.cardUrl" alt="" class="mb-3 aspect-16/10 w-full rounded-card object-cover" />
+        <!-- sizes mirrors the layout: ~20rem in a desktop grid column, otherwise the
+             page's max-w-xl minus its px-5 and the card's p-4. -->
+        <img
+          [src]="photo.src"
+          [srcset]="photo.srcset"
+          sizes="(min-width: 1024px) 20rem, (min-width: 36rem) 31.5rem, calc(100vw - 4.5rem)"
+          alt=""
+          class="mb-3 aspect-16/10 w-full rounded-card object-cover"
+        />
       } @else {
         <!-- Dish photos are optional, so a real carte mixes the two. The canvas keeps the
              card's shape without pretending a photo is loading. -->
