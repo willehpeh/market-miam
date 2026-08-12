@@ -3,7 +3,8 @@
   "version": "0.0.0",
   "license": "AGPL-3.0-or-later",
   "scripts": {
-    "test:all": "node tools/test-all.mjs"
+    "test:all": "node tools/test-all.mjs",
+    "test:map": "node tools/test-map/generate.mjs"
   },
   "private": true,
   "dependencies": {

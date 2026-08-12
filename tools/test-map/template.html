@@ -1,0 +1,679 @@
+<title>Market Miam Test Map</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root {
+    color-scheme: light;
+    --plane: #f9f9f7;
+    --surface: #fcfcfb;
+    --ink: #0b0b0b;
+    --ink-2: #52514e;
+    --ink-3: #898781;
+    --hairline: #e1e0d9;
+    --border: rgba(11, 11, 11, 0.10);
+    --backend: #2a78d6;
+    --frontend: #eb6834;
+    --packages: #1baf7a;
+    --backend-tint: rgba(42, 120, 214, 0.13);
+    --frontend-tint: rgba(235, 104, 52, 0.13);
+    --packages-tint: rgba(27, 175, 122, 0.15);
+    --mark: rgba(237, 161, 0, 0.35);
+    --shadow: 0 12px 32px rgba(11, 11, 11, 0.14);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --plane: #0d0d0d;
+      --surface: #1a1a19;
+      --ink: #ffffff;
+      --ink-2: #c3c2b7;
+      --ink-3: #898781;
+      --hairline: #2c2c2a;
+      --border: rgba(255, 255, 255, 0.10);
+      --backend: #3987e5;
+      --frontend: #d95926;
+      --packages: #199e70;
+      --backend-tint: rgba(57, 135, 229, 0.18);
+      --frontend-tint: rgba(217, 89, 38, 0.18);
+      --packages-tint: rgba(25, 158, 112, 0.20);
+      --mark: rgba(201, 133, 0, 0.45);
+      --shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --plane: #0d0d0d;
+    --surface: #1a1a19;
+    --ink: #ffffff;
+    --ink-2: #c3c2b7;
+    --ink-3: #898781;
+    --hairline: #2c2c2a;
+    --border: rgba(255, 255, 255, 0.10);
+    --backend: #3987e5;
+    --frontend: #d95926;
+    --packages: #199e70;
+    --backend-tint: rgba(57, 135, 229, 0.18);
+    --frontend-tint: rgba(217, 89, 38, 0.18);
+    --packages-tint: rgba(25, 158, 112, 0.20);
+    --mark: rgba(201, 133, 0, 0.45);
+    --shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--plane);
+    color: var(--ink);
+    font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  button { font: inherit; color: inherit; }
+
+  .wrap { max-width: 1360px; margin: 0 auto; padding: 20px clamp(14px, 3vw, 32px) 40px; }
+
+  /* ---- header ---- */
+  header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 28px; margin-bottom: 6px; }
+  .brand h1 { font-size: clamp(21px, 3vw, 27px); font-weight: 750; letter-spacing: -0.015em; margin: 0; text-wrap: balance; }
+  .brand .eyebrow {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--ink-3); margin: 0 0 2px;
+  }
+  .stats { display: flex; gap: 22px; margin-left: auto; }
+  .stat { text-align: right; }
+  .stat b { display: block; font-size: 21px; font-weight: 700; font-variant-numeric: tabular-nums;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: -0.02em; }
+  .stat span { font-size: 11px; letter-spacing: 0.09em; text-transform: uppercase; color: var(--ink-3); }
+
+  .subtitle { color: var(--ink-2); font-size: 14px; margin: 0 0 16px; max-width: 68ch; }
+
+  /* ---- control row ---- */
+  .controls {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px;
+    padding: 10px 0 14px; position: relative; z-index: 3;
+  }
+  .search { position: relative; flex: 1 1 240px; max-width: 380px; }
+  .search input {
+    width: 100%; padding: 7px 30px 7px 12px;
+    border: 1px solid var(--hairline); border-radius: 8px;
+    background: var(--surface); color: var(--ink); font: inherit; font-size: 14px;
+  }
+  .search input::placeholder { color: var(--ink-3); }
+  .search input::-webkit-search-cancel-button { display: none; }
+  .search input:focus-visible { outline: 2px solid var(--backend); outline-offset: 1px; }
+  .search .clear {
+    position: absolute; right: 4px; top: 50%; transform: translateY(-50%);
+    border: 0; background: none; color: var(--ink-3); cursor: pointer; padding: 4px 7px;
+    border-radius: 6px; display: none; line-height: 1;
+  }
+  .search .clear:hover { color: var(--ink); }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip {
+    border: 1px solid var(--hairline); background: var(--surface); border-radius: 999px;
+    padding: 4px 11px 4px 8px; font-size: 12.5px; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 6px; color: var(--ink-2);
+  }
+  .chip .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+  .chip[aria-pressed="true"] { color: var(--ink); border-color: var(--ink-3); }
+  .chip[aria-pressed="false"] { opacity: 0.45; }
+  .chip[aria-pressed="false"] .dot { background: var(--ink-3) !important; }
+  .chip:focus-visible, .toggle button:focus-visible, .crumb:focus-visible {
+    outline: 2px solid var(--backend); outline-offset: 1px;
+  }
+  .legend { display: flex; gap: 14px; font-size: 12.5px; color: var(--ink-2); flex-wrap: wrap; }
+  .legend .key { display: inline-flex; align-items: center; gap: 6px; }
+  .legend .sw { width: 10px; height: 10px; border-radius: 3px; }
+  .toggle { display: flex; border: 1px solid var(--hairline); border-radius: 8px; overflow: hidden; margin-left: auto; }
+  .toggle button { border: 0; background: var(--surface); padding: 6px 13px; font-size: 13px; cursor: pointer; color: var(--ink-2); }
+  .toggle button[aria-pressed="true"] { background: var(--ink); color: var(--plane); }
+
+  .matchline { font-size: 13px; color: var(--ink-2); min-height: 20px; margin: 0 0 8px; }
+  .matchline b { font-variant-numeric: tabular-nums; }
+
+  /* ---- breadcrumb ---- */
+  .crumbs { display: flex; align-items: center; gap: 8px; font-size: 13.5px; margin: 0 0 8px; min-height: 24px; }
+  .crumb { border: 0; background: none; padding: 2px 4px; cursor: pointer; color: var(--backend); border-radius: 5px; font-weight: 600; }
+  .crumb[disabled] { color: var(--ink); cursor: default; font-weight: 700; }
+  .crumbs .sep { color: var(--ink-3); }
+  .crumbs .hint { color: var(--ink-3); margin-left: 8px; font-size: 12.5px; }
+
+  /* ---- treemap ---- */
+  .map-shell { position: relative; }
+  #treemap {
+    position: relative; width: 100%; height: clamp(440px, calc(100vh - 300px), 760px);
+    background: var(--surface); border: 1px solid var(--hairline); border-radius: 12px;
+    overflow: hidden;
+  }
+  .tm-theme { position: absolute; }
+  .tm-theme-head {
+    position: absolute; left: 0; right: 0; top: 0; height: 26px;
+    display: flex; align-items: center; gap: 7px; padding: 0 8px;
+    border: 0; background: none; cursor: zoom-in; text-align: left; overflow: hidden; white-space: nowrap;
+    border-radius: 6px;
+  }
+  .tm-theme-head:hover { background: var(--border); }
+  .tm-theme-head:focus-visible { outline: 2px solid var(--backend); outline-offset: -2px; }
+  .tm-theme-head .t-name {
+    font-size: 11.5px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase;
+    color: var(--ink-2); overflow: hidden; text-overflow: ellipsis;
+  }
+  .tm-theme-head .t-count { font-size: 11px; color: var(--ink-3); font-variant-numeric: tabular-nums; flex: none; }
+  .tm-cell {
+    position: absolute; border: 0; padding: 8px 4px 4px 7px; text-align: left; cursor: pointer;
+    border-radius: 5px; overflow: hidden; display: block;
+    transition: opacity 0.18s ease;
+  }
+  .tm-cell::before { content: ""; position: absolute; left: 0; top: 0; right: 0; height: 3px; background: var(--cell-color); border-radius: 5px 5px 0 0; }
+  .tm-cell.dim { opacity: 0.14; }
+  .tm-cell:hover { box-shadow: inset 0 0 0 2px var(--cell-color); }
+  .tm-cell:focus-visible { outline: 2px solid var(--ink); outline-offset: -2px; z-index: 2; }
+  .tm-cell .f-name {
+    font-size: 12px; font-weight: 600; line-height: 1.25; color: var(--ink);
+    display: -webkit-box; -webkit-line-clamp: var(--clamp, 2); -webkit-box-orient: vertical; overflow: hidden;
+    word-break: break-word;
+  }
+  .tm-cell .f-count {
+    font-size: 10.5px; color: var(--ink-2); font-variant-numeric: tabular-nums;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  .layer-backend  { background: var(--backend-tint);  --cell-color: var(--backend); }
+  .layer-frontend { background: var(--frontend-tint); --cell-color: var(--frontend); }
+  .layer-packages { background: var(--packages-tint); --cell-color: var(--packages); }
+
+  /* ---- tooltip ---- */
+  #tooltip {
+    position: fixed; z-index: 40; pointer-events: none; display: none;
+    background: var(--surface); border: 1px solid var(--hairline); border-radius: 9px;
+    box-shadow: var(--shadow); padding: 9px 12px; max-width: 330px; font-size: 12.5px;
+  }
+  #tooltip .tt-file { font-weight: 650; margin-bottom: 2px; word-break: break-all; font-size: 12px; }
+  #tooltip .tt-meta { color: var(--ink-2); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  #tooltip .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+
+  /* ---- detail panel ---- */
+  #panel {
+    position: fixed; z-index: 50; top: 0; right: 0; bottom: 0; width: min(440px, 96vw);
+    background: var(--surface); border-left: 1px solid var(--hairline); box-shadow: var(--shadow);
+    transform: translateX(105%); transition: transform 0.22s ease;
+    display: flex; flex-direction: column;
+  }
+  #panel.open { transform: none; }
+  .panel-head { padding: 18px 20px 12px; border-bottom: 1px solid var(--hairline); }
+  .panel-head .close {
+    position: absolute; top: 12px; right: 12px; border: 1px solid var(--hairline);
+    background: var(--surface); border-radius: 8px; width: 30px; height: 30px; cursor: pointer;
+    color: var(--ink-2); line-height: 1;
+  }
+  .panel-head .close:hover { color: var(--ink); }
+  .panel-head .close:focus-visible { outline: 2px solid var(--backend); }
+  .panel-head h2 { margin: 0 0 6px; font-size: 16.5px; line-height: 1.3; padding-right: 30px; word-break: break-word; }
+  .panel-path { font-size: 11.5px; color: var(--ink-3); word-break: break-all; margin: 0 0 10px; }
+  .badges { display: flex; flex-wrap: wrap; gap: 6px; }
+  .badge {
+    font-size: 11px; padding: 2.5px 9px; border-radius: 999px; border: 1px solid var(--hairline);
+    color: var(--ink-2); display: inline-flex; align-items: center; gap: 5px;
+  }
+  .badge .dot { width: 7px; height: 7px; border-radius: 50%; }
+  .panel-body { overflow-y: auto; padding: 10px 20px 30px; flex: 1; }
+  .suite-h {
+    font-size: 12px; font-weight: 700; letter-spacing: 0.04em; color: var(--ink-2);
+    margin: 16px 0 4px; text-transform: none;
+  }
+  .suite-h .sub { color: var(--ink-3); font-weight: 500; }
+  .tests-ul { list-style: none; margin: 0; padding: 0; }
+  .tests-ul li {
+    position: relative; padding: 5px 0 5px 18px; font-size: 13.5px; line-height: 1.4;
+    border-bottom: 1px solid var(--hairline); word-break: break-word;
+  }
+  .tests-ul li:last-child { border-bottom: 0; }
+  .tests-ul li::before {
+    content: ""; position: absolute; left: 2px; top: 12px; width: 7px; height: 7px;
+    border-radius: 50%; background: var(--t-color, var(--ink-3));
+  }
+  .tests-ul li .flag {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--ink-3); border: 1px solid var(--hairline); border-radius: 4px; padding: 0.5px 5px; margin-left: 6px;
+    white-space: nowrap;
+  }
+  mark { background: var(--mark); color: inherit; border-radius: 3px; padding: 0 1px; }
+  #backdrop { position: fixed; inset: 0; z-index: 45; display: none; }
+  #backdrop.open { display: block; }
+
+  /* ---- list view ---- */
+  #listview { display: none; }
+  #listview.show { display: block; }
+  .lv-theme {
+    background: var(--surface); border: 1px solid var(--hairline); border-radius: 12px;
+    margin-bottom: 14px; overflow: hidden;
+  }
+  .lv-theme > summary {
+    list-style: none; cursor: pointer; padding: 13px 18px; display: flex; align-items: baseline; gap: 12px;
+  }
+  .lv-theme > summary::-webkit-details-marker { display: none; }
+  .lv-theme > summary:hover { background: var(--border); }
+  .lv-theme > summary:focus-visible { outline: 2px solid var(--backend); outline-offset: -2px; }
+  .lv-theme .marker { color: var(--ink-3); font-size: 11px; transition: transform 0.15s; flex: none; align-self: center; }
+  .lv-theme[open] > summary .marker { transform: rotate(90deg); }
+  .lv-theme h3 { margin: 0; font-size: 15px; }
+  .lv-theme .lv-count { margin-left: auto; color: var(--ink-2); font-size: 12.5px; font-variant-numeric: tabular-nums; flex: none; }
+  .lv-file { border-top: 1px solid var(--hairline); }
+  .lv-file > summary {
+    list-style: none; cursor: pointer; padding: 9px 18px 9px 22px; display: flex; align-items: center; gap: 9px; font-size: 13px;
+  }
+  .lv-file > summary::-webkit-details-marker { display: none; }
+  .lv-file > summary:hover { background: var(--border); }
+  .lv-file > summary:focus-visible { outline: 2px solid var(--backend); outline-offset: -2px; }
+  .lv-file .dot { width: 9px; height: 9px; border-radius: 3px; flex: none; }
+  .lv-file .path { color: var(--ink-3); font-size: 11.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .lv-file .lv-count { margin-left: auto; color: var(--ink-2); font-size: 12px; font-variant-numeric: tabular-nums; flex: none; }
+  .lv-file .lv-tests { padding: 2px 18px 12px 40px; }
+  .lv-hidden { display: none; }
+
+  footer { margin-top: 22px; color: var(--ink-3); font-size: 12.5px; max-width: 78ch; }
+  footer p { margin: 4px 0; }
+
+  @media (max-width: 720px) {
+    .stats { margin-left: 0; width: 100%; justify-content: flex-start; }
+    .stat { text-align: left; }
+    .toggle { margin-left: 0; }
+    #treemap { height: max(440px, calc(100vh - 360px)); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    #panel, .tm-cell, .lv-theme .marker { transition: none; }
+  }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <p class="eyebrow">market-miam monorepo</p>
+      <h1>Market Miam Test Map</h1>
+    </div>
+    <div class="stats" id="stats"></div>
+  </header>
+  <p class="subtitle">Every automated test in the monorepo, grouped by what it protects rather than
+    where it lives. Blocks are sized by test count. Click a theme to zoom in, click a file to read its tests.</p>
+
+  <div class="controls">
+    <div class="search">
+      <input id="q" type="search" placeholder="Search tests, suites, files…" aria-label="Search tests, suites and files">
+      <button class="clear" id="qClear" aria-label="Clear search">×</button>
+    </div>
+    <div class="chips" id="projChips" role="group" aria-label="Filter by project"></div>
+    <div class="toggle" role="group" aria-label="View">
+      <button id="btnMap" aria-pressed="true">Map</button>
+      <button id="btnList" aria-pressed="false">List</button>
+    </div>
+  </div>
+  <div class="legend" id="legend"></div>
+  <p class="matchline" id="matchline" role="status"></p>
+
+  <div class="map-shell" id="mapview">
+    <div class="crumbs" id="crumbs"></div>
+    <div id="treemap" role="group" aria-label="Treemap of tests by theme"></div>
+  </div>
+
+  <div id="listview"></div>
+
+  <footer>
+    <p>Colour marks the layer a test exercises: <b>backend APIs</b> (NestJS apps), <b>frontends</b>
+      (Angular apps), and the <b>shared-packages suite</b> under <span class="mono">test/</span> that
+      covers the domain libraries.</p>
+    <p>Parameterised <span class="mono">it.each</span> tables count as one test. Shared contract suites
+      are expanded once per implementation that runs them; files ending in
+      <span class="mono">.container.spec.ts</span> run against real Postgres in Docker.</p>
+    <p>Snapshot generated from source on __GENERATED__.</p>
+  </footer>
+</div>
+
+<div id="tooltip" role="presentation"></div>
+<div id="backdrop"></div>
+<aside id="panel" aria-label="Spec file detail" aria-hidden="true">
+  <div class="panel-head">
+    <button class="close" id="panelClose" aria-label="Close detail panel">✕</button>
+    <h2 id="panelTitle"></h2>
+    <p class="panel-path mono" id="panelPath"></p>
+    <div class="badges" id="panelBadges"></div>
+  </div>
+  <div class="panel-body" id="panelBody"></div>
+</aside>
+
+<script>
+const DATA = __DATA__;
+
+/* ---------- derived model ---------- */
+const GROUPS = {
+  backend:  { label: 'Backend APIs' },
+  frontend: { label: 'Frontends' },
+  packages: { label: 'Shared-packages suite' },
+};
+function groupOf(layer) {
+  if (layer === 'api' || layer === 'admin-api') return 'backend';
+  if (layer.endsWith('-frontend')) return 'frontend';
+  return 'packages';
+}
+const PROJECT_LABELS = {
+  'api': 'api', 'admin-api': 'admin-api', 'vendor-frontend': 'vendor-frontend',
+  'customer-frontend': 'customer-frontend', 'admin-frontend': 'admin-frontend',
+  'test (packages suite)': 'test/ (packages)',
+};
+for (const f of DATA) {
+  f.group = groupOf(f.layer);
+  f.short = f.file.split('/').pop().replace(/\.spec\.ts$/, '');
+  f.container = /\.container\.spec\.ts$/.test(f.file);
+  f.haystack = (f.file + ' ' + f.tests.map(t => t.suite.join(' ') + ' ' + t.name).join(' ')).toLowerCase();
+}
+const PROJECTS = [...new Set(DATA.map(f => f.layer))]
+  .sort((a, b) => DATA.filter(f => f.layer === b).length - DATA.filter(f => f.layer === a).length);
+const themeTotals = {};
+for (const f of DATA) themeTotals[f.theme] = (themeTotals[f.theme] || 0) + f.tests.length;
+const THEMES = Object.keys(themeTotals).sort((a, b) => themeTotals[b] - themeTotals[a]);
+const TOTAL_TESTS = DATA.reduce((s, f) => s + f.tests.length, 0);
+
+/* ---------- state ---------- */
+const state = {
+  zoom: null,            // theme name or null
+  query: '',
+  projects: new Set(PROJECTS),
+  view: 'map',
+  openFile: null,
+};
+
+/* ---------- header stats ---------- */
+document.getElementById('stats').innerHTML = [
+  [TOTAL_TESTS, 'tests'], [DATA.length, 'spec files'],
+  [THEMES.length, 'themes'], [PROJECTS.length, 'projects'],
+].map(([n, l]) => `<div class="stat"><b>${n}</b><span>${l}</span></div>`).join('');
+
+/* ---------- legend + chips ---------- */
+document.getElementById('legend').innerHTML = Object.entries(GROUPS).map(([k, g]) =>
+  `<span class="key"><span class="sw" style="background:var(--${k})"></span>${g.label}</span>`).join('');
+
+const chipsEl = document.getElementById('projChips');
+chipsEl.innerHTML = PROJECTS.map(p =>
+  `<button class="chip" data-p="${p}" aria-pressed="true">
+     <span class="dot" style="background:var(--${groupOf(p)})"></span>${PROJECT_LABELS[p] || p}</button>`).join('');
+chipsEl.addEventListener('click', e => {
+  const btn = e.target.closest('.chip'); if (!btn) return;
+  const p = btn.dataset.p;
+  if (state.projects.has(p) && state.projects.size === 1) {
+    PROJECTS.forEach(x => state.projects.add(x)); // re-enable all rather than allow zero
+  } else if (state.projects.has(p)) state.projects.delete(p);
+  else state.projects.add(p);
+  chipsEl.querySelectorAll('.chip').forEach(c =>
+    c.setAttribute('aria-pressed', String(state.projects.has(c.dataset.p))));
+  refresh();
+});
+
+/* ---------- filtering ---------- */
+function fileVisible(f) {
+  if (!state.projects.has(f.layer)) return false;
+  if (state.query && !f.haystack.includes(state.query)) return false;
+  return true;
+}
+function matchCounts() {
+  let files = 0, tests = 0;
+  for (const f of DATA) {
+    if (!state.projects.has(f.layer)) continue;
+    if (!state.query) { files++; tests += f.tests.length; continue; }
+    const hits = f.tests.filter(t => (t.suite.join(' ') + ' ' + t.name).toLowerCase().includes(state.query)).length;
+    const fileNameHit = f.file.toLowerCase().includes(state.query);
+    if (hits || fileNameHit) { files++; tests += hits || f.tests.length; }
+  }
+  return { files, tests };
+}
+function updateMatchline() {
+  const el = document.getElementById('matchline');
+  const filtered = state.query || state.projects.size < PROJECTS.length;
+  if (!filtered) { el.textContent = ''; return; }
+  const { files, tests } = matchCounts();
+  el.innerHTML = `Showing <b>${tests}</b> test${tests === 1 ? '' : 's'} in <b>${files}</b> file${files === 1 ? '' : 's'}` +
+    (state.query ? ` matching “${esc(state.query)}”` : '') + '.';
+}
+
+/* ---------- squarified treemap ---------- */
+function squarify(items, x, y, w, h) {
+  const rects = [];
+  if (!items.length || w <= 0 || h <= 0) return rects;
+  const total = items.reduce((s, i) => s + i.value, 0);
+  if (total <= 0) return rects;
+  const scale = (w * h) / total;
+  let cx = x, cy = y, cw = w, ch = h, row = [];
+  const areaOf = r => r.value * scale;
+  function worst(r, len) {
+    const s = r.reduce((a, b) => a + areaOf(b), 0);
+    let mx = 0, mn = Infinity;
+    for (const it of r) { const a = areaOf(it); mx = Math.max(mx, a); mn = Math.min(mn, a); }
+    const s2 = s * s, l2 = len * len;
+    return Math.max((l2 * mx) / s2, s2 / (l2 * mn));
+  }
+  function layoutRow(r) {
+    const s = r.reduce((a, b) => a + areaOf(b), 0);
+    const horiz = cw >= ch;                 // row along the shorter dimension
+    const len = horiz ? ch : cw;
+    const thick = len > 0 ? s / len : 0;
+    let off = 0;
+    for (const it of r) {
+      const rl = thick > 0 ? areaOf(it) / thick : 0;
+      if (horiz) rects.push({ x: cx, y: cy + off, w: thick, h: rl, item: it });
+      else rects.push({ x: cx + off, y: cy, w: rl, h: thick, item: it });
+      off += rl;
+    }
+    if (horiz) { cx += thick; cw -= thick; } else { cy += thick; ch -= thick; }
+  }
+  for (const it of items) {
+    const len = Math.max(1, Math.min(cw, ch));
+    if (row.length && worst(row, len) < worst(row.concat(it), len)) { layoutRow(row); row = []; }
+    row.push(it);
+  }
+  if (row.length) layoutRow(row);
+  return rects;
+}
+
+/* ---------- rendering: treemap ---------- */
+const mapEl = document.getElementById('treemap');
+const GAP = 2, HEAD = 26, PAD = 3;
+
+function renderMap() {
+  const W = mapEl.clientWidth, H = mapEl.clientHeight;
+  mapEl.innerHTML = '';
+  if (state.zoom) { renderFiles(mapEl, state.zoom, GAP, GAP, W - GAP * 2, H - GAP * 2); }
+  else {
+    const items = THEMES.map(t => ({ id: t, value: themeTotals[t] }));
+    for (const r of squarify(items, GAP, GAP, W - GAP * 2, H - GAP * 2)) {
+      const t = r.item.id;
+      const block = document.createElement('div');
+      block.className = 'tm-theme';
+      block.style.cssText = `left:${r.x + 1}px;top:${r.y + 1}px;width:${r.w - GAP}px;height:${r.h - GAP}px;`;
+      const nFiles = DATA.filter(f => f.theme === t).length;
+      const head = document.createElement('button');
+      head.className = 'tm-theme-head';
+      head.innerHTML = `<span class="t-name">${esc(t)}</span><span class="t-count">${themeTotals[t]}</span>`;
+      head.title = `${t} — ${themeTotals[t]} tests in ${nFiles} files. Click to zoom.`;
+      head.addEventListener('click', () => { state.zoom = t; refresh(); });
+      block.appendChild(head);
+      renderFiles(block, t, PAD, HEAD, r.w - GAP - PAD * 2, r.h - GAP - HEAD - PAD);
+      mapEl.appendChild(block);
+    }
+  }
+  renderCrumbs();
+}
+
+function renderFiles(parent, theme, x, y, w, h) {
+  const files = DATA.filter(f => f.theme === theme && f.tests.length > 0)
+    .map(f => ({ id: f.file, value: f.tests.length, f }))
+    .sort((a, b) => b.value - a.value);
+  for (const r of squarify(files, x, y, w, h)) {
+    const f = r.item.f;
+    const cw = Math.max(0, r.w - GAP), chh = Math.max(0, r.h - GAP);
+    if (cw < 3 || chh < 3) continue;
+    const cell = document.createElement('button');
+    cell.className = `tm-cell layer-${f.group}` + (fileVisible(f) ? '' : ' dim');
+    cell.style.cssText = `left:${r.x + 1}px;top:${r.y + 1}px;width:${cw}px;height:${chh}px;` +
+      `--clamp:${Math.max(1, Math.floor((chh - 14) / 15))};`;
+    const showName = cw >= 52 && chh >= 26;
+    const showCount = cw >= 52 && chh >= 44;
+    cell.innerHTML = (showName ? `<span class="f-name">${esc(f.short)}</span>` : '') +
+      (showCount ? `<span class="f-count">${f.tests.length}</span>` : '');
+    cell.setAttribute('aria-label', `${f.short}, ${f.tests.length} tests, ${f.layer}`);
+    cell.addEventListener('click', () => openPanel(f));
+    cell.addEventListener('mousemove', e => showTip(e, f));
+    cell.addEventListener('mouseleave', hideTip);
+    parent.appendChild(cell);
+  }
+}
+
+function renderCrumbs() {
+  const c = document.getElementById('crumbs');
+  if (!state.zoom) {
+    c.innerHTML = `<button class="crumb" disabled>All themes</button>
+      <span class="hint">Click a theme header to zoom</span>`;
+  } else {
+    c.innerHTML = `<button class="crumb" id="crumbRoot">All themes</button>
+      <span class="sep">›</span><button class="crumb" disabled>${esc(state.zoom)}</button>
+      <span class="hint">Esc to zoom out</span>`;
+    document.getElementById('crumbRoot').addEventListener('click', () => { state.zoom = null; refresh(); });
+  }
+}
+
+/* ---------- tooltip ---------- */
+const tip = document.getElementById('tooltip');
+function showTip(e, f) {
+  tip.innerHTML = `<div class="tt-file mono">${esc(f.file)}</div>
+    <div class="tt-meta"><span class="dot" style="background:var(--${f.group})"></span>
+    ${esc(PROJECT_LABELS[f.layer] || f.layer)} · ${f.tests.length} test${f.tests.length === 1 ? '' : 's'}` +
+    (f.container ? ' · Docker Postgres' : '') +
+    (f.tests.some(t => t.contract) ? ' · contract suite' : '') + `</div>`;
+  tip.style.display = 'block';
+  const r = tip.getBoundingClientRect();
+  let tx = e.clientX + 14, ty = e.clientY + 16;
+  if (tx + r.width > innerWidth - 8) tx = e.clientX - r.width - 10;
+  if (ty + r.height > innerHeight - 8) ty = e.clientY - r.height - 10;
+  tip.style.left = tx + 'px'; tip.style.top = ty + 'px';
+}
+function hideTip() { tip.style.display = 'none'; }
+
+/* ---------- detail panel ---------- */
+const panel = document.getElementById('panel'), backdrop = document.getElementById('backdrop');
+function openPanel(f) {
+  state.openFile = f;
+  hideTip();
+  document.getElementById('panelTitle').textContent = f.short;
+  document.getElementById('panelPath').textContent = f.file;
+  const badges = [
+    `<span class="badge"><span class="dot" style="background:var(--${f.group})"></span>${esc(PROJECT_LABELS[f.layer] || f.layer)}</span>`,
+    `<span class="badge">${esc(f.theme)}</span>`,
+    `<span class="badge">${f.tests.length} test${f.tests.length === 1 ? '' : 's'}</span>`,
+  ];
+  if (f.container) badges.push('<span class="badge">🐳 Docker Postgres</span>');
+  if (f.tests.some(t => t.contract)) badges.push('<span class="badge">contract suite</span>');
+  document.getElementById('panelBadges').innerHTML = badges.join('');
+  document.getElementById('panelBody').innerHTML = suiteTreeHTML(f);
+  panel.classList.add('open'); backdrop.classList.add('open');
+  panel.setAttribute('aria-hidden', 'false');
+  document.getElementById('panelClose').focus();
+}
+function closePanel() {
+  panel.classList.remove('open'); backdrop.classList.remove('open');
+  panel.setAttribute('aria-hidden', 'true');
+  state.openFile = null;
+}
+document.getElementById('panelClose').addEventListener('click', closePanel);
+backdrop.addEventListener('click', closePanel);
+
+function suiteTreeHTML(f) {
+  const groups = new Map();  // suite chain -> tests
+  for (const t of f.tests) {
+    const key = t.suite.join(' › ');
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(t);
+  }
+  let html = '';
+  for (const [key, tests] of groups) {
+    if (key) {
+      const parts = key.split(' › ');
+      html += `<h3 class="suite-h">${esc(parts[0])}` +
+        (parts.length > 1 ? ` <span class="sub">› ${esc(parts.slice(1).join(' › '))}</span>` : '') + '</h3>';
+    } else html += '<h3 class="suite-h"><span class="sub">(top level)</span></h3>';
+    html += `<ul class="tests-ul" style="--t-color:var(--${f.group})">` + tests.map(t => {
+      let name = esc(t.name);
+      if (state.query) {
+        const i = t.name.toLowerCase().indexOf(state.query);
+        if (i >= 0) name = esc(t.name.slice(0, i)) + '<mark>' + esc(t.name.slice(i, i + state.query.length)) + '</mark>' + esc(t.name.slice(i + state.query.length));
+      }
+      const flags = [];
+      if (t.mods.includes('.each')) flags.push('each');
+      if (t.mods.includes('.skip') || t.mods.includes('.todo')) flags.push('skipped');
+      if (t.contract) flags.push('contract');
+      return `<li>${name}${flags.map(fl => `<span class="flag">${fl}</span>`).join('')}</li>`;
+    }).join('') + '</ul>';
+  }
+  return html;
+}
+
+/* ---------- list view ---------- */
+function renderList() {
+  const lv = document.getElementById('listview');
+  lv.innerHTML = THEMES.map(t => {
+    const files = DATA.filter(f => f.theme === t && fileVisible(f));
+    const shown = files.length > 0;
+    const nTests = files.reduce((s, f) => s + f.tests.length, 0);
+    return `<details class="lv-theme${shown ? '' : ' lv-hidden'}" ${state.query ? 'open' : ''}>
+      <summary><span class="marker">▶</span><h3>${esc(t)}</h3>
+        <span class="lv-count">${nTests} tests · ${files.length} files</span></summary>
+      ${files.map(f => `<details class="lv-file" ${state.query ? 'open' : ''}>
+        <summary><span class="dot" style="background:var(--${f.group})"></span>
+          <span>${esc(f.short)}</span><span class="path mono">${esc(f.file)}</span>
+          <span class="lv-count">${f.tests.length}</span></summary>
+        <div class="lv-tests">${suiteTreeHTML(f)}</div>
+      </details>`).join('')}
+    </details>`;
+  }).join('');
+}
+
+/* ---------- search + view toggle ---------- */
+const qEl = document.getElementById('q'), qClear = document.getElementById('qClear');
+let qTimer;
+qEl.addEventListener('input', () => {
+  clearTimeout(qTimer);
+  qTimer = setTimeout(() => {
+    state.query = qEl.value.trim().toLowerCase();
+    qClear.style.display = state.query ? 'block' : 'none';
+    refresh();
+  }, 120);
+});
+qClear.addEventListener('click', () => { qEl.value = ''; state.query = ''; qClear.style.display = 'none'; refresh(); qEl.focus(); });
+
+const btnMap = document.getElementById('btnMap'), btnList = document.getElementById('btnList');
+function setView(v) {
+  state.view = v;
+  btnMap.setAttribute('aria-pressed', String(v === 'map'));
+  btnList.setAttribute('aria-pressed', String(v === 'list'));
+  document.getElementById('mapview').style.display = v === 'map' ? '' : 'none';
+  document.getElementById('listview').classList.toggle('show', v === 'list');
+  refresh();
+}
+btnMap.addEventListener('click', () => setView('map'));
+btnList.addEventListener('click', () => setView('list'));
+
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  if (panel.classList.contains('open')) closePanel();
+  else if (state.zoom) { state.zoom = null; refresh(); }
+});
+
+/* ---------- refresh + resize ---------- */
+function refresh() {
+  updateMatchline();
+  if (state.view === 'map') renderMap(); else renderList();
+}
+let rTimer;
+new ResizeObserver(() => {
+  clearTimeout(rTimer);
+  rTimer = setTimeout(() => { if (state.view === 'map') renderMap(); }, 80);
+}).observe(mapEl);
+
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+refresh();
+</script>
