@@ -29,6 +29,9 @@ export class DragToDismiss {
   private pending = false;
 
   protected onDown(event: PointerEvent): void {
+    if (typeof matchMedia === 'function' && !matchMedia('(pointer: coarse)').matches) {
+      return;
+    }
     // Dragging competes with scrolling, so it only starts from the top of the content — anywhere
     // else the gesture belongs to the scroller.
     if (this.host.nativeElement.scrollTop > 0) {

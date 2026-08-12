@@ -45,6 +45,28 @@ import { DragToDismiss } from '../../core/drag-to-dismiss';
         background-color: rgb(0 0 0 / 0);
       }
     }
+    @media (min-width: 40rem) {
+      .dish-sheet {
+        transform: scale(0.96);
+        opacity: 0;
+        transition-property: transform, opacity, overlay, display;
+      }
+      .dish-sheet[open] {
+        transform: scale(1);
+        opacity: 1;
+      }
+      .dish-sheet.closing {
+        transform: scale(0.96);
+        opacity: 0;
+      }
+      @starting-style {
+        .dish-sheet[open] {
+          transform: scale(0.96);
+          opacity: 0;
+        }
+      }
+    }
+
     @media (prefers-reduced-motion: reduce) {
       .dish-sheet,
       .dish-sheet::backdrop {
@@ -56,7 +78,7 @@ import { DragToDismiss } from '../../core/drag-to-dismiss';
     <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -- native dialog closes on Escape; click is backdrop-dismiss only -->
     <dialog
       #dialog
-      class="dish-sheet mx-auto mb-0 mt-auto w-full max-w-xl rounded-t-3xl bg-canvas p-0"
+      class="dish-sheet mx-auto mb-0 mt-auto w-full max-w-xl rounded-t-3xl bg-canvas p-0 sm:mb-auto sm:mt-auto sm:rounded-3xl"
       [class.closing]="closing()"
       [style.transform]="dragOffset() !== null ? 'translateY(' + dragOffset() + 'px)' : null"
       [style.transition]="dragOffset() !== null ? 'none' : null"
@@ -66,12 +88,12 @@ import { DragToDismiss } from '../../core/drag-to-dismiss';
       @if (dish(); as dish) {
         <div
           #scroller
-          class="h-[80dvh] overflow-y-auto overscroll-y-none p-5 pt-2"
+          class="h-[80dvh] overflow-y-auto overscroll-y-none p-5 pt-2 sm:h-auto sm:max-h-[85dvh] sm:pt-5"
           [appDragToDismiss]="dialog"
           (dragTo)="dragOffset.set($event)"
           (dismissed)="dismiss()"
         >
-          <div class="-mt-1 mb-2 flex cursor-grab justify-center py-2">
+          <div class="-mt-1 mb-2 flex cursor-grab justify-center py-2 sm:hidden">
             <span class="h-1.5 w-10 rounded-pill bg-line-strong"></span>
           </div>
           @if (dish.photo; as photo) {

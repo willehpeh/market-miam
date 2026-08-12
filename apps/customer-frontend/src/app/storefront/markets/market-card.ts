@@ -47,7 +47,7 @@ import { DishCard } from '../dishes/dish-card';
           <!-- The featured day is browsable like the carte: same cards, same sheet. The
                upcoming list stays on names and prices, or one page would carry the same
                dish cards once per market. -->
-          <ul data-menu class="mt-4 space-y-4 border-t border-line pt-4">
+          <ul data-menu class="mt-4 grid gap-4 border-t border-line pt-4 lg:grid-cols-2">
             @for (dish of market().dishes; track dish.itemId) {
               <li><app-dish-card [dish]="dish" (chosen)="chosen.emit($event)" /></li>
             }

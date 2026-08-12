@@ -17,52 +17,56 @@ import { StorefrontFooter } from './layout/storefront-footer';
     @if (storefront(); as storefront) {
       @switch (storefront.status) {
         @case ('published') {
-          <main class="mx-auto min-h-dvh max-w-xl bg-surface-sunk">
-            <header class="flex items-center gap-3 bg-surface px-5 py-4">
+          <main class="mx-auto min-h-dvh max-w-xl bg-surface-sunk lg:max-w-6xl">
+            <header class="flex items-center gap-3 bg-surface px-5 py-4 lg:px-8">
               <img src="logo-transparent.png" alt="Market Miam" class="h-6 w-auto" />
             </header>
 
             <app-storefront-hero [coverUrl]="storefront.coverUrl" [name]="storefront.name" />
 
-            @if (storefront.description) {
-              <section class="px-5 pt-6">
-                <!-- pre-line, not pre-wrap: honours the paragraph breaks a vendor typed
-                     without also preserving stray runs of spaces from a paste. -->
-                <p class="whitespace-pre-line text-ink-soft">{{ storefront.description }}</p>
-              </section>
-            }
-
-            <!-- The day's offering sits above the standing carte: it is what a customer
-                 can buy at the next market, where the carte is everything ever made. The
-                 same day repeats in Prochains marchés below, which keeps that list whole. -->
-            @if (nextMarket(); as market) {
-              <section class="px-5 pt-6">
-                <h2 class="kicker">Prochain marché</h2>
-                <div class="mt-5">
-                  <app-market-card [market]="market" [featured]="true" (chosen)="openDish($event)" />
-                </div>
-              </section>
-            }
-
-            <section class="px-5 py-8">
-              <h2 class="kicker">Notre carte</h2>
-              <ul class="mt-5 space-y-3">
-                @for (dish of storefront.dishes; track dish.itemId) {
-                  <li><app-dish-row [dish]="dish" (chosen)="openDish($event)" /></li>
+            <div class="px-5 py-6 lg:grid lg:grid-cols-3 lg:items-start lg:gap-10 lg:px-8 lg:py-10">
+              <div class="space-y-6 lg:col-span-2 lg:space-y-8">
+                @if (storefront.description) {
+                  <section>
+                    <!-- pre-line, not pre-wrap: honours the paragraph breaks a vendor typed
+                         without also preserving stray runs of spaces from a paste. -->
+                    <p class="whitespace-pre-line text-ink-soft">{{ storefront.description }}</p>
+                  </section>
                 }
-              </ul>
-            </section>
 
-            @if (storefront.upcomingMarkets.length) {
-              <section class="px-5 pb-8">
-                <h2 class="kicker">Prochains marchés</h2>
-                <ul class="mt-5 space-y-4">
-                  @for (market of storefront.upcomingMarkets; track $index) {
-                    <li><app-market-card [market]="market" /></li>
-                  }
-                </ul>
-              </section>
-            }
+                <!-- The day's offering sits above the standing carte: it is what a customer
+                     can buy at the next market, where the carte is everything ever made. The
+                     same day repeats in Prochains marchés below, which keeps that list whole. -->
+                @if (nextMarket(); as market) {
+                  <section>
+                    <h2 class="kicker">Prochain marché</h2>
+                    <div class="mt-5">
+                      <app-market-card [market]="market" [featured]="true" (chosen)="openDish($event)" />
+                    </div>
+                  </section>
+                }
+
+                <section>
+                  <h2 class="kicker">Notre carte</h2>
+                  <ul class="mt-5 grid gap-3 lg:grid-cols-2">
+                    @for (dish of storefront.dishes; track dish.itemId) {
+                      <li><app-dish-row [dish]="dish" (chosen)="openDish($event)" /></li>
+                    }
+                  </ul>
+                </section>
+              </div>
+
+              @if (storefront.upcomingMarkets.length) {
+                <aside class="mt-6 lg:sticky lg:top-6 lg:mt-0">
+                  <h2 class="kicker">Prochains marchés</h2>
+                  <ul class="mt-5 space-y-4">
+                    @for (market of storefront.upcomingMarkets; track $index) {
+                      <li><app-market-card [market]="market" /></li>
+                    }
+                  </ul>
+                </aside>
+              }
+            </div>
 
             <app-dish-sheet />
 

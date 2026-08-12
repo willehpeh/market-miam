@@ -12,7 +12,7 @@ import { DishViewModel } from '../storefront-view-model';
     <button
       type="button"
       [attr.data-dish]="dish().itemId"
-      class="flex w-full items-center gap-4 rounded-card bg-surface p-3 text-left shadow-soft"
+      class="flex h-full w-full items-center gap-4 rounded-card bg-surface p-3 text-left shadow-soft"
       (click)="chosen.emit(dish())"
     >
       @if (dish().photo; as photo) {
