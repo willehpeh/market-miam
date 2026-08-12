@@ -6,8 +6,7 @@ doc. Legal and website work track their own remaining sections:
 
 ## Product
 
-* mark as sold out — still domain-only, with no read model, route or UI. Now the smallest thing left in the menu du jour picture, which otherwise shipped end-to-end (`docs/MENU-DU-JOUR-PLAN.md`)
-* open market day · close market day
+* live mode — the storefront leads with the market the vendor is standing in; sold-out per dish, and closing the day (`docs/LIVE-MODE-PLAN.md`). Subsumes *mark as sold out*, which is still domain-only with no read model, route or UI. No *open market day*: the start follows from the schedule
 * item rated for market day (the miam)
 * remove item photo · clear storefront cover photo
 * retiring an item doesn't check if it's been planned

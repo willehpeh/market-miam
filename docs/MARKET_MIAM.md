@@ -68,6 +68,16 @@ moment is why it is addressed by a natural key rather than a minted id. The oper
 vendors assemble each day's offering (the *menu du jour*) by selecting items
 from their catalogue.
 
+### En direct (live)
+
+A market day the vendor is trading *right now*, with a menu, not yet closed — the
+storefront leads with the market it is standing in and each dish carries its
+availability. Distinct from **en cours**, which is the calendar's word for *this
+market is running by the clock*: a vendor at a market who planned no menu is en
+cours but not en direct. The vendor does not announce the start (it follows from
+the schedule) but does announce the end, by **closing** the day. Not yet built —
+`LIVE-MODE-PLAN.md`.
+
 ### Miam
 
 Domain-specific term for a customer expressing appetite/intent for an item. Not a public rating — a private demand signal for the vendor. Avoids the verification/gaming problems of a “like” system. Frames the interaction as “I want to eat this” rather than “I approve of this.” **Not yet built** — the furthest-out item on the public roadmap, and the namesake.
@@ -132,7 +142,7 @@ further Ordering context, not an extension of Billing (ADR 0048).
 ### Events still to come
 
 - The customer-signal events (`ItemMiamed`, `ItemRequested`) — nothing built
-- Market-day lifecycle (`open`/`close` market day) and the post-market outcome event — see `NEXT_BEHAVIOURS.md`
+- Market-day lifecycle — `MarketDayClosed`/`MarketDayReopened` (no `open`: the start follows from the schedule) and `ItemMarkedAsAvailable`, all in `LIVE-MODE-PLAN.md`; then the post-market outcome event, which hangs off closing
 - `AbsenceCancelled` (declared absences can't yet be retracted)
 
 ## MVP Strategy — status
