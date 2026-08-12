@@ -21,7 +21,9 @@ export class FindCustomerStorefrontHandler implements IQueryHandler<FindCustomer
 
   async execute(query: FindCustomerStorefront): Promise<CustomerStorefront | undefined> {
     const vendorId = await this.registry.vendorFor(query.subdomain);
-    if (!vendorId) return undefined;
+    if (!vendorId) {
+      return undefined;
+    }
     const view = await this.storefronts.findByVendor(vendorId);
     if (!view || !view.published) {
       return { status: 'coming-soon', name: view?.name || null };
