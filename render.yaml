@@ -123,6 +123,21 @@ projects:
                 - package-lock.json
                 - nx.json
                 - tsconfig.base.json
+          # The interactive test map (tools/test-map). Built with bare Node — the
+          # generator reads spec files straight off the checkout, no npm ci needed.
+          - type: web
+            name: test-map
+            runtime: static
+            repo: https://github.com/willehpeh/market-miam
+            buildCommand: node tools/test-map/generate.mjs
+            staticPublishPath: ./tmp/test-map
+            autoDeployTrigger: checksPass
+            buildFilter:
+              paths:
+                - apps/**
+                - packages/**
+                - test/**
+                - tools/test-map/**
         databases:
           - name: event-store
             databaseName: marketmiam

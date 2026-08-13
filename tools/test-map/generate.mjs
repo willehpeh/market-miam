@@ -2,7 +2,8 @@
 // Builds the interactive test-map webpage: scans every *.spec.ts, extracts the
 // describe/it hierarchy (following shared *.contract.ts suites to each caller),
 // assigns each file a domain theme, and injects the result into template.html.
-// Output: tmp/test-map/test-map.html — a self-contained page, no dependencies.
+// Output: tmp/test-map/index.html — a self-contained page, no dependencies
+// beyond Node built-ins, so the Render static site builds with a bare `node`.
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { execSync } from 'node:child_process';
 import { dirname, resolve } from 'node:path';
@@ -168,10 +169,10 @@ const html = readFileSync(resolve(HERE, 'template.html'), 'utf8')
 
 const OUT = resolve(ROOT, 'tmp/test-map');
 mkdirSync(OUT, { recursive: true });
-writeFileSync(resolve(OUT, 'test-map.html'), html);
+writeFileSync(resolve(OUT, 'index.html'), html);
 
 const empty = data.filter(f => f.tests.length === 0);
-console.log(`${data.length} spec files, ${totalTests} tests → tmp/test-map/test-map.html`);
+console.log(`${data.length} spec files, ${totalTests} tests → tmp/test-map/index.html`);
 if (empty.length) {
   console.warn(`WARNING — parsed no tests from (parser gap or dead spec):`);
   for (const f of empty) console.warn(`  ${f.file}`);
