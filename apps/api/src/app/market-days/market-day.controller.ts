@@ -3,10 +3,11 @@ import { z } from 'zod';
 import { CurrentVendor, JwtAuthGuard } from '@market-miam/auth-nestjs';
 import type { VerifiedVendor } from '@market-miam/auth';
 import { CommandGateway, QueryGateway } from '@market-miam/event-sourcing';
-import { FindUpcomingMarketDays, SetMarketDayMenu, UpcomingMarketDaysView } from '@market-miam/market-days';
+import { FindUpcomingMarketDays, MarkItemAsAvailable, MarkItemAsSoldOut, SetMarketDayMenu, UpcomingMarketDaysView } from '@market-miam/market-days';
 import { shapeOf } from '../shape-of.pipe';
 
 const MenuBody = z.object({ itemIds: z.array(z.string()) });
+const AvailabilityBody = z.object({ soldOut: z.boolean() });
 
 // Market days are derived from the schedule, but what this returns is days and their
 // menus, not schedules — so they get their own resource rather than hanging off
@@ -38,5 +39,23 @@ export class MarketDayController {
     await this.commands.execute(
       new SetMarketDayMenu({ vendorId: vendor.vendorId.value(), itemIds: body.itemIds, marketId, date }),
     );
+  }
+
+  // One idempotent route behind both commands — a phone retrying on market wifi must be
+  // safe, and re-stating the current state is a domain no-op (decisions 19 and 36), so
+  // this breaks the one-route-one-command style knowingly.
+  @Put(':marketId/:date/items/:itemId/availability')
+  @UseGuards(JwtAuthGuard)
+  async changeAvailability(
+    @CurrentVendor() vendor: VerifiedVendor,
+    @Param('marketId') marketId: string,
+    @Param('date') date: string,
+    @Param('itemId') itemId: string,
+    @Body(shapeOf(AvailabilityBody)) body: z.infer<typeof AvailabilityBody>,
+  ): Promise<void> {
+    const vendorId = vendor.vendorId.value();
+    await this.commands.execute(body.soldOut
+      ? new MarkItemAsSoldOut(vendorId, itemId, marketId, date)
+      : new MarkItemAsAvailable(vendorId, itemId, marketId, date));
   }
 }

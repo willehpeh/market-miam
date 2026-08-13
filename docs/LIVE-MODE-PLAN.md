@@ -5,9 +5,10 @@ standing in, the day's menu carries per-dish availability, and the vendor closes
 they pack up. Wireframe: `tmp/live-mode.png` (its logo and *bientôt épuisé* tag are not the
 design).
 
-Slice 0 shipped; no domain change yet. `ItemMarkedAsSoldOut` exists in the domain with no read
-model, route or UI (`NEXT_BEHAVIOURS.md`); `inProgress` already derives live-ness from schedule
-times and badges **En cours** on the customer market card.
+Slice 0 shipped. Slice 1 is built through HTTP — both availability events, the today-guard,
+`soldOutItemIds` on the read model and both query payloads, `inProgress` on the occurrence, the
+sort fix, and the idempotent availability route — with the vendor and customer UI and the ops
+alert still to come.
 
 ## Shape
 

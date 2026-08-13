@@ -165,8 +165,9 @@ describe('Public storefront', () => {
     expect(res.body.items).toHaveLength(2);
   });
 
-  // The full write path with no HTTP route yet: command through the gateway, aggregate
-  // guard (2026-06-23 is fixedClock's today), projection, then the storefront read.
+  // Dispatched through the gateway, not the availability route: this spec's subject is
+  // the storefront read, so it takes the shortest honest path to a populated log — the
+  // same stance as the menu test above. The route has its own spec.
   it("shows which of today's items sold out during service", async () => {
     await seedStorefront([opened, infoEdited, coverSet, published]);
     await seedSchedule([scheduleRegistered]);
