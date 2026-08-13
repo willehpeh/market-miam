@@ -1,7 +1,7 @@
 import { Aggregate } from '@market-miam/event-sourcing';
 import { LocalDate, LocalTime } from '@market-miam/common';
-import { ItemMarkedAsSoldOut, MarketDayEvent, MarketDayMenuSet } from './events';
-import { ItemAlreadySoldOutError, ItemNotPlannedError, MarketDayInThePastError, MarketDayNotTodayError } from './errors';
+import { ItemMarkedAsAvailable, ItemMarkedAsSoldOut, MarketDayEvent, MarketDayMenuSet } from './events';
+import { ItemAlreadyAvailableError, ItemAlreadySoldOutError, ItemNotPlannedError, MarketDayInThePastError, MarketDayNotTodayError } from './errors';
 import { MarketDayId } from './market-day-id';
 import { Menu } from './menu';
 import { ItemId } from '../catalogue';
@@ -24,6 +24,9 @@ export class MarketDay extends Aggregate {
         break;
       case 'ItemMarkedAsSoldOut':
         this._soldOut.push(new ItemId(event.payload.itemId));
+        break;
+      case 'ItemMarkedAsAvailable':
+        this._soldOut = this._soldOut.filter(itemId => !itemId.equals(new ItemId(event.payload.itemId)));
         break;
     }
   }
@@ -60,6 +63,28 @@ export class MarketDay extends Aggregate {
     }
     const event: ItemMarkedAsSoldOut = {
       type: 'ItemMarkedAsSoldOut',
+      payload: {
+        itemId: itemId.value(),
+        ...this._id.snapshot(),
+        time: time.value()
+      },
+      version: 1
+    };
+    this.raise(event);
+  }
+
+  markItemAsAvailable(itemId: ItemId, time: LocalTime) {
+    if (this.notToday()) {
+      throw new MarketDayNotTodayError();
+    }
+    if (!this._menu.includes(itemId)) {
+      throw new ItemNotPlannedError();
+    }
+    if (!this._soldOut.some(id => id.equals(itemId))) {
+      throw new ItemAlreadyAvailableError();
+    }
+    const event: ItemMarkedAsAvailable = {
+      type: 'ItemMarkedAsAvailable',
       payload: {
         itemId: itemId.value(),
         ...this._id.snapshot(),

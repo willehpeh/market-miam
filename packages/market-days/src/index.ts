@@ -15,6 +15,7 @@ export * from './calendar/events';
 export * from './calendar';
 export * from './market-day';
 export * from './set-market-day-menu';
+export * from './mark-item-as-available';
 export * from './mark-item-as-sold-out';
 export * from './catalogue-view';
 export * from './market-day-view';
