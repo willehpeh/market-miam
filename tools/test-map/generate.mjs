@@ -125,7 +125,7 @@ function contractTests(specPath, src) {
 const THEME_RULES = [
   ['Media & Uploads', /cloudinary|photo|signed-upload/],
   ['Storefront', /storefront/],
-  ['Catalogue & Dishes', /catalogue|dish/],
+  ['Catalogue & Dishes', /catalogue|dish|add-item|revise-item|retire-item|reorder-item|editable-item/],
   ['Menus', /menu|carte/],
   ['Markets & Schedules', /market-schedule|market-day|markets-list|add-schedule|editable-schedule|upcoming|scenario/],
   ['Vendors & Onboarding', /vendor|onboarding|welcome|landing|dashboard/],
@@ -137,6 +137,7 @@ function themeFor(relPath) {
   const base = relPath.split('/').pop();
   for (const [theme, re] of THEME_RULES) if (re.test(base)) return theme;
   if (/\/event-sourcing\//.test(relPath)) return 'Event Sourcing & Persistence';
+  if (/\/catalogue\//.test(relPath)) return 'Catalogue & Dishes';
   if (/\/market-days\//.test(relPath)) return 'Markets & Schedules';
   if (/\/common\/|\/shared-kernel\//.test(relPath)) return 'Core Primitives';
   if (/\/auth\//.test(relPath)) return 'Auth & Identity';
