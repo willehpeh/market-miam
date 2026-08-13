@@ -10,7 +10,7 @@ import {
   SetMarketDayMenuHandler,
   VendorScopedEvents
 } from '@market-miam/market-days';
-import { Instant, LocalDate } from '@market-miam/common';
+import { clockAt } from '../../clock-at';
 import { LAST_SATURDAY, SATURDAY, TestSetMarketDayMenu, TODAY } from '../set-market-day-menu/test-data';
 import { seedCatalogue } from '../../seed-catalogue';
 import { expectVendorScopedEvents } from '../../shared-kernel';
@@ -23,11 +23,8 @@ describe('Mark Item As Sold Out', () => {
   beforeEach(() => {
     store = new InMemoryEventStore();
     const events = new VendorScopedEvents(store);
-    // 09:00 UTC on a June day — 11:00 on the Paris wall clock the event records.
-    const clock = {
-      today: () => new LocalDate(TODAY),
-      now: () => new Instant(`${TODAY}T09:00:00.000Z`),
-    };
+    // clockAt's 09:00 UTC on a June day — 11:00 on the Paris wall clock the event records.
+    const clock = clockAt(TODAY);
     const marketDays = new MarketDays(events, clock);
     seedCatalogue(store, 'vendor-1', 'item-1', 'item-2');
     handler = new MarkItemAsSoldOutHandler(marketDays, clock);

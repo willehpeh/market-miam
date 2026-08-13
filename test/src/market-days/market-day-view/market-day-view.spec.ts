@@ -1,5 +1,4 @@
 import { InMemoryCheckpoint, InMemoryEventStore, PollingSubscription } from '@market-miam/event-sourcing';
-import { Instant, LocalDate } from '@market-miam/common';
 import {
   Catalogues,
   InMemoryMarketDayViews,
@@ -10,6 +9,7 @@ import {
 } from '@market-miam/market-days';
 import { SATURDAY, TestSetMarketDayMenu, TODAY } from '../set-market-day-menu/test-data';
 import { seedCatalogue } from '../../seed-catalogue';
+import { clockAt } from '../../clock-at';
 
 describe('MarketDayView', () => {
   let views: InMemoryMarketDayViews;
@@ -20,10 +20,7 @@ describe('MarketDayView', () => {
   beforeEach(() => {
     const store = new InMemoryEventStore();
     const events = new VendorScopedEvents(store);
-    const marketDays = new MarketDays(events, {
-      today: () => new LocalDate(TODAY),
-      now: () => new Instant(`${TODAY}T09:00:00.000Z`),
-    });
+    const marketDays = new MarketDays(events, clockAt(TODAY));
     seedCatalogue(store, 'vendor-1', 'item-1', 'item-2');
     views = new InMemoryMarketDayViews();
     projection = new MarketDayViewProjection(views);

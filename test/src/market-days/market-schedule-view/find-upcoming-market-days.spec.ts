@@ -8,12 +8,7 @@ import {
   MarketScheduleView,
   UpcomingMarketDaysView
 } from '@market-miam/market-days';
-import { Clock, Instant, LocalDate } from '@market-miam/common';
-
-const clockAt = (date: string, now = '2024-01-01T00:00:00.000Z'): Clock => ({
-  today: () => new LocalDate(date),
-  now: () => new Instant(now),
-});
+import { clockAt } from '../../clock-at';
 
 const market = {
   name: 'Marché de Belleville',
@@ -50,7 +45,7 @@ describe('FindUpcomingMarketDays', () => {
     catalogues = new InMemoryCatalogueViews();
   });
 
-  function upcoming(vendorId: string, today = '2024-01-01', now?: string) {
+  function upcoming(vendorId: string, today = '2024-01-01', now = '2024-01-01T00:00:00.000Z') {
     return new FindUpcomingMarketDaysHandler(views, menus, catalogues, clockAt(today, now)).execute(new FindUpcomingMarketDays(vendorId));
   }
 

@@ -1,5 +1,5 @@
 import { InMemoryEventStore } from '@market-miam/event-sourcing';
-import { EmptyValueError, Instant, LocalDate } from '@market-miam/common';
+import { EmptyValueError } from '@market-miam/common';
 import {
   Catalogues,
   MarketDayInThePastError,
@@ -12,6 +12,7 @@ import {
 } from '@market-miam/market-days';
 import { LAST_SATURDAY, SATURDAY, TestSetMarketDayMenu, TODAY } from './test-data';
 import { seedCatalogue } from '../../seed-catalogue';
+import { clockAt } from '../../clock-at';
 import { expectVendorScopedEvents } from '../../shared-kernel';
 
 describe('Set Market Day Menu', () => {
@@ -22,10 +23,7 @@ describe('Set Market Day Menu', () => {
   beforeEach(() => {
     store = new InMemoryEventStore();
     const events = new VendorScopedEvents(store);
-    const marketDays = new MarketDays(events, {
-      today: () => new LocalDate(TODAY),
-      now: () => new Instant(`${TODAY}T09:00:00.000Z`),
-    });
+    const marketDays = new MarketDays(events, clockAt(TODAY));
     seedCatalogue(store, 'vendor-1', 'item-1', 'item-2');
     catalogues = new Catalogues(events);
     handler = new SetMarketDayMenuHandler(marketDays, catalogues);
