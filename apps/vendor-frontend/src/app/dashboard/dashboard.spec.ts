@@ -298,14 +298,25 @@ describe('Dashboard', () => {
   });
 
   // The card's empty state is a warning. Painting it before the days land would be a false
-  // alarm, so the whole dashboard waits rather than the card flashing.
-  it('waits for the market days before showing anything', async () => {
+  // alarm, so the whole dashboard waits rather than the card flashing. Days already in the
+  // store get the same treatment: a refetch means they may be stale, so the spinner wins.
+  it('waits for the market days before showing anything, even days it already holds', async () => {
     const { storefront, marketDays, view } = await renderDashboard();
     marketDays.loading.set(true);
+    marketDays.days.set([{
+      scheduleId: 'schedule-1',
+      marketId: 'market-1',
+      date: '2026-08-15',
+      day: 'SAT',
+      absent: false,
+      itemIds: [],
+      market: { name: 'Marché de la Croix-Rousse', town: 'Lyon', codePostal: '69004' },
+    }]);
     storefront.view.set({ ...completeStorefront, subdomain: 'acme', published: true });
     view.detectChanges();
 
     expect(screen.getByRole('status', { name: /chargement/i })).toBeInTheDocument();
+    expect(screen.queryByText(/croix-rousse/i)).not.toBeInTheDocument();
   });
 
   it('explains the URL is pending and offers no button when no subdomain is assigned', async () => {

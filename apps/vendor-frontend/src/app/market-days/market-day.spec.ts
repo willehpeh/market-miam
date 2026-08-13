@@ -48,7 +48,6 @@ describe('MarketDays', () => {
           { path: 'dashboard/markets', children: [] },
         ]),
         { provide: MarketDayFacade, useClass: StoreMarketDayFacade },
-        // The schedules feature rides along because its mutations invalidate this one.
         { provide: MarketSchedules, useClass: HttpMarketSchedules },
         provideState(marketScheduleFeature),
         provideEffects(MarketScheduleEffects),
@@ -87,7 +86,7 @@ describe('MarketDays', () => {
 
   // A second GET would land after the optimistic patch and overwrite it with a projection
   // that lags the response by 4–275ms, putting the stale menu back.
-  it('does not ask again once loaded', () => {
+  it('does not ask again while fresh', () => {
     facade.load();
     httpCtrl.expectOne('/api/market-days/upcoming').flush(asSent([]));
 
@@ -98,7 +97,7 @@ describe('MarketDays', () => {
 
   // Emptiness is a real answer — every day absent, or the schedule run dry — so it must
   // not read as "never fetched" and refetch on every visit.
-  it('treats an empty list as loaded', () => {
+  it('treats an empty list as fresh', () => {
     facade.load();
     httpCtrl.expectOne('/api/market-days/upcoming').flush({ marketDays: [] });
 
@@ -107,59 +106,58 @@ describe('MarketDays', () => {
     httpCtrl.expectNone('/api/market-days/upcoming');
   });
 
-  const newSchedule: NewSchedule = {
-    market: { name: 'Marché de Monplaisir', codePostal: '69008', town: 'Lyon' },
-    days: [{ day: 'TUE', startTime: '08:00', endTime: '13:00' }],
-    frequency: { weeks: 1 },
-  };
-
-  // A schedule change redraws which days exist, and only the API can expand the
-  // recurrence — so unlike a menu save, it goes cold and the next dashboard visit
-  // fetches the fresh window instead of keeping the old one.
-  it('asks for the days again after a market is registered', () => {
-    facade.load();
-    httpCtrl.expectOne('/api/market-days/upcoming').flush(asSent([]));
-
-    schedules.registerSchedule(newSchedule);
-    httpCtrl.expectOne('/api/market-schedules').flush(null);
-
-    facade.load();
-
-    httpCtrl.expectOne('/api/market-days/upcoming');
-  });
-
-  it('asks for the days again after a schedule is amended', () => {
-    const existing: MarketScheduleView = {
-      scheduleId: 'schedule-1',
-      marketId: 'market-1',
-      market: { name: 'Marché de la Croix-Rousse', codePostal: '69004', town: 'Lyon' },
-      startDate: '2026-07-15',
-      days: [{ day: 'SAT', startTime: '08:00', endTime: '13:00' }],
+  describe('going stale when the schedule changes', () => {
+    const newSchedule: NewSchedule = {
+      market: { name: 'Marché de Monplaisir', codePostal: '69008', town: 'Lyon' },
+      days: [{ day: 'TUE', startTime: '08:00', endTime: '13:00' }],
       frequency: { weeks: 1 },
     };
-    facade.load();
-    httpCtrl.expectOne('/api/market-days/upcoming').flush(asSent([]));
-    schedules.load();
-    httpCtrl.expectOne('/api/market-schedules').flush({ schedules: [existing] });
 
-    schedules.amendSchedule('schedule-1', newSchedule);
-    httpCtrl.expectOne('/api/market-schedules/schedule-1').flush(null);
+    it('asks for the days again after a market is registered', () => {
+      facade.load();
+      httpCtrl.expectOne('/api/market-days/upcoming').flush(asSent([]));
 
-    facade.load();
+      schedules.registerSchedule(newSchedule);
+      httpCtrl.expectOne('/api/market-schedules').flush(null);
 
-    httpCtrl.expectOne('/api/market-days/upcoming');
-  });
+      facade.load();
 
-  it('keeps the warm days when the registration fails', () => {
-    facade.load();
-    httpCtrl.expectOne('/api/market-days/upcoming').flush(asSent([]));
+      httpCtrl.expectOne('/api/market-days/upcoming');
+    });
 
-    schedules.registerSchedule(newSchedule);
-    httpCtrl.expectOne('/api/market-schedules').flush(null, { status: 500, statusText: 'Server Error' });
+    it('asks for the days again after a schedule is amended', () => {
+      const existing: MarketScheduleView = {
+        scheduleId: 'schedule-1',
+        marketId: 'market-1',
+        market: { name: 'Marché de la Croix-Rousse', codePostal: '69004', town: 'Lyon' },
+        startDate: '2026-07-15',
+        days: [{ day: 'SAT', startTime: '08:00', endTime: '13:00' }],
+        frequency: { weeks: 1 },
+      };
+      facade.load();
+      httpCtrl.expectOne('/api/market-days/upcoming').flush(asSent([]));
+      schedules.load();
+      httpCtrl.expectOne('/api/market-schedules').flush({ schedules: [existing] });
 
-    facade.load();
+      schedules.amendSchedule('schedule-1', newSchedule);
+      httpCtrl.expectOne('/api/market-schedules/schedule-1').flush(null);
 
-    httpCtrl.expectNone('/api/market-days/upcoming');
+      facade.load();
+
+      httpCtrl.expectOne('/api/market-days/upcoming');
+    });
+
+    it('stays fresh when the registration fails', () => {
+      facade.load();
+      httpCtrl.expectOne('/api/market-days/upcoming').flush(asSent([]));
+
+      schedules.registerSchedule(newSchedule);
+      httpCtrl.expectOne('/api/market-schedules').flush(null, { status: 500, statusText: 'Server Error' });
+
+      facade.load();
+
+      httpCtrl.expectNone('/api/market-days/upcoming');
+    });
   });
 
   // The menu is a set replaced whole, so clearing a day is an empty array, not a DELETE.

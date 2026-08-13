@@ -18,23 +18,28 @@ export const SetMarketDayMenuFailure = createAction('[Market Days] Set Menu Fail
 
 export interface MarketDayState {
   loading: boolean;
-  loaded: boolean;
+  fresh: boolean;
   days: MarketDayView[];
 }
 
 export const initialState: MarketDayState = {
   loading: false,
-  loaded: false,
+  fresh: false,
   days: [],
 };
+
+// A schedule change redraws which days exist, and only the API can expand the
+// recurrence — so stale, not patched like the menu save below.
+const wentStale = (state: MarketDayState): MarketDayState => ({ ...state, fresh: false });
 
 export const marketDayFeature = createFeature({
   name: 'marketDays',
   reducer: createReducer<MarketDayState>(
     initialState,
     on(LoadMarketDays, (state): MarketDayState => ({ ...state, loading: true })),
-    on(LoadMarketDaysSuccess, (state, { days }): MarketDayState => ({ ...state, loading: false, loaded: true, days })),
-    on(LoadMarketDaysFailure, (state): MarketDayState => ({ ...state, loading: false, loaded: true })),
+    on(LoadMarketDaysSuccess, (state, { days }): MarketDayState => ({ ...state, loading: false, fresh: true, days })),
+    on(LoadMarketDaysFailure, (state): MarketDayState => ({ ...state, loading: false, fresh: true })),
+    on(RegisterMarketScheduleSuccess, AmendMarketScheduleSuccess, wentStale),
     // Optimistic: the response is void and the projection lags it by 4–275ms, so the day
     // takes the ids that were just sent rather than waiting for a re-read that never comes.
     // ponytail: SetMarketDayMenuFailure is unreduced — same no-error-UX stance as the
@@ -43,10 +48,5 @@ export const marketDayFeature = createFeature({
       ...state,
       days: state.days.map(day => (day.marketId === marketId && day.date === date ? { ...day, itemIds } : day)),
     })),
-    // A schedule change redraws which days exist, and only the API can expand the
-    // recurrence — so no optimistic patch here; the warm flag drops and the next load()
-    // asks again. The stale days stay in place until then: the dashboard holds its
-    // spinner on loading, so they never paint.
-    on(RegisterMarketScheduleSuccess, AmendMarketScheduleSuccess, (state): MarketDayState => ({ ...state, loaded: false })),
   ),
 });
