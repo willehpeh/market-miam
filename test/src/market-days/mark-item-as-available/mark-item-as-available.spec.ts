@@ -1,5 +1,5 @@
 import { InMemoryEventStore } from '@market-miam/event-sourcing';
-import { ItemAlreadyAvailableError, ItemNotPlannedError, MarketDayNotTodayError } from '@market-miam/market-days';
+import { ItemNotPlannedError, MarketDayNotTodayError } from '@market-miam/market-days';
 import { marketDayHarness } from '../market-day-harness';
 import { LAST_SATURDAY, SATURDAY, TODAY } from '../set-market-day-menu/test-data';
 import { expectVendorScopedEvents } from '../../shared-kernel';
@@ -54,10 +54,11 @@ describe('Mark Item As Available', () => {
     ]);
   });
 
-  it('rejects an item that is not sold out', async () => {
+  it('takes marking a never-sold-out item available as a no-op, appending nothing', async () => {
     await setMenu(TODAY, 'item-1');
 
-    await expect(() => markAvailable(TODAY)).rejects.toThrow(ItemAlreadyAvailableError);
+    await markAvailable(TODAY);
+
     expect(store.newEvents()).toEqual([expect.objectContaining({ type: 'MarketDayMenuSet' })]);
   });
 

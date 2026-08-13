@@ -1,5 +1,5 @@
 import { InMemoryEventStore } from '@market-miam/event-sourcing';
-import { ItemAlreadySoldOutError, ItemNotPlannedError, MarketDayNotTodayError } from '@market-miam/market-days';
+import { ItemNotPlannedError, MarketDayNotTodayError } from '@market-miam/market-days';
 import { marketDayHarness } from '../market-day-harness';
 import { LAST_SATURDAY, SATURDAY, TODAY } from '../set-market-day-menu/test-data';
 import { expectVendorScopedEvents } from '../../shared-kernel';
@@ -35,11 +35,15 @@ describe('Mark Item As Sold Out', () => {
     expectVendorScopedEvents(store.newEvents(), 'vendor-1');
   });
 
-  it('rejects an item that is already sold out', async () => {
+  // A re-statement, not a violation: a retried tap or a second device saying what is
+  // already true appends nothing — a duplicate event would corrupt the availability
+  // timeline. Same stance as setMenu unchanged and retiring twice.
+  it('takes a second sold-out mark as a no-op, appending nothing', async () => {
     await setMenu(TODAY, 'item-1');
     await markSoldOut(TODAY);
 
-    await expect(() => markSoldOut(TODAY)).rejects.toThrow(ItemAlreadySoldOutError);
+    await markSoldOut(TODAY);
+
     expect(store.newEvents()).toEqual([
       expect.objectContaining({ type: 'MarketDayMenuSet' }),
       expect.objectContaining({ type: 'ItemMarkedAsSoldOut' }),

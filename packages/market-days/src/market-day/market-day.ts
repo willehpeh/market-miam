@@ -1,7 +1,7 @@
 import { Aggregate } from '@market-miam/event-sourcing';
 import { LocalDate, LocalTime } from '@market-miam/common';
 import { ItemMarkedAsAvailable, ItemMarkedAsSoldOut, MarketDayEvent, MarketDayMenuSet } from './events';
-import { ItemAlreadyAvailableError, ItemAlreadySoldOutError, ItemNotPlannedError, MarketDayInThePastError, MarketDayNotTodayError } from './errors';
+import { ItemNotPlannedError, MarketDayInThePastError, MarketDayNotTodayError } from './errors';
 import { MarketDayId } from './market-day-id';
 import { Menu } from './menu';
 import { SoldOutItems } from './sold-out-items';
@@ -59,8 +59,10 @@ export class MarketDay extends Aggregate {
     if (!this._menu.includes(itemId)) {
       throw new ItemNotPlannedError();
     }
+    // A re-statement of the current state appends nothing — a duplicate event would
+    // corrupt the availability timeline (decision 36; same stance as setMenu unchanged).
     if (this._soldOut.includes(itemId)) {
-      throw new ItemAlreadySoldOutError();
+      return;
     }
     const event: ItemMarkedAsSoldOut = {
       type: 'ItemMarkedAsSoldOut',
@@ -82,7 +84,7 @@ export class MarketDay extends Aggregate {
       throw new ItemNotPlannedError();
     }
     if (!this._soldOut.includes(itemId)) {
-      throw new ItemAlreadyAvailableError();
+      return;
     }
     const event: ItemMarkedAsAvailable = {
       type: 'ItemMarkedAsAvailable',
