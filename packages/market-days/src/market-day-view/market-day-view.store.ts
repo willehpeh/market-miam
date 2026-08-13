@@ -1,6 +1,8 @@
-import { MarketDayView } from './market-day-view';
+import { AvailabilityMark, MarketDayMenu } from './market-day-view';
 
 export abstract class MarketDayViewStore {
-  abstract setMenu(menu: MarketDayView, vendorId: string): Promise<void>;
+  abstract setMenu(menu: MarketDayMenu, vendorId: string): Promise<void>;
+  abstract markSoldOut(mark: AvailabilityMark, vendorId: string): Promise<void>;
+  abstract markAvailable(mark: AvailabilityMark, vendorId: string): Promise<void>;
   abstract clear(): Promise<void>;
 }

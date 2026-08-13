@@ -1,4 +1,4 @@
-import { MarketDayView } from './market-day-view';
+import { AvailabilityMark, MarketDayMenu, MarketDayView } from './market-day-view';
 import { MarketDayViews } from './market-day-views';
 import { MarketDayViewStore } from './market-day-view.store';
 
@@ -7,10 +7,25 @@ export class InMemoryMarketDayViews implements MarketDayViews, MarketDayViewStor
 
   // Copied both ways: the store must not share array identity with writers or readers,
   // or a caller mutating its menu would silently mutate the store.
-  async setMenu(menu: MarketDayView, vendorId: string): Promise<void> {
+  async setMenu(menu: MarketDayMenu, vendorId: string): Promise<void> {
     const forVendor = this.menus.get(vendorId) ?? new Map<string, MarketDayView>();
-    forVendor.set(`${menu.marketId}|${menu.date}`, this.copyOf(menu));
+    const soldOut = forVendor.get(this.keyOf(menu))?.soldOutItemIds.filter(id => menu.itemIds.includes(id)) ?? [];
+    forVendor.set(this.keyOf(menu), this.copyOf({ ...menu, soldOutItemIds: soldOut }));
     this.menus.set(vendorId, forVendor);
+  }
+
+  async markSoldOut(mark: AvailabilityMark, vendorId: string): Promise<void> {
+    const day = this.menus.get(vendorId)?.get(this.keyOf(mark));
+    if (day) {
+      day.soldOutItemIds = [...day.soldOutItemIds, mark.itemId];
+    }
+  }
+
+  async markAvailable(mark: AvailabilityMark, vendorId: string): Promise<void> {
+    const day = this.menus.get(vendorId)?.get(this.keyOf(mark));
+    if (day) {
+      day.soldOutItemIds = day.soldOutItemIds.filter(itemId => itemId !== mark.itemId);
+    }
   }
 
   async clear(): Promise<void> {
@@ -24,7 +39,11 @@ export class InMemoryMarketDayViews implements MarketDayViews, MarketDayViewStor
       .sort((a, b) => a.date.localeCompare(b.date) || a.marketId.localeCompare(b.marketId));
   }
 
+  private keyOf(day: { marketId: string; date: string }): string {
+    return `${day.marketId}|${day.date}`;
+  }
+
   private copyOf(menu: MarketDayView): MarketDayView {
-    return { ...menu, itemIds: [...menu.itemIds] };
+    return { ...menu, itemIds: [...menu.itemIds], soldOutItemIds: [...menu.soldOutItemIds] };
   }
 }

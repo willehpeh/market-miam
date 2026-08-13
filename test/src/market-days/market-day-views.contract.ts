@@ -23,7 +23,7 @@ export function marketDayViewsContract(name: string, create: () => Store): void 
       await store.setMenu({ marketId: 'market-1', date: DAY, itemIds: ['item-1', 'item-2'] }, 'v1');
 
       expect(await menusOn('v1', DAY)).toEqual([
-        { marketId: 'market-1', date: DAY, itemIds: ['item-1', 'item-2'] },
+        { marketId: 'market-1', date: DAY, itemIds: ['item-1', 'item-2'], soldOutItemIds: [] },
       ]);
     });
 
@@ -34,7 +34,7 @@ export function marketDayViewsContract(name: string, create: () => Store): void 
       await store.setMenu({ marketId: 'market-1', date: DAY, itemIds: ['item-2', 'item-3'] }, 'v1');
 
       expect(await menusOn('v1', DAY)).toEqual([
-        { marketId: 'market-1', date: DAY, itemIds: ['item-2', 'item-3'] },
+        { marketId: 'market-1', date: DAY, itemIds: ['item-2', 'item-3'], soldOutItemIds: [] },
       ]);
     });
 
@@ -45,7 +45,7 @@ export function marketDayViewsContract(name: string, create: () => Store): void 
       await store.setMenu({ marketId: 'market-1', date: DAY, itemIds: [] }, 'v1');
 
       expect(await menusOn('v1', DAY)).toEqual([
-        { marketId: 'market-1', date: DAY, itemIds: [] },
+        { marketId: 'market-1', date: DAY, itemIds: [], soldOutItemIds: [] },
       ]);
     });
 
@@ -65,9 +65,9 @@ export function marketDayViewsContract(name: string, create: () => Store): void 
       await store.setMenu({ marketId: 'market-1', date: '2026-06-27', itemIds: ['item-4'] }, 'v1');
 
       expect(await store.menusFor('v1', DAY, '2026-06-27')).toEqual([
-        { marketId: 'market-1', date: DAY, itemIds: ['item-1'] },
-        { marketId: 'market-2', date: DAY, itemIds: ['item-2'] },
-        { marketId: 'market-1', date: '2026-06-27', itemIds: ['item-4'] },
+        { marketId: 'market-1', date: DAY, itemIds: ['item-1'], soldOutItemIds: [] },
+        { marketId: 'market-2', date: DAY, itemIds: ['item-2'], soldOutItemIds: [] },
+        { marketId: 'market-1', date: '2026-06-27', itemIds: ['item-4'], soldOutItemIds: [] },
       ]);
     });
 
@@ -86,10 +86,55 @@ export function marketDayViewsContract(name: string, create: () => Store): void 
 
       const [read] = await menusOn('v1', DAY);
       read.itemIds.push('smuggled-out');
+      read.soldOutItemIds.push('smuggled-out');
 
       expect(await menusOn('v1', DAY)).toEqual([
-        { marketId: 'market-1', date: DAY, itemIds: ['item-1'] },
+        { marketId: 'market-1', date: DAY, itemIds: ['item-1'], soldOutItemIds: [] },
       ]);
+    });
+
+    it('records a sold-out mark on a planned day', async () => {
+      await store.setMenu({ marketId: 'market-1', date: DAY, itemIds: ['item-1', 'item-2'] }, 'v1');
+
+      await store.markSoldOut({ marketId: 'market-1', date: DAY, itemId: 'item-1' }, 'v1');
+
+      expect(await menusOn('v1', DAY)).toEqual([
+        { marketId: 'market-1', date: DAY, itemIds: ['item-1', 'item-2'], soldOutItemIds: ['item-1'] },
+      ]);
+    });
+
+    it('removes the mark when the item is marked available again', async () => {
+      await store.setMenu({ marketId: 'market-1', date: DAY, itemIds: ['item-1', 'item-2'] }, 'v1');
+      await store.markSoldOut({ marketId: 'market-1', date: DAY, itemId: 'item-1' }, 'v1');
+      await store.markSoldOut({ marketId: 'market-1', date: DAY, itemId: 'item-2' }, 'v1');
+
+      await store.markAvailable({ marketId: 'market-1', date: DAY, itemId: 'item-1' }, 'v1');
+
+      expect(await menusOn('v1', DAY)).toEqual([
+        { marketId: 'market-1', date: DAY, itemIds: ['item-1', 'item-2'], soldOutItemIds: ['item-2'] },
+      ]);
+    });
+
+    // Mirrors market-day.ts:24 — a re-set menu keeps marks for items it still carries and
+    // drops the rest, so a dish re-added mid-market comes back available.
+    it('keeps only the marks a new menu still carries', async () => {
+      await store.setMenu({ marketId: 'market-1', date: DAY, itemIds: ['item-1', 'item-2'] }, 'v1');
+      await store.markSoldOut({ marketId: 'market-1', date: DAY, itemId: 'item-1' }, 'v1');
+      await store.markSoldOut({ marketId: 'market-1', date: DAY, itemId: 'item-2' }, 'v1');
+
+      await store.setMenu({ marketId: 'market-1', date: DAY, itemIds: ['item-2', 'item-3'] }, 'v1');
+
+      expect(await menusOn('v1', DAY)).toEqual([
+        { marketId: 'market-1', date: DAY, itemIds: ['item-2', 'item-3'], soldOutItemIds: ['item-2'] },
+      ]);
+    });
+
+    // The aggregate guards marks to planned items on real days, so this only happens if a
+    // projection replays out of order — staying absent beats inventing a row with no menu.
+    it('ignores a mark for a day nobody planned', async () => {
+      await store.markSoldOut({ marketId: 'market-1', date: DAY, itemId: 'item-1' }, 'v1');
+
+      expect(await menusOn('v1', DAY)).toEqual([]);
     });
 
     it('clears every menu', async () => {
