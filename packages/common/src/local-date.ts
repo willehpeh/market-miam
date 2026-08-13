@@ -38,6 +38,10 @@ export class LocalDate {
     return this._value < other._value;
   }
 
+  equals(other: LocalDate): boolean {
+    return this._value === other._value;
+  }
+
   dayOfWeek(): string {
     return LocalDate.DAYS[this.toDate().getUTCDay()];
   }

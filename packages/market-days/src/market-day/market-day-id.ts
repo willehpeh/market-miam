@@ -22,7 +22,7 @@ export class MarketDayId {
   }
 
   isOn(date: LocalDate): boolean {
-    return this._date.value() === date.value();
+    return this._date.equals(date);
   }
 
   snapshot(): MarketDayIdSnapshot {
