@@ -22,12 +22,14 @@ describe('Mark Item As Sold Out', () => {
   beforeEach(() => {
     store = new InMemoryEventStore();
     const events = new VendorScopedEvents(store);
-    const marketDays = new MarketDays(events, {
+    // 09:00 UTC on a June day — 11:00 on the Paris wall clock the event records.
+    const clock = {
       today: () => new LocalDate(TODAY),
       now: () => new Instant(`${TODAY}T09:00:00.000Z`),
-    });
+    };
+    const marketDays = new MarketDays(events, clock);
     seedCatalogue(store, 'vendor-1', 'item-1', 'item-2');
-    handler = new MarkItemAsSoldOutHandler(marketDays);
+    handler = new MarkItemAsSoldOutHandler(marketDays, clock);
     menus = new SetMarketDayMenuHandler(marketDays, new Catalogues(events));
   });
 
@@ -36,7 +38,7 @@ describe('Mark Item As Sold Out', () => {
   }
 
   function markSoldOut(date: string, itemId = 'item-1'): Promise<void> {
-    return handler.execute(new MarkItemAsSoldOut('vendor-1', itemId, 'market-1', date, '10:00'));
+    return handler.execute(new MarkItemAsSoldOut('vendor-1', itemId, 'market-1', date));
   }
 
   it("marks an item on today's menu as sold out", async () => {
@@ -48,7 +50,7 @@ describe('Mark Item As Sold Out', () => {
       expect.objectContaining({ type: 'MarketDayMenuSet' }),
       expect.objectContaining({
         type: 'ItemMarkedAsSoldOut',
-        payload: { itemId: 'item-1', marketId: 'market-1', date: TODAY, time: '10:00' },
+        payload: { itemId: 'item-1', marketId: 'market-1', date: TODAY, time: '11:00' },
       }),
     ]);
   });

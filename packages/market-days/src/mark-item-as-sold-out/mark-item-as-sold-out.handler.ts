@@ -3,12 +3,14 @@ import { MarkItemAsSoldOut } from './mark-item-as-sold-out';
 import { MarketDayId, MarketDays } from '../market-day';
 import { ItemId } from '../catalogue';
 import { MarketId, VendorId } from '@market-miam/shared-kernel';
-import { LocalDate, LocalTime } from '@market-miam/common';
+import { Clock, LocalDate } from '@market-miam/common';
+import { parisWallClock } from '../market-schedule-view';
 
 @CommandHandler(MarkItemAsSoldOut)
 export class MarkItemAsSoldOutHandler implements ICommandHandler<MarkItemAsSoldOut> {
 
-  constructor(private readonly marketDays: MarketDays) {}
+  constructor(private readonly marketDays: MarketDays,
+              private readonly clock: Clock) {}
 
   async execute(command: MarkItemAsSoldOut): Promise<void> {
     const vendorId = new VendorId(command.vendorId);
@@ -16,7 +18,7 @@ export class MarkItemAsSoldOutHandler implements ICommandHandler<MarkItemAsSoldO
     const itemId = new ItemId(command.itemId);
 
     const marketDay = await this.marketDays.forVendorAtMarketOn(vendorId, id);
-    marketDay.markItemAsSoldOut(itemId, new LocalTime(command.time));
+    marketDay.markItemAsSoldOut(itemId, parisWallClock(this.clock.now()).time());
 
     await this.marketDays.save(marketDay, vendorId, id);
   }

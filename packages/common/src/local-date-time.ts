@@ -7,8 +7,12 @@ import { LocalTime } from './local-time';
 export class LocalDateTime {
   private readonly _value: string;
 
-  constructor(date: LocalDate, time: LocalTime) {
-    this._value = `${date.value()}T${time.value()}`;
+  constructor(date: LocalDate, private readonly _time: LocalTime) {
+    this._value = `${date.value()}T${_time.value()}`;
+  }
+
+  time(): LocalTime {
+    return this._time;
   }
 
   isNotAfter(other: LocalDateTime): boolean {
