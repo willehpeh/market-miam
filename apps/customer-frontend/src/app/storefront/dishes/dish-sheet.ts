@@ -83,11 +83,11 @@ import { DragToDismiss } from '../../core/drag-to-dismiss';
       [style.transform]="dragOffset() !== null ? 'translateY(' + dragOffset() + 'px)' : null"
       [style.transition]="dragOffset() !== null ? 'none' : null"
       (click)="dismissOnBackdrop($event)"
+      (close)="onClosed()"
       (transitionend)="onSlideEnd($event)"
     >
       @if (dish(); as dish) {
         <div
-          #scroller
           class="h-[80dvh] overflow-y-auto overscroll-y-none p-5 pt-2 sm:h-auto sm:max-h-[85dvh] sm:pt-5"
           [appDragToDismiss]="dialog"
           (dragTo)="dragOffset.set($event)"
@@ -97,7 +97,15 @@ import { DragToDismiss } from '../../core/drag-to-dismiss';
             <span class="h-1.5 w-10 rounded-pill bg-line-strong"></span>
           </div>
           @if (dish.photo; as photo) {
-            <img [src]="photo.sheetUrl" alt="" class="aspect-4/3 w-full rounded-card object-cover" />
+            <!-- Same srcset as the card, so this is usually a cache hit on the photo the
+                 card already loaded. sizes: the sheet's max-w-xl minus its p-5. -->
+            <img
+              [src]="photo.src"
+              [srcset]="photo.srcset"
+              sizes="(min-width: 36rem) 33.5rem, calc(100vw - 2.5rem)"
+              alt=""
+              class="aspect-4/3 w-full rounded-card object-cover"
+            />
           } @else {
             <!-- Surface here, canvas on the card: the placeholder is the quiet panel against
                  whatever it sits on, and the sheet itself is canvas. -->
@@ -136,18 +144,19 @@ export class DishSheet {
   protected readonly dragOffset = signal<number | null>(null);
   protected readonly closing = signal(false);
   private readonly dialog = viewChild.required<ElementRef<HTMLDialogElement>>('dialog');
-  private readonly scroller = viewChild<ElementRef<HTMLElement>>('scroller');
 
-  // The scroll reset has to come after showModal(): a closed <dialog> is display:none, and CSSOM
-  // ignores a scrollTop write on an element with no layout box — the browser then restores the
-  // previous offset when the sheet is shown again.
   open(dish: DishViewModel): void {
     this.dish.set(dish);
     this.dialog().nativeElement.showModal();
-    const scroller = this.scroller()?.nativeElement;
-    if (scroller) {
-      scroller.scrollTop = 0;
-    }
+  }
+
+  // The dialog element survives between dishes, and an <img> keeps its old pixels on a src
+  // change until the new photo decodes. Tearing the content down on close means the next
+  // open builds a fresh <img> and a fresh scroller — no previous dish's photo while the new
+  // one loads, no inherited scroll offset. The close event also covers Escape, which the
+  // native dialog handles without going through dismiss().
+  protected onClosed(): void {
+    this.dish.set(null);
   }
 
   protected dismissOnBackdrop(event: MouseEvent): void {

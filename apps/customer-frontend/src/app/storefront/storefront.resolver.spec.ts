@@ -73,9 +73,13 @@ describe('storefrontResolver', () => {
           description: 'Mijoté 7 heures',
           priceLabel: '13,00 €',
           photo: {
-            cardUrl: 'https://res.cloudinary.com/test-cloud/image/upload/c_fill,w_800,h_500,q_auto,f_auto/v7/dish-1',
-            sheetUrl: 'https://res.cloudinary.com/test-cloud/image/upload/c_fill,w_1200,h_900,q_auto,f_auto/v7/dish-1',
-            thumbUrl: 'https://res.cloudinary.com/test-cloud/image/upload/c_fill,w_200,h_200,q_auto,f_auto/v7/dish-1',
+            src: 'https://res.cloudinary.com/test-cloud/image/upload/c_fill,w_800,h_600,q_auto,f_auto/v7/dish-1',
+            srcset: [
+              'https://res.cloudinary.com/test-cloud/image/upload/c_fill,w_400,h_300,q_auto,f_auto/v7/dish-1 400w',
+              'https://res.cloudinary.com/test-cloud/image/upload/c_fill,w_800,h_600,q_auto,f_auto/v7/dish-1 800w',
+              'https://res.cloudinary.com/test-cloud/image/upload/c_fill,w_1200,h_900,q_auto,f_auto/v7/dish-1 1200w',
+              'https://res.cloudinary.com/test-cloud/image/upload/c_fill,w_1600,h_1200,q_auto,f_auto/v7/dish-1 1600w',
+            ].join(', '),
           },
         },
         {

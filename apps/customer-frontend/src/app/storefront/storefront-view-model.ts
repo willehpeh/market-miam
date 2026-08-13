@@ -9,7 +9,7 @@ export type DishViewModel = {
   description: string;
   priceLabel: string;
   variants?: { name: string; description: string; priceLabel: string }[];
-  photo: { cardUrl: string; sheetUrl: string; thumbUrl: string } | null;
+  photo: { src: string; srcset: string } | null;
 };
 
 export type MarketViewModel = {
@@ -64,6 +64,19 @@ function cloudinaryUrl(reference: string, transform: string): string {
   return `https://res.cloudinary.com/${environment.cloudinary.cloudName}/image/upload/${transform}/${reference}`;
 }
 
+// One 4:3 crop in a ladder of widths, and the browser picks per slot. The card and the
+// sheet share the candidates, so opening a sheet reuses the photo its card already
+// loaded — a second hand-picked URL here is what made the sheet flash the previous dish.
+const DISH_PHOTO_WIDTHS = [400, 800, 1200, 1600];
+
+function dishPhoto(reference: string): { src: string; srcset: string } {
+  const candidate = (width: number) => cloudinaryUrl(reference, `c_fill,w_${width},h_${(width * 3) / 4},q_auto,f_auto`);
+  return {
+    src: candidate(800),
+    srcset: DISH_PHOTO_WIDTHS.map((width) => `${candidate(width)} ${width}w`).join(', '),
+  };
+}
+
 function formatEuros(cents: number): string {
   return `${(cents / 100).toFixed(2).replace('.', ',')} €`;
 }
@@ -71,13 +84,7 @@ function formatEuros(cents: number): string {
 // One mapping for both the carte and a market day's menu — they are the same catalogue
 // items, and a dish must not read differently depending on which section it lands in.
 function toDishViewModel(dish: CatalogueDish): DishViewModel {
-  const photo = dish.imageReference
-    ? {
-        cardUrl: cloudinaryUrl(dish.imageReference, 'c_fill,w_800,h_500,q_auto,f_auto'),
-        sheetUrl: cloudinaryUrl(dish.imageReference, 'c_fill,w_1200,h_900,q_auto,f_auto'),
-        thumbUrl: cloudinaryUrl(dish.imageReference, 'c_fill,w_200,h_200,q_auto,f_auto'),
-      }
-    : null;
+  const photo = dish.imageReference ? dishPhoto(dish.imageReference) : null;
   const base = { itemId: dish.itemId, name: dish.name, description: dish.description, photo, priceLabel: priceLabelFor(dish) };
   return dish.variants
     ? {

@@ -17,9 +17,8 @@ const ACME: StorefrontViewModel = {
       description: 'Mijoté 7 heures',
       priceLabel: '13,00 €',
       photo: {
-        cardUrl: 'https://cdn.test/card/dish-1',
-        sheetUrl: 'https://cdn.test/sheet/dish-1',
-        thumbUrl: 'https://cdn.test/thumb/dish-1',
+        src: 'https://cdn.test/photo/dish-1',
+        srcset: 'https://cdn.test/photo/dish-1 800w, https://cdn.test/photo/dish-1-big 1600w',
       },
     },
     { itemId: 'dish-2', name: 'Tarte tatin', description: 'Aux pommes', priceLabel: '6,00 €', photo: null },
@@ -31,21 +30,6 @@ function drag(type: string, clientY: number): Event {
   const event = new Event(type, { bubbles: true });
   Object.assign(event, { clientY, pointerType: 'mouse', pointerId: 1 });
   return event;
-}
-
-// jsdom's scrollTop is a plain property, so it would accept a write the browser drops. CSSOM
-// ignores scrollTop on an element with no layout box, and a closed <dialog> is display:none.
-function trackScrollTop(scroller: HTMLElement, dialog: HTMLDialogElement): void {
-  let position = 0;
-  Object.defineProperty(scroller, 'scrollTop', {
-    configurable: true,
-    get: () => position,
-    set: (value: number) => {
-      if (dialog.open) {
-        position = value;
-      }
-    },
-  });
 }
 
 function render(storefront: StorefrontViewModel | null) {
@@ -76,7 +60,11 @@ describe('CartePage', () => {
     const cards = render(ACME).nativeElement.querySelectorAll('app-dish-card');
 
     expect(cards.length).toBe(2);
-    expect((cards[0].querySelector('img') as HTMLImageElement).src).toBe('https://cdn.test/card/dish-1');
+    const photo = cards[0].querySelector('img') as HTMLImageElement;
+    expect(photo.src).toBe('https://cdn.test/photo/dish-1');
+    expect(photo.getAttribute('srcset')).toBe('https://cdn.test/photo/dish-1 800w, https://cdn.test/photo/dish-1-big 1600w');
+    // Without sizes the browser assumes 100vw and over-fetches from the ladder.
+    expect(photo.getAttribute('sizes')).toBeTruthy();
     expect(cards[1].querySelector('img')).toBeNull();
     expect(cards[1].querySelector('.fa-utensils')).not.toBeNull();
   });
@@ -114,7 +102,12 @@ describe('CartePage', () => {
     expect(dialog.textContent).toContain('Bœuf bourguignon');
     expect(dialog.textContent).toContain('Mijoté 7 heures');
     expect(dialog.textContent).toContain('13,00 €');
-    expect((dialog.querySelector('img') as HTMLImageElement).src).toBe('https://cdn.test/sheet/dish-1');
+    // The same candidates as the card, so the sheet opens on a photo the browser
+    // already has instead of fetching a second URL while the old pixels linger.
+    const photo = dialog.querySelector('img') as HTMLImageElement;
+    expect(photo.src).toBe('https://cdn.test/photo/dish-1');
+    expect(photo.getAttribute('srcset')).toBe('https://cdn.test/photo/dish-1 800w, https://cdn.test/photo/dish-1-big 1600w');
+    expect(photo.getAttribute('sizes')).toBeTruthy();
   });
 
   it('lists the variants in the sheet for a dish with variants', () => {
@@ -190,22 +183,24 @@ describe('CartePage', () => {
     expect(scroller.textContent).toContain('Mijoté 7 heures');
   });
 
-  it('resets the scroll position when a dish is opened, once the sheet is on screen', () => {
+  // The dialog element survives between dishes, and an <img> keeps its old pixels on a
+  // src change until the new photo decodes — so a sheet that closes full must reopen
+  // empty, or the next dish flashes the previous dish's photo while its own downloads.
+  it('empties the sheet when it closes, so the next dish never opens on the previous photo', async () => {
     const fixture = render(ACME);
 
     (fixture.nativeElement.querySelector('[data-dish="dish-1"]') as HTMLElement).click();
     fixture.detectChanges();
     const dialog = fixture.nativeElement.querySelector('dialog') as HTMLDialogElement;
-    const scroller = fixture.nativeElement.querySelector('dialog .overflow-y-auto') as HTMLElement;
-    trackScrollTop(scroller, dialog);
-    scroller.scrollTop = 200;
+    expect(dialog.querySelector('img')).not.toBeNull();
+
     dialog.click();
+    // The close event is queued as a task, not dispatched inside close().
+    await new Promise((resolve) => setTimeout(resolve));
     fixture.detectChanges();
 
-    (fixture.nativeElement.querySelector('[data-dish="dish-2"]') as HTMLElement).click();
-    fixture.detectChanges();
-
-    expect(scroller.scrollTop).toBe(0);
+    expect(dialog.open).toBe(false);
+    expect(dialog.querySelector('img')).toBeNull();
   });
 
   it('closes the dish sheet on a backdrop click, but not when its content is clicked', () => {

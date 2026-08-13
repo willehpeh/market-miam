@@ -2,9 +2,10 @@ import { StorefrontViewModel, toViewModel } from './storefront-view-model';
 import { CustomerStorefront } from './customer-storefront';
 
 describe('toViewModel', () => {
-  // The carte lists every dish as a row, so it must not pull the 800px card image ten
-  // times over to fill a 64px square.
-  it('sizes a dish photo for the card, the sheet and the carte row', () => {
+  // One crop, a ladder of widths: the card and the sheet render the same candidates, so
+  // opening the sheet finds the photo the card already loaded in the browser cache instead
+  // of flashing the previous dish while a second URL downloads.
+  it('builds a single srcset ladder per dish photo, shared by the card and the sheet', () => {
     const storefront: CustomerStorefront = {
       status: 'published',
       name: 'Chez Test',
@@ -17,7 +18,15 @@ describe('toViewModel', () => {
 
     const view = toViewModel(storefront) as Extract<StorefrontViewModel, { status: 'published' }>;
 
-    expect(view.dishes[0].photo?.thumbUrl).toContain('c_fill,w_200,h_200,q_auto,f_auto/v1/boeuf');
+    expect(view.dishes[0].photo).toEqual({
+      src: 'https://res.cloudinary.com/test-cloud/image/upload/c_fill,w_800,h_600,q_auto,f_auto/v1/boeuf',
+      srcset: [
+        'https://res.cloudinary.com/test-cloud/image/upload/c_fill,w_400,h_300,q_auto,f_auto/v1/boeuf 400w',
+        'https://res.cloudinary.com/test-cloud/image/upload/c_fill,w_800,h_600,q_auto,f_auto/v1/boeuf 800w',
+        'https://res.cloudinary.com/test-cloud/image/upload/c_fill,w_1200,h_900,q_auto,f_auto/v1/boeuf 1200w',
+        'https://res.cloudinary.com/test-cloud/image/upload/c_fill,w_1600,h_1200,q_auto,f_auto/v1/boeuf 1600w',
+      ].join(', '),
+    });
   });
 
   it('labels a variant dish "dès {min}" and maps each variant', () => {
