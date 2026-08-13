@@ -3,6 +3,7 @@ import {
   Catalogues,
   ItemAlreadySoldOutError,
   ItemNotPlannedError,
+  MarketDayNotTodayError,
   MarketDays,
   MarkItemAsSoldOut,
   MarkItemAsSoldOutHandler,
@@ -10,7 +11,7 @@ import {
   VendorScopedEvents
 } from '@market-miam/market-days';
 import { Instant, LocalDate } from '@market-miam/common';
-import { SATURDAY, TestSetMarketDayMenu, TODAY } from '../set-market-day-menu/test-data';
+import { LAST_SATURDAY, SATURDAY, TestSetMarketDayMenu, TODAY } from '../set-market-day-menu/test-data';
 import { seedCatalogue } from '../../seed-catalogue';
 import { expectVendorScopedEvents } from '../../shared-kernel';
 
@@ -107,5 +108,17 @@ describe('Mark Item As Sold Out', () => {
     await setMenu(SATURDAY, 'item-1');
 
     await expect(() => markSoldOut(TODAY)).rejects.toThrow(ItemNotPlannedError);
+  });
+
+  it('rejects marking a future day sold out, even one with the item on its menu', async () => {
+    await setMenu(SATURDAY, 'item-1');
+
+    await expect(() => markSoldOut(SATURDAY)).rejects.toThrow(MarketDayNotTodayError);
+    expect(store.newEvents()).toEqual([expect.objectContaining({ type: 'MarketDayMenuSet' })]);
+  });
+
+  it('rejects marking a past day sold out', async () => {
+    await expect(() => markSoldOut(LAST_SATURDAY)).rejects.toThrow(MarketDayNotTodayError);
+    expect(store.newEvents()).toEqual([]);
   });
 });

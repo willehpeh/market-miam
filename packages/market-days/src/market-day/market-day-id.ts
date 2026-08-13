@@ -21,6 +21,10 @@ export class MarketDayId {
     return this._date.isBefore(date);
   }
 
+  isOn(date: LocalDate): boolean {
+    return this._date.value() === date.value();
+  }
+
   snapshot(): MarketDayIdSnapshot {
     return { marketId: this._marketId.value(), date: this._date.value() };
   }
