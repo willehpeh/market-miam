@@ -8,6 +8,8 @@ export type MarketDayOccurrence = {
   startTime?: string;
   endTime?: string;
   absent: boolean;
+  // The market is happening right now — schedule truth, never true for an absent day.
+  inProgress: boolean;
   // The day's menu joined from the catalogue at query time — current names and prices,
   // in catalogue order. Empty when nothing is planned; suppressed when absent.
   items: CatalogueViewItem[];

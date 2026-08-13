@@ -1,11 +1,10 @@
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
-import { Clock, LocalDateTime } from '@market-miam/common';
 import { FindCustomerStorefront } from './find-customer-storefront';
 import { CustomerStorefront, UpcomingMarket } from './customer-storefront';
 import { SubdomainRegistry } from '../subdomain-registry';
 import { VendorStorefrontViews } from '../vendor-storefront-view';
 import { CatalogueViews } from '../catalogue-view';
-import { FindUpcomingMarketDays, FindUpcomingMarketDaysHandler, hasStarted, MarketDayOccurrence, notYetEnded, parisWallClock } from '../market-schedule-view';
+import { FindUpcomingMarketDays, FindUpcomingMarketDaysHandler, MarketDayOccurrence } from '../market-schedule-view';
 
 const MAX_UPCOMING = 5;
 
@@ -16,7 +15,6 @@ export class FindCustomerStorefrontHandler implements IQueryHandler<FindCustomer
     private readonly storefronts: VendorStorefrontViews,
     private readonly catalogues: CatalogueViews,
     private readonly upcoming: FindUpcomingMarketDaysHandler,
-    private readonly clock: Clock,
   ) {}
 
   async execute(query: FindCustomerStorefront): Promise<CustomerStorefront | undefined> {
@@ -44,15 +42,10 @@ export class FindCustomerStorefrontHandler implements IQueryHandler<FindCustomer
   // so what arrives is only what is still to come.
   private async upcomingMarketsFor(vendorId: string): Promise<UpcomingMarket[]> {
     const { marketDays } = await this.upcoming.execute(new FindUpcomingMarketDays(vendorId));
-    const now = parisWallClock(this.clock.now());
-    return marketDays.slice(0, MAX_UPCOMING).map(day => this.asUpcomingMarket(day, now));
+    return marketDays.slice(0, MAX_UPCOMING).map(day => this.asUpcomingMarket(day));
   }
 
-  private inProgress(day: MarketDayOccurrence, now: LocalDateTime): boolean {
-    return !day.absent && hasStarted(day, now) && notYetEnded(day, now);
-  }
-
-  private asUpcomingMarket(day: MarketDayOccurrence, now: LocalDateTime): UpcomingMarket {
+  private asUpcomingMarket(day: MarketDayOccurrence): UpcomingMarket {
     return {
       date: day.date,
       weekday: day.day,
@@ -64,7 +57,7 @@ export class FindCustomerStorefrontHandler implements IQueryHandler<FindCustomer
       town: day.market.town,
       pitch: day.market.pitch,
       cancelled: day.absent,
-      inProgress: this.inProgress(day, now),
+      inProgress: day.inProgress,
       items: day.items,
       soldOutItemIds: day.soldOutItemIds,
     };

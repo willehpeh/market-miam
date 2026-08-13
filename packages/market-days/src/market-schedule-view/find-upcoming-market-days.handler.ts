@@ -9,7 +9,7 @@ import { MarketDayViews } from '../market-day-view/market-day-views';
 import { CatalogueViewItem } from '../catalogue-view/catalogue-view';
 import { CatalogueViews } from '../catalogue-view/catalogue-views';
 import { Recurrence } from '../calendar/schedule/recurrence';
-import { notYetEnded, parisWallClock } from './market-day-clock';
+import { hasStarted, notYetEnded, parisWallClock } from './market-day-clock';
 
 type DayMenu = { items: CatalogueViewItem[]; soldOutItemIds: string[] };
 type Items = Map<string, DayMenu>;
@@ -42,6 +42,7 @@ export class FindUpcomingMarketDaysHandler implements IQueryHandler<FindUpcoming
     return schedules
       .flatMap(schedule => this.occurrencesOf(schedule, today, horizon, items))
       .filter(day => notYetEnded(day, now))
+      .map(day => ({ ...day, inProgress: !day.absent && hasStarted(day, now) && notYetEnded(day, now) }))
       .sort((a, b) => a.date.localeCompare(b.date));
   }
 
@@ -53,7 +54,7 @@ export class FindUpcomingMarketDaysHandler implements IQueryHandler<FindUpcoming
 
   // Absent days keep their occurrence but lose their menu — suppression lives in the
   // query, so no cross-aggregate coupling between calendar and market day.
-  private occurrencesOf(schedule: MarketScheduleView, from: LocalDate, to: LocalDate, items: Items): MarketDayOccurrence[] {
+  private occurrencesOf(schedule: MarketScheduleView, from: LocalDate, to: LocalDate, items: Items): Omit<MarketDayOccurrence, 'inProgress'>[] {
     const absences = schedule.absences ?? [];
     const occurrences = Recurrence.fromSnapshot(schedule).occurrencesWithin(from, to);
     return occurrences.map(occurrence => {

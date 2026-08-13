@@ -67,6 +67,7 @@ describe('FindUpcomingMarketDays', () => {
         startTime: '08:00',
         endTime: '14:00',
         absent: false,
+        inProgress: false,
         items: [],
         soldOutItemIds: [],
         market,
@@ -253,6 +254,33 @@ describe('FindUpcomingMarketDays', () => {
     const { marketDays } = await upcoming('vendor-id', '2024-01-06', '2024-01-06T21:00:00.000Z');
 
     expect(marketDays[0].date).toEqual('2024-01-06');
+  });
+
+  // 10:00Z is 11:00 in February's Paris (CET) — mid-market for an 08:00–14:00 day.
+  it('flags the occurrence whose market is running right now, and only that one', async () => {
+    await views.recordSchedule(scheduleWith({ startDate: '2024-02-05' }), 'vendor-id');
+
+    const { marketDays } = await upcoming('vendor-id', '2024-02-10', '2024-02-10T10:00:00.000Z');
+
+    expect(marketDays[0]).toMatchObject({ date: '2024-02-10', inProgress: true });
+    expect(marketDays.slice(1).every(day => !day.inProgress)).toBe(true);
+  });
+
+  it('does not flag a market before its start time', async () => {
+    await views.recordSchedule(scheduleWith({ startDate: '2024-02-05' }), 'vendor-id');
+
+    const { marketDays } = await upcoming('vendor-id', '2024-02-10', '2024-02-10T06:00:00.000Z');
+
+    expect(marketDays[0]).toMatchObject({ date: '2024-02-10', inProgress: false });
+  });
+
+  it('never flags an absent day, even during its hours', async () => {
+    await views.recordSchedule(scheduleWith({ startDate: '2024-02-05' }), 'vendor-id');
+    await views.recordAbsence('schedule-1', 'vendor-id', { from: '2024-02-10', to: '2024-02-10' });
+
+    const { marketDays } = await upcoming('vendor-id', '2024-02-10', '2024-02-10T10:00:00.000Z');
+
+    expect(marketDays[0]).toMatchObject({ date: '2024-02-10', absent: true, inProgress: false });
   });
 
   it("carries the day's sold-out marks onto its occurrence", async () => {
