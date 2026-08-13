@@ -4,12 +4,13 @@ import { ItemMarkedAsAvailable, ItemMarkedAsSoldOut, MarketDayEvent, MarketDayMe
 import { ItemAlreadyAvailableError, ItemAlreadySoldOutError, ItemNotPlannedError, MarketDayInThePastError, MarketDayNotTodayError } from './errors';
 import { MarketDayId } from './market-day-id';
 import { Menu } from './menu';
+import { SoldOutItems } from './sold-out-items';
 import { ItemId } from '../catalogue';
 
 export class MarketDay extends Aggregate {
 
   private _menu = new Menu([]);
-  private _soldOut: ItemId[] = [];
+  private _soldOut = new SoldOutItems();
 
   constructor(private readonly _id: MarketDayId,
               private readonly _today: LocalDate) {
@@ -20,13 +21,13 @@ export class MarketDay extends Aggregate {
     switch (event.type) {
       case 'MarketDayMenuSet':
         this._menu = new Menu(event.payload.itemIds.map(itemId => new ItemId(itemId)));
-        this._soldOut = this._soldOut.filter(itemId => this._menu.includes(itemId));
+        this._soldOut = this._soldOut.keptBy(this._menu);
         break;
       case 'ItemMarkedAsSoldOut':
-        this._soldOut.push(new ItemId(event.payload.itemId));
+        this._soldOut = this._soldOut.with(new ItemId(event.payload.itemId));
         break;
       case 'ItemMarkedAsAvailable':
-        this._soldOut = this._soldOut.filter(itemId => !itemId.equals(new ItemId(event.payload.itemId)));
+        this._soldOut = this._soldOut.without(new ItemId(event.payload.itemId));
         break;
     }
   }
@@ -58,7 +59,7 @@ export class MarketDay extends Aggregate {
     if (!this._menu.includes(itemId)) {
       throw new ItemNotPlannedError();
     }
-    if (this._soldOut.some(id => id.equals(itemId))) {
+    if (this._soldOut.includes(itemId)) {
       throw new ItemAlreadySoldOutError();
     }
     const event: ItemMarkedAsSoldOut = {
@@ -80,7 +81,7 @@ export class MarketDay extends Aggregate {
     if (!this._menu.includes(itemId)) {
       throw new ItemNotPlannedError();
     }
-    if (!this._soldOut.some(id => id.equals(itemId))) {
+    if (!this._soldOut.includes(itemId)) {
       throw new ItemAlreadyAvailableError();
     }
     const event: ItemMarkedAsAvailable = {
