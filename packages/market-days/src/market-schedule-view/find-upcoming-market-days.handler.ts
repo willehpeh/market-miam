@@ -43,7 +43,13 @@ export class FindUpcomingMarketDaysHandler implements IQueryHandler<FindUpcoming
       .flatMap(schedule => this.occurrencesOf(schedule, today, horizon, items))
       .filter(day => notYetEnded(day, now))
       .map(day => ({ ...day, inProgress: !day.absent && hasStarted(day, now) && notYetEnded(day, now) }))
-      .sort((a, b) => a.date.localeCompare(b.date));
+      // First-by-start-time is what makes "the first occurrence" the market the vendor is
+      // standing at; the fallback matches hasStarted, which treats no startTime as the
+      // start of the day, and marketId makes the order total (decision 25).
+      .sort((a, b) =>
+        a.date.localeCompare(b.date)
+        || (a.startTime ?? '00:00').localeCompare(b.startTime ?? '00:00')
+        || a.marketId.localeCompare(b.marketId));
   }
 
   private queryPeriod() {

@@ -132,6 +132,32 @@ describe('FindUpcomingMarketDays', () => {
     ]);
   });
 
+  it('orders two markets on the same day by start time, not registration order', async () => {
+    await views.recordSchedule(scheduleWith({
+      scheduleId: 'schedule-2', marketId: 'market-2',
+      days: [{ day: 'SAT', startTime: '16:00', endTime: '20:00' }],
+    }), 'vendor-id');
+    await views.recordSchedule(scheduleWith({}), 'vendor-id');
+
+    const { marketDays } = await upcoming('vendor-id');
+
+    expect(marketDays.slice(0, 2).map(d => [d.date, d.marketId])).toEqual([
+      ['2024-02-10', 'market-1'],
+      ['2024-02-10', 'market-2'],
+    ]);
+  });
+
+  it('sorts an untimed market as starting at the top of its day', async () => {
+    await views.recordSchedule(scheduleWith({}), 'vendor-id');
+    await views.recordSchedule(scheduleWith({
+      scheduleId: 'schedule-2', marketId: 'market-2', days: [{ day: 'SAT' }],
+    }), 'vendor-id');
+
+    const { marketDays } = await upcoming('vendor-id');
+
+    expect(marketDays.slice(0, 2).map(d => d.marketId)).toEqual(['market-2', 'market-1']);
+  });
+
   it('scopes occurrences to the queried vendor', async () => {
     await views.recordSchedule(scheduleWith({}), 'vendor-a');
 
