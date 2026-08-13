@@ -3,16 +3,13 @@ import { EmptyValueError } from '@market-miam/common';
 import {
   Catalogues,
   MarketDayInThePastError,
-  MarketDays,
   NoSuchItemError,
   RetireItem,
   RetireItemHandler,
-  SetMarketDayMenuHandler,
-  VendorScopedEvents
+  SetMarketDayMenuHandler
 } from '@market-miam/market-days';
 import { LAST_SATURDAY, SATURDAY, TestSetMarketDayMenu, TODAY } from './test-data';
-import { seedCatalogue } from '../../seed-catalogue';
-import { clockAt } from '../../clock-at';
+import { marketDayHarness } from '../market-day-harness';
 import { expectVendorScopedEvents } from '../../shared-kernel';
 
 describe('Set Market Day Menu', () => {
@@ -21,12 +18,7 @@ describe('Set Market Day Menu', () => {
   let handler: SetMarketDayMenuHandler;
 
   beforeEach(() => {
-    store = new InMemoryEventStore();
-    const events = new VendorScopedEvents(store);
-    const marketDays = new MarketDays(events, clockAt(TODAY));
-    seedCatalogue(store, 'vendor-1', 'item-1', 'item-2');
-    catalogues = new Catalogues(events);
-    handler = new SetMarketDayMenuHandler(marketDays, catalogues);
+    ({ store, catalogues, menus: handler } = marketDayHarness());
   });
 
   it('sets the menu for a market day', async () => {

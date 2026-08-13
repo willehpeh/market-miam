@@ -1,43 +1,17 @@
 import { InMemoryEventStore } from '@market-miam/event-sourcing';
-import {
-  Catalogues,
-  ItemAlreadySoldOutError,
-  ItemNotPlannedError,
-  MarketDayNotTodayError,
-  MarketDays,
-  MarkItemAsSoldOut,
-  MarkItemAsSoldOutHandler,
-  SetMarketDayMenuHandler,
-  VendorScopedEvents
-} from '@market-miam/market-days';
-import { clockAt } from '../../clock-at';
-import { LAST_SATURDAY, SATURDAY, TestSetMarketDayMenu, TODAY } from '../set-market-day-menu/test-data';
-import { seedCatalogue } from '../../seed-catalogue';
+import { ItemAlreadySoldOutError, ItemNotPlannedError, MarketDayNotTodayError } from '@market-miam/market-days';
+import { marketDayHarness } from '../market-day-harness';
+import { LAST_SATURDAY, SATURDAY, TODAY } from '../set-market-day-menu/test-data';
 import { expectVendorScopedEvents } from '../../shared-kernel';
 
 describe('Mark Item As Sold Out', () => {
   let store: InMemoryEventStore;
-  let handler: MarkItemAsSoldOutHandler;
-  let menus: SetMarketDayMenuHandler;
+  let setMenu: (date: string, ...itemIds: string[]) => Promise<void>;
+  let markSoldOut: (date: string, itemId?: string) => Promise<void>;
 
   beforeEach(() => {
-    store = new InMemoryEventStore();
-    const events = new VendorScopedEvents(store);
-    // clockAt's 09:00 UTC on a June day — 11:00 on the Paris wall clock the event records.
-    const clock = clockAt(TODAY);
-    const marketDays = new MarketDays(events, clock);
-    seedCatalogue(store, 'vendor-1', 'item-1', 'item-2');
-    handler = new MarkItemAsSoldOutHandler(marketDays, clock);
-    menus = new SetMarketDayMenuHandler(marketDays, new Catalogues(events));
+    ({ store, setMenu, markSoldOut } = marketDayHarness());
   });
-
-  function setMenu(date: string, ...itemIds: string[]): Promise<void> {
-    return menus.execute(TestSetMarketDayMenu.with({ date, itemIds }));
-  }
-
-  function markSoldOut(date: string, itemId = 'item-1'): Promise<void> {
-    return handler.execute(new MarkItemAsSoldOut('vendor-1', itemId, 'market-1', date));
-  }
 
   it("marks an item on today's menu as sold out", async () => {
     await setMenu(TODAY, 'item-1');
