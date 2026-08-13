@@ -5,7 +5,7 @@ import { PostgresHarness, startPostgres } from '@market-miam/testing';
 import { bootPostgresApp, eventually } from '../testing/api-postgres-app';
 
 const INSTANCES = 2;
-const DISHES = 200;
+const ITEMS = 200;
 
 describe('A burst of catalogue commands across two instances', () => {
   let postgres: PostgresHarness;
@@ -26,11 +26,11 @@ describe('A burst of catalogue commands across two instances', () => {
       .post('/catalogue')
       .set('Authorization', 'Bearer any-token')
       .send({
-        itemId: `dish-${index}`,
-        name: `Dish ${index}`,
+        itemId: `item-${index}`,
+        name: `Item ${index}`,
         description: 'Mijoté maison',
         price: 1000 + index,
-        imageReference: `v1/dishes/acme-bakery/dish-${index}`,
+        imageReference: `v1/dishes/acme-bakery/item-${index}`,
       });
   }
 
@@ -43,13 +43,13 @@ describe('A burst of catalogue commands across two instances', () => {
     // losers are real lost appends, not a stubbed port. Whatever survives is what
     // both read models must agree on.
     const statuses = (await Promise.all(
-      Array.from({ length: DISHES }, (_, index) => add(apps[index % INSTANCES], index)),
+      Array.from({ length: ITEMS }, (_, index) => add(apps[index % INSTANCES], index)),
     )).map((response) => response.status);
 
     expect(statuses.filter((status) => status !== 201 && status !== 409)).toEqual([]);
     const landed = statuses.filter((status) => status === 201).length;
     // A green tick alone says nothing about how much contention there actually was.
-    console.log(`${landed}/${DISHES} appends landed, ${DISHES - landed} lost the race`);
+    console.log(`${landed}/${ITEMS} appends landed, ${ITEMS - landed} lost the race`);
 
     for (const app of apps) {
       const catalogue = await eventually(

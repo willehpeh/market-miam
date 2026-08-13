@@ -35,7 +35,7 @@ export class FindCustomerStorefrontHandler implements IQueryHandler<FindCustomer
       description: view.description,
       phone: view.phone,
       coverPhoto: view.imageReference || null,
-      dishes: catalogue.items,
+      items: catalogue.items,
       upcomingMarkets: await this.upcomingMarketsFor(vendorId),
     };
   }
@@ -65,7 +65,7 @@ export class FindCustomerStorefrontHandler implements IQueryHandler<FindCustomer
       pitch: day.market.pitch,
       cancelled: day.absent,
       inProgress: this.inProgress(day, now),
-      dishes: day.dishes,
+      items: day.items,
     };
   }
 }

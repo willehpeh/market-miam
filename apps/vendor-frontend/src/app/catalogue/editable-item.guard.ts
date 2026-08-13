@@ -4,11 +4,11 @@ import { CanActivateFn, Router } from '@angular/router';
 import { filter, map, take } from 'rxjs';
 import { CatalogueFacade } from './catalogue.facade';
 
-// The edit route reuses the add form, which reads its dish synchronously at construction.
+// The edit route reuses the add form, which reads its item synchronously at construction.
 // On a cold direct-nav the store is empty, so warm it (only when cold, to preserve an
-// optimistic insert) and hold the route until the load settles. A dish that still isn't
+// optimistic insert) and hold the route until the load settles. An item that still isn't
 // there is a stale link — bounce to the catalogue.
-export const editableDish: CanActivateFn = (route) => {
+export const editableItem: CanActivateFn = (route) => {
   const catalogue = inject(CatalogueFacade);
   const router = inject(Router);
   if (catalogue.items().length === 0) {

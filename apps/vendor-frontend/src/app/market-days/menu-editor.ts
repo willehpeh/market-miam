@@ -25,17 +25,17 @@ import { MarketDayFacade } from './market-day.facade';
         <p class="mt-3 text-sm text-ink-soft">{{ marketDay.marketName }}</p>
 
         <ul class="mt-6 space-y-2">
-          @for (dish of dishes(); track dish.itemId) {
+          @for (item of items(); track item.itemId) {
             <li>
               <label class="flex items-center gap-3 rounded-card border border-line bg-surface p-3">
                 <input
                   type="checkbox"
                   class="size-5 shrink-0"
-                  [checked]="dish.chosen"
-                  (change)="toggle(dish.itemId)"
+                  [checked]="item.chosen"
+                  (change)="toggle(item.itemId)"
                 />
-                <span class="min-w-0 flex-1 break-words font-bold text-ink">{{ dish.name }}</span>
-                <span class="shrink-0 font-mono text-sm text-muted">{{ dish.priceLabel }}</span>
+                <span class="min-w-0 flex-1 break-words font-bold text-ink">{{ item.name }}</span>
+                <span class="shrink-0 font-mono text-sm text-muted">{{ item.priceLabel }}</span>
               </label>
             </li>
           } @empty {
@@ -88,7 +88,7 @@ export class MenuEditor {
   private readonly touched = signal<ReadonlySet<string> | null>(null);
   private readonly selected = computed(() => this.touched() ?? new Set(this.occurrence()?.itemIds ?? []));
 
-  readonly dishes = computed(() =>
+  readonly items = computed(() =>
     this.catalogue.items().map((item) => ({
       itemId: item.itemId,
       name: item.name,

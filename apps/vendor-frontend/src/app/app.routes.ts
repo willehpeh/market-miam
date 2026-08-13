@@ -3,9 +3,9 @@ import { Landing } from './landing/landing';
 import { Dashboard } from './dashboard/dashboard';
 import { CataloguePage } from './catalogue/catalogue-page';
 import { CatalogueList } from './catalogue/catalogue-list';
-import { AddDish } from './catalogue/add-dish';
-import { ReorderDishes } from './catalogue/reorder-dishes';
-import { editableDish } from './catalogue/editable-dish.guard';
+import { AddItem } from './catalogue/add-item';
+import { ReorderItems } from './catalogue/reorder-items';
+import { editableItem } from './catalogue/editable-item.guard';
 import { MarketsList } from './markets/markets-list';
 import { AddSchedule } from './markets/add-schedule';
 import { editableSchedule } from './markets/editable-schedule.guard';
@@ -29,14 +29,14 @@ export const appRoutes: Route[] = [
       {
         path: 'catalogue',
         children: [
-          { path: 'new', component: AddDish },
-          { path: ':itemId/edit', component: AddDish, canActivate: [editableDish] },
+          { path: 'new', component: AddItem },
+          { path: ':itemId/edit', component: AddItem, canActivate: [editableItem] },
           {
             path: '',
             component: CataloguePage,
             children: [
               { path: '', component: CatalogueList },
-              { path: 'order', component: ReorderDishes },
+              { path: 'order', component: ReorderItems },
             ],
           },
         ],

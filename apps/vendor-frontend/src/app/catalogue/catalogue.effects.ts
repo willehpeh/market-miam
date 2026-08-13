@@ -8,29 +8,29 @@ import { Catalogue } from './catalogue';
 import { PhotoUploads } from '../storefront/photo-uploads';
 import { MAX_SOURCE_BYTES, MAX_UPLOAD_BYTES, PhotoDownscale } from '../storefront/photo-downscale';
 import {
-  AddDish,
-  AddDishFailure,
-  AddDishSuccess,
+  AddItem,
+  AddItemFailure,
+  AddItemSuccess,
   catalogueFeature,
   LoadCatalogue,
   LoadCatalogueFailure,
   LoadCatalogueSuccess,
-  ReorderDishes,
-  ReorderDishesFailure,
-  ReorderDishesSuccess,
-  RetireDish,
-  RetireDishFailure,
-  RetireDishSuccess,
-  ReviseDish,
-  ReviseDishFailure,
-  ReviseDishSuccess,
-  ChangeDishPhoto,
-  ChangeDishPhotoFailure,
-  ChangeDishPhotoSuccess,
-  UploadDishPhoto,
-  UploadDishPhotoFailure,
-  UploadDishPhotoSuccess,
-  UploadDishPhotoTooLarge,
+  ReorderItems,
+  ReorderItemsFailure,
+  ReorderItemsSuccess,
+  RetireItem,
+  RetireItemFailure,
+  RetireItemSuccess,
+  ReviseItem,
+  ReviseItemFailure,
+  ReviseItemSuccess,
+  ChangeItemPhoto,
+  ChangeItemPhotoFailure,
+  ChangeItemPhotoSuccess,
+  UploadItemPhoto,
+  UploadItemPhotoFailure,
+  UploadItemPhotoSuccess,
+  UploadItemPhotoTooLarge,
 } from './catalogue.state';
 
 @Injectable()
@@ -58,102 +58,102 @@ export class CatalogueEffects {
   // matters is the one *after* shrinking: a 12 Mo photo off the roll leaves here at a few
   // hundred Ko. Shrinking on this side of the dispatch also means the spinner is already
   // up while the phone spends its half-second decoding and re-encoding.
-  uploadDishPhoto$ = createEffect(() =>
+  uploadItemPhoto$ = createEffect(() =>
     this.actions$.pipe(
-      ofType(UploadDishPhoto),
+      ofType(UploadItemPhoto),
       switchMap(({ itemId, file }) => {
         if (file.size > MAX_SOURCE_BYTES) {
-          return of(UploadDishPhotoTooLarge());
+          return of(UploadItemPhotoTooLarge());
         }
         return this.downscale.shrink(file).pipe(
           switchMap((prepared) =>
             // Only a photo that came back undecoded can still be over the ceiling.
             prepared.size > MAX_UPLOAD_BYTES
-              ? of(UploadDishPhotoTooLarge())
+              ? of(UploadItemPhotoTooLarge())
               : this.catalogue.photoSignature(itemId).pipe(
                   switchMap((signed) =>
                     this.photoUploads.upload(prepared, signed).pipe(
                       map((uploaded) =>
-                        UploadDishPhotoSuccess({ itemId, imageReference: `v${uploaded.version}/${uploaded.publicId}` }),
+                        UploadItemPhotoSuccess({ itemId, imageReference: `v${uploaded.version}/${uploaded.publicId}` }),
                       ),
                     ),
                   ),
                 ),
           ),
-          catchError(() => of(UploadDishPhotoFailure())),
+          catchError(() => of(UploadItemPhotoFailure())),
         );
       }),
     ),
   );
 
-  // Persist the photo the moment it finishes uploading, but only for a dish that already
-  // exists in the catalogue (an edit). A brand-new dish isn't in the store yet, so its photo
-  // rides along in the AddDish payload instead of a standalone PUT.
+  // Persist the photo the moment it finishes uploading, but only for an item that already
+  // exists in the catalogue (an edit). A brand-new item isn't in the store yet, so its photo
+  // rides along in the AddItem payload instead of a standalone PUT.
   persistUploadedPhoto$ = createEffect(() =>
     this.actions$.pipe(
-      ofType(UploadDishPhotoSuccess),
+      ofType(UploadItemPhotoSuccess),
       withLatestFrom(this.store.select(catalogueFeature.selectItems)),
       filter(([{ itemId }, items]) => items.some((item) => item.itemId === itemId)),
-      map(([{ itemId, imageReference }]) => ChangeDishPhoto({ itemId, imageReference })),
+      map(([{ itemId, imageReference }]) => ChangeItemPhoto({ itemId, imageReference })),
     ),
   );
 
-  addDish$ = createEffect(() =>
+  addItem$ = createEffect(() =>
     this.actions$.pipe(
-      ofType(AddDish),
+      ofType(AddItem),
       switchMap(({ itemId, name, description, price, imageReference, variants }) =>
         this.catalogue.add({ itemId, name, description, price, imageReference, variants }).pipe(
-          map(() => AddDishSuccess({ item: { itemId, name, description, price, imageReference: imageReference ?? '', variants } })),
-          catchError(() => of(AddDishFailure())),
+          map(() => AddItemSuccess({ item: { itemId, name, description, price, imageReference: imageReference ?? '', variants } })),
+          catchError(() => of(AddItemFailure())),
         ),
       ),
     ),
   );
 
-  reviseDish$ = createEffect(() =>
+  reviseItem$ = createEffect(() =>
     this.actions$.pipe(
-      ofType(ReviseDish),
+      ofType(ReviseItem),
       switchMap(({ itemId, name, description, price, variants }) => {
         const revision = { itemId, name, description, price, variants };
         return this.catalogue.revise(revision).pipe(
-          map(() => ReviseDishSuccess(revision)),
-          catchError(() => of(ReviseDishFailure())),
+          map(() => ReviseItemSuccess(revision)),
+          catchError(() => of(ReviseItemFailure())),
         );
       }),
     ),
   );
 
-  reorderDishes$ = createEffect(() =>
+  reorderItems$ = createEffect(() =>
     this.actions$.pipe(
-      ofType(ReorderDishes),
+      ofType(ReorderItems),
       switchMap(({ itemIds }) =>
         this.catalogue.reorder(itemIds).pipe(
-          map(() => ReorderDishesSuccess({ itemIds })),
-          catchError(() => of(ReorderDishesFailure())),
+          map(() => ReorderItemsSuccess({ itemIds })),
+          catchError(() => of(ReorderItemsFailure())),
         ),
       ),
     ),
   );
 
-  retireDish$ = createEffect(() =>
+  retireItem$ = createEffect(() =>
     this.actions$.pipe(
-      ofType(RetireDish),
+      ofType(RetireItem),
       switchMap(({ itemId }) =>
         this.catalogue.retire(itemId).pipe(
-          map(() => RetireDishSuccess({ itemId })),
-          catchError(() => of(RetireDishFailure())),
+          map(() => RetireItemSuccess({ itemId })),
+          catchError(() => of(RetireItemFailure())),
         ),
       ),
     ),
   );
 
-  changeDishPhoto$ = createEffect(() =>
+  changeItemPhoto$ = createEffect(() =>
     this.actions$.pipe(
-      ofType(ChangeDishPhoto),
+      ofType(ChangeItemPhoto),
       switchMap(({ itemId, imageReference }) =>
         this.catalogue.changePhoto(itemId, imageReference).pipe(
-          map(() => ChangeDishPhotoSuccess({ itemId, imageReference })),
-          catchError(() => of(ChangeDishPhotoFailure())),
+          map(() => ChangeItemPhotoSuccess({ itemId, imageReference })),
+          catchError(() => of(ChangeItemPhotoFailure())),
         ),
       ),
     ),
@@ -162,7 +162,7 @@ export class CatalogueEffects {
   navigateOnAdded$ = createEffect(
     () =>
       this.actions$.pipe(
-        ofType(AddDishSuccess, ReviseDishSuccess, ReorderDishesSuccess, RetireDishSuccess),
+        ofType(AddItemSuccess, ReviseItemSuccess, ReorderItemsSuccess, RetireItemSuccess),
         tap(() => {
           void this.router.navigate(['/dashboard/catalogue']);
         }),

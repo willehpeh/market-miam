@@ -1,7 +1,7 @@
 import { describe } from 'vitest';
 import { VendorScopedEvents } from '@market-miam/market-days';
 import { InMemoryEventStore } from '@market-miam/event-sourcing';
-import { AddItemToCatalogueHandler, Catalogues, InvalidDishPricingError, NoSuchItemError, RetireItem, RetireItemHandler, ReviseItem, ReviseItemHandler } from '@market-miam/market-days';
+import { AddItemToCatalogueHandler, Catalogues, InvalidItemPricingError, NoSuchItemError, RetireItem, RetireItemHandler, ReviseItem, ReviseItemHandler } from '@market-miam/market-days';
 import { TestAddItemToCatalogue } from '../add-item-to-catalogue/test-data';
 import { TestReviseItem } from './test-data';
 import { expectVendorScopedEvents } from '../../shared-kernel';
@@ -38,7 +38,7 @@ describe('Revise item', () => {
     ]);
   });
 
-  it('revises a flat dish into a variant dish (variants, no price)', async () => {
+  it('revises a flat item into a variant item (variants, no price)', async () => {
     const added = TestAddItemToCatalogue.simple();
     await new AddItemToCatalogueHandler(catalogues).execute(added);
 
@@ -82,7 +82,7 @@ describe('Revise item', () => {
         { name: 'Large', description: '', price: 1200 },
       ] });
 
-      await expect(handler.execute(command)).rejects.toThrow(InvalidDishPricingError);
+      await expect(handler.execute(command)).rejects.toThrow(InvalidItemPricingError);
       expect(store.newEvents()).toEqual([expect.objectContaining({ type: 'ItemAddedToCatalogue' })]);
     });
 
@@ -92,7 +92,7 @@ describe('Revise item', () => {
 
       const command = new ReviseItem({ itemId: added.itemId, vendorId: added.vendorId, name: 'Revised Name', description: 'Revised Description' });
 
-      await expect(handler.execute(command)).rejects.toThrow(InvalidDishPricingError);
+      await expect(handler.execute(command)).rejects.toThrow(InvalidItemPricingError);
       expect(store.newEvents()).toEqual([expect.objectContaining({ type: 'ItemAddedToCatalogue' })]);
     });
   });

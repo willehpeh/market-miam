@@ -3,7 +3,7 @@ import {
   AddItemToCatalogueHandler,
   DuplicateVariantNameError,
   InvalidPriceError,
-  InvalidDishPricingError,
+  InvalidItemPricingError,
   ItemAddedToCatalogue,
   ItemAlreadyInCatalogueError,
   TooFewVariantsError,
@@ -46,7 +46,7 @@ describe('AddItemToCatalogue', () => {
     expect(store.newEvents()).toEqual([expect.objectContaining(expectedEvent)]);
   });
 
-  it('adds a dish with variants and no dish-level price', async () => {
+  it('adds an item with variants and no item-level price', async () => {
     const command = TestAddItemToCatalogue.withVariants([
       { name: 'Small', description: '', price: 800 },
       { name: 'Large', description: 'extra hungry', price: 1200 },
@@ -75,7 +75,7 @@ describe('AddItemToCatalogue', () => {
   it.each([
     { when: 'no variants', variants: [] as VariantInput[] },
     { when: 'a single variant', variants: [{ name: 'Only', description: '', price: 800 }] },
-  ])('rejects a variant dish with $when', async ({ variants }) => {
+  ])('rejects a variant item with $when', async ({ variants }) => {
     await expect(
       handler.execute(TestAddItemToCatalogue.withVariants(variants))
     ).rejects.toThrow(TooFewVariantsError);
@@ -83,7 +83,7 @@ describe('AddItemToCatalogue', () => {
     expect(store.newEvents()).toEqual([]);
   });
 
-  it('rejects a variant dish with duplicate variant names', async () => {
+  it('rejects a variant item with duplicate variant names', async () => {
     const command = TestAddItemToCatalogue.withVariants([
       { name: 'Large', description: '', price: 800 },
       { name: 'Large', description: 'the other large', price: 1200 },
@@ -94,7 +94,7 @@ describe('AddItemToCatalogue', () => {
   });
 
   describe('rejects an invalid pricing shape', () => {
-    it('rejects a dish with both a price and variants', async () => {
+    it('rejects an item with both a price and variants', async () => {
       const command = new AddItemToCatalogue({
         itemId: 'item-id',
         vendorId: 'vendor-id',
@@ -107,11 +107,11 @@ describe('AddItemToCatalogue', () => {
         ],
       });
 
-      await expect(handler.execute(command)).rejects.toThrow(InvalidDishPricingError);
+      await expect(handler.execute(command)).rejects.toThrow(InvalidItemPricingError);
       expect(store.newEvents()).toEqual([]);
     });
 
-    it('rejects a dish with neither a price nor variants', async () => {
+    it('rejects an item with neither a price nor variants', async () => {
       const command = new AddItemToCatalogue({
         itemId: 'item-id',
         vendorId: 'vendor-id',
@@ -119,7 +119,7 @@ describe('AddItemToCatalogue', () => {
         description: '',
       });
 
-      await expect(handler.execute(command)).rejects.toThrow(InvalidDishPricingError);
+      await expect(handler.execute(command)).rejects.toThrow(InvalidItemPricingError);
       expect(store.newEvents()).toEqual([]);
     });
   });

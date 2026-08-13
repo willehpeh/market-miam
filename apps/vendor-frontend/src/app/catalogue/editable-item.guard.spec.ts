@@ -1,9 +1,9 @@
 import { TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
-import { AddDish } from './add-dish';
+import { AddItem } from './add-item';
 import { CatalogueList } from './catalogue-list';
-import { editableDish } from './editable-dish.guard';
+import { editableItem } from './editable-item.guard';
 import { CatalogueFacade } from './catalogue.facade';
 import { FakeCatalogueFacade } from './fake.catalogue.facade';
 import { CatalogueItemView } from './catalogue';
@@ -13,10 +13,10 @@ const existing: CatalogueItemView = {
   name: 'Bœuf bourguignon',
   description: 'Mijoté maison',
   price: 1300,
-  imageReference: 'v1/dishes/acme/item-1',
+  imageReference: 'v1/items/acme/item-1',
 };
 
-describe('editableDish guard', () => {
+describe('editableItem guard', () => {
   let fake: FakeCatalogueFacade;
   let harness: RouterTestingHarness;
 
@@ -31,7 +31,7 @@ describe('editableDish guard', () => {
       providers: [
         provideRouter([
           { path: 'dashboard/catalogue', component: CatalogueList },
-          { path: 'dashboard/catalogue/:itemId/edit', component: AddDish, canActivate: [editableDish] },
+          { path: 'dashboard/catalogue/:itemId/edit', component: AddItem, canActivate: [editableItem] },
         ]),
         { provide: CatalogueFacade, useValue: fake },
       ],
@@ -40,7 +40,7 @@ describe('editableDish guard', () => {
   });
 
   it('warms a cold store so a direct-nav edit prefills instead of adding', async () => {
-    await harness.navigateByUrl('/dashboard/catalogue/item-1/edit', AddDish);
+    await harness.navigateByUrl('/dashboard/catalogue/item-1/edit', AddItem);
     harness.detectChanges();
 
     expect(TestBed.inject(Router).url).toBe('/dashboard/catalogue/item-1/edit');
@@ -49,7 +49,7 @@ describe('editableDish guard', () => {
     expect(form.querySelector('#name')).toHaveValue('Bœuf bourguignon');
   });
 
-  it('bounces to the catalogue when the dish is unknown', async () => {
+  it('bounces to the catalogue when the item is unknown', async () => {
     await harness.navigateByUrl('/dashboard/catalogue/ghost/edit');
 
     expect(TestBed.inject(Router).url).toBe('/dashboard/catalogue');
@@ -58,7 +58,7 @@ describe('editableDish guard', () => {
   it('does not reload a store that is already warm', async () => {
     fake.items.set([existing]);
 
-    await harness.navigateByUrl('/dashboard/catalogue/item-1/edit', AddDish);
+    await harness.navigateByUrl('/dashboard/catalogue/item-1/edit', AddItem);
     harness.detectChanges();
 
     expect(fake.loaded).toBe(false);

@@ -1,8 +1,8 @@
 import { inject, Injectable } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { CatalogueFacade } from './catalogue.facade';
-import { DishRevision, NewDish } from './catalogue';
-import { AddDish, BeginDish, catalogueFeature, ChangeDishPhoto, LoadCatalogue, ReorderDishes, RetireDish, ReviseDish, UploadDishPhoto } from './catalogue.state';
+import { ItemRevision, NewItem } from './catalogue';
+import { AddItem, BeginItem, catalogueFeature, ChangeItemPhoto, LoadCatalogue, ReorderItems, RetireItem, ReviseItem, UploadItemPhoto } from './catalogue.state';
 
 @Injectable()
 export class StoreCatalogueFacade implements CatalogueFacade {
@@ -19,31 +19,31 @@ export class StoreCatalogueFacade implements CatalogueFacade {
     this.store.dispatch(LoadCatalogue());
   }
 
-  beginDish(): void {
-    this.store.dispatch(BeginDish());
+  beginItem(): void {
+    this.store.dispatch(BeginItem());
   }
 
-  uploadDishPhoto(itemId: string, file: File): void {
-    this.store.dispatch(UploadDishPhoto({ itemId, file }));
+  uploadItemPhoto(itemId: string, file: File): void {
+    this.store.dispatch(UploadItemPhoto({ itemId, file }));
   }
 
-  addDish(dish: NewDish): void {
-    this.store.dispatch(AddDish(dish));
+  addItem(item: NewItem): void {
+    this.store.dispatch(AddItem(item));
   }
 
-  reviseDish(revision: DishRevision): void {
-    this.store.dispatch(ReviseDish(revision));
+  reviseItem(revision: ItemRevision): void {
+    this.store.dispatch(ReviseItem(revision));
   }
 
-  changeDishPhoto(itemId: string, imageReference: string): void {
-    this.store.dispatch(ChangeDishPhoto({ itemId, imageReference }));
+  changeItemPhoto(itemId: string, imageReference: string): void {
+    this.store.dispatch(ChangeItemPhoto({ itemId, imageReference }));
   }
 
-  reorderDishes(itemIds: string[]): void {
-    this.store.dispatch(ReorderDishes({ itemIds }));
+  reorderItems(itemIds: string[]): void {
+    this.store.dispatch(ReorderItems({ itemIds }));
   }
 
-  retireDish(itemId: string): void {
-    this.store.dispatch(RetireDish({ itemId }));
+  retireItem(itemId: string): void {
+    this.store.dispatch(RetireItem({ itemId }));
   }
 }

@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-// The day's menu is held as ids, not as the dishes the API joins on to it: the card counts
+// The day's menu is held as ids, not as the items the API joins on to it: the card counts
 // them and the editor ticks them, and both read names and prices from the catalogue store.
 export interface MarketDayView {
   scheduleId: string;

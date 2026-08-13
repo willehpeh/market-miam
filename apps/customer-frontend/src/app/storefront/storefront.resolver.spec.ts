@@ -15,13 +15,13 @@ const ACME: CustomerStorefront = {
   description: 'Fresh bread daily',
   phone: '0102030405',
   coverPhoto: 'v7/cover',
-  dishes: [
-    { itemId: 'dish-1', name: 'Bœuf bourguignon', description: 'Mijoté 7 heures', price: 1300, imageReference: 'v7/dish-1' },
-    { itemId: 'dish-2', name: 'Tarte tatin', description: 'Aux pommes', price: 600, imageReference: '' },
+  items: [
+    { itemId: 'item-1', name: 'Bœuf bourguignon', description: 'Mijoté 7 heures', price: 1300, imageReference: 'v7/item-1' },
+    { itemId: 'item-2', name: 'Tarte tatin', description: 'Aux pommes', price: 600, imageReference: '' },
   ],
   upcomingMarkets: [
-    { date: '2026-06-18', weekday: 'THU', marketName: 'Marché Saint-Antoine', startTime: '08:00', endTime: '13:30', street: 'Quai Saint-Antoine', postalCode: '69002', town: 'Lyon', pitch: 'A3', cancelled: false, inProgress: false, dishes: [] },
-    { date: '2026-06-23', weekday: 'TUE', marketName: 'Marché de la Croix-Rousse', startTime: '08:00', endTime: '13:00', postalCode: '69004', town: 'Lyon', cancelled: true, inProgress: false, dishes: [] },
+    { date: '2026-06-18', weekday: 'THU', marketName: 'Marché Saint-Antoine', startTime: '08:00', endTime: '13:30', street: 'Quai Saint-Antoine', postalCode: '69002', town: 'Lyon', pitch: 'A3', cancelled: false, inProgress: false, items: [] },
+    { date: '2026-06-23', weekday: 'TUE', marketName: 'Marché de la Croix-Rousse', startTime: '08:00', endTime: '13:00', postalCode: '69004', town: 'Lyon', cancelled: true, inProgress: false, items: [] },
   ],
 };
 
@@ -66,24 +66,24 @@ describe('storefrontResolver', () => {
       phone: '0102030405',
       coverUrl: 'https://res.cloudinary.com/test-cloud/image/upload/c_fill,w_1200,h_750,q_auto,f_auto/v7/cover',
       socialImageUrl: 'https://res.cloudinary.com/test-cloud/image/upload/c_fill,w_1200,h_630,q_auto,f_auto/v7/cover',
-      dishes: [
+      items: [
         {
-          itemId: 'dish-1',
+          itemId: 'item-1',
           name: 'Bœuf bourguignon',
           description: 'Mijoté 7 heures',
           priceLabel: '13,00 €',
           photo: {
-            src: 'https://res.cloudinary.com/test-cloud/image/upload/c_fill,w_800,h_600,q_auto,f_auto/v7/dish-1',
+            src: 'https://res.cloudinary.com/test-cloud/image/upload/c_fill,w_800,h_600,q_auto,f_auto/v7/item-1',
             srcset: [
-              'https://res.cloudinary.com/test-cloud/image/upload/c_fill,w_400,h_300,q_auto,f_auto/v7/dish-1 400w',
-              'https://res.cloudinary.com/test-cloud/image/upload/c_fill,w_800,h_600,q_auto,f_auto/v7/dish-1 800w',
-              'https://res.cloudinary.com/test-cloud/image/upload/c_fill,w_1200,h_900,q_auto,f_auto/v7/dish-1 1200w',
-              'https://res.cloudinary.com/test-cloud/image/upload/c_fill,w_1600,h_1200,q_auto,f_auto/v7/dish-1 1600w',
+              'https://res.cloudinary.com/test-cloud/image/upload/c_fill,w_400,h_300,q_auto,f_auto/v7/item-1 400w',
+              'https://res.cloudinary.com/test-cloud/image/upload/c_fill,w_800,h_600,q_auto,f_auto/v7/item-1 800w',
+              'https://res.cloudinary.com/test-cloud/image/upload/c_fill,w_1200,h_900,q_auto,f_auto/v7/item-1 1200w',
+              'https://res.cloudinary.com/test-cloud/image/upload/c_fill,w_1600,h_1200,q_auto,f_auto/v7/item-1 1600w',
             ].join(', '),
           },
         },
         {
-          itemId: 'dish-2',
+          itemId: 'item-2',
           name: 'Tarte tatin',
           description: 'Aux pommes',
           priceLabel: '6,00 €',
@@ -91,8 +91,8 @@ describe('storefrontResolver', () => {
         },
       ],
       upcomingMarkets: [
-        { weekday: 'JEU', day: '18', month: 'JUIN', marketName: 'Marché Saint-Antoine', hours: '8h – 13h30', address: 'Quai Saint-Antoine, Lyon', cancelled: false, inProgress: false, dishes: [] },
-        { weekday: 'MAR', day: '23', month: 'JUIN', marketName: 'Marché de la Croix-Rousse', hours: '8h – 13h', address: 'Lyon', cancelled: true, inProgress: false, dishes: [] },
+        { weekday: 'JEU', day: '18', month: 'JUIN', marketName: 'Marché Saint-Antoine', hours: '8h – 13h30', address: 'Quai Saint-Antoine, Lyon', cancelled: false, inProgress: false, items: [] },
+        { weekday: 'MAR', day: '23', month: 'JUIN', marketName: 'Marché de la Croix-Rousse', hours: '8h – 13h', address: 'Lyon', cancelled: true, inProgress: false, items: [] },
       ],
     });
   });

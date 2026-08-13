@@ -3,7 +3,7 @@ import { CatalogueViewItem, CatalogueViews, CatalogueViewStore } from '@market-m
 
 type Store = CatalogueViews & CatalogueViewStore;
 
-const dish = (overrides: Partial<CatalogueViewItem> = {}): CatalogueViewItem => ({
+const item = (overrides: Partial<CatalogueViewItem> = {}): CatalogueViewItem => ({
   itemId: 'item-1',
   name: 'Bœuf bourguignon',
   description: 'Mijoté maison',
@@ -25,12 +25,12 @@ export function catalogueViewsContract(name: string, create: () => Store): void 
     });
 
     it('adds an item to the catalogue', async () => {
-      await store.addItemToCatalogue(dish(), 'v1');
-      expect(await store.forVendor('v1')).toEqual({ items: [dish()] });
+      await store.addItemToCatalogue(item(), 'v1');
+      expect(await store.forVendor('v1')).toEqual({ items: [item()] });
     });
 
-    it('round-trips a variant dish (variants, no price)', async () => {
-      const variantDish: CatalogueViewItem = {
+    it('round-trips a variant item (variants, no price)', async () => {
+      const variantItem: CatalogueViewItem = {
         itemId: 'pizza',
         name: 'Pizza',
         description: 'Wood-fired',
@@ -40,16 +40,16 @@ export function catalogueViewsContract(name: string, create: () => Store): void 
           { name: 'Pepperoni', description: 'spicy', price: 1200 },
         ],
       };
-      await store.addItemToCatalogue(variantDish, 'v1');
-      expect(await store.forVendor('v1')).toEqual({ items: [variantDish] });
+      await store.addItemToCatalogue(variantItem, 'v1');
+      expect(await store.forVendor('v1')).toEqual({ items: [variantItem] });
     });
 
     // A rebuild replays every ItemAddedToCatalogue onto the store, so re-adding must
     // replace rather than append — otherwise a replay duplicates the whole catalogue.
     it('replaces a re-added item in place', async () => {
-      await store.addItemToCatalogue(dish({ itemId: 'a' }), 'v1');
-      await store.addItemToCatalogue(dish({ itemId: 'b' }), 'v1');
-      await store.addItemToCatalogue(dish({ itemId: 'a', name: 'Renamed' }), 'v1');
+      await store.addItemToCatalogue(item({ itemId: 'a' }), 'v1');
+      await store.addItemToCatalogue(item({ itemId: 'b' }), 'v1');
+      await store.addItemToCatalogue(item({ itemId: 'a', name: 'Renamed' }), 'v1');
 
       const { items } = await store.forVendor('v1');
       expect(items.map(item => item.itemId)).toEqual(['a', 'b']);
@@ -57,15 +57,15 @@ export function catalogueViewsContract(name: string, create: () => Store): void 
     });
 
     it('keeps items in the order they were added', async () => {
-      await store.addItemToCatalogue(dish({ itemId: 'a', name: 'A' }), 'v1');
-      await store.addItemToCatalogue(dish({ itemId: 'b', name: 'B' }), 'v1');
+      await store.addItemToCatalogue(item({ itemId: 'a', name: 'A' }), 'v1');
+      await store.addItemToCatalogue(item({ itemId: 'b', name: 'B' }), 'v1');
       expect((await store.forVendor('v1')).items.map(item => item.itemId)).toEqual(['a', 'b']);
     });
 
     it('reorders the items into the order given', async () => {
-      await store.addItemToCatalogue(dish({ itemId: 'a', name: 'A' }), 'v1');
-      await store.addItemToCatalogue(dish({ itemId: 'b', name: 'B' }), 'v1');
-      await store.addItemToCatalogue(dish({ itemId: 'c', name: 'C' }), 'v1');
+      await store.addItemToCatalogue(item({ itemId: 'a', name: 'A' }), 'v1');
+      await store.addItemToCatalogue(item({ itemId: 'b', name: 'B' }), 'v1');
+      await store.addItemToCatalogue(item({ itemId: 'c', name: 'C' }), 'v1');
 
       await store.reorderItems(['c', 'a', 'b'], 'v1');
 
@@ -73,20 +73,20 @@ export function catalogueViewsContract(name: string, create: () => Store): void 
     });
 
     it('adds an item after a reorder to the end of the order', async () => {
-      await store.addItemToCatalogue(dish({ itemId: 'a', name: 'A' }), 'v1');
-      await store.addItemToCatalogue(dish({ itemId: 'b', name: 'B' }), 'v1');
+      await store.addItemToCatalogue(item({ itemId: 'a', name: 'A' }), 'v1');
+      await store.addItemToCatalogue(item({ itemId: 'b', name: 'B' }), 'v1');
       await store.reorderItems(['b', 'a'], 'v1');
 
-      await store.addItemToCatalogue(dish({ itemId: 'c', name: 'C' }), 'v1');
+      await store.addItemToCatalogue(item({ itemId: 'c', name: 'C' }), 'v1');
 
       expect((await store.forVendor('v1')).items.map(item => item.itemId)).toEqual(['b', 'a', 'c']);
     });
 
     it('leaves another vendor\'s order alone when reordering', async () => {
-      await store.addItemToCatalogue(dish({ itemId: 'a', name: 'A' }), 'v1');
-      await store.addItemToCatalogue(dish({ itemId: 'b', name: 'B' }), 'v1');
-      await store.addItemToCatalogue(dish({ itemId: 'a', name: 'A' }), 'v2');
-      await store.addItemToCatalogue(dish({ itemId: 'b', name: 'B' }), 'v2');
+      await store.addItemToCatalogue(item({ itemId: 'a', name: 'A' }), 'v1');
+      await store.addItemToCatalogue(item({ itemId: 'b', name: 'B' }), 'v1');
+      await store.addItemToCatalogue(item({ itemId: 'a', name: 'A' }), 'v2');
+      await store.addItemToCatalogue(item({ itemId: 'b', name: 'B' }), 'v2');
 
       await store.reorderItems(['b', 'a'], 'v1');
 
@@ -94,20 +94,20 @@ export function catalogueViewsContract(name: string, create: () => Store): void 
     });
 
     it('scopes items to their vendor', async () => {
-      await store.addItemToCatalogue(dish({ itemId: 'a' }), 'v1');
+      await store.addItemToCatalogue(item({ itemId: 'a' }), 'v1');
       expect(await store.forVendor('v2')).toEqual({ items: [] });
     });
 
     it('revises an item name, description and price, keeping its image', async () => {
-      await store.addItemToCatalogue(dish(), 'v1');
+      await store.addItemToCatalogue(item(), 'v1');
       await store.reviseItem('item-1', { name: 'Poulet rôti', description: 'Fermier', price: 1600 }, 'v1');
       expect(await store.forVendor('v1')).toEqual({
-        items: [dish({ name: 'Poulet rôti', description: 'Fermier', price: 1600 })],
+        items: [item({ name: 'Poulet rôti', description: 'Fermier', price: 1600 })],
       });
     });
 
-    it('revises a flat dish into a variant dish, clearing the price', async () => {
-      await store.addItemToCatalogue(dish(), 'v1');
+    it('revises a flat item into a variant item, clearing the price', async () => {
+      await store.addItemToCatalogue(item(), 'v1');
       await store.reviseItem('item-1', {
         name: 'Pizza',
         description: 'Wood-fired',
@@ -130,7 +130,7 @@ export function catalogueViewsContract(name: string, create: () => Store): void 
       });
     });
 
-    it('revises a variant dish back to a single price, clearing the variants', async () => {
+    it('revises a variant item back to a single price, clearing the variants', async () => {
       await store.addItemToCatalogue({
         itemId: 'pizza',
         name: 'Pizza',
@@ -154,24 +154,24 @@ export function catalogueViewsContract(name: string, create: () => Store): void 
     });
 
     it('changes an item photo, keeping its other fields', async () => {
-      await store.addItemToCatalogue(dish(), 'v1');
+      await store.addItemToCatalogue(item(), 'v1');
       await store.updateItemPhoto('item-1', 'v9/dishes/item-1', 'v1');
       expect(await store.forVendor('v1')).toEqual({
-        items: [dish({ imageReference: 'v9/dishes/item-1' })],
+        items: [item({ imageReference: 'v9/dishes/item-1' })],
       });
     });
 
     it('retires an item', async () => {
-      await store.addItemToCatalogue(dish({ itemId: 'a' }), 'v1');
-      await store.addItemToCatalogue(dish({ itemId: 'b' }), 'v1');
+      await store.addItemToCatalogue(item({ itemId: 'a' }), 'v1');
+      await store.addItemToCatalogue(item({ itemId: 'b' }), 'v1');
       await store.retireItem('a', 'v1');
       expect((await store.forVendor('v1')).items.map(item => item.itemId)).toEqual(['b']);
     });
 
     it('reorders the items left after a retirement', async () => {
-      await store.addItemToCatalogue(dish({ itemId: 'a' }), 'v1');
-      await store.addItemToCatalogue(dish({ itemId: 'b' }), 'v1');
-      await store.addItemToCatalogue(dish({ itemId: 'c' }), 'v1');
+      await store.addItemToCatalogue(item({ itemId: 'a' }), 'v1');
+      await store.addItemToCatalogue(item({ itemId: 'b' }), 'v1');
+      await store.addItemToCatalogue(item({ itemId: 'c' }), 'v1');
       await store.retireItem('b', 'v1');
 
       await store.reorderItems(['c', 'a'], 'v1');
@@ -180,7 +180,7 @@ export function catalogueViewsContract(name: string, create: () => Store): void 
     });
 
     it('clears all items', async () => {
-      await store.addItemToCatalogue(dish(), 'v1');
+      await store.addItemToCatalogue(item(), 'v1');
       await store.clear();
       expect(await store.forVendor('v1')).toEqual({ items: [] });
     });

@@ -59,15 +59,15 @@ describe('Command dispatch tracing', () => {
   });
 
   // Opt-in per command type: RegisterVendor above stays payload-blind, while a menu carries
-  // how many dishes it named. A count aggregates; the ids it counts would not, and would put
+  // how many items it named. A count aggregates; the ids it counts would not, and would put
   // catalogue contents on a span.
-  it('carries the dish count on a menu dispatch', async () => {
+  it('carries the item count on a menu dispatch', async () => {
     await boot();
     for (const itemId of ['item-1', 'item-2']) {
       await request(app.getHttpServer())
         .post('/catalogue')
         .set('Authorization', 'Bearer any-token')
-        .send({ itemId, name: `Dish ${itemId}`, description: '', price: 500 })
+        .send({ itemId, name: `Item ${itemId}`, description: '', price: 500 })
         .expect(201);
     }
 

@@ -60,7 +60,7 @@ describe('Public storefront', () => {
       description: 'Fresh bread daily',
       phone: '0102030405',
       coverPhoto: 'v7/cover',
-      dishes: [],
+      items: [],
       upcomingMarkets: [],
     });
   });
@@ -78,7 +78,7 @@ describe('Public storefront', () => {
       date: '2026-06-23', weekday: 'TUE', marketName: 'Marché de Belleville',
       startTime: '07:00', endTime: '14:30',
       street: 'Boulevard de Belleville', postalCode: '75011', town: 'Paris', pitch: 'B12',
-      cancelled: false, inProgress: true, dishes: [],
+      cancelled: false, inProgress: true, items: [],
     });
   });
 
@@ -146,23 +146,23 @@ describe('Public storefront', () => {
     await seedStorefront([opened, infoEdited, coverSet, published]);
     await seedSchedule([scheduleRegistered]);
     await seedCatalogue([
-      { type: 'ItemAddedToCatalogue', payload: { itemId: 'dish-1', name: 'Bœuf bourguignon', description: 'Mijoté 7 heures', price: 1300, imageReference: 'v7/dish-1' }, version: 1 },
-      { type: 'ItemAddedToCatalogue', payload: { itemId: 'dish-2', name: 'Tarte tatin', description: 'Aux pommes', price: 600 }, version: 1 },
+      { type: 'ItemAddedToCatalogue', payload: { itemId: 'item-1', name: 'Bœuf bourguignon', description: 'Mijoté 7 heures', price: 1300, imageReference: 'v7/item-1' }, version: 1 },
+      { type: 'ItemAddedToCatalogue', payload: { itemId: 'item-2', name: 'Tarte tatin', description: 'Aux pommes', price: 600 }, version: 1 },
     ]);
     await app.get(CommandGateway).execute(new SetMarketDayMenu({
-      vendorId: 'acme-bakery', itemIds: ['dish-1'], marketId: 'market-1', date: '2026-06-30',
+      vendorId: 'acme-bakery', itemIds: ['item-1'], marketId: 'market-1', date: '2026-06-30',
     }));
     await app.get(Subscriptions).drain();
 
     const res = await request(app.getHttpServer()).get('/public/storefront/acme').expect(200);
-    expect(res.body.upcomingMarkets.map((m: { date: string; dishes: { name: string }[] }) => ({ date: m.date, dishes: m.dishes.map(dish => dish.name) }))).toEqual([
-      { date: '2026-06-23', dishes: [] },
-      { date: '2026-06-30', dishes: ['Bœuf bourguignon'] },
-      { date: '2026-07-07', dishes: [] },
-      { date: '2026-07-14', dishes: [] },
-      { date: '2026-07-21', dishes: [] },
+    expect(res.body.upcomingMarkets.map((m: { date: string; items: { name: string }[] }) => ({ date: m.date, items: m.items.map(item => item.name) }))).toEqual([
+      { date: '2026-06-23', items: [] },
+      { date: '2026-06-30', items: ['Bœuf bourguignon'] },
+      { date: '2026-07-07', items: [] },
+      { date: '2026-07-14', items: [] },
+      { date: '2026-07-21', items: [] },
     ]);
-    expect(res.body.dishes).toHaveLength(2);
+    expect(res.body.items).toHaveLength(2);
   });
 
   it('keeps a market day the vendor declared absent from, flagged as cancelled', async () => {
@@ -178,17 +178,17 @@ describe('Public storefront', () => {
     ]);
   });
 
-  it('includes the catalogue dishes on a published storefront', async () => {
+  it('includes the catalogue items on a published storefront', async () => {
     await seedStorefront([opened, infoEdited, coverSet, published]);
     await seedCatalogue([
-      { type: 'ItemAddedToCatalogue', payload: { itemId: 'dish-1', name: 'Bœuf bourguignon', description: 'Mijoté 7 heures', price: 1300, imageReference: 'v7/dish-1' }, version: 1 },
-      { type: 'ItemAddedToCatalogue', payload: { itemId: 'dish-2', name: 'Tarte tatin', description: 'Aux pommes', price: 600 }, version: 1 },
+      { type: 'ItemAddedToCatalogue', payload: { itemId: 'item-1', name: 'Bœuf bourguignon', description: 'Mijoté 7 heures', price: 1300, imageReference: 'v7/item-1' }, version: 1 },
+      { type: 'ItemAddedToCatalogue', payload: { itemId: 'item-2', name: 'Tarte tatin', description: 'Aux pommes', price: 600 }, version: 1 },
     ]);
 
     const res = await request(app.getHttpServer()).get('/public/storefront/acme').expect(200);
-    expect(res.body.dishes).toEqual([
-      { itemId: 'dish-1', name: 'Bœuf bourguignon', description: 'Mijoté 7 heures', price: 1300, imageReference: 'v7/dish-1' },
-      { itemId: 'dish-2', name: 'Tarte tatin', description: 'Aux pommes', price: 600, imageReference: '' },
+    expect(res.body.items).toEqual([
+      { itemId: 'item-1', name: 'Bœuf bourguignon', description: 'Mijoté 7 heures', price: 1300, imageReference: 'v7/item-1' },
+      { itemId: 'item-2', name: 'Tarte tatin', description: 'Aux pommes', price: 600, imageReference: '' },
     ]);
   });
 

@@ -7,12 +7,14 @@ import { AddItemToCatalogue, CatalogueView, ChangeItemPhoto, FindVendorCatalogue
 import { CloudinarySignedUpload, SignedUploads } from '../signed-uploads';
 import { shapeOf } from '../shape-of.pipe';
 
-function dishPhotoPublicId(vendorId: string, itemId: string): string {
+// The `dishes` segment is the historical Cloudinary folder; existing uploads live under
+// it, and moving new ones would split the media library across two folders for no reader.
+function itemPhotoPublicId(vendorId: string, itemId: string): string {
   return `vendors/${vendorId}/dishes/${itemId}`;
 }
 
 const VariantBody = z.object({ name: z.string(), description: z.string(), price: z.number() });
-const DishBody = z.object({
+const ItemBody = z.object({
   itemId: z.string(),
   name: z.string(),
   description: z.string(),
@@ -20,7 +22,7 @@ const DishBody = z.object({
   imageReference: z.string().optional(),
   variants: z.array(VariantBody).optional(),
 });
-const RevisionBody = DishBody.omit({ itemId: true, imageReference: true });
+const RevisionBody = ItemBody.omit({ itemId: true, imageReference: true });
 const ReorderBody = z.object({ itemIds: z.array(z.string()) });
 const PhotoBody = z.object({ imageReference: z.string() });
 const PhotoSignatureBody = z.object({ itemId: z.string() });
@@ -45,17 +47,17 @@ export class CatalogueController {
     @CurrentVendor() vendor: VerifiedVendor,
     @Body(shapeOf(PhotoSignatureBody)) body: z.infer<typeof PhotoSignatureBody>,
   ): CloudinarySignedUpload {
-    // ponytail: reuses the cover-photo eager rendition. Warms the wrong size for a dish
-    // card, so the first paint may race Cloudinary. Add a dish eager transform once the
+    // ponytail: reuses the cover-photo eager rendition. Warms the wrong size for an item
+    // card, so the first paint may race Cloudinary. Add an item eager transform once the
     // form lands and the card rendition is known.
-    return this.signedUploads.for(dishPhotoPublicId(vendor.vendorId.value(), body.itemId));
+    return this.signedUploads.for(itemPhotoPublicId(vendor.vendorId.value(), body.itemId));
   }
 
   @Post()
   @UseGuards(JwtAuthGuard)
   async add(
     @CurrentVendor() vendor: VerifiedVendor,
-    @Body(shapeOf(DishBody)) body: z.infer<typeof DishBody>,
+    @Body(shapeOf(ItemBody)) body: z.infer<typeof ItemBody>,
   ): Promise<void> {
     await this.commands.execute(
       new AddItemToCatalogue({
@@ -71,7 +73,7 @@ export class CatalogueController {
   }
 
   // Declared above :itemId — Nest matches in declaration order, so the other way round
-  // this arrives at revise() as a dish called "order".
+  // this arrives at revise() as an item called "order".
   @Put('order')
   @UseGuards(JwtAuthGuard)
   async reorder(

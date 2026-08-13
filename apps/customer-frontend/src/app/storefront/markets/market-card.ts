@@ -1,11 +1,11 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
-import { DishViewModel, MarketViewModel } from '../storefront-view-model';
-import { DishCard } from '../dishes/dish-card';
+import { ItemViewModel, MarketViewModel } from '../storefront-view-model';
+import { ItemCard } from '../items/item-card';
 
 @Component({
   selector: 'app-market-card',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DishCard],
+  imports: [ItemCard],
   host: { class: 'contents' },
   template: `
     <div
@@ -42,22 +42,22 @@ import { DishCard } from '../dishes/dish-card';
         </span>
       </div>
 
-      @if (market().dishes.length) {
+      @if (market().items.length) {
         @if (featured()) {
           <!-- The featured day is browsable like the carte: same cards, same sheet. The
                upcoming list stays on names and prices, or one page would carry the same
-               dish cards once per market. -->
+               item cards once per market. -->
           <ul data-menu class="mt-4 grid gap-4 border-t border-line pt-4 lg:grid-cols-2">
-            @for (dish of market().dishes; track dish.itemId) {
-              <li><app-dish-card [dish]="dish" (chosen)="chosen.emit($event)" /></li>
+            @for (item of market().items; track item.itemId) {
+              <li><app-item-card [item]="item" (chosen)="chosen.emit($event)" /></li>
             }
           </ul>
         } @else {
           <ul data-menu class="mt-3 border-t border-line pt-3">
-            @for (dish of market().dishes; track dish.itemId) {
+            @for (item of market().items; track item.itemId) {
               <li class="flex justify-between gap-3 py-0.5 text-sm">
-                <span class="min-w-0 break-words text-ink">{{ dish.name }}</span>
-                <span class="shrink-0 font-mono text-ink-soft">{{ dish.priceLabel }}</span>
+                <span class="min-w-0 break-words text-ink">{{ item.name }}</span>
+                <span class="shrink-0 font-mono text-ink-soft">{{ item.priceLabel }}</span>
               </li>
             }
           </ul>
@@ -69,5 +69,5 @@ import { DishCard } from '../dishes/dish-card';
 export class MarketCard {
   readonly market = input.required<MarketViewModel>();
   readonly featured = input(false);
-  readonly chosen = output<DishViewModel>();
+  readonly chosen = output<ItemViewModel>();
 }

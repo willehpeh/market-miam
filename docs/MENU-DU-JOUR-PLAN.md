@@ -19,7 +19,7 @@ Settled by grilling before slice 1. Do not re-litigate without a reason.
 | 5 | Menus ride on `MarketDayOccurrence` (enrich `FindUpcomingMarketDays`) | `FindCustomerStorefrontHandler` already composes that handler → one change serves vendor list, editor and storefront. This is `archive/MARKET-SCHEDULE-FOLLOWUPS.md` §5 |
 | 6 | Customer: **"Prochain marché" card above the carte** + menus listed inside each Prochains-marchés card | Puts the day's offering above the standing carte without redesigning the hero |
 | 7 | Vendor: **one card at the top of the dashboard for the next market day**, tap → editor route | Removes an intermediate list screen. ~~Next 14 days~~ — narrowed while grilling slice 5: the card is a doorway, and one day is the only thing a vendor can act on today. "Plan later in time" is a later slice, cheap once the store already holds the 56-day window |
-| 8 | Editor opens **blank** *for an unplanned day*. Prefill from the **last menu at that market** deferred | Nothing needs a single-day read; revisit once vendors have used it. **Not** "an already-planned day opens empty" — a planned day prefills from `dishes` on the upcoming payload, or saving would silently wipe the menu |
+| 8 | Editor opens **blank** *for an unplanned day*. Prefill from the **last menu at that market** deferred | Nothing needs a single-day read; revisit once vendors have used it. **Not** "an already-planned day opens empty" — a planned day prefills from `items` on the upcoming payload, or saving would silently wipe the menu |
 | 9 | Market day survives until `endTime`, badged **"En cours"** | Customers want the menu *during* the market. Interim — superseded by live mode |
 | 10 | Absent days: menu suppressed **in the query** | Occurrence already carries `absent`; no cross-aggregate coupling. ~~Editor read-only~~ — the slice-5 card skips absent days when picking the next one, so the editor is only reachable for one by hand-typed URL; no read-only mode built |
 
@@ -84,7 +84,7 @@ Erasure needs no change — market-day events carry no PII, so `VendorErasure` d
   the whole window of menus load once per query, so the query costs three reads flat
 - `FindCustomerStorefrontHandler`: `hasNotStarted` replaced by `notYetEnded` (no `endTime` →
   end of calendar day, settling that open question); `UpcomingMarket` gains `inProgress`
-  (never true when cancelled; no `startTime` → started once the date arrives) and `dishes`
+  (never true when cancelled; no `startTime` → started once the date arrives) and `items`
 
 Tests: 6 new in `find-upcoming-market-days.spec.ts` (join order, current-detail, retired-dish
 drop, absence suppression, whole-horizon join); `public-storefront.spec.ts` reworked for the
@@ -117,7 +117,7 @@ empty array, not a `DELETE`. Returns void like every other command route.
 
 | Decision | |
 |---|---|
-| No single-day GET | The editor prefills from `dishes` on the upcoming payload. Retired dishes silently drop from the prefill (correct — they can't be sold); an absent day prefills empty, inert while absence is permanent |
+| No single-day GET | The editor prefills from `items` on the upcoming payload. Retired dishes silently drop from the prefill (correct — they can't be sold); an absent day prefills empty, inert while absence is permanent |
 | No schedule or absence validation | Would read calendar state from the market-day write path, off an eventually consistent read model — a vendor could be rejected on a schedule registered moments earlier. A menu for a market the vendor never attends is stored and never surfaces |
 | Void response, not the updated view | Read-your-writes is handled by the editor patching its own store: it already holds the catalogue to render the picker, so it has the same ingredients the query joins with |
 | `ConcurrencyError` → 409 (`f8511e0`) | Pre-existing app-wide; a lost append arrived as a 500, so every double-submit read as an incident. Filters now come from one shared list — registered separately, a filter added to only the test module passed the whole suite |
@@ -200,9 +200,9 @@ protected readonly selected = computed(() =>
 Seeds whenever the payload lands; once the vendor toggles anything, no store update can clobber it.
 Save is never disabled — the backend raises no event for an unchanged menu.
 
-**State holds `itemIds`, not `dishes`.** Nothing in this app renders the joined dishes: the count is
+**State holds `itemIds`, not `items`.** Nothing in this app renders the joined dishes: the count is
 `itemIds.length`, and the picker's names and prices come from the catalogue store. Mapping
-`day.dishes.map(d => d.itemId)` at load makes the optimistic patch *write back the ids you just
+`day.items.map(d => d.itemId)` at load makes the optimistic patch *write back the ids you just
 sent* — no catalogue in the market-day facade, no second copy of the query's join rule, no
 cross-feature provider coupling, no fixture churn. Retired dishes are already dropped server-side,
 so the prefill inherits slice 4's behaviour, and the store ends up mirroring the backend's own

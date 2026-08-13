@@ -56,7 +56,7 @@ describe('Publishing a storefront over HTTP', () => {
       { type: 'StorefrontCoverPhotoSet', payload: { imageReference: 'v1/cover' }, version: 1 },
     ], 0, { vendorId });
     await store.append(`catalogue-${vendorId}`, [
-      { type: 'ItemAddedToCatalogue', payload: { itemId: 'dish-1', name: 'Bœuf bourguignon', description: 'Mijoté', price: 1300 }, version: 1 },
+      { type: 'ItemAddedToCatalogue', payload: { itemId: 'item-1', name: 'Bœuf bourguignon', description: 'Mijoté', price: 1300 }, version: 1 },
     ], 0, { vendorId });
     await store.append(`calendar-${vendorId}`, [
       { type: 'MarketScheduleRegistered', payload: { scheduleId: 'sched-1', market: { id: 'market-1' } }, version: 1 },

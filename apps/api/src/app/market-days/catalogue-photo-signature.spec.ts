@@ -3,7 +3,7 @@ import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { bootApiTestApp } from '../testing/api-test-app';
 
-describe('Signing a dish photo upload over HTTP', () => {
+describe('Signing an item photo upload over HTTP', () => {
   let app: INestApplication;
 
   beforeEach(async () => {

@@ -5,7 +5,7 @@ import { CatalogueViews, CatalogueViewStore } from '@market-miam/market-days';
 import { bootApiTestApp } from '../testing/api-test-app';
 import { Subscriptions } from '../event-sourcing/subscriptions';
 
-const dish = {
+const item = {
   itemId: 'item-1',
   name: 'Bœuf bourguignon',
   description: 'Mijoté maison',
@@ -28,14 +28,14 @@ describe('Rebuilding the catalogue projection', () => {
     await request(app.getHttpServer())
       .post('/catalogue')
       .set('Authorization', 'Bearer any-token')
-      .send(dish)
+      .send(item)
       .expect(201);
     await app.get(Subscriptions).drain();
 
     // An orphan row with no backing events — only a real clear removes it, since
     // replay never recreates it. This is what distinguishes clear+replay from a no-op.
     await app.get(CatalogueViewStore).addItemToCatalogue(
-      { ...dish, itemId: 'ghost-item' },
+      { ...item, itemId: 'ghost-item' },
       'ghost-vendor',
     );
 
@@ -45,7 +45,7 @@ describe('Rebuilding the catalogue projection', () => {
       .get('/catalogue')
       .set('Authorization', 'Bearer any-token')
       .expect(200);
-    expect(rebuilt.body).toEqual({ items: [dish] });
+    expect(rebuilt.body).toEqual({ items: [item] });
     expect(await app.get(CatalogueViews).forVendor('ghost-vendor')).toEqual({ items: [] });
   });
 
@@ -57,7 +57,7 @@ describe('Rebuilding the catalogue projection', () => {
       await request(app.getHttpServer())
         .post('/catalogue')
         .set('Authorization', 'Bearer any-token')
-        .send({ ...dish, itemId, name: itemId.toUpperCase() })
+        .send({ ...item, itemId, name: itemId.toUpperCase() })
         .expect(201);
     }
     await request(app.getHttpServer())

@@ -37,14 +37,14 @@ describe('NextMenuCard', () => {
     expect(screen.getByText('8h – 13h')).toBeTruthy();
   });
 
-  it('counts the dishes once the day has a menu', async () => {
+  it('counts the items once the day has a menu', async () => {
     await renderCard([day({ itemIds: ['item-1', 'item-2', 'item-3'] })]);
 
     expect(screen.getByText('3 plats au menu')).toBeTruthy();
     expect(screen.getByRole('link', { name: /modifier le menu/i })).toBeTruthy();
   });
 
-  it('counts a single dish in the singular', async () => {
+  it('counts a single item in the singular', async () => {
     await renderCard([day({ itemIds: ['item-1'] })]);
 
     expect(screen.getByText('1 plat au menu')).toBeTruthy();
@@ -52,7 +52,7 @@ describe('NextMenuCard', () => {
 
   // Without this the card looks identical whether the vendor has not planned the day yet or
   // planned it and cleared it — and both are legal.
-  it('says outright when the day carries no dishes', async () => {
+  it('says outright when the day carries no items', async () => {
     await renderCard([day()]);
 
     expect(screen.getByText('Aucun plat au menu')).toBeTruthy();

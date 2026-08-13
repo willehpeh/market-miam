@@ -1,5 +1,5 @@
 import { createAction, createFeature, createReducer, on, props } from '@ngrx/store';
-import { CatalogueItemView, DishRevision, NewDish } from './catalogue';
+import { CatalogueItemView, ItemRevision, NewItem } from './catalogue';
 
 export const LoadCatalogue = createAction('[Catalogue] Load Catalogue');
 export const LoadCatalogueSuccess = createAction(
@@ -11,29 +11,29 @@ export const LoadCatalogueFailure = createAction(
   props<{ status: number }>(),
 );
 
-export const BeginDish = createAction('[Catalogue] Begin Dish');
-export const UploadDishPhoto = createAction('[Catalogue] Upload Dish Photo', props<{ itemId: string; file: File }>());
-export const UploadDishPhotoSuccess = createAction(
-  '[Catalogue] Upload Dish Photo Success',
+export const BeginItem = createAction('[Catalogue] Begin Item');
+export const UploadItemPhoto = createAction('[Catalogue] Upload Item Photo', props<{ itemId: string; file: File }>());
+export const UploadItemPhotoSuccess = createAction(
+  '[Catalogue] Upload Item Photo Success',
   props<{ itemId: string; imageReference: string }>(),
 );
-export const UploadDishPhotoFailure = createAction('[Catalogue] Upload Dish Photo Failure');
-export const UploadDishPhotoTooLarge = createAction('[Catalogue] Upload Dish Photo Too Large');
-export const AddDish = createAction('[Catalogue] Add Dish', props<NewDish>());
-export const AddDishSuccess = createAction('[Catalogue] Add Dish Success', props<{ item: CatalogueItemView }>());
-export const AddDishFailure = createAction('[Catalogue] Add Dish Failure');
-export const ReviseDish = createAction('[Catalogue] Revise Dish', props<DishRevision>());
-export const ReviseDishSuccess = createAction('[Catalogue] Revise Dish Success', props<DishRevision>());
-export const ReviseDishFailure = createAction('[Catalogue] Revise Dish Failure');
-export const ReorderDishes = createAction('[Catalogue] Reorder Dishes', props<{ itemIds: string[] }>());
-export const ReorderDishesSuccess = createAction('[Catalogue] Reorder Dishes Success', props<{ itemIds: string[] }>());
-export const ReorderDishesFailure = createAction('[Catalogue] Reorder Dishes Failure');
-export const RetireDish = createAction('[Catalogue] Retire Dish', props<{ itemId: string }>());
-export const RetireDishSuccess = createAction('[Catalogue] Retire Dish Success', props<{ itemId: string }>());
-export const RetireDishFailure = createAction('[Catalogue] Retire Dish Failure');
-export const ChangeDishPhoto = createAction('[Catalogue] Change Dish Photo', props<{ itemId: string; imageReference: string }>());
-export const ChangeDishPhotoSuccess = createAction('[Catalogue] Change Dish Photo Success', props<{ itemId: string; imageReference: string }>());
-export const ChangeDishPhotoFailure = createAction('[Catalogue] Change Dish Photo Failure');
+export const UploadItemPhotoFailure = createAction('[Catalogue] Upload Item Photo Failure');
+export const UploadItemPhotoTooLarge = createAction('[Catalogue] Upload Item Photo Too Large');
+export const AddItem = createAction('[Catalogue] Add Item', props<NewItem>());
+export const AddItemSuccess = createAction('[Catalogue] Add Item Success', props<{ item: CatalogueItemView }>());
+export const AddItemFailure = createAction('[Catalogue] Add Item Failure');
+export const ReviseItem = createAction('[Catalogue] Revise Item', props<ItemRevision>());
+export const ReviseItemSuccess = createAction('[Catalogue] Revise Item Success', props<ItemRevision>());
+export const ReviseItemFailure = createAction('[Catalogue] Revise Item Failure');
+export const ReorderItems = createAction('[Catalogue] Reorder Items', props<{ itemIds: string[] }>());
+export const ReorderItemsSuccess = createAction('[Catalogue] Reorder Items Success', props<{ itemIds: string[] }>());
+export const ReorderItemsFailure = createAction('[Catalogue] Reorder Items Failure');
+export const RetireItem = createAction('[Catalogue] Retire Item', props<{ itemId: string }>());
+export const RetireItemSuccess = createAction('[Catalogue] Retire Item Success', props<{ itemId: string }>());
+export const RetireItemFailure = createAction('[Catalogue] Retire Item Failure');
+export const ChangeItemPhoto = createAction('[Catalogue] Change Item Photo', props<{ itemId: string; imageReference: string }>());
+export const ChangeItemPhotoSuccess = createAction('[Catalogue] Change Item Photo Success', props<{ itemId: string; imageReference: string }>());
+export const ChangeItemPhotoFailure = createAction('[Catalogue] Change Item Photo Failure');
 
 export interface CatalogueState {
   loading: boolean;
@@ -60,42 +60,42 @@ export const catalogueFeature = createFeature({
     on(LoadCatalogue, (state): CatalogueState => ({ ...state, loading: true })),
     on(LoadCatalogueSuccess, (state, { items }): CatalogueState => ({ ...state, loading: false, items })),
     on(LoadCatalogueFailure, (state): CatalogueState => ({ ...state, loading: false })),
-    on(BeginDish, (state): CatalogueState => ({ ...state, photoUploading: false, photoError: false, photoTooLarge: false, newPhotoReference: '' })),
-    on(UploadDishPhoto, (state): CatalogueState => ({ ...state, photoUploading: true, photoError: false, photoTooLarge: false })),
-    on(UploadDishPhotoSuccess, (state, { imageReference }): CatalogueState => ({
+    on(BeginItem, (state): CatalogueState => ({ ...state, photoUploading: false, photoError: false, photoTooLarge: false, newPhotoReference: '' })),
+    on(UploadItemPhoto, (state): CatalogueState => ({ ...state, photoUploading: true, photoError: false, photoTooLarge: false })),
+    on(UploadItemPhotoSuccess, (state, { imageReference }): CatalogueState => ({
       ...state,
       photoUploading: false,
       newPhotoReference: imageReference,
     })),
-    on(UploadDishPhotoFailure, (state): CatalogueState => ({ ...state, photoUploading: false, photoError: true })),
-    on(UploadDishPhotoTooLarge, (state): CatalogueState => ({ ...state, photoUploading: false, photoTooLarge: true })),
-    // ponytail: AddDishFailure is emitted but unreduced — no add-error UX yet. Wire a banner
+    on(UploadItemPhotoFailure, (state): CatalogueState => ({ ...state, photoUploading: false, photoError: true })),
+    on(UploadItemPhotoTooLarge, (state): CatalogueState => ({ ...state, photoUploading: false, photoTooLarge: true })),
+    // ponytail: AddItemFailure is emitted but unreduced — no add-error UX yet. Wire a banner
     // into the reducer when the flow needs it (mirrors storefront's EditStorefrontFailure).
-    // Optimistic: append on success so the list shows the dish without waiting for the
+    // Optimistic: append on success so the list shows the item without waiting for the
     // projection to catch up (CatalogueList loads only when empty).
-    on(AddDishSuccess, (state, { item }): CatalogueState => ({ ...state, items: [...state.items, item], newPhotoReference: '' })),
-    // ponytail: ReviseDishFailure is emitted but unreduced — same no-error-UX stance as AddDishFailure.
+    on(AddItemSuccess, (state, { item }): CatalogueState => ({ ...state, items: [...state.items, item], newPhotoReference: '' })),
+    // ponytail: ReviseItemFailure is emitted but unreduced — same no-error-UX stance as AddItemFailure.
     // Optimistic: merge the revised fields by id on success, preserving the item's other fields (image).
-    on(ReviseDishSuccess, (state, { itemId, name, description, price, variants }): CatalogueState => ({
+    on(ReviseItemSuccess, (state, { itemId, name, description, price, variants }): CatalogueState => ({
       ...state,
       items: state.items.map(item => item.itemId === itemId ? { ...item, name, description, price, variants } : item),
     })),
-    // ponytail: ReorderDishesFailure unreduced — the reorder screen keeps the vendor's
+    // ponytail: ReorderItemsFailure unreduced — the reorder screen keeps the vendor's
     // order on its own until it saves, so a failure leaves the stored order untouched
     // rather than wrong. Wire a banner in when there is an error UX to hang it on.
-    on(ReorderDishesSuccess, (state, { itemIds }): CatalogueState => ({
+    on(ReorderItemsSuccess, (state, { itemIds }): CatalogueState => ({
       ...state,
       items: itemIds.flatMap(itemId => state.items.find(item => item.itemId === itemId) ?? []),
     })),
-    // ponytail: RetireDishFailure unreduced — same no-error-UX stance as its siblings. The
-    // dish stays put and the vendor stays on the form, which is at least not a lie.
+    // ponytail: RetireItemFailure unreduced — same no-error-UX stance as its siblings. The
+    // item stays put and the vendor stays on the form, which is at least not a lie.
     // Optimistic: drop it on success so the list is right without waiting for the projection.
-    on(RetireDishSuccess, (state, { itemId }): CatalogueState => ({
+    on(RetireItemSuccess, (state, { itemId }): CatalogueState => ({
       ...state,
       items: state.items.filter(item => item.itemId !== itemId),
     })),
-    // ponytail: ChangeDishPhotoFailure unreduced — same no-error-UX stance.
-    on(ChangeDishPhotoSuccess, (state, { itemId, imageReference }): CatalogueState => ({
+    // ponytail: ChangeItemPhotoFailure unreduced — same no-error-UX stance.
+    on(ChangeItemPhotoSuccess, (state, { itemId, imageReference }): CatalogueState => ({
       ...state,
       items: state.items.map(item => item.itemId === itemId ? { ...item, imageReference } : item),
     })),

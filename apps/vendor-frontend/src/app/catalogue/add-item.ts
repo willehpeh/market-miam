@@ -7,10 +7,10 @@ import { DismissOnOutsidePress } from '../core/dismiss-on-outside-press';
 import { CatalogueFacade } from './catalogue.facade';
 import { centsToEuros, parseEurosToCents } from './money';
 
-const DISH_PREVIEW_TRANSFORMATION = 'c_fill,w_600,h_400,q_auto,f_webp';
+const ITEM_PREVIEW_TRANSFORMATION = 'c_fill,w_600,h_400,q_auto,f_webp';
 
 @Component({
-  selector: 'mm-add-dish',
+  selector: 'mm-add-item',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterLink, Card, FormField, CloudinaryUrlPipe, DismissOnOutsidePress],
   styles: `
@@ -315,7 +315,7 @@ const DISH_PREVIEW_TRANSFORMATION = 'c_fill,w_600,h_400,q_auto,f_webp';
     </mm-card>
   `,
 })
-export class AddDish {
+export class AddItem {
   private readonly catalogue = inject(CatalogueFacade);
   private readonly route = inject(ActivatedRoute);
 
@@ -326,7 +326,7 @@ export class AddDish {
   private readonly itemId = this.editing?.itemId ?? crypto.randomUUID();
   private readonly existingImage = this.editing?.imageReference ?? '';
 
-  protected readonly previewTransformation = DISH_PREVIEW_TRANSFORMATION;
+  protected readonly previewTransformation = ITEM_PREVIEW_TRANSFORMATION;
   protected readonly photoReference = this.catalogue.newPhotoReference;
   protected readonly previewRef = computed(() => this.photoReference() || this.existingImage);
   protected readonly uploading = this.catalogue.photoUploading;
@@ -371,7 +371,7 @@ export class AddDish {
   });
 
   constructor() {
-    this.catalogue.beginDish();
+    this.catalogue.beginItem();
   }
 
   protected addFormat(): void {
@@ -410,11 +410,11 @@ export class AddDish {
     if (!file) {
       return;
     }
-    this.catalogue.uploadDishPhoto(this.itemId, file);
+    this.catalogue.uploadItemPhoto(this.itemId, file);
   }
 
   protected retire(): void {
-    this.catalogue.retireDish(this.itemId);
+    this.catalogue.retireItem(this.itemId);
   }
 
   protected submit(event: Event): void {
@@ -426,9 +426,9 @@ export class AddDish {
         return;
       }
       if (this.isEditing) {
-        this.catalogue.reviseDish({ itemId: this.itemId, name, description, variants });
+        this.catalogue.reviseItem({ itemId: this.itemId, name, description, variants });
       } else {
-        this.catalogue.addDish({ itemId: this.itemId, name, description, variants, imageReference: this.photoReference() || undefined });
+        this.catalogue.addItem({ itemId: this.itemId, name, description, variants, imageReference: this.photoReference() || undefined });
       }
       return;
     }
@@ -437,9 +437,9 @@ export class AddDish {
       return;
     }
     if (this.isEditing) {
-      this.catalogue.reviseDish({ itemId: this.itemId, name, description, price: cents });
+      this.catalogue.reviseItem({ itemId: this.itemId, name, description, price: cents });
     } else {
-      this.catalogue.addDish({
+      this.catalogue.addItem({
         itemId: this.itemId,
         name,
         description,

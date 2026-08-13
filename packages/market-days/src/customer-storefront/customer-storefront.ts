@@ -16,7 +16,7 @@ export type UpcomingMarket = {
   inProgress: boolean;
   // The day's menu, joined from the catalogue upstream; empty when nothing is planned
   // or the day is cancelled.
-  dishes: CatalogueViewItem[];
+  items: CatalogueViewItem[];
 };
 
 export type CustomerStorefront =
@@ -26,7 +26,7 @@ export type CustomerStorefront =
       description: string;
       phone: string;
       coverPhoto: string | null;
-      dishes: CatalogueViewItem[];
+      items: CatalogueViewItem[];
       upcomingMarkets: UpcomingMarket[];
     }
   | {

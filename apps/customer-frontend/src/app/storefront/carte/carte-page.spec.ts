@@ -10,18 +10,18 @@ const ACME: StorefrontViewModel = {
   phone: '0102030405',
   coverUrl: null,
   socialImageUrl: null,
-  dishes: [
+  items: [
     {
-      itemId: 'dish-1',
+      itemId: 'item-1',
       name: 'Bœuf bourguignon',
       description: 'Mijoté 7 heures',
       priceLabel: '13,00 €',
       photo: {
-        src: 'https://cdn.test/photo/dish-1',
-        srcset: 'https://cdn.test/photo/dish-1 800w, https://cdn.test/photo/dish-1-big 1600w',
+        src: 'https://cdn.test/photo/item-1',
+        srcset: 'https://cdn.test/photo/item-1 800w, https://cdn.test/photo/item-1-big 1600w',
       },
     },
-    { itemId: 'dish-2', name: 'Tarte tatin', description: 'Aux pommes', priceLabel: '6,00 €', photo: null },
+    { itemId: 'item-2', name: 'Tarte tatin', description: 'Aux pommes', priceLabel: '6,00 €', photo: null },
   ],
   upcomingMarkets: [],
 };
@@ -44,7 +44,7 @@ describe('CartePage', () => {
     TestBed.configureTestingModule({ providers: [provideRouter([])] });
   });
 
-  it('lists every dish the vendor makes, with prices', () => {
+  it('lists every item the vendor makes, with prices', () => {
     const text = render(ACME).nativeElement.textContent as string;
 
     expect(text).toContain('Notre carte');
@@ -55,24 +55,24 @@ describe('CartePage', () => {
   });
 
   // A page of its own is a browse, not a list you scan past on the way to something else —
-  // so the dishes get the big card, the same one the day's menu uses.
-  it('shows each dish as a card, with its photo or an icon in its place', () => {
-    const cards = render(ACME).nativeElement.querySelectorAll('app-dish-card');
+  // so the items get the big card, the same one the day's menu uses.
+  it('shows each item as a card, with its photo or an icon in its place', () => {
+    const cards = render(ACME).nativeElement.querySelectorAll('app-item-card');
 
     expect(cards.length).toBe(2);
     const photo = cards[0].querySelector('img') as HTMLImageElement;
-    expect(photo.src).toBe('https://cdn.test/photo/dish-1');
-    expect(photo.getAttribute('srcset')).toBe('https://cdn.test/photo/dish-1 800w, https://cdn.test/photo/dish-1-big 1600w');
+    expect(photo.src).toBe('https://cdn.test/photo/item-1');
+    expect(photo.getAttribute('srcset')).toBe('https://cdn.test/photo/item-1 800w, https://cdn.test/photo/item-1-big 1600w');
     // Without sizes the browser assumes 100vw and over-fetches from the ladder.
     expect(photo.getAttribute('sizes')).toBeTruthy();
     expect(cards[1].querySelector('img')).toBeNull();
     expect(cards[1].querySelector('.fa-utensils')).not.toBeNull();
   });
 
-  it('opens the dish sheet from a card, keeping the icon for a dish with no photo', () => {
+  it('opens the item sheet from a card, keeping the icon for an item with no photo', () => {
     const fixture = render(ACME);
 
-    (fixture.nativeElement.querySelector('app-dish-card [data-dish="dish-2"]') as HTMLElement).click();
+    (fixture.nativeElement.querySelector('app-item-card [data-item="item-2"]') as HTMLElement).click();
     fixture.detectChanges();
 
     const dialog = fixture.nativeElement.querySelector('dialog') as HTMLDialogElement;
@@ -91,10 +91,10 @@ describe('CartePage', () => {
     expect(link.textContent).toContain('Acme Bakery');
   });
 
-  it('opens the dish sheet with the full details when a dish is clicked', () => {
+  it('opens the item sheet with the full details when an item is clicked', () => {
     const fixture = render(ACME);
 
-    (fixture.nativeElement.querySelector('[data-dish="dish-1"]') as HTMLElement).click();
+    (fixture.nativeElement.querySelector('[data-item="item-1"]') as HTMLElement).click();
     fixture.detectChanges();
 
     const dialog = fixture.nativeElement.querySelector('dialog') as HTMLDialogElement;
@@ -105,15 +105,15 @@ describe('CartePage', () => {
     // The same candidates as the card, so the sheet opens on a photo the browser
     // already has instead of fetching a second URL while the old pixels linger.
     const photo = dialog.querySelector('img') as HTMLImageElement;
-    expect(photo.src).toBe('https://cdn.test/photo/dish-1');
-    expect(photo.getAttribute('srcset')).toBe('https://cdn.test/photo/dish-1 800w, https://cdn.test/photo/dish-1-big 1600w');
+    expect(photo.src).toBe('https://cdn.test/photo/item-1');
+    expect(photo.getAttribute('srcset')).toBe('https://cdn.test/photo/item-1 800w, https://cdn.test/photo/item-1-big 1600w');
     expect(photo.getAttribute('sizes')).toBeTruthy();
   });
 
-  it('lists the variants in the sheet for a dish with variants', () => {
+  it('lists the variants in the sheet for an item with variants', () => {
     const fixture = render({
       ...ACME,
-      dishes: [
+      items: [
         {
           itemId: 'pizza',
           name: 'Pizza',
@@ -128,7 +128,7 @@ describe('CartePage', () => {
       ],
     });
 
-    (fixture.nativeElement.querySelector('[data-dish="pizza"]') as HTMLElement).click();
+    (fixture.nativeElement.querySelector('[data-item="pizza"]') as HTMLElement).click();
     fixture.detectChanges();
 
     const dialog = fixture.nativeElement.querySelector('dialog') as HTMLDialogElement;
@@ -144,10 +144,10 @@ describe('CartePage', () => {
 
   // Same reasoning as the storefront description: jsdom lays nothing out, so the class is
   // the only observable trace.
-  it('keeps the paragraph breaks a vendor typed into a dish and its formats', () => {
+  it('keeps the paragraph breaks a vendor typed into an item and its formats', () => {
     const fixture = render({
       ...ACME,
-      dishes: [
+      items: [
         {
           itemId: 'pizza',
           name: 'Pizza',
@@ -159,7 +159,7 @@ describe('CartePage', () => {
       ],
     });
 
-    (fixture.nativeElement.querySelector('[data-dish="pizza"]') as HTMLElement).click();
+    (fixture.nativeElement.querySelector('[data-item="pizza"]') as HTMLElement).click();
     fixture.detectChanges();
 
     const dialog = fixture.nativeElement.querySelector('dialog') as HTMLDialogElement;
@@ -173,7 +173,7 @@ describe('CartePage', () => {
   it('scrolls the whole sheet content, photo and title included', () => {
     const fixture = render(ACME);
 
-    (fixture.nativeElement.querySelector('[data-dish="dish-1"]') as HTMLElement).click();
+    (fixture.nativeElement.querySelector('[data-item="item-1"]') as HTMLElement).click();
     fixture.detectChanges();
 
     const scroller = fixture.nativeElement.querySelector('dialog .overflow-y-auto') as HTMLElement;
@@ -183,13 +183,13 @@ describe('CartePage', () => {
     expect(scroller.textContent).toContain('Mijoté 7 heures');
   });
 
-  // The dialog element survives between dishes, and an <img> keeps its old pixels on a
+  // The dialog element survives between items, and an <img> keeps its old pixels on a
   // src change until the new photo decodes — so a sheet that closes full must reopen
-  // empty, or the next dish flashes the previous dish's photo while its own downloads.
-  it('empties the sheet when it closes, so the next dish never opens on the previous photo', async () => {
+  // empty, or the next item flashes the previous item's photo while its own downloads.
+  it('empties the sheet when it closes, so the next item never opens on the previous photo', async () => {
     const fixture = render(ACME);
 
-    (fixture.nativeElement.querySelector('[data-dish="dish-1"]') as HTMLElement).click();
+    (fixture.nativeElement.querySelector('[data-item="item-1"]') as HTMLElement).click();
     fixture.detectChanges();
     const dialog = fixture.nativeElement.querySelector('dialog') as HTMLDialogElement;
     expect(dialog.querySelector('img')).not.toBeNull();
@@ -203,10 +203,10 @@ describe('CartePage', () => {
     expect(dialog.querySelector('img')).toBeNull();
   });
 
-  it('closes the dish sheet on a backdrop click, but not when its content is clicked', () => {
+  it('closes the item sheet on a backdrop click, but not when its content is clicked', () => {
     const fixture = render(ACME);
 
-    (fixture.nativeElement.querySelector('[data-dish="dish-1"]') as HTMLElement).click();
+    (fixture.nativeElement.querySelector('[data-item="item-1"]') as HTMLElement).click();
     fixture.detectChanges();
 
     const dialog = fixture.nativeElement.querySelector('dialog') as HTMLDialogElement;
@@ -221,10 +221,10 @@ describe('CartePage', () => {
     expect(dialog.open).toBe(false);
   });
 
-  it('dismisses the dish sheet when its content is dragged past the threshold, but snaps back on a small drag', () => {
+  it('dismisses the item sheet when its content is dragged past the threshold, but snaps back on a small drag', () => {
     const fixture = render(ACME);
 
-    (fixture.nativeElement.querySelector('[data-dish="dish-1"]') as HTMLElement).click();
+    (fixture.nativeElement.querySelector('[data-item="item-1"]') as HTMLElement).click();
     fixture.detectChanges();
 
     const dialog = fixture.nativeElement.querySelector('dialog') as HTMLDialogElement;
@@ -247,7 +247,7 @@ describe('CartePage', () => {
   it('scrolls instead of dragging when the sheet content is not at the top', () => {
     const fixture = render(ACME);
 
-    (fixture.nativeElement.querySelector('[data-dish="dish-1"]') as HTMLElement).click();
+    (fixture.nativeElement.querySelector('[data-item="item-1"]') as HTMLElement).click();
     fixture.detectChanges();
 
     const dialog = fixture.nativeElement.querySelector('dialog') as HTMLDialogElement;

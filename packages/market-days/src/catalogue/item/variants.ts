@@ -7,11 +7,11 @@ export class Variants {
 
   constructor(variants: Variant[]) {
     if (variants.length < 2) {
-      throw new TooFewVariantsError(`A dish with variants needs at least two; got ${ variants.length }`);
+      throw new TooFewVariantsError(`An item with variants needs at least two; got ${ variants.length }`);
     }
     const names = variants.map(variant => variant.value().name);
     if (new Set(names).size !== names.length) {
-      throw new DuplicateVariantNameError('Variant names must be unique within a dish');
+      throw new DuplicateVariantNameError('Variant names must be unique within an item');
     }
     this._variants = variants;
   }

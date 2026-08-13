@@ -1,12 +1,12 @@
 import { TestBed } from '@angular/core/testing';
 import { render, screen, fireEvent } from '@testing-library/angular';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
-import { AddDish } from './add-dish';
+import { AddItem } from './add-item';
 import { CatalogueFacade } from './catalogue.facade';
 import { FakeCatalogueFacade } from './fake.catalogue.facade';
 
 async function renderForm() {
-  const view = await render(AddDish, {
+  const view = await render(AddItem, {
     providers: [provideRouter([]), { provide: CatalogueFacade, useClass: FakeCatalogueFacade }],
   });
   const catalogue = TestBed.inject(CatalogueFacade) as FakeCatalogueFacade;
@@ -27,7 +27,7 @@ function selectFile(container: Element, file: File, source: 'camera' | 'roll' = 
 
 const anImage = () => new File(['bytes'], 'plat.jpg', { type: 'image/jpeg' });
 
-// Three rows, because the delete stays disabled while a dish is down to its last two formats.
+// Three rows, because the delete stays disabled while an item is down to its last two formats.
 async function renderThreeFormats() {
   const { view, catalogue } = await renderForm();
   fireEvent.click(screen.getByRole('button', { name: /plusieurs formats/i }));
@@ -42,8 +42,8 @@ function fillForm(name: string, price: string) {
   fireEvent.input(screen.getByLabelText(/prix/i), { target: { value: price } });
 }
 
-describe('AddDish', () => {
-  it('starts a fresh dish, clearing any leftover photo state', async () => {
+describe('AddItem', () => {
+  it('starts a fresh item, clearing any leftover photo state', async () => {
     const { catalogue } = await renderForm();
     expect(catalogue.began).toBe(true);
   });
@@ -113,12 +113,12 @@ describe('AddDish', () => {
 
   it('previews the uploaded photo', async () => {
     const { view, catalogue } = await renderForm();
-    catalogue.newPhotoReference.set('v1/dishes/acme/coq');
+    catalogue.newPhotoReference.set('v1/items/acme/coq');
     view.detectChanges();
 
     expect(screen.getByAltText(/photo du plat/i)).toHaveAttribute(
       'src',
-      expect.stringContaining('c_fill,w_600,h_400,q_auto,f_webp/v1/dishes/acme/coq'),
+      expect.stringContaining('c_fill,w_600,h_400,q_auto,f_webp/v1/items/acme/coq'),
     );
   });
 
@@ -139,7 +139,7 @@ describe('AddDish', () => {
     expect(screen.getAllByLabelText(/^format$/i)).toHaveLength(2);
   });
 
-  it('adds a variant dish, sending its formats and no price', async () => {
+  it('adds a variant item, sending its formats and no price', async () => {
     const { view, catalogue } = await renderForm();
     fireEvent.input(screen.getByLabelText(/nom du plat/i), { target: { value: 'Pizza' } });
     fireEvent.click(screen.getByRole('button', { name: /plusieurs formats/i }));
@@ -155,7 +155,7 @@ describe('AddDish', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /ajouter à ma carte/i }));
 
-    expect(catalogue.addedDish).toEqual({
+    expect(catalogue.addedItem).toEqual({
       itemId: expect.stringMatching(/.+/),
       name: 'Pizza',
       description: '',
@@ -229,7 +229,7 @@ describe('AddDish', () => {
     expect(screen.getAllByLabelText(/^format$/i)).toHaveLength(3);
   });
 
-  it('will not submit a formats dish while a format row is incomplete', async () => {
+  it('will not submit a formats item while a format row is incomplete', async () => {
     const { view } = await renderForm();
     fireEvent.input(screen.getByLabelText(/nom du plat/i), { target: { value: 'Pizza' } });
     fireEvent.click(screen.getByRole('button', { name: /plusieurs formats/i }));
@@ -269,7 +269,7 @@ describe('AddDish', () => {
     expect(reordered[1].value).toBe('Petite');
   });
 
-  it('will not submit a formats dish with duplicate format names', async () => {
+  it('will not submit a formats item with duplicate format names', async () => {
     const { view } = await renderForm();
     fireEvent.input(screen.getByLabelText(/nom du plat/i), { target: { value: 'Pizza' } });
     fireEvent.click(screen.getByRole('button', { name: /plusieurs formats/i }));
@@ -297,14 +297,14 @@ describe('AddDish', () => {
     expect(screen.getByRole('button', { name: /ajouter à ma carte/i })).toBeEnabled();
   });
 
-  it('adds a dish with no photo, sending no image reference', async () => {
+  it('adds an item with no photo, sending no image reference', async () => {
     const { view, catalogue } = await renderForm();
     fillForm('Parmentier de canard', '12,00');
     view.detectChanges();
 
     fireEvent.click(screen.getByRole('button', { name: /ajouter à ma carte/i }));
 
-    expect(catalogue.addedDish).toEqual({
+    expect(catalogue.addedItem).toEqual({
       itemId: expect.stringMatching(/.+/),
       name: 'Parmentier de canard',
       description: '',
@@ -315,7 +315,7 @@ describe('AddDish', () => {
 
   it('will not submit while a price cannot be read as euros', async () => {
     const { view, catalogue } = await renderForm();
-    catalogue.newPhotoReference.set('v1/dishes/acme/coq');
+    catalogue.newPhotoReference.set('v1/items/acme/coq');
     fillForm('Parmentier de canard', 'gratuit');
     view.detectChanges();
 
@@ -324,38 +324,38 @@ describe('AddDish', () => {
     expect(screen.getByText(/par exemple 12,00/i)).toBeVisible();
   });
 
-  it('adds the dish with its price in cents and the uploaded photo, reusing the upload item id', async () => {
+  it('adds the item with its price in cents and the uploaded photo, reusing the upload item id', async () => {
     const { view, catalogue } = await renderForm();
     selectFile(view.container, anImage());
-    catalogue.newPhotoReference.set('v1/dishes/acme/coq');
+    catalogue.newPhotoReference.set('v1/items/acme/coq');
     fillForm('Parmentier de canard', '12,50');
     fireEvent.input(screen.getByLabelText(/description/i), { target: { value: 'Confit effiloché' } });
     view.detectChanges();
 
     fireEvent.click(screen.getByRole('button', { name: /ajouter à ma carte/i }));
 
-    expect(catalogue.addedDish).toEqual({
+    expect(catalogue.addedItem).toEqual({
       itemId: catalogue.uploadedPhoto?.itemId,
       name: 'Parmentier de canard',
       description: 'Confit effiloché',
       price: 1250,
-      imageReference: 'v1/dishes/acme/coq',
+      imageReference: 'v1/items/acme/coq',
     });
   });
 
-  describe('editing an existing dish', () => {
+  describe('editing an existing item', () => {
     const existing = {
       itemId: 'item-1',
       name: 'Bœuf bourguignon',
       description: 'Mijoté maison',
       price: 1300,
-      imageReference: 'v1/dishes/acme/item-1',
+      imageReference: 'v1/items/acme/item-1',
     };
 
     async function renderEdit() {
       const catalogue = new FakeCatalogueFacade();
       catalogue.items.set([existing]);
-      const view = await render(AddDish, {
+      const view = await render(AddItem, {
         providers: [
           provideRouter([]),
           { provide: CatalogueFacade, useValue: catalogue },
@@ -365,7 +365,7 @@ describe('AddDish', () => {
       return { view, catalogue };
     }
 
-    it('prefills the form with the existing dish, price back in euros', async () => {
+    it('prefills the form with the existing item, price back in euros', async () => {
       await renderEdit();
 
       expect(screen.getByLabelText(/nom du plat/i)).toHaveValue('Bœuf bourguignon');
@@ -373,7 +373,7 @@ describe('AddDish', () => {
       expect(screen.getByLabelText(/description/i)).toHaveValue('Mijoté maison');
     });
 
-    it('opens a variant dish in formats mode, prefilled', async () => {
+    it('opens a variant item in formats mode, prefilled', async () => {
       const catalogue = new FakeCatalogueFacade();
       catalogue.items.set([{
         itemId: 'item-1',
@@ -385,7 +385,7 @@ describe('AddDish', () => {
           { name: 'Pepperoni', description: 'spicy', price: 1200 },
         ],
       }]);
-      await render(AddDish, {
+      await render(AddItem, {
         providers: [
           provideRouter([]),
           { provide: CatalogueFacade, useValue: catalogue },
@@ -402,10 +402,10 @@ describe('AddDish', () => {
     it('shows the current photo', async () => {
       await renderEdit();
 
-      expect(screen.getByAltText(/photo du plat/i)).toHaveAttribute('src', expect.stringContaining('v1/dishes/acme/item-1'));
+      expect(screen.getByAltText(/photo du plat/i)).toHaveAttribute('src', expect.stringContaining('v1/items/acme/item-1'));
     });
 
-    it('revises the dish on submit rather than adding', async () => {
+    it('revises the item on submit rather than adding', async () => {
       const { view, catalogue } = await renderEdit();
       fireEvent.input(screen.getByLabelText(/nom du plat/i), { target: { value: 'Bœuf mode' } });
       fireEvent.input(screen.getByLabelText(/prix/i), { target: { value: '14,00' } });
@@ -413,8 +413,8 @@ describe('AddDish', () => {
 
       fireEvent.click(screen.getByRole('button', { name: /enregistrer/i }));
 
-      expect(catalogue.revisedDish).toEqual({ itemId: 'item-1', name: 'Bœuf mode', description: 'Mijoté maison', price: 1400 });
-      expect(catalogue.addedDish).toBeUndefined();
+      expect(catalogue.revisedItem).toEqual({ itemId: 'item-1', name: 'Bœuf mode', description: 'Mijoté maison', price: 1400 });
+      expect(catalogue.addedItem).toBeUndefined();
     });
 
     it('uploads a newly picked photo under the existing item id', async () => {
@@ -424,7 +424,7 @@ describe('AddDish', () => {
       expect(catalogue.uploadedPhoto?.itemId).toBe('item-1');
     });
 
-    it('offers to delete the dish', async () => {
+    it('offers to delete the item', async () => {
       await renderEdit();
 
       expect(screen.getByRole('button', { name: /^supprimer$/i })).toBeInTheDocument();
@@ -436,19 +436,19 @@ describe('AddDish', () => {
       fireEvent.click(screen.getByRole('button', { name: /^supprimer$/i }));
       view.detectChanges();
 
-      expect(catalogue.retiredDish).toBeUndefined();
+      expect(catalogue.retiredItem).toBeUndefined();
       expect(screen.getByRole('button', { name: /confirmer/i })).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /annuler/i })).toBeInTheDocument();
     });
 
-    it('retires the dish once the vendor confirms', async () => {
+    it('retires the item once the vendor confirms', async () => {
       const { view, catalogue } = await renderEdit();
       fireEvent.click(screen.getByRole('button', { name: /^supprimer$/i }));
       view.detectChanges();
 
       fireEvent.click(screen.getByRole('button', { name: /confirmer/i }));
 
-      expect(catalogue.retiredDish).toBe('item-1');
+      expect(catalogue.retiredItem).toBe('item-1');
     });
 
     it('abandons the deletion when the vendor backs out', async () => {
@@ -459,7 +459,7 @@ describe('AddDish', () => {
       fireEvent.click(screen.getByRole('button', { name: /annuler/i }));
       view.detectChanges();
 
-      expect(catalogue.retiredDish).toBeUndefined();
+      expect(catalogue.retiredItem).toBeUndefined();
       expect(screen.getByRole('button', { name: /^supprimer$/i })).toBeInTheDocument();
     });
 
@@ -471,7 +471,7 @@ describe('AddDish', () => {
       fireEvent.pointerDown(screen.getByLabelText(/nom du plat/i));
       view.detectChanges();
 
-      expect(catalogue.retiredDish).toBeUndefined();
+      expect(catalogue.retiredItem).toBeUndefined();
       expect(screen.getByRole('button', { name: /^supprimer$/i })).toBeInTheDocument();
     });
 
@@ -482,11 +482,11 @@ describe('AddDish', () => {
 
       fireEvent.click(screen.getByRole('button', { name: /confirmer/i }));
 
-      expect(catalogue.revisedDish).toBeUndefined();
+      expect(catalogue.revisedItem).toBeUndefined();
     });
   });
 
-  it('offers no delete for a dish that does not exist yet', async () => {
+  it('offers no delete for an item that does not exist yet', async () => {
     await renderForm();
 
     expect(screen.queryByRole('button', { name: /^supprimer$/i })).not.toBeInTheDocument();

@@ -55,18 +55,18 @@ async function renderBlank() {
 async function renderReady(overrides: Partial<StorefrontView> = {}) {
   const ctx = await renderDashboard();
   ctx.storefront.view.set({ ...completeStorefront, subdomain: 'acme', ...overrides });
-  ctx.catalogue.items.set([aDish]);
+  ctx.catalogue.items.set([aItem]);
   ctx.markets.schedules.set([aSchedule]);
   ctx.view.detectChanges();
   return ctx;
 }
 
-const aDish: CatalogueItemView = {
+const aItem: CatalogueItemView = {
   itemId: 'item-1',
   name: 'Bœuf bourguignon',
   description: 'Mijoté maison',
   price: 1300,
-  imageReference: 'v1/dishes/acme/item-1',
+  imageReference: 'v1/items/acme/item-1',
 };
 
 const aSchedule: MarketScheduleView = {
@@ -139,9 +139,9 @@ describe('Dashboard', () => {
     expect(within(step).getByText('2 marchés ajoutés')).toBeInTheDocument();
   });
 
-  it('marks the catalogue step done and shows the dish count once dishes exist', async () => {
+  it('marks the catalogue step done and shows the item count once items exist', async () => {
     const { view, catalogue } = await renderBlank();
-    catalogue.items.set([aDish]);
+    catalogue.items.set([aItem]);
     view.detectChanges();
 
     const step = screen.getByRole('link', { name: /composez votre catalogue/i });
@@ -150,16 +150,16 @@ describe('Dashboard', () => {
     expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '1');
   });
 
-  it('pluralises the dish count', async () => {
+  it('pluralises the item count', async () => {
     const { view, catalogue } = await renderBlank();
-    catalogue.items.set([aDish, { ...aDish, itemId: 'item-2' }]);
+    catalogue.items.set([aItem, { ...aItem, itemId: 'item-2' }]);
     view.detectChanges();
 
     const step = screen.getByRole('link', { name: /composez votre catalogue/i });
     expect(within(step).getByText('2 plats ajoutés')).toBeInTheDocument();
   });
 
-  it('leaves the catalogue step to do while it holds no dishes', async () => {
+  it('leaves the catalogue step to do while it holds no items', async () => {
     await renderBlank();
 
     const step = screen.getByRole('link', { name: /composez votre catalogue/i });

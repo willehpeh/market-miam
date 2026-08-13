@@ -10,7 +10,7 @@ export type MarketDayOccurrence = {
   absent: boolean;
   // The day's menu joined from the catalogue at query time — current names and prices,
   // in catalogue order. Empty when nothing is planned; suppressed when absent.
-  dishes: CatalogueViewItem[];
+  items: CatalogueViewItem[];
   market: {
     name: string;
     town: string;

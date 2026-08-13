@@ -53,7 +53,7 @@ describe('CatalogueView', () => {
     });
   });
 
-  it('should project a variant dish with its variants and no price', async () => {
+  it('should project a variant item with its variants and no price', async () => {
     const command = TestAddItemToCatalogue.withVariants([
       { name: 'Small', description: '', price: 800 },
       { name: 'Large', description: 'extra hungry', price: 1200 },
@@ -93,7 +93,7 @@ describe('CatalogueView', () => {
     });
   });
 
-  it('should revise a flat dish into a variant dish', async () => {
+  it('should revise a flat item into a variant item', async () => {
     const added = TestAddItemToCatalogue.simple();
     await new AddItemToCatalogueHandler(catalogues).execute(added);
     await new ReviseItemHandler(catalogues).execute(new ReviseItem({ itemId: added.itemId, vendorId: added.vendorId, name: 'Pizza', description: 'Wood-fired', variants: [
@@ -119,7 +119,7 @@ describe('CatalogueView', () => {
     });
   });
 
-  it('should revise a variant dish back to a single price', async () => {
+  it('should revise a variant item back to a single price', async () => {
     const added = TestAddItemToCatalogue.withVariants([
       { name: 'Small', description: '', price: 800 },
       { name: 'Large', description: 'extra hungry', price: 1200 },

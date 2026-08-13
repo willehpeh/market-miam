@@ -22,7 +22,7 @@ const day = {
   market: { name: 'Marché de la Croix-Rousse', town: 'Lyon', codePostal: '69004' },
 };
 
-const asSent = (dishes: Record<string, unknown>[]) => ({ marketDays: [{ ...day, dishes }] });
+const asSent = (items: Record<string, unknown>[]) => ({ marketDays: [{ ...day, items }] });
 
 describe('MarketDays', () => {
   let facade: MarketDayFacade;
@@ -58,7 +58,7 @@ describe('MarketDays', () => {
   // The API joins each day's menu to the catalogue. Nothing here renders that join: the
   // card counts ids, the editor ticks them, and both take names and prices from the
   // catalogue store.
-  it('keeps the dish ids and drops the detail joined onto them', () => {
+  it('keeps the item ids and drops the detail joined onto them', () => {
     facade.load();
 
     httpCtrl.expectOne('/api/market-days/upcoming').flush(
@@ -112,9 +112,9 @@ describe('MarketDays', () => {
   });
 
   it('leaves other days alone when one is saved', async () => {
-    const other = { ...day, marketId: 'market-2', dishes: [] };
+    const other = { ...day, marketId: 'market-2', items: [] };
     facade.load();
-    httpCtrl.expectOne('/api/market-days/upcoming').flush({ marketDays: [{ ...day, dishes: [] }, other] });
+    httpCtrl.expectOne('/api/market-days/upcoming').flush({ marketDays: [{ ...day, items: [] }, other] });
 
     facade.setMenu('market-1', '2026-08-15', ['item-9']);
     httpCtrl.expectOne('/api/market-days/market-1/2026-08-15/menu').flush(null);

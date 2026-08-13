@@ -1,9 +1,9 @@
 import { environment } from '../../environments/environment';
 import { CustomerStorefront } from './customer-storefront';
-import { CatalogueDish } from './dishes/catalogue-dish';
+import { CatalogueItem } from './items/catalogue-item';
 import { UpcomingMarket } from './markets/upcoming-market';
 
-export type DishViewModel = {
+export type ItemViewModel = {
   itemId: string;
   name: string;
   description: string;
@@ -21,9 +21,9 @@ export type MarketViewModel = {
   address: string;
   cancelled: boolean;
   inProgress: boolean;
-  // Full dishes, so the featured card can render the same cards as the carte and open the
+  // Full items, so the featured card can render the same cards as the carte and open the
   // same sheet. The upcoming list draws only their names and prices.
-  dishes: DishViewModel[];
+  items: ItemViewModel[];
 };
 
 export type StorefrontViewModel =
@@ -36,7 +36,7 @@ export type StorefrontViewModel =
       // Absolute Open Graph / Twitter card image, cropped to the 1200×630 the
       // crawlers expect — null when the vendor has no cover photo yet.
       socialImageUrl: string | null;
-      dishes: DishViewModel[];
+      items: ItemViewModel[];
       upcomingMarkets: MarketViewModel[];
     }
   | {
@@ -55,7 +55,7 @@ export function toViewModel(storefront: CustomerStorefront): StorefrontViewModel
     phone: storefront.phone,
     coverUrl: storefront.coverPhoto ? cloudinaryUrl(storefront.coverPhoto, 'c_fill,w_1200,h_750,q_auto,f_auto') : null,
     socialImageUrl: storefront.coverPhoto ? cloudinaryUrl(storefront.coverPhoto, 'c_fill,w_1200,h_630,q_auto,f_auto') : null,
-    dishes: storefront.dishes.map(toDishViewModel),
+    items: storefront.items.map(toItemViewModel),
     upcomingMarkets: storefront.upcomingMarkets.map(toMarketViewModel),
   };
 }
@@ -66,14 +66,14 @@ function cloudinaryUrl(reference: string, transform: string): string {
 
 // One 4:3 crop in a ladder of widths, and the browser picks per slot. The card and the
 // sheet share the candidates, so opening a sheet reuses the photo its card already
-// loaded — a second hand-picked URL here is what made the sheet flash the previous dish.
-const DISH_PHOTO_WIDTHS = [400, 800, 1200, 1600];
+// loaded — a second hand-picked URL here is what made the sheet flash the previous item.
+const ITEM_PHOTO_WIDTHS = [400, 800, 1200, 1600];
 
-function dishPhoto(reference: string): { src: string; srcset: string } {
+function itemPhoto(reference: string): { src: string; srcset: string } {
   const candidate = (width: number) => cloudinaryUrl(reference, `c_fill,w_${width},h_${(width * 3) / 4},q_auto,f_auto`);
   return {
     src: candidate(800),
-    srcset: DISH_PHOTO_WIDTHS.map((width) => `${candidate(width)} ${width}w`).join(', '),
+    srcset: ITEM_PHOTO_WIDTHS.map((width) => `${candidate(width)} ${width}w`).join(', '),
   };
 }
 
@@ -82,22 +82,22 @@ function formatEuros(cents: number): string {
 }
 
 // One mapping for both the carte and a market day's menu — they are the same catalogue
-// items, and a dish must not read differently depending on which section it lands in.
-function toDishViewModel(dish: CatalogueDish): DishViewModel {
-  const photo = dish.imageReference ? dishPhoto(dish.imageReference) : null;
-  const base = { itemId: dish.itemId, name: dish.name, description: dish.description, photo, priceLabel: priceLabelFor(dish) };
-  return dish.variants
+// items, and an item must not read differently depending on which section it lands in.
+function toItemViewModel(item: CatalogueItem): ItemViewModel {
+  const photo = item.imageReference ? itemPhoto(item.imageReference) : null;
+  const base = { itemId: item.itemId, name: item.name, description: item.description, photo, priceLabel: priceLabelFor(item) };
+  return item.variants
     ? {
         ...base,
-        variants: dish.variants.map(variant => ({ name: variant.name, description: variant.description, priceLabel: formatEuros(variant.price) })),
+        variants: item.variants.map(variant => ({ name: variant.name, description: variant.description, priceLabel: formatEuros(variant.price) })),
       }
     : base;
 }
 
-function priceLabelFor(dish: CatalogueDish): string {
-  return dish.variants
-    ? `dès ${formatEuros(Math.min(...dish.variants.map(variant => variant.price)))}`
-    : formatEuros(dish.price ?? 0);
+function priceLabelFor(item: CatalogueItem): string {
+  return item.variants
+    ? `dès ${formatEuros(Math.min(...item.variants.map(variant => variant.price)))}`
+    : formatEuros(item.price ?? 0);
 }
 
 // ponytail: French single-region labels, keyed off the DTO's own weekday + date parts
@@ -116,7 +116,7 @@ function toMarketViewModel(market: UpcomingMarket): MarketViewModel {
     address: [market.street, market.town].filter(Boolean).join(', '),
     cancelled: market.cancelled,
     inProgress: market.inProgress,
-    dishes: market.dishes.map(toDishViewModel),
+    items: market.items.map(toItemViewModel),
   };
 }
 

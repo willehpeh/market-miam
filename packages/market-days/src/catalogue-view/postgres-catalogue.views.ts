@@ -53,7 +53,7 @@ export class PostgresCatalogueViews implements CatalogueViews, CatalogueViewStor
   }
 
   // Reordering redeals the vendor's own seq values: their existing seats, sorted, handed
-  // out in the order given. Values stay distinct and below any future nextval, so a dish
+  // out in the order given. Values stay distinct and below any future nextval, so an item
   // added later still lands last — and no column or migration is needed to hold a position.
   async reorderItems(itemIds: string[], vendorId: string): Promise<void> {
     await this.db.query(

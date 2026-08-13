@@ -32,7 +32,7 @@ describe('Publish Storefront', () => {
     expect((failure as StorefrontNotReadyToPublish).missing).not.toContain('title');
   });
 
-  it('rejects publishing a storefront with no dishes', async () => {
+  it('rejects publishing a storefront with no items', async () => {
     openStorefrontWithCover();
 
     const failure = await handler.execute(TestPublishStorefront.valid()).catch((e: unknown) => e);
@@ -42,10 +42,10 @@ describe('Publish Storefront', () => {
     expect((failure as StorefrontNotReadyToPublish).missing).not.toContain('cover');
   });
 
-  it('rejects publishing a storefront whose only dish has been retired', async () => {
+  it('rejects publishing a storefront whose only item has been retired', async () => {
     openStorefrontWithCover();
-    addDish();
-    retireDish();
+    addItem();
+    retireItem();
     addSchedule();
 
     const failure = await handler.execute(TestPublishStorefront.valid()).catch((e: unknown) => e);
@@ -57,7 +57,7 @@ describe('Publish Storefront', () => {
 
   it('rejects publishing a storefront with no market schedule', async () => {
     openStorefrontWithCover();
-    addDish();
+    addItem();
 
     const failure = await handler.execute(TestPublishStorefront.valid()).catch((e: unknown) => e);
 
@@ -68,7 +68,7 @@ describe('Publish Storefront', () => {
 
   it('rejects publishing a storefront with no assigned subdomain', async () => {
     openStorefrontWithCover();
-    addDish();
+    addItem();
     addSchedule();
 
     const failure = await handler.execute(TestPublishStorefront.valid()).catch((e: unknown) => e);
@@ -80,7 +80,7 @@ describe('Publish Storefront', () => {
 
   it('publishes a storefront that meets every requirement', async () => {
     openStorefrontWithCover();
-    addDish();
+    addItem();
     addSchedule();
     await assignSubdomain();
 
@@ -93,7 +93,7 @@ describe('Publish Storefront', () => {
 
   it('publishes a storefront whose description is empty', async () => {
     openStorefrontWithCover({ description: '' });
-    addDish();
+    addItem();
     addSchedule();
     await assignSubdomain();
 
@@ -106,7 +106,7 @@ describe('Publish Storefront', () => {
 
   it('is idempotent, raising no new event when the storefront is already published', async () => {
     publishedStorefront();
-    addDish();
+    addItem();
     addSchedule();
     await assignSubdomain();
 
@@ -134,15 +134,15 @@ describe('Publish Storefront', () => {
     ], { vendorId: 'vendor-id' });
   }
 
-  function addDish() {
+  function addItem() {
     store.seedWith('catalogue-vendor-id', [
-      { type: 'ItemAddedToCatalogue', payload: { itemId: 'dish-1', name: 'Bœuf bourguignon', description: 'Mijoté', price: 1300 }, version: 1 },
+      { type: 'ItemAddedToCatalogue', payload: { itemId: 'item-1', name: 'Bœuf bourguignon', description: 'Mijoté', price: 1300 }, version: 1 },
     ], { vendorId: 'vendor-id' });
   }
 
-  function retireDish() {
+  function retireItem() {
     store.seedWith('catalogue-vendor-id', [
-      { type: 'ItemRetired', payload: { itemId: 'dish-1' }, version: 1 },
+      { type: 'ItemRetired', payload: { itemId: 'item-1' }, version: 1 },
     ], { vendorId: 'vendor-id' });
   }
 
@@ -157,7 +157,7 @@ describe('Publish Storefront', () => {
 
   it('stamps the vendor id into the published event metadata', async () => {
     openStorefrontWithCover();
-    addDish();
+    addItem();
     addSchedule();
     await assignSubdomain();
 

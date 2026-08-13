@@ -3,7 +3,7 @@ import { RouterLink } from '@angular/router';
 import { CloudinaryUrlPipe } from '../core/cloudinary-url.pipe';
 import { CatalogueFacade } from './catalogue.facade';
 
-const DISH_ROW_TRANSFORMATION = 'c_fill,w_200,h_200,q_auto,f_webp';
+const ITEM_ROW_TRANSFORMATION = 'c_fill,w_200,h_200,q_auto,f_webp';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -15,12 +15,12 @@ const DISH_ROW_TRANSFORMATION = 'c_fill,w_200,h_200,q_auto,f_webp';
     </div>
 
     <ul class="mt-6 divide-y divide-line">
-      @for (dish of order(); track dish.itemId; let index = $index) {
+      @for (item of order(); track item.itemId; let index = $index) {
         <li class="flex items-center gap-2 py-2">
-          @if (dish.imageReference) {
+          @if (item.imageReference) {
             <img
               class="size-16 shrink-0 rounded-field object-cover"
-              [src]="dish.imageReference | cloudinaryUrl: thumbnailTransformation"
+              [src]="item.imageReference | cloudinaryUrl: thumbnailTransformation"
               alt=""
             >
           } @else {
@@ -28,11 +28,11 @@ const DISH_ROW_TRANSFORMATION = 'c_fill,w_200,h_200,q_auto,f_webp';
               <i class="fa-solid fa-camera" aria-hidden="true"></i>
             </span>
           }
-          <span class="min-w-0 flex-1 break-words text-sm font-bold text-ink">{{ dish.name }}</span>
+          <span class="min-w-0 flex-1 break-words text-sm font-bold text-ink">{{ item.name }}</span>
           <button
             type="button"
             class="icon-btn shrink-0"
-            [attr.aria-label]="'Descendre ' + dish.name"
+            [attr.aria-label]="'Descendre ' + item.name"
             [disabled]="index === order().length - 1"
             (click)="moveDown(index)"
           >
@@ -41,7 +41,7 @@ const DISH_ROW_TRANSFORMATION = 'c_fill,w_200,h_200,q_auto,f_webp';
           <button
             type="button"
             class="icon-btn shrink-0"
-            [attr.aria-label]="'Monter ' + dish.name"
+            [attr.aria-label]="'Monter ' + item.name"
             [disabled]="index === 0"
             (click)="moveUp(index)"
           >
@@ -52,10 +52,10 @@ const DISH_ROW_TRANSFORMATION = 'c_fill,w_200,h_200,q_auto,f_webp';
     </ul>
   `,
 })
-export class ReorderDishes {
+export class ReorderItems {
   private readonly catalogue = inject(CatalogueFacade);
 
-  readonly thumbnailTransformation = DISH_ROW_TRANSFORMATION;
+  readonly thumbnailTransformation = ITEM_ROW_TRANSFORMATION;
   // The vendor's order is theirs alone until they save it, so a failed save leaves what
   // they arranged on screen. It re-seeds from the store when the catalogue arrives cold.
   protected readonly order = linkedSignal(() => this.catalogue.items());
@@ -67,7 +67,7 @@ export class ReorderDishes {
   }
 
   protected save(): void {
-    this.catalogue.reorderDishes(this.order().map((dish) => dish.itemId));
+    this.catalogue.reorderItems(this.order().map((item) => item.itemId));
   }
 
   protected moveUp(index: number): void {
@@ -79,11 +79,11 @@ export class ReorderDishes {
   }
 
   private swap(a: number, b: number): void {
-    this.order.update((dishes) => {
-      if (b < 0 || b >= dishes.length) {
-        return dishes;
+    this.order.update((items) => {
+      if (b < 0 || b >= items.length) {
+        return items;
       }
-      const reordered = [...dishes];
+      const reordered = [...items];
       [reordered[a], reordered[b]] = [reordered[b], reordered[a]];
       return reordered;
     });

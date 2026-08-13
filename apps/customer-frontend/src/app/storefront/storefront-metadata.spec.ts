@@ -12,7 +12,7 @@ const PUBLISHED: StorefrontViewModel = {
   phone: '0102030405',
   coverUrl: 'https://cdn.test/cover-750',
   socialImageUrl: 'https://cdn.test/cover-630',
-  dishes: [],
+  items: [],
   upcomingMarkets: [],
 };
 

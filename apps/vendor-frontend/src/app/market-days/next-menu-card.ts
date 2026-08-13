@@ -40,15 +40,15 @@ export class NextMenuCard {
     if (!day) {
       return null;
     }
-    const dishes = day.itemIds.length;
+    const items = day.itemIds.length;
     return {
       marketId: day.marketId,
       date: day.date,
       label: longDate(day.day, day.date),
       marketName: day.market.name,
       hours: timeRange(day),
-      menu: dishes ? `${dishes} plat${dishes > 1 ? 's' : ''} au menu` : 'Aucun plat au menu',
-      action: dishes ? 'Modifier le menu' : 'Planifier le menu',
+      menu: items ? `${items} plat${items > 1 ? 's' : ''} au menu` : 'Aucun plat au menu',
+      action: items ? 'Modifier le menu' : 'Planifier le menu',
     };
   });
 

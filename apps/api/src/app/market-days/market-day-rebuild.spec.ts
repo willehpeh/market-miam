@@ -7,7 +7,7 @@ import { Subscriptions } from '../event-sourcing/subscriptions';
 
 const SATURDAY = '2026-06-27';
 
-const dish = {
+const item = {
   itemId: 'item-1',
   name: 'Bœuf bourguignon',
   description: 'Mijoté maison',
@@ -30,12 +30,12 @@ describe('Rebuilding the market day projection', () => {
     await request(app.getHttpServer())
       .post('/catalogue')
       .set('Authorization', 'Bearer any-token')
-      .send(dish)
+      .send(item)
       .expect(201);
     await request(app.getHttpServer())
       .put(`/market-days/market-1/${SATURDAY}/menu`)
       .set('Authorization', 'Bearer any-token')
-      .send({ itemIds: [dish.itemId] })
+      .send({ itemIds: [item.itemId] })
       .expect(200);
     await app.get(Subscriptions).drain();
 
@@ -49,7 +49,7 @@ describe('Rebuilding the market day projection', () => {
     await app.get(Subscriptions).rebuild('market-day-view');
 
     expect(await app.get(MarketDayViews).menusFor('acme-bakery', SATURDAY, SATURDAY)).toEqual([
-      { marketId: 'market-1', date: SATURDAY, itemIds: [dish.itemId] },
+      { marketId: 'market-1', date: SATURDAY, itemIds: [item.itemId] },
     ]);
     expect(await app.get(MarketDayViews).menusFor('ghost-vendor', SATURDAY, SATURDAY)).toEqual([]);
   });

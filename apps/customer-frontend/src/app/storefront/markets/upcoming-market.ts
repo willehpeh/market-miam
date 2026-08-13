@@ -1,4 +1,4 @@
-import { CatalogueDish } from '../dishes/catalogue-dish';
+import { CatalogueItem } from '../items/catalogue-item';
 
 export type UpcomingMarket = {
   date: string;
@@ -16,5 +16,5 @@ export type UpcomingMarket = {
   inProgress: boolean;
   // The day's menu, joined to the catalogue by the query — empty when nothing is planned,
   // and always empty when the vendor is away.
-  dishes: CatalogueDish[];
+  items: CatalogueItem[];
 };

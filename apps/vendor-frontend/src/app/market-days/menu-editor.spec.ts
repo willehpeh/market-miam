@@ -21,7 +21,7 @@ const day = (overrides: Partial<MarketDayView> = {}): MarketDayView => ({
   ...overrides,
 });
 
-const dish = (itemId: string, name: string, price = 1300): CatalogueItemView => ({
+const item = (itemId: string, name: string, price = 1300): CatalogueItemView => ({
   itemId,
   name,
   description: '',
@@ -85,7 +85,7 @@ describe('MenuEditor', () => {
   it('offers the whole catalogue, ticking what the day already carries', async () => {
     await renderEditor((marketDays, catalogue) => {
       marketDays.days.set([day({ itemIds: ['item-2'] })]);
-      catalogue.items.set([dish('item-1', 'Bourguignon'), dish('item-2', 'Tatin')]);
+      catalogue.items.set([item('item-1', 'Bourguignon'), item('item-2', 'Tatin')]);
     });
 
     expect(screen.getByRole('checkbox', { name: /Bourguignon/ })).not.toBeChecked();
@@ -95,7 +95,7 @@ describe('MenuEditor', () => {
   it('saves the whole menu, not just what changed', async () => {
     const { marketDays } = await renderEditor((days, catalogue) => {
       days.days.set([day({ itemIds: ['item-2'] })]);
-      catalogue.items.set([dish('item-1', 'Bourguignon'), dish('item-2', 'Tatin')]);
+      catalogue.items.set([item('item-1', 'Bourguignon'), item('item-2', 'Tatin')]);
     });
 
     fireEvent.click(screen.getByRole('checkbox', { name: /Bourguignon/ }));
@@ -109,10 +109,10 @@ describe('MenuEditor', () => {
   });
 
   // Clearing a day is an empty set, not a delete.
-  it('clears the day when every dish is unticked', async () => {
+  it('clears the day when every item is unticked', async () => {
     const { marketDays } = await renderEditor((days, catalogue) => {
       days.days.set([day({ itemIds: ['item-1'] })]);
-      catalogue.items.set([dish('item-1', 'Bourguignon')]);
+      catalogue.items.set([item('item-1', 'Bourguignon')]);
     });
 
     fireEvent.click(screen.getByRole('checkbox', { name: /Bourguignon/ }));
@@ -129,7 +129,7 @@ describe('MenuEditor', () => {
   });
 
   it('leaves a warm catalogue alone', async () => {
-    const { catalogue } = await renderEditor((_, items) => items.items.set([dish('item-1', 'Bourguignon')]));
+    const { catalogue } = await renderEditor((_, items) => items.items.set([item('item-1', 'Bourguignon')]));
 
     expect(catalogue.loaded).toBe(false);
   });

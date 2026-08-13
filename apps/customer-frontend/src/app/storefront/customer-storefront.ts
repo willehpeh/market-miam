@@ -1,5 +1,5 @@
 import { UpcomingMarket } from './markets/upcoming-market';
-import { CatalogueDish } from './dishes/catalogue-dish';
+import { CatalogueItem } from './items/catalogue-item';
 
 export type CustomerStorefront = PublishedCustomerStorefront | ComingSoonCustomerStorefront;
 
@@ -9,7 +9,7 @@ export type PublishedCustomerStorefront = {
   description: string;
   phone: string;
   coverPhoto: string | null;
-  dishes: CatalogueDish[];
+  items: CatalogueItem[];
   upcomingMarkets: UpcomingMarket[];
 };
 

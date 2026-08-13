@@ -10,19 +10,19 @@ const ACME: StorefrontViewModel = {
   phone: '0102030405',
   coverUrl: null,
   socialImageUrl: null,
-  dishes: [
+  items: [
     {
-      itemId: 'dish-1',
+      itemId: 'item-1',
       name: 'Bœuf bourguignon',
       description: 'Mijoté 7 heures',
       priceLabel: '13,00 €',
       photo: {
-        src: 'https://cdn.test/photo/dish-1',
-        srcset: 'https://cdn.test/photo/dish-1 800w, https://cdn.test/photo/dish-1-big 1600w',
+        src: 'https://cdn.test/photo/item-1',
+        srcset: 'https://cdn.test/photo/item-1 800w, https://cdn.test/photo/item-1-big 1600w',
       },
     },
     {
-      itemId: 'dish-2',
+      itemId: 'item-2',
       name: 'Tarte tatin',
       description: 'Aux pommes',
       priceLabel: '6,00 €',
@@ -30,8 +30,8 @@ const ACME: StorefrontViewModel = {
     },
   ],
   upcomingMarkets: [
-    { weekday: 'JEU', day: '18', month: 'JUIN', marketName: 'Marché Saint-Antoine', hours: '8h – 13h30', address: 'Quai Saint-Antoine, Lyon', cancelled: false, inProgress: false, dishes: [] },
-    { weekday: 'MAR', day: '23', month: 'JUIN', marketName: 'Marché de la Croix-Rousse', hours: '8h – 13h', address: 'Lyon', cancelled: true, inProgress: false, dishes: [] },
+    { weekday: 'JEU', day: '18', month: 'JUIN', marketName: 'Marché Saint-Antoine', hours: '8h – 13h30', address: 'Quai Saint-Antoine, Lyon', cancelled: false, inProgress: false, items: [] },
+    { weekday: 'MAR', day: '23', month: 'JUIN', marketName: 'Marché de la Croix-Rousse', hours: '8h – 13h', address: 'Lyon', cancelled: true, inProgress: false, items: [] },
   ],
 };
 
@@ -78,7 +78,7 @@ describe('StorefrontPage', () => {
   });
 
   // The carte is a page of its own: this one is "should I go", the carte is "what can they
-  // make". Listing both left the page repeating every dish it had already shown.
+  // make". Listing both left the page repeating every item it had already shown.
   it('points to the carte instead of listing it', () => {
     const fixture = TestBed.createComponent(StorefrontPage);
     fixture.componentRef.setInput('storefront', ACME);
@@ -86,7 +86,7 @@ describe('StorefrontPage', () => {
 
     const link = fixture.nativeElement.querySelector('a[href="/carte"]') as HTMLAnchorElement;
     expect(link.textContent).toContain('Notre carte');
-    expect(fixture.nativeElement.querySelectorAll('[data-dish]').length).toBe(0);
+    expect(fixture.nativeElement.querySelectorAll('[data-item]').length).toBe(0);
     expect(fixture.nativeElement.textContent as string).not.toContain('Bœuf bourguignon');
   });
 
@@ -114,7 +114,7 @@ describe('StorefrontPage', () => {
     fixture.componentRef.setInput('storefront', {
       ...ACME,
       upcomingMarkets: [
-        { ...ACME.upcomingMarkets[0], dishes: [ACME.dishes[0]] },
+        { ...ACME.upcomingMarkets[0], items: [ACME.items[0]] },
         ACME.upcomingMarkets[1],
       ],
     });
@@ -129,7 +129,7 @@ describe('StorefrontPage', () => {
     const fixture = TestBed.createComponent(StorefrontPage);
     fixture.componentRef.setInput('storefront', {
       ...ACME,
-      upcomingMarkets: [ACME.upcomingMarkets[0], { ...ACME.upcomingMarkets[1], dishes: [ACME.dishes[1]] }],
+      upcomingMarkets: [ACME.upcomingMarkets[0], { ...ACME.upcomingMarkets[1], items: [ACME.items[1]] }],
     });
     fixture.detectChanges();
 
@@ -164,16 +164,16 @@ describe('StorefrontPage', () => {
   // The day's menu is browsable like the carte, not a price list: same cards, same sheet.
   // Only the featured card goes this far — repeating full cards for every upcoming market
   // would bury the page.
-  it('opens the dish sheet from a dish on the next market\'s menu', () => {
+  it('opens the item sheet from an item on the next market\'s menu', () => {
     const fixture = TestBed.createComponent(StorefrontPage);
     fixture.componentRef.setInput('storefront', {
       ...ACME,
-      upcomingMarkets: [{ ...ACME.upcomingMarkets[0], dishes: [ACME.dishes[0]] }],
+      upcomingMarkets: [{ ...ACME.upcomingMarkets[0], items: [ACME.items[0]] }],
     });
     fixture.detectChanges();
 
-    const menuDish = fixture.nativeElement.querySelector('app-market-card [data-dish="dish-1"]') as HTMLElement;
-    menuDish.click();
+    const menuItem = fixture.nativeElement.querySelector('app-market-card [data-item="item-1"]') as HTMLElement;
+    menuItem.click();
     fixture.detectChanges();
 
     const dialog = fixture.nativeElement.querySelector('dialog') as HTMLDialogElement;
@@ -181,16 +181,16 @@ describe('StorefrontPage', () => {
     expect(dialog.textContent).toContain('Mijoté 7 heures');
   });
 
-  it('keeps the upcoming list to names and prices, without dish cards', () => {
+  it('keeps the upcoming list to names and prices, without item cards', () => {
     const fixture = TestBed.createComponent(StorefrontPage);
     fixture.componentRef.setInput('storefront', {
       ...ACME,
-      upcomingMarkets: [ACME.upcomingMarkets[0], { ...ACME.upcomingMarkets[1], dishes: [ACME.dishes[0]] }],
+      upcomingMarkets: [ACME.upcomingMarkets[0], { ...ACME.upcomingMarkets[1], items: [ACME.items[0]] }],
     });
     fixture.detectChanges();
 
     const listCards = fixture.nativeElement.querySelectorAll('app-market-card');
-    expect(listCards[1].querySelector('[data-dish]')).toBeNull();
+    expect(listCards[1].querySelector('[data-item]')).toBeNull();
     expect(listCards[1].textContent as string).toContain('Bœuf bourguignon');
   });
 

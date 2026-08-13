@@ -21,7 +21,7 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
     // Sibling routes swap under one outlet, so without this the document keeps its
-    // scrollTop: a vendor who scrolled to a dish deep in their catalogue opened its
+    // scrollTop: a vendor who scrolled to an item deep in their catalogue opened its
     // form already scrolled past the top of it. Forward navigations start at the top,
     // and a real back button still returns the vendor to their place in the list.
     provideRouter(appRoutes, withInMemoryScrolling({ scrollPositionRestoration: 'enabled' })),

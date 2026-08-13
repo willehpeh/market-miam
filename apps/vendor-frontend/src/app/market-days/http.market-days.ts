@@ -5,7 +5,7 @@ import { MarketDays, MarketDayView } from './market-days';
 import { environment } from '../../environments/environment';
 
 type UpcomingResponse = {
-  marketDays: (Omit<MarketDayView, 'itemIds'> & { dishes: { itemId: string }[] })[];
+  marketDays: (Omit<MarketDayView, 'itemIds'> & { items: { itemId: string }[] })[];
 };
 
 @Injectable()
@@ -15,7 +15,7 @@ export class HttpMarketDays implements MarketDays {
   upcoming(): Observable<MarketDayView[]> {
     return this.http
       .get<UpcomingResponse>(`${environment.apiBaseUrl}/api/market-days/upcoming`)
-      .pipe(map(({ marketDays }) => marketDays.map(({ dishes, ...day }) => ({ ...day, itemIds: dishes.map(d => d.itemId) }))));
+      .pipe(map(({ marketDays }) => marketDays.map(({ items, ...day }) => ({ ...day, itemIds: items.map(d => d.itemId) }))));
   }
 
   setMenu(marketId: string, date: string, itemIds: string[]): Observable<void> {

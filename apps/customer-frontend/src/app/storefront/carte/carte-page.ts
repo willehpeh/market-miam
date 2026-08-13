@@ -1,9 +1,9 @@
 import { ChangeDetectionStrategy, Component, input, viewChild } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { DishViewModel, StorefrontViewModel } from '../storefront-view-model';
+import { ItemViewModel, StorefrontViewModel } from '../storefront-view-model';
 import { ComingSoonPage } from '../coming-soon/coming-soon-page';
-import { DishCard } from '../dishes/dish-card';
-import { DishSheet } from '../dishes/dish-sheet';
+import { ItemCard } from '../items/item-card';
+import { ItemSheet } from '../items/item-sheet';
 import { StorefrontFooter } from '../layout/storefront-footer';
 
 // Everything the vendor ever makes, on its own page: the home page answers "should I go",
@@ -12,7 +12,7 @@ import { StorefrontFooter } from '../layout/storefront-footer';
 @Component({
   selector: 'app-carte-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, ComingSoonPage, DishCard, DishSheet, StorefrontFooter],
+  imports: [RouterLink, ComingSoonPage, ItemCard, ItemSheet, StorefrontFooter],
   template: `
     @if (storefront(); as storefront) {
       @switch (storefront.status) {
@@ -35,13 +35,13 @@ import { StorefrontFooter } from '../layout/storefront-footer';
             <div class="px-5 py-6 lg:px-8 lg:py-10">
               <h1 class="text-3xl font-bold tracking-tight text-ink lg:text-4xl">Notre carte</h1>
               <ul class="mt-6 grid gap-4 lg:grid-cols-3">
-                @for (dish of storefront.dishes; track dish.itemId) {
-                  <li><app-dish-card [dish]="dish" (chosen)="openDish($event)" /></li>
+                @for (item of storefront.items; track item.itemId) {
+                  <li><app-item-card [item]="item" (chosen)="openItem($event)" /></li>
                 }
               </ul>
             </div>
 
-            <app-dish-sheet />
+            <app-item-sheet />
 
             <app-storefront-footer [name]="storefront.name" [phone]="storefront.phone" />
           </main>
@@ -60,9 +60,9 @@ import { StorefrontFooter } from '../layout/storefront-footer';
 export class CartePage {
   readonly storefront = input<StorefrontViewModel | null>(null);
 
-  private readonly sheet = viewChild.required(DishSheet);
+  private readonly sheet = viewChild.required(ItemSheet);
 
-  protected openDish(dish: DishViewModel): void {
-    this.sheet().open(dish);
+  protected openItem(item: ItemViewModel): void {
+    this.sheet().open(item);
   }
 }

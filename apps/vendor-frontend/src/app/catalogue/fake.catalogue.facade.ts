@@ -1,6 +1,6 @@
 import { Injectable, signal } from '@angular/core';
 import { CatalogueFacade } from './catalogue.facade';
-import { CatalogueItemView, DishRevision, NewDish } from './catalogue';
+import { CatalogueItemView, ItemRevision, NewItem } from './catalogue';
 
 @Injectable()
 export class FakeCatalogueFacade implements CatalogueFacade {
@@ -13,41 +13,41 @@ export class FakeCatalogueFacade implements CatalogueFacade {
   loaded = false;
   began = false;
   uploadedPhoto: { itemId: string; file: File } | undefined;
-  addedDish: NewDish | undefined;
-  revisedDish: DishRevision | undefined;
+  addedItem: NewItem | undefined;
+  revisedItem: ItemRevision | undefined;
   changedPhoto: { itemId: string; imageReference: string } | undefined;
-  reorderedDishes: string[] | undefined;
-  retiredDish: string | undefined;
+  reorderedItems: string[] | undefined;
+  retiredItem: string | undefined;
 
   load(): void {
     this.loaded = true;
   }
 
-  beginDish(): void {
+  beginItem(): void {
     this.began = true;
   }
 
-  uploadDishPhoto(itemId: string, file: File): void {
+  uploadItemPhoto(itemId: string, file: File): void {
     this.uploadedPhoto = { itemId, file };
   }
 
-  addDish(dish: NewDish): void {
-    this.addedDish = dish;
+  addItem(item: NewItem): void {
+    this.addedItem = item;
   }
 
-  reviseDish(revision: DishRevision): void {
-    this.revisedDish = revision;
+  reviseItem(revision: ItemRevision): void {
+    this.revisedItem = revision;
   }
 
-  changeDishPhoto(itemId: string, imageReference: string): void {
+  changeItemPhoto(itemId: string, imageReference: string): void {
     this.changedPhoto = { itemId, imageReference };
   }
 
-  reorderDishes(itemIds: string[]): void {
-    this.reorderedDishes = itemIds;
+  reorderItems(itemIds: string[]): void {
+    this.reorderedItems = itemIds;
   }
 
-  retireDish(itemId: string): void {
-    this.retiredDish = itemId;
+  retireItem(itemId: string): void {
+    this.retiredItem = itemId;
   }
 }

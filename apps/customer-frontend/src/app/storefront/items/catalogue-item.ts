@@ -1,4 +1,4 @@
-export type CatalogueDish = {
+export type CatalogueItem = {
   itemId: string;
   name: string;
   description: string;

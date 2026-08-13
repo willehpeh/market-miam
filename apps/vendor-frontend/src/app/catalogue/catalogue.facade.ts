@@ -1,5 +1,5 @@
 import { Signal } from '@angular/core';
-import { CatalogueItemView, DishRevision, NewDish } from './catalogue';
+import { CatalogueItemView, ItemRevision, NewItem } from './catalogue';
 
 export abstract class CatalogueFacade {
   abstract readonly items: Signal<CatalogueItemView[]>;
@@ -10,11 +10,11 @@ export abstract class CatalogueFacade {
   abstract readonly newPhotoReference: Signal<string>;
 
   abstract load(): void;
-  abstract beginDish(): void;
-  abstract uploadDishPhoto(itemId: string, file: File): void;
-  abstract addDish(dish: NewDish): void;
-  abstract reviseDish(revision: DishRevision): void;
-  abstract changeDishPhoto(itemId: string, imageReference: string): void;
-  abstract reorderDishes(itemIds: string[]): void;
-  abstract retireDish(itemId: string): void;
+  abstract beginItem(): void;
+  abstract uploadItemPhoto(itemId: string, file: File): void;
+  abstract addItem(item: NewItem): void;
+  abstract reviseItem(revision: ItemRevision): void;
+  abstract changeItemPhoto(itemId: string, imageReference: string): void;
+  abstract reorderItems(itemIds: string[]): void;
+  abstract retireItem(itemId: string): void;
 }

@@ -16,12 +16,12 @@ describe('seedDev', () => {
     await app.close();
   });
 
-  it('makes a published demo storefront with dishes reachable by its subdomain', async () => {
+  it('makes a published demo storefront with items reachable by its subdomain', async () => {
     await seedDev(app);
 
     const res = await request(app.getHttpServer()).get('/public/storefront/demo').expect(200);
     expect(res.body.status).toBe('published');
-    expect(res.body.dishes).toHaveLength(3);
+    expect(res.body.items).toHaveLength(3);
   });
 
   it('assigns the local dev sign-in vendor a subdomain so it can publish', async () => {

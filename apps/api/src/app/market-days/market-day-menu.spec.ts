@@ -9,7 +9,7 @@ import { Subscriptions } from '../event-sourcing/subscriptions';
 // fixedClock is 2026-06-23T09:00Z — a Tuesday, 11:00 in Paris, mid-market for a 07:00–14:30 day.
 const TUESDAY = '2026-06-23';
 
-const dish = {
+const item = {
   itemId: 'item-1',
   name: 'Bœuf bourguignon',
   description: 'Mijoté maison',
@@ -50,7 +50,7 @@ describe('Setting a market day\'s menu over HTTP', () => {
     authed('put', `/market-days/${marketId}/${date}/menu`).send({ itemIds });
 
   async function seedCatalogueAndSchedule(): Promise<void> {
-    await authed('post', '/catalogue').send(dish).expect(201);
+    await authed('post', '/catalogue').send(item).expect(201);
     await authed('post', '/market-schedules').send(schedule).expect(201);
     await app.get(Subscriptions).drain();
   }
@@ -70,14 +70,14 @@ describe('Setting a market day\'s menu over HTTP', () => {
   it('serves the menu back on the vendor\'s upcoming days', async () => {
     await seedCatalogueAndSchedule();
 
-    await setMenu([dish.itemId]).expect(200);
+    await setMenu([item.itemId]).expect(200);
     await app.get(Subscriptions).drain();
 
     const response = await authed('get', '/market-days/upcoming').expect(200);
     expect(response.body.marketDays[0]).toMatchObject({
       marketId: 'market-1',
       date: TUESDAY,
-      dishes: [expect.objectContaining({ itemId: 'item-1', name: 'Bœuf bourguignon', price: 1300 })],
+      items: [expect.objectContaining({ itemId: 'item-1', name: 'Bœuf bourguignon', price: 1300 })],
     });
   });
 
@@ -88,18 +88,18 @@ describe('Setting a market day\'s menu over HTTP', () => {
     await seedCatalogueAndSchedule();
     await seedPublishedStorefront();
 
-    await setMenu([dish.itemId]).expect(200);
+    await setMenu([item.itemId]).expect(200);
     await app.get(Subscriptions).drain();
 
     const response = await request(app.getHttpServer()).get('/public/storefront/acme').expect(200);
     expect(response.body.upcomingMarkets[0]).toMatchObject({
       date: TUESDAY,
       inProgress: true,
-      dishes: [expect.objectContaining({ itemId: 'item-1', name: 'Bœuf bourguignon' })],
+      items: [expect.objectContaining({ itemId: 'item-1', name: 'Bœuf bourguignon' })],
     });
   });
 
-  it('rejects a dish the vendor does not have as a bad request', async () => {
+  it('rejects an item the vendor does not have as a bad request', async () => {
     await seedCatalogueAndSchedule();
 
     await setMenu(['never-in-the-catalogue']).expect(400);

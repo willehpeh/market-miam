@@ -14,7 +14,7 @@ export interface CatalogueView {
   items: CatalogueItemView[];
 }
 
-export interface NewDish {
+export interface NewItem {
   itemId: string;
   name: string;
   description: string;
@@ -23,7 +23,7 @@ export interface NewDish {
   variants?: { name: string; description: string; price: number }[];
 }
 
-export interface DishRevision {
+export interface ItemRevision {
   itemId: string;
   name: string;
   description: string;
@@ -34,8 +34,8 @@ export interface DishRevision {
 export abstract class Catalogue {
   abstract list(): Observable<CatalogueView>;
   abstract photoSignature(itemId: string): Observable<SignedUpload>;
-  abstract add(dish: NewDish): Observable<void>;
-  abstract revise(revision: DishRevision): Observable<void>;
+  abstract add(item: NewItem): Observable<void>;
+  abstract revise(revision: ItemRevision): Observable<void>;
   abstract changePhoto(itemId: string, imageReference: string): Observable<void>;
   abstract reorder(itemIds: string[]): Observable<void>;
   abstract retire(itemId: string): Observable<void>;

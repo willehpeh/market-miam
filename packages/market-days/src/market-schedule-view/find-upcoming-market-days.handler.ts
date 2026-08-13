@@ -11,7 +11,7 @@ import { CatalogueViews } from '../catalogue-view/catalogue-views';
 import { Recurrence } from '../calendar/schedule/recurrence';
 import { notYetEnded, parisWallClock } from './market-day-clock';
 
-type Dishes = Map<string, CatalogueViewItem[]>;
+type Items = Map<string, CatalogueViewItem[]>;
 
 const dayKey = (marketId: string, date: string) => `${marketId}|${date}`;
 
@@ -29,17 +29,17 @@ export class FindUpcomingMarketDaysHandler implements IQueryHandler<FindUpcoming
   async execute(query: FindUpcomingMarketDays): Promise<UpcomingMarketDaysView> {
     const { today, horizon } = this.queryPeriod();
     const { schedules } = await this.views.forVendor(query.vendorId);
-    const dishes = await this.dishesByDay(query.vendorId, today, horizon);
-    return { marketDays: this.marketDaysFrom(schedules, today, horizon, dishes) };
+    const items = await this.itemsByDay(query.vendorId, today, horizon);
+    return { marketDays: this.marketDaysFrom(schedules, today, horizon, items) };
   }
 
   // Upcoming means still to come: a day that has ended leaves, so a vendor whose market
   // finished this afternoon is offered tomorrow rather than a day they can no longer sell on.
   // Days are dropped, not flagged — no past-day read path exists to list them with.
-  private marketDaysFrom(schedules: MarketScheduleView[], today: LocalDate, horizon: LocalDate, dishes: Dishes) {
+  private marketDaysFrom(schedules: MarketScheduleView[], today: LocalDate, horizon: LocalDate, items: Items) {
     const now = parisWallClock(this.clock.now());
     return schedules
-      .flatMap(schedule => this.occurrencesOf(schedule, today, horizon, dishes))
+      .flatMap(schedule => this.occurrencesOf(schedule, today, horizon, items))
       .filter(day => notYetEnded(day, now))
       .sort((a, b) => a.date.localeCompare(b.date));
   }
@@ -52,7 +52,7 @@ export class FindUpcomingMarketDaysHandler implements IQueryHandler<FindUpcoming
 
   // Absent days keep their occurrence but lose their menu — suppression lives in the
   // query, so no cross-aggregate coupling between calendar and market day.
-  private occurrencesOf(schedule: MarketScheduleView, from: LocalDate, to: LocalDate, dishes: Dishes): MarketDayOccurrence[] {
+  private occurrencesOf(schedule: MarketScheduleView, from: LocalDate, to: LocalDate, items: Items): MarketDayOccurrence[] {
     const absences = schedule.absences ?? [];
     const occurrences = Recurrence.fromSnapshot(schedule).occurrencesWithin(from, to);
     return occurrences.map(occurrence => {
@@ -65,7 +65,7 @@ export class FindUpcomingMarketDaysHandler implements IQueryHandler<FindUpcoming
         startTime: occurrence.startTime,
         endTime: occurrence.endTime,
         absent,
-        dishes: absent ? [] : dishes.get(dayKey(schedule.marketId, occurrence.date)) ?? [],
+        items: absent ? [] : items.get(dayKey(schedule.marketId, occurrence.date)) ?? [],
         market: schedule.market,
       };
     });
@@ -74,7 +74,7 @@ export class FindUpcomingMarketDaysHandler implements IQueryHandler<FindUpcoming
   // Menus and catalogue are read once per query, not once per occurrence: the whole
   // window is one range scan. The menu event carries a set of ids; catalogue order is the
   // display order, and joining here means a revised name or price reaches days already planned.
-  private async dishesByDay(vendorId: string, from: LocalDate, to: LocalDate): Promise<Dishes> {
+  private async itemsByDay(vendorId: string, from: LocalDate, to: LocalDate): Promise<Items> {
     const [{ items }, menus] = await Promise.all([
       this.catalogues.forVendor(vendorId),
       this.menus.menusFor(vendorId, from.value(), to.value()),

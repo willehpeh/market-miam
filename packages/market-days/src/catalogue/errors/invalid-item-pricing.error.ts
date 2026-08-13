@@ -1,8 +1,8 @@
 import { DomainError } from '@market-miam/common';
 
-export class InvalidDishPricingError extends DomainError {
+export class InvalidItemPricingError extends DomainError {
   constructor(message: string) {
     super(message);
-    this.name = 'InvalidDishPricingError';
+    this.name = 'InvalidItemPricingError';
   }
 }

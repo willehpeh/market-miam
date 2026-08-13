@@ -1,16 +1,16 @@
 import { ChangeDetectionStrategy, Component, computed, input, viewChild } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { DishViewModel, StorefrontViewModel } from './storefront-view-model';
+import { ItemViewModel, StorefrontViewModel } from './storefront-view-model';
 import { ComingSoonPage } from './coming-soon/coming-soon-page';
 import { StorefrontHero } from './layout/storefront-hero';
-import { DishSheet } from './dishes/dish-sheet';
+import { ItemSheet } from './items/item-sheet';
 import { MarketCard } from './markets/market-card';
 import { StorefrontFooter } from './layout/storefront-footer';
 
 @Component({
   selector: 'app-storefront-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, ComingSoonPage, StorefrontHero, DishSheet, MarketCard, StorefrontFooter],
+  imports: [RouterLink, ComingSoonPage, StorefrontHero, ItemSheet, MarketCard, StorefrontFooter],
   template: `
     @if (storefront(); as storefront) {
       @switch (storefront.status) {
@@ -39,7 +39,7 @@ import { StorefrontFooter } from './layout/storefront-footer';
                   <section>
                     <h2 class="kicker">Prochain marché</h2>
                     <div class="mt-5">
-                      <app-market-card [market]="market" [featured]="true" (chosen)="openDish($event)" />
+                      <app-market-card [market]="market" [featured]="true" (chosen)="openItem($event)" />
                     </div>
                   </section>
                 }
@@ -75,7 +75,7 @@ import { StorefrontFooter } from './layout/storefront-footer';
               }
             </div>
 
-            <app-dish-sheet />
+            <app-item-sheet />
 
             <app-storefront-footer [name]="storefront.name" [phone]="storefront.phone" />
           </main>
@@ -107,9 +107,9 @@ export class StorefrontPage {
     const storefront = this.storefront();
     return storefront?.status === 'published' ? storefront.upcomingMarkets.slice(1) : [];
   });
-  private readonly sheet = viewChild.required(DishSheet);
+  private readonly sheet = viewChild.required(ItemSheet);
 
-  protected openDish(dish: DishViewModel): void {
-    this.sheet().open(dish);
+  protected openItem(item: ItemViewModel): void {
+    this.sheet().open(item);
   }
 }

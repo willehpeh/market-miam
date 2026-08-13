@@ -115,7 +115,7 @@ export class SetupSteps {
     const present = fields.filter((field) => field.set).map((field) => field.label);
     const missing = fields.filter((field) => !field.set && field.required).map((field) => field.label);
     const optional = fields.filter((field) => !field.set && !field.required).map((field) => field.label);
-    const dishCount = this.catalogue.items().length;
+    const itemCount = this.catalogue.items().length;
     const scheduleCount = this.markets.schedules().length;
     const steps = [
       {
@@ -128,8 +128,8 @@ export class SetupSteps {
       {
         number: 2,
         title: 'Composez votre catalogue',
-        detail: dishCount ? dishesAdded(dishCount) : 'Ajoutez au moins un plat à proposer.',
-        done: dishCount > 0,
+        detail: itemCount ? itemsAdded(itemCount) : 'Ajoutez au moins un plat à proposer.',
+        done: itemCount > 0,
         link: '/dashboard/catalogue'
       },
       {
@@ -157,7 +157,7 @@ export class SetupSteps {
   }
 }
 
-function dishesAdded(count: number): string {
+function itemsAdded(count: number): string {
   const plural = count > 1 ? 's' : '';
   return `${ count } plat${ plural } ajouté${ plural }`;
 }

@@ -35,7 +35,7 @@ function scheduleWith(overrides: Partial<MarketScheduleView>): MarketScheduleVie
   };
 }
 
-function dish(itemId: string, name: string): CatalogueViewItem {
+function item(itemId: string, name: string): CatalogueViewItem {
   return { itemId, name, description: '', price: 500, imageReference: '' };
 }
 
@@ -72,7 +72,7 @@ describe('FindUpcomingMarketDays', () => {
         startTime: '08:00',
         endTime: '14:00',
         absent: false,
-        dishes: [],
+        items: [],
         market,
       })),
     });
@@ -154,56 +154,56 @@ describe('FindUpcomingMarketDays', () => {
 
   it('joins the day\'s menu from the catalogue, in catalogue order', async () => {
     await views.recordSchedule(scheduleWith({ startDate: '2024-02-05' }), 'vendor-id');
-    await catalogues.addItemToCatalogue(dish('item-1', 'Bourguignon'), 'vendor-id');
-    await catalogues.addItemToCatalogue(dish('item-2', 'Tatin'), 'vendor-id');
+    await catalogues.addItemToCatalogue(item('item-1', 'Bourguignon'), 'vendor-id');
+    await catalogues.addItemToCatalogue(item('item-2', 'Tatin'), 'vendor-id');
     await menus.setMenu({ marketId: 'market-1', date: '2024-02-10', itemIds: ['item-2', 'item-1'] }, 'vendor-id');
 
     const { marketDays } = await upcoming('vendor-id');
 
-    expect(marketDays.map(d => ({ date: d.date, dishes: d.dishes.map(item => item.name) }))).toEqual([
-      { date: '2024-02-10', dishes: ['Bourguignon', 'Tatin'] },
-      { date: '2024-02-17', dishes: [] },
-      { date: '2024-02-24', dishes: [] },
+    expect(marketDays.map(d => ({ date: d.date, items: d.items.map(item => item.name) }))).toEqual([
+      { date: '2024-02-10', items: ['Bourguignon', 'Tatin'] },
+      { date: '2024-02-17', items: [] },
+      { date: '2024-02-24', items: [] },
     ]);
   });
 
-  it('serves the menu with the dish\'s current catalogue detail, not what it was when planned', async () => {
+  it('serves the menu with the item\'s current catalogue detail, not what it was when planned', async () => {
     await views.recordSchedule(scheduleWith({ startDate: '2024-02-05' }), 'vendor-id');
-    await catalogues.addItemToCatalogue(dish('item-1', 'Bourguignon'), 'vendor-id');
+    await catalogues.addItemToCatalogue(item('item-1', 'Bourguignon'), 'vendor-id');
     await menus.setMenu({ marketId: 'market-1', date: '2024-02-10', itemIds: ['item-1'] }, 'vendor-id');
 
     await catalogues.reviseItem('item-1', { name: 'Bœuf bourguignon', description: 'Mijoté', price: 1300, variants: undefined }, 'vendor-id');
 
     const { marketDays } = await upcoming('vendor-id');
-    expect(marketDays[0].dishes).toEqual([
+    expect(marketDays[0].items).toEqual([
       { itemId: 'item-1', name: 'Bœuf bourguignon', description: 'Mijoté', price: 1300, imageReference: '', variants: undefined },
     ]);
   });
 
-  it('drops a planned dish the catalogue has since retired', async () => {
+  it('drops a planned item the catalogue has since retired', async () => {
     await views.recordSchedule(scheduleWith({ startDate: '2024-02-05' }), 'vendor-id');
-    await catalogues.addItemToCatalogue(dish('item-1', 'Bourguignon'), 'vendor-id');
-    await catalogues.addItemToCatalogue(dish('item-2', 'Tatin'), 'vendor-id');
+    await catalogues.addItemToCatalogue(item('item-1', 'Bourguignon'), 'vendor-id');
+    await catalogues.addItemToCatalogue(item('item-2', 'Tatin'), 'vendor-id');
     await menus.setMenu({ marketId: 'market-1', date: '2024-02-10', itemIds: ['item-1', 'item-2'] }, 'vendor-id');
 
     await catalogues.retireItem('item-1', 'vendor-id');
 
     const { marketDays } = await upcoming('vendor-id');
-    expect(marketDays[0].dishes.map(item => item.itemId)).toEqual(['item-2']);
+    expect(marketDays[0].items.map(item => item.itemId)).toEqual(['item-2']);
   });
 
   it('keys the menu join by market, not by date alone', async () => {
     await views.recordSchedule(scheduleWith({ scheduleId: 'schedule-1', marketId: 'market-1', startDate: '2024-02-05' }), 'vendor-id');
     await views.recordSchedule(scheduleWith({ scheduleId: 'schedule-2', marketId: 'market-2', startDate: '2024-02-05' }), 'vendor-id');
-    await catalogues.addItemToCatalogue(dish('item-1', 'Bourguignon'), 'vendor-id');
+    await catalogues.addItemToCatalogue(item('item-1', 'Bourguignon'), 'vendor-id');
     await menus.setMenu({ marketId: 'market-1', date: '2024-02-10', itemIds: ['item-1'] }, 'vendor-id');
 
     const { marketDays } = await upcoming('vendor-id');
 
     const sameDay = marketDays.filter(d => d.date === '2024-02-10');
-    expect(sameDay.map(d => ({ marketId: d.marketId, dishes: d.dishes.map(item => item.name) }))).toEqual([
-      { marketId: 'market-1', dishes: ['Bourguignon'] },
-      { marketId: 'market-2', dishes: [] },
+    expect(sameDay.map(d => ({ marketId: d.marketId, items: d.items.map(item => item.name) }))).toEqual([
+      { marketId: 'market-1', items: ['Bourguignon'] },
+      { marketId: 'market-2', items: [] },
     ]);
   });
 
@@ -211,14 +211,14 @@ describe('FindUpcomingMarketDays', () => {
   // occurrences do — a narrower one would quietly strip the far end of the horizon.
   it('joins menus across the whole horizon, not just the days nearest today', async () => {
     await views.recordSchedule(scheduleWith({ startDate: '2023-06-01' }), 'vendor-id');
-    await catalogues.addItemToCatalogue(dish('item-1', 'Bourguignon'), 'vendor-id');
+    await catalogues.addItemToCatalogue(item('item-1', 'Bourguignon'), 'vendor-id');
     await menus.setMenu({ marketId: 'market-1', date: '2024-02-24', itemIds: ['item-1'] }, 'vendor-id');
 
     const { marketDays } = await upcoming('vendor-id');
 
     const last = marketDays[marketDays.length - 1];
-    expect({ date: last.date, dishes: last.dishes.map(item => item.name) })
-      .toEqual({ date: '2024-02-24', dishes: ['Bourguignon'] });
+    expect({ date: last.date, items: last.items.map(item => item.name) })
+      .toEqual({ date: '2024-02-24', items: ['Bourguignon'] });
   });
 
   // A vendor with markets on consecutive days has to be able to plan tomorrow's menu the
@@ -261,11 +261,11 @@ describe('FindUpcomingMarketDays', () => {
 
   it('suppresses the menu on a day the vendor is absent', async () => {
     await views.recordSchedule(scheduleWith({ startDate: '2024-02-05' }), 'vendor-id');
-    await catalogues.addItemToCatalogue(dish('item-1', 'Bourguignon'), 'vendor-id');
+    await catalogues.addItemToCatalogue(item('item-1', 'Bourguignon'), 'vendor-id');
     await menus.setMenu({ marketId: 'market-1', date: '2024-02-10', itemIds: ['item-1'] }, 'vendor-id');
     await views.recordAbsence('schedule-1', 'vendor-id', { from: '2024-02-10', to: '2024-02-10' });
 
     const { marketDays } = await upcoming('vendor-id');
-    expect(marketDays[0]).toMatchObject({ date: '2024-02-10', absent: true, dishes: [] });
+    expect(marketDays[0]).toMatchObject({ date: '2024-02-10', absent: true, items: [] });
   });
 });
