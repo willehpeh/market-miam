@@ -4,7 +4,7 @@ import { MarketDayId, MarketDays } from '../market-day';
 import { ItemId } from '../catalogue';
 import { MarketId, VendorId } from '@market-miam/shared-kernel';
 import { Clock, LocalDate } from '@market-miam/common';
-import { parisWallClock } from '../market-schedule-view';
+import { parisTime } from '../market-schedule-view';
 
 @CommandHandler(MarkItemAsAvailable)
 export class MarkItemAsAvailableHandler implements ICommandHandler<MarkItemAsAvailable> {
@@ -18,7 +18,7 @@ export class MarkItemAsAvailableHandler implements ICommandHandler<MarkItemAsAva
     const itemId = new ItemId(command.itemId);
 
     const marketDay = await this.marketDays.forVendorAtMarketOn(vendorId, id);
-    marketDay.markItemAsAvailable(itemId, parisWallClock(this.clock.now()).time());
+    marketDay.markItemAsAvailable(itemId, parisTime(this.clock.now()));
 
     await this.marketDays.save(marketDay, vendorId, id);
   }

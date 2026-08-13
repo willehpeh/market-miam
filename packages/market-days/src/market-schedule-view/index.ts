@@ -9,4 +9,4 @@ export { FindVendorSchedulesHandler } from './find-vendor-schedules.handler';
 export * from './upcoming-market-days-view';
 export { FindUpcomingMarketDays } from './find-upcoming-market-days';
 export { FindUpcomingMarketDaysHandler } from './find-upcoming-market-days.handler';
-export { hasStarted, notYetEnded, parisWallClock } from './market-day-clock';
+export { hasStarted, notYetEnded, parisTime, parisWallClock } from './market-day-clock';

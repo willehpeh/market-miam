@@ -17,6 +17,11 @@ export function parisWallClock(now: Instant): LocalDateTime {
   );
 }
 
+// The stamp the availability events carry — what time it is at the market, right now.
+export function parisTime(now: Instant): LocalTime {
+  return parisWallClock(now).time();
+}
+
 export function wallClockOn(day: Timed, time: string): LocalDateTime {
   return new LocalDateTime(new LocalDate(day.date), new LocalTime(time));
 }
