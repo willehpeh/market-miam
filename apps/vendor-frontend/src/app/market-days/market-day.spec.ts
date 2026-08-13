@@ -10,6 +10,12 @@ import { marketDayFeature } from './market-day.state';
 import { MarketDayEffects } from './market-day.effects';
 import { MarketDayFacade } from './market-day.facade';
 import { StoreMarketDayFacade } from './store.market-day.facade';
+import { MarketSchedules, MarketScheduleView, NewSchedule } from '../markets/market-schedules';
+import { HttpMarketSchedules } from '../markets/http.market-schedules';
+import { marketScheduleFeature } from '../markets/market-schedule.state';
+import { MarketScheduleEffects } from '../markets/market-schedule.effects';
+import { MarketScheduleFacade } from '../markets/market-schedule.facade';
+import { StoreMarketScheduleFacade } from '../markets/store.market-schedule.facade';
 
 const day = {
   scheduleId: 'schedule-1',
@@ -26,6 +32,7 @@ const asSent = (items: Record<string, unknown>[]) => ({ marketDays: [{ ...day, i
 
 describe('MarketDays', () => {
   let facade: MarketDayFacade;
+  let schedules: MarketScheduleFacade;
   let httpCtrl: HttpTestingController;
 
   beforeEach(() => {
@@ -36,11 +43,20 @@ describe('MarketDays', () => {
         provideState(marketDayFeature),
         provideEffects(MarketDayEffects),
         provideHttpClientTesting(),
-        provideRouter([{ path: 'dashboard', children: [] }]),
+        provideRouter([
+          { path: 'dashboard', children: [] },
+          { path: 'dashboard/markets', children: [] },
+        ]),
         { provide: MarketDayFacade, useClass: StoreMarketDayFacade },
+        // The schedules feature rides along because its mutations invalidate this one.
+        { provide: MarketSchedules, useClass: HttpMarketSchedules },
+        provideState(marketScheduleFeature),
+        provideEffects(MarketScheduleEffects),
+        { provide: MarketScheduleFacade, useClass: StoreMarketScheduleFacade },
       ],
     });
     facade = TestBed.inject(MarketDayFacade);
+    schedules = TestBed.inject(MarketScheduleFacade);
     httpCtrl = TestBed.inject(HttpTestingController);
   });
 
@@ -85,6 +101,61 @@ describe('MarketDays', () => {
   it('treats an empty list as loaded', () => {
     facade.load();
     httpCtrl.expectOne('/api/market-days/upcoming').flush({ marketDays: [] });
+
+    facade.load();
+
+    httpCtrl.expectNone('/api/market-days/upcoming');
+  });
+
+  const newSchedule: NewSchedule = {
+    market: { name: 'Marché de Monplaisir', codePostal: '69008', town: 'Lyon' },
+    days: [{ day: 'TUE', startTime: '08:00', endTime: '13:00' }],
+    frequency: { weeks: 1 },
+  };
+
+  // A schedule change redraws which days exist, and only the API can expand the
+  // recurrence — so unlike a menu save, it goes cold and the next dashboard visit
+  // fetches the fresh window instead of keeping the old one.
+  it('asks for the days again after a market is registered', () => {
+    facade.load();
+    httpCtrl.expectOne('/api/market-days/upcoming').flush(asSent([]));
+
+    schedules.registerSchedule(newSchedule);
+    httpCtrl.expectOne('/api/market-schedules').flush(null);
+
+    facade.load();
+
+    httpCtrl.expectOne('/api/market-days/upcoming');
+  });
+
+  it('asks for the days again after a schedule is amended', () => {
+    const existing: MarketScheduleView = {
+      scheduleId: 'schedule-1',
+      marketId: 'market-1',
+      market: { name: 'Marché de la Croix-Rousse', codePostal: '69004', town: 'Lyon' },
+      startDate: '2026-07-15',
+      days: [{ day: 'SAT', startTime: '08:00', endTime: '13:00' }],
+      frequency: { weeks: 1 },
+    };
+    facade.load();
+    httpCtrl.expectOne('/api/market-days/upcoming').flush(asSent([]));
+    schedules.load();
+    httpCtrl.expectOne('/api/market-schedules').flush({ schedules: [existing] });
+
+    schedules.amendSchedule('schedule-1', newSchedule);
+    httpCtrl.expectOne('/api/market-schedules/schedule-1').flush(null);
+
+    facade.load();
+
+    httpCtrl.expectOne('/api/market-days/upcoming');
+  });
+
+  it('keeps the warm days when the registration fails', () => {
+    facade.load();
+    httpCtrl.expectOne('/api/market-days/upcoming').flush(asSent([]));
+
+    schedules.registerSchedule(newSchedule);
+    httpCtrl.expectOne('/api/market-schedules').flush(null, { status: 500, statusText: 'Server Error' });
 
     facade.load();
 

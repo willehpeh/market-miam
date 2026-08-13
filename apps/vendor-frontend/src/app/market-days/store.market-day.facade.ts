@@ -14,6 +14,8 @@ export class StoreMarketDayFacade implements MarketDayFacade {
   // Warm-only: a re-GET after a save would overwrite the optimistic patch with a
   // projection that lags the response by 4–275ms. Emptiness is a real answer here — a
   // vendor can genuinely have no upcoming days — so the flag, not the list length.
+  // Schedule changes drop the flag (see the reducer): those redraw which days exist,
+  // which no patch can express, so the next visit asks again.
   load(): void {
     if (!this.loaded()) {
       this.store.dispatch(LoadMarketDays());

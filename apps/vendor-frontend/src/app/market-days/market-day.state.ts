@@ -1,4 +1,5 @@
 import { createAction, createFeature, createReducer, on, props } from '@ngrx/store';
+import { AmendMarketScheduleSuccess, RegisterMarketScheduleSuccess } from '../markets/market-schedule.state';
 import { MarketDayView } from './market-days';
 
 export const LoadMarketDays = createAction('[Market Days] Load');
@@ -42,5 +43,10 @@ export const marketDayFeature = createFeature({
       ...state,
       days: state.days.map(day => (day.marketId === marketId && day.date === date ? { ...day, itemIds } : day)),
     })),
+    // A schedule change redraws which days exist, and only the API can expand the
+    // recurrence — so no optimistic patch here; the warm flag drops and the next load()
+    // asks again. The stale days stay in place until then: the dashboard holds its
+    // spinner on loading, so they never paint.
+    on(RegisterMarketScheduleSuccess, AmendMarketScheduleSuccess, (state): MarketDayState => ({ ...state, loaded: false })),
   ),
 });
