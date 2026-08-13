@@ -55,6 +55,14 @@ const pool = {
       // Long-idle connections get dropped by the network without pg noticing until the
       // next query fails. TCP keepalive surfaces the death instead.
       keepAlive: true,
+      // Client-side, so a hung query throws rather than never settling and taking the
+      // subscription silently with it; a server-side statement_timeout would not, its
+      // abort rides the same dead socket (ADR 0050). 10s is ~10x the slowest poll
+      // observed — a ceiling loadFrom's 100-row batching holds as the log grows.
+      query_timeout: 10_000,
+      // Acquisition only, so it complements the above rather than replacing it; kept
+      // under it so the two cannot stack into one long stall.
+      connectionTimeoutMillis: 5_000,
     }),
   inject: [ConfigService],
 };
