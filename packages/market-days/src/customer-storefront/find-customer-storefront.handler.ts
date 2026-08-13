@@ -66,6 +66,7 @@ export class FindCustomerStorefrontHandler implements IQueryHandler<FindCustomer
       cancelled: day.absent,
       inProgress: this.inProgress(day, now),
       items: day.items,
+      soldOutItemIds: day.soldOutItemIds,
     };
   }
 }

@@ -17,6 +17,8 @@ export type UpcomingMarket = {
   // The day's menu, joined from the catalogue upstream; empty when nothing is planned
   // or the day is cancelled.
   items: CatalogueViewItem[];
+  // Which of those items sold out during service — the customer card greys them in place.
+  soldOutItemIds: string[];
 };
 
 export type CustomerStorefront =

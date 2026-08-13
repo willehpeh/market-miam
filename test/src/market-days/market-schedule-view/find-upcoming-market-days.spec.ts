@@ -68,6 +68,7 @@ describe('FindUpcomingMarketDays', () => {
         endTime: '14:00',
         absent: false,
         items: [],
+        soldOutItemIds: [],
         market,
       })),
     });
@@ -252,6 +253,33 @@ describe('FindUpcomingMarketDays', () => {
     const { marketDays } = await upcoming('vendor-id', '2024-01-06', '2024-01-06T21:00:00.000Z');
 
     expect(marketDays[0].date).toEqual('2024-01-06');
+  });
+
+  it("carries the day's sold-out marks onto its occurrence", async () => {
+    await views.recordSchedule(scheduleWith({ startDate: '2024-02-05' }), 'vendor-id');
+    await catalogues.addItemToCatalogue(item('item-1', 'Bourguignon'), 'vendor-id');
+    await catalogues.addItemToCatalogue(item('item-2', 'Tatin'), 'vendor-id');
+    await menus.setMenu({ marketId: 'market-1', date: '2024-02-10', itemIds: ['item-1', 'item-2'] }, 'vendor-id');
+    await menus.markSoldOut({ marketId: 'market-1', date: '2024-02-10', itemId: 'item-1' }, 'vendor-id');
+
+    const { marketDays } = await upcoming('vendor-id');
+
+    expect(marketDays.map(d => ({ date: d.date, soldOutItemIds: d.soldOutItemIds }))).toEqual([
+      { date: '2024-02-10', soldOutItemIds: ['item-1'] },
+      { date: '2024-02-17', soldOutItemIds: [] },
+      { date: '2024-02-24', soldOutItemIds: [] },
+    ]);
+  });
+
+  it('suppresses sold-out marks along with the menu on an absent day', async () => {
+    await views.recordSchedule(scheduleWith({ startDate: '2024-02-05' }), 'vendor-id');
+    await catalogues.addItemToCatalogue(item('item-1', 'Bourguignon'), 'vendor-id');
+    await menus.setMenu({ marketId: 'market-1', date: '2024-02-10', itemIds: ['item-1'] }, 'vendor-id');
+    await menus.markSoldOut({ marketId: 'market-1', date: '2024-02-10', itemId: 'item-1' }, 'vendor-id');
+    await views.recordAbsence('schedule-1', 'vendor-id', { from: '2024-02-10', to: '2024-02-10' });
+
+    const { marketDays } = await upcoming('vendor-id');
+    expect(marketDays[0]).toMatchObject({ date: '2024-02-10', absent: true, items: [], soldOutItemIds: [] });
   });
 
   it('suppresses the menu on a day the vendor is absent', async () => {

@@ -11,7 +11,8 @@ import { CatalogueViews } from '../catalogue-view/catalogue-views';
 import { Recurrence } from '../calendar/schedule/recurrence';
 import { notYetEnded, parisWallClock } from './market-day-clock';
 
-type Items = Map<string, CatalogueViewItem[]>;
+type DayMenu = { items: CatalogueViewItem[]; soldOutItemIds: string[] };
+type Items = Map<string, DayMenu>;
 
 const dayKey = (marketId: string, date: string) => `${marketId}|${date}`;
 
@@ -57,6 +58,7 @@ export class FindUpcomingMarketDaysHandler implements IQueryHandler<FindUpcoming
     const occurrences = Recurrence.fromSnapshot(schedule).occurrencesWithin(from, to);
     return occurrences.map(occurrence => {
       const absent = absences.some(range => range.from <= occurrence.date && occurrence.date <= range.to);
+      const menu = absent ? undefined : items.get(dayKey(schedule.marketId, occurrence.date));
       return {
         scheduleId: schedule.scheduleId,
         marketId: schedule.marketId,
@@ -65,7 +67,8 @@ export class FindUpcomingMarketDaysHandler implements IQueryHandler<FindUpcoming
         startTime: occurrence.startTime,
         endTime: occurrence.endTime,
         absent,
-        items: absent ? [] : items.get(dayKey(schedule.marketId, occurrence.date)) ?? [],
+        items: menu?.items ?? [],
+        soldOutItemIds: menu?.soldOutItemIds ?? [],
         market: schedule.market,
       };
     });
@@ -81,7 +84,7 @@ export class FindUpcomingMarketDaysHandler implements IQueryHandler<FindUpcoming
     ]);
     return new Map(menus.map((menu: MarketDayView) => [
       dayKey(menu.marketId, menu.date),
-      items.filter(item => menu.itemIds.includes(item.itemId)),
+      { items: items.filter(item => menu.itemIds.includes(item.itemId)), soldOutItemIds: menu.soldOutItemIds },
     ]));
   }
 }

@@ -11,6 +11,9 @@ export type MarketDayOccurrence = {
   // The day's menu joined from the catalogue at query time — current names and prices,
   // in catalogue order. Empty when nothing is planned; suppressed when absent.
   items: CatalogueViewItem[];
+  // Which of those items sold out during service. Suppressed with the menu when absent;
+  // may name an id the catalogue join dropped (a retired item), which readers ignore.
+  soldOutItemIds: string[];
   market: {
     name: string;
     town: string;

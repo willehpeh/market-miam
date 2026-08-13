@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { CommandGateway, DomainEvent, EventStore } from '@market-miam/event-sourcing';
-import { InMemorySubdomainRegistry, SetMarketDayMenu } from '@market-miam/market-days';
+import { InMemorySubdomainRegistry, MarkItemAsSoldOut, SetMarketDayMenu } from '@market-miam/market-days';
 import { bootApiTestApp, fixedClock } from '../testing/api-test-app';
 import { Subscriptions } from '../event-sourcing/subscriptions';
 
@@ -78,7 +78,7 @@ describe('Public storefront', () => {
       date: '2026-06-23', weekday: 'TUE', marketName: 'Marché de Belleville',
       startTime: '07:00', endTime: '14:30',
       street: 'Boulevard de Belleville', postalCode: '75011', town: 'Paris', pitch: 'B12',
-      cancelled: false, inProgress: true, items: [],
+      cancelled: false, inProgress: true, items: [], soldOutItemIds: [],
     });
   });
 
@@ -163,6 +163,29 @@ describe('Public storefront', () => {
       { date: '2026-07-21', items: [] },
     ]);
     expect(res.body.items).toHaveLength(2);
+  });
+
+  // The full write path with no HTTP route yet: command through the gateway, aggregate
+  // guard (2026-06-23 is fixedClock's today), projection, then the storefront read.
+  it("shows which of today's items sold out during service", async () => {
+    await seedStorefront([opened, infoEdited, coverSet, published]);
+    await seedSchedule([scheduleRegistered]);
+    await seedCatalogue([
+      { type: 'ItemAddedToCatalogue', payload: { itemId: 'item-1', name: 'Bœuf bourguignon', description: 'Mijoté 7 heures', price: 1300 }, version: 1 },
+      { type: 'ItemAddedToCatalogue', payload: { itemId: 'item-2', name: 'Tarte tatin', description: 'Aux pommes', price: 600 }, version: 1 },
+    ]);
+    await app.get(CommandGateway).execute(new SetMarketDayMenu({
+      vendorId: 'acme-bakery', itemIds: ['item-1', 'item-2'], marketId: 'market-1', date: '2026-06-23',
+    }));
+    await app.get(CommandGateway).execute(new MarkItemAsSoldOut('acme-bakery', 'item-1', 'market-1', '2026-06-23'));
+    await app.get(Subscriptions).drain();
+
+    const res = await request(app.getHttpServer()).get('/public/storefront/acme').expect(200);
+    expect(res.body.upcomingMarkets[0]).toMatchObject({
+      date: '2026-06-23',
+      items: [expect.objectContaining({ itemId: 'item-1' }), expect.objectContaining({ itemId: 'item-2' })],
+      soldOutItemIds: ['item-1'],
+    });
   });
 
   it('keeps a market day the vendor declared absent from, flagged as cancelled', async () => {
