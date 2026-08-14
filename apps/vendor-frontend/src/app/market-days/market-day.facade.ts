@@ -7,4 +7,6 @@ export abstract class MarketDayFacade {
 
   abstract load(): void;
   abstract setMenu(marketId: string, date: string, itemIds: string[]): void;
+  abstract markSoldOut(marketId: string, date: string, itemId: string): void;
+  abstract markAvailable(marketId: string, date: string, itemId: string): void;
 }

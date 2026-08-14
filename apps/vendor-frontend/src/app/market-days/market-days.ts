@@ -14,6 +14,9 @@ export interface MarketDayView {
   // can open the live screen before the market's hours — never derived from the device clock.
   today: boolean;
   itemIds: string[];
+  // Which of the day's items sold out during service — may name an id the catalogue has
+  // since retired, which readers ignore, mirroring the API's own contract.
+  soldOutItemIds: string[];
   market: {
     name: string;
     town: string;
@@ -26,4 +29,5 @@ export interface MarketDayView {
 export abstract class MarketDays {
   abstract upcoming(): Observable<MarketDayView[]>;
   abstract setMenu(marketId: string, date: string, itemIds: string[]): Observable<void>;
+  abstract changeAvailability(marketId: string, date: string, itemId: string, soldOut: boolean): Observable<void>;
 }

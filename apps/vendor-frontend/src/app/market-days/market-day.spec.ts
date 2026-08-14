@@ -26,8 +26,11 @@ const day = {
   endTime: '13:00',
   absent: false,
   today: false,
+  soldOutItemIds: [],
   market: { name: 'Marché de la Croix-Rousse', town: 'Lyon', codePostal: '69004' },
 };
+
+const availability = (itemId: string) => `/api/market-days/market-1/2026-08-15/items/${itemId}/availability`;
 
 const asSent = (items: Record<string, unknown>[]) => ({ marketDays: [{ ...day, items }] });
 
@@ -195,6 +198,77 @@ describe('MarketDays', () => {
         { marketId: 'market-2', itemIds: [] },
       ]),
     );
+  });
+
+  // One idempotent route behind both commands (decision 19): a phone retrying on bad
+  // market signal must be safe, and {soldOut: true} twice is.
+  it('puts the availability change for one item', () => {
+    facade.markSoldOut('market-1', '2026-08-15', 'item-1');
+
+    const req = httpCtrl.expectOne(availability('item-1'));
+    expect(req.request.method).toBe('PUT');
+    expect(req.request.body).toEqual({ soldOut: true });
+    req.flush(null);
+  });
+
+  it('restores availability through the same route', () => {
+    facade.markAvailable('market-1', '2026-08-15', 'item-1');
+
+    const req = httpCtrl.expectOne(availability('item-1'));
+    expect(req.request.body).toEqual({ soldOut: false });
+    req.flush(null);
+  });
+
+  // The moving row is the vendor's receipt, so it cannot wait on market wifi: the patch
+  // lands on dispatch and the queue drains behind the UI.
+  it('moves the row before the request settles, and never refetches', () => {
+    facade.load();
+    httpCtrl.expectOne('/api/market-days/upcoming').flush(asSent([{ itemId: 'item-1' }]));
+
+    facade.markSoldOut('market-1', '2026-08-15', 'item-1');
+
+    expect(facade.days()[0].soldOutItemIds).toEqual(['item-1']);
+    httpCtrl.expectOne(availability('item-1')).flush(null);
+    expect(facade.days()[0].soldOutItemIds).toEqual(['item-1']);
+    httpCtrl.expectNone('/api/market-days/upcoming');
+  });
+
+  // concatMap, deliberately (decision 22): switchMap would cancel the in-flight mark when
+  // the next tap lands — three dishes in five seconds and only the last survives.
+  it('queues rapid taps instead of cancelling the one in flight', () => {
+    facade.markSoldOut('market-1', '2026-08-15', 'item-1');
+    facade.markSoldOut('market-1', '2026-08-15', 'item-2');
+
+    httpCtrl.expectNone(availability('item-2'));
+    httpCtrl.expectOne(availability('item-1')).flush(null);
+    httpCtrl.expectOne(availability('item-2')).flush(null);
+  });
+
+  // Silent snap-back, no toast — the row returning is the disclosure, consistent with
+  // decision 7's no-toast stance.
+  it('snaps the row back when the tap fails', () => {
+    facade.load();
+    httpCtrl.expectOne('/api/market-days/upcoming').flush(asSent([{ itemId: 'item-1' }]));
+
+    facade.markSoldOut('market-1', '2026-08-15', 'item-1');
+    expect(facade.days()[0].soldOutItemIds).toEqual(['item-1']);
+
+    httpCtrl.expectOne(availability('item-1')).flush(null, { status: 500, statusText: 'Server Error' });
+
+    expect(facade.days()[0].soldOutItemIds).toEqual([]);
+  });
+
+  it('snaps a failed restore back too', () => {
+    facade.load();
+    httpCtrl.expectOne('/api/market-days/upcoming')
+      .flush({ marketDays: [{ ...day, items: [{ itemId: 'item-1' }], soldOutItemIds: ['item-1'] }] });
+
+    facade.markAvailable('market-1', '2026-08-15', 'item-1');
+    expect(facade.days()[0].soldOutItemIds).toEqual([]);
+
+    httpCtrl.expectOne(availability('item-1')).flush(null, { status: 500, statusText: 'Server Error' });
+
+    expect(facade.days()[0].soldOutItemIds).toEqual(['item-1']);
   });
 
   it('returns to the dashboard once the menu is saved', async () => {

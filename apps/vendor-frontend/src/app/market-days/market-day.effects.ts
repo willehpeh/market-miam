@@ -2,9 +2,12 @@ import { inject, Injectable } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
-import { catchError, map, of, switchMap, tap } from 'rxjs';
+import { catchError, concatMap, map, of, switchMap, tap } from 'rxjs';
 import { MarketDays } from './market-days';
 import {
+  ChangeItemAvailability,
+  ChangeItemAvailabilityFailure,
+  ChangeItemAvailabilitySuccess,
   LoadMarketDays,
   LoadMarketDaysFailure,
   LoadMarketDaysSuccess,
@@ -38,6 +41,22 @@ export class MarketDayEffects {
         this.marketDays.setMenu(marketId, date, itemIds).pipe(
           map(() => SetMarketDayMenuSuccess({ marketId, date, itemIds })),
           catchError(() => of(SetMarketDayMenuFailure())),
+        ),
+      ),
+    ),
+  );
+
+  // concatMap, deliberately (live-mode decision 22): the switchMap above cancels the
+  // in-flight request when the next arrives — right for one whole-set save per screen,
+  // silently fatal for rapid taps. Queued, each request completes before the next loads
+  // the aggregate, so a single client cannot 409 itself.
+  changeAvailability$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(ChangeItemAvailability),
+      concatMap(({ marketId, date, itemId, soldOut }) =>
+        this.marketDays.changeAvailability(marketId, date, itemId, soldOut).pipe(
+          map(() => ChangeItemAvailabilitySuccess()),
+          catchError(() => of(ChangeItemAvailabilityFailure({ marketId, date, itemId, soldOut }))),
         ),
       ),
     ),

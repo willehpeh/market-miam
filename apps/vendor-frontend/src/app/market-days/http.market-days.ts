@@ -21,4 +21,11 @@ export class HttpMarketDays implements MarketDays {
   setMenu(marketId: string, date: string, itemIds: string[]): Observable<void> {
     return this.http.put<void>(`${environment.apiBaseUrl}/api/market-days/${marketId}/${date}/menu`, { itemIds });
   }
+
+  changeAvailability(marketId: string, date: string, itemId: string, soldOut: boolean): Observable<void> {
+    return this.http.put<void>(
+      `${environment.apiBaseUrl}/api/market-days/${marketId}/${date}/items/${itemId}/availability`,
+      { soldOut },
+    );
+  }
 }

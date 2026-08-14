@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/angular';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/angular';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { LiveScreen } from './live-screen';
 import { MarketDayFacade } from './market-day.facade';
@@ -76,5 +76,75 @@ describe('LiveScreen', () => {
     const { marketDays } = await renderLive(() => void 0);
 
     expect(marketDays.loaded).toBe(true);
+  });
+
+  const aLiveDay = (marketDays: FakeMarketDayFacade, catalogue: FakeCatalogueFacade, soldOutItemIds: string[] = []) => {
+    marketDays.days.set([day({ today: true, itemIds: ['item-1', 'item-2'], soldOutItemIds })]);
+    catalogue.items.set([item('item-1', 'Bourguignon'), item('item-2', 'Tatin')]);
+  };
+
+  // Decision 7: marking is one fast tap on a full-width row, and the row moving into the
+  // épuisé group is the receipt — no toast, no confirm.
+  it('marks a dish sold out with one tap, the row moving as the receipt', async () => {
+    const { marketDays } = await renderLive((md, cat) => aLiveDay(md, cat));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Bourguignon' }));
+
+    expect(marketDays.availabilityChanges).toEqual([
+      { marketId: 'market-1', date: '2026-08-15', itemId: 'item-1', soldOut: true },
+    ]);
+    const epuises = screen.getByRole('region', { name: /épuisé/i });
+    expect(within(epuises).getByRole('button', { name: 'Bourguignon' })).toBeTruthy();
+  });
+
+  // Decision 7's undo: restore is a tap inside the épuisé group, not a toggle next to
+  // the action it undoes.
+  it('restores a dish with a tap inside the épuisé group', async () => {
+    const { marketDays } = await renderLive((md, cat) => aLiveDay(md, cat, ['item-2']));
+
+    fireEvent.click(within(screen.getByRole('region', { name: /épuisé/i })).getByRole('button', { name: 'Tatin' }));
+
+    expect(marketDays.availabilityChanges).toEqual([
+      { marketId: 'market-1', date: '2026-08-15', itemId: 'item-2', soldOut: false },
+    ]);
+    expect(screen.queryByRole('region', { name: /épuisé/i })).toBeNull();
+  });
+
+  it('splits the rows: sold-out dishes sit in the épuisé group, not the active list', async () => {
+    await renderLive((md, cat) => aLiveDay(md, cat, ['item-1']));
+
+    const epuises = screen.getByRole('region', { name: /épuisé/i });
+    expect(within(epuises).getByRole('button', { name: 'Bourguignon' })).toBeTruthy();
+    expect(within(epuises).queryByRole('button', { name: 'Tatin' })).toBeNull();
+  });
+
+  it('keeps the épuisé group off the screen while everything is available', async () => {
+    await renderLive((md, cat) => aLiveDay(md, cat));
+
+    expect(screen.queryByRole('region', { name: /épuisé/i })).toBeNull();
+  });
+
+  // Decision 20: the page mutates under a screen reader with no visible cue it can read —
+  // the move is announced, politely.
+  it('announces the move', async () => {
+    await renderLive((md, cat) => aLiveDay(md, cat));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Bourguignon' }));
+    expect(screen.getByText('Bourguignon épuisé')).toBeTruthy();
+
+    fireEvent.click(within(screen.getByRole('region', { name: /épuisé/i })).getByRole('button', { name: 'Bourguignon' }));
+    expect(screen.getByText('Bourguignon disponible')).toBeTruthy();
+  });
+
+  // Decision 20: the tapped row's element is destroyed when it changes group, which
+  // strands keyboard and switch-control focus — so focus follows the row.
+  it('moves focus with the row it moved', async () => {
+    await renderLive((md, cat) => aLiveDay(md, cat));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Bourguignon' }));
+
+    await waitFor(() =>
+      expect(within(screen.getByRole('region', { name: /épuisé/i })).getByRole('button', { name: 'Bourguignon' })).toHaveFocus(),
+    );
   });
 });
