@@ -58,6 +58,11 @@ live in [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
 
 ## License
 
+MarketMiam is a commercial product whose code is free software: the hosted
+service is run for profit, and the AGPL is chosen deliberately so that anyone
+can study, self-host, fork, or build on the code — provided they share their
+source in turn.
+
 Copyright © 2026 William Alexander
 
 This program is free software: you can redistribute it and/or modify it under

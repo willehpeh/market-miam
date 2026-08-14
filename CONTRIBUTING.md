@@ -1,7 +1,10 @@
 # Contributing to MarketMiam
 
-Thanks for your interest in MarketMiam. Contributions are welcome — with one
-caveat up front: this is a deliberately opinionated codebase. Event sourcing,
+Thanks for your interest in MarketMiam. Contributions are welcome — with two
+caveats up front. First, this is the codebase of a commercial product that
+happens to be free software, not a community-run project — see
+[Licensing](#licensing-and-the-commercial-product) below for what that means
+for your contribution. Second, this is a deliberately opinionated codebase. Event sourcing,
 CQRS, hexagonal architecture, and outside-in TDD are not incidental choices,
 and pull requests that cut against them are unlikely to land, however good the
 code. Read this page first and you'll save us both a review round.
@@ -99,12 +102,22 @@ with them. Two expectations:
 
 Unreviewed, machine-generated PRs are closed without discussion.
 
-## Licensing
+## Licensing, and the commercial product
 
-MarketMiam is licensed under the
-[GNU AGPL-3.0-or-later](LICENSE). By submitting a contribution, you agree
-that it is your own work (or that you have the right to submit it) and that
-it is licensed under the same terms — inbound = outbound. There is no CLA.
+Be aware of what you're contributing to: **MarketMiam is a for-profit
+product.** The hosted service is run commercially by its author. The code is
+[AGPL-3.0-or-later](LICENSE) deliberately, not incidentally — anyone is free
+to study it, self-host it, fork it, or build a competing service on it, on the
+condition that they share their source in turn. If contributing to a codebase
+that also powers a commercial service isn't a trade you want to make, that's
+a perfectly good reason not to contribute.
+
+The trade is symmetric, though. By submitting a contribution you agree that
+it's your own work (or that you have the right to submit it) and that it's
+licensed under the same terms — inbound = outbound, no CLA. That cuts both
+ways: because there's no CLA, your contribution stays AGPL permanently, and
+the project cannot be relicensed proprietary out from under the people who
+built it.
 
 ## Community
 
