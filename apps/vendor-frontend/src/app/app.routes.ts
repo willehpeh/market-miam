@@ -10,6 +10,7 @@ import { MarketsList } from './markets/markets-list';
 import { AddSchedule } from './markets/add-schedule';
 import { editableSchedule } from './markets/editable-schedule.guard';
 import { MenuEditor } from './market-days/menu-editor';
+import { LiveScreen } from './market-days/live-screen';
 import { Welcome } from './onboarding/welcome';
 import { StorefrontForm } from './storefront/storefront-form';
 import { authenticated } from './core/auth/authenticated.guard';
@@ -45,6 +46,9 @@ export const appRoutes: Route[] = [
       // spinner, the day, or "n'est plus programmé". Save exists only in the middle branch,
       // so a cold refresh cannot render empty and wipe the menu.
       { path: 'menus/:marketId/:date', component: MenuEditor },
+      // Same no-guard shape: the live screen declines any day but today itself, exactly
+      // as the domain refuses its commands.
+      { path: 'live/:marketId/:date', component: LiveScreen },
       {
         path: 'markets',
         children: [
