@@ -50,7 +50,20 @@ npx nx build <project>         # production build
 npx nx graph                   # explore the project graph
 ```
 
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) — contributions are welcome, but read
+it first: the architecture is opinionated on purpose. Community expectations
+live in [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
+
 ## License
+
+MarketMiam is a commercial product whose code is free software — permanently.
+The hosted service is run for profit, and the AGPL is chosen deliberately so
+that anyone can study, self-host, fork, or build on the code (provided they
+share their source in turn), and so that the code can never be taken
+closed-source by anyone, the author included. There is no CLA, on purpose:
+see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 Copyright © 2026 William Alexander
 
