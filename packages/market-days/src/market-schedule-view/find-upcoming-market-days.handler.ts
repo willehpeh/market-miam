@@ -14,6 +14,11 @@ import { hasStarted, notYetEnded, parisWallClock } from './market-day-clock';
 type DayMenu = { items: CatalogueViewItem[]; soldOutItemIds: string[] };
 type Items = Map<string, DayMenu>;
 
+// A day as the records alone describe it — recurrence expanded, absences applied, menu
+// joined. The clock's two readings (inProgress, today) are layered on in marketDaysFrom,
+// so only that step's answers change with the moment the query is asked.
+type ScheduledOccurrence = Omit<MarketDayOccurrence, 'inProgress' | 'today'>;
+
 const dayKey = (marketId: string, date: string) => `${marketId}|${date}`;
 
 @QueryHandler(FindUpcomingMarketDays)
@@ -39,13 +44,15 @@ export class FindUpcomingMarketDaysHandler implements IQueryHandler<FindUpcoming
   // Days are dropped, not flagged — no past-day read path exists to list them with.
   private marketDaysFrom(schedules: MarketScheduleView[], today: LocalDate, horizon: LocalDate, items: Items) {
     const now = parisWallClock(this.clock.now());
+    const todayValue = today.value();
     return schedules
       .flatMap(schedule => this.occurrencesOf(schedule, today, horizon, items))
       .filter(day => notYetEnded(day, now))
+      // Ended days are gone by here, so started is all that separates running from pending.
       .map(day => ({
         ...day,
-        inProgress: !day.absent && hasStarted(day, now) && notYetEnded(day, now),
-        today: day.date === today.value(),
+        inProgress: !day.absent && hasStarted(day, now),
+        today: day.date === todayValue,
       }))
       // First-by-start-time is what makes "the first occurrence" the market the vendor is
       // standing at; the fallback matches hasStarted, which treats no startTime as the
@@ -64,7 +71,7 @@ export class FindUpcomingMarketDaysHandler implements IQueryHandler<FindUpcoming
 
   // Absent days keep their occurrence but lose their menu — suppression lives in the
   // query, so no cross-aggregate coupling between calendar and market day.
-  private occurrencesOf(schedule: MarketScheduleView, from: LocalDate, to: LocalDate, items: Items): Omit<MarketDayOccurrence, 'inProgress' | 'today'>[] {
+  private occurrencesOf(schedule: MarketScheduleView, from: LocalDate, to: LocalDate, items: Items): ScheduledOccurrence[] {
     const absences = schedule.absences ?? [];
     const occurrences = Recurrence.fromSnapshot(schedule).occurrencesWithin(from, to);
     return occurrences.map(occurrence => {

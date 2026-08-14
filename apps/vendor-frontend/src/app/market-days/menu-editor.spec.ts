@@ -3,24 +3,10 @@ import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/route
 import { MenuEditor } from './menu-editor';
 import { MarketDayFacade } from './market-day.facade';
 import { FakeMarketDayFacade } from './fake.market-day.facade';
-import { MarketDayView } from './market-days';
+import { marketDayView as day } from './market-day-view.builder';
 import { CatalogueFacade } from '../catalogue/catalogue.facade';
 import { FakeCatalogueFacade } from '../catalogue/fake.catalogue.facade';
 import { CatalogueItemView } from '../catalogue/catalogue';
-
-const day = (overrides: Partial<MarketDayView> = {}): MarketDayView => ({
-  scheduleId: 'schedule-1',
-  marketId: 'market-1',
-  date: '2026-08-15',
-  day: 'SAT',
-  startTime: '08:00',
-  endTime: '13:00',
-  absent: false,
-  today: false,
-  itemIds: [],
-  market: { name: 'Marché de la Croix-Rousse', codePostal: '69004', town: 'Lyon' },
-  ...overrides,
-});
 
 const item = (itemId: string, name: string, price = 1300): CatalogueItemView => ({
   itemId,
