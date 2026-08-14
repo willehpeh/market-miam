@@ -14,11 +14,6 @@ import { hasStarted, notYetEnded, parisWallClock } from './market-day-clock';
 type DayMenu = { items: CatalogueViewItem[]; soldOutItemIds: string[] };
 type Items = Map<string, DayMenu>;
 
-// A day as the records alone describe it — recurrence expanded, absences applied, menu
-// joined. The clock's two readings (inProgress, today) are layered on in marketDaysFrom,
-// so only that step's answers change with the moment the query is asked.
-type ScheduledOccurrence = Omit<MarketDayOccurrence, 'inProgress' | 'today'>;
-
 const dayKey = (marketId: string, date: string) => `${marketId}|${date}`;
 
 @QueryHandler(FindUpcomingMarketDays)
@@ -71,7 +66,13 @@ export class FindUpcomingMarketDaysHandler implements IQueryHandler<FindUpcoming
 
   // Absent days keep their occurrence but lose their menu — suppression lives in the
   // query, so no cross-aggregate coupling between calendar and market day.
-  private occurrencesOf(schedule: MarketScheduleView, from: LocalDate, to: LocalDate, items: Items): ScheduledOccurrence[] {
+  // The return type is unnamed on purpose: it is a day as the records alone describe it,
+  // the two missing fields being the ones only the clock can answer (computed per query in
+  // marketDaysFrom), and every noun tried for that lied a little — "scheduled" reads as
+  // decision 13's schedule truth, which is inProgress; "liveness" claims decision 26's
+  // gate, which also needs a menu. Decision 15's assembly home is where this seam gets
+  // a real name.
+  private occurrencesOf(schedule: MarketScheduleView, from: LocalDate, to: LocalDate, items: Items): Omit<MarketDayOccurrence, 'inProgress' | 'today'>[] {
     const absences = schedule.absences ?? [];
     const occurrences = Recurrence.fromSnapshot(schedule).occurrencesWithin(from, to);
     return occurrences.map(occurrence => {
