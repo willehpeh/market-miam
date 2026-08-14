@@ -50,6 +50,12 @@ npx nx build <project>         # production build
 npx nx graph                   # explore the project graph
 ```
 
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) — contributions are welcome, but read
+it first: the architecture is opinionated on purpose. Community expectations
+live in [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
+
 ## License
 
 Copyright © 2026 William Alexander
