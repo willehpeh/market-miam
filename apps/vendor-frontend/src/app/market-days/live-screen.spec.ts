@@ -7,14 +7,9 @@ import { marketDayView as day } from './market-day-view.builder';
 import { CatalogueFacade } from '../catalogue/catalogue.facade';
 import { FakeCatalogueFacade } from '../catalogue/fake.catalogue.facade';
 import { CatalogueItemView } from '../catalogue/catalogue';
+import { catalogueItem } from '../catalogue/catalogue-item.builder';
 
-const item = (itemId: string, name: string): CatalogueItemView => ({
-  itemId,
-  name,
-  description: '',
-  price: 1300,
-  imageReference: '',
-});
+const item = (itemId: string, name: string): CatalogueItemView => catalogueItem({ itemId, name });
 
 async function renderLive(setup: (marketDays: FakeMarketDayFacade, catalogue: FakeCatalogueFacade) => void) {
   const marketDays = new FakeMarketDayFacade();

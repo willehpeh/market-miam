@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { form, FormField, required } from '@angular/forms/signals';
 import { Card } from '../core/card';
+import { Spinner } from '../core/spinner';
 import { CloudinaryUrlPipe } from '../core/cloudinary-url.pipe';
 import { DismissOnOutsidePress } from '../core/dismiss-on-outside-press';
 import { CatalogueFacade } from './catalogue.facade';
@@ -12,7 +13,7 @@ const ITEM_PREVIEW_TRANSFORMATION = 'c_fill,w_600,h_400,q_auto,f_webp';
 @Component({
   selector: 'mm-add-item',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, Card, FormField, CloudinaryUrlPipe, DismissOnOutsidePress],
+  imports: [RouterLink, Card, FormField, CloudinaryUrlPipe, DismissOnOutsidePress, Spinner],
   styles: `
     .segment {
       flex: 1;
@@ -118,11 +119,7 @@ const ITEM_PREVIEW_TRANSFORMATION = 'c_fill,w_600,h_400,q_auto,f_webp';
         <div class="mt-4 overflow-hidden rounded-card border border-dashed border-line-strong bg-surface-sunk text-center">
           @if (uploading()) {
             <div class="grid h-48 place-items-center">
-              <div
-                role="status"
-                aria-label="Envoi de la photo…"
-                class="size-8 animate-spin rounded-full border-4 border-line-strong border-t-brand"
-              ></div>
+              <mm-spinner label="Envoi de la photo…" />
             </div>
           } @else if (previewRef(); as ref) {
             <img [src]="ref | cloudinaryUrl: previewTransformation" alt="Photo du plat" class="h-48 w-full object-cover" />

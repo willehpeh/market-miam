@@ -4,7 +4,7 @@ import { provideRouter } from '@angular/router';
 import { CatalogueList } from './catalogue-list';
 import { CatalogueFacade } from './catalogue.facade';
 import { FakeCatalogueFacade } from './fake.catalogue.facade';
-import { CatalogueItemView } from './catalogue';
+import { catalogueItem } from './catalogue-item.builder';
 
 async function renderList() {
   const view = await render(CatalogueList, {
@@ -14,14 +14,7 @@ async function renderList() {
   return { view, catalogue };
 }
 
-const item = (overrides: Partial<CatalogueItemView> = {}): CatalogueItemView => ({
-  itemId: 'item-1',
-  name: 'Bœuf bourguignon',
-  description: 'Mijoté maison',
-  price: 1300,
-  imageReference: 'v1/items/acme/item-1',
-  ...overrides,
-});
+const item = catalogueItem;
 
 describe('CatalogueList', () => {
   it('loads the catalogue on init when it is empty', async () => {

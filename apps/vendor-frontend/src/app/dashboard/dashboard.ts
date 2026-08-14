@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { Card } from '../core/card';
+import { Spinner } from '../core/spinner';
 import { StorefrontFacade } from '../storefront/storefront.facade';
 import { CatalogueFacade } from '../catalogue/catalogue.facade';
 import { MarketScheduleFacade } from '../markets/market-schedule.facade';
@@ -9,16 +10,12 @@ import { SetupSteps } from './setup-steps';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [Card, StorefrontHome, SetupSteps],
+  imports: [Card, StorefrontHome, SetupSteps, Spinner],
   template: `
     @if (!loaded()) {
       <mm-card>
         <div class="mx-auto grid h-32 place-items-center">
-          <div
-            role="status"
-            aria-label="Chargement de votre stand…"
-            class="size-8 animate-spin rounded-full border-4 border-line-strong border-t-brand"
-          ></div>
+          <mm-spinner label="Chargement de votre stand…" />
         </div>
       </mm-card>
     } @else {

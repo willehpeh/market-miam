@@ -3,13 +3,14 @@ import { form, FormField, required } from '@angular/forms/signals';
 import { StorefrontFacade } from './storefront.facade';
 import { CloudinaryUrlPipe } from '../core/cloudinary-url.pipe';
 import { Card } from '../core/card';
+import { Spinner } from '../core/spinner';
 
 const MAX_PHOTO_BYTES = 10 * 1024 * 1024;
 
 @Component({
   selector: 'mm-storefront-form',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [Card, FormField, CloudinaryUrlPipe],
+  imports: [Card, FormField, CloudinaryUrlPipe, Spinner],
   template: `
     <mm-card back="/dashboard">
       <form (submit)="submit($event)">
@@ -19,11 +20,7 @@ const MAX_PHOTO_BYTES = 10 * 1024 * 1024;
         <div class="mt-5 rounded-card border border-dashed border-line-strong bg-surface-sunk p-4 text-center">
           @if (uploading()) {
             <div class="mx-auto grid h-32 place-items-center">
-              <div
-                role="status"
-                aria-label="Envoi de la photo…"
-                class="size-8 animate-spin rounded-full border-4 border-line-strong border-t-brand"
-              ></div>
+              <mm-spinner label="Envoi de la photo…" />
             </div>
           } @else if (view()?.imageReference; as ref) {
             <img

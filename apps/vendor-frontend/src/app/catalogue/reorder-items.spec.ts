@@ -4,14 +4,9 @@ import { ReorderItems } from './reorder-items';
 import { CatalogueFacade } from './catalogue.facade';
 import { FakeCatalogueFacade } from './fake.catalogue.facade';
 import { CatalogueItemView } from './catalogue';
+import { catalogueItem } from './catalogue-item.builder';
 
-const item = (itemId: string, name: string): CatalogueItemView => ({
-  itemId,
-  name,
-  description: '',
-  price: 1300,
-  imageReference: `v1/items/acme/${itemId}`,
-});
+const item = (itemId: string, name: string): CatalogueItemView => catalogueItem({ itemId, name });
 
 async function renderReorder(items: CatalogueItemView[] = []) {
   const catalogue = new FakeCatalogueFacade();

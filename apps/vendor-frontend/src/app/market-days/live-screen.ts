@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Card } from '../core/card';
+import { Spinner } from '../core/spinner';
 import { longDate } from '../core/french-date';
 import { CatalogueFacade } from '../catalogue/catalogue.facade';
 import { MarketDayFacade } from './market-day.facade';
@@ -8,16 +9,12 @@ import { MarketDayFacade } from './market-day.facade';
 @Component({
   selector: 'mm-live-screen',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [Card, RouterLink],
+  imports: [Card, RouterLink, Spinner],
   template: `
     <mm-card back="/dashboard">
       @if (loading()) {
         <div class="mx-auto grid h-32 place-items-center">
-          <div
-            role="status"
-            aria-label="Chargement du marché…"
-            class="size-8 animate-spin rounded-full border-4 border-line-strong border-t-brand"
-          ></div>
+          <mm-spinner label="Chargement du marché…" />
         </div>
       } @else if (day(); as marketDay) {
         <h1 class="text-xl leading-tight">{{ marketDay.label }}</h1>
