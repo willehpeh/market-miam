@@ -172,10 +172,10 @@ describe('Onboarding launch', () => {
     httpCtrl.expectOne('/api/storefront').flush(null);
 
     await waitFor(() => expect(router.url).toBe('/dashboard'));
-    httpCtrl.expectOne('/api/catalogue').flush({ items: [] });
-    httpCtrl.expectOne('/api/market-schedules').flush({ schedules: [] });
-    // No second market-days GET: that load is warm-only, so returning to the dashboard
-    // keeps what the store already holds instead of re-reading a lagging projection.
+    // No second GETs: every load is warm-only, so returning to the dashboard keeps what
+    // the store already holds instead of re-reading a lagging projection.
+    httpCtrl.expectNone('/api/catalogue');
+    httpCtrl.expectNone('/api/market-schedules');
     httpCtrl.expectNone('/api/market-days/upcoming');
   });
 

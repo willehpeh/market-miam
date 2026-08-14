@@ -10,9 +10,15 @@ export class StoreMarketScheduleFacade implements MarketScheduleFacade {
 
   readonly schedules = this.store.selectSignal(marketScheduleFeature.selectSchedules);
   readonly loading = this.store.selectSignal(marketScheduleFeature.selectLoading);
+  private readonly fresh = this.store.selectSignal(marketScheduleFeature.selectFresh);
 
+  // Only a stale cache refetches: a re-GET would put a projection that lags the response
+  // back over an optimistic patch. Emptiness is a real answer — a vendor can retire every
+  // schedule — so the flag, not the list length.
   load(): void {
-    this.store.dispatch(LoadMarketSchedules());
+    if (!this.fresh()) {
+      this.store.dispatch(LoadMarketSchedules());
+    }
   }
 
   registerSchedule(schedule: NewSchedule): void {

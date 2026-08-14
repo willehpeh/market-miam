@@ -25,19 +25,10 @@ const schedule = (overrides: Partial<MarketScheduleView> = {}): MarketScheduleVi
 });
 
 describe('MarketsList', () => {
-  it('loads the schedules on init when the store is empty', async () => {
+  // Warm-only lives in the store facade now — the component asks unconditionally.
+  it('loads the schedules on init', async () => {
     const { markets } = await renderList();
     expect(markets.loaded).toBe(true);
-  });
-
-  it('does not reload when schedules are already in the store', async () => {
-    const markets = new FakeMarketScheduleFacade();
-    markets.schedules.set([schedule()]);
-    await render(MarketsList, {
-      providers: [provideRouter([]), { provide: MarketScheduleFacade, useValue: markets }],
-    });
-
-    expect(markets.loaded).toBe(false);
   });
 
   it('names each market', async () => {

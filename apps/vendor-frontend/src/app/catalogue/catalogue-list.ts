@@ -94,10 +94,6 @@ export class CatalogueList {
   );
 
   constructor() {
-    // ponytail: load only when cold, so an optimistic insert (from adding an item) isn't
-    // clobbered by a re-GET. Dashboard warms the store.
-    if (!this.catalogue.items().length) {
-      this.catalogue.load();
-    }
+    this.catalogue.load();
   }
 }

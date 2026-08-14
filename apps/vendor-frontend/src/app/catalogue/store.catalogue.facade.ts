@@ -10,13 +10,19 @@ export class StoreCatalogueFacade implements CatalogueFacade {
 
   readonly items = this.store.selectSignal(catalogueFeature.selectItems);
   readonly loading = this.store.selectSignal(catalogueFeature.selectLoading);
+  private readonly fresh = this.store.selectSignal(catalogueFeature.selectFresh);
   readonly photoUploading = this.store.selectSignal(catalogueFeature.selectPhotoUploading);
   readonly photoError = this.store.selectSignal(catalogueFeature.selectPhotoError);
   readonly photoTooLarge = this.store.selectSignal(catalogueFeature.selectPhotoTooLarge);
   readonly newPhotoReference = this.store.selectSignal(catalogueFeature.selectNewPhotoReference);
 
+  // Only a stale cache refetches: a re-GET would put a projection that lags the response
+  // back over an optimistic patch. Emptiness is a real answer — a brand-new vendor has no
+  // items — so the flag, not the list length.
   load(): void {
-    this.store.dispatch(LoadCatalogue());
+    if (!this.fresh()) {
+      this.store.dispatch(LoadCatalogue());
+    }
   }
 
   beginItem(): void {

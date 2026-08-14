@@ -61,9 +61,7 @@ export class ReorderItems {
   protected readonly order = linkedSignal(() => this.catalogue.items());
 
   constructor() {
-    if (!this.catalogue.items().length) {
-      this.catalogue.load();
-    }
+    this.catalogue.load();
   }
 
   protected save(): void {

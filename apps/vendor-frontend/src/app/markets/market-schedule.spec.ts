@@ -84,6 +84,49 @@ describe('MarketSchedules', () => {
     expect(facade.schedules()).toEqual([]);
   });
 
+  // A second GET would land after an optimistic patch and put the lagging projection
+  // back — freshness is the facade's question, not each caller's.
+  it('does not ask again while fresh', () => {
+    facade.load();
+    httpCtrl.expectOne('/api/market-schedules').flush({ schedules });
+
+    facade.load();
+
+    httpCtrl.expectNone('/api/market-schedules');
+  });
+
+  // Emptiness is a real answer — a vendor can have retired every schedule — so it must
+  // not read as "never fetched" and refetch on every visit.
+  it('treats an empty list as fresh', () => {
+    facade.load();
+    httpCtrl.expectOne('/api/market-schedules').flush({ schedules: [] });
+
+    facade.load();
+
+    httpCtrl.expectNone('/api/market-schedules');
+  });
+
+  // A failed load must not read as fresh, or the list stays empty for the whole session.
+  it('asks again after a failed load', () => {
+    facade.load();
+    httpCtrl.expectOne('/api/market-schedules').flush(null, { status: 500, statusText: 'Server Error' });
+
+    facade.load();
+
+    httpCtrl.expectOne('/api/market-schedules');
+  });
+
+  // The add screen is deep-linkable, so an append can land on a cold store; the appended
+  // copy is newer than the projection, and a follow-up GET could only clobber it.
+  it('does not refetch after a registration lands on a cold store', () => {
+    facade.registerSchedule(content);
+    httpCtrl.expectOne('/api/market-schedules').flush(null);
+
+    facade.load();
+
+    httpCtrl.expectNone('/api/market-schedules');
+  });
+
   it('posts the assembled schedule, minting ids and stamping today', () => {
     facade.registerSchedule(content);
 

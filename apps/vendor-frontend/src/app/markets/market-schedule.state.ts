@@ -33,11 +33,13 @@ export const AmendMarketScheduleFailure = createAction('[Market Schedules] Amend
 
 export interface MarketScheduleState {
   loading: boolean;
+  fresh: boolean;
   schedules: MarketScheduleView[];
 }
 
 export const initialState: MarketScheduleState = {
   loading: false,
+  fresh: false,
   schedules: [],
 };
 
@@ -46,12 +48,16 @@ export const marketScheduleFeature = createFeature({
   reducer: createReducer<MarketScheduleState>(
     initialState,
     on(LoadMarketSchedules, (state): MarketScheduleState => ({ ...state, loading: true })),
-    on(LoadMarketSchedulesSuccess, (state, { schedules }): MarketScheduleState => ({ ...state, loading: false, schedules })),
+    on(LoadMarketSchedulesSuccess, (state, { schedules }): MarketScheduleState => ({ ...state, loading: false, fresh: true, schedules })),
+    // A failed load leaves the cache stale on purpose: the next screen visit retries.
     on(LoadMarketSchedulesFailure, (state): MarketScheduleState => ({ ...state, loading: false })),
     // ponytail: optimistic — append on success so the list shows the new schedule
     // without waiting for the projection to catch up. RegisterMarketScheduleFailure is
     // unreduced; the global error interceptor surfaces 5xx/network.
-    on(RegisterMarketScheduleSuccess, (state, { schedule }): MarketScheduleState => ({ ...state, schedules: [...state.schedules, schedule] })),
+    // fresh too: the add screen is deep-linkable, so the append can land on a cold store,
+    // and the appended copy is newer than the projection — a follow-up GET could only
+    // clobber it.
+    on(RegisterMarketScheduleSuccess, (state, { schedule }): MarketScheduleState => ({ ...state, fresh: true, schedules: [...state.schedules, schedule] })),
     // ponytail: optimistic — replace the amended row by id so the edit shows immediately.
     on(AmendMarketScheduleSuccess, (state, { schedule }): MarketScheduleState => ({
       ...state,

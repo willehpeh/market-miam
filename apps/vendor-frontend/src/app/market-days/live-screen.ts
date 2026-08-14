@@ -68,8 +68,6 @@ export class LiveScreen {
 
   constructor() {
     this.marketDays.load();
-    if (!this.catalogue.items().length) {
-      this.catalogue.load();
-    }
+    this.catalogue.load();
   }
 }

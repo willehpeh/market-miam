@@ -17,19 +17,10 @@ async function renderList() {
 const item = catalogueItem;
 
 describe('CatalogueList', () => {
-  it('loads the catalogue on init when it is empty', async () => {
+  // Warm-only lives in the store facade now — the component asks unconditionally.
+  it('loads the catalogue on init', async () => {
     const { catalogue } = await renderList();
     expect(catalogue.loaded).toBe(true);
-  });
-
-  it('does not reload when the catalogue is already in the store', async () => {
-    const catalogue = new FakeCatalogueFacade();
-    catalogue.items.set([item()]);
-    await render(CatalogueList, {
-      providers: [provideRouter([]), { provide: CatalogueFacade, useValue: catalogue }],
-    });
-
-    expect(catalogue.loaded).toBe(false);
   });
 
   it('lists each item with its name and price in euros', async () => {

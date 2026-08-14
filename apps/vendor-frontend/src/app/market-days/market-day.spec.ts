@@ -214,4 +214,15 @@ describe('MarketDays', () => {
     expect(facade.loading()).toBe(false);
     expect(facade.days()).toEqual([]);
   });
+
+  // A failed load must not read as fresh, or the dashboard stays empty for the whole
+  // session; the next screen visit retries instead.
+  it('asks again after a failed load', () => {
+    facade.load();
+    httpCtrl.expectOne('/api/market-days/upcoming').flush(null, { status: 500, statusText: 'Server Error' });
+
+    facade.load();
+
+    httpCtrl.expectOne('/api/market-days/upcoming');
+  });
 });

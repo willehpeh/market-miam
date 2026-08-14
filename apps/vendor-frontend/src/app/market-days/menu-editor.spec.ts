@@ -110,9 +110,4 @@ describe('MenuEditor', () => {
     expect(catalogue.loaded).toBe(true);
   });
 
-  it('leaves a warm catalogue alone', async () => {
-    const { catalogue } = await renderEditor((_, items) => items.items.set([item('item-1', 'Bourguignon')]));
-
-    expect(catalogue.loaded).toBe(false);
-  });
 });

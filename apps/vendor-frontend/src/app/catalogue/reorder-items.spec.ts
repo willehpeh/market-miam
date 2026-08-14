@@ -75,7 +75,8 @@ describe('ReorderItems', () => {
     expect(screen.getByRole('link', { name: /annuler/i })).toHaveAttribute('href', '/dashboard/catalogue');
   });
 
-  it('loads the catalogue when it arrives cold', async () => {
+  // Warm-only lives in the store facade now — the component asks unconditionally.
+  it('loads the catalogue on init', async () => {
     const { catalogue } = await renderReorder();
 
     expect(catalogue.loaded).toBe(true);
@@ -90,9 +91,4 @@ describe('ReorderItems', () => {
     expect(rowNames()).toEqual(['Bœuf bourguignon']);
   });
 
-  it('does not reload a catalogue already in the store', async () => {
-    const { catalogue } = await renderReorder([item('item-1', 'Bœuf bourguignon')]);
-
-    expect(catalogue.loaded).toBe(false);
-  });
 });

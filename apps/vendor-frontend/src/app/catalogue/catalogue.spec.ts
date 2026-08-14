@@ -107,6 +107,49 @@ describe('Catalogue', () => {
     expect(facade.items()).toEqual([]);
   });
 
+  // A second GET would land after an optimistic patch and put the lagging projection
+  // back — freshness is the facade's question, not each caller's.
+  it('does not ask again while fresh', () => {
+    facade.load();
+    httpCtrl.expectOne('/api/catalogue').flush({ items });
+
+    facade.load();
+
+    httpCtrl.expectNone('/api/catalogue');
+  });
+
+  // Emptiness is a real answer — a brand-new vendor has no items yet — so it must not
+  // read as "never fetched" and refetch on every visit.
+  it('treats an empty catalogue as fresh', () => {
+    facade.load();
+    httpCtrl.expectOne('/api/catalogue').flush({ items: [] });
+
+    facade.load();
+
+    httpCtrl.expectNone('/api/catalogue');
+  });
+
+  // A failed load must not read as fresh, or the carte stays empty for the whole session.
+  it('asks again after a failed load', () => {
+    facade.load();
+    httpCtrl.expectOne('/api/catalogue').flush(null, serverError);
+
+    facade.load();
+
+    httpCtrl.expectOne('/api/catalogue');
+  });
+
+  // The add screen is deep-linkable, so an append can land on a cold store; the appended
+  // copy is newer than the projection, and a follow-up GET could only clobber it.
+  it('does not refetch after an add lands on a cold store', () => {
+    facade.addItem({ itemId: 'coq', name: 'Coq au vin', description: '', price: 1500 });
+    httpCtrl.expectOne('/api/catalogue').flush(null);
+
+    facade.load();
+
+    httpCtrl.expectNone('/api/catalogue');
+  });
+
   it('uploads an item photo by signing for the item id, then exposes the versioned reference', () => {
     facade.uploadItemPhoto('coq', anImage());
 

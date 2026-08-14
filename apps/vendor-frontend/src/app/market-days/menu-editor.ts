@@ -98,11 +98,7 @@ export class MenuEditor {
 
   constructor() {
     this.marketDays.load();
-    // ponytail: warm-only at the call site, as CatalogueList does — the catalogue facade
-    // does not own this yet. See VENDOR-FRONTEND-FOLLOWUPS.md.
-    if (!this.catalogue.items().length) {
-      this.catalogue.load();
-    }
+    this.catalogue.load();
   }
 
   toggle(itemId: string): void {

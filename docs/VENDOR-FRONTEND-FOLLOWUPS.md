@@ -37,24 +37,17 @@ To convert:
 
 Blocked on: slice 5 shipping.
 
-## 2. Warm-only loading belongs in the facade
+## 2. ~~Warm-only loading belongs in the facade~~ — done
 
-`if (!x().length) facade.load()` is duplicated in components (`catalogue-list.ts:99`,
-`markets-list.ts:85`), each with its own `ponytail:` comment explaining the same thing. It exists to
-stop a re-GET clobbering an optimistic insert while the projection lags 4–275ms.
-
-Move the check into `StoreCatalogueFacade.load()` / `StoreMarketScheduleFacade.load()` — "am I
-already warm?" is the facade's question, not each caller's.
-
-Fixes a latent bug: `dashboard.ts:218-219` calls `catalogue.load()` and `markets.load()`
-**unconditionally** on every dashboard visit. Today the projection has usually caught up by then;
-any flow that saves and returns straight to the dashboard would show stale data.
-
-`length` is a poor cache key where empty is a real answer — market days use an explicit `loaded`
-flag for that reason. Catalogue and schedules can keep `length` (a published vendor has both) or
-adopt the flag for consistency.
-
-Blocked on: nothing technical. Kept out of slice 5 to avoid touching two shipped features mid-slice.
+Shipped during live-mode slice 1: `StoreCatalogueFacade` and `StoreMarketScheduleFacade` own
+freshness behind a `fresh` flag like market-days, the call-site guards and their `ponytail:`
+comments are gone, and the dashboard's unconditional loads became warm-only with no dashboard
+edit — closing the latent clobber bug named below. Two revisions to the design as written:
+**fresh is set on success only**, so a failed load retries on the next screen visit
+(market-days changed to match — its failure path used to mark the cache fresh); and the
+optimistic **append successes** (`AddItemSuccess`, `RegisterMarketScheduleSuccess`) mark fresh
+too, because the add screens are deep-linkable, so an append can land on a cold store and a
+follow-up GET could only clobber it.
 
 ## 3. Menu editor: reactive params before a second link
 

@@ -38,7 +38,8 @@ export const marketDayFeature = createFeature({
     initialState,
     on(LoadMarketDays, (state): MarketDayState => ({ ...state, loading: true })),
     on(LoadMarketDaysSuccess, (state, { days }): MarketDayState => ({ ...state, loading: false, fresh: true, days })),
-    on(LoadMarketDaysFailure, (state): MarketDayState => ({ ...state, loading: false, fresh: true })),
+    // A failed load leaves the cache stale on purpose: the next screen visit retries.
+    on(LoadMarketDaysFailure, (state): MarketDayState => ({ ...state, loading: false })),
     on(RegisterMarketScheduleSuccess, AmendMarketScheduleSuccess, wentStale),
     // Optimistic: the response is void and the projection lags it by 4–275ms, so the day
     // takes the ids that were just sent rather than waiting for a re-read that never comes.
