@@ -112,12 +112,15 @@ condition that they share their source in turn. If contributing to a codebase
 that also powers a commercial service isn't a trade you want to make, that's
 a perfectly good reason not to contribute.
 
-The trade is symmetric, though. By submitting a contribution you agree that
-it's your own work (or that you have the right to submit it) and that it's
-licensed under the same terms — inbound = outbound, no CLA. That cuts both
-ways: because there's no CLA, your contribution stays AGPL permanently, and
-the project cannot be relicensed proprietary out from under the people who
-built it.
+The trade is symmetric, though, and the symmetry is the point. This code is
+open source permanently, by construction. By submitting a contribution you
+agree that it's your own work (or that you have the right to submit it) and
+that it's licensed under the same terms — inbound = outbound. There is
+deliberately no CLA: copyright stays dispersed among everyone who
+contributes, which means no one — not the author, not an acquirer, not a
+future maintainer — can ever relicense the project proprietary. The AGPL was
+chosen to make a rug-pull as close to impossible as licensing can make it,
+and declining to collect a CLA is what locks that promise in.
 
 ## Community
 
