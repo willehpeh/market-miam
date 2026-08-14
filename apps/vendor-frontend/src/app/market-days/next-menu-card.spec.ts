@@ -13,6 +13,7 @@ const day = (overrides: Partial<MarketDayView> = {}): MarketDayView => ({
   startTime: '08:00',
   endTime: '13:00',
   absent: false,
+  today: false,
   itemIds: [],
   market: { name: 'Marché de la Croix-Rousse', codePostal: '69004', town: 'Lyon' },
   ...overrides,
@@ -79,6 +80,25 @@ describe('NextMenuCard', () => {
     await renderCard([day()]);
 
     expect(screen.getByRole('link', { name: /le menu/i }).getAttribute('href'))
+      .toBe('/dashboard/menus/market-1/2026-08-15');
+  });
+
+  // The card is the switch (decisions 27, 41, 43): once the day is today and carries a
+  // menu, the doorway leads to the live screen, not the planner — from midnight, so the
+  // 6h sold-out case stays reachable.
+  it('opens the live screen once the day is today and has a menu', async () => {
+    await renderCard([day({ today: true, itemIds: ['item-1'] })]);
+
+    expect(screen.getByRole('link', { name: /suivre le marché/i }).getAttribute('href'))
+      .toBe('/dashboard/live/market-1/2026-08-15');
+  });
+
+  // The flip is caused by planning, not by the clock — an unplanned today still opens
+  // the editor, whose neutral prompt is what a vendor who forgot needs.
+  it('keeps offering the planner while today has no menu', async () => {
+    await renderCard([day({ today: true })]);
+
+    expect(screen.getByRole('link', { name: /planifier le menu/i }).getAttribute('href'))
       .toBe('/dashboard/menus/market-1/2026-08-15');
   });
 

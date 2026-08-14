@@ -68,6 +68,7 @@ describe('FindUpcomingMarketDays', () => {
         endTime: '14:00',
         absent: false,
         inProgress: false,
+        today: false,
         items: [],
         soldOutItemIds: [],
         market,
@@ -290,6 +291,18 @@ describe('FindUpcomingMarketDays', () => {
 
     expect(marketDays[0]).toMatchObject({ date: '2024-02-10', inProgress: true });
     expect(marketDays.slice(1).every(day => !day.inProgress)).toBe(true);
+  });
+
+  // 06:00Z is 07:00 in February's Paris (CET) — before the 08:00 start. Today must
+  // already be true where inProgress is not, or the card cannot open the live screen
+  // for the 6h sold-out case decision 27 exists to keep reachable.
+  it('flags today\'s occurrence from midnight, before its market starts, and only that one', async () => {
+    await views.recordSchedule(scheduleWith({ startDate: '2024-02-05' }), 'vendor-id');
+
+    const { marketDays } = await upcoming('vendor-id', '2024-02-10', '2024-02-10T06:00:00.000Z');
+
+    expect(marketDays[0]).toMatchObject({ date: '2024-02-10', today: true, inProgress: false });
+    expect(marketDays.slice(1).every(day => !day.today)).toBe(true);
   });
 
   it('does not flag a market before its start time', async () => {

@@ -10,6 +10,9 @@ export interface MarketDayView {
   startTime?: string;
   endTime?: string;
   absent: boolean;
+  // Server-said calendar truth (decision 42): true from midnight, so the dashboard card
+  // can open the live screen before the market's hours — never derived from the device clock.
+  today: boolean;
   itemIds: string[];
   market: {
     name: string;

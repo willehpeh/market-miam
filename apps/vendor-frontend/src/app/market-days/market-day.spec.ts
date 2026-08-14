@@ -25,6 +25,7 @@ const day = {
   startTime: '08:00',
   endTime: '13:00',
   absent: false,
+  today: false,
   market: { name: 'Marché de la Croix-Rousse', town: 'Lyon', codePostal: '69004' },
 };
 

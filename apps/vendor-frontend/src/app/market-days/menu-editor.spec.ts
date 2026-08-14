@@ -16,6 +16,7 @@ const day = (overrides: Partial<MarketDayView> = {}): MarketDayView => ({
   startTime: '08:00',
   endTime: '13:00',
   absent: false,
+  today: false,
   itemIds: [],
   market: { name: 'Marché de la Croix-Rousse', codePostal: '69004', town: 'Lyon' },
   ...overrides,

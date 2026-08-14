@@ -309,6 +309,7 @@ describe('Dashboard', () => {
       date: '2026-08-15',
       day: 'SAT',
       absent: false,
+      today: false,
       itemIds: [],
       market: { name: 'Marché de la Croix-Rousse', town: 'Lyon', codePostal: '69004' },
     }]);

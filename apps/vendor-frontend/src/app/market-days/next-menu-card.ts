@@ -22,7 +22,7 @@ import { MarketDayFacade } from './market-day.facade';
              legal, and without this line they look identical. -->
         <p class="mt-3 text-sm text-ink-soft">{{ day.menu }}</p>
 
-        <a [routerLink]="['/dashboard/menus', day.marketId, day.date]" class="btn-link mt-4">
+        <a [routerLink]="day.link" class="btn-link mt-4">
           <i class="fa-solid fa-calendar-check" aria-hidden="true"></i>
           {{ day.action }}
         </a>
@@ -41,14 +41,16 @@ export class NextMenuCard {
       return null;
     }
     const items = day.itemIds.length;
+    // The doorway flips on planning plus the server-said today, never the clock alone
+    // (decisions 27, 42) — so it leads to the live screen from midnight, not from startTime.
+    const live = day.today && items > 0;
     return {
-      marketId: day.marketId,
-      date: day.date,
       label: longDate(day.day, day.date),
       marketName: day.market.name,
       hours: timeRange(day),
       menu: items ? `${items} plat${items > 1 ? 's' : ''} au menu` : 'Aucun plat au menu',
-      action: items ? 'Modifier le menu' : 'Planifier le menu',
+      action: live ? 'Suivre le marché' : items ? 'Modifier le menu' : 'Planifier le menu',
+      link: [live ? '/dashboard/live' : '/dashboard/menus', day.marketId, day.date],
     };
   });
 

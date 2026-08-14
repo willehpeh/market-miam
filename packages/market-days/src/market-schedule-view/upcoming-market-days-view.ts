@@ -10,6 +10,10 @@ export type MarketDayOccurrence = {
   absent: boolean;
   // The market is happening right now — schedule truth, never true for an absent day.
   inProgress: boolean;
+  // The occurrence falls on the server's today — true from midnight, before the market
+  // starts, which inProgress deliberately is not. Same clock as the aggregate's today-guard,
+  // so the screen this gates and the commands it fires can never disagree.
+  today: boolean;
   // The day's menu joined from the catalogue at query time — current names and prices,
   // in catalogue order. Empty when nothing is planned; suppressed when absent.
   items: CatalogueViewItem[];

@@ -55,6 +55,7 @@ describe('Reading a vendor\'s upcoming market days', () => {
       endTime: '14:30',
       absent: false,
       inProgress: false,
+      today: false,
       items: [],
       soldOutItemIds: [],
       market: { name: 'Marché de Belleville', town: 'Paris', codePostal: '75011', streetAddress: 'Boulevard de Belleville', pitch: 'B12' },

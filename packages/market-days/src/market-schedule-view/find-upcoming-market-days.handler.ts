@@ -42,7 +42,11 @@ export class FindUpcomingMarketDaysHandler implements IQueryHandler<FindUpcoming
     return schedules
       .flatMap(schedule => this.occurrencesOf(schedule, today, horizon, items))
       .filter(day => notYetEnded(day, now))
-      .map(day => ({ ...day, inProgress: !day.absent && hasStarted(day, now) && notYetEnded(day, now) }))
+      .map(day => ({
+        ...day,
+        inProgress: !day.absent && hasStarted(day, now) && notYetEnded(day, now),
+        today: day.date === today.value(),
+      }))
       // First-by-start-time is what makes "the first occurrence" the market the vendor is
       // standing at; the fallback matches hasStarted, which treats no startTime as the
       // start of the day, and marketId makes the order total (decision 25).
@@ -60,7 +64,7 @@ export class FindUpcomingMarketDaysHandler implements IQueryHandler<FindUpcoming
 
   // Absent days keep their occurrence but lose their menu — suppression lives in the
   // query, so no cross-aggregate coupling between calendar and market day.
-  private occurrencesOf(schedule: MarketScheduleView, from: LocalDate, to: LocalDate, items: Items): Omit<MarketDayOccurrence, 'inProgress'>[] {
+  private occurrencesOf(schedule: MarketScheduleView, from: LocalDate, to: LocalDate, items: Items): Omit<MarketDayOccurrence, 'inProgress' | 'today'>[] {
     const absences = schedule.absences ?? [];
     const occurrences = Recurrence.fromSnapshot(schedule).occurrencesWithin(from, to);
     return occurrences.map(occurrence => {
