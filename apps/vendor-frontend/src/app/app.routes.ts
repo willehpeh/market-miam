@@ -1,41 +1,35 @@
 import { Route } from '@angular/router';
-import { Landing } from './landing/landing';
-import { Dashboard } from './dashboard/dashboard';
-import { CataloguePage } from './catalogue/catalogue-page';
-import { CatalogueList } from './catalogue/catalogue-list';
-import { AddItem } from './catalogue/add-item';
-import { ReorderItems } from './catalogue/reorder-items';
-import { MarketsList } from './markets/markets-list';
-import { AddSchedule } from './markets/add-schedule';
-import { MenuEditor } from './market-days/menu-editor';
-import { LiveScreen } from './market-days/live-screen';
-import { Welcome } from './onboarding/welcome';
-import { StorefrontForm } from './storefront/storefront-form';
 import { authenticated } from './core/auth/authenticated.guard';
 
+// Every screen loads on demand. A signed-out vendor is entitled to download the landing
+// page and nothing else, and a vendor on their dashboard has no use for the live screen,
+// the reorder list, or either editor until they open one.
 export const appRoutes: Route[] = [
   {
     path: 'onboarding',
     canActivateChild: [authenticated],
-    children: [{ path: '', component: Welcome }],
+    children: [{ path: '', loadComponent: () => import('./onboarding/welcome').then(m => m.Welcome) }],
   },
   {
     path: 'dashboard',
     canActivateChild: [authenticated],
     children: [
-      { path: '', component: Dashboard },
-      { path: 'information', component: StorefrontForm },
+      { path: '', loadComponent: () => import('./dashboard/dashboard').then(m => m.Dashboard) },
+      {
+        path: 'information',
+        loadComponent: () => import('./storefront/storefront-form').then(m => m.StorefrontForm),
+      },
       {
         path: 'catalogue',
         children: [
-          { path: 'new', component: AddItem },
-          { path: ':itemId/edit', component: AddItem },
+          { path: 'new', loadComponent: () => import('./catalogue/add-item').then(m => m.AddItem) },
+          { path: ':itemId/edit', loadComponent: () => import('./catalogue/add-item').then(m => m.AddItem) },
           {
             path: '',
-            component: CataloguePage,
+            loadComponent: () => import('./catalogue/catalogue-page').then(m => m.CataloguePage),
             children: [
-              { path: '', component: CatalogueList },
-              { path: 'order', component: ReorderItems },
+              { path: '', loadComponent: () => import('./catalogue/catalogue-list').then(m => m.CatalogueList) },
+              { path: 'order', loadComponent: () => import('./catalogue/reorder-items').then(m => m.ReorderItems) },
             ],
           },
         ],
@@ -44,19 +38,28 @@ export const appRoutes: Route[] = [
       // record, or "n'est plus …" — save exists only in the middle branch, so a cold
       // refresh cannot render empty and wipe anything. That is why none of them is
       // guarded: there is nothing left for a guard to protect.
-      { path: 'menus/:marketId/:date', component: MenuEditor },
+      {
+        path: 'menus/:marketId/:date',
+        loadComponent: () => import('./market-days/menu-editor').then(m => m.MenuEditor),
+      },
       // The live screen declines any day but today itself, exactly as the domain
       // refuses its commands.
-      { path: 'live/:marketId/:date', component: LiveScreen },
+      {
+        path: 'live/:marketId/:date',
+        loadComponent: () => import('./market-days/live-screen').then(m => m.LiveScreen),
+      },
       {
         path: 'markets',
         children: [
-          { path: '', component: MarketsList },
-          { path: 'new', component: AddSchedule },
-          { path: ':scheduleId/edit', component: AddSchedule },
+          { path: '', loadComponent: () => import('./markets/markets-list').then(m => m.MarketsList) },
+          { path: 'new', loadComponent: () => import('./markets/add-schedule').then(m => m.AddSchedule) },
+          {
+            path: ':scheduleId/edit',
+            loadComponent: () => import('./markets/add-schedule').then(m => m.AddSchedule),
+          },
         ],
       },
     ],
   },
-  { path: '', component: Landing },
+  { path: '', loadComponent: () => import('./landing/landing').then(m => m.Landing) },
 ];
