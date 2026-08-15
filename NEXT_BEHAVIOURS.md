@@ -6,7 +6,7 @@ doc. Legal and website work track their own remaining sections:
 
 ## Product
 
-* live mode — the storefront leads with the market the vendor is standing in; sold-out per dish, and closing the day (`docs/LIVE-MODE-PLAN.md`). Subsumes *mark as sold out*, now shipped end to end (slice 1); the ops alert remains. No *open market day*: the start follows from the schedule
+* live mode — the storefront leads with the market the vendor is standing in; sold-out per dish, and closing the day (`docs/LIVE-MODE-PLAN.md`). Subsumes *mark as sold out*, shipped whole (slice 1); slice 2 — closing the day — is next. No *open market day*: the start follows from the schedule
 * item rated for market day (the miam)
 * remove item photo · clear storefront cover photo
 * retiring an item doesn't check if it's been planned
@@ -31,6 +31,6 @@ doc. Legal and website work track their own remaining sections:
 * orphan-checkpoint detection — if a checkpoint is ever renamed
 * per-event dead-lettering — on the first real poison event (alert design ready: `docs/O11Y-PLAN.md`)
 * composite cursor — only if append throughput bottlenecks (~300–1000/s, ADR 0028)
-* per-type span attributes · stuck-subscription alert — evidence-gated, designs ready (`docs/O11Y-PLAN.md`)
+* per-type span attributes — evidence-gated, design ready (`docs/O11Y-PLAN.md`; the stuck-subscription alert shipped with live-mode slice 1)
 * OTel collector + tail-based sampling — until volume warrants
 * ops transport for `erase`/`rebuild` + automated Auth0 user delete on erasure — when an ops surface exists

@@ -16,6 +16,7 @@ import { LineageModule } from '../lineage/lineage.module';
 import { TracingCommandGateway } from './tracing/command-gateway';
 import { TracingQueryGateway } from './tracing/query-gateway';
 import { Subscriptions } from './subscriptions';
+import { HealthController } from './health.controller';
 
 // The leaf adapter ApplicationEventStore wraps. One token for "whatever store the
 // profile plugs in", so the wrapping stays written once instead of once per profile.
@@ -32,6 +33,7 @@ export class EventSourcingModule {
       module: EventSourcingModule,
       global: true,
       imports: [CqrsModule, DiscoveryModule, LineageModule],
+      controllers: [HealthController],
       providers: [
         {
           // 'vendorId' names the PII subject in append metadata — application

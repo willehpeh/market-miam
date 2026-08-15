@@ -20,7 +20,11 @@ Read side — `QueryGateway` span: `QueryGateway` port (`event-sourcing`) mirror
    forward progress. Motivation + kind-awareness: **`archive/DEFERRED.md` "Per-event
    dead-lettering"** (formerly POSTGRES-PLAN item 4).
 
-   **Deferred — evidence-gated.** Detection already works today: each failed poll emits a
+   **Shipped with live-mode slice 1** — decision 24 of `LIVE-MODE-PLAN.md` called the
+   evidence gate: a lagging projection now means a sold-out dish stays on sale. Built as
+   designed below (`subscription-health.spec.ts`), with one delivery revision recorded in
+   the last bullet. Point any free uptime monitor at `GET /api/health` — that is the pager.
+   The pre-existing detection context, kept for the record: each failed poll emits a
    `logger.error` (Render logs) **and** an `event-handler handle` error span (emitted by `PollingSubscription`) in Honeycomb
    (`exception.slug: 'event-handler-failed'`, `event.type`, `vendor.id`, status ERROR). With the
    current **1:1 event-type→consumer** mapping, `event.type` already identifies the stuck consumer,
@@ -29,7 +33,7 @@ Read side — `QueryGateway` span: `QueryGateway` port (`event-sourcing`) mirror
    (b) two consumers handle the same event type — breaks the 1:1 identifiability; (c) the first real
    stuck-subscription incident.
 
-   **Ready design** (pick-up-and-go). OTel approach = a **span, not a metric** (the exporter is
+   **Design, as built.** OTel approach = a **span, not a metric** (the exporter is
    `exporter-trace-otlp-proto` — traces only; a metric would need a whole metrics pipeline). Emit a
    zero-duration error span from the retry handler, which is the only seam that knows recovery depth:
    - `startPolling` iterates `this.consumers` (not `.map(c => c.subscription)`) so `wakeSubscription`
@@ -40,9 +44,16 @@ Read side — `QueryGateway` span: `QueryGateway` port (`event-sourcing`) mirror
      `subscription.name`, `subscription.kind`, `subscription.retry_count`,
      `exception.slug: 'subscription-poll-failed'`; `recordException`; status ERROR; `end()`.
      `startSpan` (not `startActiveSpan`) — standalone wide event, no children.
-   - Code stays kind-agnostic (just tags `kind`); **Honeycomb owns the policy**: Trigger on
-     `MAX(subscription.retry_count) WHERE subscription.kind = "processor"` grouped by
-     `subscription.name`, ~10-min window, `> 5` → page. Softer warn on `projection` optional.
+   - The span code stays kind-agnostic (just tags `kind`). ~~Honeycomb owns the policy:
+     Trigger on `MAX(subscription.retry_count) WHERE subscription.kind = "processor"` grouped
+     by `subscription.name`, ~10-min window, `> 5` → page~~ — revised at build time: the free
+     tier had no trigger slot, so the policy lives in `GET /health` (`health.controller.ts`)
+     instead — 503 once a **processor** exceeds five consecutive failures, projections
+     reported in the body but never paged on, checkpoint conflicts never counted, a
+     successful poll clears the count (`Subscriptions.status()`). An external uptime monitor
+     polling the route is the pager. Recorded cost: changing the policy is a deploy, not a
+     query edit. The trigger as struck stays creatable unchanged if a slot ever frees — the
+     span carries everything it needs.
    - Test: `InMemorySpanExporter` harness + a throwing stub handler + fake timers → assert a finished
      `subscription poll failed` span with `subscription.kind: 'processor'`, `retry_count ≥ 1`, ERROR.
      The existing "logs the failure and keeps polling" test still passes (`logger.error` kept).

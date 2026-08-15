@@ -12,7 +12,9 @@ and the vendor side is shipped: the doorway card (decisions 41–43) and the liv
 its rows, épuisé group, pre-live banner, waiting poll and *En direct* receipt. The customer
 side is shipped too: sold-out greys in place on the *Prochain marché* card, and a
 route-provided feed polls while broadcasting and re-asks on the tab becoming visible
-(decisions 7, 8, 17, 20, 26). Only the ops alert remains.
+(decisions 7, 8, 17, 20, 26). The ops alert is shipped too — the span as designed, with
+paging through `GET /api/health` and an external monitor, the free tier having no trigger
+slot (`O11Y-PLAN.md` step 5). **Slice 1 is complete.**
 
 ## Shape
 
@@ -34,7 +36,7 @@ row on the home page. Three things the plan did not call:
   resolver runs inside the navigation, so flushing by hand races the router. It also counts
   requests, which is what proves one fetch serves both children.
 
-**Slice 1 — sold-out, end to end. Backend, vendor UI and customer UI done; the ops alert remains.** Migration `0014` and the Postgres availability SQL are contract-covered but written in an environment with no Docker — run the container suite before trusting the adapter.
+**Slice 1 — sold-out, end to end. Shipped whole.** Migration `0014` and the Postgres availability SQL are contract-covered but written in an environment with no Docker — run the container suite before trusting the adapter.
 
 | | |
 |---|---|

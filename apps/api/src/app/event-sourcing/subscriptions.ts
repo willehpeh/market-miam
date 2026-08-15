@@ -1,6 +1,7 @@
 import { Inject, Injectable, Logger, OnApplicationBootstrap, OnApplicationShutdown, Optional } from '@nestjs/common';
 import { DiscoveryService } from '@nestjs/core';
 import { exhaustMap, from, mergeMap, retry, Subject, takeUntil, timer } from 'rxjs';
+import { Exception, SpanStatusCode, trace } from '@opentelemetry/api';
 import {
   Checkpoint,
   CheckpointConflictError,
@@ -41,10 +42,19 @@ type CheckpointedConsumer =
   | (ConsumerShape & { readonly kind: 'projection'; readonly handler: Projection })
   | (ConsumerShape & { readonly kind: 'processor'; readonly handler: EventHandler });
 
+export interface SubscriptionStatus {
+  name: string;
+  kind: CheckpointKind;
+  consecutiveFailures: number;
+}
+
 @Injectable()
 export class Subscriptions implements OnApplicationBootstrap, OnApplicationShutdown {
   private readonly stopped = new Subject<void>();
   private consumers: CheckpointedConsumer[] = [];
+  // Consecutive real failures per consumer, kept by the background poller — what the
+  // health route reads. Conflicts never count; a successful poll clears the entry.
+  private readonly failures = new Map<string, number>();
 
   constructor(
     private readonly discovery: DiscoveryService,
@@ -66,6 +76,14 @@ export class Subscriptions implements OnApplicationBootstrap, OnApplicationShutd
   onApplicationShutdown(): void {
     this.stopped.next();
     this.stopped.complete();
+  }
+
+  status(): SubscriptionStatus[] {
+    return this.consumers.map(({ name, kind }) => ({
+      name,
+      kind,
+      consecutiveFailures: this.failures.get(name) ?? 0,
+    }));
   }
 
   async drain(): Promise<void> {
@@ -142,7 +160,7 @@ export class Subscriptions implements OnApplicationBootstrap, OnApplicationShutd
   }
 
   private startPolling(): void {
-    from(this.consumers.map((consumer) => consumer.subscription))
+    from(this.consumers)
       .pipe(
         mergeMap(this.wakeSubscription()),
         takeUntil(this.stopped),
@@ -151,8 +169,8 @@ export class Subscriptions implements OnApplicationBootstrap, OnApplicationShutd
   }
 
   private wakeSubscription() {
-    return (subscription: Subscription) => this.schedule.pokes().pipe(
-      exhaustMap(() => subscription.poll()),
+    return (consumer: CheckpointedConsumer) => this.schedule.pokes().pipe(
+      exhaustMap(() => consumer.subscription.poll().then(() => this.failures.delete(consumer.name))),
       // ponytail: exponential backoff, capped, reset once a poll succeeds. Infinite
       // retries are deliberate — a transient store outage should recover, not kill
       // the consumer. A poison event (handler throws on the same event every time)
@@ -169,11 +187,31 @@ export class Subscriptions implements OnApplicationBootstrap, OnApplicationShutd
             this.logger.log(`Subscription poll yielded to a concurrent writer: ${error.message}`);
           } else {
             this.logger.error('Subscription poll failed', error);
+            this.pollFailed(consumer, retryCount, error);
           }
           return timer(Math.min(RETRY_BACKOFF_MS * 2 ** (retryCount - 1), MAX_RETRY_BACKOFF_MS));
         },
       }),
     );
+  }
+
+  // The retry callback is the only seam that knows recovery depth (resetOnSuccess, so
+  // retryCount is consecutive-failure depth). It feeds both alert transports: the wide
+  // error span Honeycomb can query — and trigger on, should a slot free up — and the
+  // in-memory count the health route serves to whatever pages instead.
+  private pollFailed(consumer: CheckpointedConsumer, retryCount: number, error: unknown): void {
+    this.failures.set(consumer.name, retryCount);
+    const span = trace.getTracer('subscriptions').startSpan('subscription poll failed', {
+      attributes: {
+        'subscription.name': consumer.name,
+        'subscription.kind': consumer.kind,
+        'subscription.retry_count': retryCount,
+        'exception.slug': 'subscription-poll-failed',
+      },
+    });
+    span.recordException(error as Exception);
+    span.setStatus({ code: SpanStatusCode.ERROR });
+    span.end();
   }
 }
 
