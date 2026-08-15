@@ -529,7 +529,7 @@ describe('AddItem', () => {
     });
 
     it('names an incomplete format row', async () => {
-      const { view } = await renderThreeFormats();
+      await renderThreeFormats();
 
       expect(screen.getByText('Complétez chaque format.')).toBeVisible();
     });
