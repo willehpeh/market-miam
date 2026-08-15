@@ -17,4 +17,7 @@ export type UpcomingMarket = {
   // The day's menu, joined to the catalogue by the query — empty when nothing is planned,
   // and always empty when the vendor is away.
   items: CatalogueItem[];
+  // Which of those items sold out during service — suppressed with the menu when the
+  // vendor is away, and may name an id the catalogue join dropped, which readers ignore.
+  soldOutItemIds: string[];
 };

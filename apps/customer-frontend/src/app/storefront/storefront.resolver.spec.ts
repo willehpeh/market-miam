@@ -6,6 +6,7 @@ import { ActivatedRouteSnapshot, RouterStateSnapshot, convertToParamMap } from '
 import { firstValueFrom, Observable } from 'rxjs';
 import { storefrontResolver } from './storefront.resolver';
 import { CustomerStorefront } from './customer-storefront';
+import { StorefrontFeed } from './storefront-feed';
 import { StorefrontMetadata } from './storefront-metadata';
 import { StorefrontViewModel } from './storefront-view-model';
 
@@ -20,8 +21,8 @@ const ACME: CustomerStorefront = {
     { itemId: 'item-2', name: 'Tarte tatin', description: 'Aux pommes', price: 600, imageReference: '' },
   ],
   upcomingMarkets: [
-    { date: '2026-06-18', weekday: 'THU', marketName: 'Marché Saint-Antoine', startTime: '08:00', endTime: '13:30', street: 'Quai Saint-Antoine', postalCode: '69002', town: 'Lyon', pitch: 'A3', cancelled: false, inProgress: false, items: [] },
-    { date: '2026-06-23', weekday: 'TUE', marketName: 'Marché de la Croix-Rousse', startTime: '08:00', endTime: '13:00', postalCode: '69004', town: 'Lyon', cancelled: true, inProgress: false, items: [] },
+    { date: '2026-06-18', weekday: 'THU', marketName: 'Marché Saint-Antoine', startTime: '08:00', endTime: '13:30', street: 'Quai Saint-Antoine', postalCode: '69002', town: 'Lyon', pitch: 'A3', cancelled: false, inProgress: false, items: [], soldOutItemIds: [] },
+    { date: '2026-06-23', weekday: 'TUE', marketName: 'Marché de la Croix-Rousse', startTime: '08:00', endTime: '13:00', postalCode: '69004', town: 'Lyon', cancelled: true, inProgress: false, items: [], soldOutItemIds: [] },
   ],
 };
 
@@ -44,11 +45,14 @@ describe('storefrontResolver', () => {
       providers: [
         provideHttpClient(),
         provideHttpClientTesting(),
-        { provide: DOCUMENT, useValue: { location } },
+        // The listener no-ops keep the stub bare while the feed hangs its visibility
+        // listener off the same document.
+        { provide: DOCUMENT, useValue: { location, addEventListener: () => undefined, removeEventListener: () => undefined } },
         { provide: REQUEST, useFactory: () => request },
         // The document here is a bare location stub, which Meta cannot read. What the
         // resolver does with the tags is app.routes.spec's business.
         { provide: StorefrontMetadata, useValue: { set: () => undefined } },
+        StorefrontFeed,
       ],
     });
     http = TestBed.inject(HttpTestingController);
@@ -95,6 +99,16 @@ describe('storefrontResolver', () => {
         { weekday: 'MAR', day: '23', month: 'JUIN', marketName: 'Marché de la Croix-Rousse', hours: '8h – 13h', address: 'Lyon', cancelled: true, inProgress: false, items: [] },
       ],
     });
+  });
+
+  // The pages render from the feed, so a resolve that did not seed it would leave both
+  // children blank while the route data sat full.
+  it('seeds the live feed with what it resolved', async () => {
+    const result = firstValueFrom(resolve({ subdomain: 'acme' }));
+    http.expectOne('/api/public/storefront/acme').flush(ACME);
+    await result;
+
+    expect(TestBed.inject(StorefrontFeed).view()?.status).toBe('published');
   });
 
   it('passes the coming-soon storefront through', async () => {

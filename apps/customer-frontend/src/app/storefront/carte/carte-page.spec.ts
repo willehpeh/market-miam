@@ -1,6 +1,9 @@
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { CartePage } from './carte-page';
+import { StorefrontFeed } from '../storefront-feed';
 import { StorefrontViewModel } from '../storefront-view-model';
 
 const ACME: StorefrontViewModel = {
@@ -33,15 +36,17 @@ function drag(type: string, clientY: number): Event {
 }
 
 function render(storefront: StorefrontViewModel | null) {
+  TestBed.inject(StorefrontFeed).view.set(storefront);
   const fixture = TestBed.createComponent(CartePage);
-  fixture.componentRef.setInput('storefront', storefront);
   fixture.detectChanges();
   return fixture;
 }
 
 describe('CartePage', () => {
   beforeEach(() => {
-    TestBed.configureTestingModule({ providers: [provideRouter([])] });
+    TestBed.configureTestingModule({
+      providers: [provideRouter([]), StorefrontFeed, provideHttpClient(), provideHttpClientTesting()],
+    });
   });
 
   it('lists every item the vendor makes, with prices', () => {

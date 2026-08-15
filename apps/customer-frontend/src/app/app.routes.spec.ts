@@ -18,7 +18,7 @@ const ACME: CustomerStorefront = {
     { itemId: 'item-2', name: 'Tarte tatin', description: 'Aux pommes', price: 600, imageReference: '' },
   ],
   upcomingMarkets: [
-    { date: '2026-06-18', weekday: 'THU', marketName: 'Marché Saint-Antoine', startTime: '08:00', endTime: '13:30', street: 'Quai Saint-Antoine', postalCode: '69002', town: 'Lyon', cancelled: false, inProgress: false, items: [] },
+    { date: '2026-06-18', weekday: 'THU', marketName: 'Marché Saint-Antoine', startTime: '08:00', endTime: '13:30', street: 'Quai Saint-Antoine', postalCode: '69002', town: 'Lyon', cancelled: false, inProgress: false, items: [], soldOutItemIds: [] },
   ],
 };
 

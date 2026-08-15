@@ -46,8 +46,10 @@ import { ItemCard } from '../items/item-card';
         @if (featured()) {
           <!-- The featured day is browsable like the carte: same cards, same sheet. The
                upcoming list stays on names and prices, or one page would carry the same
-               item cards once per market. -->
-          <ul data-menu class="mt-4 grid gap-4 border-t border-line pt-4 lg:grid-cols-2">
+               item cards once per market. aria-live on the list only (decision 20): the
+               poll greys rows with no user action, and scoping it wider would re-announce
+               everything around them. -->
+          <ul data-menu aria-live="polite" class="mt-4 grid gap-4 border-t border-line pt-4 lg:grid-cols-2">
             @for (item of market().items; track item.itemId) {
               <li><app-item-card [item]="item" (chosen)="chosen.emit($event)" /></li>
             }

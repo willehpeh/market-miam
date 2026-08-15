@@ -1,6 +1,7 @@
-import { ChangeDetectionStrategy, Component, input, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, viewChild } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { ItemViewModel, StorefrontViewModel } from '../storefront-view-model';
+import { ItemViewModel } from '../storefront-view-model';
+import { StorefrontFeed } from '../storefront-feed';
 import { ComingSoonPage } from '../coming-soon/coming-soon-page';
 import { ItemCard } from '../items/item-card';
 import { ItemSheet } from '../items/item-sheet';
@@ -58,7 +59,7 @@ import { StorefrontFooter } from '../layout/storefront-footer';
   `,
 })
 export class CartePage {
-  readonly storefront = input<StorefrontViewModel | null>(null);
+  protected readonly storefront = inject(StorefrontFeed).view;
 
   private readonly sheet = viewChild.required(ItemSheet);
 

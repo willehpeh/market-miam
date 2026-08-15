@@ -1,6 +1,7 @@
-import { ChangeDetectionStrategy, Component, computed, input, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, viewChild } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { ItemViewModel, StorefrontViewModel } from './storefront-view-model';
+import { ItemViewModel } from './storefront-view-model';
+import { StorefrontFeed } from './storefront-feed';
 import { ComingSoonPage } from './coming-soon/coming-soon-page';
 import { StorefrontHero } from './layout/storefront-hero';
 import { ItemSheet } from './items/item-sheet';
@@ -92,7 +93,9 @@ import { StorefrontFooter } from './layout/storefront-footer';
   `,
 })
 export class StorefrontPage {
-  readonly storefront = input<StorefrontViewModel | null>(null);
+  // Read from the feed, not the resolve snapshot: while the vendor is broadcasting, the
+  // feed's re-asks land here without a navigation (decision 8).
+  protected readonly storefront = inject(StorefrontFeed).view;
 
   // Cancelled days are not skipped, unlike the vendor's card: a customer heading out needs
   // to know the next market is off more than they need the one after it.

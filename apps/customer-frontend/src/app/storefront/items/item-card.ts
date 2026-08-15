@@ -23,6 +23,7 @@ import { ItemViewModel } from '../storefront-view-model';
           sizes="(min-width: 1024px) 20rem, (min-width: 36rem) 31.5rem, calc(100vw - 4.5rem)"
           alt=""
           class="mb-3 aspect-16/10 w-full rounded-card object-cover"
+          [class.grayscale]="item().soldOut"
         />
       } @else {
         <!-- Item photos are optional, so a real carte mixes the two. The canvas keeps the
@@ -33,10 +34,15 @@ import { ItemViewModel } from '../storefront-view-model';
       }
       <span class="block w-full">
         <span class="flex justify-between gap-3 w-full">
-          <span class="line-clamp-2 text-lg font-bold text-ink">{{ item().name }}</span>
-          <span class="shrink-0 text-lg font-bold text-ink">{{ item().priceLabel }}</span>
+          <span class="line-clamp-2 text-lg font-bold" [class.text-ink]="!item().soldOut" [class.text-neutral-500]="item().soldOut">{{ item().name }}</span>
+          <span class="shrink-0 text-lg font-bold" [class.text-ink]="!item().soldOut" [class.text-neutral-500]="item().soldOut">{{ item().priceLabel }}</span>
         </span>
       </span>
+      <!-- Availability is the badge's text, never the greying alone (decision 20) — and
+           the card stays tappable: a customer may still want to read what they missed. -->
+      @if (item().soldOut) {
+        <span class="kicker mt-2 inline-block self-start rounded-pill bg-line-strong px-2 py-0.5 normal-case text-neutral-600">Épuisé</span>
+      }
     </button>
   `,
 })

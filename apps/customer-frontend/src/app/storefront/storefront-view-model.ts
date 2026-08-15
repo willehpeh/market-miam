@@ -10,6 +10,9 @@ export type ItemViewModel = {
   priceLabel: string;
   variants?: { name: string; description: string; priceLabel: string }[];
   photo: { src: string; srcset: string } | null;
+  // Only ever set on a market day's items — the carte has no availability to speak of.
+  // A variant dish greys whole (decision 9).
+  soldOut?: boolean;
 };
 
 export type MarketViewModel = {
@@ -116,7 +119,9 @@ function toMarketViewModel(market: UpcomingMarket): MarketViewModel {
     address: [market.street, market.town].filter(Boolean).join(', '),
     cancelled: market.cancelled,
     inProgress: market.inProgress,
-    items: market.items.map(toItemViewModel),
+    // Flagged in place, never re-sorted: shuffling rows under a reader's thumb is worse
+    // than a dead row (decision 7).
+    items: market.items.map(item => ({ ...toItemViewModel(item), soldOut: market.soldOutItemIds.includes(item.itemId) })),
   };
 }
 

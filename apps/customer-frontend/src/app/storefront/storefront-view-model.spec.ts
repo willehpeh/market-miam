@@ -91,6 +91,7 @@ describe('toViewModel', () => {
               variants: [{ name: 'Margherita', description: '', price: 900 }],
             },
           ],
+          soldOutItemIds: ['pizza'],
         },
       ],
     };
@@ -98,7 +99,7 @@ describe('toViewModel', () => {
     const view = toViewModel(storefront) as Extract<StorefrontViewModel, { status: 'published' }>;
 
     expect(view.upcomingMarkets[0].items).toEqual([
-      { itemId: 'boeuf', name: 'Bourguignon', description: '', priceLabel: '13,00 €', photo: null },
+      { itemId: 'boeuf', name: 'Bourguignon', description: '', priceLabel: '13,00 €', photo: null, soldOut: false },
       {
         itemId: 'pizza',
         name: 'Pizza',
@@ -106,7 +107,12 @@ describe('toViewModel', () => {
         priceLabel: 'dès 9,00 €',
         photo: null,
         variants: [{ name: 'Margherita', description: '', priceLabel: '9,00 €' }],
+        // A variant dish greys whole (decision 9): sold-out is per item until a pilot
+        // vendor puts a variant dish on a live menu.
+        soldOut: true,
       },
     ]);
+    // The carte carries no availability — soldOut is a market-day fact only.
+    expect(view.items.every(item => item.soldOut === undefined)).toBe(true);
   });
 });

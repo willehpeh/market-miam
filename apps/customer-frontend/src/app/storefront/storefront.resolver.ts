@@ -6,6 +6,7 @@ import { environment } from '../../environments/environment';
 import { currentOrigin } from '../core/request-url';
 import { CustomerStorefront } from './customer-storefront';
 import { StorefrontMetadata } from './storefront-metadata';
+import { StorefrontFeed } from './storefront-feed';
 import { StorefrontViewModel, toViewModel } from './storefront-view-model';
 
 export const storefrontResolver: ResolveFn<StorefrontViewModel | null> = (route): Observable<StorefrontViewModel | null> => {
@@ -25,7 +26,13 @@ export const storefrontResolver: ResolveFn<StorefrontViewModel | null> = (route)
     : of(null);
   // The card is set here rather than in a page, so every route under this resolve is
   // indexable as itself — and the tags are written during the SSR render pass either way.
-  return storefront.pipe(tap(view => metadata.set(view, origin)));
+  // The feed is seeded here too: the pages render from it, and while the vendor is
+  // broadcasting it re-asks the server on its own (decision 8).
+  const feed = inject(StorefrontFeed);
+  return storefront.pipe(
+    tap(view => metadata.set(view, origin)),
+    tap(view => feed.seed(view, subdomain)),
+  );
 };
 
 function subdomainFrom(host: string, queryParam: string | null): string | null {
