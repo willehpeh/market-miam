@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { form, FormField, required } from '@angular/forms/signals';
+import { applyEach, applyWhen, form, FormField, required, validate } from '@angular/forms/signals';
 import { Card } from '../core/card';
 import { Spinner } from '../core/spinner';
 import { CloudinaryUrlPipe } from '../core/cloudinary-url.pipe';
@@ -195,13 +195,13 @@ const ITEM_PREVIEW_TRANSFORMATION = 'c_fill,w_600,h_400,q_auto,f_webp';
                   inputmode="decimal"
                   class="flex-1"
                   [formField]="fields.price"
-                  [attr.aria-invalid]="fields.price().touched() && priceInvalid()"
-                  [attr.aria-describedby]="fields.price().touched() && priceInvalid() ? 'price-error' : null"
+                  [attr.aria-invalid]="fields.price().touched() && fields.price().invalid()"
+                  [attr.aria-describedby]="fields.price().touched() && fields.price().invalid() ? 'price-error' : null"
                   placeholder="ex. 12,00"
                 />
                 <span class="text-sm text-muted">EUR</span>
               </div>
-              @if (fields.price().touched() && priceInvalid()) {
+              @if (fields.price().touched() && fields.price().invalid()) {
                 <p id="price-error" role="alert" class="mt-1 text-xs text-danger">Indiquez un prix, par exemple 12,00.</p>
               }
             </div>
@@ -209,11 +209,11 @@ const ITEM_PREVIEW_TRANSFORMATION = 'c_fill,w_600,h_400,q_auto,f_webp';
             <div>
               <p class="field-label">Formats</p>
               <div class="mt-2 space-y-4">
-                @for (format of fields.variants().value(); track $index) {
+                @for (format of fields.variants; track $index) {
                   <div class="rounded-card border border-line bg-surface p-4">
                     <div class="mb-4 flex items-center gap-2">
                       <span class="grid size-7 shrink-0 place-items-center rounded-card bg-brand-soft text-sm font-bold text-ink">{{ $index + 1 }}</span>
-                      <span class="min-w-0 flex-1 truncate font-bold text-ink">{{ format.name }}</span>
+                      <span class="min-w-0 flex-1 truncate font-bold text-ink">{{ format.name().value() }}</span>
                       <!-- Deleting a format throws away what the vendor typed into it, so it asks
                            first. The arrows stand down while it does: they make room for the wider
                            button, and reordering a row that is halfway to being deleted is not a
@@ -235,7 +235,7 @@ const ITEM_PREVIEW_TRANSFORMATION = 'c_fill,w_600,h_400,q_auto,f_webp';
                           type="button"
                           class="icon-btn shrink-0"
                           [attr.aria-label]="'Descendre le format ' + ($index + 1)"
-                          [disabled]="$index === fields.variants().value().length - 1"
+                          [disabled]="$index === fields.variants.length - 1"
                           (click)="moveFormatDown($index)"
                         >
                           <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
@@ -253,7 +253,7 @@ const ITEM_PREVIEW_TRANSFORMATION = 'c_fill,w_600,h_400,q_auto,f_webp';
                           type="button"
                           class="icon-btn shrink-0"
                           [attr.aria-label]="'Supprimer le format ' + ($index + 1)"
-                          [disabled]="fields.variants().value().length <= 2"
+                          [disabled]="fields.variants.length <= 2"
                           (click)="confirmingFormat.set($index)"
                         >
                           <i class="fa-solid fa-trash-can" aria-hidden="true"></i>
@@ -262,16 +262,16 @@ const ITEM_PREVIEW_TRANSFORMATION = 'c_fill,w_600,h_400,q_auto,f_webp';
                     </div>
                     <div class="grid grid-cols-[auto_1fr] items-baseline gap-x-4 gap-y-3">
                       <label [attr.for]="'format-name-' + $index" class="field-label">Format</label>
-                      <input [id]="'format-name-' + $index" type="text" [formField]="fields.variants[$index].name" placeholder="ex. Petite" />
+                      <input [id]="'format-name-' + $index" type="text" [formField]="format.name" placeholder="ex. Petite" />
 
                       <label [attr.for]="'format-price-' + $index" class="field-label">Prix</label>
                       <div class="flex items-center gap-2">
-                        <input [id]="'format-price-' + $index" type="text" inputmode="decimal" class="flex-1" [formField]="fields.variants[$index].price" placeholder="ex. 9,50" />
+                        <input [id]="'format-price-' + $index" type="text" inputmode="decimal" class="flex-1" [formField]="format.price" placeholder="ex. 9,50" />
                         <span class="text-sm text-muted">EUR</span>
                       </div>
 
                       <label [attr.for]="'format-detail-' + $index" class="field-label pt-2">Détail<span class="block font-sans font-normal normal-case tracking-normal text-muted">optionnel</span></label>
-                      <textarea [id]="'format-detail-' + $index" rows="2" [formField]="fields.variants[$index].description" placeholder="ex. 250 g · pour une personne"></textarea>
+                      <textarea [id]="'format-detail-' + $index" rows="2" [formField]="format.description" placeholder="ex. 250 g · pour une personne"></textarea>
                     </div>
                   </div>
                 }
@@ -347,25 +347,39 @@ export class AddItem {
       : [emptyFormat(), emptyFormat()],
   });
 
+  // Every rule lives in the schema, so `fields().invalid()` is the whole answer and each
+  // field carries its own error. Both modes' inputs stay in the model across a switch —
+  // whatever was typed before is still there — so each mode's rules are applied only while
+  // that mode is showing, or the hidden half would hold the form invalid.
   protected readonly fields = form(this.model, (path) => {
     required(path.name);
+    applyWhen(
+      path,
+      () => this.mode() === 'single',
+      (single) => {
+        validate(single.price, ({ value }) => (parseEurosToCents(value()) === null ? { kind: 'price' } : undefined));
+      },
+    );
+    applyWhen(
+      path,
+      () => this.mode() === 'variants',
+      (formats) => {
+        applyEach(formats.variants, (format) => {
+          // Trimmed, not `required`: a name of spaces is a blank name on the storefront.
+          validate(format.name, ({ value }) => (value().trim() === '' ? { kind: 'required' } : undefined));
+          validate(format.price, ({ value }) => (parseEurosToCents(value()) === null ? { kind: 'price' } : undefined));
+        });
+        // On the list itself: uniqueness is a property of the set, not of any one row.
+        validate(formats.variants, ({ value }) => {
+          const names = value().map((format) => format.name.trim());
+          return new Set(names).size === names.length ? undefined : { kind: 'duplicateFormat' };
+        });
+      },
+    );
   });
 
   private readonly priceCents = computed(() => parseEurosToCents(this.fields().value().price));
-  protected readonly priceInvalid = computed(() => this.priceCents() === null);
-  private readonly formatsComplete = computed(() =>
-    this.fields().value().variants.every((v) => v.name.trim() !== '' && parseEurosToCents(v.price) !== null),
-  );
-  private readonly formatsUnique = computed(() => {
-    const names = this.fields().value().variants.map((v) => v.name.trim());
-    return new Set(names).size === names.length;
-  });
-  protected readonly cannotSubmit = computed(() => {
-    if (this.uploading() || this.fields().invalid()) {
-      return true;
-    }
-    return this.mode() === 'single' ? this.priceInvalid() : !this.formatsComplete() || !this.formatsUnique();
-  });
+  protected readonly cannotSubmit = computed(() => this.uploading() || this.fields().invalid());
 
   constructor() {
     this.catalogue.beginItem();

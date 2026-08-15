@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { form, FormField, required } from '@angular/forms/signals';
+import { form, FormField, required, validate } from '@angular/forms/signals';
 import { Card } from '../core/card';
 import { MarketScheduleFacade } from './market-schedule.facade';
 
@@ -82,7 +82,7 @@ type DayEntry = { day: string; startTime: string; endTime: string };
                   class="mt-1"
                   [formField]="fields.codePostal"
                   placeholder="ex. 69008"
-                  [attr.aria-invalid]="fields.codePostal().touched() && codePostalInvalid()"
+                  [attr.aria-invalid]="fields.codePostal().touched() && fields.codePostal().invalid()"
                 />
               </div>
               <div class="flex-1">
@@ -97,7 +97,7 @@ type DayEntry = { day: string; startTime: string; endTime: string };
                 />
               </div>
             </div>
-            @if (fields.codePostal().touched() && codePostalInvalid()) {
+            @if (fields.codePostal().touched() && fields.codePostal().invalid()) {
               <p role="alert" class="mt-1 text-xs text-danger">Code postal à 5 chiffres.</p>
             }
           </div>
@@ -200,19 +200,22 @@ export class AddSchedule {
     (path) => {
       required(path.name);
       required(path.town);
+      // Trimmed rather than `pattern`, so a code pasted with stray spaces is judged on
+      // its digits — which is what the vendor meant by it.
+      validate(path.codePostal, ({ value }) =>
+        /^\d{5}$/.test(value().trim()) ? undefined : { kind: 'codePostal' }
+      );
     }
   );
-  private readonly codePostalValid = computed(() => /^\d{5}$/.test(this.fields().value().codePostal.trim()));
-  protected readonly codePostalInvalid = computed(() => !this.codePostalValid());
 
+  // The one rule the form cannot own: `days` is not a form field but a set of custom
+  // toggles and time inputs, so its validity is still combined here.
   private readonly daysValid = computed(() => {
     const days = this.days();
     return days.length > 0 && this.allDaysHaveStartAndEndTimes(days);
   });
 
-  protected readonly cannotSubmit = computed(
-    () => this.fields().invalid() || !this.codePostalValid() || !this.daysValid()
-  );
+  protected readonly cannotSubmit = computed(() => this.fields().invalid() || !this.daysValid());
 
   protected selected(code: string): boolean {
     return this.days().some((day) => day.day === code);
