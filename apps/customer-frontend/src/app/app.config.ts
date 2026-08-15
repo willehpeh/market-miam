@@ -2,11 +2,7 @@ import {
   ApplicationConfig,
   provideBrowserGlobalErrorListeners,
 } from '@angular/core';
-import {
-  provideRouter,
-  withComponentInputBinding,
-  withInMemoryScrolling,
-} from '@angular/router';
+import { provideRouter, withInMemoryScrolling } from '@angular/router';
 import { provideHttpClient, withFetch } from '@angular/common/http';
 import { appRoutes } from './app.routes';
 import {
@@ -24,7 +20,6 @@ export const appConfig: ApplicationConfig = {
     // at the top, and a real back button still returns the customer to their place.
     provideRouter(
       appRoutes,
-      withComponentInputBinding(),
       withInMemoryScrolling({ scrollPositionRestoration: 'enabled' })
     ),
     provideHttpClient(withFetch()),

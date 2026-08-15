@@ -1,7 +1,9 @@
-import { ChangeDetectionStrategy, Component, computed, inject, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, viewChild } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { StorefrontHost } from '../core/storefront-host';
 import { ItemViewModel } from './storefront-view-model';
 import { StorefrontFeed } from './storefront-feed';
+import { StorefrontMetadata } from './storefront-metadata';
 import { ComingSoonPage } from './coming-soon/coming-soon-page';
 import { StorefrontHero } from './layout/storefront-hero';
 import { ItemSheet } from './items/item-sheet';
@@ -111,6 +113,15 @@ export class StorefrontPage {
     return storefront?.status === 'published' ? storefront.upcomingMarkets.slice(1) : [];
   });
   private readonly sheet = viewChild.required(ItemSheet);
+
+  constructor() {
+    // Meta and Title are imperative services with no signal input, so mirroring the feed
+    // into them is what effect() is for. It runs inside the SSR render pass, which is what
+    // puts the finished card in the HTML a crawler reads.
+    const metadata = inject(StorefrontMetadata);
+    const origin = inject(StorefrontHost).origin;
+    effect(() => metadata.set(this.storefront(), origin));
+  }
 
   protected openItem(item: ItemViewModel): void {
     this.sheet().open(item);

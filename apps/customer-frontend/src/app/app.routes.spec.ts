@@ -1,11 +1,14 @@
 import { TestBed } from '@angular/core/testing';
-import { provideRouter, withComponentInputBinding } from '@angular/router';
+import { provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { HttpBackend, HttpEvent, HttpRequest, HttpResponse, provideHttpClient } from '@angular/common/http';
-import { Title } from '@angular/platform-browser';
+import { Meta, Title } from '@angular/platform-browser';
 import { Observable, of } from 'rxjs';
 import { appRoutes } from './app.routes';
+import { StorefrontHost } from './core/storefront-host';
 import { CustomerStorefront } from './storefront/customer-storefront';
+
+const ORIGIN = 'https://acme.marketmiam.fr';
 
 const ACME: CustomerStorefront = {
   status: 'published',
@@ -22,8 +25,8 @@ const ACME: CustomerStorefront = {
   ],
 };
 
-// Answering from the backend rather than from HttpTestingController: a resolver runs
-// inside the navigation, so flushing it by hand means racing the router.
+// Answering from the backend rather than from HttpTestingController: the feed fetches on
+// its own schedule, so flushing it by hand means racing the resource.
 class FakeApi implements HttpBackend {
   readonly fetched: string[] = [];
 
@@ -40,9 +43,12 @@ describe('storefront routes', () => {
   beforeEach(async () => {
     TestBed.configureTestingModule({
       providers: [
-        provideRouter(appRoutes, withComponentInputBinding()),
+        provideRouter(appRoutes),
         provideHttpClient(),
         { provide: HttpBackend, useValue: api },
+        // The vendor is named by the address the browser was pointed at, which a router
+        // harness does not move.
+        { provide: StorefrontHost, useValue: { subdomain: 'acme', origin: ORIGIN } },
       ],
     });
     api.fetched.length = 0;
@@ -51,22 +57,27 @@ describe('storefront routes', () => {
     harness = await RouterTestingHarness.create();
   });
 
-  // The host is localhost under jsdom, so the subdomain comes from the query param —
-  // the same fallback local development uses.
   async function navigateTo(url: string): Promise<HTMLElement> {
     await harness.navigateByUrl(url);
+    // The feed's request is issued and resolved through the resource's effect, so the page
+    // renders its storefront on the tick after the navigation settles.
+    TestBed.tick();
+    harness.detectChanges();
     return harness.routeNativeElement as HTMLElement;
   }
 
+  const metaContent = (selector: string): string | null =>
+    TestBed.inject(Meta).getTag(selector)?.content ?? null;
+
   it('renders the storefront at the root', async () => {
-    const page = await navigateTo('/?subdomain=acme');
+    const page = await navigateTo('/');
 
     expect(page.textContent).toContain('Acme Bakery');
     expect(page.textContent).toContain('Prochain marché');
   });
 
   it('renders the carte at /carte', async () => {
-    const page = await navigateTo('/carte?subdomain=acme');
+    const page = await navigateTo('/carte');
 
     expect(page.textContent).toContain('Notre carte');
     expect(page.textContent).toContain('Bœuf bourguignon');
@@ -74,18 +85,28 @@ describe('storefront routes', () => {
   });
 
   // The carte is the page a search engine is most likely to land on, so it carries the
-  // vendor's card too — the metadata follows the resolve, not the home page.
+  // vendor's card too.
   it('titles the carte with the vendor, like the storefront', async () => {
-    await navigateTo('/carte?subdomain=acme');
+    await navigateTo('/carte');
 
     expect(TestBed.inject(Title).getTitle()).toBe('Acme Bakery');
   });
 
-  // Both pages are the same vendor's storefront: the resolve sits on the parent so moving
-  // between them costs nothing.
+  // Same card, but not the same address: two pages advertising one og:url compete for the
+  // same entry, and a link shared from the carte resolves to the home page.
+  it('gives each page its own canonical address', async () => {
+    await navigateTo('/');
+    expect(metaContent('property="og:url"')).toBe(ORIGIN);
+
+    await navigateTo('/carte');
+    expect(metaContent('property="og:url"')).toBe(`${ORIGIN}/carte`);
+  });
+
+  // Both pages are the same vendor's storefront: the feed sits on the parent route and is
+  // keyed on the subdomain, so moving between them costs nothing.
   it('serves both pages from a single fetch', async () => {
-    await navigateTo('/?subdomain=acme');
-    await navigateTo('/carte?subdomain=acme');
+    await navigateTo('/');
+    await navigateTo('/carte');
 
     expect(api.fetched).toEqual(['/api/public/storefront/acme']);
   });

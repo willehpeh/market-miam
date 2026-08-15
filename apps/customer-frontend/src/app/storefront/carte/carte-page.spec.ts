@@ -1,7 +1,6 @@
+import { signal, WritableSignal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { provideHttpClient } from '@angular/common/http';
-import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { CartePage } from './carte-page';
 import { StorefrontFeed } from '../storefront-feed';
 import { StorefrontViewModel } from '../storefront-view-model';
@@ -35,8 +34,10 @@ function drag(type: string, clientY: number): Event {
   return event;
 }
 
+let view: WritableSignal<StorefrontViewModel | null>;
+
 function render(storefront: StorefrontViewModel | null) {
-  TestBed.inject(StorefrontFeed).view.set(storefront);
+  view.set(storefront);
   const fixture = TestBed.createComponent(CartePage);
   fixture.detectChanges();
   return fixture;
@@ -44,8 +45,9 @@ function render(storefront: StorefrontViewModel | null) {
 
 describe('CartePage', () => {
   beforeEach(() => {
+    view = signal<StorefrontViewModel | null>(null);
     TestBed.configureTestingModule({
-      providers: [provideRouter([]), StorefrontFeed, provideHttpClient(), provideHttpClientTesting()],
+      providers: [provideRouter([]), { provide: StorefrontFeed, useValue: { view } }],
     });
   });
 

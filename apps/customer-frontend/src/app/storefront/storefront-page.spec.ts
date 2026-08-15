@@ -1,7 +1,6 @@
+import { signal, WritableSignal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { provideHttpClient } from '@angular/common/http';
-import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { StorefrontPage } from './storefront-page';
 import { StorefrontFeed } from './storefront-feed';
 import { StorefrontViewModel } from './storefront-view-model';
@@ -39,18 +38,19 @@ const ACME: StorefrontViewModel = {
 };
 
 describe('StorefrontPage', () => {
-  let feed: StorefrontFeed;
+  // The page renders whatever the feed holds; how the feed comes by it is its own spec.
+  let view: WritableSignal<StorefrontViewModel | null>;
 
   beforeEach(() => {
+    view = signal<StorefrontViewModel | null>(null);
     TestBed.configureTestingModule({
-      providers: [provideRouter([]), StorefrontFeed, provideHttpClient(), provideHttpClientTesting()],
+      providers: [provideRouter([]), { provide: StorefrontFeed, useValue: { view } }],
     });
-    feed = TestBed.inject(StorefrontFeed);
   });
 
   it('renders the vendor name, description and phone for a published storefront', () => {
     const fixture = TestBed.createComponent(StorefrontPage);
-    feed.view.set(ACME);
+    view.set(ACME);
     fixture.detectChanges();
 
     const text = fixture.nativeElement.textContent as string;
@@ -62,7 +62,7 @@ describe('StorefrontPage', () => {
   // jsdom lays nothing out, so the class is the only observable trace of the behaviour.
   it('keeps the paragraph breaks a vendor typed into their description', () => {
     const fixture = TestBed.createComponent(StorefrontPage);
-    feed.view.set({
+    view.set({
       ...ACME,
       description: 'Pains au levain, farine bio.\n\nCuisson au feu de bois.',
     });
@@ -78,7 +78,7 @@ describe('StorefrontPage', () => {
   // thumb, never colour alone, and the row stays tappable.
   it('greys a sold-out dish in place, saying so in text', () => {
     const fixture = TestBed.createComponent(StorefrontPage);
-    feed.view.set({
+    view.set({
       ...ACME,
       upcomingMarkets: [{
         ...ACME.upcomingMarkets[0],
@@ -99,7 +99,7 @@ describe('StorefrontPage', () => {
   // labels around the rows the poll greys.
   it('keeps the featured menu a polite live region', () => {
     const fixture = TestBed.createComponent(StorefrontPage);
-    feed.view.set({
+    view.set({
       ...ACME,
       upcomingMarkets: [{ ...ACME.upcomingMarkets[0], items: [ACME.items[0]] }],
     });
@@ -111,7 +111,7 @@ describe('StorefrontPage', () => {
 
   it('credits Market Miam in the footer with a link to the homepage', () => {
     const fixture = TestBed.createComponent(StorefrontPage);
-    feed.view.set(ACME);
+    view.set(ACME);
     fixture.detectChanges();
 
     const footer = fixture.nativeElement.querySelector('footer') as HTMLElement;
@@ -124,7 +124,7 @@ describe('StorefrontPage', () => {
   // make". Listing both left the page repeating every item it had already shown.
   it('points to the carte instead of listing it', () => {
     const fixture = TestBed.createComponent(StorefrontPage);
-    feed.view.set(ACME);
+    view.set(ACME);
     fixture.detectChanges();
 
     const link = fixture.nativeElement.querySelector('a[href="/carte"]') as HTMLAnchorElement;
@@ -135,7 +135,7 @@ describe('StorefrontPage', () => {
 
   it('renders the upcoming markets with a date badge and details, flagging cancelled ones', () => {
     const fixture = TestBed.createComponent(StorefrontPage);
-    feed.view.set(ACME);
+    view.set(ACME);
     fixture.detectChanges();
 
     const text = fixture.nativeElement.textContent as string;
@@ -154,7 +154,7 @@ describe('StorefrontPage', () => {
   // actually buy on the next market day, and the carte is everything the vendor ever makes.
   it('leads with the next market and its menu, above the carte', () => {
     const fixture = TestBed.createComponent(StorefrontPage);
-    feed.view.set({
+    view.set({
       ...ACME,
       upcomingMarkets: [
         { ...ACME.upcomingMarkets[0], items: [ACME.items[0]] },
@@ -170,7 +170,7 @@ describe('StorefrontPage', () => {
 
   it('lists each market day\'s menu inside its own card', () => {
     const fixture = TestBed.createComponent(StorefrontPage);
-    feed.view.set({
+    view.set({
       ...ACME,
       upcomingMarkets: [ACME.upcomingMarkets[0], { ...ACME.upcomingMarkets[1], items: [ACME.items[1]] }],
     });
@@ -186,7 +186,7 @@ describe('StorefrontPage', () => {
   // identical down to the pixel on a day with no menu planned. tmp/too-much.png.
   it('lists only the markets after the one it leads with', () => {
     const fixture = TestBed.createComponent(StorefrontPage);
-    feed.view.set(ACME);
+    view.set(ACME);
     fixture.detectChanges();
 
     const text = fixture.nativeElement.textContent as string;
@@ -196,7 +196,7 @@ describe('StorefrontPage', () => {
 
   it('says nothing about later markets when the vendor has only the next one', () => {
     const fixture = TestBed.createComponent(StorefrontPage);
-    feed.view.set({ ...ACME, upcomingMarkets: [ACME.upcomingMarkets[0]] });
+    view.set({ ...ACME, upcomingMarkets: [ACME.upcomingMarkets[0]] });
     fixture.detectChanges();
 
     const text = fixture.nativeElement.textContent as string;
@@ -209,7 +209,7 @@ describe('StorefrontPage', () => {
   // would bury the page.
   it('opens the item sheet from an item on the next market\'s menu', () => {
     const fixture = TestBed.createComponent(StorefrontPage);
-    feed.view.set({
+    view.set({
       ...ACME,
       upcomingMarkets: [{ ...ACME.upcomingMarkets[0], items: [ACME.items[0]] }],
     });
@@ -226,7 +226,7 @@ describe('StorefrontPage', () => {
 
   it('keeps the upcoming list to names and prices, without item cards', () => {
     const fixture = TestBed.createComponent(StorefrontPage);
-    feed.view.set({
+    view.set({
       ...ACME,
       upcomingMarkets: [ACME.upcomingMarkets[0], { ...ACME.upcomingMarkets[1], items: [ACME.items[0]] }],
     });
@@ -239,7 +239,7 @@ describe('StorefrontPage', () => {
 
   it('says nothing about a menu on a day with none planned', () => {
     const fixture = TestBed.createComponent(StorefrontPage);
-    feed.view.set(ACME);
+    view.set(ACME);
     fixture.detectChanges();
 
     expect(fixture.nativeElement.querySelector('[data-menu]')).toBeNull();
@@ -247,7 +247,7 @@ describe('StorefrontPage', () => {
 
   it('badges a market that is under way', () => {
     const fixture = TestBed.createComponent(StorefrontPage);
-    feed.view.set({
+    view.set({
       ...ACME,
       upcomingMarkets: [{ ...ACME.upcomingMarkets[0], inProgress: true }],
     });
@@ -258,7 +258,7 @@ describe('StorefrontPage', () => {
 
   it('shows a coming-soon message with the title for an unpublished storefront', () => {
     const fixture = TestBed.createComponent(StorefrontPage);
-    feed.view.set({ status: 'coming-soon', name: 'Chez Demo' } satisfies StorefrontViewModel);
+    view.set({ status: 'coming-soon', name: 'Chez Demo' } satisfies StorefrontViewModel);
     fixture.detectChanges();
 
     const text = fixture.nativeElement.textContent as string;
@@ -268,7 +268,7 @@ describe('StorefrontPage', () => {
 
   it('shows a not-found message when there is no storefront', () => {
     const fixture = TestBed.createComponent(StorefrontPage);
-    feed.view.set(null);
+    view.set(null);
     fixture.detectChanges();
 
     expect(fixture.nativeElement.textContent as string).toContain('introuvable');

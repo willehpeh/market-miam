@@ -1,7 +1,9 @@
-import { ChangeDetectionStrategy, Component, inject, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, inject, viewChild } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { StorefrontHost } from '../../core/storefront-host';
 import { ItemViewModel } from '../storefront-view-model';
 import { StorefrontFeed } from '../storefront-feed';
+import { StorefrontMetadata } from '../storefront-metadata';
 import { ComingSoonPage } from '../coming-soon/coming-soon-page';
 import { ItemCard } from '../items/item-card';
 import { ItemSheet } from '../items/item-sheet';
@@ -62,6 +64,15 @@ export class CartePage {
   protected readonly storefront = inject(StorefrontFeed).view;
 
   private readonly sheet = viewChild.required(ItemSheet);
+
+  constructor() {
+    // The carte is the page a search engine is most likely to land on, so it carries the
+    // vendor's card too — but at its own address, or a shared link resolves to the home
+    // page and the two compete for the same canonical URL.
+    const metadata = inject(StorefrontMetadata);
+    const origin = inject(StorefrontHost).origin;
+    effect(() => metadata.set(this.storefront(), `${origin}/carte`));
+  }
 
   protected openItem(item: ItemViewModel): void {
     this.sheet().open(item);
