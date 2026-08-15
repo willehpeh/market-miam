@@ -1,4 +1,6 @@
-import { afterNextRender, ChangeDetectionStrategy, Component, computed, DestroyRef, ElementRef, inject, Injector, signal } from '@angular/core';
+import { afterRenderEffect, ChangeDetectionStrategy, Component, computed, ElementRef, inject, signal, viewChildren } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { interval } from 'rxjs';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Card } from '../core/card';
 import { Spinner } from '../core/spinner';
@@ -44,6 +46,7 @@ type Row = { itemId: string; name: string };
           @for (item of active(); track item.itemId) {
             <li>
               <button
+                #row
                 type="button"
                 class="w-full rounded-card border border-line bg-surface p-3 text-left font-bold text-ink"
                 [attr.data-item]="item.itemId"
@@ -62,6 +65,7 @@ type Row = { itemId: string; name: string };
               @for (item of epuises(); track item.itemId) {
                 <li>
                   <button
+                    #row
                     type="button"
                     class="w-full rounded-card border border-line bg-surface-sunk p-3 text-left font-bold text-muted"
                     [attr.data-item]="item.itemId"
@@ -91,8 +95,6 @@ export class LiveScreen {
   private readonly marketDays = inject(MarketDayFacade);
   private readonly catalogue = inject(CatalogueFacade);
   private readonly route = inject(ActivatedRoute);
-  private readonly host: HTMLElement = inject(ElementRef).nativeElement;
-  private readonly injector = inject(Injector);
 
   private readonly marketId = this.route.snapshot.paramMap.get('marketId') ?? '';
   private readonly date = this.route.snapshot.paramMap.get('date') ?? '';
@@ -131,18 +133,37 @@ export class LiveScreen {
 
   readonly note = signal('');
 
+  // Both row lists in one query, in DOM order — how a moved row is found again after the
+  // render that moved it.
+  private readonly rows = viewChildren<ElementRef<HTMLButtonElement>>('row');
+  private readonly pendingFocus = signal<string | null>(null);
+
   constructor() {
     this.marketDays.load();
     this.catalogue.load();
     // Decision 8's mechanism gated on waiting (decision 27): each tick asks the gate, so
     // the re-asks stop the moment the server says live — and the gate, not the interval,
     // is the part under test (decision 32b).
-    const poll = setInterval(() => {
-      if (awaitingStart(this.occurrence())) {
-        this.marketDays.refresh();
-      }
-    }, WAITING_POLL_MS);
-    inject(DestroyRef).onDestroy(() => clearInterval(poll));
+    interval(WAITING_POLL_MS)
+      .pipe(takeUntilDestroyed())
+      .subscribe(() => {
+        if (awaitingStart(this.occurrence())) {
+          this.marketDays.refresh();
+        }
+      });
+    // Decision 20: the tapped row's element is destroyed when it changes group, which
+    // strands keyboard and switch-control focus — so focus follows the row once the
+    // render that moved it has run. Focus is a DOM write, hence the write phase.
+    afterRenderEffect({
+      write: () => {
+        const itemId = this.pendingFocus();
+        if (!itemId) {
+          return;
+        }
+        this.rows().find(row => row.nativeElement.dataset['item'] === itemId)?.nativeElement.focus();
+        this.pendingFocus.set(null);
+      },
+    });
   }
 
   markSoldOut(item: Row): void {
@@ -155,14 +176,8 @@ export class LiveScreen {
     this.moved(`${item.name} disponible`, item.itemId);
   }
 
-  // Decision 20: the tapped row's element is destroyed when it changes group, which
-  // strands keyboard and switch-control focus — so focus follows the row, and the move
-  // is announced through the live region above.
   private moved(note: string, itemId: string): void {
     this.note.set(note);
-    afterNextRender(
-      () => this.host.querySelector<HTMLButtonElement>(`button[data-item="${itemId}"]`)?.focus(),
-      { injector: this.injector },
-    );
+    this.pendingFocus.set(itemId);
   }
 }

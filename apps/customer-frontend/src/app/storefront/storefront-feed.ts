@@ -1,7 +1,8 @@
-import { DestroyRef, DOCUMENT, inject, Injectable, PLATFORM_ID, signal } from '@angular/core';
+import { DOCUMENT, inject, Injectable, PLATFORM_ID, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { isPlatformBrowser } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
-import { catchError, EMPTY, map } from 'rxjs';
+import { catchError, EMPTY, fromEvent, interval, map, merge } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { CustomerStorefront } from './customer-storefront';
 import { StorefrontViewModel, toViewModel } from './storefront-view-model';
@@ -26,17 +27,15 @@ export class StorefrontFeed {
     if (!isPlatformBrowser(inject(PLATFORM_ID))) {
       return;
     }
-    const tick = () => {
-      if (broadcasting(this.view()) && this.document.visibilityState === 'visible') {
-        this.refresh();
-      }
-    };
-    const poll = setInterval(tick, LIVE_POLL_MS);
-    this.document.addEventListener('visibilitychange', tick);
-    inject(DestroyRef).onDestroy(() => {
-      clearInterval(poll);
-      this.document.removeEventListener('visibilitychange', tick);
-    });
+    // Two triggers, one gated stream: the minute cadence and the tab coming back
+    // (decision 8) — torn down with the route scope that provides the feed.
+    merge(interval(LIVE_POLL_MS), fromEvent(this.document, 'visibilitychange'))
+      .pipe(takeUntilDestroyed())
+      .subscribe(() => {
+        if (broadcasting(this.view()) && this.document.visibilityState === 'visible') {
+          this.refresh();
+        }
+      });
   }
 
   seed(view: StorefrontViewModel | null, subdomain: string | null): void {
