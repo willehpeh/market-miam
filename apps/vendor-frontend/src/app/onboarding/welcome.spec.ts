@@ -12,7 +12,12 @@ describe('Welcome', () => {
     });
     const router = TestBed.inject(Router);
 
-    fireEvent.click(screen.getByRole('button', { name: /créer ma vitrine/i }));
+    const start = screen.getByRole('link', { name: /créer ma vitrine/i });
+    // A link, so it carries an address: middle-click, open-in-new-tab and "copy link"
+    // all work, and assistive tech announces where it goes rather than "button".
+    expect(start).toHaveAttribute('href', '/dashboard');
+
+    fireEvent.click(start);
     await view.fixture.whenStable();
 
     expect(router.url).toBe('/dashboard');

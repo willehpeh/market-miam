@@ -155,7 +155,7 @@ describe('Onboarding launch', () => {
     await view.fixture.whenStable();
     expect(router.url).toBe('/onboarding');
 
-    fireEvent.click(screen.getByRole('button', { name: /créer ma vitrine/i }));
+    fireEvent.click(screen.getByRole('link', { name: /créer ma vitrine/i }));
     await view.fixture.whenStable();
     expect(router.url).toBe('/dashboard');
     httpCtrl.expectOne('/api/catalogue').flush({ items: [] });

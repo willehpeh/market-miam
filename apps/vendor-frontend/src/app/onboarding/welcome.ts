@@ -27,7 +27,8 @@ import { Card } from '../core/card';
         }
       </ul>
 
-      <button type="button" class="mt-6 flex w-full max-w-xs mx-auto" routerLink="/dashboard">Créer ma vitrine →</button>
+      <!-- An anchor, not a button: this navigates, so it should carry an address. -->
+      <a routerLink="/dashboard" class="btn-link mt-6 flex w-full max-w-xs mx-auto">Créer ma vitrine →</a>
     </mm-card>
   `,
 })
