@@ -30,7 +30,7 @@ describe('Landing', () => {
 
   it('should not display the login button while the auth status is pending', async () => {
     const { view, auth } = await renderLanding();
-    auth.status.set('pending');
+    auth.setStatus('pending');
     view.detectChanges();
 
     expect(screen.queryByRole('button', LOGIN)).not.toBeInTheDocument();
@@ -38,7 +38,7 @@ describe('Landing', () => {
 
   it('should not display the login button if the user is authenticated', async () => {
     const { view, auth } = await renderLanding();
-    auth.status.set('authenticated');
+    auth.setStatus('authenticated');
     view.detectChanges();
 
     expect(screen.queryByRole('button', LOGIN)).not.toBeInTheDocument();
@@ -54,7 +54,7 @@ describe('Landing', () => {
 
   it('shows a preparing state once authenticated while the storefront is readied', async () => {
     const { view, auth } = await renderLanding();
-    auth.status.set('authenticated');
+    auth.setStatus('authenticated');
     view.detectChanges();
 
     expect(screen.getByText('Nous préparons votre stand…')).toBeVisible();
@@ -62,7 +62,7 @@ describe('Landing', () => {
 
   it('shows the error with its code when preparation fails', async () => {
     const { view, auth, onboarding } = await renderLanding();
-    auth.status.set('authenticated');
+    auth.setStatus('authenticated');
     onboarding.errorCode.set(503);
     view.detectChanges();
 
@@ -72,7 +72,7 @@ describe('Landing', () => {
 
   it('retries preparation when the vendor clicks Réessayer', async () => {
     const { view, auth, onboarding } = await renderLanding();
-    auth.status.set('authenticated');
+    auth.setStatus('authenticated');
     onboarding.errorCode.set(500);
     view.detectChanges();
 

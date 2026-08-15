@@ -8,6 +8,8 @@ export class StoreAuthFacade implements AuthFacade {
   private readonly store = inject(Store);
 
   readonly status = this.store.selectSignal(selectAuthStatus);
+  // Straight off the store: no effect, no conversion, nothing to clean up.
+  readonly status$ = this.store.select(selectAuthStatus);
 
   login(): void {
     this.store.dispatch(Login());

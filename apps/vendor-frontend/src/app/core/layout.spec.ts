@@ -41,7 +41,7 @@ describe('Layout', () => {
 
   it('should display the logout button if the user is authenticated', async () => {
     const { view, auth } = await renderLayout();
-    auth.status.set('authenticated');
+    auth.setStatus('authenticated');
     view.detectChanges();
 
     expect(screen.getByRole('button', LOGOUT)).toBeVisible();
@@ -49,7 +49,7 @@ describe('Layout', () => {
 
   it('should not display the logout button while the auth status is pending', async () => {
     const { view, auth } = await renderLayout();
-    auth.status.set('pending');
+    auth.setStatus('pending');
     view.detectChanges();
 
     expect(screen.queryByRole('button', LOGOUT)).not.toBeInTheDocument();
@@ -57,7 +57,7 @@ describe('Layout', () => {
 
   it('should logout when clicked', async () => {
     const { view, auth } = await renderLayout();
-    auth.status.set('authenticated');
+    auth.setStatus('authenticated');
     view.detectChanges();
 
     fireEvent.click(screen.getByRole('button', LOGOUT));

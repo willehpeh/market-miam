@@ -36,7 +36,7 @@ describe('CataloguePage', () => {
         { provide: AuthFacade, useClass: FakeAuthFacade },
       ],
     });
-    (TestBed.inject(AuthFacade) as FakeAuthFacade).status.set('authenticated');
+    (TestBed.inject(AuthFacade) as FakeAuthFacade).setStatus('authenticated');
     const harness = await RouterTestingHarness.create();
 
     await harness.navigateByUrl('/dashboard/catalogue/order');

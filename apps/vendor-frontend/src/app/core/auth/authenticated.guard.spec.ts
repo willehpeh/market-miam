@@ -14,6 +14,8 @@ import { MarketScheduleFacade } from '../../markets/market-schedule.facade';
 import { FakeMarketScheduleFacade } from '../../markets/fake.market-schedule.facade';
 import { MarketDayFacade } from '../../market-days/market-day.facade';
 import { FakeMarketDayFacade } from '../../market-days/fake.market-day.facade';
+import { OnboardingFacade } from '../../onboarding/onboarding.facade';
+import { FakeOnboardingFacade } from '../../onboarding/fake.onboarding.facade';
 import { Share } from '../share';
 import { FakeShare } from '../fake.share';
 
@@ -33,6 +35,7 @@ describe('authenticated guard', () => {
         { provide: CatalogueFacade, useClass: FakeCatalogueFacade },
         { provide: MarketScheduleFacade, useClass: FakeMarketScheduleFacade },
         { provide: MarketDayFacade, useClass: FakeMarketDayFacade },
+        { provide: OnboardingFacade, useClass: FakeOnboardingFacade },
         { provide: Share, useClass: FakeShare },
       ],
     });
@@ -41,11 +44,28 @@ describe('authenticated guard', () => {
   });
 
   it('does not bounce while pending, admitting once authenticated resolves', async () => {
-    fake.status.set('pending');
+    fake.setStatus('pending');
     const nav = harness.navigateByUrl('/dashboard');
-    fake.status.set('authenticated');
+    fake.setStatus('authenticated');
     await nav;
 
     expect(TestBed.inject(Router).url).toBe('/dashboard');
+  });
+
+  it('sends an anonymous visitor to the landing page', async () => {
+    fake.setStatus('anonymous');
+
+    await harness.navigateByUrl('/dashboard');
+
+    expect(TestBed.inject(Router).url).toBe('/');
+  });
+
+  it('waits for a pending session to resolve anonymous before bouncing', async () => {
+    fake.setStatus('pending');
+    const nav = harness.navigateByUrl('/dashboard');
+    fake.setStatus('anonymous');
+    await nav;
+
+    expect(TestBed.inject(Router).url).toBe('/');
   });
 });

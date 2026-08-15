@@ -5,10 +5,8 @@ import { CataloguePage } from './catalogue/catalogue-page';
 import { CatalogueList } from './catalogue/catalogue-list';
 import { AddItem } from './catalogue/add-item';
 import { ReorderItems } from './catalogue/reorder-items';
-import { editableItem } from './catalogue/editable-item.guard';
 import { MarketsList } from './markets/markets-list';
 import { AddSchedule } from './markets/add-schedule';
-import { editableSchedule } from './markets/editable-schedule.guard';
 import { MenuEditor } from './market-days/menu-editor';
 import { LiveScreen } from './market-days/live-screen';
 import { Welcome } from './onboarding/welcome';
@@ -31,7 +29,7 @@ export const appRoutes: Route[] = [
         path: 'catalogue',
         children: [
           { path: 'new', component: AddItem },
-          { path: ':itemId/edit', component: AddItem, canActivate: [editableItem] },
+          { path: ':itemId/edit', component: AddItem },
           {
             path: '',
             component: CataloguePage,
@@ -42,19 +40,20 @@ export const appRoutes: Route[] = [
           },
         ],
       },
-      // No guard, unlike its siblings: the editor reads the day reactively and shows a
-      // spinner, the day, or "n'est plus programmé". Save exists only in the middle branch,
-      // so a cold refresh cannot render empty and wipe the menu.
+      // Every screen below reads its own record reactively and shows a spinner, the
+      // record, or "n'est plus …" — save exists only in the middle branch, so a cold
+      // refresh cannot render empty and wipe anything. That is why none of them is
+      // guarded: there is nothing left for a guard to protect.
       { path: 'menus/:marketId/:date', component: MenuEditor },
-      // Same no-guard shape: the live screen declines any day but today itself, exactly
-      // as the domain refuses its commands.
+      // The live screen declines any day but today itself, exactly as the domain
+      // refuses its commands.
       { path: 'live/:marketId/:date', component: LiveScreen },
       {
         path: 'markets',
         children: [
           { path: '', component: MarketsList },
           { path: 'new', component: AddSchedule },
-          { path: ':scheduleId/edit', component: AddSchedule, canActivate: [editableSchedule] },
+          { path: ':scheduleId/edit', component: AddSchedule },
         ],
       },
     ],
