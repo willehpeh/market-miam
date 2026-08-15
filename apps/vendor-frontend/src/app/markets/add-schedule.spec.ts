@@ -190,6 +190,84 @@ describe('AddSchedule', () => {
       expect(screen.getByLabelText(/fin mardi/i)).toHaveValue('14:30');
     });
 
+    // The cold direct-nav the route guard used to cover: the screen waits for the market
+    // it names rather than rendering an empty form a save would write back over it.
+    async function renderCold() {
+      const markets = new FakeMarketScheduleFacade();
+      markets.loading.set(true);
+      const view = await render(AddSchedule, {
+        providers: [
+          provideRouter([]),
+          { provide: MarketScheduleFacade, useValue: markets },
+          { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ scheduleId: 'schedule-1' }) } } },
+        ],
+      });
+      const deliver = (schedules: MarketScheduleView[]) => {
+        markets.schedules.set(schedules);
+        markets.loading.set(false);
+        view.detectChanges();
+      };
+      return { view, markets, deliver };
+    }
+
+    it('asks for the schedules itself, now that no guard warms them', async () => {
+      const { markets } = await renderCold();
+
+      expect(markets.loaded).toBe(true);
+    });
+
+    it('waits rather than offering an empty form', async () => {
+      await renderCold();
+
+      expect(screen.getByRole('status', { name: /chargement/i })).toBeInTheDocument();
+      expect(screen.queryByLabelText(/nom du marché/i)).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /enregistrer/i })).not.toBeInTheDocument();
+    });
+
+    it('prefills once the market arrives, days and hours included', async () => {
+      const { deliver } = await renderCold();
+
+      deliver([existing]);
+
+      expect(screen.getByLabelText(/nom du marché/i)).toHaveValue('Marché de Belleville');
+      expect(screen.getByRole('button', { name: /^mardi$/i })).toHaveAttribute('aria-pressed', 'true');
+      expect(screen.getByLabelText(/début mardi/i)).toHaveValue('07:00');
+    });
+
+    it('amends the market that arrives rather than registering a second one', async () => {
+      const { view, deliver, markets } = await renderCold();
+      deliver([existing]);
+
+      fireEvent.input(screen.getByLabelText(/nom du marché/i), { target: { value: 'Marché Renommé' } });
+      view.detectChanges();
+      fireEvent.click(screen.getByRole('button', { name: /enregistrer/i }));
+
+      expect(markets.amended?.scheduleId).toBe('schedule-1');
+      expect(markets.registered).toBeUndefined();
+    });
+
+    it('keeps what the vendor typed when the store updates underneath', async () => {
+      const { view, deliver, markets } = await renderCold();
+      deliver([existing]);
+      fireEvent.input(screen.getByLabelText(/nom du marché/i), { target: { value: 'Marché Renommé' } });
+      view.detectChanges();
+
+      markets.schedules.set([{ ...existing, startDate: '2026-08-01' }]);
+      view.detectChanges();
+
+      expect(screen.getByLabelText(/nom du marché/i)).toHaveValue('Marché Renommé');
+    });
+
+    it('says so when the market is no longer in the calendar, offering no save', async () => {
+      const { deliver } = await renderCold();
+
+      deliver([]);
+
+      expect(screen.getByText(/n'est plus dans votre calendrier/i)).toBeVisible();
+      expect(screen.getByRole('link', { name: /marchés/i })).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /enregistrer/i })).not.toBeInTheDocument();
+    });
+
     it('amends via the facade with the schedule id and edited values', async () => {
       const { view, markets } = await renderEdit();
       fireEvent.input(screen.getByLabelText(/nom du marché/i), { target: { value: 'Marché Renommé' } });

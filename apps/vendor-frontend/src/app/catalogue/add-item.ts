@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, linkedSignal, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { applyEach, applyWhen, form, FormField, required, validate } from '@angular/forms/signals';
 import { Card } from '../core/card';
@@ -6,9 +6,15 @@ import { Spinner } from '../core/spinner';
 import { CloudinaryUrlPipe } from '../core/cloudinary-url.pipe';
 import { DismissOnOutsidePress } from '../core/dismiss-on-outside-press';
 import { CatalogueFacade } from './catalogue.facade';
+import { CatalogueItemView } from './catalogue';
 import { centsToEuros, parseEurosToCents } from './money';
 
 const ITEM_PREVIEW_TRANSFORMATION = 'c_fill,w_600,h_400,q_auto,f_webp';
+
+type FormatModel = { name: string; price: string; description: string };
+// Named because the model signal below is a linkedSignal whose computation returns its
+// own previous value — inference has nothing to bite on without it.
+type ItemModel = { name: string; price: string; description: string; variants: FormatModel[] };
 
 @Component({
   selector: 'mm-add-item',
@@ -110,6 +116,18 @@ const ITEM_PREVIEW_TRANSFORMATION = 'c_fill,w_600,h_400,q_auto,f_webp';
   `,
   template: `
     <mm-card>
+      @if (loading()) {
+        <div class="mx-auto grid h-32 place-items-center">
+          <mm-spinner label="Chargement du plat…" />
+        </div>
+      } @else if (missing()) {
+        <!-- Save only exists inside the branch that found the dish, so a cold refresh
+             cannot render an empty form and write it back over the real one. -->
+        <p class="text-sm text-ink-soft">Ce plat n'est plus à votre carte.</p>
+        <a routerLink="/dashboard/catalogue" class="mt-4 inline-block font-bold text-brand no-underline">
+          Retour au catalogue
+        </a>
+      } @else {
       <form (submit)="submit($event)">
         <div class="flex items-center justify-between">
           <h1 class="text-xl leading-tight">{{ isEditing ? 'Modifier le plat' : 'Nouveau plat' }}</h1>
@@ -309,6 +327,7 @@ const ITEM_PREVIEW_TRANSFORMATION = 'c_fill,w_600,h_400,q_auto,f_webp';
           }
         }
       </form>
+      }
     </mm-card>
   `,
 })
@@ -316,21 +335,45 @@ export class AddItem {
   private readonly catalogue = inject(CatalogueFacade);
   private readonly route = inject(ActivatedRoute);
 
-  private readonly editing = this.catalogue
-    .items()
-    .find((item) => item.itemId === this.route.snapshot.paramMap.get('itemId'));
-  protected readonly isEditing = this.editing !== undefined;
-  private readonly itemId = this.editing?.itemId ?? crypto.randomUUID();
-  private readonly existingImage = this.editing?.imageReference ?? '';
+  // The route decides which screen this is, not the store: a link naming a dish is an
+  // edit even before the dish has arrived. Deciding it from store contents is what let a
+  // cold refresh mint a new id, pick create-mode, and save a second copy of the dish.
+  private readonly routeItemId = this.route.snapshot.paramMap.get('itemId');
+  protected readonly isEditing = this.routeItemId !== null;
+  private readonly newItemId = crypto.randomUUID();
+
+  private readonly editing = computed(() =>
+    this.routeItemId === null
+      ? undefined
+      : this.catalogue.items().find((item) => item.itemId === this.routeItemId),
+  );
+  // A new dish has nothing to wait for; an edit link waits for the dish it names, and
+  // says so if the catalogue settles without it.
+  protected readonly loading = computed(() => this.isEditing && this.catalogue.loading());
+  protected readonly missing = computed(() => this.isEditing && !this.loading() && this.editing() === undefined);
+  protected readonly itemId = computed(() => this.editing()?.itemId ?? this.newItemId);
 
   protected readonly previewTransformation = ITEM_PREVIEW_TRANSFORMATION;
   protected readonly photoReference = this.catalogue.newPhotoReference;
-  protected readonly previewRef = computed(() => this.photoReference() || this.existingImage);
+  protected readonly previewRef = computed(() => this.photoReference() || this.editing()?.imageReference || '');
   protected readonly uploading = this.catalogue.photoUploading;
   protected readonly uploadError = this.catalogue.photoError;
   protected readonly tooLarge = this.catalogue.photoTooLarge;
 
-  protected readonly mode = signal<'single' | 'variants'>(this.editing?.variants ? 'variants' : 'single');
+  // Re-seeds on the dish's identity, not on its contents. A linkedSignal recomputes
+  // whenever its source's dependencies change — it does not compare source values — so
+  // the identity check is made here against `previous.source`. Without it, a photo
+  // finishing its upload patches the dish in the store and retypes the form under the
+  // vendor.
+  protected readonly mode = linkedSignal<CatalogueItemView | undefined, 'single' | 'variants'>({
+    source: () => this.editing(),
+    computation: (item, previous) =>
+      previous && previous.source?.itemId === item?.itemId
+        ? previous.value
+        : item?.variants
+          ? 'variants'
+          : 'single',
+  });
   // Annuler puts this back rather than leaving the screen, so backing out of a deletion
   // costs nothing the vendor typed.
   protected readonly confirmingRetire = signal(false);
@@ -338,13 +381,11 @@ export class AddItem {
   // the index is only meaningful against the list it was taken from.
   protected readonly confirmingFormat = signal<number | null>(null);
 
-  private readonly model = signal({
-    name: this.editing?.name ?? '',
-    price: this.editing && this.editing.price !== undefined ? centsToEuros(this.editing.price) : '',
-    description: this.editing?.description ?? '',
-    variants: this.editing?.variants
-      ? this.editing.variants.map((v) => ({ name: v.name, price: centsToEuros(v.price), description: v.description }))
-      : [emptyFormat(), emptyFormat()],
+  // Same identity guard as `mode`, for the same reason.
+  private readonly model = linkedSignal<CatalogueItemView | undefined, ItemModel>({
+    source: () => this.editing(),
+    computation: (item, previous) =>
+      previous && previous.source?.itemId === item?.itemId ? previous.value : modelOf(item),
   });
 
   // Every rule lives in the schema, so `fields().invalid()` is the whole answer and each
@@ -383,6 +424,8 @@ export class AddItem {
 
   constructor() {
     this.catalogue.beginItem();
+    // Warm-only in the facade. No guard does this for the screen any more.
+    this.catalogue.load();
   }
 
   protected addFormat(): void {
@@ -421,11 +464,11 @@ export class AddItem {
     if (!file) {
       return;
     }
-    this.catalogue.uploadItemPhoto(this.itemId, file);
+    this.catalogue.uploadItemPhoto(this.itemId(), file);
   }
 
   protected retire(): void {
-    this.catalogue.retireItem(this.itemId);
+    this.catalogue.retireItem(this.itemId());
   }
 
   protected submit(event: Event): void {
@@ -437,9 +480,9 @@ export class AddItem {
         return;
       }
       if (this.isEditing) {
-        this.catalogue.reviseItem({ itemId: this.itemId, name, description, variants });
+        this.catalogue.reviseItem({ itemId: this.itemId(), name, description, variants });
       } else {
-        this.catalogue.addItem({ itemId: this.itemId, name, description, variants, imageReference: this.photoReference() || undefined });
+        this.catalogue.addItem({ itemId: this.itemId(), name, description, variants, imageReference: this.photoReference() || undefined });
       }
       return;
     }
@@ -448,10 +491,10 @@ export class AddItem {
       return;
     }
     if (this.isEditing) {
-      this.catalogue.reviseItem({ itemId: this.itemId, name, description, price: cents });
+      this.catalogue.reviseItem({ itemId: this.itemId(), name, description, price: cents });
     } else {
       this.catalogue.addItem({
-        itemId: this.itemId,
+        itemId: this.itemId(),
         name,
         description,
         price: cents,
@@ -473,6 +516,17 @@ export class AddItem {
   }
 }
 
-function emptyFormat(): { name: string; price: string; description: string } {
+function emptyFormat(): FormatModel {
   return { name: '', price: '', description: '' };
+}
+
+function modelOf(item: CatalogueItemView | undefined): ItemModel {
+  return {
+    name: item?.name ?? '',
+    price: item && item.price !== undefined ? centsToEuros(item.price) : '',
+    description: item?.description ?? '',
+    variants: item?.variants
+      ? item.variants.map((v) => ({ name: v.name, price: centsToEuros(v.price), description: v.description }))
+      : [emptyFormat(), emptyFormat()],
+  };
 }

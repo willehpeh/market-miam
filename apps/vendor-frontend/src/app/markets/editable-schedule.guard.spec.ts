@@ -56,13 +56,16 @@ describe('editableSchedule guard', () => {
     expect(TestBed.inject(Router).url).toBe('/dashboard/markets');
   });
 
-  it('does not reload a store that is already warm', async () => {
+  // "does not reload a warm store" used to live here. The screen now asks for the
+  // schedules itself, so this route can no longer observe who asked — and warm-only is
+  // the facade's promise anyway, kept by market-schedule.spec.ts's "does not ask again
+  // while fresh". What is left of this guard goes with the next change.
+  it('prefills from a store that is already warm', async () => {
     fake.schedules.set([existing]);
 
     await harness.navigateByUrl('/dashboard/markets/schedule-1/edit', AddSchedule);
     harness.detectChanges();
 
-    expect(fake.loaded).toBe(false);
     expect(harness.routeNativeElement!.querySelector('#name')).toHaveValue('Marché de Belleville');
   });
 });

@@ -55,13 +55,16 @@ describe('editableItem guard', () => {
     expect(TestBed.inject(Router).url).toBe('/dashboard/catalogue');
   });
 
-  it('does not reload a store that is already warm', async () => {
+  // "does not reload a warm store" used to live here. The screen now asks for the
+  // catalogue itself, so this route can no longer observe who asked — and warm-only is
+  // the facade's promise anyway, kept by catalogue.spec.ts's "does not ask again while
+  // fresh". What is left of this guard goes with the next change.
+  it('prefills from a store that is already warm', async () => {
     fake.items.set([existing]);
 
     await harness.navigateByUrl('/dashboard/catalogue/item-1/edit', AddItem);
     harness.detectChanges();
 
-    expect(fake.loaded).toBe(false);
     expect(harness.routeNativeElement!.querySelector('#name')).toHaveValue('Bœuf bourguignon');
   });
 });

@@ -1,8 +1,10 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, linkedSignal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { form, FormField, required, validate } from '@angular/forms/signals';
 import { Card } from '../core/card';
+import { Spinner } from '../core/spinner';
 import { MarketScheduleFacade } from './market-schedule.facade';
+import { MarketScheduleView } from './market-schedules';
 
 const DAYS = [
   { code: 'MON', short: 'L', label: 'Lundi' },
@@ -14,13 +16,28 @@ const DAYS = [
   { code: 'SUN', short: 'D', label: 'Dimanche' }
 ];
 type DayEntry = { day: string; startTime: string; endTime: string };
+// Named for the same reason as the dish form's: the model is a linkedSignal whose
+// computation returns its own previous value, which inference cannot unpick alone.
+type MarketModel = { name: string; streetAddress: string; codePostal: string; town: string; pitch: string };
 
 @Component({
   selector: 'mm-add-schedule',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, Card, FormField],
+  imports: [RouterLink, Card, FormField, Spinner],
   template: `
     <mm-card>
+      @if (loading()) {
+        <div class="mx-auto grid h-32 place-items-center">
+          <mm-spinner label="Chargement du marché…" />
+        </div>
+      } @else if (missing()) {
+        <!-- Save only exists inside the branch that found the market, so a cold refresh
+             cannot render an empty form and write it back over the real one. -->
+        <p class="text-sm text-ink-soft">Ce marché n'est plus dans votre calendrier.</p>
+        <a routerLink="/dashboard/markets" class="mt-4 inline-block font-bold text-brand no-underline">
+          Retour à vos marchés
+        </a>
+      } @else {
       <form (submit)="submit($event)">
         <div class="flex items-center justify-between">
           <h1 class="text-xl leading-tight">{{ isEditing ? 'Modifier le marché' : 'Nouveau marché' }}</h1>
@@ -164,6 +181,7 @@ type DayEntry = { day: string; startTime: string; endTime: string };
           {{ isEditing ? 'Enregistrer' : 'Ajouter le marché ✓' }}
         </button>
       </form>
+      }
     </mm-card>
   `
 })
@@ -178,24 +196,48 @@ export class AddSchedule {
   });
   private readonly markets = inject(MarketScheduleFacade);
   private readonly route = inject(ActivatedRoute);
-  private readonly editing = this.markets
-    .schedules()
-    .find((schedule) => schedule.scheduleId === this.route.snapshot.paramMap.get('scheduleId'));
-  protected readonly isEditing = this.editing !== undefined;
-  protected readonly days = signal<DayEntry[]>(
-    this.editing?.days.map((day) => ({
-      day: day.day,
-      startTime: day.startTime ?? '',
-      endTime: day.endTime ?? ''
-    })) ?? []
+
+  // The route decides which screen this is, not the store: a link naming a market is an
+  // edit even before the market has arrived.
+  private readonly routeScheduleId = this.route.snapshot.paramMap.get('scheduleId');
+  protected readonly isEditing = this.routeScheduleId !== null;
+
+  protected readonly editing = computed(() =>
+    this.routeScheduleId === null
+      ? undefined
+      : this.markets.schedules().find((schedule) => schedule.scheduleId === this.routeScheduleId)
   );
+  protected readonly loading = computed(() => this.isEditing && this.markets.loading());
+  protected readonly missing = computed(() => this.isEditing && !this.loading() && this.editing() === undefined);
+
+  // Both seeded on the market's identity, not its contents: a linkedSignal recomputes
+  // whenever its source's dependencies change rather than comparing source values, so
+  // the check is made here — otherwise any store update retypes the form under the
+  // vendor.
+  protected readonly days = linkedSignal<MarketScheduleView | undefined, DayEntry[]>({
+    source: () => this.editing(),
+    computation: (schedule, previous) =>
+      previous && previous.source?.scheduleId === schedule?.scheduleId
+        ? previous.value
+        : schedule?.days.map((day) => ({
+            day: day.day,
+            startTime: day.startTime ?? '',
+            endTime: day.endTime ?? ''
+          })) ?? []
+  });
   protected readonly fields = form(
-    signal({
-      name: this.editing?.market.name ?? '',
-      streetAddress: this.editing?.market.streetAddress ?? '',
-      codePostal: this.editing?.market.codePostal ?? '',
-      town: this.editing?.market.town ?? '',
-      pitch: this.editing?.market.pitch ?? ''
+    linkedSignal<MarketScheduleView | undefined, MarketModel>({
+      source: () => this.editing(),
+      computation: (schedule, previous) =>
+        previous && previous.source?.scheduleId === schedule?.scheduleId
+          ? previous.value
+          : {
+              name: schedule?.market.name ?? '',
+              streetAddress: schedule?.market.streetAddress ?? '',
+              codePostal: schedule?.market.codePostal ?? '',
+              town: schedule?.market.town ?? '',
+              pitch: schedule?.market.pitch ?? ''
+            }
     }),
     (path) => {
       required(path.name);
@@ -257,13 +299,19 @@ export class AddSchedule {
         startTime: day.startTime || undefined,
         endTime: day.endTime || undefined
       })),
-      frequency: this.editing?.frequency ?? { weeks: 1 }
+      frequency: this.editing()?.frequency ?? { weeks: 1 }
     };
-    if (this.editing) {
-      this.markets.amendSchedule(this.editing.scheduleId, schedule);
+    const editing = this.editing();
+    if (editing) {
+      this.markets.amendSchedule(editing.scheduleId, schedule);
     } else {
       this.markets.registerSchedule(schedule);
     }
+  }
+
+  constructor() {
+    // Warm-only in the facade. No guard does this for the screen any more.
+    this.markets.load();
   }
 
   private allDaysHaveStartAndEndTimes(days: DayEntry[]) {

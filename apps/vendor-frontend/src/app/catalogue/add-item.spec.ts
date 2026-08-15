@@ -4,6 +4,7 @@ import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/route
 import { AddItem } from './add-item';
 import { CatalogueFacade } from './catalogue.facade';
 import { FakeCatalogueFacade } from './fake.catalogue.facade';
+import { CatalogueItemView } from './catalogue';
 
 async function renderForm() {
   const view = await render(AddItem, {
@@ -490,5 +491,121 @@ describe('AddItem', () => {
     await renderForm();
 
     expect(screen.queryByRole('button', { name: /^supprimer$/i })).not.toBeInTheDocument();
+  });
+
+  // A cold direct-nav to an edit link — a bookmark, a refresh — arrives before the
+  // catalogue does. The screen used to read its dish once at field init and render an
+  // empty form, which saving then wrote back over the real one; a route guard held the
+  // navigation to hide it. The screen waits for its own data instead.
+  describe('editing an item the store has not delivered yet', () => {
+    const existing = {
+      itemId: 'item-1',
+      name: 'Bœuf bourguignon',
+      description: 'Mijoté maison',
+      price: 1300,
+      imageReference: 'v1/items/acme/item-1',
+    };
+
+    async function renderCold() {
+      const catalogue = new FakeCatalogueFacade();
+      catalogue.loading.set(true);
+      const view = await render(AddItem, {
+        providers: [
+          provideRouter([]),
+          { provide: CatalogueFacade, useValue: catalogue },
+          { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ itemId: 'item-1' }) } } },
+        ],
+      });
+      const deliver = (items: CatalogueItemView[]) => {
+        catalogue.items.set(items);
+        catalogue.loading.set(false);
+        view.detectChanges();
+      };
+      return { view, catalogue, deliver };
+    }
+
+    it('asks for the catalogue itself, now that no guard warms it', async () => {
+      const { catalogue } = await renderCold();
+
+      expect(catalogue.loaded).toBe(true);
+    });
+
+    it('waits rather than offering an empty form', async () => {
+      await renderCold();
+
+      expect(screen.getByRole('status', { name: /chargement/i })).toBeInTheDocument();
+      expect(screen.queryByLabelText(/nom du plat/i)).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /enregistrer/i })).not.toBeInTheDocument();
+    });
+
+    it('prefills once the dish arrives', async () => {
+      const { deliver } = await renderCold();
+
+      deliver([existing]);
+
+      expect(screen.getByLabelText(/nom du plat/i)).toHaveValue('Bœuf bourguignon');
+      expect(screen.getByLabelText(/prix/i)).toHaveValue('13,00');
+    });
+
+    // The hazard the old shape hid: minting an id at field init picked create-mode before
+    // the dish landed, so a save on a cold refresh added a second copy instead of editing.
+    it('revises the dish that arrives rather than adding a second copy', async () => {
+      const { view, deliver, catalogue } = await renderCold();
+      deliver([existing]);
+
+      fireEvent.input(screen.getByLabelText(/nom du plat/i), { target: { value: 'Bœuf mode' } });
+      view.detectChanges();
+      fireEvent.click(screen.getByRole('button', { name: /enregistrer/i }));
+
+      expect(catalogue.revisedItem).toEqual({
+        itemId: 'item-1',
+        name: 'Bœuf mode',
+        description: 'Mijoté maison',
+        price: 1300,
+      });
+      expect(catalogue.addedItem).toBeUndefined();
+    });
+
+    it('opens a late variant dish in formats mode', async () => {
+      const { deliver } = await renderCold();
+
+      deliver([{
+        itemId: 'item-1',
+        name: 'Pizza',
+        description: 'Wood-fired',
+        imageReference: '',
+        variants: [
+          { name: 'Margherita', description: 'tomato', price: 900 },
+          { name: 'Pepperoni', description: 'spicy', price: 1200 },
+        ],
+      }]);
+
+      const names = screen.getAllByLabelText(/^format$/i) as HTMLInputElement[];
+      expect(names.map((n) => n.value)).toEqual(['Margherita', 'Pepperoni']);
+    });
+
+    // A photo finishing its upload patches the item in the store. That must not reach in
+    // and retype the fields the vendor is working in.
+    it('keeps what the vendor typed when the store updates underneath', async () => {
+      const { view, deliver, catalogue } = await renderCold();
+      deliver([existing]);
+      fireEvent.input(screen.getByLabelText(/nom du plat/i), { target: { value: 'Bœuf mode' } });
+      view.detectChanges();
+
+      catalogue.items.set([{ ...existing, imageReference: 'v2/items/acme/item-1' }]);
+      view.detectChanges();
+
+      expect(screen.getByLabelText(/nom du plat/i)).toHaveValue('Bœuf mode');
+    });
+
+    it('says so when the dish is no longer on the carte, offering no save', async () => {
+      const { deliver } = await renderCold();
+
+      deliver([]);
+
+      expect(screen.getByText(/n'est plus à votre carte/i)).toBeVisible();
+      expect(screen.getByRole('link', { name: /catalogue/i })).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /enregistrer/i })).not.toBeInTheDocument();
+    });
   });
 });
