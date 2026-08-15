@@ -71,6 +71,27 @@ describe('StorefrontForm', () => {
     expect(screen.getByRole('button', { name: /enregistrer/i })).toBeEnabled();
   });
 
+  // A disabled button on its own leaves the vendor guessing, and the field's own message
+  // only appears once they have touched it.
+  it('says why it cannot be saved yet, and describes the button with it', async () => {
+    const { view } = await renderForm();
+
+    expect(screen.getByText('Indiquez le nom du stand.')).toBeVisible();
+    const describedBy = screen.getByRole('button', { name: /enregistrer/i }).getAttribute('aria-describedby');
+    expect(describedBy).toBeTruthy();
+    expect(view.container.querySelector(`#${describedBy}`)?.textContent).toContain('Indiquez le nom du stand.');
+  });
+
+  it('stops saying so once the stand has a name', async () => {
+    const { view } = await renderForm();
+
+    fireEvent.input(screen.getByLabelText(/nom du stand/i), { target: { value: 'La Table de Margaux' } });
+    view.detectChanges();
+
+    expect(screen.queryByText('Indiquez le nom du stand.')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /enregistrer/i })).not.toHaveAttribute('aria-describedby');
+  });
+
   it.each([
     { published: false, state: 'not yet published' },
     { published: true, state: 'already published' },

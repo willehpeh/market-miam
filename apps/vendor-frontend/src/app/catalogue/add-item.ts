@@ -301,9 +301,21 @@ type ItemModel = { name: string; price: string; description: string; variants: F
           }
         </div>
 
-        <button type="submit" class="mt-6 flex w-full max-w-xs mx-auto justify-center" [disabled]="cannotSubmit()">
+        <button
+          type="submit"
+          class="mt-6 flex w-full max-w-xs mx-auto justify-center"
+          [disabled]="cannotSubmit()"
+          [attr.aria-describedby]="blockers().length ? 'submit-blockers' : null"
+        >
           {{ isEditing ? 'Enregistrer' : 'Ajouter à ma carte ✓' }}
         </button>
+        @if (blockers().length) {
+          <ul id="submit-blockers" class="mt-2 space-y-0.5 text-center text-xs text-muted">
+            @for (blocker of blockers(); track blocker) {
+              <li>{{ blocker }}</li>
+            }
+          </ul>
+        }
 
         <!-- Every button here is type="button": a stray Enter in the name field submits the
              form's default button, and none of these should be the one that answers it. -->
@@ -421,6 +433,35 @@ export class AddItem {
 
   private readonly priceCents = computed(() => parseEurosToCents(this.fields().value().price));
   protected readonly cannotSubmit = computed(() => this.uploading() || this.fields().invalid());
+
+  // A disabled button is not an explanation. These read the form's own state rather than
+  // re-deriving the rules — the schema owns those — and are tied to the button by
+  // aria-describedby, so a screen reader announces the reason with it.
+  protected readonly blockers = computed(() => {
+    const reasons: string[] = [];
+    if (this.uploading()) {
+      reasons.push("Attendez la fin de l'envoi de la photo.");
+    }
+    if (this.fields.name().invalid()) {
+      reasons.push('Indiquez le nom du plat.');
+    }
+    if (this.mode() === 'single') {
+      if (this.fields.price().invalid()) {
+        reasons.push('Indiquez le prix.');
+      }
+      return reasons;
+    }
+    // Row count off the value, so adding or removing a format re-runs this; the verdict
+    // per row still comes from the field.
+    const rows = this.fields.variants().value();
+    if (rows.some((_, index) => this.fields.variants[index]().invalid())) {
+      reasons.push('Complétez chaque format.');
+    }
+    if (this.fields.variants().errors().some(error => error.kind === 'duplicateFormat')) {
+      reasons.push('Donnez un nom différent à chaque format.');
+    }
+    return reasons;
+  });
 
   constructor() {
     this.catalogue.beginItem();

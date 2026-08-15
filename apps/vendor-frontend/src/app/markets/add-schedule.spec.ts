@@ -156,6 +156,61 @@ describe('AddSchedule', () => {
     expect(submitButton()).toBeDisabled();
   });
 
+  // The day rules live outside the form — `days` is a set of custom toggles, not a field —
+  // so nothing in the template could carry their errors. An impossible closing time used
+  // to disable the button and say nothing at all.
+  describe('saying why the market cannot be added yet', () => {
+    it('names what a blank form is still missing', async () => {
+      await renderForm();
+
+      expect(screen.getByText('Indiquez le nom du marché.')).toBeVisible();
+      expect(screen.getByText('Indiquez la ville.')).toBeVisible();
+      expect(screen.getByText('Complétez le code postal.')).toBeVisible();
+      expect(screen.getByText('Choisissez au moins un jour.')).toBeVisible();
+    });
+
+    it('describes the disabled button with those reasons', async () => {
+      const { view } = await renderForm();
+
+      const describedBy = submitButton().getAttribute('aria-describedby');
+      expect(describedBy).toBeTruthy();
+      expect(view.container.querySelector(`#${describedBy}`)?.textContent).toContain('Indiquez le nom du marché.');
+    });
+
+    it('says when a day has no closing time', async () => {
+      const { view } = await renderForm();
+      fillRequired();
+      fireEvent.click(screen.getByRole('button', { name: /^mardi$/i }));
+      view.detectChanges();
+      fireEvent.input(screen.getByLabelText(/fin mardi/i), { target: { value: '' } });
+      view.detectChanges();
+
+      expect(screen.getByText('Complétez les horaires de chaque jour.')).toBeVisible();
+    });
+
+    it('says when a day closes before it opens', async () => {
+      const { view } = await renderForm();
+      fillRequired();
+      fireEvent.click(screen.getByRole('button', { name: /^mardi$/i }));
+      view.detectChanges();
+      fireEvent.input(screen.getByLabelText(/fin mardi/i), { target: { value: '07:00' } });
+      view.detectChanges();
+
+      expect(screen.getByText('Une fermeture ne peut pas précéder son ouverture.')).toBeVisible();
+    });
+
+    it('says nothing once the market can be added', async () => {
+      const { view } = await renderForm();
+      fillRequired();
+      fireEvent.click(screen.getByRole('button', { name: /^mardi$/i }));
+      view.detectChanges();
+
+      expect(submitButton()).toBeEnabled();
+      expect(screen.queryByText('Choisissez au moins un jour.')).not.toBeInTheDocument();
+      expect(submitButton()).not.toHaveAttribute('aria-describedby');
+    });
+  });
+
   describe('editing an existing schedule', () => {
     const existing: MarketScheduleView = {
       scheduleId: 'schedule-1',

@@ -487,6 +487,80 @@ describe('AddItem', () => {
     });
   });
 
+  // The submit button stays disabled until the dish can be saved, which on its own tells
+  // the vendor nothing about why. These say why, and are tied to the button so a screen
+  // reader reads them as its description.
+  describe('saying why the dish cannot be added yet', () => {
+    it('names what a blank form is still missing', async () => {
+      await renderForm();
+
+      expect(screen.getByText('Indiquez le nom du plat.')).toBeVisible();
+      expect(screen.getByText('Indiquez le prix.')).toBeVisible();
+    });
+
+    it('describes the disabled button with those reasons', async () => {
+      const { view } = await renderForm();
+
+      const button = screen.getByRole('button', { name: /ajouter à ma carte/i });
+      const describedBy = button.getAttribute('aria-describedby');
+      expect(describedBy).toBeTruthy();
+      expect(view.container.querySelector(`#${describedBy}`)?.textContent).toContain('Indiquez le nom du plat.');
+    });
+
+    it('drops a reason as soon as it is met', async () => {
+      const { view } = await renderForm();
+
+      fireEvent.input(screen.getByLabelText(/nom du plat/i), { target: { value: 'Parmentier' } });
+      view.detectChanges();
+
+      expect(screen.queryByText('Indiquez le nom du plat.')).not.toBeInTheDocument();
+      expect(screen.getByText('Indiquez le prix.')).toBeVisible();
+    });
+
+    it('says nothing once the dish can be added', async () => {
+      const { view } = await renderForm();
+
+      fillForm('Parmentier de canard', '12,00');
+      view.detectChanges();
+
+      expect(screen.getByRole('button', { name: /ajouter à ma carte/i })).toBeEnabled();
+      expect(screen.queryByText('Indiquez le prix.')).not.toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /ajouter à ma carte/i })).not.toHaveAttribute('aria-describedby');
+    });
+
+    it('names an incomplete format row', async () => {
+      const { view } = await renderThreeFormats();
+
+      expect(screen.getByText('Complétez chaque format.')).toBeVisible();
+    });
+
+    it('names formats that share a name', async () => {
+      const { view } = await renderForm();
+      fireEvent.input(screen.getByLabelText(/nom du plat/i), { target: { value: 'Pizza' } });
+      fireEvent.click(screen.getByRole('button', { name: /plusieurs formats/i }));
+      view.detectChanges();
+
+      const names = screen.getAllByLabelText(/^format$/i);
+      const prices = screen.getAllByLabelText(/^prix$/i);
+      fireEvent.input(names[0], { target: { value: 'Grande' } });
+      fireEvent.input(prices[0], { target: { value: '9,50' } });
+      fireEvent.input(names[1], { target: { value: 'Grande' } });
+      fireEvent.input(prices[1], { target: { value: '16,00' } });
+      view.detectChanges();
+
+      expect(screen.getByText('Donnez un nom différent à chaque format.')).toBeVisible();
+    });
+
+    it('asks the vendor to wait while a photo is still uploading', async () => {
+      const { view, catalogue } = await renderForm();
+      fillForm('Parmentier de canard', '12,00');
+      catalogue.photoUploading.set(true);
+      view.detectChanges();
+
+      expect(screen.getByText("Attendez la fin de l'envoi de la photo.")).toBeVisible();
+    });
+  });
+
   it('offers no delete for an item that does not exist yet', async () => {
     await renderForm();
 

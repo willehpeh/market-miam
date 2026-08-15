@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, linkedSignal, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, linkedSignal, signal } from '@angular/core';
 import { form, FormField, required } from '@angular/forms/signals';
 import { StorefrontFacade } from './storefront.facade';
 import { CloudinaryUrlPipe } from '../core/cloudinary-url.pipe';
@@ -81,9 +81,21 @@ const MAX_PHOTO_BYTES = 10 * 1024 * 1024;
           </div>
         </div>
 
-        <button type="submit" class="mt-6 flex w-full max-w-xs mx-auto justify-center" [disabled]="fields().invalid()">
+        <button
+          type="submit"
+          class="mt-6 flex w-full max-w-xs mx-auto justify-center"
+          [disabled]="fields().invalid()"
+          [attr.aria-describedby]="blockers().length ? 'submit-blockers' : null"
+        >
           Enregistrer
         </button>
+        @if (blockers().length) {
+          <ul id="submit-blockers" class="mt-2 space-y-0.5 text-center text-xs text-muted">
+            @for (blocker of blockers(); track blocker) {
+              <li>{{ blocker }}</li>
+            }
+          </ul>
+        }
       </form>
     </mm-card>
 
@@ -117,6 +129,12 @@ export class StorefrontForm {
   protected readonly fields = form(this.model, (path) => {
     required(path.name);
   });
+
+  // A disabled button is not an explanation, and the field's own message waits for a
+  // touch the vendor has no reason to give it.
+  protected readonly blockers = computed(() =>
+    this.fields.name().invalid() ? ['Indiquez le nom du stand.'] : [],
+  );
 
   protected selectPhoto(event: Event): void {
     const input = event.target as HTMLInputElement;

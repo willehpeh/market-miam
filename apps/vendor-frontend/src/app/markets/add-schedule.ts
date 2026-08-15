@@ -177,9 +177,21 @@ type MarketModel = { name: string; streetAddress: string; codePostal: string; to
                  placeholder="ex. Allée centrale, stand 24" />
         </div>
 
-        <button type="submit" class="mt-6 flex w-full max-w-xs mx-auto justify-center" [disabled]="cannotSubmit()">
+        <button
+          type="submit"
+          class="mt-6 flex w-full max-w-xs mx-auto justify-center"
+          [disabled]="cannotSubmit()"
+          [attr.aria-describedby]="blockers().length ? 'submit-blockers' : null"
+        >
           {{ isEditing ? 'Enregistrer' : 'Ajouter le marché ✓' }}
         </button>
+        @if (blockers().length) {
+          <ul id="submit-blockers" class="mt-2 space-y-0.5 text-center text-xs text-muted">
+            @for (blocker of blockers(); track blocker) {
+              <li>{{ blocker }}</li>
+            }
+          </ul>
+        }
       </form>
       }
     </mm-card>
@@ -251,13 +263,41 @@ export class AddSchedule {
   );
 
   // The one rule the form cannot own: `days` is not a form field but a set of custom
-  // toggles and time inputs, so its validity is still combined here.
-  private readonly daysValid = computed(() => {
+  // toggles and time inputs, so its validity is still judged here — and, because there is
+  // no field to hang an error on, it is stated in words rather than only felt as a
+  // disabled button.
+  private readonly dayProblems = computed(() => {
     const days = this.days();
-    return days.length > 0 && this.allDaysHaveStartAndEndTimes(days);
+    if (days.length === 0) {
+      return ['Choisissez au moins un jour.'];
+    }
+    const problems: string[] = [];
+    if (days.some(day => !day.startTime || !day.endTime)) {
+      problems.push('Complétez les horaires de chaque jour.');
+    }
+    if (days.some(day => day.startTime && day.endTime && day.endTime <= day.startTime)) {
+      problems.push('Une fermeture ne peut pas précéder son ouverture.');
+    }
+    return problems;
   });
 
-  protected readonly cannotSubmit = computed(() => this.fields().invalid() || !this.daysValid());
+  protected readonly cannotSubmit = computed(() => this.fields().invalid() || this.dayProblems().length > 0);
+
+  // A disabled button is not an explanation. The field reasons read the form's own state;
+  // the schema still owns the rules.
+  protected readonly blockers = computed(() => {
+    const reasons: string[] = [];
+    if (this.fields.name().invalid()) {
+      reasons.push('Indiquez le nom du marché.');
+    }
+    if (this.fields.town().invalid()) {
+      reasons.push('Indiquez la ville.');
+    }
+    if (this.fields.codePostal().invalid()) {
+      reasons.push('Complétez le code postal.');
+    }
+    return [...reasons, ...this.dayProblems()];
+  });
 
   protected selected(code: string): boolean {
     return this.days().some((day) => day.day === code);
@@ -314,7 +354,4 @@ export class AddSchedule {
     this.markets.load();
   }
 
-  private allDaysHaveStartAndEndTimes(days: DayEntry[]) {
-    return days.every((day) => !!day.startTime && !!day.endTime && day.endTime > day.startTime);
-  }
 }
