@@ -176,7 +176,7 @@ describe('Stuck-subscription health', () => {
   // not page anyone.
   it('does not count yielding to a concurrent writer', async () => {
     await boot();
-    app.get(Shipper).behave = () => Promise.reject(new CheckpointConflictError('shipper'));
+    app.get(Shipper).behave = () => Promise.reject(new CheckpointConflictError('shipper', 0));
 
     await failuresOf(6);
 
