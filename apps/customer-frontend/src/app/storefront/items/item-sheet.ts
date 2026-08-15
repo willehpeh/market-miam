@@ -78,6 +78,7 @@ import { DragToDismiss } from '../../core/drag-to-dismiss';
     <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -- native dialog closes on Escape; click is backdrop-dismiss only -->
     <dialog
       #dialog
+      aria-labelledby="item-sheet-title"
       class="item-sheet mx-auto mb-0 mt-auto w-full max-w-xl rounded-t-3xl bg-canvas p-0 sm:mb-auto sm:mt-auto sm:rounded-3xl"
       [class.closing]="closing()"
       [style.transform]="dragOffset() !== null ? 'translateY(' + dragOffset() + 'px)' : null"
@@ -114,7 +115,7 @@ import { DragToDismiss } from '../../core/drag-to-dismiss';
             </span>
           }
           <div class="mt-5 flex items-baseline justify-between gap-3">
-            <h3 class="text-2xl font-bold text-ink">{{ item.name }}</h3>
+            <h3 id="item-sheet-title" class="text-2xl font-bold text-ink">{{ item.name }}</h3>
             <p class="shrink-0 text-2xl font-bold text-ink">{{ item.priceLabel }}</p>
           </div>
           <p class="mt-3 whitespace-pre-line text-lg text-ink-soft">{{ item.description }}</p>

@@ -23,7 +23,7 @@ import { StorefrontFooter } from './layout/storefront-footer';
               <img src="logo-transparent.png" alt="Market Miam" class="h-6 w-auto" />
             </header>
 
-            <app-storefront-hero [coverUrl]="storefront.coverUrl" [name]="storefront.name" />
+            <app-storefront-hero [coverReference]="storefront.coverReference" [name]="storefront.name" />
 
             <div class="px-5 py-6 lg:grid lg:grid-cols-3 lg:items-start lg:gap-10 lg:px-8 lg:py-10">
               <div class="space-y-6 lg:col-span-2 lg:space-y-8">
@@ -70,7 +70,7 @@ import { StorefrontFooter } from './layout/storefront-footer';
                 <aside class="mt-6 lg:sticky lg:top-6 lg:mt-0">
                   <h2 class="kicker">Marchés suivants</h2>
                   <ul class="mt-5 space-y-4">
-                    @for (market of followingMarkets(); track $index) {
+                    @for (market of followingMarkets(); track market.date + market.marketName) {
                       <li><app-market-card [market]="market" /></li>
                     }
                   </ul>

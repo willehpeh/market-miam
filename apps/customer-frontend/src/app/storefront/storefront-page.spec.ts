@@ -1,4 +1,5 @@
 import { signal, WritableSignal } from '@angular/core';
+import { provideCloudinaryLoader } from '@angular/common';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { StorefrontPage } from './storefront-page';
@@ -10,7 +11,7 @@ const ACME: StorefrontViewModel = {
   name: 'Acme Bakery',
   description: 'Fresh bread daily',
   phone: '0102030405',
-  coverUrl: null,
+  coverReference: null,
   socialImageUrl: null,
   items: [
     {
@@ -32,8 +33,8 @@ const ACME: StorefrontViewModel = {
     },
   ],
   upcomingMarkets: [
-    { weekday: 'JEU', day: '18', month: 'JUIN', marketName: 'Marché Saint-Antoine', hours: '8h – 13h30', address: 'Quai Saint-Antoine, Lyon', cancelled: false, inProgress: false, items: [] },
-    { weekday: 'MAR', day: '23', month: 'JUIN', marketName: 'Marché de la Croix-Rousse', hours: '8h – 13h', address: 'Lyon', cancelled: true, inProgress: false, items: [] },
+    { date: '2026-06-18', weekday: 'JEU', day: '18', month: 'JUIN', marketName: 'Marché Saint-Antoine', hours: '8h – 13h30', address: 'Quai Saint-Antoine, Lyon', cancelled: false, inProgress: false, items: [] },
+    { date: '2026-06-23', weekday: 'MAR', day: '23', month: 'JUIN', marketName: 'Marché de la Croix-Rousse', hours: '8h – 13h', address: 'Lyon', cancelled: true, inProgress: false, items: [] },
   ],
 };
 
@@ -44,7 +45,11 @@ describe('StorefrontPage', () => {
   beforeEach(() => {
     view = signal<StorefrontViewModel | null>(null);
     TestBed.configureTestingModule({
-      providers: [provideRouter([]), { provide: StorefrontFeed, useValue: { view } }],
+      providers: [
+        provideRouter([]),
+        { provide: StorefrontFeed, useValue: { view } },
+        provideCloudinaryLoader('https://res.cloudinary.com/test-cloud'),
+      ],
     });
   });
 
@@ -272,5 +277,29 @@ describe('StorefrontPage', () => {
     fixture.detectChanges();
 
     expect(fixture.nativeElement.textContent as string).toContain('introuvable');
+  });
+
+  // The cover is the LCP element on every storefront: it must be the one image the browser
+  // is told to fetch first, and its URLs are built by the loader from a bare reference.
+  it('renders the cover as a priority image built by the loader', () => {
+    const fixture = TestBed.createComponent(StorefrontPage);
+    view.set({ ...ACME, coverReference: 'v7/cover' });
+    fixture.detectChanges();
+
+    const cover = fixture.nativeElement.querySelector('app-storefront-hero img') as HTMLImageElement;
+    expect(cover.getAttribute('loading')).toBe('eager');
+    expect(cover.getAttribute('fetchpriority')).toBe('high');
+    expect(cover.getAttribute('src')).toContain('res.cloudinary.com/test-cloud');
+    expect(cover.getAttribute('src')).toContain('c_fill,ar_16:10');
+    expect(cover.getAttribute('src')).toContain('v7/cover');
+  });
+
+  it('keeps the stand-photo placeholder when the vendor has no cover', () => {
+    const fixture = TestBed.createComponent(StorefrontPage);
+    view.set(ACME);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('app-storefront-hero img')).toBeNull();
+    expect(fixture.nativeElement.textContent as string).toContain('photo du stand');
   });
 });

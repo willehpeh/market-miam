@@ -1,13 +1,28 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+import { NgOptimizedImage } from '@angular/common';
 
 @Component({
   selector: 'app-storefront-hero',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [NgOptimizedImage],
   host: { class: 'contents' },
   template: `
     <section class="relative">
-      @if (coverUrl(); as cover) {
-        <img [src]="cover" alt="" class="aspect-16/10 w-full object-cover lg:aspect-3/1" />
+      @if (coverReference(); as cover) {
+        <!-- The cover is the LCP element on every storefront: priority emits the preload
+             link and the high fetch priority during the server render. fill, because the
+             box changes shape at lg and the crop is the box's business, not the image's. -->
+        <span class="relative block aspect-16/10 w-full lg:aspect-3/1">
+          <img
+            [ngSrc]="cover"
+            fill
+            priority
+            [loaderParams]="{ transform: 'c_fill,ar_16:10' }"
+            sizes="100vw"
+            alt=""
+            class="object-cover"
+          />
+        </span>
       } @else {
         <div class="hatch aspect-16/10 w-full lg:aspect-3/1"></div>
         <span class="kicker absolute left-5 top-5 rounded-pill bg-surface/85 px-3 py-1 lg:left-8">photo du stand</span>
@@ -19,6 +34,6 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
   `,
 })
 export class StorefrontHero {
-  readonly coverUrl = input<string | null>(null);
+  readonly coverReference = input<string | null>(null);
   readonly name = input.required<string>();
 }

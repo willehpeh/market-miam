@@ -6,15 +6,16 @@ import { ItemViewModel } from '../storefront-view-model';
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'contents' },
   template: `
+    @let dish = item();
     <!-- h-full so a row of cards shares one height, and the price line sits on the
          baseline of the tallest rather than wherever its own text happens to end. -->
     <button
       type="button"
-      [attr.data-item]="item().itemId"
+      [attr.data-item]="dish.itemId"
       class="flex h-full w-full flex-col rounded-card bg-surface p-4 text-left shadow-soft justify-start"
-      (click)="chosen.emit(item())"
+      (click)="chosen.emit(dish)"
     >
-      @if (item().photo; as photo) {
+      @if (dish.photo; as photo) {
         <!-- sizes mirrors the layout: ~20rem in a desktop grid column, otherwise the
              page's max-w-xl minus its px-5 and the card's p-4. -->
         <img
@@ -23,7 +24,7 @@ import { ItemViewModel } from '../storefront-view-model';
           sizes="(min-width: 1024px) 20rem, (min-width: 36rem) 31.5rem, calc(100vw - 4.5rem)"
           alt=""
           class="mb-3 aspect-16/10 w-full rounded-card object-cover"
-          [class.grayscale]="item().soldOut"
+          [class.grayscale]="dish.soldOut"
         />
       } @else {
         <!-- Item photos are optional, so a real carte mixes the two. The canvas keeps the
@@ -34,13 +35,13 @@ import { ItemViewModel } from '../storefront-view-model';
       }
       <span class="block w-full">
         <span class="flex justify-between gap-3 w-full">
-          <span class="line-clamp-2 text-lg font-bold" [class.text-ink]="!item().soldOut" [class.text-neutral-500]="item().soldOut">{{ item().name }}</span>
-          <span class="shrink-0 text-lg font-bold" [class.text-ink]="!item().soldOut" [class.text-neutral-500]="item().soldOut">{{ item().priceLabel }}</span>
+          <span class="line-clamp-2 text-lg font-bold" [class.text-ink]="!dish.soldOut" [class.text-neutral-500]="dish.soldOut">{{ dish.name }}</span>
+          <span class="shrink-0 text-lg font-bold" [class.text-ink]="!dish.soldOut" [class.text-neutral-500]="dish.soldOut">{{ dish.priceLabel }}</span>
         </span>
       </span>
       <!-- Availability is the badge's text, never the greying alone (decision 20) — and
            the card stays tappable: a customer may still want to read what they missed. -->
-      @if (item().soldOut) {
+      @if (dish.soldOut) {
         <span class="kicker mt-2 inline-block self-start rounded-pill bg-line-strong px-2 py-0.5 normal-case text-neutral-600">Épuisé</span>
       }
     </button>

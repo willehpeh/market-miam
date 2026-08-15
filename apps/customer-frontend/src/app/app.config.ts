@@ -4,6 +4,8 @@ import {
 } from '@angular/core';
 import { provideRouter, withInMemoryScrolling } from '@angular/router';
 import { provideHttpClient, withFetch } from '@angular/common/http';
+import { provideCloudinaryLoader } from '@angular/common';
+import { environment } from '../environments/environment';
 import { appRoutes } from './app.routes';
 import {
   provideClientHydration,
@@ -23,5 +25,8 @@ export const appConfig: ApplicationConfig = {
       withInMemoryScrolling({ scrollPositionRestoration: 'enabled' })
     ),
     provideHttpClient(withFetch()),
+    // NgOptimizedImage builds the cover's URLs from a bare reference, so the crop lives in
+    // the template beside the box it fills rather than in the view model.
+    provideCloudinaryLoader(`https://res.cloudinary.com/${environment.cloudinary.cloudName}`),
   ],
 };

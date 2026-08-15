@@ -1,4 +1,4 @@
-import { inject, Injectable } from '@angular/core';
+import { DOCUMENT, inject, Injectable } from '@angular/core';
 import { Meta, Title } from '@angular/platform-browser';
 import { StorefrontViewModel } from './storefront-view-model';
 
@@ -21,6 +21,7 @@ type Card = {
 export class StorefrontMetadata {
   private readonly title = inject(Title);
   private readonly meta = inject(Meta);
+  private readonly document = inject(DOCUMENT);
 
   set(storefront: StorefrontViewModel | null, origin: string): void {
     this.apply(this.cardFor(storefront, origin));
@@ -44,6 +45,9 @@ export class StorefrontMetadata {
 
   private apply(card: Card): void {
     this.title.setTitle(card.title);
+    // og:url is what a share preview reads; rel=canonical is what a crawler indexes on.
+    // Both pages carry the same card, so without this they compete for one entry.
+    this.setCanonical(card.url);
     this.meta.updateTag({ property: 'og:site_name', content: SITE_NAME });
     this.meta.updateTag({ property: 'og:type', content: 'website' });
     this.meta.updateTag({ property: 'og:url', content: card.url });
@@ -66,5 +70,15 @@ export class StorefrontMetadata {
         this.meta.removeTag(selector);
       }
     }
+  }
+
+  // Meta covers <meta> only, so the canonical <link> is placed by hand — found-or-created
+  // so a re-render updates the href instead of stacking a second tag.
+  private setCanonical(url: string): void {
+    const head = this.document.head;
+    const existing = head.querySelector<HTMLLinkElement>('link[rel="canonical"]');
+    const link = existing ?? head.appendChild(this.document.createElement('link'));
+    link.setAttribute('rel', 'canonical');
+    link.setAttribute('href', url);
   }
 }

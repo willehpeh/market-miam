@@ -10,6 +10,7 @@ const item = (itemId: string): ItemViewModel => ({
 });
 
 const market = (overrides: Partial<MarketViewModel> = {}): MarketViewModel => ({
+  date: '2026-08-15',
   weekday: 'SAM',
   day: '15',
   month: 'AOÛT',
@@ -27,7 +28,7 @@ const published = (upcomingMarkets: MarketViewModel[]): StorefrontViewModel => (
   name: 'Acme',
   description: '',
   phone: '',
-  coverUrl: null,
+  coverReference: null,
   socialImageUrl: null,
   items: [],
   upcomingMarkets,

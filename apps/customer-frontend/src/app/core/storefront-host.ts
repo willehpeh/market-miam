@@ -24,11 +24,16 @@ function pageUrl(): URL {
   return new URL(request?.url ?? document.location.href);
 }
 
-// Localhost has no vendor label, so development names the vendor with an explicit query
-// param instead — the same fallback the deployed site never reaches.
+// Labels that are the site rather than a vendor. Without this, www.marketmiam.fr asks the
+// API for a vendor named "www" and renders "Boutique introuvable" at the address most
+// likely to be typed by hand.
+const RESERVED_LABELS = new Set(['localhost', 'www']);
+
+// A reserved label has no vendor behind it, so development names one with an explicit
+// query param instead — the fallback the deployed site never reaches.
 function subdomainFrom(url: URL): string | null {
   const label = url.hostname.split('.')[0];
-  if (label && label !== 'localhost') {
+  if (label && !RESERVED_LABELS.has(label)) {
     return label;
   }
   return url.searchParams.get('subdomain')?.trim() || null;

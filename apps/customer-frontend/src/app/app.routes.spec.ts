@@ -68,6 +68,8 @@ describe('storefront routes', () => {
 
   const metaContent = (selector: string): string | null =>
     TestBed.inject(Meta).getTag(selector)?.content ?? null;
+  const canonical = (): string | null =>
+    document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]')?.getAttribute('href') ?? null;
 
   it('renders the storefront at the root', async () => {
     const page = await navigateTo('/');
@@ -100,6 +102,7 @@ describe('storefront routes', () => {
 
     await navigateTo('/carte');
     expect(metaContent('property="og:url"')).toBe(`${ORIGIN}/carte`);
+    expect(canonical()).toBe(`${ORIGIN}/carte`);
   });
 
   // Both pages are the same vendor's storefront: the feed sits on the parent route and is

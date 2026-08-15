@@ -10,7 +10,7 @@ const ACME: StorefrontViewModel = {
   name: 'Acme Bakery',
   description: 'Fresh bread daily',
   phone: '0102030405',
-  coverUrl: null,
+  coverReference: null,
   socialImageUrl: null,
   items: [
     {

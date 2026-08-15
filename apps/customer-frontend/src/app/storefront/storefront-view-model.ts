@@ -16,6 +16,10 @@ export type ItemViewModel = {
 };
 
 export type MarketViewModel = {
+  // The day itself, kept so a market can be tracked by which market it is rather than by
+  // where it sits in the list: the live poll rebuilds this array every minute, and a
+  // positional key rebinds every card below a day that drops off.
+  date: string;
   weekday: string;
   day: string;
   month: string;
@@ -35,7 +39,7 @@ export type StorefrontViewModel =
       name: string;
       description: string;
       phone: string;
-      coverUrl: string | null;
+      coverReference: string | null;
       // Absolute Open Graph / Twitter card image, cropped to the 1200×630 the
       // crawlers expect — null when the vendor has no cover photo yet.
       socialImageUrl: string | null;
@@ -56,7 +60,7 @@ export function toViewModel(storefront: CustomerStorefront): StorefrontViewModel
     name: storefront.name,
     description: storefront.description,
     phone: storefront.phone,
-    coverUrl: storefront.coverPhoto ? cloudinaryUrl(storefront.coverPhoto, 'c_fill,w_1200,h_750,q_auto,f_auto') : null,
+    coverReference: storefront.coverPhoto,
     socialImageUrl: storefront.coverPhoto ? cloudinaryUrl(storefront.coverPhoto, 'c_fill,w_1200,h_630,q_auto,f_auto') : null,
     items: storefront.items.map(toItemViewModel),
     upcomingMarkets: storefront.upcomingMarkets.map(toMarketViewModel),
@@ -111,6 +115,7 @@ const MONTHS = ['JANV', 'FÉVR', 'MARS', 'AVR', 'MAI', 'JUIN', 'JUIL', 'AOÛT', 
 function toMarketViewModel(market: UpcomingMarket): MarketViewModel {
   const [, month, day] = market.date.split('-');
   return {
+    date: market.date,
     weekday: WEEKDAYS[market.weekday] ?? market.weekday,
     day: String(Number(day)),
     month: MONTHS[Number(month) - 1] ?? '',
