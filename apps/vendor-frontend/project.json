@@ -6,6 +6,7 @@
   "sourceRoot": "apps/vendor-frontend/src",
   "tags": [],
   "targets": {
+    "typecheck": {},
     "build": {
       "executor": "@angular/build:application",
       "outputs": [
@@ -76,7 +77,6 @@
       },
       "defaultConfiguration": "production"
     },
-    "typecheck": {},
     "serve": {
       "continuous": true,
       "executor": "@angular/build:dev-server",

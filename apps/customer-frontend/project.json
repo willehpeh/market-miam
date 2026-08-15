@@ -6,6 +6,7 @@
   "sourceRoot": "apps/customer-frontend/src",
   "tags": [],
   "targets": {
+    "typecheck": {},
     "build": {
       "executor": "@angular/build:application",
       "outputs": ["{options.outputPath}"],
