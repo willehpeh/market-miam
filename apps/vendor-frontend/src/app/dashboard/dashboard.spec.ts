@@ -17,7 +17,7 @@ import { marketDayView } from '../market-days/market-day-view.builder';
 import { COPIED_NOTICE_DELAY, Share } from '../core/share';
 import { FakeShare } from '../core/fake.share';
 
-async function renderDashboard() {
+async function renderDashboard(copiedNoticeDelay = 0) {
   const view = await render(Dashboard, {
     providers: [
       provideRouter([]),
@@ -26,7 +26,7 @@ async function renderDashboard() {
       { provide: MarketScheduleFacade, useClass: FakeMarketScheduleFacade },
       { provide: MarketDayFacade, useClass: FakeMarketDayFacade },
       { provide: Share, useClass: FakeShare },
-      { provide: COPIED_NOTICE_DELAY, useValue: 0 },
+      { provide: COPIED_NOTICE_DELAY, useValue: copiedNoticeDelay },
     ],
   });
   const storefront = TestBed.inject(StorefrontFacade) as FakeStorefrontFacade;
@@ -53,8 +53,8 @@ async function renderBlank() {
   return ctx;
 }
 
-async function renderReady(overrides: Partial<StorefrontView> = {}) {
-  const ctx = await renderDashboard();
+async function renderReady(overrides: Partial<StorefrontView> = {}, copiedNoticeDelay = 0) {
+  const ctx = await renderDashboard(copiedNoticeDelay);
   ctx.storefront.view.set({ ...completeStorefront, subdomain: 'acme', ...overrides });
   ctx.catalogue.items.set([aItem]);
   ctx.markets.schedules.set([aSchedule]);
@@ -235,6 +235,31 @@ describe('Dashboard', () => {
 
     await waitFor(() => expect(screen.getByText('Lien copié')).toBeInTheDocument());
     await waitFor(() => expect(screen.getByRole('button', { name: /partager/i })).toBeInTheDocument());
+  });
+
+  // Each copy is its own receipt. The reset used to be a bare timer per tap, so a second
+  // copy inherited the first one's deadline: tap again and the confirmation vanished half
+  // a second later, exactly when a vendor is tapping because they doubt it worked.
+  it('gives a second copy its own full confirmation window', async () => {
+    const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+    const { view, sharing } = await renderReady({ published: true }, 300);
+    sharing.outcome = 'copied';
+
+    fireEvent.click(screen.getByRole('button', { name: /partager/i }));
+    await waitFor(() => expect(screen.getByText('Lien copié')).toBeInTheDocument());
+
+    await sleep(180);
+    fireEvent.click(screen.getByRole('button', { name: /lien copié/i }));
+    await waitFor(() => expect(screen.getByText('Lien copié')).toBeInTheDocument());
+
+    // ~380ms after the first tap, ~200ms after the second: the first tap's deadline has
+    // passed and must not take the second tap's receipt with it.
+    await sleep(200);
+    view.detectChanges();
+    expect(screen.getByText('Lien copié')).toBeInTheDocument();
+
+    await waitFor(() => expect(screen.queryByText('Lien copié')).not.toBeInTheDocument());
+    expect(screen.getByRole('button', { name: /partager/i })).toBeInTheDocument();
   });
 
   it('says nothing when the vendor backs out of the share sheet', async () => {

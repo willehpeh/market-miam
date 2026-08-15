@@ -1,4 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Subject, switchMap, timer } from 'rxjs';
 import { RouterLink } from '@angular/router';
 import { Card } from '../core/card';
 import { COPIED_NOTICE_DELAY, Share } from '../core/share';
@@ -61,6 +63,20 @@ export class StorefrontHome {
   private readonly sharing = inject(Share);
   private readonly copiedNoticeDelay = inject(COPIED_NOTICE_DELAY);
 
+  // switchMap rather than a timer per tap: every copy is its own receipt, so a new one
+  // supersedes the pending reset instead of inheriting the previous tap's deadline. A
+  // second copy used to lose its confirmation the moment the first tap's timer came due.
+  private readonly copies = new Subject<void>();
+
+  constructor() {
+    this.copies
+      .pipe(
+        switchMap(() => timer(this.copiedNoticeDelay)),
+        takeUntilDestroyed(),
+      )
+      .subscribe(() => this.copied.set(false));
+  }
+
   async share(): Promise<void> {
     const url = this.storefrontUrl();
     if (!url) {
@@ -71,6 +87,6 @@ export class StorefrontHome {
       return;
     }
     this.copied.set(true);
-    setTimeout(() => this.copied.set(false), this.copiedNoticeDelay);
+    this.copies.next();
   }
 }
