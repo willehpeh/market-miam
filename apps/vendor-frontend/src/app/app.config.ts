@@ -9,9 +9,6 @@ import { provideNotifications } from './core/notifications/notifications.provide
 import { provideAuth } from './core/auth/auth.providers';
 import { provideVendor } from './vendor/vendor.providers';
 import { provideStorefront } from './storefront/storefront.providers';
-import { provideCatalogue } from './catalogue/catalogue.providers';
-import { provideMarketSchedules } from './markets/market-schedule.providers';
-import { provideMarketDays } from './market-days/market-day.providers';
 import { provideOnboarding } from './onboarding/onboarding.providers';
 import { provideNgrx } from './core/ngrx.providers';
 import { Share } from './core/share';
@@ -32,12 +29,16 @@ export const appConfig: ApplicationConfig = {
     ),
     { provide: Share, useClass: WebShare },
     provideNotifications(),
+    // These four are one chain at boot — LoginSuccess → RegisterVendor →
+    // RegisterVendorSuccess → LoadStorefront → LoadStorefrontSuccess → the navigation
+    // that decides between /onboarding and /dashboard — and it runs whatever route the
+    // vendor opened. An effect in it that is not listening when its action fires strands
+    // them on "Nous préparons votre stand…", so these stay here.
+    // The catalogue, market-schedule and market-day slices are not in that chain and now
+    // arrive with the dashboard chunk: see dashboard.routes.ts.
     provideAuth(),
     provideVendor(),
     provideStorefront(),
-    provideCatalogue(),
-    provideMarketSchedules(),
-    provideMarketDays(),
     provideOnboarding(),
     provideNgrx()
   ],

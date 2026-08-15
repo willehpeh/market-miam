@@ -8,7 +8,9 @@
   "targets": {
     "build": {
       "executor": "@angular/build:application",
-      "outputs": ["{options.outputPath}"],
+      "outputs": [
+        "{options.outputPath}"
+      ],
       "inputs": [
         "production",
         "^production",
@@ -30,14 +32,16 @@
             "output": "assets"
           }
         ],
-        "styles": ["apps/vendor-frontend/src/styles.css"]
+        "styles": [
+          "apps/vendor-frontend/src/styles.css"
+        ]
       },
       "configurations": {
         "production": {
           "budgets": [
             {
               "type": "initial",
-              "maximumWarning": "560kb",
+              "maximumWarning": "545kb",
               "maximumError": "620kb"
             },
             {
@@ -72,6 +76,7 @@
       },
       "defaultConfiguration": "production"
     },
+    "typecheck": {},
     "serve": {
       "continuous": true,
       "executor": "@angular/build:dev-server",
@@ -93,15 +98,23 @@
       "options": {
         "buildTarget": "vendor-frontend:build:testing",
         "watch": false,
-        "setupFiles": ["apps/vendor-frontend/src/test-setup.ts"],
+        "setupFiles": [
+          "apps/vendor-frontend/src/test-setup.ts"
+        ],
         "coverage": true,
-        "coverageInclude": ["src/**/*.ts"],
+        "coverageInclude": [
+          "src/**/*.ts"
+        ],
         "coverageExclude": [
           "src/**/*.spec.ts",
           "src/main.ts",
           "src/**/*.config.ts"
         ],
-        "coverageReporters": ["text-summary", "html", "lcov"]
+        "coverageReporters": [
+          "text-summary",
+          "html",
+          "lcov"
+        ]
       },
       "configurations": {
         "watch": {
