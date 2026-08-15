@@ -60,7 +60,7 @@ type Row = { itemId: string; name: string };
 
         @if (epuises().length) {
           <section class="mt-8" aria-labelledby="epuises-heading">
-            <h2 id="epuises-heading" class="text-sm font-bold uppercase tracking-wide text-muted">Épuisé</h2>
+            <h2 id="epuises-heading" class="text-sm font-bold uppercase tracking-wide text-muted">Épuisés</h2>
             <ul class="mt-3 space-y-2">
               @for (item of epuises(); track item.itemId) {
                 <li>
