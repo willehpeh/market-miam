@@ -5,10 +5,12 @@ standing in, the day's menu carries per-dish availability, and the vendor closes
 they pack up. Wireframe: `tmp/live-mode.png` (its logo and *bientôt épuisé* tag are not the
 design).
 
-Slice 0 shipped. Slice 1 is built through HTTP — both availability events, the today-guard,
-`soldOutItemIds` on the read model and both query payloads, `inProgress` on the occurrence, the
-sort fix, and the idempotent availability route — with the `today` flag on the occurrence
-(decision 42), the vendor and customer UI and the ops alert still to come.
+Slice 0 shipped. Slice 1's backend is built through HTTP — both availability events, the
+today-guard, `soldOutItemIds` on the read model and both query payloads, `inProgress` and
+`today` (decision 42) on the occurrence, the sort fix, and the idempotent availability route —
+and the vendor side is shipped: the doorway card (decisions 41–43) and the live screen with
+its rows, épuisé group, pre-live banner, waiting poll and *En direct* receipt. The customer UI
+and the ops alert remain.
 
 ## Shape
 
@@ -30,7 +32,7 @@ row on the home page. Three things the plan did not call:
   resolver runs inside the navigation, so flushing by hand races the router. It also counts
   requests, which is what proves one fetch serves both children.
 
-**Slice 1 — sold-out, end to end. Backend done through HTTP; vendor UI, customer UI and the ops alert remain.** Migration `0014` and the Postgres availability SQL are contract-covered but written in an environment with no Docker — run the container suite before trusting the adapter.
+**Slice 1 — sold-out, end to end. Backend and vendor UI done; customer UI and the ops alert remain.** Migration `0014` and the Postgres availability SQL are contract-covered but written in an environment with no Docker — run the container suite before trusting the adapter.
 
 | | |
 |---|---|

@@ -1,10 +1,13 @@
-import { afterNextRender, ChangeDetectionStrategy, Component, computed, ElementRef, inject, Injector, signal } from '@angular/core';
+import { afterNextRender, ChangeDetectionStrategy, Component, computed, DestroyRef, ElementRef, inject, Injector, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Card } from '../core/card';
 import { Spinner } from '../core/spinner';
-import { longDate } from '../core/french-date';
+import { formatTime, longDate } from '../core/french-date';
 import { CatalogueFacade } from '../catalogue/catalogue.facade';
 import { MarketDayFacade } from './market-day.facade';
+import { awaitingStart, broadcasting } from './live-status';
+
+const WAITING_POLL_MS = 60_000;
 
 type Row = { itemId: string; name: string };
 
@@ -21,6 +24,19 @@ type Row = { itemId: string; name: string };
       } @else if (day(); as marketDay) {
         <h1 class="text-xl leading-tight">{{ marketDay.label }}</h1>
         <p class="mt-3 text-sm text-ink-soft">{{ marketDay.marketName }}</p>
+
+        <!-- One slot, two server-said states (decisions 27, 37): the stated boundary
+             while waiting, the broadcast receipt once live. Never a countdown. -->
+        @if (live()) {
+          <div class="mt-4 rounded-card border border-brand bg-surface p-3">
+            <p class="font-bold text-brand">En direct</p>
+            <p class="text-sm text-ink-soft">Vos clients voient ce menu.</p>
+          </div>
+        } @else if (waiting()) {
+          <div class="mt-4 rounded-card bg-surface-sunk p-3">
+            <p class="text-sm text-ink-soft">Vos clients verront ce menu à partir de {{ startLabel() }}.</p>
+          </div>
+        }
 
         <!-- One fast tap on a full-width row; the row moving into the épuisé group is the
              receipt — no toast, no confirm (decision 7). -->
@@ -106,11 +122,27 @@ export class LiveScreen {
   readonly active = computed(() => this.planned().filter((item) => !this.soldOut().has(item.itemId)));
   readonly epuises = computed(() => this.planned().filter((item) => this.soldOut().has(item.itemId)));
 
+  readonly live = computed(() => broadcasting(this.occurrence()));
+  readonly waiting = computed(() => awaitingStart(this.occurrence()));
+  readonly startLabel = computed(() => {
+    const startTime = this.occurrence()?.startTime;
+    return startTime ? formatTime(startTime) : '';
+  });
+
   readonly note = signal('');
 
   constructor() {
     this.marketDays.load();
     this.catalogue.load();
+    // Decision 8's mechanism gated on waiting (decision 27): each tick asks the gate, so
+    // the re-asks stop the moment the server says live — and the gate, not the interval,
+    // is the part under test (decision 32b).
+    const poll = setInterval(() => {
+      if (awaitingStart(this.occurrence())) {
+        this.marketDays.refresh();
+      }
+    }, WAITING_POLL_MS);
+    inject(DestroyRef).onDestroy(() => clearInterval(poll));
   }
 
   markSoldOut(item: Row): void {

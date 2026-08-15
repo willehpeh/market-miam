@@ -11,6 +11,7 @@ import {
   LoadMarketDays,
   LoadMarketDaysFailure,
   LoadMarketDaysSuccess,
+  RefreshMarketDays,
   SetMarketDayMenu,
   SetMarketDayMenuFailure,
   SetMarketDayMenuSuccess,
@@ -24,7 +25,7 @@ export class MarketDayEffects {
 
   loadMarketDays$ = createEffect(() =>
     this.actions$.pipe(
-      ofType(LoadMarketDays),
+      ofType(LoadMarketDays, RefreshMarketDays),
       switchMap(() =>
         this.marketDays.upcoming().pipe(
           map(days => LoadMarketDaysSuccess({ days })),

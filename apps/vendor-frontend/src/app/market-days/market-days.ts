@@ -10,6 +10,9 @@ export interface MarketDayView {
   startTime?: string;
   endTime?: string;
   absent: boolean;
+  // The market is running right now — schedule truth, server-said like today below; the
+  // banner slot and the waiting poll's gate read it rather than computing hours.
+  inProgress: boolean;
   // Server-said calendar truth (decision 42): true from midnight, so the dashboard card
   // can open the live screen before the market's hours — never derived from the device clock.
   today: boolean;

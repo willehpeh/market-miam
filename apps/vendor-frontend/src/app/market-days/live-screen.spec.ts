@@ -136,6 +136,36 @@ describe('LiveScreen', () => {
     expect(screen.getByText('Bourguignon disponible')).toBeTruthy();
   });
 
+  // Decision 27: a stated boundary, not a countdown — the screen re-asks the server
+  // rather than computing when it stops being true.
+  it('states when customers will see the menu, while waiting', async () => {
+    await renderLive((md, cat) => aLiveDay(md, cat));
+
+    expect(screen.getByText(/vos clients verront ce menu à partir de 8h/i)).toBeTruthy();
+    expect(screen.queryByText('En direct')).toBeNull();
+  });
+
+  // Decision 37: the banner's slot flips to the broadcast receipt — the one change on
+  // this screen the vendor did not cause, which is why it must announce itself.
+  it('flips the slot to the En direct receipt once the server says live', async () => {
+    await renderLive((md, cat) => {
+      md.days.set([day({ today: true, inProgress: true, itemIds: ['item-1', 'item-2'] })]);
+      cat.items.set([item('item-1', 'Bourguignon'), item('item-2', 'Tatin')]);
+    });
+
+    expect(screen.getByText('En direct')).toBeTruthy();
+    expect(screen.queryByText(/verront ce menu/i)).toBeNull();
+  });
+
+  // Neither claim is honest with an empty menu (decision 12): the customer page shows
+  // its normal face either way.
+  it('claims nothing while the menu is empty', async () => {
+    await renderLive((md) => md.days.set([day({ today: true, inProgress: true })]));
+
+    expect(screen.queryByText('En direct')).toBeNull();
+    expect(screen.queryByText(/verront ce menu/i)).toBeNull();
+  });
+
   // Decision 20: the tapped row's element is destroyed when it changes group, which
   // strands keyboard and switch-control focus — so focus follows the row.
   it('moves focus with the row it moved', async () => {

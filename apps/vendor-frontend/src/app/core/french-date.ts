@@ -29,7 +29,7 @@ export function timeRange(day: { startTime?: string; endTime?: string }): string
   return day.endTime ? `${start} – ${formatTime(day.endTime)}` : start;
 }
 
-function formatTime(time: string): string {
+export function formatTime(time: string): string {
   const [hours, minutes] = time.split(':');
   const hour = String(Number(hours));
   return minutes === '00' ? `${hour}h` : `${hour}h${minutes}`;

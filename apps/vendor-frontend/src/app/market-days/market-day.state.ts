@@ -3,6 +3,9 @@ import { AmendMarketScheduleSuccess, RegisterMarketScheduleSuccess } from '../ma
 import { MarketDayView } from './market-days';
 
 export const LoadMarketDays = createAction('[Market Days] Load');
+// The waiting poll's re-ask: same request, but deliberately unreduced — no loading flip,
+// so a tick never puts a spinner over the screen it is refreshing.
+export const RefreshMarketDays = createAction('[Market Days] Refresh');
 export const LoadMarketDaysSuccess = createAction('[Market Days] Load Success', props<{ days: MarketDayView[] }>());
 export const LoadMarketDaysFailure = createAction('[Market Days] Load Failure', props<{ status: number }>());
 

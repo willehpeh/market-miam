@@ -25,6 +25,7 @@ const day = {
   startTime: '08:00',
   endTime: '13:00',
   absent: false,
+  inProgress: false,
   today: false,
   soldOutItemIds: [],
   market: { name: 'Marché de la Croix-Rousse', town: 'Lyon', codePostal: '69004' },
@@ -198,6 +199,18 @@ describe('MarketDays', () => {
         { marketId: 'market-2', itemIds: [] },
       ]),
     );
+  });
+
+  // The waiting poll's re-ask (decision 27): refresh ignores freshness — it exists to
+  // learn what only time changes — but must not flip the screen into a spinner each tick.
+  it('refreshes even while fresh, without going into loading', () => {
+    facade.load();
+    httpCtrl.expectOne('/api/market-days/upcoming').flush(asSent([]));
+
+    facade.refresh();
+
+    expect(facade.loading()).toBe(false);
+    httpCtrl.expectOne('/api/market-days/upcoming').flush(asSent([]));
   });
 
   // One idempotent route behind both commands (decision 19): a phone retrying on bad

@@ -1,7 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { MarketDayFacade } from './market-day.facade';
-import { ChangeItemAvailability, LoadMarketDays, marketDayFeature, SetMarketDayMenu } from './market-day.state';
+import { ChangeItemAvailability, LoadMarketDays, marketDayFeature, RefreshMarketDays, SetMarketDayMenu } from './market-day.state';
 
 @Injectable()
 export class StoreMarketDayFacade implements MarketDayFacade {
@@ -19,6 +19,12 @@ export class StoreMarketDayFacade implements MarketDayFacade {
     if (!this.fresh()) {
       this.store.dispatch(LoadMarketDays());
     }
+  }
+
+  // The poll's re-ask ignores freshness on purpose: it exists to learn what only time
+  // changes — inProgress flipping at startTime — which no event will ever push.
+  refresh(): void {
+    this.store.dispatch(RefreshMarketDays());
   }
 
   setMenu(marketId: string, date: string, itemIds: string[]): void {

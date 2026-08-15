@@ -14,6 +14,12 @@ export class FakeMarketDayFacade implements MarketDayFacade {
     this.loaded = true;
   }
 
+  refreshed = 0;
+
+  refresh(): void {
+    this.refreshed++;
+  }
+
   setMenu(marketId: string, date: string, itemIds: string[]): void {
     this.savedMenu = { marketId, date, itemIds };
   }
