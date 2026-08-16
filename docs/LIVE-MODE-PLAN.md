@@ -16,6 +16,10 @@ route-provided feed polls while broadcasting and re-asks on the tab becoming vis
 paging through `GET /api/health` and an external monitor, the free tier having no trigger
 slot (`O11Y-PLAN.md` step 5). **Slice 1 is complete.**
 
+**Next is slice 2**, whose decisions are all settled — nothing in Open blocks it. **Slice 2b is
+not startable as written**: the rating capture window is open and it revises decision 11, and
+the French copy for the two judgments is open. Decide both before 2b, not during.
+
 ## Shape
 
 What gets built, in order. Why is in the decisions below.
@@ -36,7 +40,7 @@ row on the home page. Three things the plan did not call:
   resolver runs inside the navigation, so flushing by hand races the router. It also counts
   requests, which is what proves one fetch serves both children.
 
-**Slice 1 — sold-out, end to end. Shipped whole.** Migration `0014` and the Postgres availability SQL are contract-covered but written in an environment with no Docker — run the container suite before trusting the adapter.
+**Slice 1 — sold-out, end to end. Shipped whole.** Migration `0014` and the Postgres availability SQL were written in an environment with no Docker; the container suite has since been run and passes, so the adapter is verified, not just contract-covered.
 
 | | |
 |---|---|
@@ -58,7 +62,7 @@ row on the home page. Three things the plan did not call:
 | Read model | `closed` on the row; store gains `close` · `reopen` |
 | Query | `FindNextMarketDay` keeps a closed day until `endTime`; the customer's list drops it |
 | HTTP | `PUT /market-days/:marketId/:date/closed` → `{ closed: boolean }` (decision 44) |
-| Vendor | **Fermer le stand** at the foot of the live screen, no confirm dialog; once closed the screen goes inert — rows untappable, *Modifier le menu* hidden, **Rouvrir le stand** where it stood (decision 38); the card renders *Stand fermé · Rouvrir*; the pre-live screen gains *Je ne peux pas venir aujourd'hui* (decisions 40, 45) |
+| Vendor | **Fermer le stand** at the foot of the live screen, no confirm dialog; once closed the screen goes inert — rows untappable **as availability controls but still rows** (decisions 38, 48), *Modifier le menu* hidden, **Rouvrir le stand** where it stood; the card renders *Stand fermé · Rouvrir*; the pre-live screen gains *Je ne peux pas venir aujourd'hui* (decisions 40, 45) |
 
 **Slice 2b — outcomes (decision 47).** Between close and the takeover: the three outcomes per
 item per market day that `MARKET_MIAM.md` calls post-market tracking.
