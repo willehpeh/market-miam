@@ -29,13 +29,22 @@ const aujourdhui = [
     texte:
       'Quels marchés, quels jours, quels horaires. Et vos clients d’un marché découvrent qu’ils peuvent aussi vous retrouver ailleurs dans la semaine.',
   },
+  {
+    titre: 'Le menu du jour',
+    texte:
+      'Ce que vous servez à chaque marché, publié la veille ou le matin même. Vos habitués savent ce qui les attend avant de sortir de chez eux.',
+  },
+  {
+    titre: 'Pendant le marché',
+    texte:
+      'Un plat est parti ? Une touche, et il passe en épuisé sur votre vitrine. Vos clients en route le voient avant d’arriver.',
+  },
 ];
 
 const bientot = [
-  'Le menu du jour, publié marché par marché — et « il n’y en a plus » en direct quand un plat part',
-  'Le <strong>miam</strong> : vos clients disent ce qui leur fait envie avant le marché — sans commander, sans payer',
   'Après chaque marché, un geste par plat : ça a bien marché, ça n’a pas marché, il n’y en avait plus',
   'Au fil des semaines, vos réponses deviennent des repères : quoi préparer la veille, et en quelle quantité',
+  'Le <strong>miam</strong> : vos clients disent ce qui leur fait envie avant le marché — sans commander, sans payer',
 ];
 ---
 
@@ -54,12 +63,12 @@ const bientot = [
         <h1>Plus besoin de poster votre menu en story à 6&nbsp;h du matin.</h1>
         <p class="lede">
           Market Miam donne à chaque traiteur sa propre vitrine : votre carte, vos marchés,
-          vos horaires. Vos habitués la consultent quand ils veulent — elle ne s’efface pas
-          au bout de 24&nbsp;heures.
+          et le menu du jour publié marché par marché. Vos habitués la consultent quand ils
+          veulent — elle ne s’efface pas au bout de 24&nbsp;heures.
         </p>
         <div class="hero-actions">
           <button class="btn btn-solid" {...cta}>Rejoignez les premiers traiteurs</button>
-          <p class="note">Gratuit pendant la phase pilote. Sans engagement.</p>
+          <p class="note">Premier mois offert. Sans engagement.</p>
         </div>
       </div>
       <figure class="shot">
@@ -100,7 +109,7 @@ const bientot = [
 
     <section class="wrap section">
       <p class="eyebrow">Disponible aujourd’hui</p>
-      <h2>Ce que Market Miam vous donne dès l’inscription</h2>
+      <h2>Ce que Market Miam vous donne aujourd’hui</h2>
       <div class="cards">
         {
           aujourdhui.map((item) => (
@@ -139,8 +148,12 @@ const bientot = [
         </p>
         <ul class="terms">
           <li>
-            <strong>Gratuit</strong> jusqu’à la sortie des fonctionnalités en cours de
-            développement, puis <strong>{PRIX_MENSUEL} par mois</strong>.
+            <strong>Premier mois offert</strong>, puis <strong>{PRIX_MENSUEL} par mois</strong>
+            (18&nbsp;€&nbsp;TTC). Sans engagement — vous arrêtez quand vous voulez.
+          </li>
+          <li>
+            <strong>Le tarif ne bouge pas</strong> — ce qui arrive ensuite est compris, sans
+            supplément.
           </li>
           <li><strong>Aucune commission</strong> sur vos ventes. Jamais.</li>
           <li><strong>Vos clients restent vos clients</strong> — pas ceux d’une plateforme.</li>

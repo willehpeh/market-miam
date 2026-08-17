@@ -6,7 +6,7 @@
 
 Single page, French, plain CSS over `packages/design-system/tokens.css`.
 
-- Hero → problem → *Disponible aujourd'hui* (vitrine, carte, marchés) → *Ce qui arrive ensuite* → pilot terms → footer
+- Hero → problem → *Disponible aujourd'hui* (vitrine, carte, marchés, menu du jour, pendant le marché) → *Ce qui arrive ensuite* → pilot terms → footer
 - Tally popup lead capture, form `aQX9NB` (nom / adresse mail / marchés où vous exercez)
 - `og:*` + `twitter:*` + canonical in `Base.astro`; `og.jpg` 1200×630
 - Hero shot links to the live demo storefront
@@ -29,10 +29,16 @@ vendor app and the customer storefront.
 **carte vs menu is a deliberate split.** *Carte* is the standing list (the catalogue),
 *menu* is the day's offering (the market day). So *Le menu du jour* is right and *carte
 du jour* is not — the hero alt text says *sa carte* because what's in the screenshot is
-the standing carte. The menu du jour has since shipped and now renders **above** the carte
-on a storefront, so a fresh hero screenshot would show both.
+the standing carte.
 
-Also swapped in `Base.astro`'s meta description, which is what Google shows.
+**The hero shot is now stale, and the alt text with it.** Live-mode slice 0 moved the carte
+to its own `/carte` page, so a storefront home is *Prochain marché* (carrying the day's menu)
+plus a *Notre carte* row — not the standing carte the screenshot shows. Reshoot before
+touching that alt text; the two have to move together, and the copy is correct for the image
+currently in `public/`. Tracked in Remaining §6.
+
+Also swapped in `Base.astro`'s meta description, which is what Google shows — refreshed again
+when the menu du jour moved into *Disponible aujourd'hui* (152 chars, still mission-first).
 
 ### SEO plumbing
 
@@ -79,20 +85,24 @@ doesn't cost the landing page.
 
 ### Roadmap section (`f32ace5`, `a49c622`, `64ab3a4`)
 
-Four bullets, led by the **miam** (bold, `--mm-brand-deep`). The lede ends *"Nous le
-construisons dans cet ordre."* — order beats disclaimer. The section already says once that
-none of it is online; repeating that across a longer list reads as vapour, whereas a stated
-sequence reads as a queue someone is working through.
+The lede ends *"Nous le construisons dans cet ordre."* — order beats disclaimer. The section
+already says once that none of it is online; repeating that across a longer list reads as
+vapour, whereas a stated sequence reads as a queue someone is working through.
 
-The bullets sit at deliberately different distances. What's actually behind each:
+**Cut to three bullets once live-mode slice 1 shipped.** The menu-du-jour-and-*il n'y en a
+plus* bullet described work that is now live end to end, so it moved into *Disponible
+aujourd'hui* as two cards (below), and the **miam** moved to last — the owner's order is
+close → waste-watch → miam. What's behind what remains:
 
 | Bullet | Reality |
 |---|---|
-| menu du jour | **Shipped end-to-end** — a vendor plans the next market day from their dashboard, and it shows on the storefront above the carte (`docs/MENU-DU-JOUR-PLAN.md`). Safe to talk about in the present tense. |
-| *il n'y en a plus* | Domain only — `mark-item-as-sold-out`, `ItemMarkedAsSoldOut`. No read model, no HTTP, no UI. Now the cheapest roadmap item to ship, and mostly a frontend job. |
+| post-market feedback per dish | Slice 2b of `LIVE-MODE-PLAN.md`. Decisions settled, unbuilt; blocked on close shipping first |
+| repères over time | Waste-watch. Not built, and the last thing before the miam |
 | le miam | **Nothing built.** No aggregate, no event, no handler; `NEXT_BEHAVIOURS.md` has *item rated for market day* unstarted. Furthest-out thing on the page — have an answer ready for *"when?"* |
-| post-market feedback per dish | Not built |
-| repères over time | Not built |
+
+Five shipped cards against three coming, so the shipped-to-promised ratio the cap exists to
+protect is comfortable now — which is headroom to spend on the close clause, not an invitation
+to lengthen the roadmap.
 
 **Why the miam earns its line despite being unbuilt:** it's the namesake, and it's the only
 roadmap item where the *customer* does something rather than the vendor doing admin — which
@@ -100,9 +110,10 @@ is what makes a product read as alive. *"sans commander, sans payer"* is load-be
 the honest description (a private demand signal, not an order — `MARKET_MIAM.md:42`) and it
 heads off the reading that this is becoming a delivery marketplace.
 
-Roadmap length is capped on purpose. Three shipped things against four coming is already the
+Roadmap length is capped on purpose. Three shipped things against four coming was already the
 edge; more future items and the shipped-to-promised ratio tips the page into reading like a
-pre-launch teaser, which is the opposite of the intent.
+pre-launch teaser, which is the opposite of the intent. The cap is a ceiling on the *promised*
+side — the ratio moving to five-against-three as features ship does not license adding any back.
 
 ## Remaining
 
@@ -192,11 +203,31 @@ Capture: same demo account as the storefront shot so names match; ~1200px wide; 
 
 **Decision: capture, then hold.** The hero storefront shot does the selling. Dashboard shots lengthen the page and go stale every time that UI changes. Ship them only if pilot conversations stall on *"is this a hassle to maintain?"*
 
+### 6. The close clause (on the day slice 2 deploys)
+
+One sentence, appended to the *Pendant le marché* card in `index.astro` — **not before the
+deploy**, because *Disponible aujourd'hui* claims only what a vendor can do that afternoon:
+
+> Et quand vous remballez — ou si vous ne pouvez pas venir — vous fermez le stand : votre
+> vitrine cesse d'annoncer un marché où vous n'êtes plus.
+
+It carries both doors of decision 45 (*Fermer le stand*, *Je ne peux pas venir aujourd'hui*)
+without naming either label, so vendor-app copy can move without dragging the site with it.
+The customer-side promise is the one worth selling: nobody walks over for nothing.
+
+### 7. Reshoot the hero storefront (`storefront-demo.webp`)
+
+Stale since slice 0 — see the carte-vs-menu note above. Shoot on a live market morning so the
+frame carries *Prochain marché* with the day's menu, at least one **Épuisé** row and the
+*Notre carte* entry; that single image then shows everything the two new cards claim. Alt text
+becomes *…photo de stand, nom du traiteur et le menu du jour*, and `og.jpg` is composed from
+the same shot so it regenerates too — which means a forced re-scrape, per §1.
+
 ## Deferred
 
 | Item | Add when |
 |------|----------|
-| Pilot price freeze | Owner decides he means it — it's the only genuine commercial commitment that would be on the page, which is why it's pinned rather than shipped. Draft, for the pilot terms: *Le tarif du pilote ne bouge pas — ce que nous ajouterons ensuite est compris.* Turns the roadmap from a threat ("will this get expensive?") into a reason to join now. |
+| ~~Pilot price freeze~~ | **Shipped 2026-08**, alongside the price itself — see the decisions above for why it stopped being optional at that moment. |
 | A 50 € tier (préco + réservation) | **Deliberately not on the page**, and not just "later". It turns the reassurance block into a pricing table, and a vendor reads *the good stuff costs 50, 15 buys the brochure* — at the exact moment you're asking for trust. Feature gating is still an Open Item in `MARKET_MIAM.md`, so publishing a split would commit in public to something undecided. And preordering is unscoped: no aggregate, no events, and it drags in payments, no-shows and customer PII the product currently avoids by design. |
 | Analytics | Real traffic worth measuring. Needs a cookie banner if it sets cookies. |
 | Client testimonial + real storefront shots | First *vendor* is actually live — the demo doesn't count. |
@@ -213,14 +244,33 @@ Capture: same demo account as the storefront shot so names match; ~1200px wide; 
 - **`--mm-brand` for decoration, `--mm-brand-deep` for brand-as-text on light.** Measured on the roadmap list: `--mm-brand` is 3.90:1 against that section's background at 16px, under the 4.5:1 AA floor; `--mm-brand-deep` is 7.75:1. The file already followed this split (`.eyebrow`, `.foot a`, `.legal a`) — now it's written down.
 - **Tally over Formspree** — unlimited responses free, and Belgium-based, so French vendors' data stays in the EU. Free tier shows Tally branding; Pro (€20/mo) removes it, not needed yet.
 - **Popup, not inline iframe** — page stays on-brand, branding is less visible in an overlay.
-- **Price named before it's charged** — *gratuit … puis 15 € HT/mois*. Stating it now avoids a cold ask at conversion and filters people who were never customers.
-- **The pilot ends when the roadmap features ship — the two *gratuit* statements are one
-  period, two angles.** Hero note: *pendant la phase pilote*; pilot terms: *jusqu'à la
-  sortie des fonctionnalités en cours de développement* (echoing the roadmap section's
-  eyebrow so the referent stays local). The feature gate is the promise a traiteur can
-  verify from outside; don't reword either side to a period that can drift from the other.
+- **Price named before it's charged** — stating it avoids a cold ask at conversion and filters people who were never customers. Now literal: it *is* charged.
+- ~~**The pilot ends when the roadmap features ship — the two *gratuit* statements are one
+  period, two angles.**~~ **Superseded 2026-08: the price is 15 € HT/mois as of now, with the
+  first month offered.** The feature gate was a good promise while most of the roadmap was
+  unbuilt; against two remaining items it reads as a countdown to an invoice, which is worse
+  than a plain price. Nobody had signed up under the old terms, so nothing was owed. The two
+  statements are no longer coupled — the hero note (*Premier mois offert. Sans engagement.*)
+  and the pilot terms both name a calendar month, not a feature gate, and neither can drift
+  from the other. **The pilot is no longer defined by being free**: it is the hand-onboarded
+  cohort of five to ten, it ends when that fills, and the page deliberately promises nothing
+  about when — because with a flat price, the end of the pilot costs a vendor nothing.
+- **The price freeze ships with the price** — *Le tarif ne bouge pas — ce qui arrive ensuite
+  est compris, sans supplément.* Load-bearing, not decoration: without *gratuit*, the roadmap
+  section flips valence from "you're not paying for the unbuilt part" to "you're paying 15 €
+  for a product whose own page says three things are missing". The freeze is what turns that
+  back into a reason to join now, and it costs nothing — 15 € was the price either way.
+- **No billing system, deliberately** — ADR 0048 settles Billing's architecture but
+  `packages/billing` does not exist. Five to ten vendors are invoiced by hand from the
+  micro-entreprise; non-payment is handled by unpublishing a storefront by hand.
+  `NEXT_BEHAVIOURS.md`'s *subscription as a publication requirement* triggers on the first
+  paid plan — that trigger has now fired, and staying manual is the standing answer until
+  the cohort outgrows it, not an oversight.
+- **HT and TTC are both shown** — *15 € HT par mois (18 € TTC)*. HT alone is the correct B2B
+  convention and stays the headline, but a traiteur en franchise de TVA cannot reclaim the
+  20 %, so HT-only would be a surprise at the first invoice. One parenthesis, no surprise.
 - **Storefront shot in the hero, not the dashboard** — it's what a vendor is buying.
-- **"Market Miam" appears in one on-page heading** — the *Disponible aujourd'hui* h2, *Ce que Market Miam vous donne dès l'inscription*. Before that, the name was in `<title>`, metas, alt text and body copy but in no `h1`–`h6` on the whole site — a weak signal for brand queries. The hero h1 stays a brand-free hook; that section is the natural home because it's literally what Market Miam gives you.
+- **"Market Miam" appears in one on-page heading** — the *Disponible aujourd'hui* h2, *Ce que Market Miam vous donne aujourd'hui* (was *dès l'inscription*, which stopped covering the section once a market-morning feature joined it; the brand stays in the heading either way). Before that, the name was in `<title>`, metas, alt text and body copy but in no `h1`–`h6` on the whole site — a weak signal for brand queries. The hero h1 stays a brand-free hook; that section is the natural home because it's literally what Market Miam gives you.
 - **`public/` holds generated assets, not originals.** Regeneration recipe in the app README.
 
 ## Astro traps hit here (save the next person the debugging)
