@@ -6,13 +6,14 @@ import { longDate } from '../core/french-date';
 import { CatalogueFacade } from '../catalogue/catalogue.facade';
 import { formatEuros } from '../catalogue/money';
 import { MarketDayFacade } from './market-day.facade';
+import { hasLiveScreen } from './live-status';
 
 @Component({
   selector: 'mm-menu-editor',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [Card, RouterLink, Spinner],
   template: `
-    <mm-card back="/dashboard">
+    <mm-card [back]="back()">
       @if (loading()) {
         <div class="mx-auto grid h-32 place-items-center">
           <mm-spinner label="Chargement du marché…" />
@@ -57,10 +58,11 @@ export class MenuEditor {
   private readonly catalogue = inject(CatalogueFacade);
   private readonly route = inject(ActivatedRoute);
 
-  // One entry point (the dashboard card), so params are read once — and `touched` below
-  // is keyed to them. Before adding any second link to this route, go reactive:
-  // toSignal(paramMap) + a linkedSignal reset, or day A's ticks silently become day B's
-  // saved menu on a param-only navigation. VENDOR-FRONTEND-FOLLOWUPS.md §3.
+  // Params are read once, and `touched` below is keyed to them. Both ways in — the
+  // dashboard card and the live screen (decision 10) — arrive from another route, so the
+  // component is built fresh each time. An editor→editor link is the one that arms this:
+  // go reactive first, or day A's ticks silently become day B's saved menu on a param-only
+  // navigation. VENDOR-FRONTEND-FOLLOWUPS.md §3.
   private readonly marketId = this.route.snapshot.paramMap.get('marketId') ?? '';
   private readonly date = this.route.snapshot.paramMap.get('date') ?? '';
 
@@ -70,6 +72,12 @@ export class MenuEditor {
 
   private readonly occurrence = computed(() =>
     this.marketDays.days().find((candidate) => candidate.marketId === this.marketId && candidate.date === this.date),
+  );
+
+  // Back to the day, not always to the dashboard: the card's own gate picks, so a vendor
+  // who came from the live screen to add a tray is put back on it.
+  readonly back = computed(() =>
+    hasLiveScreen(this.occurrence()) ? `/dashboard/live/${this.marketId}/${this.date}` : '/dashboard',
   );
 
   readonly day = computed(() => {

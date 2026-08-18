@@ -1,7 +1,7 @@
 import { MarketDayView } from './market-days';
 
 // The one Saturday every market-day spec stages. A field added to the view lands here
-// once, not in a literal per spec file — slice 2's `closed` is the next arrival.
+// once, not in a literal per spec file.
 export const marketDayView = (overrides: Partial<MarketDayView> = {}): MarketDayView => ({
   scheduleId: 'schedule-1',
   marketId: 'market-1',
@@ -12,6 +12,7 @@ export const marketDayView = (overrides: Partial<MarketDayView> = {}): MarketDay
   absent: false,
   inProgress: false,
   today: false,
+  closed: false,
   itemIds: [],
   soldOutItemIds: [],
   market: { name: 'Marché de la Croix-Rousse', codePostal: '69004', town: 'Lyon' },

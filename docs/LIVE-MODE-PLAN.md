@@ -20,7 +20,9 @@ slot (`O11Y-PLAN.md` step 5). **Slice 1 is complete.**
 their *today*, no-op and ended guards, `_closed` in `apply`, decision 29's guards on `setMenu`
 and both availability commands, `closed` on the read model and on the occurrence, the customer
 list dropping a closed day, the idempotent `PUT …/closed`, and `GET /market-days/:marketId/:date`
-behind `FindMarketDay` (decision 50). **Next is slice 2's vendor screens.** **Slice 2b is still
+behind `FindMarketDay` (decision 50). **Slice 2's live screen is shipped** — close, the closed
+state, reopen, the inert rows and decision 10's editor link. **Next is the editor's
+*Je ne peux pas venir aujourd'hui* and the card's `closed` branch (decision 51).** **Slice 2b is still
 not startable as written**, but on one count rather than two: the French copy for the two
 judgments is open. The rating capture window is settled — decision 50 dissolved it.
 
@@ -86,6 +88,29 @@ Four things the plan did not call, landing across slice 2's backend:
 - **`MarketDays` reads the vendor's calendar** so the aggregate is constituted with the day's
   hours (decision 50). `Calendar.apply` had never handled `MarketScheduleAmended`, which was
   harmless while it only tracked `marketId` and is not once it answers about hours.
+
+Four more the plan did not call, landing with slice 2's live screen:
+
+- **The editor's exits were both hard-wired to the dashboard**, so a vendor who tapped
+  *Modifier le menu* mid-market was thrown out of the day to save one dish. The card's own gate
+  is now one predicate — `hasLiveScreen(day)` in `live-status.ts`, decision 27's `today &&
+  itemIds.length > 0` — read by the card, by `awaitingStart`, and by both of the editor's exits,
+  so the doorway and the way back cannot drift apart. `SetMarketDayMenuSuccess` reads it after
+  its own patch (reducers run before effects), which is why saving today's first menu lands on
+  the live screen rather than where the vendor came from.
+- **The closed banner outranks the live one.** Decision 38 took the confirm dialog away on
+  purpose, which leaves the banner as the only thing telling a vendor a mistap just took them
+  out of every customer's list — so *Stand fermé* is the loud state and *En direct* the quiet
+  one, not the other way round. It carries the consequence as a subline, *Vos clients ne voient
+  plus ce marché.* — copy decision 45 did not settle.
+- **Decision 48's *inert* got a visual form**: closed rows sink onto the canvas and lose their
+  border, keeping their text at full strength. Dimming was rejected twice over — the base layer's
+  `disabled:opacity-50` is unreadable in market sun, and the day's menu is still what the vendor
+  is reading. The raised card is what says *tappable*, so that is what goes.
+- **`.quiet` became a design-system utility**, out of `add-item.ts` where it dressed *Annuler*.
+  *Fermer le stand* is the second neutral outline control in the app: not the brand colour, which
+  belongs to *En direct* and would out-shout the dishes, and not the danger colour, which
+  overclaims a state decision 38 calls more reversible than sold-out.
 
 **Slice 2b — outcomes (decision 47).** Between close and the takeover: the three outcomes per
 item per market day that `MARKET_MIAM.md` calls post-market tracking.

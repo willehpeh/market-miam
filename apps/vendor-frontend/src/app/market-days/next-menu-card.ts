@@ -3,6 +3,7 @@ import { RouterLink } from '@angular/router';
 import { Card } from '../core/card';
 import { longDate, timeRange } from '../core/french-date';
 import { MarketDayFacade } from './market-day.facade';
+import { hasLiveScreen } from './live-status';
 
 @Component({
   selector: 'mm-next-menu-card',
@@ -43,7 +44,7 @@ export class NextMenuCard {
     const items = day.itemIds.length;
     // The doorway flips on planning plus the server-said today, never the clock alone
     // (decisions 27, 42) — so it leads to the live screen from midnight, not from startTime.
-    const live = day.today && items > 0;
+    const live = hasLiveScreen(day);
     return {
       label: longDate(day.day, day.date),
       marketName: day.market.name,

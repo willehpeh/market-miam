@@ -103,16 +103,6 @@ type ItemModel = { name: string; price: string; description: string; variants: F
     .format-confirm:active {
       background: var(--color-danger);
     }
-    .quiet {
-      background: transparent;
-      color: var(--color-ink-soft);
-      border: 1px solid var(--color-line-strong);
-      box-shadow: none;
-    }
-    .quiet:hover,
-    .quiet:active {
-      background: var(--color-surface-sunk);
-    }
   `,
   template: `
     <mm-card>

@@ -77,8 +77,9 @@ follow-up GET could only clobber it.
 `menu-editor.ts` reads its route params from the **snapshot** and keys the vendor's tick state
 (`touched`) to nothing. Angular reuses a component instance on a param-only navigation, so the day
 an editor→editor link exists, navigating from day A to day B keeps A's component alive with stale
-params — and A's ticks silently become B's saved menu. Today this is unreachable: the dashboard
-card is the only way in and it links to one day.
+params — and A's ticks silently become B's saved menu. Today this is unreachable: both ways in —
+the dashboard card and the live screen's *Modifier le menu* (live-mode decision 10) — arrive from
+another route, so the component is built fresh each time, and neither links to a second day.
 
 The fix, when it arms:
 
@@ -91,6 +92,7 @@ The fix, when it arms:
   B's menu renders and A's ticks did not bleed. Written today it would exercise a path no user can
   reach, which is why this waits
 
-Armed by: any second link to `/dashboard/menus/:marketId/:date` — the deferred "plan later in
-time" day list is the expected trigger (decision 7 narrowed the card to one day; the 56-day window
+Armed by: an **editor→editor** link — a second entry point from elsewhere does not arm it, since
+only a param-only navigation reuses the instance. The deferred "plan later in time" day list is the
+expected trigger (decision 7 narrowed the card to one day; the 56-day window
 the store already holds makes the list cheap).

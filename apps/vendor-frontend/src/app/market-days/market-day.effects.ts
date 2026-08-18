@@ -2,12 +2,17 @@ import { inject, Injectable } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
-import { catchError, concatMap, map, of, switchMap, tap } from 'rxjs';
+import { catchError, concatMap, map, of, switchMap, tap, withLatestFrom } from 'rxjs';
+import { Store } from '@ngrx/store';
 import { MarketDays } from './market-days';
+import { hasLiveScreen } from './live-status';
 import {
   ChangeItemAvailability,
   ChangeItemAvailabilityFailure,
   ChangeItemAvailabilitySuccess,
+  ChangeStandClosure,
+  ChangeStandClosureFailure,
+  ChangeStandClosureSuccess,
   LoadMarketDays,
   LoadMarketDaysFailure,
   LoadMarketDaysSuccess,
@@ -15,6 +20,7 @@ import {
   SetMarketDayMenu,
   SetMarketDayMenuFailure,
   SetMarketDayMenuSuccess,
+  marketDayFeature,
 } from './market-day.state';
 
 @Injectable()
@@ -22,6 +28,7 @@ export class MarketDayEffects {
   private readonly actions$ = inject(Actions);
   private readonly marketDays = inject(MarketDays);
   private readonly router = inject(Router);
+  private readonly store = inject(Store);
 
   loadMarketDays$ = createEffect(() =>
     this.actions$.pipe(
@@ -63,12 +70,31 @@ export class MarketDayEffects {
     ),
   );
 
-  navigateToDashboard$ = createEffect(
+  // Queued like the availability pair, and for the same reason: close then reopen must
+  // not race, or the day settles on whichever response happens to land last.
+  changeClosure$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(ChangeStandClosure),
+      concatMap(({ marketId, date, closed }) =>
+        this.marketDays.changeClosure(marketId, date, closed).pipe(
+          map(() => ChangeStandClosureSuccess()),
+          catchError(() => of(ChangeStandClosureFailure({ marketId, date, closed }))),
+        ),
+      ),
+    ),
+  );
+
+  // Back to the day, not to the dashboard: the card's own gate decides, so a menu saved
+  // for today lands on the live screen and everything else lands where it always did. The
+  // days are read after the patch above — reducers run before effects.
+  navigateAfterSave$ = createEffect(
     () =>
       this.actions$.pipe(
         ofType(SetMarketDayMenuSuccess),
-        tap(() => {
-          void this.router.navigate(['/dashboard']);
+        withLatestFrom(this.store.select(marketDayFeature.selectDays)),
+        tap(([{ marketId, date }, days]) => {
+          const saved = days.find(day => day.marketId === marketId && day.date === date);
+          void this.router.navigate(hasLiveScreen(saved) ? ['/dashboard/live', marketId, date] : ['/dashboard']);
         }),
       ),
     { dispatch: false },

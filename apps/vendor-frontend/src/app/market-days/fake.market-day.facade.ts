@@ -9,6 +9,7 @@ export class FakeMarketDayFacade implements MarketDayFacade {
   loaded = false;
   savedMenu: { marketId: string; date: string; itemIds: string[] } | undefined;
   availabilityChanges: { marketId: string; date: string; itemId: string; soldOut: boolean }[] = [];
+  closures: { marketId: string; date: string; closed: boolean }[] = [];
 
   load(): void {
     this.loaded = true;
@@ -30,6 +31,14 @@ export class FakeMarketDayFacade implements MarketDayFacade {
 
   markAvailable(marketId: string, date: string, itemId: string): void {
     this.changeAvailability(marketId, date, itemId, false);
+  }
+
+  close(marketId: string, date: string): void {
+    this.closures.push({ marketId, date, closed: true });
+  }
+
+  reopen(marketId: string, date: string): void {
+    this.closures.push({ marketId, date, closed: false });
   }
 
   // The optimistic patch is part of the port's contract — the row moves on the call, not

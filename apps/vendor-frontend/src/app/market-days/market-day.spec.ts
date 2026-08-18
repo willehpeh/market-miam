@@ -27,11 +27,13 @@ const day = {
   absent: false,
   inProgress: false,
   today: false,
+  closed: false,
   soldOutItemIds: [],
   market: { name: 'Marché de la Croix-Rousse', town: 'Lyon', codePostal: '69004' },
 };
 
 const availability = (itemId: string) => `/api/market-days/market-1/2026-08-15/items/${itemId}/availability`;
+const closure = '/api/market-days/market-1/2026-08-15/closed';
 
 const asSent = (items: Record<string, unknown>[]) => ({ marketDays: [{ ...day, items }] });
 
@@ -51,6 +53,7 @@ describe('MarketDays', () => {
         provideRouter([
           { path: 'dashboard', children: [] },
           { path: 'dashboard/markets', children: [] },
+          { path: 'dashboard/live/:marketId/:date', children: [] },
         ]),
         { provide: MarketDayFacade, useClass: StoreMarketDayFacade },
         { provide: MarketSchedules, useClass: HttpMarketSchedules },
@@ -284,6 +287,70 @@ describe('MarketDays', () => {
     expect(facade.days()[0].soldOutItemIds).toEqual(['item-1']);
   });
 
+  // Availability's shape for the same reasons (decision 44): a vendor packing up on bad
+  // market signal retries, and {closed: true} twice is safe.
+  it('puts the closure', () => {
+    facade.close('market-1', '2026-08-15');
+
+    const req = httpCtrl.expectOne(closure);
+    expect(req.request.method).toBe('PUT');
+    expect(req.request.body).toEqual({ closed: true });
+    req.flush(null);
+  });
+
+  it('reopens through the same route', () => {
+    facade.reopen('market-1', '2026-08-15');
+
+    const req = httpCtrl.expectOne(closure);
+    expect(req.request.body).toEqual({ closed: false });
+    req.flush(null);
+  });
+
+  // Decision 38's whole-screen flip is decision 7's receipt at screen scale, so it cannot
+  // wait on market wifi either: the vendor packing up sees the stand shut on the tap.
+  it('flips the day closed before the request settles, and never refetches', () => {
+    facade.load();
+    httpCtrl.expectOne('/api/market-days/upcoming').flush(asSent([{ itemId: 'item-1' }]));
+
+    facade.close('market-1', '2026-08-15');
+
+    expect(facade.days()[0].closed).toBe(true);
+    httpCtrl.expectOne(closure).flush(null);
+    expect(facade.days()[0].closed).toBe(true);
+    httpCtrl.expectNone('/api/market-days/upcoming');
+  });
+
+  // Silent snap-back, the availability pair's stance (decision 7): the stand coming back
+  // open is the disclosure, and a vendor who walked away from a dead connection sees the
+  // true state when they look again.
+  it('reopens the day when the close fails', () => {
+    facade.load();
+    httpCtrl.expectOne('/api/market-days/upcoming').flush(asSent([{ itemId: 'item-1' }]));
+
+    facade.close('market-1', '2026-08-15');
+    expect(facade.days()[0].closed).toBe(true);
+
+    httpCtrl.expectOne(closure).flush(null, { status: 500, statusText: 'Server Error' });
+
+    expect(facade.days()[0].closed).toBe(false);
+  });
+
+  // Two markets can share a date (decision 25's overlap), so the patch and its snap-back
+  // both have to address one day rather than the vendor's whole list.
+  it('closes only the day it was asked about, and snaps only that one back', () => {
+    facade.load();
+    httpCtrl
+      .expectOne('/api/market-days/upcoming')
+      .flush({ marketDays: [{ ...day, items: [] }, { ...day, marketId: 'market-2', items: [] }] });
+
+    facade.close('market-1', '2026-08-15');
+    expect(facade.days().map(each => each.closed)).toEqual([true, false]);
+
+    httpCtrl.expectOne(closure).flush(null, { status: 500, statusText: 'Server Error' });
+
+    expect(facade.days().map(each => each.closed)).toEqual([false, false]);
+  });
+
   it('returns to the dashboard once the menu is saved', async () => {
     const router = TestBed.inject(Router);
     facade.setMenu('market-1', '2026-08-15', []);
@@ -291,6 +358,20 @@ describe('MarketDays', () => {
     httpCtrl.expectOne('/api/market-days/market-1/2026-08-15/menu').flush(null);
 
     await waitFor(() => expect(router.url).toBe('/dashboard'));
+  });
+
+  // The editor has two doorways now (decision 10, and decision 51's unplanned today), so
+  // its exit mirrors the card's own gate rather than always landing on the dashboard: a
+  // vendor who added a tray mid-market goes back to the screen they were running the day on.
+  it('returns to the live screen when the day it saved is today', async () => {
+    const router = TestBed.inject(Router);
+    facade.load();
+    httpCtrl.expectOne('/api/market-days/upcoming').flush({ marketDays: [{ ...day, today: true, items: [] }] });
+
+    facade.setMenu('market-1', '2026-08-15', ['item-1']);
+    httpCtrl.expectOne('/api/market-days/market-1/2026-08-15/menu').flush(null);
+
+    await waitFor(() => expect(router.url).toBe('/dashboard/live/market-1/2026-08-15'));
   });
 
   it('stops loading and stays empty when the request fails', () => {

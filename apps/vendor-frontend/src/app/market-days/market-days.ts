@@ -16,6 +16,9 @@ export interface MarketDayView {
   // Server-said calendar truth (decision 42): true from midnight, so the dashboard card
   // can open the live screen before the market's hours — never derived from the device clock.
   today: boolean;
+  // The vendor shut the stand — not schedule truth, so a closed day is still *en cours*
+  // by the clock (decision 13). The customer's list drops it; this screen keeps it to reopen.
+  closed: boolean;
   itemIds: string[];
   // Which of the day's items sold out during service — may name an id the catalogue has
   // since retired, which readers ignore, mirroring the API's own contract.
@@ -33,4 +36,5 @@ export abstract class MarketDays {
   abstract upcoming(): Observable<MarketDayView[]>;
   abstract setMenu(marketId: string, date: string, itemIds: string[]): Observable<void>;
   abstract changeAvailability(marketId: string, date: string, itemId: string, soldOut: boolean): Observable<void>;
+  abstract changeClosure(marketId: string, date: string, closed: boolean): Observable<void>;
 }

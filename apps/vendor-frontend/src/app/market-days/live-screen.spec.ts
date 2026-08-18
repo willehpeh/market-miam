@@ -4,6 +4,7 @@ import { LiveScreen } from './live-screen';
 import { MarketDayFacade } from './market-day.facade';
 import { FakeMarketDayFacade } from './fake.market-day.facade';
 import { marketDayView as day } from './market-day-view.builder';
+import { MarketDayView } from './market-days';
 import { CatalogueFacade } from '../catalogue/catalogue.facade';
 import { FakeCatalogueFacade } from '../catalogue/fake.catalogue.facade';
 import { CatalogueItemView } from '../catalogue/catalogue';
@@ -78,8 +79,13 @@ describe('LiveScreen', () => {
     expect(marketDays.loaded).toBe(true);
   });
 
-  const aLiveDay = (marketDays: FakeMarketDayFacade, catalogue: FakeCatalogueFacade, soldOutItemIds: string[] = []) => {
-    marketDays.days.set([day({ today: true, itemIds: ['item-1', 'item-2'], soldOutItemIds })]);
+  const aLiveDay = (
+    marketDays: FakeMarketDayFacade,
+    catalogue: FakeCatalogueFacade,
+    soldOutItemIds: string[] = [],
+    overrides: Partial<MarketDayView> = {},
+  ) => {
+    marketDays.days.set([day({ today: true, itemIds: ['item-1', 'item-2'], soldOutItemIds, ...overrides })]);
     catalogue.items.set([item('item-1', 'Bourguignon'), item('item-2', 'Tatin')]);
   };
 
@@ -176,5 +182,67 @@ describe('LiveScreen', () => {
     await waitFor(() =>
       expect(within(screen.getByRole('region', { name: /épuisé/i })).getByRole('button', { name: 'Bourguignon' })).toHaveFocus(),
     );
+  });
+
+  // Decision 38: no confirm dialog — the placement is the mistap protection, at the foot
+  // of the page, furthest from the rows tapped all morning.
+  it('closes the stand with a tap at the foot', async () => {
+    const { marketDays } = await renderLive((md, cat) => aLiveDay(md, cat, [], { inProgress: true }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Fermer le stand' }));
+
+    expect(marketDays.closures).toEqual([{ marketId: 'market-1', date: '2026-08-15', closed: true }]);
+  });
+
+  // Decision 38: the closed screen is a full state, not a disabled one — the banner slot
+  // says what the customer now sees, and Rouvrir sits exactly where Fermer stood.
+  it('says the stand is closed and offers to reopen it', async () => {
+    await renderLive((md, cat) => aLiveDay(md, cat, [], { inProgress: true, closed: true }));
+
+    expect(screen.getByText('Stand fermé')).toBeTruthy();
+    expect(screen.getByText('Vos clients ne voient plus ce marché.')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Rouvrir le stand' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Fermer le stand' })).toBeNull();
+    expect(screen.queryByText('En direct')).toBeNull();
+  });
+
+  // Close is more reversible than sold-out (decision 38), so the door back is one tap in
+  // the place the door out was — no confirm either.
+  it('reopens the stand with a tap on Rouvrir', async () => {
+    const { marketDays } = await renderLive((md, cat) => aLiveDay(md, cat, [], { inProgress: true, closed: true }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Rouvrir le stand' }));
+
+    expect(marketDays.closures).toEqual([{ marketId: 'market-1', date: '2026-08-15', closed: false }]);
+  });
+
+  // Decision 10: the editor must stay reachable during the market — *j'ai apporté une
+  // plaque de plus* is real, and setMenu only ever guarded past days.
+  it('keeps the editor reachable with a discreet link', async () => {
+    await renderLive((md, cat) => aLiveDay(md, cat, [], { inProgress: true }));
+
+    expect(screen.getByRole('link', { name: 'Modifier le menu' }).getAttribute('href')).toBe(
+      '/dashboard/menus/market-1/2026-08-15',
+    );
+  });
+
+  // Decision 38: the closed screen is a full state, not a disabled one. Decision 29 makes
+  // the domain refuse setMenu once the stand is shut, so a link still offering it would
+  // buy the vendor a 400 on the first mistap.
+  it('takes the editor link away once the stand is closed', async () => {
+    await renderLive((md, cat) => aLiveDay(md, cat, [], { inProgress: true, closed: true }));
+
+    expect(screen.queryByRole('link', { name: 'Modifier le menu' })).toBeNull();
+  });
+
+  // Decision 48: inert means the rows stop being availability controls, not that they stop
+  // being rows — 2b's rating mode lands on these same rows, so they keep their markup and
+  // both groups keep their split. Asserted as disabled rather than by clicking: fireEvent
+  // dispatches straight to the listener, where a browser suppresses activation entirely.
+  it('stops the rows being availability controls once the stand is closed', async () => {
+    await renderLive((md, cat) => aLiveDay(md, cat, ['item-2'], { inProgress: true, closed: true }));
+
+    expect(screen.getByRole('button', { name: 'Bourguignon' })).toBeDisabled();
+    expect(within(screen.getByRole('region', { name: /épuisé/i })).getByRole('button', { name: 'Tatin' })).toBeDisabled();
   });
 });

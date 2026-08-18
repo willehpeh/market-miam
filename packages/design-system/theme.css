@@ -146,6 +146,13 @@
     @apply hover:bg-line active:bg-line active:scale-[0.98];
     @apply focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand;
   }
+  /* neutral outline control — a secondary action that must read as a button without
+     claiming the brand colour or the danger colour */
+  .quiet {
+    @apply inline-flex items-center justify-center gap-2 rounded-field border border-line-strong bg-transparent px-4 py-3 text-base font-bold text-ink-soft shadow-none transition-colors;
+    @apply hover:bg-surface-sunk active:bg-surface-sunk active:scale-[0.98];
+    @apply focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand;
+  }
   /* quiet square icon button — row controls that must not shout like a submit */
   .icon-btn {
     background: transparent;

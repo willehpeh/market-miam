@@ -110,4 +110,20 @@ describe('MenuEditor', () => {
     expect(catalogue.loaded).toBe(true);
   });
 
+
+  // Two doorways in (decision 10, and decision 51's unplanned today), so backing out goes
+  // where the card would send them now rather than always to the dashboard.
+  it('backs out to the live screen when the day is a planned today', async () => {
+    await renderEditor((marketDays) => marketDays.days.set([day({ today: true, itemIds: ['item-1'] })]));
+
+    expect(screen.getByRole('link', { name: /retour/i }).getAttribute('href')).toBe(
+      '/dashboard/live/market-1/2026-08-15',
+    );
+  });
+
+  it('backs out to the dashboard when the day has no live screen to go back to', async () => {
+    await renderEditor((marketDays) => marketDays.days.set([day({ today: true })]));
+
+    expect(screen.getByRole('link', { name: /retour/i }).getAttribute('href')).toBe('/dashboard');
+  });
 });

@@ -4,10 +4,16 @@ import { MarketDayView } from './market-days';
 // never decides anything on the vendor's side (decisions 21, 27). Extracted so the
 // waiting poll's gate is drivable without fake timers (decision 32b).
 
+// The vendor's doorway gate (decision 27): a planned today is run from the live screen,
+// anything else from the dashboard. The card reads it to choose its link, and the editor
+// to choose where to put the vendor back — decision 10 gave it a second way in.
+export const hasLiveScreen = (day: MarketDayView | undefined): boolean =>
+  !!day && day.today && day.itemIds.length > 0;
+
 // True while the vendor can see a planned today whose market has not started: the state
 // the pre-live banner names and the poll re-asks the server about, tick by tick.
 export const awaitingStart = (day: MarketDayView | undefined): boolean =>
-  !!day && day.today && day.itemIds.length > 0 && !day.inProgress;
+  !!day && hasLiveScreen(day) && !day.inProgress;
 
 // Decision 26's live predicate in its slice-1 form — what the customer's page reads,
 // which is exactly what the En direct receipt claims (decision 37). An empty menu

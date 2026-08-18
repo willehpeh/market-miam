@@ -27,9 +27,15 @@ type Row = { itemId: string; name: string };
         <h1 class="text-xl leading-tight">{{ marketDay.label }}</h1>
         <p class="mt-3 text-sm text-ink-soft">{{ marketDay.marketName }}</p>
 
-        <!-- One slot, two server-said states (decisions 27, 37): the stated boundary
-             while waiting, the broadcast receipt once live. Never a countdown. -->
-        @if (live()) {
+        <!-- One slot, three server-said states (decisions 27, 37, 38): the stated boundary
+             while waiting, the broadcast receipt once live, and the closed state that
+             outranks both — a closed day leaves the customer's list entirely. Never a countdown. -->
+        @if (marketDay.closed) {
+          <div class="mt-4 rounded-card border-2 border-danger bg-danger-soft p-3">
+            <p class="font-bold text-danger">Stand fermé</p>
+            <p class="text-sm text-ink">Vos clients ne voient plus ce marché.</p>
+          </div>
+        } @else if (live()) {
           <div class="mt-4 rounded-card border border-brand bg-surface p-3">
             <p class="font-bold text-brand">En direct</p>
             <p class="text-sm text-ink-soft">Vos clients voient ce menu.</p>
@@ -41,15 +47,20 @@ type Row = { itemId: string; name: string };
         }
 
         <!-- One fast tap on a full-width row; the row moving into the épuisé group is the
-             receipt — no toast, no confirm (decision 7). -->
+             receipt — no toast, no confirm (decision 7). A closed stand sinks the rows onto
+             the canvas and drops their border — the raised card is what says *tappable*, so
+             that is what goes, not the legibility. Decision 48 keeps them as rows, split into
+             the same two groups, because 2b's rating mode lands on them. -->
         <ul class="mt-6 space-y-2">
           @for (item of active(); track item.itemId) {
             <li>
               <button
                 #row
                 type="button"
-                class="w-full rounded-card border border-line bg-surface p-3 text-left font-bold text-ink"
+                class="w-full rounded-card border p-3 text-left font-bold text-ink disabled:opacity-100"
+                [class]="marketDay.closed ? 'border-transparent bg-canvas' : 'border-line bg-surface'"
                 [attr.data-item]="item.itemId"
+                [disabled]="marketDay.closed"
                 (click)="markSoldOut(item)"
               >
                 {{ item.name }}
@@ -67,8 +78,10 @@ type Row = { itemId: string; name: string };
                   <button
                     #row
                     type="button"
-                    class="w-full rounded-card border border-line bg-surface-sunk p-3 text-left font-bold text-muted"
+                    class="w-full rounded-card border p-3 text-left font-bold text-muted disabled:opacity-100"
+                    [class]="marketDay.closed ? 'border-transparent bg-canvas' : 'border-line bg-surface-sunk'"
                     [attr.data-item]="item.itemId"
+                    [disabled]="marketDay.closed"
                     (click)="markAvailable(item)"
                   >
                     {{ item.name }}
@@ -77,6 +90,29 @@ type Row = { itemId: string; name: string };
               }
             </ul>
           </section>
+        }
+
+        <!-- Decision 38: no confirm dialog. The protection is the placement — the foot of
+             the page, furthest from the rows tapped all morning. -->
+        <!-- Decision 10: discreet, because the rows are what this screen is for — but the
+             editor stays open all market, since a vendor who brought one more tray must
+             be able to say so. -->
+        @if (!marketDay.closed) {
+          <a [routerLink]="editorLink" class="mt-8 block text-center text-sm font-bold text-brand no-underline">
+            Modifier le menu
+          </a>
+        }
+
+        <!-- Closed outranks live at the foot too, and is not gated on the market having
+             started: decision 45's two doors — packed up, and never came — land on one state. -->
+        @if (marketDay.closed) {
+          <button type="button" class="quiet mt-8 flex w-full max-w-xs mx-auto justify-center" (click)="reopenStand()">
+            Rouvrir le stand
+          </button>
+        } @else if (live()) {
+          <button type="button" class="quiet mt-8 flex w-full max-w-xs mx-auto justify-center" (click)="closeStand()">
+            Fermer le stand
+          </button>
         }
 
         <p aria-live="polite" class="sr-only">{{ note() }}</p>
@@ -99,6 +135,8 @@ export class LiveScreen {
   private readonly marketId = this.route.snapshot.paramMap.get('marketId') ?? '';
   private readonly date = this.route.snapshot.paramMap.get('date') ?? '';
 
+  readonly editorLink = ['/dashboard/menus', this.marketId, this.date];
+
   readonly loading = computed(() => this.marketDays.loading() || this.catalogue.loading());
 
   private readonly occurrence = computed(() =>
@@ -108,7 +146,7 @@ export class LiveScreen {
   readonly day = computed(() => {
     const occurrence = this.occurrence();
     return occurrence?.today
-      ? { label: longDate(occurrence.day, occurrence.date), marketName: occurrence.market.name }
+      ? { label: longDate(occurrence.day, occurrence.date), marketName: occurrence.market.name, closed: occurrence.closed }
       : undefined;
   });
 
@@ -164,6 +202,14 @@ export class LiveScreen {
         this.pendingFocus.set(null);
       },
     });
+  }
+
+  closeStand(): void {
+    this.marketDays.close(this.marketId, this.date);
+  }
+
+  reopenStand(): void {
+    this.marketDays.reopen(this.marketId, this.date);
   }
 
   markSoldOut(item: Row): void {

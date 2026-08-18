@@ -28,4 +28,8 @@ export class HttpMarketDays implements MarketDays {
       { soldOut },
     );
   }
+
+  changeClosure(marketId: string, date: string, closed: boolean): Observable<void> {
+    return this.http.put<void>(`${environment.apiBaseUrl}/api/market-days/${marketId}/${date}/closed`, { closed });
+  }
 }

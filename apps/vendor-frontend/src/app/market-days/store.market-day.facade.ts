@@ -1,7 +1,14 @@
 import { inject, Injectable } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { MarketDayFacade } from './market-day.facade';
-import { ChangeItemAvailability, LoadMarketDays, marketDayFeature, RefreshMarketDays, SetMarketDayMenu } from './market-day.state';
+import {
+  ChangeItemAvailability,
+  ChangeStandClosure,
+  LoadMarketDays,
+  marketDayFeature,
+  RefreshMarketDays,
+  SetMarketDayMenu,
+} from './market-day.state';
 
 @Injectable()
 export class StoreMarketDayFacade implements MarketDayFacade {
@@ -37,5 +44,13 @@ export class StoreMarketDayFacade implements MarketDayFacade {
 
   markAvailable(marketId: string, date: string, itemId: string): void {
     this.store.dispatch(ChangeItemAvailability({ marketId, date, itemId, soldOut: false }));
+  }
+
+  close(marketId: string, date: string): void {
+    this.store.dispatch(ChangeStandClosure({ marketId, date, closed: true }));
+  }
+
+  reopen(marketId: string, date: string): void {
+    this.store.dispatch(ChangeStandClosure({ marketId, date, closed: false }));
   }
 }

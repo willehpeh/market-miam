@@ -31,6 +31,16 @@ export const ChangeItemAvailabilityFailure = createAction(
   props<{ marketId: string; date: string; itemId: string; soldOut: boolean }>(),
 );
 
+export const ChangeStandClosure = createAction(
+  '[Market Days] Change Stand Closure',
+  props<{ marketId: string; date: string; closed: boolean }>(),
+);
+export const ChangeStandClosureSuccess = createAction('[Market Days] Change Stand Closure Success');
+export const ChangeStandClosureFailure = createAction(
+  '[Market Days] Change Stand Closure Failure',
+  props<{ marketId: string; date: string; closed: boolean }>(),
+);
+
 export interface MarketDayState {
   loading: boolean;
   fresh: boolean;
@@ -74,6 +84,17 @@ export const marketDayFeature = createFeature({
     on(SetMarketDayMenuSuccess, (state, { marketId, date, itemIds }): MarketDayState => ({
       ...state,
       days: state.days.map(day => (day.marketId === marketId && day.date === date ? { ...day, itemIds } : day)),
+    })),
+    // Optimistic on dispatch like the marks below, and for the same reason one rung up:
+    // the whole-screen flip is the vendor's receipt (decision 38).
+    on(ChangeStandClosure, (state, { marketId, date, closed }): MarketDayState => ({
+      ...state,
+      days: state.days.map(day => (day.marketId === marketId && day.date === date ? { ...day, closed } : day)),
+    })),
+    // A failed close reopens the stand, silently — the state returning is the disclosure.
+    on(ChangeStandClosureFailure, (state, { marketId, date, closed }): MarketDayState => ({
+      ...state,
+      days: state.days.map(day => (day.marketId === marketId && day.date === date ? { ...day, closed: !closed } : day)),
     })),
     // Optimistic on dispatch, not on success: the moving row is the vendor's receipt
     // (live-mode decision 7), so it cannot wait on market wifi.
