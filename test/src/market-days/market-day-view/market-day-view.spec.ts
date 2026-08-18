@@ -10,10 +10,12 @@ describe('MarketDayView', () => {
   let setMenu: (date: string, ...itemIds: string[]) => Promise<void>;
   let markSoldOut: (date: string, itemId?: string) => Promise<void>;
   let markAvailable: (date: string, itemId?: string) => Promise<void>;
+  let close: (date: string) => Promise<void>;
+  let reopen: (date: string) => Promise<void>;
 
   beforeEach(() => {
     const harness = marketDayHarness();
-    ({ setMenu, markSoldOut, markAvailable } = harness);
+    ({ setMenu, markSoldOut, markAvailable, close, reopen } = harness);
     views = new InMemoryMarketDayViews();
     projection = new MarketDayViewProjection(views);
     subscription = new PollingSubscription(harness.store, projection, new InMemoryCheckpoint('market-day-view'));
@@ -27,7 +29,7 @@ describe('MarketDayView', () => {
     await subscription.poll();
 
     expect(await menuOnSaturday()).toEqual([
-      { marketId: 'market-1', date: SATURDAY, itemIds: ['item-1', 'item-2'], soldOutItemIds: [] },
+      { marketId: 'market-1', date: SATURDAY, itemIds: ['item-1', 'item-2'], soldOutItemIds: [], closed: false },
     ]);
   });
 
@@ -38,7 +40,7 @@ describe('MarketDayView', () => {
     await subscription.poll();
 
     expect(await menuOnSaturday()).toEqual([
-      { marketId: 'market-1', date: SATURDAY, itemIds: ['item-2'], soldOutItemIds: [] },
+      { marketId: 'market-1', date: SATURDAY, itemIds: ['item-2'], soldOutItemIds: [], closed: false },
     ]);
   });
 
@@ -51,7 +53,7 @@ describe('MarketDayView', () => {
     await subscription.poll();
 
     expect(await menuToday()).toEqual([
-      { marketId: 'market-1', date: TODAY, itemIds: ['item-1', 'item-2'], soldOutItemIds: ['item-1'] },
+      { marketId: 'market-1', date: TODAY, itemIds: ['item-1', 'item-2'], soldOutItemIds: ['item-1'], closed: false },
     ]);
   });
 
@@ -63,7 +65,42 @@ describe('MarketDayView', () => {
     await subscription.poll();
 
     expect(await menuToday()).toEqual([
-      { marketId: 'market-1', date: TODAY, itemIds: ['item-1', 'item-2'], soldOutItemIds: [] },
+      { marketId: 'market-1', date: TODAY, itemIds: ['item-1', 'item-2'], soldOutItemIds: [], closed: false },
+    ]);
+  });
+
+  it('projects a day the vendor closed as closed', async () => {
+    await setMenu(TODAY, 'item-1');
+    await close(TODAY);
+
+    await subscription.poll();
+
+    expect(await menuToday()).toEqual([
+      { marketId: 'market-1', date: TODAY, itemIds: ['item-1'], soldOutItemIds: [], closed: true },
+    ]);
+  });
+
+  it('projects a reopened day as open again', async () => {
+    await setMenu(TODAY, 'item-1');
+    await close(TODAY);
+    await reopen(TODAY);
+
+    await subscription.poll();
+
+    expect(await menuToday()).toEqual([
+      { marketId: 'market-1', date: TODAY, itemIds: ['item-1'], soldOutItemIds: [], closed: false },
+    ]);
+  });
+
+  // The no-show door: a vendor whose van broke down closes a day they never planned, so
+  // the close is the first thing the day's stream ever carried (decisions 40, 45).
+  it('projects a day closed with no menu at all', async () => {
+    await close(TODAY);
+
+    await subscription.poll();
+
+    expect(await menuToday()).toEqual([
+      { marketId: 'market-1', date: TODAY, itemIds: [], soldOutItemIds: [], closed: true },
     ]);
   });
 

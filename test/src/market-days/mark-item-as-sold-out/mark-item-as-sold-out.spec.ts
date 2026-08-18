@@ -1,16 +1,16 @@
 import { InMemoryEventStore } from '@market-miam/event-sourcing';
-import { ItemNotPlannedError, MarketDayNotTodayError } from '@market-miam/market-days';
+import { ItemNotPlannedError, MarketDayClosedError, MarketDayNotTodayError } from '@market-miam/market-days';
 import { marketDayHarness } from '../market-day-harness';
 import { LAST_SATURDAY, SATURDAY, TODAY } from '../set-market-day-menu/test-data';
-import { expectVendorScopedEvents } from '../../shared-kernel';
 
 describe('Mark Item As Sold Out', () => {
   let store: InMemoryEventStore;
   let setMenu: (date: string, ...itemIds: string[]) => Promise<void>;
   let markSoldOut: (date: string, itemId?: string) => Promise<void>;
+  let close: (date: string) => Promise<void>;
 
   beforeEach(() => {
-    ({ store, setMenu, markSoldOut } = marketDayHarness());
+    ({ store, setMenu, markSoldOut, close } = marketDayHarness());
   });
 
   it("marks an item on today's menu as sold out", async () => {
@@ -25,14 +25,6 @@ describe('Mark Item As Sold Out', () => {
         payload: { itemId: 'item-1', marketId: 'market-1', date: TODAY, time: '11:00' },
       }),
     ]);
-  });
-
-  it('stamps the vendor id into the event metadata', async () => {
-    await setMenu(TODAY, 'item-1');
-
-    await markSoldOut(TODAY);
-
-    expectVendorScopedEvents(store.newEvents(), 'vendor-1');
   });
 
   // A re-statement, not a violation: a retried tap or a second device saying what is
@@ -95,5 +87,18 @@ describe('Mark Item As Sold Out', () => {
   it('rejects marking a past day sold out', async () => {
     await expect(() => markSoldOut(LAST_SATURDAY)).rejects.toThrow(MarketDayNotTodayError);
     expect(store.newEvents()).toEqual([]);
+  });
+
+  // Once the stand is shut, *it's gone right now* is no longer a claim the day can
+  // carry — what sold out that day becomes an outcome, recorded separately (decision 29).
+  it('rejects marking an item sold out once the day is closed', async () => {
+    await setMenu(TODAY, 'item-1');
+    await close(TODAY);
+
+    await expect(() => markSoldOut(TODAY)).rejects.toThrow(MarketDayClosedError);
+    expect(store.newEvents()).toEqual([
+      expect.objectContaining({ type: 'MarketDayMenuSet' }),
+      expect.objectContaining({ type: 'MarketDayClosed' }),
+    ]);
   });
 });

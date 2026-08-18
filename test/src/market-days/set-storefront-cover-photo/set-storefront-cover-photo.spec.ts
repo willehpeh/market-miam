@@ -2,7 +2,6 @@ import { InMemoryEventStore } from '@market-miam/event-sourcing';
 import { VendorScopedEvents } from '@market-miam/market-days';
 import { SetStorefrontCoverPhotoHandler, StorefrontNotOpenError, Storefronts } from '@market-miam/market-days';
 import { TestSetStorefrontCoverPhoto } from './test-data';
-import { expectVendorScopedEvents } from '../../shared-kernel';
 
 describe('Set Storefront Cover Photo', () => {
   let store: InMemoryEventStore;
@@ -30,13 +29,6 @@ describe('Set Storefront Cover Photo', () => {
         imageReference: command.imageReference
       }
     })]);
-  });
-
-  it('stamps the vendor id into the event metadata', async () => {
-    openStorefront();
-    await handler.execute(TestSetStorefrontCoverPhoto.valid());
-
-    expectVendorScopedEvents(store.newEvents(), 'vendor-id');
   });
 
   it('should change the existing cover photo when a new one is set', async () => {

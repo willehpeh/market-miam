@@ -25,6 +25,8 @@ describe('Request shape', () => {
     ['a menu whose itemIds is not an array', 'put', '/market-days/market-1/2026-06-30/menu', { itemIds: 'item-1' }, 'itemIds'],
     ['an availability change without soldOut', 'put', '/market-days/market-1/2026-06-30/items/item-1/availability', {}, 'soldOut'],
     ['an availability change whose soldOut is not a boolean', 'put', '/market-days/market-1/2026-06-30/items/item-1/availability', { soldOut: 'oui' }, 'soldOut'],
+    ['a closure without closed', 'put', '/market-days/market-1/2026-06-30/closed', {}, 'closed'],
+    ['a closure whose closed is not a boolean', 'put', '/market-days/market-1/2026-06-30/closed', { closed: 'oui' }, 'closed'],
     ['a menu holding a non-string id', 'put', '/market-days/market-1/2026-06-30/menu', { itemIds: [7] }, 'itemIds.0'],
     ['an item without a name', 'post', '/catalogue', { itemId: 'item-1', description: 'Mijoté' }, 'name'],
     ['an item whose variants is not an array', 'post', '/catalogue', { itemId: 'item-1', name: 'Bœuf', description: '', variants: 'grande' }, 'variants'],

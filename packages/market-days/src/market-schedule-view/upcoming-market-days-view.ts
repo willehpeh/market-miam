@@ -17,6 +17,9 @@ export type MarketDayOccurrence = {
   // The day's menu joined from the catalogue at query time — current names and prices,
   // in catalogue order. Empty when nothing is planned; suppressed when absent.
   items: CatalogueViewItem[];
+  // The vendor packed up (or never came). Independent of inProgress, which stays schedule
+  // truth — a closed market is still *en cours* by the clock (decision 13).
+  closed: boolean;
   // Which of those items sold out during service. Suppressed with the menu when absent;
   // may name an id the catalogue join dropped (a retired item), which readers ignore.
   soldOutItemIds: string[];

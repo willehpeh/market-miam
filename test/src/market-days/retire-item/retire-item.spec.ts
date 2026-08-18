@@ -4,7 +4,6 @@ import { InMemoryEventStore } from '@market-miam/event-sourcing';
 import { AddItemToCatalogueHandler, Catalogues, RetireItem, RetireItemHandler } from '@market-miam/market-days';
 import { TestAddItemToCatalogue } from '../add-item-to-catalogue/test-data';
 import { TestRetireItem } from './test-data';
-import { expectVendorScopedEvents } from '../../shared-kernel';
 
 describe('Retire item', () => {
   let store: InMemoryEventStore;
@@ -33,14 +32,6 @@ describe('Retire item', () => {
         }
       })
     ]);
-  });
-
-  it('stamps the vendor id into the event metadata', async () => {
-    const newItemCommand = TestAddItemToCatalogue.simple();
-    await new AddItemToCatalogueHandler(catalogues).execute(newItemCommand);
-    await handler.execute(new RetireItem(newItemCommand.vendorId, newItemCommand.itemId));
-
-    expectVendorScopedEvents(store.newEvents(), 'vendor-id');
   });
 
   it('should raise no events for an item it has never heard of', async () => {

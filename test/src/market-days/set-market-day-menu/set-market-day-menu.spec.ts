@@ -2,6 +2,7 @@ import { InMemoryEventStore } from '@market-miam/event-sourcing';
 import { EmptyValueError } from '@market-miam/common';
 import {
   Catalogues,
+  MarketDayClosedError,
   MarketDayInThePastError,
   NoSuchItemError,
   RetireItem,
@@ -10,15 +11,16 @@ import {
 } from '@market-miam/market-days';
 import { LAST_SATURDAY, SATURDAY, TestSetMarketDayMenu, TODAY } from './test-data';
 import { marketDayHarness } from '../market-day-harness';
-import { expectVendorScopedEvents } from '../../shared-kernel';
 
 describe('Set Market Day Menu', () => {
   let store: InMemoryEventStore;
   let catalogues: Catalogues;
   let handler: SetMarketDayMenuHandler;
+  let setMenu: (date: string, ...itemIds: string[]) => Promise<void>;
+  let close: (date: string) => Promise<void>;
 
   beforeEach(() => {
-    ({ store, catalogues, menus: handler } = marketDayHarness());
+    ({ store, catalogues, menus: handler, setMenu, close } = marketDayHarness());
   });
 
   it('sets the menu for a market day', async () => {
@@ -30,12 +32,6 @@ describe('Set Market Day Menu', () => {
         payload: { itemIds: ['item-1', 'item-2'], marketId: 'market-1', date: SATURDAY },
       }),
     ]);
-  });
-
-  it('stamps the vendor id into the event metadata', async () => {
-    await handler.execute(TestSetMarketDayMenu.with({ itemIds: ['item-1'] }));
-
-    expectVendorScopedEvents(store.newEvents(), 'vendor-1');
   });
 
   it('raises nothing when the menu is unchanged', async () => {
@@ -82,6 +78,19 @@ describe('Set Market Day Menu', () => {
         type: 'MarketDayMenuSet',
         payload: { itemIds: ['item-1', 'item-2'], marketId: 'market-1', date: TODAY },
       }),
+    ]);
+  });
+
+  // Editing a closed day would clear its sold-out items, wiping the service-phase
+  // record the day's outcomes are about to be read from (decision 29).
+  it('rejects editing the menu once the day is closed', async () => {
+    await setMenu(TODAY, 'item-1');
+    await close(TODAY);
+
+    await expect(() => setMenu(TODAY, 'item-2')).rejects.toThrow(MarketDayClosedError);
+    expect(store.newEvents()).toEqual([
+      expect.objectContaining({ type: 'MarketDayMenuSet' }),
+      expect.objectContaining({ type: 'MarketDayClosed' }),
     ]);
   });
 

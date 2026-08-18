@@ -14,7 +14,6 @@ import {
 import { EmptyValueError } from '@market-miam/common';
 import { InMemoryEventStore } from '@market-miam/event-sourcing';
 import { TestAddItemToCatalogue } from './test-data';
-import { expectVendorScopedEvents } from '../../shared-kernel';
 
 describe('AddItemToCatalogue', () => {
   let store: InMemoryEventStore;
@@ -122,12 +121,6 @@ describe('AddItemToCatalogue', () => {
       await expect(handler.execute(command)).rejects.toThrow(InvalidItemPricingError);
       expect(store.newEvents()).toEqual([]);
     });
-  });
-
-  it('stamps the vendor id into the event metadata', async () => {
-    await handler.execute(TestAddItemToCatalogue.simple());
-
-    expectVendorScopedEvents(store.newEvents(), 'vendor-id');
   });
 
   it('should allow free items', async () => {

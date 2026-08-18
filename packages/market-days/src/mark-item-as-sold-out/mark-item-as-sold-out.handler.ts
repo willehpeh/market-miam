@@ -20,6 +20,6 @@ export class MarkItemAsSoldOutHandler implements ICommandHandler<MarkItemAsSoldO
     const marketDay = await this.marketDays.forVendorAtMarketOn(vendorId, id);
     marketDay.markItemAsSoldOut(itemId, parisTime(this.clock.now()));
 
-    await this.marketDays.save(marketDay, vendorId, id);
+    await this.marketDays.save(marketDay, vendorId);
   }
 }

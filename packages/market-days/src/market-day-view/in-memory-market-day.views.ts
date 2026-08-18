@@ -1,4 +1,4 @@
-import { AvailabilityMark, MarketDayMenu, MarketDayView } from './market-day-view';
+import { AvailabilityMark, MarketDayMenu, MarketDayRef, MarketDayView } from './market-day-view';
 import { MarketDayViews } from './market-day-views';
 import { MarketDayViewStore } from './market-day-view.store';
 
@@ -10,7 +10,7 @@ export class InMemoryMarketDayViews implements MarketDayViews, MarketDayViewStor
   async setMenu(menu: MarketDayMenu, vendorId: string): Promise<void> {
     const forVendor = this.menus.get(vendorId) ?? new Map<string, MarketDayView>();
     const soldOut = forVendor.get(this.keyOf(menu))?.soldOutItemIds.filter(id => menu.itemIds.includes(id)) ?? [];
-    forVendor.set(this.keyOf(menu), this.copyOf({ ...menu, soldOutItemIds: soldOut }));
+    forVendor.set(this.keyOf(menu), this.copyOf({ ...menu, soldOutItemIds: soldOut, closed: forVendor.get(this.keyOf(menu))?.closed ?? false }));
     this.menus.set(vendorId, forVendor);
   }
 
@@ -25,6 +25,23 @@ export class InMemoryMarketDayViews implements MarketDayViews, MarketDayViewStor
     const day = this.menus.get(vendorId)?.get(this.keyOf(mark));
     if (day) {
       day.soldOutItemIds = day.soldOutItemIds.filter(itemId => itemId !== mark.itemId);
+    }
+  }
+
+  // Upsert, unlike the availability marks: closing a day nobody planned is a real thing a
+  // vendor does — the *je ne peux pas venir* door — so the row starts here, menu-less.
+  async close(day: MarketDayRef, vendorId: string): Promise<void> {
+    const forVendor = this.menus.get(vendorId) ?? new Map<string, MarketDayView>();
+    const row = forVendor.get(this.keyOf(day))
+      ?? { marketId: day.marketId, date: day.date, itemIds: [], soldOutItemIds: [], closed: false };
+    forVendor.set(this.keyOf(day), { ...row, closed: true });
+    this.menus.set(vendorId, forVendor);
+  }
+
+  async reopen(day: MarketDayRef, vendorId: string): Promise<void> {
+    const row = this.menus.get(vendorId)?.get(this.keyOf(day));
+    if (row) {
+      row.closed = false;
     }
   }
 

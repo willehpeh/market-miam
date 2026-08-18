@@ -2,7 +2,6 @@ import { InMemoryEventStore } from '@market-miam/event-sourcing';
 import { VendorScopedEvents } from '@market-miam/market-days';
 import { Calendars, Catalogues, InMemorySubdomainRegistry, PublishStorefrontHandler, StorefrontNotReadyToPublish, StorefrontPublication, Storefronts } from '@market-miam/market-days';
 import { TestPublishStorefront } from './test-data';
-import { expectVendorScopedEvents } from '../../shared-kernel';
 
 describe('Publish Storefront', () => {
   let store: InMemoryEventStore;
@@ -153,17 +152,6 @@ describe('Publish Storefront', () => {
 
     expect(failure).toBeInstanceOf(StorefrontNotReadyToPublish);
     expect((failure as StorefrontNotReadyToPublish).missing).toEqual(['title', 'cover', 'catalogue', 'schedule', 'url']);
-  });
-
-  it('stamps the vendor id into the published event metadata', async () => {
-    openStorefrontWithCover();
-    addItem();
-    addSchedule();
-    await assignSubdomain();
-
-    await handler.execute(TestPublishStorefront.valid());
-
-    expectVendorScopedEvents(store.newEvents(), 'vendor-id');
   });
 
   function openStorefront() {

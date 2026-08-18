@@ -23,6 +23,10 @@ export class LocalTime {
     this._value = trimmed;
   }
 
+  isAfter(other: LocalTime): boolean {
+    return this._value > other._value;
+  }
+
   value(): string {
     return this._value;
   }

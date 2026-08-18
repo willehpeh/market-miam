@@ -70,6 +70,7 @@ describe('FindUpcomingMarketDays', () => {
         inProgress: false,
         today: false,
         items: [],
+        closed: false,
         soldOutItemIds: [],
         market,
       })),
@@ -335,6 +336,21 @@ describe('FindUpcomingMarketDays', () => {
       { date: '2024-02-10', soldOutItemIds: ['item-1'] },
       { date: '2024-02-17', soldOutItemIds: [] },
       { date: '2024-02-24', soldOutItemIds: [] },
+    ]);
+  });
+
+  // The vendor keeps a closed day: it is theirs to reopen, and the live screen renders
+  // *Stand fermé* from this flag (decisions 11, 45). Only the customer stops seeing it.
+  it("carries the day's closure onto its occurrence", async () => {
+    await views.recordSchedule(scheduleWith({ startDate: '2024-02-05' }), 'vendor-id');
+    await menus.close({ marketId: 'market-1', date: '2024-02-10' }, 'vendor-id');
+
+    const { marketDays } = await upcoming('vendor-id');
+
+    expect(marketDays.map(d => ({ date: d.date, closed: d.closed }))).toEqual([
+      { date: '2024-02-10', closed: true },
+      { date: '2024-02-17', closed: false },
+      { date: '2024-02-24', closed: false },
     ]);
   });
 

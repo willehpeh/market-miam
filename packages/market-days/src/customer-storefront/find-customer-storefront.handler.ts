@@ -39,10 +39,16 @@ export class FindCustomerStorefrontHandler implements IQueryHandler<FindCustomer
   }
 
   // No end-of-day filter here: FindUpcomingMarketDays already drops days that have ended,
-  // so what arrives is only what is still to come.
+  // so what arrives is only what is still to come. Closed is the one temporal fact it does
+  // not apply, because the vendor keeps the day to reopen it (decision 11) — the customer
+  // reads it as over. Filtered before the cut, so a closed morning market does not cost
+  // them their fifth day.
   private async upcomingMarketsFor(vendorId: string): Promise<UpcomingMarket[]> {
     const { marketDays } = await this.upcoming.execute(new FindUpcomingMarketDays(vendorId));
-    return marketDays.slice(0, MAX_UPCOMING).map(day => this.asUpcomingMarket(day));
+    return marketDays
+      .filter(day => !day.closed)
+      .slice(0, MAX_UPCOMING)
+      .map(day => this.asUpcomingMarket(day));
   }
 
   private asUpcomingMarket(day: MarketDayOccurrence): UpcomingMarket {

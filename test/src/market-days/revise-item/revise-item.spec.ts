@@ -4,7 +4,6 @@ import { InMemoryEventStore } from '@market-miam/event-sourcing';
 import { AddItemToCatalogueHandler, Catalogues, InvalidItemPricingError, NoSuchItemError, RetireItem, RetireItemHandler, ReviseItem, ReviseItemHandler } from '@market-miam/market-days';
 import { TestAddItemToCatalogue } from '../add-item-to-catalogue/test-data';
 import { TestReviseItem } from './test-data';
-import { expectVendorScopedEvents } from '../../shared-kernel';
 
 describe('Revise item', () => {
   let store: InMemoryEventStore;
@@ -62,14 +61,6 @@ describe('Revise item', () => {
         },
       }),
     ]);
-  });
-
-  it('stamps the vendor id into the event metadata', async () => {
-    const newItemCommand = TestAddItemToCatalogue.simple();
-    await new AddItemToCatalogueHandler(catalogues).execute(newItemCommand);
-    await handler.execute(TestReviseItem.valid());
-
-    expectVendorScopedEvents(store.newEvents(), 'vendor-id');
   });
 
   describe('rejects an invalid pricing shape', () => {

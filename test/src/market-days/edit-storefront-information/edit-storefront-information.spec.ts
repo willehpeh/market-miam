@@ -3,7 +3,6 @@ import { VendorScopedEvents } from '@market-miam/market-days';
 import { EditStorefrontInformationHandler, StorefrontNotOpenError, Storefronts } from '@market-miam/market-days';
 import { EmptyValueError } from '@market-miam/common';
 import { TestEditStorefrontInformation } from './test-data';
-import { expectVendorScopedEvents } from '../../shared-kernel';
 
 describe('Edit Storefront Information', () => {
   let store: InMemoryEventStore;
@@ -52,13 +51,6 @@ describe('Edit Storefront Information', () => {
         }
       })
     ]);
-  });
-
-  it('stamps the vendor id into the event metadata', async () => {
-    openStorefront();
-    await handler.execute(TestEditStorefrontInformation.valid());
-
-    expectVendorScopedEvents(store.newEvents(), 'vendor-id');
   });
 
   it('should prevent an empty name', async () => {

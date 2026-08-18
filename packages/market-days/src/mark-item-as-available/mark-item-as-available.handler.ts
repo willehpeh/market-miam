@@ -20,6 +20,6 @@ export class MarkItemAsAvailableHandler implements ICommandHandler<MarkItemAsAva
     const marketDay = await this.marketDays.forVendorAtMarketOn(vendorId, id);
     marketDay.markItemAsAvailable(itemId, parisTime(this.clock.now()));
 
-    await this.marketDays.save(marketDay, vendorId, id);
+    await this.marketDays.save(marketDay, vendorId);
   }
 }

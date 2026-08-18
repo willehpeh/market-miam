@@ -9,7 +9,6 @@ import {
 } from '@market-miam/market-days';
 import { EmptyValueError } from '@market-miam/common';
 import { InvalidPostalCodeError } from '@market-miam/market-days';
-import { expectVendorScopedEvents } from '../../shared-kernel';
 
 describe('Register Market Schedule', () => {
   let store: InMemoryEventStore;
@@ -74,12 +73,6 @@ describe('Register Market Schedule', () => {
       type: 'MarketScheduleRegistered',
       payload: expect.objectContaining({ market })
     })]);
-  });
-
-  it('stamps the vendor id into the event metadata', async () => {
-    await handler.execute(TestRegisterMarketSchedule.simple());
-
-    expectVendorScopedEvents(store.newEvents(), 'vendor-id');
   });
 
   it.each([

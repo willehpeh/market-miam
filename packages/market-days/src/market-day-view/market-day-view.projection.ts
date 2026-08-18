@@ -1,9 +1,15 @@
 import { CheckpointedProjection, EventHandlerMap, ProjectionFor, StoredEvent } from '@market-miam/event-sourcing';
 import { vendorIdFrom } from '@market-miam/shared-kernel';
-import { ItemMarkedAsAvailable, ItemMarkedAsSoldOut, MarketDayMenuSet } from '../market-day/events';
+import {
+  ItemMarkedAsAvailable,
+  ItemMarkedAsSoldOut,
+  MarketDayClosed,
+  MarketDayMenuSet,
+  MarketDayReopened
+} from '../market-day/events';
 import { MarketDayViewStore } from './market-day-view.store';
 
-type MarketDayViewEvent = MarketDayMenuSet | ItemMarkedAsSoldOut | ItemMarkedAsAvailable;
+type MarketDayViewEvent = MarketDayMenuSet | ItemMarkedAsSoldOut | ItemMarkedAsAvailable | MarketDayClosed | MarketDayReopened;
 
 @CheckpointedProjection('market-day-view')
 export class MarketDayViewProjection extends ProjectionFor<MarketDayViewEvent> {
@@ -17,6 +23,8 @@ export class MarketDayViewProjection extends ProjectionFor<MarketDayViewEvent> {
       MarketDayMenuSet: e => this.handleMenuSet(e),
       ItemMarkedAsSoldOut: e => this.store.markSoldOut(e.payload, vendorIdFrom(e)),
       ItemMarkedAsAvailable: e => this.store.markAvailable(e.payload, vendorIdFrom(e)),
+      MarketDayClosed: e => this.store.close(e.payload, vendorIdFrom(e)),
+      MarketDayReopened: e => this.store.reopen(e.payload, vendorIdFrom(e)),
     };
   }
 

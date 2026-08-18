@@ -11,7 +11,7 @@ import { CatalogueViews } from '../catalogue-view/catalogue-views';
 import { Recurrence } from '../calendar/schedule/recurrence';
 import { hasStarted, notYetEnded, parisWallClock } from './market-day-clock';
 
-type DayMenu = { items: CatalogueViewItem[]; soldOutItemIds: string[] };
+type DayMenu = { items: CatalogueViewItem[]; soldOutItemIds: string[]; closed: boolean };
 type Items = Map<string, DayMenu>;
 
 const dayKey = (marketId: string, date: string) => `${marketId}|${date}`;
@@ -77,7 +77,10 @@ export class FindUpcomingMarketDaysHandler implements IQueryHandler<FindUpcoming
     const occurrences = Recurrence.fromSnapshot(schedule).occurrencesWithin(from, to);
     return occurrences.map(occurrence => {
       const absent = absences.some(range => range.from <= occurrence.date && occurrence.date <= range.to);
-      const menu = absent ? undefined : items.get(dayKey(schedule.marketId, occurrence.date));
+      // Closure is the day's own state, not the menu's, so it survives the absence
+      // suppression that hides items — a day can be both declared absent and closed.
+      const day = items.get(dayKey(schedule.marketId, occurrence.date));
+      const menu = absent ? undefined : day;
       return {
         scheduleId: schedule.scheduleId,
         marketId: schedule.marketId,
@@ -88,6 +91,7 @@ export class FindUpcomingMarketDaysHandler implements IQueryHandler<FindUpcoming
         absent,
         items: menu?.items ?? [],
         soldOutItemIds: menu?.soldOutItemIds ?? [],
+        closed: day?.closed ?? false,
         market: schedule.market,
       };
     });
@@ -103,7 +107,11 @@ export class FindUpcomingMarketDaysHandler implements IQueryHandler<FindUpcoming
     ]);
     return new Map(menus.map((menu: MarketDayView) => [
       dayKey(menu.marketId, menu.date),
-      { items: items.filter(item => menu.itemIds.includes(item.itemId)), soldOutItemIds: menu.soldOutItemIds },
+      {
+        items: items.filter(item => menu.itemIds.includes(item.itemId)),
+        soldOutItemIds: menu.soldOutItemIds,
+        closed: menu.closed,
+      },
     ]));
   }
 }

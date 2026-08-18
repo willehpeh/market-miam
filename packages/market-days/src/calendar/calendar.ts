@@ -11,18 +11,26 @@ import { ScheduleId } from './schedule/schedule-id';
 import { DateRange } from './date-range';
 import { ImmutableMarketError, NoSuchScheduleError, ScheduleAlreadyRegisteredError } from './errors';
 import { Market } from '../market';
+import { LocalDate } from '@market-miam/common';
+import { Occurrence, Recurrence, RecurrenceSnapshot } from './schedule/recurrence';
+
+type ScheduledMarket = { marketId: string; recurrence: RecurrenceSnapshot };
 
 export class Calendar extends Aggregate {
 
-  private _marketIds = new Map<string, string>();
+  private _schedules = new Map<string, ScheduledMarket>();
 
   apply(event: CalendarEvent): void {
     switch (event.type) {
       case 'MarketScheduleRegistered':
-        this._marketIds.set(event.payload.scheduleId, event.payload.market.id);
+      case 'MarketScheduleAmended':
+        this._schedules.set(event.payload.scheduleId, {
+          marketId: event.payload.market.id,
+          recurrence: { startDate: event.payload.startDate, days: event.payload.days, frequency: event.payload.frequency },
+        });
         break;
       case 'MarketScheduleCancelled':
-        this._marketIds.delete(event.payload.scheduleId);
+        this._schedules.delete(event.payload.scheduleId);
         break;
     }
   }
@@ -54,7 +62,7 @@ export class Calendar extends Aggregate {
       throw new NoSuchScheduleError(`No schedule with ID ${ scheduleId.value() }`);
     }
     const marketSnapshot = market.snapshot();
-    if (this._marketIds.get(scheduleId.value()) !== marketSnapshot.id) {
+    if (this._schedules.get(scheduleId.value())?.marketId !== marketSnapshot.id) {
       throw new ImmutableMarketError(`Cannot change the market of schedule ${ scheduleId.value() }`);
     }
     const event: MarketScheduleAmended = {
@@ -96,10 +104,20 @@ export class Calendar extends Aggregate {
   }
 
   hasAtLeastOneSchedule(): boolean {
-    return this._marketIds.size > 0;
+    return this._schedules.size > 0;
+  }
+
+  // The hours a market day runs to, expanded from the recurrence for that one date. A day
+  // no schedule covers has none — the write path stays as incurious about unreal days as
+  // it has always been, and the caller falls back to the end of the calendar day.
+  hoursFor(marketId: string, date: LocalDate): Occurrence | undefined {
+    return [...this._schedules.values()]
+      .filter(schedule => schedule.marketId === marketId)
+      .flatMap(schedule => Recurrence.fromSnapshot(schedule.recurrence).occurrencesWithin(date, date))
+      .at(0);
   }
 
   private containsSchedule(scheduleId: ScheduleId): boolean {
-    return this._marketIds.has(scheduleId.value());
+    return this._schedules.has(scheduleId.value());
   }
 }

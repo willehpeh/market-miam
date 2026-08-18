@@ -50,6 +50,11 @@ describe('Public storefront', () => {
     await app.get(Subscriptions).drain();
   }
 
+  async function seedMarketDay(marketId: string, date: string, events: DomainEvent[]): Promise<void> {
+    await app.get(EventStore).append(`market-day/acme-bakery/${marketId}/${date}`, events, 0, { vendorId: 'acme-bakery' });
+    await app.get(Subscriptions).drain();
+  }
+
   it('returns the published storefront for a resolved subdomain', async () => {
     await seedStorefront([opened, infoEdited, coverSet, published]);
 
@@ -89,6 +94,22 @@ describe('Public storefront', () => {
       ...scheduleRegistered,
       payload: { ...scheduleRegistered.payload, days: [{ day: 'TUE', startTime: '06:00', endTime: '09:00' }] },
     }]);
+
+    const res = await request(app.getHttpServer()).get('/public/storefront/acme').expect(200);
+    expect(res.body.upcomingMarkets.map((m: { date: string }) => m.date)).toEqual([
+      '2026-06-30', '2026-07-07', '2026-07-14', '2026-07-21', '2026-07-28',
+    ]);
+  });
+
+  // The vendor packed up: the customer reads a closed day as over, so it leaves the list
+  // entirely rather than sitting there badged *En cours* until 14:30 (decision 11). The
+  // day behind it is promoted, so the list still offers five.
+  it('drops a closed market day, and still lists five', async () => {
+    await seedStorefront([opened, infoEdited, coverSet, published]);
+    await seedSchedule([scheduleRegistered]);
+    await seedMarketDay('market-1', '2026-06-23', [
+      { type: 'MarketDayClosed', payload: { marketId: 'market-1', date: '2026-06-23', time: '11:00' }, version: 1 },
+    ]);
 
     const res = await request(app.getHttpServer()).get('/public/storefront/acme').expect(200);
     expect(res.body.upcomingMarkets.map((m: { date: string }) => m.date)).toEqual([

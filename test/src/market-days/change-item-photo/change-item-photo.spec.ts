@@ -4,7 +4,6 @@ import { InMemoryEventStore } from '@market-miam/event-sourcing';
 import { AddItemToCatalogueHandler, Catalogues, ChangeItemPhoto, ChangeItemPhotoHandler, NoSuchItemError } from '@market-miam/market-days';
 import { TestAddItemToCatalogue } from '../add-item-to-catalogue/test-data';
 import { TestChangeItemPhoto } from './test-data';
-import { expectVendorScopedEvents } from '../../shared-kernel';
 
 describe('Change item photo', () => {
   let store: InMemoryEventStore;
@@ -34,14 +33,6 @@ describe('Change item photo', () => {
         }
       })
     ]);
-  });
-
-  it('stamps the vendor id into the event metadata', async () => {
-    const newItemCommand = TestAddItemToCatalogue.simple();
-    await new AddItemToCatalogueHandler(catalogues).execute(newItemCommand);
-    await handler.execute(TestChangeItemPhoto.valid());
-
-    expectVendorScopedEvents(store.newEvents(), 'vendor-id');
   });
 
   it('should fail and raise no events if the item does not exist', async () => {

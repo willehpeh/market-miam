@@ -1,13 +1,24 @@
-import { Body, Controller, Get, Param, Put, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, NotFoundException, Param, Put, UseGuards } from '@nestjs/common';
 import { z } from 'zod';
 import { CurrentVendor, JwtAuthGuard } from '@market-miam/auth-nestjs';
 import type { VerifiedVendor } from '@market-miam/auth';
 import { CommandGateway, QueryGateway } from '@market-miam/event-sourcing';
-import { FindUpcomingMarketDays, MarkItemAsAvailable, MarkItemAsSoldOut, SetMarketDayMenu, UpcomingMarketDaysView } from '@market-miam/market-days';
+import {
+  CloseMarketDay,
+  FindMarketDay,
+  FindUpcomingMarketDays,
+  MarketDayOccurrence,
+  MarkItemAsAvailable,
+  MarkItemAsSoldOut,
+  ReopenMarketDay,
+  SetMarketDayMenu,
+  UpcomingMarketDaysView
+} from '@market-miam/market-days';
 import { shapeOf } from '../shape-of.pipe';
 
 const MenuBody = z.object({ itemIds: z.array(z.string()) });
 const AvailabilityBody = z.object({ soldOut: z.boolean() });
+const ClosedBody = z.object({ closed: z.boolean() });
 
 // Market days are derived from the schedule, but what this returns is days and their
 // menus, not schedules — so they get their own resource rather than hanging off
@@ -25,6 +36,22 @@ export class MarketDayController {
     return this.queries.execute(new FindUpcomingMarketDays(vendor.vendorId.value()));
   }
 
+  // Addressed by market and date rather than read out of the upcoming list: a closed day
+  // stays the vendor's to look at, and the list only ever looks forward.
+  @Get(':marketId/:date')
+  @UseGuards(JwtAuthGuard)
+  async marketDay(
+    @CurrentVendor() vendor: VerifiedVendor,
+    @Param('marketId') marketId: string,
+    @Param('date') date: string,
+  ): Promise<MarketDayOccurrence> {
+    const day = await this.queries.execute(new FindMarketDay(vendor.vendorId.value(), marketId, date));
+    if (!day) {
+      throw new NotFoundException();
+    }
+    return day;
+  }
+
   // The whole set every time — the menu is a set, so clearing a day is an empty itemIds
   // rather than a DELETE. Which days exist is the schedule's business, not this route's:
   // a menu for a market the vendor never attends is stored and simply never surfaces.
@@ -39,6 +66,23 @@ export class MarketDayController {
     await this.commands.execute(
       new SetMarketDayMenu({ vendorId: vendor.vendorId.value(), itemIds: body.itemIds, marketId, date }),
     );
+  }
+
+  // The availability pair's shape, for the same reasons: a vendor packing up on market
+  // signal retries, and both directions of one flag read better as one route than as a
+  // POST and a DELETE that would say *delete the market day* (decision 44).
+  @Put(':marketId/:date/closed')
+  @UseGuards(JwtAuthGuard)
+  async setClosed(
+    @CurrentVendor() vendor: VerifiedVendor,
+    @Param('marketId') marketId: string,
+    @Param('date') date: string,
+    @Body(shapeOf(ClosedBody)) body: z.infer<typeof ClosedBody>,
+  ): Promise<void> {
+    const vendorId = vendor.vendorId.value();
+    await this.commands.execute(body.closed
+      ? new CloseMarketDay(vendorId, marketId, date)
+      : new ReopenMarketDay(vendorId, marketId, date));
   }
 
   // One idempotent route behind both commands — a phone retrying on market wifi must be

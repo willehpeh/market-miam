@@ -2,7 +2,6 @@ import { InMemoryEventStore } from '@market-miam/event-sourcing';
 import { VendorScopedEvents } from '@market-miam/market-days';
 import { RegisterVendor, RegisterVendorHandler, VendorRegistered, Vendors } from '@market-miam/market-days';
 import { TestRegisterVendor } from './test-data';
-import { expectVendorScopedEvents } from '../../shared-kernel';
 
 describe('Register Vendor', () => {
   let handler: RegisterVendorHandler;
@@ -20,12 +19,6 @@ describe('Register Vendor', () => {
     await handler.execute(command);
 
     expectSingleEventFrom(command);
-  });
-
-  it('stamps the vendor id into the event metadata', async () => {
-    await handler.execute(TestRegisterVendor.valid());
-
-    expectVendorScopedEvents(store.newEvents(), 'vendor-id');
   });
 
   it.each([

@@ -17,13 +17,16 @@ import {
   FindVendorCatalogueHandler,
   FindVendorStorefrontHandler,
   FindVendorSchedulesHandler,
+  FindMarketDayHandler,
   FindUpcomingMarketDaysHandler,
   MarketDayViewProjection,
   MarketDayViewStore,
   MarketScheduleViewProjection,
   MarketScheduleViewStore,
+  CloseMarketDayHandler,
   MarkItemAsAvailableHandler,
   MarkItemAsSoldOutHandler,
+  ReopenMarketDayHandler,
   MarketDays,
   OpenStorefrontHandler,
   PublishStorefrontHandler,
@@ -65,8 +68,9 @@ const repositories = [
   { provide: Storefronts, useFactory: (events: VendorScopedEvents) => new Storefronts(events), inject: [VendorScopedEvents] },
   {
     provide: MarketDays,
-    useFactory: (events: VendorScopedEvents, appClock: Clock) => new MarketDays(events, appClock),
-    inject: [VendorScopedEvents, Clock],
+    useFactory: (events: VendorScopedEvents, appClock: Clock, calendars: Calendars) =>
+      new MarketDays(events, appClock, calendars),
+    inject: [VendorScopedEvents, Clock, Calendars],
   },
 ];
 
@@ -115,8 +119,10 @@ const commandHandlers = [
   CancelMarketScheduleHandler,
   DeclareAbsenceHandler,
   SetMarketDayMenuHandler,
+  CloseMarketDayHandler,
   MarkItemAsAvailableHandler,
   MarkItemAsSoldOutHandler,
+  ReopenMarketDayHandler,
   EditStorefrontInformationHandler,
   SetStorefrontCoverPhotoHandler,
   OpenStorefrontHandler,
@@ -125,7 +131,7 @@ const commandHandlers = [
 
 const domainServices = [StorefrontPublication];
 
-const queryHandlers = [FindCustomerStorefrontHandler, FindVendorStorefrontHandler, FindVendorCatalogueHandler, FindVendorSchedulesHandler, FindUpcomingMarketDaysHandler];
+const queryHandlers = [FindCustomerStorefrontHandler, FindVendorStorefrontHandler, FindVendorCatalogueHandler, FindVendorSchedulesHandler, FindUpcomingMarketDaysHandler, FindMarketDayHandler];
 
 // EventStore / CommandGateway / QueryGateway come from the global
 // EventSourcingModule; the view stores from the global persistence module the

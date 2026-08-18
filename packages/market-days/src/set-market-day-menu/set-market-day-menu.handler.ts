@@ -18,7 +18,7 @@ export class SetMarketDayMenuHandler implements ICommandHandler<SetMarketDayMenu
 
     const day = await this.marketDays.forVendorAtMarketOn(vendorId, marketDay);
     day.setMenu(menu);
-    await this.marketDays.save(day, vendorId, marketDay);
+    await this.marketDays.save(day, vendorId);
   }
 
   private async menuFor(vendorId: VendorId, itemIds: string[]): Promise<Menu> {
