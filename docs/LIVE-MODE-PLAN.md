@@ -29,9 +29,10 @@ fallback, `standingOf` states the phase and `nextPhaseInMs` together on both han
 screen reads its own `day` slot and stops loading the list, `over` is a full state with an empty
 foot, no reopen and no editor link, and one timer off the countdown plus a visibility re-ask
 replaces the 60s poll — which is deleted, along with `RefreshMarketDays`.
-**Next is slice 2b or slice 3.** **Slice 2b is still
-not startable as written**, but on one count rather than two: the French copy for the two
-judgments is open. The rating capture window is settled — decision 50 dissolved it.
+**Next is slice 2b or slice 3.** **Slice 2b is startable**: its last open
+count, the French copy for the two judgments, now has a working answer — *Bien vendu*
+and *Moins bien vendu*, carried as a working assumption to iterate on rather than settled
+vocabulary. The rating capture window is settled — decision 50 dissolved it.
 
 ## Shape
 
@@ -281,7 +282,7 @@ Accepted deliberately; none block a slice.
 | French copy: the live hero, ~~the vendor's live card~~ (its action settled — *Suivre le marché*, decision 43), ~~the épuisés group heading~~ (*Épuisés*, decision 46), ~~the *En direct* receipt (decision 37)~~ (shipped as written in slice 1 — *En direct* · *Vos clients voient ce menu.*), ~~the closed/can't-come states (decisions 38, 40)~~ (settled — decision 45) | Leaning away from the wireframe's *ON EST AU MARCHÉ* — a presence claim derived open cannot back (same family as the cut *plats préparés ce matin*), reserved for a future presence-backed state (see named limits). Working direction: *EN DIRECT* + market name + hours. *Plats préparés ce matin* stays cut. **The badge word is the vendor's *En direct*, unchanged** — decision 13's two terms are repo-wide, and vendor and customer reading different words for one state is how a third gets born |
 | ~~The rating capture window (slice 2b)~~ | ~~Undecided, and it collides with decision 11~~ — dissolved by decision 50: the day is reachable through `FindMarketDay` whenever, so the window is the aggregate's `_today` guard and nothing else. No second temporal concept, and no revision to what the vendor's list keeps |
 | ~~French copy for the ended-but-open live screen~~ | ~~Undecided~~ — *Marché terminé* (decision 60) |
-| French copy for the three outcomes (slice 2b) | Undecided — the English is *sold out · did well · didn't do well*. *Épuisé* is settled vocabulary (decision 46) and carries over; the two judgments need the vendor's own register rather than a translation |
+| French copy for the three outcomes (slice 2b) | **Working: *Moins bien vendu · Bien vendu · Épuisé*** — the three levels, worst to best, in that order; enough to build 2b on, deliberately not settled. *Épuisé* is decision 46's, and decision 49 prefills it. *Moins bien vendu* over *mal vendu* on purpose: the comparative reads as a fact about the tray, where *mal* reads as a verdict on the vendor, and this is a screen they meet in the rain after a bad morning. Both are past participles, so all three agree with the dish grammatically — though these two describe the sale where *épuisé* describes the dish. **Two things to watch when it meets the pilot vendor**: the pair is lopsided (11 characters against 17), which a three-way control has to absorb without the long one wrapping; and the words go into event names under decision 13's one-term rule, so a later change is a rename across the log, not a copy tweak. **Trigger: the first time the vendor says it back in different words.** Ordering is recorded as stated and is not yet argued for — note that decision 49 prefills *épuisé*, so the commonest answer sits at the far end of the control |
 | Dashboard card prominence on market mornings | Undecided — if the dashboard grows other tiles, the market-day card may need to take over the dashboard on market days: the customer takeover logic, one level up. With today's sparse dashboard the card-as-doorway works by default |
 | How a failed availability tap reverts (decision 22 says "visibly") | Silent snap-back of the row, no toast — consistent with decision 7's no-toast stance; revisit if the vendor misses reversions |
 | Subdomain for the always-live demo vendor (decision 23) | Undecided |
