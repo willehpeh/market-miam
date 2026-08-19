@@ -32,10 +32,12 @@ export class InMemoryCatalogueViews implements CatalogueViews, CatalogueViewStor
   }
 
   // ItemsReordered always names every item in the catalogue — the aggregate refuses
-  // anything less — so seating them by the given ids loses nothing.
+  // anything less — so seating them by the given ids loses nothing. Written as a filter
+  // rather than a lookup with a fallback: a `?? []` for the miss would silently drop an
+  // item on the day that guarantee broke, and no test can reach it to say otherwise.
   async reorderItems(itemIds: string[], vendorId: string): Promise<void> {
-    const byId = new Map((await this.forVendor(vendorId)).items.map(item => [item.itemId, item]));
-    this.items.set(vendorId, itemIds.flatMap(itemId => byId.get(itemId) ?? []));
+    const items = (await this.forVendor(vendorId)).items;
+    this.items.set(vendorId, itemIds.flatMap(itemId => items.filter(item => item.itemId === itemId)));
   }
 
   async retireItem(itemId: string, vendorId: string): Promise<void> {

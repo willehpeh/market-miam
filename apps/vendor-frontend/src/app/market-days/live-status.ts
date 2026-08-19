@@ -13,7 +13,7 @@ export const isToday = (day: MarketDayView | undefined): boolean =>
 // anything else from the dashboard. The card reads it to choose its link, and the editor
 // to choose where to put the vendor back — decision 10 gave it a second way in.
 export const hasLiveScreen = (day: MarketDayView | undefined): boolean =>
-  isToday(day) && !!day && day.itemIds.length > 0;
+  isToday(day) && (day?.itemIds.length ?? 0) > 0;
 
 // True while the vendor can see a planned today whose market has not started: the state
 // the pre-live banner names and the poll re-asks the server about, tick by tick.

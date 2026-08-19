@@ -1,5 +1,6 @@
 import { describe } from 'vitest';
 import { VendorScopedEvents } from '@market-miam/market-days';
+import { VendorId } from '@market-miam/shared-kernel';
 import { InMemoryEventStore } from '@market-miam/event-sourcing';
 import { AddItemToCatalogueHandler, Catalogues, InvalidItemPricingError, NoSuchItemError, RetireItem, RetireItemHandler, ReviseItem, ReviseItemHandler } from '@market-miam/market-days';
 import { TestAddItemToCatalogue } from '../add-item-to-catalogue/test-data';
@@ -102,5 +103,18 @@ describe('Revise item', () => {
     const command = new ReviseItem({ itemId: added.itemId, vendorId: added.vendorId, name: 'Revised Name', description: 'Revised Description', price: 750 });
 
     await expect(handler.execute(command)).rejects.toThrow(NoSuchItemError);
+  });
+
+  // The command path cannot produce this — reviseItem asserts the item exists first — so
+  // this is the rehydration guard: a stream that revises an item it never added fails
+  // loudly rather than constituting a catalogue with a hole in it.
+  it('refuses to rehydrate a catalogue whose stream revises an item it never added', async () => {
+    store.seedWith('catalogue-vendor-id', [{
+      type: 'ItemRevised',
+      payload: { itemId: 'never-added', name: 'Ghost', description: '', price: 500 },
+      version: 1,
+    }], { vendorId: 'vendor-id' });
+
+    await expect(catalogues.forVendor(new VendorId('vendor-id'))).rejects.toThrow(NoSuchItemError);
   });
 });

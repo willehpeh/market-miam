@@ -57,16 +57,24 @@ export const initialState: MarketDayState = {
 // recurrence — so stale, not patched like the menu save below.
 const wentStale = (state: MarketDayState): MarketDayState => ({ ...state, fresh: false });
 
-const patchAvailability = (state: MarketDayState, marketId: string, date: string, itemId: string, soldOut: boolean): MarketDayState => ({
+// Which day a patch addresses, said once. Two markets can share a date (decision 25), so
+// every optimistic patch below has to name both halves — and each rewriting of that made a
+// place to get it wrong.
+const patchDay = (
+  state: MarketDayState,
+  marketId: string,
+  date: string,
+  change: (day: MarketDayView) => MarketDayView,
+): MarketDayState => ({
   ...state,
-  days: state.days.map(day => {
-    if (day.marketId !== marketId || day.date !== date) {
-      return day;
-    }
+  days: state.days.map(day => (day.marketId === marketId && day.date === date ? change(day) : day)),
+});
+
+const patchAvailability = (state: MarketDayState, marketId: string, date: string, itemId: string, soldOut: boolean): MarketDayState =>
+  patchDay(state, marketId, date, day => {
     const others = day.soldOutItemIds.filter(id => id !== itemId);
     return { ...day, soldOutItemIds: soldOut ? [...others, itemId] : others };
-  }),
-});
+  });
 
 export const marketDayFeature = createFeature({
   name: 'marketDays',
@@ -81,21 +89,15 @@ export const marketDayFeature = createFeature({
     // takes the ids that were just sent rather than waiting for a re-read that never comes.
     // ponytail: SetMarketDayMenuFailure is unreduced — same no-error-UX stance as the
     // catalogue's siblings; the interceptor surfaces 5xx and network failures.
-    on(SetMarketDayMenuSuccess, (state, { marketId, date, itemIds }): MarketDayState => ({
-      ...state,
-      days: state.days.map(day => (day.marketId === marketId && day.date === date ? { ...day, itemIds } : day)),
-    })),
+    on(SetMarketDayMenuSuccess, (state, { marketId, date, itemIds }): MarketDayState =>
+      patchDay(state, marketId, date, day => ({ ...day, itemIds }))),
     // Optimistic on dispatch like the marks below, and for the same reason one rung up:
     // the whole-screen flip is the vendor's receipt (decision 38).
-    on(ChangeStandClosure, (state, { marketId, date, closed }): MarketDayState => ({
-      ...state,
-      days: state.days.map(day => (day.marketId === marketId && day.date === date ? { ...day, closed } : day)),
-    })),
+    on(ChangeStandClosure, (state, { marketId, date, closed }): MarketDayState =>
+      patchDay(state, marketId, date, day => ({ ...day, closed }))),
     // A failed close reopens the stand, silently — the state returning is the disclosure.
-    on(ChangeStandClosureFailure, (state, { marketId, date, closed }): MarketDayState => ({
-      ...state,
-      days: state.days.map(day => (day.marketId === marketId && day.date === date ? { ...day, closed: !closed } : day)),
-    })),
+    on(ChangeStandClosureFailure, (state, { marketId, date, closed }): MarketDayState =>
+      patchDay(state, marketId, date, day => ({ ...day, closed: !closed }))),
     // Optimistic on dispatch, not on success: the moving row is the vendor's receipt
     // (live-mode decision 7), so it cannot wait on market wifi.
     on(ChangeItemAvailability, (state, { marketId, date, itemId, soldOut }): MarketDayState =>

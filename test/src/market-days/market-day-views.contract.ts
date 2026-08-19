@@ -145,6 +145,12 @@ export function marketDayViewsContract(name: string, create: () => Store): void 
       expect(await menusOn('v1', DAY)).toEqual([]);
     });
 
+    it('ignores an available-mark for a day nobody planned', async () => {
+      await store.markAvailable(mark('item-1'), 'v1');
+
+      expect(await menusOn('v1', DAY)).toEqual([]);
+    });
+
     it('marks a planned day closed, and open again on reopen', async () => {
       await store.setMenu(menu(), 'v1');
 

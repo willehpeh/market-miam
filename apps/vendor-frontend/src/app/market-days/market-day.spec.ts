@@ -288,6 +288,20 @@ describe('MarketDays', () => {
 
   // Availability's shape for the same reasons (decision 44): a vendor packing up on bad
   // market signal retries, and {closed: true} twice is safe.
+  // Two markets can share a date (decision 25's overlap), so a tap on one stall's dish must
+  // leave the other's row alone. The closure pair had this; the marks did not.
+  it('marks only the day it was asked about', () => {
+    facade.load();
+    httpCtrl
+      .expectOne('/api/market-days/upcoming')
+      .flush({ marketDays: [{ ...day, items: [{ itemId: 'item-1' }] }, { ...day, marketId: 'market-2', items: [{ itemId: 'item-1' }] }] });
+
+    facade.markSoldOut('market-1', '2026-08-15', 'item-1');
+
+    expect(facade.days().map(each => each.soldOutItemIds)).toEqual([['item-1'], []]);
+    httpCtrl.expectOne(availability('item-1')).flush(null);
+  });
+
   it('puts the closure', () => {
     facade.close('market-1', '2026-08-15');
 

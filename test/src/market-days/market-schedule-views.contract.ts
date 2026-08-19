@@ -86,6 +86,23 @@ export function marketScheduleViewsContract(name: string, create: () => Store): 
       expect(schedules[0].absences).toEqual([{ from: '2026-07-20', to: '2026-07-27' }]);
     });
 
+    // Both no-ops rather than upserts: the projection only ever amends or annotates a
+    // schedule it has already recorded, so a miss means a replay out of order — and an
+    // invented row would be a schedule the vendor never registered.
+    it('ignores an amendment to a schedule it has never recorded', async () => {
+      await store.recordSchedule(schedule({ scheduleId: 'a' }), 'v1');
+      await store.amendSchedule(schedule({ scheduleId: 'b', days: [{ day: 'WED' }] }), 'v1');
+      const { schedules } = await store.forVendor('v1');
+      expect(schedules.map(s => s.scheduleId)).toEqual(['a']);
+    });
+
+    it('ignores an absence declared on a schedule it has never recorded', async () => {
+      await store.recordSchedule(schedule({ scheduleId: 'a' }), 'v1');
+      await store.recordAbsence('b', 'v1', { from: '2026-07-20', to: '2026-07-27' });
+      const { schedules } = await store.forVendor('v1');
+      expect(schedules[0].absences ?? []).toEqual([]);
+    });
+
     it('clears all schedules', async () => {
       await store.recordSchedule(schedule(), 'v1');
       await store.clear();

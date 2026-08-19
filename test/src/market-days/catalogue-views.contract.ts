@@ -106,6 +106,14 @@ export function catalogueViewsContract(name: string, create: () => Store): void 
       });
     });
 
+    it("leaves the catalogue's other items alone when one is revised", async () => {
+      await store.addItemToCatalogue(item({ itemId: 'a' }), 'v1');
+      await store.addItemToCatalogue(item({ itemId: 'b' }), 'v1');
+      await store.reviseItem('a', { name: 'Poulet rôti', description: 'Fermier', price: 1600 }, 'v1');
+      const { items } = await store.forVendor('v1');
+      expect(items).toEqual([item({ itemId: 'a', name: 'Poulet rôti', description: 'Fermier', price: 1600 }), item({ itemId: 'b' })]);
+    });
+
     it('revises a flat item into a variant item, clearing the price', async () => {
       await store.addItemToCatalogue(item(), 'v1');
       await store.reviseItem('item-1', {
@@ -159,6 +167,14 @@ export function catalogueViewsContract(name: string, create: () => Store): void 
       expect(await store.forVendor('v1')).toEqual({
         items: [item({ imageReference: 'v9/dishes/item-1' })],
       });
+    });
+
+    it("leaves the catalogue's other items alone when one is re-photographed", async () => {
+      await store.addItemToCatalogue(item({ itemId: 'a' }), 'v1');
+      await store.addItemToCatalogue(item({ itemId: 'b' }), 'v1');
+      await store.updateItemPhoto('a', 'v9/dishes/a', 'v1');
+      const { items } = await store.forVendor('v1');
+      expect(items).toEqual([item({ itemId: 'a', imageReference: 'v9/dishes/a' }), item({ itemId: 'b' })]);
     });
 
     it('retires an item', async () => {

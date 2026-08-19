@@ -2,8 +2,6 @@ import { Aggregate } from '@market-miam/event-sourcing';
 import { LocalDate, LocalTime } from '@market-miam/common';
 import { VendorId } from '@market-miam/shared-kernel';
 import {
-  ItemMarkedAsAvailable,
-  ItemMarkedAsSoldOut,
   MarketDayClosed,
   MarketDayEvent,
   MarketDayMenuSet,
@@ -82,33 +80,19 @@ export class MarketDay extends Aggregate {
   // Stricter than setMenu's past-only guard: planning ahead is legal, availability is a
   // claim about right now (LIVE-MODE-PLAN.md decision 16).
   markItemAsSoldOut(itemId: ItemId, time: LocalTime) {
-    if (this.notToday()) {
-      throw new MarketDayNotTodayError();
-    }
-    if (this._closed) {
-      throw new MarketDayClosedError();
-    }
-    if (!this._menu.includes(itemId)) {
-      throw new ItemNotPlannedError();
-    }
-    // A re-statement of the current state appends nothing — a duplicate event would
-    // corrupt the availability timeline (decision 36; same stance as setMenu unchanged).
-    if (this._soldOut.includes(itemId)) {
-      return;
-    }
-    const event: ItemMarkedAsSoldOut = {
-      type: 'ItemMarkedAsSoldOut',
-      payload: {
-        itemId: itemId.value(),
-        ...this._id.snapshot(),
-        time: time.value()
-      },
-      version: 1
-    };
-    this.raise(event);
+    this.markAvailability(itemId, time, true);
   }
 
   markItemAsAvailable(itemId: ItemId, time: LocalTime) {
+    this.markAvailability(itemId, time, false);
+  }
+
+  // Both directions, one set of guards: the pair drifted apart once already, when decision
+  // 29's closed guard had to be added to each by hand. The no-op rule is one statement here
+  // rather than two that must stay each other's negation — a re-statement of the current
+  // state appends nothing, or a duplicate event would corrupt the availability timeline
+  // (decision 36; same stance as setMenu unchanged).
+  private markAvailability(itemId: ItemId, time: LocalTime, soldOut: boolean): void {
     if (this.notToday()) {
       throw new MarketDayNotTodayError();
     }
@@ -118,19 +102,13 @@ export class MarketDay extends Aggregate {
     if (!this._menu.includes(itemId)) {
       throw new ItemNotPlannedError();
     }
-    if (!this._soldOut.includes(itemId)) {
+    if (this._soldOut.includes(itemId) === soldOut) {
       return;
     }
-    const event: ItemMarkedAsAvailable = {
-      type: 'ItemMarkedAsAvailable',
-      payload: {
-        itemId: itemId.value(),
-        ...this._id.snapshot(),
-        time: time.value()
-      },
-      version: 1
-    };
-    this.raise(event);
+    const payload = { itemId: itemId.value(), ...this._id.snapshot(), time: time.value() };
+    this.raise(soldOut
+      ? { type: 'ItemMarkedAsSoldOut', payload, version: 1 }
+      : { type: 'ItemMarkedAsAvailable', payload, version: 1 });
   }
 
   streamIdFor(vendorId: VendorId): string {

@@ -32,6 +32,17 @@ describe('InMemorySubdomainRegistry', () => {
     expect(await registry.vendorFor('acme')).toBeUndefined();
   });
 
+  // Erasure is per vendor, and the registry is one map across all of them (PRIVACY-PLAN 2b).
+  it('leaves another vendor\'s subdomain registered when one is removed', async () => {
+    const registry = new InMemorySubdomainRegistry();
+    await registry.register('acme', 'acme-bakery');
+    await registry.register('brioche', 'brioche-co');
+
+    await registry.removeFor('acme-bakery');
+
+    expect(await registry.vendorFor('brioche')).toEqual('brioche-co');
+  });
+
   it('resolves a vendor to its registered subdomain', async () => {
     const registry = new InMemorySubdomainRegistry();
     await registry.register('acme', 'acme-bakery');
