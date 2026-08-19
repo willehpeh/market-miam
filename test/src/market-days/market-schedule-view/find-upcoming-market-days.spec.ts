@@ -293,6 +293,18 @@ describe('FindUpcomingMarketDays', () => {
     expect(marketDays.slice(1).every(day => day.phase === 'future')).toBe(true);
   });
 
+  // Decision 59: both handlers state the countdown, from the one computation that decides
+  // the phase — the card reads the same day the live screen does, so the two cannot differ
+  // about when it turns over. 11:00 Paris against a 14:00 close, plus the closing minute.
+  it('says how long the running market has left', async () => {
+    await views.recordSchedule(scheduleWith({ startDate: '2024-02-05' }), 'vendor-id');
+
+    const { marketDays } = await upcoming('vendor-id', '2024-02-10', '2024-02-10T10:00:00.000Z');
+
+    expect(marketDays[0]).toMatchObject({ phase: 'trading', nextPhaseInMs: 10_860_000 });
+    expect(marketDays.slice(1).every(day => !day.nextPhaseInMs)).toBe(true);
+  });
+
   // 06:00Z is 07:00 in February's Paris (CET) — before the 08:00 start. Due must be
   // distinguishable from future, or the card cannot open the live screen for the 6h
   // sold-out case decision 27 exists to keep reachable.

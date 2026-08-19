@@ -15,13 +15,10 @@ import {
   MarketDayNotTodayError
 } from './errors';
 import { MarketDayId } from './market-day-id';
+import { MarketHours } from './market-hours';
 import { Menu } from './menu';
 import { SoldOutItems } from './sold-out-items';
 import { ItemId } from '../catalogue';
-
-// The only part of the day's schedule the aggregate decides with. Structural, so the
-// calendar's Occurrence satisfies it without the market day importing the calendar.
-type MarketHours = { endTime?: string };
 
 export class MarketDay extends Aggregate {
 
@@ -29,9 +26,11 @@ export class MarketDay extends Aggregate {
   private _soldOut = new SoldOutItems();
   private _closed = false;
 
+  // The hours come from the vendor's calendar, read by the repository — the day is
+  // constituted with everything it decides on, without ever importing a schedule (ADR 0051).
   constructor(private readonly _id: MarketDayId,
               private readonly _today: LocalDate,
-              private readonly _hours?: MarketHours) {
+              private readonly _hours: MarketHours = new MarketHours()) {
     super();
   }
 
@@ -158,10 +157,8 @@ export class MarketDay extends Aggregate {
     return this._id.isBefore(this._today);
   }
 
-  // A day no schedule covers, or one with no closing time, runs to the end of the calendar
-  // day — the same fallback the query side reads it with (market-day-clock.ts).
   private hasEnded(time: LocalTime): boolean {
-    return time.isAfter(new LocalTime(this._hours?.endTime ?? '23:59'));
+    return time.isAfter(this._hours.closing());
   }
 
   private notToday(): boolean {

@@ -11,4 +11,4 @@ export { FindMarketDay } from './find-market-day';
 export { FindMarketDayHandler } from './find-market-day.handler';
 export { FindUpcomingMarketDays } from './find-upcoming-market-days';
 export { FindUpcomingMarketDaysHandler } from './find-upcoming-market-days.handler';
-export { hasStarted, notYetEnded, parisTime, parisWallClock } from './market-day-clock';
+export { notYetEnded, parisTime, parisWallClock } from './market-day-clock';

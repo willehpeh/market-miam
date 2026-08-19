@@ -236,6 +236,15 @@ Accepted deliberately; none block a slice.
   open — never gating, `(inProgress || openedToday)`, upgrading the hero copy to the presence
   claim it currently cannot make. **Trigger: a customer or the vendor reports the page claiming
   presence that wasn't there, or the vendor asks how to signal they're running late.**
+- **The phase turns over up to 59s late, never early.** `parisWallClock` reads whole minutes,
+  so `nextPhaseInMs` counts to the first minute of the next phase (`untilAfter`,
+  `market-day-clock.ts`) and a timer set from it fires between 0 and 59 seconds after the phase
+  really changed. Late is the safe direction here and the lie is bounded by a minute — where
+  counting to the boundary itself would say zero for the whole boundary minute, and a timer set
+  for zero re-asks instantly, gets zero again and spins. It is also no worse than the 60s poll
+  decision 59 replaced. Sub-minute accuracy would mean carrying seconds through `LocalTime`,
+  which is `HH:mm` by format and stamps the availability events. **Trigger: a screen that must
+  flip on the second**, which no vendor-facing state is.
 - **A market crossing midnight cannot work** — decision 16. Pre-existing: `endTime` is a
   `LocalTime` with no next-day concept.
 - **Two devices can 409 each other** — decision 22. One vendor, one phone is the real case.

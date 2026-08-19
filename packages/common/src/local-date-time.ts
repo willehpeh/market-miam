@@ -18,4 +18,14 @@ export class LocalDateTime {
   isNotAfter(other: LocalDateTime): boolean {
     return this._value <= other._value;
   }
+
+  // Both sides are wall-clock, so this is elapsed time only within one calendar day — all
+  // that is ever asked of it, and the reason a countdown never spans one (decision 61).
+  millisUntil(other: LocalDateTime): number {
+    return other.toDate().getTime() - this.toDate().getTime();
+  }
+
+  private toDate(): Date {
+    return new Date(`${this._value}:00Z`);
+  }
 }

@@ -57,11 +57,47 @@ describe('FindMarketDay', () => {
       endTime: '14:00',
       absent: false,
       phase: 'trading',
+      // 10h Paris against a market that closes at 14h. Four hours, plus the closing
+      // minute itself: `over` starts at 14h01, which is what the countdown names.
+      nextPhaseInMs: 14_460_000,
       items: [],
       closed: false,
       soldOutItemIds: [],
       market,
     });
+  });
+
+  // Decision 59: the screen sets one timer off this rather than polling, so the wait for
+  // a market to open is a duration the server states, never one the device works out.
+  it('counts down to opening on a day that has not started', async () => {
+    await views.recordSchedule(scheduleWith(), 'vendor-id');
+
+    expect(await findDay('2024-02-10', '2024-02-10', '2024-02-10T06:00:00.000Z')).toMatchObject({
+      phase: 'due',
+      nextPhaseInMs: 3_660_000,
+    });
+  });
+
+  // The screen the vendor ran the market on stays open past closing time, so `over` needs
+  // its own countdown — to midnight, where the day stops being today at all.
+  it('counts down to midnight on a day whose market has ended', async () => {
+    await views.recordSchedule(scheduleWith(), 'vendor-id');
+
+    expect(await findDay('2024-02-10', '2024-02-10', '2024-02-10T14:00:00.000Z')).toMatchObject({
+      phase: 'over',
+      nextPhaseInMs: 32_400_000,
+    });
+  });
+
+  // Decision 61: nothing follows `past`, and a day still days away has a boundary no timer
+  // would wait for. Both carry no countdown at all — a zero is what a timer spins on.
+  it.each([
+    ['a day already behind the vendor', '2024-01-13'],
+    ['a day still to come', '2024-02-17'],
+  ])('leaves %s without a countdown', async (_, date) => {
+    await views.recordSchedule(scheduleWith(), 'vendor-id');
+
+    expect(await findDay(date)).not.toHaveProperty('nextPhaseInMs');
   });
 
   // Why this query exists: the upcoming window looks forward only, and a vendor keeps the

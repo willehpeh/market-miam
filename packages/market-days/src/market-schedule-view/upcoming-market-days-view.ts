@@ -15,6 +15,10 @@ export type MarketDayOccurrence = {
   // and the commands they fire can never disagree. Nothing the vendor does moves it —
   // `closed` and `absent` below are the facts they can set, and both are independent of it.
   phase: MarketDayPhase;
+  // How long this phase has left, so a screen can schedule one re-ask instead of polling.
+  // Present for the three today phases only: `past` has no phase after it, and a `future`
+  // day's boundary is days away, which no timer wants (decision 61).
+  nextPhaseInMs?: number;
   // The day's menu joined from the catalogue at query time — current names and prices,
   // in catalogue order. Empty when nothing is planned; suppressed when absent.
   items: CatalogueViewItem[];

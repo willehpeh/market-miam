@@ -9,7 +9,7 @@ import { MarketDayViews } from '../market-day-view/market-day-views';
 import { CatalogueViewItem } from '../catalogue-view/catalogue-view';
 import { CatalogueViews } from '../catalogue-view/catalogue-views';
 import { Recurrence } from '../calendar/schedule/recurrence';
-import { notYetEnded, parisWallClock, phaseOf } from './market-day-clock';
+import { notYetEnded, opensAt, parisWallClock, standingOf } from './market-day-clock';
 
 type DayMenu = { items: CatalogueViewItem[]; soldOutItemIds: string[]; closed: boolean };
 type Items = Map<string, DayMenu>;
@@ -44,13 +44,12 @@ export class FindUpcomingMarketDaysHandler implements IQueryHandler<FindUpcoming
       .filter(day => notYetEnded(day, now))
       // Ended days are gone by here (decision 57), so this list never carries `over` or
       // `past` — the point lookup is where those arrive.
-      .map(day => ({ ...day, phase: phaseOf(day, now) }))
+      .map(day => ({ ...day, ...standingOf(day, now) }))
       // First-by-start-time is what makes "the first occurrence" the market the vendor is
-      // standing at; the fallback matches hasStarted, which treats no startTime as the
-      // start of the day, and marketId makes the order total (decision 25).
+      // standing at, and marketId makes the order total (decision 25).
       .sort((a, b) =>
         a.date.localeCompare(b.date)
-        || (a.startTime ?? '00:00').localeCompare(b.startTime ?? '00:00')
+        || opensAt(a).localeCompare(opensAt(b))
         || a.marketId.localeCompare(b.marketId));
   }
 
