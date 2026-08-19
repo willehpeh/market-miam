@@ -30,7 +30,9 @@ reading them, not running them.
 | [M7](m7-listen-boot-and-stop-issues.md) | Low | **Fixed** ([ADR 0042](../adr/0042-listen-lifecycle-single-use-connection-object.md)) | LISTEN boot resolves on failure; `stop()` never completes its subjects | `postgres.notifications.ts` |
 | [M5](m5-read-path-write-amplification.md) | Low (tradeoff) | Open (accepted) | Read-path write amplification: one transaction per event per consumer | `polling.subscription.ts` |
 | [M6](m6-write-path-scaling-ceilings.md) | Low (tradeoff) | Open (accepted) | Write-path scaling ceilings: global lock, O(n) check, unbounded load | `append-transaction.ts` |
+| [F1](f1-api-suite-socket-hang-up-flake.md) | Low | Open (local only) | The api suite fails one random HTTP test in ~1 run in 9, always `socket hang up` | `api-test-app.ts` |
 
 The W/M/T taxonomy is the evaluation's: **W** = write/read-path correctness,
 **M** = medium-and-below implementation issues, **T** = test-and-tooling. Within
 a letter the numbers are identity, not rank — severity is what orders the table.
+**F** is later than the evaluation: a flake found in normal work, not in the audit.
