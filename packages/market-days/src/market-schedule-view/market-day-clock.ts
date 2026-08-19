@@ -37,3 +37,25 @@ export function notYetEnded(day: Timed, now: LocalDateTime): boolean {
 export function hasStarted(day: Timed, now: LocalDateTime): boolean {
   return wallClockOn(day, day.startTime || '00:00').isNotAfter(now);
 }
+
+// Where now sits against this day, in one reading (decision 56). Two date words for the
+// days either side, three market words for today. Clock truth only — nothing the vendor
+// does moves it, which is what keeps it apart from `closed` and `absent`.
+export type MarketDayPhase = 'future' | 'due' | 'trading' | 'over' | 'past';
+
+// Computed here rather than inline in each handler: stamping it twice is how the list and
+// the point lookup came to disagree about what a past day is. Untimed days keep the
+// fallbacks above — no startTime counts as the start of the day, no endTime as 23:59 —
+// so an untimed today reads as trading throughout.
+export function phaseOf(day: Timed, now: LocalDateTime): MarketDayPhase {
+  if (!wallClockOn(day, '00:00').isNotAfter(now)) {
+    return 'future';
+  }
+  if (!now.isNotAfter(wallClockOn(day, '23:59'))) {
+    return 'past';
+  }
+  if (!hasStarted(day, now)) {
+    return 'due';
+  }
+  return notYetEnded(day, now) ? 'trading' : 'over';
+}

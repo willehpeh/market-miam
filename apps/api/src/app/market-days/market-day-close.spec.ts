@@ -111,7 +111,7 @@ describe('Closing the stand over HTTP', () => {
     await app.get(Subscriptions).drain();
 
     const response = await authed('get', `/market-days/market-1/${TUESDAY}`).expect(200);
-    expect(response.body).toMatchObject({ date: TUESDAY, closed: true, today: true });
+    expect(response.body).toMatchObject({ date: TUESDAY, closed: true, phase: 'over' });
   });
 
   it('404s for a day the vendor has no market scheduled on', async () => {

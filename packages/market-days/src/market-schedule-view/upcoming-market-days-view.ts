@@ -1,4 +1,5 @@
 import { CatalogueViewItem } from '../catalogue-view/catalogue-view';
+import { MarketDayPhase } from './market-day-clock';
 
 export type MarketDayOccurrence = {
   scheduleId: string;
@@ -8,12 +9,12 @@ export type MarketDayOccurrence = {
   startTime?: string;
   endTime?: string;
   absent: boolean;
-  // The market is happening right now — schedule truth, never true for an absent day.
-  inProgress: boolean;
-  // The occurrence falls on the server's today — true from midnight, before the market
-  // starts, which inProgress deliberately is not. Same clock as the aggregate's today-guard,
-  // so the screen this gates and the commands it fires can never disagree.
-  today: boolean;
+  // Where now sits against this day, by the clock alone (decision 56): `due`, `trading` and
+  // `over` all mean today, either side of the market's hours; `future` and `past` are the
+  // dates around it. Same clock as the aggregate's today-guard, so the screens this gates
+  // and the commands they fire can never disagree. Nothing the vendor does moves it —
+  // `closed` and `absent` below are the facts they can set, and both are independent of it.
+  phase: MarketDayPhase;
   // The day's menu joined from the catalogue at query time — current names and prices,
   // in catalogue order. Empty when nothing is planned; suppressed when absent.
   items: CatalogueViewItem[];

@@ -7,7 +7,7 @@ import { Spinner } from '../core/spinner';
 import { formatTime, longDate } from '../core/french-date';
 import { CatalogueFacade } from '../catalogue/catalogue.facade';
 import { MarketDayFacade } from './market-day.facade';
-import { awaitingStart, broadcasting } from './live-status';
+import { awaitingStart, broadcasting, isToday } from './live-status';
 import { ClosedNotice } from './closed-notice';
 import { ReopenStand } from './reopen-stand';
 
@@ -102,14 +102,14 @@ type Row = { itemId: string; name: string };
           </a>
         }
 
-        <!-- Decision 52: one slot, one verb, flipping at startTime. Gated on inProgress
-             rather than on broadcasting: the banner above claims something about a menu, this
-             offers to call the day off, which needs none. -->
+        <!-- Decision 52: one slot, one verb, flipping at startTime. Keyed to the phase
+             alone rather than to broadcasting: the banner above claims something about a menu,
+             this offers to call the day off, which needs none. -->
         @if (marketDay.closed) {
           <mm-reopen-stand [marketId]="marketId" [date]="date" />
         } @else {
           <button type="button" class="quiet mt-8 flex w-full max-w-xs mx-auto justify-center" (click)="closeStand()">
-            @if (marketDay.inProgress) {
+            @if (marketDay.trading) {
               Fermer le stand
             } @else {
               Je ne peux pas venir aujourd'hui
@@ -147,12 +147,12 @@ export class LiveScreen {
 
   readonly day = computed(() => {
     const occurrence = this.occurrence();
-    return occurrence?.today
+    return isToday(occurrence) && occurrence
       ? {
           label: longDate(occurrence.day, occurrence.date),
           marketName: occurrence.market.name,
           closed: occurrence.closed,
-          inProgress: occurrence.inProgress,
+          trading: occurrence.phase === 'trading',
         }
       : undefined;
   });

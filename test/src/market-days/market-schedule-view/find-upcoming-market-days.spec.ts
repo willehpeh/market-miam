@@ -67,8 +67,7 @@ describe('FindUpcomingMarketDays', () => {
         startTime: '08:00',
         endTime: '14:00',
         absent: false,
-        inProgress: false,
-        today: false,
+        phase: 'future',
         items: [],
         closed: false,
         soldOutItemIds: [],
@@ -285,42 +284,37 @@ describe('FindUpcomingMarketDays', () => {
   });
 
   // 10:00Z is 11:00 in February's Paris (CET) — mid-market for an 08:00–14:00 day.
-  it('flags the occurrence whose market is running right now, and only that one', async () => {
+  it('says trading for the occurrence whose market is running right now, and only that one', async () => {
     await views.recordSchedule(scheduleWith({ startDate: '2024-02-05' }), 'vendor-id');
 
     const { marketDays } = await upcoming('vendor-id', '2024-02-10', '2024-02-10T10:00:00.000Z');
 
-    expect(marketDays[0]).toMatchObject({ date: '2024-02-10', inProgress: true });
-    expect(marketDays.slice(1).every(day => !day.inProgress)).toBe(true);
+    expect(marketDays[0]).toMatchObject({ date: '2024-02-10', phase: 'trading' });
+    expect(marketDays.slice(1).every(day => day.phase === 'future')).toBe(true);
   });
 
-  // 06:00Z is 07:00 in February's Paris (CET) — before the 08:00 start. Today must
-  // already be true where inProgress is not, or the card cannot open the live screen
-  // for the 6h sold-out case decision 27 exists to keep reachable.
-  it('flags today\'s occurrence from midnight, before its market starts, and only that one', async () => {
+  // 06:00Z is 07:00 in February's Paris (CET) — before the 08:00 start. Due must be
+  // distinguishable from future, or the card cannot open the live screen for the 6h
+  // sold-out case decision 27 exists to keep reachable.
+  it('says due for today from midnight, before its market starts, and only for today', async () => {
     await views.recordSchedule(scheduleWith({ startDate: '2024-02-05' }), 'vendor-id');
 
     const { marketDays } = await upcoming('vendor-id', '2024-02-10', '2024-02-10T06:00:00.000Z');
 
-    expect(marketDays[0]).toMatchObject({ date: '2024-02-10', today: true, inProgress: false });
-    expect(marketDays.slice(1).every(day => !day.today)).toBe(true);
+    expect(marketDays[0]).toMatchObject({ date: '2024-02-10', phase: 'due' });
+    expect(marketDays.slice(1).every(day => day.phase === 'future')).toBe(true);
   });
 
-  it('does not flag a market before its start time', async () => {
-    await views.recordSchedule(scheduleWith({ startDate: '2024-02-05' }), 'vendor-id');
-
-    const { marketDays } = await upcoming('vendor-id', '2024-02-10', '2024-02-10T06:00:00.000Z');
-
-    expect(marketDays[0]).toMatchObject({ date: '2024-02-10', inProgress: false });
-  });
-
-  it('never flags an absent day, even during its hours', async () => {
+  // Decision 56: the phase is clock truth, so an absence does not move it. The suppression
+  // customers see is the derivation in FindCustomerStorefront, covered where it lives —
+  // apps/api public-storefront.spec.ts, "never badges a cancelled market day in progress".
+  it('says trading for an absent day during its hours, absence being no business of the clock', async () => {
     await views.recordSchedule(scheduleWith({ startDate: '2024-02-05' }), 'vendor-id');
     await views.recordAbsence('schedule-1', 'vendor-id', { from: '2024-02-10', to: '2024-02-10' });
 
     const { marketDays } = await upcoming('vendor-id', '2024-02-10', '2024-02-10T10:00:00.000Z');
 
-    expect(marketDays[0]).toMatchObject({ date: '2024-02-10', absent: true, inProgress: false });
+    expect(marketDays[0]).toMatchObject({ date: '2024-02-10', absent: true, phase: 'trading' });
   });
 
   it("carries the day's sold-out marks onto its occurrence", async () => {

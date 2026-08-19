@@ -56,8 +56,7 @@ describe('FindMarketDay', () => {
       startTime: '08:00',
       endTime: '14:00',
       absent: false,
-      inProgress: true,
-      today: true,
+      phase: 'trading',
       items: [],
       closed: false,
       soldOutItemIds: [],
@@ -80,7 +79,7 @@ describe('FindMarketDay', () => {
     expect(await findDay('2024-01-13')).toMatchObject({
       date: '2024-01-13',
       closed: true,
-      today: false,
+      phase: 'past',
       items: [expect.objectContaining({ itemId: 'item-1' })],
       soldOutItemIds: ['item-1'],
     });
@@ -117,7 +116,6 @@ describe('FindMarketDay', () => {
 
     expect(await findDay('2024-02-10')).toMatchObject({
       absent: true,
-      inProgress: false,
       items: [],
       soldOutItemIds: [],
     });

@@ -29,7 +29,7 @@ export class StoreMarketDayFacade implements MarketDayFacade {
   }
 
   // The poll's re-ask ignores freshness on purpose: it exists to learn what only time
-  // changes — inProgress flipping at startTime — which no event will ever push.
+  // changes — the phase turning over at startTime — which no event will ever push.
   refresh(): void {
     this.store.dispatch(RefreshMarketDays());
   }

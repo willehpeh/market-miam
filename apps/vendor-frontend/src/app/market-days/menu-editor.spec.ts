@@ -114,7 +114,7 @@ describe('MenuEditor', () => {
   // Two doorways in (decision 10, and decision 51's unplanned today), so backing out goes
   // where the card would send them now rather than always to the dashboard.
   it('backs out to the live screen when the day is a planned today', async () => {
-    await renderEditor((marketDays) => marketDays.days.set([day({ today: true, itemIds: ['item-1'] })]));
+    await renderEditor((marketDays) => marketDays.days.set([day({ phase: 'due', itemIds: ['item-1'] })]));
 
     expect(screen.getByRole('link', { name: /retour/i }).getAttribute('href')).toBe(
       '/dashboard/live/market-1/2026-08-15',
@@ -122,7 +122,7 @@ describe('MenuEditor', () => {
   });
 
   it('backs out to the dashboard when the day has no live screen to go back to', async () => {
-    await renderEditor((marketDays) => marketDays.days.set([day({ today: true })]));
+    await renderEditor((marketDays) => marketDays.days.set([day({ phase: 'due' })]));
 
     expect(screen.getByRole('link', { name: /retour/i }).getAttribute('href')).toBe('/dashboard');
   });
@@ -131,7 +131,7 @@ describe('MenuEditor', () => {
   // same way — a normal editor would offer an Enregistrer decision 29 refuses in silence.
   it('renders the closed state in place of the list', async () => {
     await renderEditor((md, cat) => {
-      md.days.set([day({ today: true, closed: true })]);
+      md.days.set([day({ phase: 'due', closed: true })]);
       cat.items.set([item('item-1', 'Bourguignon')]);
     });
 
@@ -143,7 +143,7 @@ describe('MenuEditor', () => {
   // Decision 53: the undo is one tap where the state renders, not a link to somewhere it
   // renders better — this is the path of the tap nobody meant.
   it('reopens the stand from the editor', async () => {
-    const { marketDays } = await renderEditor((md) => md.days.set([day({ today: true, closed: true })]));
+    const { marketDays } = await renderEditor((md) => md.days.set([day({ phase: 'due', closed: true })]));
 
     fireEvent.click(screen.getByRole('button', { name: 'Rouvrir le stand' }));
 

@@ -25,8 +25,7 @@ const day = {
   startTime: '08:00',
   endTime: '13:00',
   absent: false,
-  inProgress: false,
-  today: false,
+  phase: 'future',
   closed: false,
   soldOutItemIds: [],
   market: { name: 'Marché de la Croix-Rousse', town: 'Lyon', codePostal: '69004' },
@@ -366,7 +365,7 @@ describe('MarketDays', () => {
   it('returns to the live screen when the day it saved is today', async () => {
     const router = TestBed.inject(Router);
     facade.load();
-    httpCtrl.expectOne('/api/market-days/upcoming').flush({ marketDays: [{ ...day, today: true, items: [] }] });
+    httpCtrl.expectOne('/api/market-days/upcoming').flush({ marketDays: [{ ...day, phase: 'due', items: [] }] });
 
     facade.setMenu('market-1', '2026-08-15', ['item-1']);
     httpCtrl.expectOne('/api/market-days/market-1/2026-08-15/menu').flush(null);

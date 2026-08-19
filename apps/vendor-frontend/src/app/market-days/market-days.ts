@@ -1,5 +1,7 @@
 import { Observable } from 'rxjs';
 
+export type MarketDayPhase = 'future' | 'due' | 'trading' | 'over' | 'past';
+
 // The day's menu is held as ids, not as the items the API joins on to it: the card counts
 // them and the editor ticks them, and both read names and prices from the catalogue store.
 export interface MarketDayView {
@@ -10,12 +12,11 @@ export interface MarketDayView {
   startTime?: string;
   endTime?: string;
   absent: boolean;
-  // The market is running right now — schedule truth, server-said like today below; the
-  // banner slot and the waiting poll's gate read it rather than computing hours.
-  inProgress: boolean;
-  // Server-said calendar truth (decision 42): true from midnight, so the dashboard card
-  // can open the live screen before the market's hours — never derived from the device clock.
-  today: boolean;
+  // Where now sits against this day, said by the server (decision 56): `due`, `trading` and
+  // `over` are today, either side of the market's hours; `future` and `past` are the dates
+  // around it. Never derived from the device clock (decision 21), and nothing the vendor does
+  // moves it — `closed` below is the fact they set. Read through live-status.ts, not directly.
+  phase: MarketDayPhase;
   // The vendor shut the stand — not schedule truth, so a closed day is still *en cours*
   // by the clock (decision 13). The customer's list drops it; this screen keeps it to reopen.
   closed: boolean;

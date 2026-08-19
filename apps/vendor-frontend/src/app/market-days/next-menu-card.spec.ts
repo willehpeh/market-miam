@@ -74,7 +74,7 @@ describe('NextMenuCard', () => {
   // menu, the doorway leads to the live screen, not the planner — from midnight, so the
   // 6h sold-out case stays reachable.
   it('opens the live screen once the day is today and has a menu', async () => {
-    await renderCard([day({ today: true, itemIds: ['item-1'] })]);
+    await renderCard([day({ phase: 'due', itemIds: ['item-1'] })]);
 
     expect(screen.getByRole('link', { name: /suivre le marché/i }).getAttribute('href'))
       .toBe('/dashboard/live/market-1/2026-08-15');
@@ -83,7 +83,7 @@ describe('NextMenuCard', () => {
   // The flip is caused by planning, not by the clock — an unplanned today still opens
   // the editor, whose neutral prompt is what a vendor who forgot needs.
   it('keeps offering the planner while today has no menu', async () => {
-    await renderCard([day({ today: true })]);
+    await renderCard([day({ phase: 'due' })]);
 
     expect(screen.getByRole('link', { name: /planifier le menu/i }).getAttribute('href'))
       .toBe('/dashboard/menus/market-1/2026-08-15');
@@ -104,7 +104,7 @@ describe('NextMenuCard', () => {
   // Decision 55: the vendor who wakes ill opens the app to the dashboard and wants to say
   // so — not to navigate through a button reading *Planifier le menu* to find it.
   it('offers the call-off on a today, planned or not', async () => {
-    const { marketDays } = await renderCard([day({ today: true })]);
+    const { marketDays } = await renderCard([day({ phase: 'due' })]);
 
     fireEvent.click(screen.getByRole('button', { name: "Je ne peux pas venir aujourd'hui" }));
 
@@ -120,7 +120,7 @@ describe('NextMenuCard', () => {
   // Decision 51: closed is read before items, or a closed menu-less day still reads
   // *Planifier le menu* and leads to a save decision 29 refuses.
   it('shows the closed state ahead of whatever the menu says', async () => {
-    await renderCard([day({ today: true, closed: true })]);
+    await renderCard([day({ phase: 'due', closed: true })]);
 
     expect(screen.getByText('Stand fermé')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Rouvrir le stand' })).toBeTruthy();

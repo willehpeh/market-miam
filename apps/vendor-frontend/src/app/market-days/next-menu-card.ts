@@ -3,7 +3,7 @@ import { RouterLink } from '@angular/router';
 import { Card } from '../core/card';
 import { longDate, timeRange } from '../core/french-date';
 import { MarketDayFacade } from './market-day.facade';
-import { hasLiveScreen } from './live-status';
+import { hasLiveScreen, isToday } from './live-status';
 import { ClosedNotice } from './closed-notice';
 import { ReopenStand } from './reopen-stand';
 
@@ -87,7 +87,7 @@ export class NextMenuCard {
       link: [live ? '/dashboard/live' : '/dashboard/menus', day.marketId, day.date],
       marketId: day.marketId,
       date: day.date,
-      today: day.today,
+      today: isToday(day),
       closed: day.closed,
     };
   });

@@ -63,7 +63,9 @@ export class FindCustomerStorefrontHandler implements IQueryHandler<FindCustomer
       town: day.market.town,
       pitch: day.market.pitch,
       cancelled: day.absent,
-      inProgress: day.inProgress,
+      // Decision 56: the occurrence carries clock truth alone, so the absence guard this
+      // field has always documented — never true for an absent day — lands here instead.
+      inProgress: !day.absent && day.phase === 'trading',
       items: day.items,
       soldOutItemIds: day.soldOutItemIds,
     };

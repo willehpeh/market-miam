@@ -9,7 +9,7 @@ import { MarketDayViews } from '../market-day-view/market-day-views';
 import { CatalogueViewItem } from '../catalogue-view/catalogue-view';
 import { CatalogueViews } from '../catalogue-view/catalogue-views';
 import { Recurrence } from '../calendar/schedule/recurrence';
-import { hasStarted, notYetEnded, parisWallClock } from './market-day-clock';
+import { notYetEnded, parisWallClock, phaseOf } from './market-day-clock';
 
 type DayMenu = { items: CatalogueViewItem[]; soldOutItemIds: string[]; closed: boolean };
 type Items = Map<string, DayMenu>;
@@ -39,16 +39,12 @@ export class FindUpcomingMarketDaysHandler implements IQueryHandler<FindUpcoming
   // Days are dropped, not flagged — no past-day read path exists to list them with.
   private marketDaysFrom(schedules: MarketScheduleView[], today: LocalDate, horizon: LocalDate, items: Items) {
     const now = parisWallClock(this.clock.now());
-    const todayValue = today.value();
     return schedules
       .flatMap(schedule => this.occurrencesOf(schedule, today, horizon, items))
       .filter(day => notYetEnded(day, now))
-      // Ended days are gone by here, so started is all that separates running from pending.
-      .map(day => ({
-        ...day,
-        inProgress: !day.absent && hasStarted(day, now),
-        today: day.date === todayValue,
-      }))
+      // Ended days are gone by here (decision 57), so this list never carries `over` or
+      // `past` — the point lookup is where those arrive.
+      .map(day => ({ ...day, phase: phaseOf(day, now) }))
       // First-by-start-time is what makes "the first occurrence" the market the vendor is
       // standing at; the fallback matches hasStarted, which treats no startTime as the
       // start of the day, and marketId makes the order total (decision 25).
@@ -66,13 +62,11 @@ export class FindUpcomingMarketDaysHandler implements IQueryHandler<FindUpcoming
 
   // Absent days keep their occurrence but lose their menu — suppression lives in the
   // query, so no cross-aggregate coupling between calendar and market day.
-  // The return type is unnamed on purpose: it is a day as the records alone describe it,
-  // the two missing fields being the ones only the clock can answer (computed per query in
-  // marketDaysFrom), and every noun tried for that lied a little — "scheduled" reads as
-  // decision 13's schedule truth, which is inProgress; "liveness" claims decision 26's
-  // gate, which also needs a menu. Decision 15's assembly home is where this seam gets
-  // a real name.
-  private occurrencesOf(schedule: MarketScheduleView, from: LocalDate, to: LocalDate, items: Items): Omit<MarketDayOccurrence, 'inProgress' | 'today'>[] {
+  // The return type is unnamed on purpose: a day as the records alone describe it, missing
+  // only the one field the clock answers (stamped per query in marketDaysFrom). The Omit is
+  // not what binds the shape — execute's return type does that — it just fails here, at the
+  // function that built the wrong day, rather than three calls up.
+  private occurrencesOf(schedule: MarketScheduleView, from: LocalDate, to: LocalDate, items: Items): Omit<MarketDayOccurrence, 'phase'>[] {
     const absences = schedule.absences ?? [];
     const occurrences = Recurrence.fromSnapshot(schedule).occurrencesWithin(from, to);
     return occurrences.map(occurrence => {

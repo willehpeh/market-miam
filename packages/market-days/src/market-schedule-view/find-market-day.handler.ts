@@ -7,7 +7,7 @@ import { MarketScheduleViews } from './market-schedule-views';
 import { MarketDayViews } from '../market-day-view/market-day-views';
 import { CatalogueViews } from '../catalogue-view/catalogue-views';
 import { Recurrence } from '../calendar/schedule/recurrence';
-import { hasStarted, parisWallClock } from './market-day-clock';
+import { parisWallClock, phaseOf } from './market-day-clock';
 
 @QueryHandler(FindMarketDay)
 export class FindMarketDayHandler implements IQueryHandler<FindMarketDay> {
@@ -46,8 +46,7 @@ export class FindMarketDayHandler implements IQueryHandler<FindMarketDay> {
       startTime: occurrence.startTime,
       endTime: occurrence.endTime,
       absent,
-      inProgress: !absent && hasStarted(occurrence, now),
-      today: query.date === this.clock.today().value(),
+      phase: phaseOf(occurrence, now),
       items: items.filter(item => menu?.itemIds.includes(item.itemId)),
       closed: day?.closed ?? false,
       soldOutItemIds: menu?.soldOutItemIds ?? [],

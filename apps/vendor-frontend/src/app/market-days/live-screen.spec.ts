@@ -38,7 +38,7 @@ describe('LiveScreen', () => {
   });
 
   it('names the day it is standing in', async () => {
-    await renderLive((marketDays) => marketDays.days.set([day({ today: true })]));
+    await renderLive((marketDays) => marketDays.days.set([day({ phase: 'due' })]));
 
     expect(screen.getByRole('heading', { name: /samedi 15 août/i })).toBeTruthy();
     expect(screen.getByText(/Marché de la Croix-Rousse/)).toBeTruthy();
@@ -48,7 +48,7 @@ describe('LiveScreen', () => {
   // only what the vendor brought — the rows are the day's menu, in catalogue order.
   it("lists the day's menu, not the whole catalogue", async () => {
     await renderLive((marketDays, catalogue) => {
-      marketDays.days.set([day({ today: true, itemIds: ['item-3', 'item-1'] })]);
+      marketDays.days.set([day({ phase: 'due', itemIds: ['item-3', 'item-1'] })]);
       catalogue.items.set([item('item-1', 'Bourguignon'), item('item-2', 'Rôti'), item('item-3', 'Tatin')]);
     });
 
@@ -60,7 +60,7 @@ describe('LiveScreen', () => {
   // Decision 41's guard state: the commands this screen fires are refused for any day
   // but today, so the screen refuses the same thing — a reactive branch, not a route guard.
   it('says so when the day is not today', async () => {
-    await renderLive((marketDays) => marketDays.days.set([day({ today: false, itemIds: ['item-1'] })]));
+    await renderLive((marketDays) => marketDays.days.set([day({ phase: 'future', itemIds: ['item-1'] })]));
 
     expect(screen.getByText(/ce marché n.a pas lieu aujourd.hui/i)).toBeTruthy();
     expect(screen.queryByText('Bourguignon')).toBeNull();
@@ -68,7 +68,7 @@ describe('LiveScreen', () => {
 
   // A stale bookmark or a hand-typed URL — the editor's "n'est plus programmé" precedent.
   it('says so when the day is unknown', async () => {
-    await renderLive((marketDays) => marketDays.days.set([day({ today: true, marketId: 'market-9' })]));
+    await renderLive((marketDays) => marketDays.days.set([day({ phase: 'due', marketId: 'market-9' })]));
 
     expect(screen.getByText(/ce marché n.a pas lieu aujourd.hui/i)).toBeTruthy();
   });
@@ -85,7 +85,7 @@ describe('LiveScreen', () => {
     soldOutItemIds: string[] = [],
     overrides: Partial<MarketDayView> = {},
   ) => {
-    marketDays.days.set([day({ today: true, itemIds: ['item-1', 'item-2'], soldOutItemIds, ...overrides })]);
+    marketDays.days.set([day({ phase: 'due', itemIds: ['item-1', 'item-2'], soldOutItemIds, ...overrides })]);
     catalogue.items.set([item('item-1', 'Bourguignon'), item('item-2', 'Tatin')]);
   };
 
@@ -155,7 +155,7 @@ describe('LiveScreen', () => {
   // this screen the vendor did not cause, which is why it must announce itself.
   it('flips the slot to the En direct receipt once the server says live', async () => {
     await renderLive((md, cat) => {
-      md.days.set([day({ today: true, inProgress: true, itemIds: ['item-1', 'item-2'] })]);
+      md.days.set([day({ phase: 'trading', itemIds: ['item-1', 'item-2'] })]);
       cat.items.set([item('item-1', 'Bourguignon'), item('item-2', 'Tatin')]);
     });
 
@@ -166,7 +166,7 @@ describe('LiveScreen', () => {
   // Neither claim is honest with an empty menu (decision 12): the customer page shows
   // its normal face either way.
   it('claims nothing while the menu is empty', async () => {
-    await renderLive((md) => md.days.set([day({ today: true, inProgress: true })]));
+    await renderLive((md) => md.days.set([day({ phase: 'trading' })]));
 
     expect(screen.queryByText('En direct')).toBeNull();
     expect(screen.queryByText(/verront ce menu/i)).toBeNull();
@@ -187,7 +187,7 @@ describe('LiveScreen', () => {
   // Decision 38: no confirm dialog — the placement is the mistap protection, at the foot
   // of the page, furthest from the rows tapped all morning.
   it('closes the stand with a tap at the foot', async () => {
-    const { marketDays } = await renderLive((md, cat) => aLiveDay(md, cat, [], { inProgress: true }));
+    const { marketDays } = await renderLive((md, cat) => aLiveDay(md, cat, [], { phase: 'trading' }));
 
     fireEvent.click(screen.getByRole('button', { name: 'Fermer le stand' }));
 
@@ -197,7 +197,7 @@ describe('LiveScreen', () => {
   // Decision 38: the closed screen is a full state, not a disabled one — the banner slot
   // says what the customer now sees, and Rouvrir sits exactly where Fermer stood.
   it('says the stand is closed and offers to reopen it', async () => {
-    await renderLive((md, cat) => aLiveDay(md, cat, [], { inProgress: true, closed: true }));
+    await renderLive((md, cat) => aLiveDay(md, cat, [], { phase: 'trading', closed: true }));
 
     expect(screen.getByText('Stand fermé')).toBeTruthy();
     expect(screen.getByText('Vos clients ne voient plus ce marché.')).toBeTruthy();
@@ -209,7 +209,7 @@ describe('LiveScreen', () => {
   // Close is more reversible than sold-out (decision 38), so the door back is one tap in
   // the place the door out was — no confirm either.
   it('reopens the stand with a tap on Rouvrir', async () => {
-    const { marketDays } = await renderLive((md, cat) => aLiveDay(md, cat, [], { inProgress: true, closed: true }));
+    const { marketDays } = await renderLive((md, cat) => aLiveDay(md, cat, [], { phase: 'trading', closed: true }));
 
     fireEvent.click(screen.getByRole('button', { name: 'Rouvrir le stand' }));
 
@@ -219,7 +219,7 @@ describe('LiveScreen', () => {
   // Decision 10: the editor must stay reachable during the market — *j'ai apporté une
   // plaque de plus* is real, and setMenu only ever guarded past days.
   it('keeps the editor reachable with a discreet link', async () => {
-    await renderLive((md, cat) => aLiveDay(md, cat, [], { inProgress: true }));
+    await renderLive((md, cat) => aLiveDay(md, cat, [], { phase: 'trading' }));
 
     expect(screen.getByRole('link', { name: 'Modifier le menu' }).getAttribute('href')).toBe(
       '/dashboard/menus/market-1/2026-08-15',
@@ -230,7 +230,7 @@ describe('LiveScreen', () => {
   // the domain refuse setMenu once the stand is shut, so a link still offering it would
   // buy the vendor a 400 on the first mistap.
   it('takes the editor link away once the stand is closed', async () => {
-    await renderLive((md, cat) => aLiveDay(md, cat, [], { inProgress: true, closed: true }));
+    await renderLive((md, cat) => aLiveDay(md, cat, [], { phase: 'trading', closed: true }));
 
     expect(screen.queryByRole('link', { name: 'Modifier le menu' })).toBeNull();
   });
@@ -240,7 +240,7 @@ describe('LiveScreen', () => {
   // both groups keep their split. Asserted as disabled rather than by clicking: fireEvent
   // dispatches straight to the listener, where a browser suppresses activation entirely.
   it('stops the rows being availability controls once the stand is closed', async () => {
-    await renderLive((md, cat) => aLiveDay(md, cat, ['item-2'], { inProgress: true, closed: true }));
+    await renderLive((md, cat) => aLiveDay(md, cat, ['item-2'], { phase: 'trading', closed: true }));
 
     expect(screen.getByRole('button', { name: 'Bourguignon' })).toBeDisabled();
     expect(within(screen.getByRole('region', { name: /épuisé/i })).getByRole('button', { name: 'Tatin' })).toBeDisabled();
@@ -258,7 +258,7 @@ describe('LiveScreen', () => {
   });
 
   it('swaps the verb for Fermer le stand once the market is running', async () => {
-    await renderLive((md, cat) => aLiveDay(md, cat, [], { inProgress: true }));
+    await renderLive((md, cat) => aLiveDay(md, cat, [], { phase: 'trading' }));
 
     expect(screen.getByRole('button', { name: 'Fermer le stand' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: /je ne peux pas venir/i })).toBeNull();
@@ -267,7 +267,7 @@ describe('LiveScreen', () => {
   // The door is gated on today, not on a menu: decision 16's guard is *today*, and an empty
   // menu makes the sentence no less true. The banner is the half that needs a menu.
   it('offers the call-off with no menu at all', async () => {
-    await renderLive((md) => md.days.set([day({ today: true })]));
+    await renderLive((md) => md.days.set([day({ phase: 'due' })]));
 
     expect(screen.getByRole('button', { name: "Je ne peux pas venir aujourd'hui" })).toBeTruthy();
     expect(screen.queryByText(/verront ce menu/i)).toBeNull();
