@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/angular';
+import { fireEvent, render, screen } from '@testing-library/angular';
 import { provideRouter } from '@angular/router';
 import { NextMenuCard } from './next-menu-card';
 import { MarketDayFacade } from './market-day.facade';
@@ -99,5 +99,32 @@ describe('NextMenuCard', () => {
     const { marketDays } = await renderCard([]);
 
     expect(marketDays.loaded).toBe(true);
+  });
+
+  // Decision 55: the vendor who wakes ill opens the app to the dashboard and wants to say
+  // so — not to navigate through a button reading *Planifier le menu* to find it.
+  it('offers the call-off on a today, planned or not', async () => {
+    const { marketDays } = await renderCard([day({ today: true })]);
+
+    fireEvent.click(screen.getByRole('button', { name: "Je ne peux pas venir aujourd'hui" }));
+
+    expect(marketDays.closures).toEqual([{ marketId: 'market-1', date: '2026-08-15', closed: true }]);
+  });
+
+  it('keeps the call-off off a day that is not today', async () => {
+    await renderCard([day({ itemIds: ['item-1'] })]);
+
+    expect(screen.queryByRole('button', { name: "Je ne peux pas venir aujourd'hui" })).toBeNull();
+  });
+
+  // Decision 51: closed is read before items, or a closed menu-less day still reads
+  // *Planifier le menu* and leads to a save decision 29 refuses.
+  it('shows the closed state ahead of whatever the menu says', async () => {
+    await renderCard([day({ today: true, closed: true })]);
+
+    expect(screen.getByText('Stand fermé')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Rouvrir le stand' })).toBeTruthy();
+    expect(screen.queryByRole('link', { name: /planifier le menu|suivre le marché/i })).toBeNull();
+    expect(screen.queryByRole('button', { name: "Je ne peux pas venir aujourd'hui" })).toBeNull();
   });
 });

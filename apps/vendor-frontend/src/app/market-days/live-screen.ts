@@ -8,6 +8,8 @@ import { formatTime, longDate } from '../core/french-date';
 import { CatalogueFacade } from '../catalogue/catalogue.facade';
 import { MarketDayFacade } from './market-day.facade';
 import { awaitingStart, broadcasting } from './live-status';
+import { ClosedNotice } from './closed-notice';
+import { ReopenStand } from './reopen-stand';
 
 const WAITING_POLL_MS = 60_000;
 
@@ -16,7 +18,7 @@ type Row = { itemId: string; name: string };
 @Component({
   selector: 'mm-live-screen',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [Card, RouterLink, Spinner],
+  imports: [Card, ClosedNotice, ReopenStand, RouterLink, Spinner],
   template: `
     <mm-card back="/dashboard">
       @if (loading()) {
@@ -31,10 +33,7 @@ type Row = { itemId: string; name: string };
              while waiting, the broadcast receipt once live, and the closed state that
              outranks both — a closed day leaves the customer's list entirely. Never a countdown. -->
         @if (marketDay.closed) {
-          <div class="mt-4 rounded-card border-2 border-danger bg-danger-soft p-3">
-            <p class="font-bold text-danger">Stand fermé</p>
-            <p class="text-sm text-ink">Vos clients ne voient plus ce marché.</p>
-          </div>
+          <mm-closed-notice />
         } @else if (live()) {
           <div class="mt-4 rounded-card border border-brand bg-surface p-3">
             <p class="font-bold text-brand">En direct</p>
@@ -103,15 +102,18 @@ type Row = { itemId: string; name: string };
           </a>
         }
 
-        <!-- Closed outranks live at the foot too, and is not gated on the market having
-             started: decision 45's two doors — packed up, and never came — land on one state. -->
+        <!-- Decision 52: one slot, one verb, flipping at startTime. Gated on inProgress
+             rather than on broadcasting: the banner above claims something about a menu, this
+             offers to call the day off, which needs none. -->
         @if (marketDay.closed) {
-          <button type="button" class="quiet mt-8 flex w-full max-w-xs mx-auto justify-center" (click)="reopenStand()">
-            Rouvrir le stand
-          </button>
-        } @else if (live()) {
+          <mm-reopen-stand [marketId]="marketId" [date]="date" />
+        } @else {
           <button type="button" class="quiet mt-8 flex w-full max-w-xs mx-auto justify-center" (click)="closeStand()">
-            Fermer le stand
+            @if (marketDay.inProgress) {
+              Fermer le stand
+            } @else {
+              Je ne peux pas venir aujourd'hui
+            }
           </button>
         }
 
@@ -132,8 +134,8 @@ export class LiveScreen {
   private readonly catalogue = inject(CatalogueFacade);
   private readonly route = inject(ActivatedRoute);
 
-  private readonly marketId = this.route.snapshot.paramMap.get('marketId') ?? '';
-  private readonly date = this.route.snapshot.paramMap.get('date') ?? '';
+  readonly marketId = this.route.snapshot.paramMap.get('marketId') ?? '';
+  readonly date = this.route.snapshot.paramMap.get('date') ?? '';
 
   readonly editorLink = ['/dashboard/menus', this.marketId, this.date];
 
@@ -146,7 +148,12 @@ export class LiveScreen {
   readonly day = computed(() => {
     const occurrence = this.occurrence();
     return occurrence?.today
-      ? { label: longDate(occurrence.day, occurrence.date), marketName: occurrence.market.name, closed: occurrence.closed }
+      ? {
+          label: longDate(occurrence.day, occurrence.date),
+          marketName: occurrence.market.name,
+          closed: occurrence.closed,
+          inProgress: occurrence.inProgress,
+        }
       : undefined;
   });
 
@@ -206,10 +213,6 @@ export class LiveScreen {
 
   closeStand(): void {
     this.marketDays.close(this.marketId, this.date);
-  }
-
-  reopenStand(): void {
-    this.marketDays.reopen(this.marketId, this.date);
   }
 
   markSoldOut(item: Row): void {

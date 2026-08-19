@@ -126,4 +126,27 @@ describe('MenuEditor', () => {
 
     expect(screen.getByRole('link', { name: /retour/i }).getAttribute('href')).toBe('/dashboard');
   });
+
+  // Decision 53: browser-back after closing is one gesture, and a hand-typed URL lands the
+  // same way — a normal editor would offer an Enregistrer decision 29 refuses in silence.
+  it('renders the closed state in place of the list', async () => {
+    await renderEditor((md, cat) => {
+      md.days.set([day({ today: true, closed: true })]);
+      cat.items.set([item('item-1', 'Bourguignon')]);
+    });
+
+    expect(screen.getByText('Stand fermé')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Enregistrer' })).toBeNull();
+    expect(screen.queryByText('Bourguignon')).toBeNull();
+  });
+
+  // Decision 53: the undo is one tap where the state renders, not a link to somewhere it
+  // renders better — this is the path of the tap nobody meant.
+  it('reopens the stand from the editor', async () => {
+    const { marketDays } = await renderEditor((md) => md.days.set([day({ today: true, closed: true })]));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Rouvrir le stand' }));
+
+    expect(marketDays.closures).toEqual([{ marketId: 'market-1', date: '2026-08-15', closed: false }]);
+  });
 });

@@ -245,4 +245,31 @@ describe('LiveScreen', () => {
     expect(screen.getByRole('button', { name: 'Bourguignon' })).toBeDisabled();
     expect(within(screen.getByRole('region', { name: /épuisé/i })).getByRole('button', { name: 'Tatin' })).toBeDisabled();
   });
+
+  // Decision 52: the verb flips at startTime because a door is an offer, not a record —
+  // *je ne peux pas venir* is what the vendor means at 7h, *fermer le stand* at 9h.
+  it('offers the call-off before the market starts', async () => {
+    const { marketDays } = await renderLive((md, cat) => aLiveDay(md, cat));
+
+    fireEvent.click(screen.getByRole('button', { name: "Je ne peux pas venir aujourd'hui" }));
+
+    expect(marketDays.closures).toEqual([{ marketId: 'market-1', date: '2026-08-15', closed: true }]);
+    expect(screen.queryByRole('button', { name: 'Fermer le stand' })).toBeNull();
+  });
+
+  it('swaps the verb for Fermer le stand once the market is running', async () => {
+    await renderLive((md, cat) => aLiveDay(md, cat, [], { inProgress: true }));
+
+    expect(screen.getByRole('button', { name: 'Fermer le stand' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /je ne peux pas venir/i })).toBeNull();
+  });
+
+  // The door is gated on today, not on a menu: decision 16's guard is *today*, and an empty
+  // menu makes the sentence no less true. The banner is the half that needs a menu.
+  it('offers the call-off with no menu at all', async () => {
+    await renderLive((md) => md.days.set([day({ today: true })]));
+
+    expect(screen.getByRole('button', { name: "Je ne peux pas venir aujourd'hui" })).toBeTruthy();
+    expect(screen.queryByText(/verront ce menu/i)).toBeNull();
+  });
 });
