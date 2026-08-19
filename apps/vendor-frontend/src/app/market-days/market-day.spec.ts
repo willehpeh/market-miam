@@ -91,6 +91,76 @@ describe('MarketDays', () => {
     expect(facade.loading()).toBe(false);
   });
 
+  // Decision 58: the live screen reads one day by id rather than finding it in the list.
+  // At endTime today's day leaves the upcoming window, and the screen the vendor ran the
+  // market on would fall to its guard branch mid-afternoon.
+  describe('the one day the live screen stands on', () => {
+    const point = '/api/market-days/market-1/2026-08-15';
+
+    it('asks for it by market and date', () => {
+      facade.loadDay('market-1', '2026-08-15');
+
+      expect(httpCtrl.expectOne(point).request.method).toBe('GET');
+    });
+
+    it('is still loading until the answer arrives, so no guard state flashes', () => {
+      facade.loadDay('market-1', '2026-08-15');
+
+      expect(facade.day()).toEqual({ status: 'loading' });
+
+      httpCtrl.expectOne(point).flush({ ...day, items: [] });
+    });
+
+    // The screen and the domain decline the same thing (decision 41): a date no schedule
+    // covers is a 404, and the screen says so rather than spinning for ever.
+    it('reads a day no schedule covers as missing', () => {
+      facade.loadDay('market-1', '2026-08-15');
+
+      httpCtrl.expectOne(point).flush(null, { status: 404, statusText: 'Not Found' });
+
+      expect(facade.day()).toEqual({ status: 'missing' });
+    });
+
+    // The phase timer and the tab coming back both re-ask over a screen the vendor is
+    // using, so a re-ask must not put a spinner over the day already on it.
+    it('keeps the day on screen while re-asking for it', () => {
+      facade.loadDay('market-1', '2026-08-15');
+      httpCtrl.expectOne(point).flush({ ...day, items: [] });
+
+      facade.loadDay('market-1', '2026-08-15');
+
+      expect(facade.day()).toMatchObject({ status: 'found' });
+      httpCtrl.expectOne(point).flush({ ...day, items: [] });
+    });
+
+    // The slot is a second copy of one day, and it is the copy the live screen renders —
+    // so the optimistic patches the vendor's taps make have to reach it (decision 58).
+    it('moves the row in the slot too, not only in the list', () => {
+      facade.loadDay('market-1', '2026-08-15');
+      httpCtrl.expectOne(point).flush({ ...day, phase: 'trading', items: [{ itemId: 'item-1' }] });
+
+      facade.markSoldOut('market-1', '2026-08-15', 'item-1');
+
+      expect(facade.day()).toMatchObject({ status: 'found', day: { soldOutItemIds: ['item-1'] } });
+      httpCtrl.expectOne(availability('item-1')).flush(null);
+    });
+
+    it('holds it in its own slot, ids kept and the join dropped', () => {
+      facade.loadDay('market-1', '2026-08-15');
+
+      httpCtrl.expectOne(point).flush({
+        ...day,
+        phase: 'trading',
+        items: [{ itemId: 'item-1', name: 'Bourguignon', description: '', price: 1300, imageReference: 'v1/x' }],
+      });
+
+      expect(facade.day()).toEqual({
+        status: 'found',
+        day: { ...day, phase: 'trading', itemIds: ['item-1'] },
+      });
+    });
+  });
+
   // A second GET would land after the optimistic patch and overwrite it with a projection
   // that lags the response by 4–275ms, putting the stale menu back.
   it('does not ask again while fresh', () => {
@@ -201,18 +271,6 @@ describe('MarketDays', () => {
         { marketId: 'market-2', itemIds: [] },
       ]),
     );
-  });
-
-  // The waiting poll's re-ask (decision 27): refresh ignores freshness — it exists to
-  // learn what only time changes — but must not flip the screen into a spinner each tick.
-  it('refreshes even while fresh, without going into loading', () => {
-    facade.load();
-    httpCtrl.expectOne('/api/market-days/upcoming').flush(asSent([]));
-
-    facade.refresh();
-
-    expect(facade.loading()).toBe(false);
-    httpCtrl.expectOne('/api/market-days/upcoming').flush(asSent([]));
   });
 
   // One idempotent route behind both commands (decision 19): a phone retrying on bad

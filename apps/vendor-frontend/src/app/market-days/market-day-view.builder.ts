@@ -11,6 +11,7 @@ export const marketDayView = (overrides: Partial<MarketDayView> = {}): MarketDay
   endTime: '13:00',
   absent: false,
   phase: 'future',
+  nextPhaseInMs: undefined,
   closed: false,
   itemIds: [],
   soldOutItemIds: [],

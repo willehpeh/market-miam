@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/angular';
+import { vi } from 'vitest';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { LiveScreen } from './live-screen';
 import { MarketDayFacade } from './market-day.facade';
@@ -31,14 +32,14 @@ async function renderLive(setup: (marketDays: FakeMarketDayFacade, catalogue: Fa
 }
 
 describe('LiveScreen', () => {
-  it('waits while the days are still arriving', async () => {
-    await renderLive((marketDays) => marketDays.loading.set(true));
+  it('waits while the day is still arriving', async () => {
+    await renderLive(() => void 0);
 
     expect(screen.getByRole('status', { name: /chargement/i })).toBeTruthy();
   });
 
   it('names the day it is standing in', async () => {
-    await renderLive((marketDays) => marketDays.days.set([day({ phase: 'due' })]));
+    await renderLive((marketDays) => marketDays.showing(day({ phase: 'due' })));
 
     expect(screen.getByRole('heading', { name: /samedi 15 août/i })).toBeTruthy();
     expect(screen.getByText(/Marché de la Croix-Rousse/)).toBeTruthy();
@@ -48,7 +49,7 @@ describe('LiveScreen', () => {
   // only what the vendor brought — the rows are the day's menu, in catalogue order.
   it("lists the day's menu, not the whole catalogue", async () => {
     await renderLive((marketDays, catalogue) => {
-      marketDays.days.set([day({ phase: 'due', itemIds: ['item-3', 'item-1'] })]);
+      marketDays.showing(day({ phase: 'due', itemIds: ['item-3', 'item-1'] }));
       catalogue.items.set([item('item-1', 'Bourguignon'), item('item-2', 'Rôti'), item('item-3', 'Tatin')]);
     });
 
@@ -60,23 +61,27 @@ describe('LiveScreen', () => {
   // Decision 41's guard state: the commands this screen fires are refused for any day
   // but today, so the screen refuses the same thing — a reactive branch, not a route guard.
   it('says so when the day is not today', async () => {
-    await renderLive((marketDays) => marketDays.days.set([day({ phase: 'future', itemIds: ['item-1'] })]));
+    await renderLive((marketDays) => marketDays.showing(day({ phase: 'future', itemIds: ['item-1'] })));
 
     expect(screen.getByText(/ce marché n.a pas lieu aujourd.hui/i)).toBeTruthy();
     expect(screen.queryByText('Bourguignon')).toBeNull();
   });
 
   // A stale bookmark or a hand-typed URL — the editor's "n'est plus programmé" precedent.
+  // The API answers 404 and the slot says missing, which lands in the same branch.
   it('says so when the day is unknown', async () => {
-    await renderLive((marketDays) => marketDays.days.set([day({ phase: 'due', marketId: 'market-9' })]));
+    await renderLive((marketDays) => marketDays.day.set({ status: 'missing' }));
 
     expect(screen.getByText(/ce marché n.a pas lieu aujourd.hui/i)).toBeTruthy();
   });
 
-  it('loads the days it needs', async () => {
+  // Decision 58: one day by id, never the 56-day window. The list drops a day at endTime,
+  // which is mid-afternoon on the very screen the vendor ran the market on.
+  it('asks for the one day it stands on, not the list', async () => {
     const { marketDays } = await renderLive(() => void 0);
 
-    expect(marketDays.loaded).toBe(true);
+    expect(marketDays.loadedDays).toEqual([{ marketId: 'market-1', date: '2026-08-15' }]);
+    expect(marketDays.loaded).toBe(false);
   });
 
   const aLiveDay = (
@@ -85,7 +90,7 @@ describe('LiveScreen', () => {
     soldOutItemIds: string[] = [],
     overrides: Partial<MarketDayView> = {},
   ) => {
-    marketDays.days.set([day({ phase: 'due', itemIds: ['item-1', 'item-2'], soldOutItemIds, ...overrides })]);
+    marketDays.showing(day({ phase: 'due', itemIds: ['item-1', 'item-2'], soldOutItemIds, ...overrides }));
     catalogue.items.set([item('item-1', 'Bourguignon'), item('item-2', 'Tatin')]);
   };
 
@@ -155,7 +160,7 @@ describe('LiveScreen', () => {
   // this screen the vendor did not cause, which is why it must announce itself.
   it('flips the slot to the En direct receipt once the server says live', async () => {
     await renderLive((md, cat) => {
-      md.days.set([day({ phase: 'trading', itemIds: ['item-1', 'item-2'] })]);
+      md.showing(day({ phase: 'trading', itemIds: ['item-1', 'item-2'] }));
       cat.items.set([item('item-1', 'Bourguignon'), item('item-2', 'Tatin')]);
     });
 
@@ -166,7 +171,7 @@ describe('LiveScreen', () => {
   // Neither claim is honest with an empty menu (decision 12): the customer page shows
   // its normal face either way.
   it('claims nothing while the menu is empty', async () => {
-    await renderLive((md) => md.days.set([day({ phase: 'trading' })]));
+    await renderLive((md) => md.showing(day({ phase: 'trading' })));
 
     expect(screen.queryByText('En direct')).toBeNull();
     expect(screen.queryByText(/verront ce menu/i)).toBeNull();
@@ -246,6 +251,84 @@ describe('LiveScreen', () => {
     expect(within(screen.getByRole('region', { name: /épuisé/i })).getByRole('button', { name: 'Tatin' })).toBeDisabled();
   });
 
+  // Decision 59: one timer off the server-said duration, not a 60s interval. The screen
+  // asks again exactly when the phase it is showing has run out — the timer decides when
+  // to ask, never what the answer is, so firing late is self-correcting.
+  describe('asking again when the phase turns over', () => {
+    beforeEach(() => vi.useFakeTimers());
+    afterEach(() => vi.useRealTimers());
+
+    it('re-asks when the countdown runs out', async () => {
+      const { marketDays } = await renderLive((md, cat) =>
+        aLiveDay(md, cat, [], { phase: 'due', nextPhaseInMs: 60_000 }));
+
+      vi.advanceTimersByTime(60_000);
+
+      expect(marketDays.loadedDays).toHaveLength(2);
+    });
+
+    it('waits for the whole countdown, and a tap in the meantime does not restart it', async () => {
+      const { marketDays } = await renderLive((md, cat) =>
+        aLiveDay(md, cat, [], { phase: 'trading', nextPhaseInMs: 60_000 }));
+
+      vi.advanceTimersByTime(30_000);
+      fireEvent.click(screen.getByRole('button', { name: 'Bourguignon' }));
+      vi.advanceTimersByTime(30_000);
+
+      expect(marketDays.loadedDays).toHaveLength(2);
+    });
+
+    // Decision 61: nothing follows `past`, so there is nothing to wait for.
+    it('sets no timer on a day that carries no countdown', async () => {
+      const { marketDays } = await renderLive((md, cat) => aLiveDay(md, cat, [], { phase: 'over' }));
+
+      vi.advanceTimersByTime(24 * 60 * 60_000);
+
+      expect(marketDays.loadedDays).toHaveLength(1);
+    });
+  });
+
+  // A backgrounded phone fires no timer, which is what this is for: the vendor puts the
+  // phone in their apron at 11h and takes it out at 13h30.
+  it('asks again when the tab comes back', async () => {
+    const { marketDays } = await renderLive((md, cat) => aLiveDay(md, cat, [], { phase: 'trading' }));
+
+    document.dispatchEvent(new Event('visibilitychange'));
+
+    expect(marketDays.loadedDays).toHaveLength(2);
+  });
+
+  // Decision 60: `over` is a full state, not the else-branch of the foot. Before the point
+  // lookup an ended day could not reach this screen at all; now it stays open on it all
+  // afternoon, and the foot would otherwise offer *je ne peux pas venir* at 13h05 to a
+  // vendor who traded all morning.
+  it('says the market is over once the clock has ended it', async () => {
+    await renderLive((md, cat) => aLiveDay(md, cat, [], { phase: 'over' }));
+
+    expect(screen.getByText('Marché terminé')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Fermer le stand' })).toBeNull();
+    expect(screen.queryByRole('button', { name: /je ne peux pas venir/i })).toBeNull();
+  });
+
+  // Decision 48's treatment, for the same reason one phase later: *épuisé* is a claim
+  // about a stall that is no longer there, and decision 49 reads these marks back as a
+  // rating. The rows stay rows — 2b's judgments land on them.
+  it('stops the rows being availability controls once the market is over', async () => {
+    await renderLive((md, cat) => aLiveDay(md, cat, ['item-2'], { phase: 'over' }));
+
+    expect(screen.getByRole('button', { name: 'Bourguignon' })).toBeDisabled();
+    expect(within(screen.getByRole('region', { name: /épuisé/i })).getByRole('button', { name: 'Tatin' })).toBeDisabled();
+  });
+
+  // A live defect the moment `over` can reach the screen: decision 50 makes reopen raise
+  // MarketDayEndedError past endTime, and the failure path is a silent snap-back — a
+  // button that does nothing.
+  it('offers no reopen once the clock has ended the day', async () => {
+    await renderLive((md, cat) => aLiveDay(md, cat, [], { phase: 'over', closed: true }));
+
+    expect(screen.queryByRole('button', { name: 'Rouvrir le stand' })).toBeNull();
+  });
+
   // Decision 52: the verb flips at startTime because a door is an offer, not a record —
   // *je ne peux pas venir* is what the vendor means at 7h, *fermer le stand* at 9h.
   it('offers the call-off before the market starts', async () => {
@@ -267,7 +350,7 @@ describe('LiveScreen', () => {
   // The door is gated on today, not on a menu: decision 16's guard is *today*, and an empty
   // menu makes the sentence no less true. The banner is the half that needs a menu.
   it('offers the call-off with no menu at all', async () => {
-    await renderLive((md) => md.days.set([day({ phase: 'due' })]));
+    await renderLive((md) => md.showing(day({ phase: 'due' })));
 
     expect(screen.getByRole('button', { name: "Je ne peux pas venir aujourd'hui" })).toBeTruthy();
     expect(screen.queryByText(/verront ce menu/i)).toBeNull();

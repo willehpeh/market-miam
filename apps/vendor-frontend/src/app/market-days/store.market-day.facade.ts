@@ -4,9 +4,9 @@ import { MarketDayFacade } from './market-day.facade';
 import {
   ChangeItemAvailability,
   ChangeStandClosure,
+  LoadMarketDay,
   LoadMarketDays,
   marketDayFeature,
-  RefreshMarketDays,
   SetMarketDayMenu,
 } from './market-day.state';
 
@@ -16,6 +16,7 @@ export class StoreMarketDayFacade implements MarketDayFacade {
 
   readonly days = this.store.selectSignal(marketDayFeature.selectDays);
   readonly loading = this.store.selectSignal(marketDayFeature.selectLoading);
+  readonly day = this.store.selectSignal(marketDayFeature.selectDay);
   private readonly fresh = this.store.selectSignal(marketDayFeature.selectFresh);
 
   // Only a stale cache refetches: a re-GET after a save would overwrite the optimistic
@@ -28,10 +29,10 @@ export class StoreMarketDayFacade implements MarketDayFacade {
     }
   }
 
-  // The poll's re-ask ignores freshness on purpose: it exists to learn what only time
-  // changes — the phase turning over at startTime — which no event will ever push.
-  refresh(): void {
-    this.store.dispatch(RefreshMarketDays());
+  // Never gated on freshness, unlike the list: the slot holds one day that the clock moves
+  // under the vendor, and the screen asks for it again precisely when it has turned over.
+  loadDay(marketId: string, date: string): void {
+    this.store.dispatch(LoadMarketDay({ marketId, date }));
   }
 
   setMenu(marketId: string, date: string, itemIds: string[]): void {

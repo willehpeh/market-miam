@@ -4,9 +4,12 @@ import { map, Observable } from 'rxjs';
 import { MarketDays, MarketDayView } from './market-days';
 import { environment } from '../../environments/environment';
 
-type UpcomingResponse = {
-  marketDays: (Omit<MarketDayView, 'itemIds'> & { items: { itemId: string }[] })[];
-};
+type SentDay = Omit<MarketDayView, 'itemIds'> & { items: { itemId: string }[] };
+
+type UpcomingResponse = { marketDays: SentDay[] };
+
+// The API joins the catalogue onto the menu; nothing here renders that join.
+const withItemIds = ({ items, ...day }: SentDay): MarketDayView => ({ ...day, itemIds: items.map(item => item.itemId) });
 
 @Injectable()
 export class HttpMarketDays implements MarketDays {
@@ -15,7 +18,13 @@ export class HttpMarketDays implements MarketDays {
   upcoming(): Observable<MarketDayView[]> {
     return this.http
       .get<UpcomingResponse>(`${environment.apiBaseUrl}/api/market-days/upcoming`)
-      .pipe(map(({ marketDays }) => marketDays.map(({ items, ...day }) => ({ ...day, itemIds: items.map(d => d.itemId) }))));
+      .pipe(map(({ marketDays }) => marketDays.map(withItemIds)));
+  }
+
+  day(marketId: string, date: string): Observable<MarketDayView> {
+    return this.http
+      .get<SentDay>(`${environment.apiBaseUrl}/api/market-days/${marketId}/${date}`)
+      .pipe(map(withItemIds));
   }
 
   setMenu(marketId: string, date: string, itemIds: string[]): Observable<void> {

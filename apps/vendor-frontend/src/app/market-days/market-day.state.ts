@@ -1,13 +1,18 @@
 import { createAction, createFeature, createReducer, on, props } from '@ngrx/store';
 import { AmendMarketScheduleSuccess, RegisterMarketScheduleSuccess } from '../markets/market-schedule.state';
-import { MarketDayView } from './market-days';
+import { MarketDaySlot, MarketDayView } from './market-days';
 
 export const LoadMarketDays = createAction('[Market Days] Load');
-// The waiting poll's re-ask: same request, but deliberately unreduced — no loading flip,
-// so a tick never puts a spinner over the screen it is refreshing.
-export const RefreshMarketDays = createAction('[Market Days] Refresh');
 export const LoadMarketDaysSuccess = createAction('[Market Days] Load Success', props<{ days: MarketDayView[] }>());
 export const LoadMarketDaysFailure = createAction('[Market Days] Load Failure', props<{ status: number }>());
+
+// The live screen's own read (decision 58). Unlike the list it is never cached: the screen
+// is entered once per market and the day it shows changes under the vendor all morning.
+export const LoadMarketDay = createAction('[Market Days] Load Day', props<{ marketId: string; date: string }>());
+export const LoadMarketDaySuccess = createAction('[Market Days] Load Day Success', props<{ day: MarketDayView }>());
+// 404 and 5xx land in the same place — the screen's guard state — matching the list, whose
+// failed load also leaves the screen with nothing to render. The interceptor surfaces 5xx.
+export const LoadMarketDayFailure = createAction('[Market Days] Load Day Failure');
 
 export const SetMarketDayMenu = createAction(
   '[Market Days] Set Menu',
@@ -45,12 +50,14 @@ export interface MarketDayState {
   loading: boolean;
   fresh: boolean;
   days: MarketDayView[];
+  day: MarketDaySlot;
 }
 
 export const initialState: MarketDayState = {
   loading: false,
   fresh: false,
   days: [],
+  day: { status: 'loading' },
 };
 
 // A schedule change redraws which days exist, and only the API can expand the
@@ -68,6 +75,11 @@ const patchDay = (
 ): MarketDayState => ({
   ...state,
   days: state.days.map(day => (day.marketId === marketId && day.date === date ? change(day) : day)),
+  // The slot is a second copy of one day, so every patch reaches it too — the live screen
+  // reads it, and that is the screen the marks and the close are made from (decision 58).
+  day: state.day.status === 'found' && state.day.day.marketId === marketId && state.day.day.date === date
+    ? { status: 'found', day: change(state.day.day) }
+    : state.day,
 });
 
 const patchAvailability = (state: MarketDayState, marketId: string, date: string, itemId: string, soldOut: boolean): MarketDayState =>
@@ -85,6 +97,13 @@ export const marketDayFeature = createFeature({
     // A failed load leaves the cache stale on purpose: the next screen visit retries.
     on(LoadMarketDaysFailure, (state): MarketDayState => ({ ...state, loading: false })),
     on(RegisterMarketScheduleSuccess, AmendMarketScheduleSuccess, wentStale),
+    // A re-ask over a day already on screen must not flip to loading: the phase timer and
+    // the tab coming back both fire on a screen the vendor is using, and a spinner over it
+    // would be the poll's old sin in a new place.
+    on(LoadMarketDay, (state): MarketDayState =>
+      (state.day.status === 'found' ? state : { ...state, day: { status: 'loading' } })),
+    on(LoadMarketDaySuccess, (state, { day }): MarketDayState => ({ ...state, day: { status: 'found', day } })),
+    on(LoadMarketDayFailure, (state): MarketDayState => ({ ...state, day: { status: 'missing' } })),
     // Optimistic: the response is void and the projection lags it by 4–275ms, so the day
     // takes the ids that were just sent rather than waiting for a re-read that never comes.
     // ponytail: SetMarketDayMenuFailure is unreduced — same no-error-UX stance as the

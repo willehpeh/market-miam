@@ -13,10 +13,12 @@ import {
   ChangeStandClosure,
   ChangeStandClosureFailure,
   ChangeStandClosureSuccess,
+  LoadMarketDay,
+  LoadMarketDayFailure,
+  LoadMarketDaySuccess,
   LoadMarketDays,
   LoadMarketDaysFailure,
   LoadMarketDaysSuccess,
-  RefreshMarketDays,
   SetMarketDayMenu,
   SetMarketDayMenuFailure,
   SetMarketDayMenuSuccess,
@@ -32,11 +34,24 @@ export class MarketDayEffects {
 
   loadMarketDays$ = createEffect(() =>
     this.actions$.pipe(
-      ofType(LoadMarketDays, RefreshMarketDays),
+      ofType(LoadMarketDays),
       switchMap(() =>
         this.marketDays.upcoming().pipe(
           map(days => LoadMarketDaysSuccess({ days })),
           catchError((error: HttpErrorResponse) => of(LoadMarketDaysFailure({ status: error.status }))),
+        ),
+      ),
+    ),
+  );
+
+  // switchMap: one screen reads one day, and a re-ask supersedes the one before it.
+  loadMarketDay$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(LoadMarketDay),
+      switchMap(({ marketId, date }) =>
+        this.marketDays.day(marketId, date).pipe(
+          map(day => LoadMarketDaySuccess({ day })),
+          catchError(() => of(LoadMarketDayFailure())),
         ),
       ),
     ),

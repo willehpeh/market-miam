@@ -1,6 +1,6 @@
-import { afterRenderEffect, ChangeDetectionStrategy, Component, computed, ElementRef, inject, signal, viewChildren } from '@angular/core';
+import { afterRenderEffect, ChangeDetectionStrategy, Component, computed, effect, ElementRef, inject, signal, viewChildren } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { interval } from 'rxjs';
+import { fromEvent } from 'rxjs';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Card } from '../core/card';
 import { Spinner } from '../core/spinner';
@@ -10,8 +10,6 @@ import { MarketDayFacade } from './market-day.facade';
 import { awaitingStart, broadcasting, isToday } from './live-status';
 import { ClosedNotice } from './closed-notice';
 import { ReopenStand } from './reopen-stand';
-
-const WAITING_POLL_MS = 60_000;
 
 type Row = { itemId: string; name: string };
 
@@ -34,6 +32,10 @@ type Row = { itemId: string; name: string };
              outranks both — a closed day leaves the customer's list entirely. Never a countdown. -->
         @if (marketDay.closed) {
           <mm-closed-notice />
+        } @else if (marketDay.over) {
+          <div class="mt-4 rounded-card bg-surface-sunk p-3">
+            <p class="font-bold text-ink">Marché terminé</p>
+          </div>
         } @else if (live()) {
           <div class="mt-4 rounded-card border border-brand bg-surface p-3">
             <p class="font-bold text-brand">En direct</p>
@@ -57,9 +59,9 @@ type Row = { itemId: string; name: string };
                 #row
                 type="button"
                 class="w-full rounded-card border p-3 text-left font-bold text-ink disabled:opacity-100"
-                [class]="marketDay.closed ? 'border-transparent bg-canvas' : 'border-line bg-surface'"
+                [class]="marketDay.inert ? 'border-transparent bg-canvas' : 'border-line bg-surface'"
                 [attr.data-item]="item.itemId"
-                [disabled]="marketDay.closed"
+                [disabled]="marketDay.inert"
                 (click)="markSoldOut(item)"
               >
                 {{ item.name }}
@@ -78,9 +80,9 @@ type Row = { itemId: string; name: string };
                     #row
                     type="button"
                     class="w-full rounded-card border p-3 text-left font-bold text-muted disabled:opacity-100"
-                    [class]="marketDay.closed ? 'border-transparent bg-canvas' : 'border-line bg-surface-sunk'"
+                    [class]="marketDay.inert ? 'border-transparent bg-canvas' : 'border-line bg-surface-sunk'"
                     [attr.data-item]="item.itemId"
-                    [disabled]="marketDay.closed"
+                    [disabled]="marketDay.inert"
                     (click)="markAvailable(item)"
                   >
                     {{ item.name }}
@@ -105,16 +107,22 @@ type Row = { itemId: string; name: string };
         <!-- Decision 52: one slot, one verb, flipping at startTime. Keyed to the phase
              alone rather than to broadcasting: the banner above claims something about a menu,
              this offers to call the day off, which needs none. -->
-        @if (marketDay.closed) {
-          <mm-reopen-stand [marketId]="marketId" [date]="date" />
-        } @else {
-          <button type="button" class="quiet mt-8 flex w-full max-w-xs mx-auto justify-center" (click)="closeStand()">
-            @if (marketDay.trading) {
-              Fermer le stand
-            } @else {
-              Je ne peux pas venir aujourd'hui
-            }
-          </button>
+        <!-- Decision 60: an ended day has an empty foot. No close verb, because ADR 0049
+             defines a close as an early endTime and the clock already ran out; and no
+             Rouvrir, because decision 50 refuses one past endTime and the failure path is
+             a silent snap-back. 2b's rating is what lands here. -->
+        @if (!marketDay.over) {
+          @if (marketDay.closed) {
+            <mm-reopen-stand [marketId]="marketId" [date]="date" />
+          } @else {
+            <button type="button" class="quiet mt-8 flex w-full max-w-xs mx-auto justify-center" (click)="closeStand()">
+              @if (marketDay.trading) {
+                Fermer le stand
+              } @else {
+                Je ne peux pas venir aujourd'hui
+              }
+            </button>
+          }
         }
 
         <p aria-live="polite" class="sr-only">{{ note() }}</p>
@@ -139,11 +147,14 @@ export class LiveScreen {
 
   readonly editorLink = ['/dashboard/menus', this.marketId, this.date];
 
-  readonly loading = computed(() => this.marketDays.loading() || this.catalogue.loading());
+  // The slot's own state, not the list's: *not fetched yet* has to outrank the guard
+  // branch, or the screen says "pas aujourd'hui" for one frame on every entry.
+  readonly loading = computed(() => this.marketDays.day().status === 'loading' || this.catalogue.loading());
 
-  private readonly occurrence = computed(() =>
-    this.marketDays.days().find((candidate) => candidate.marketId === this.marketId && candidate.date === this.date),
-  );
+  private readonly occurrence = computed(() => {
+    const slot = this.marketDays.day();
+    return slot.status === 'found' ? slot.day : undefined;
+  });
 
   readonly day = computed(() => {
     const occurrence = this.occurrence();
@@ -153,6 +164,10 @@ export class LiveScreen {
           marketName: occurrence.market.name,
           closed: occurrence.closed,
           trading: occurrence.phase === 'trading',
+          over: occurrence.phase === 'over',
+          // One flag for both readings of decision 48: the rows stop being availability
+          // controls when the vendor packs up, and again when the clock ends the day.
+          inert: occurrence.closed || occurrence.phase === 'over',
         }
       : undefined;
   });
@@ -169,6 +184,11 @@ export class LiveScreen {
   readonly active = computed(() => this.planned().filter((item) => !this.soldOut().has(item.itemId)));
   readonly epuises = computed(() => this.planned().filter((item) => this.soldOut().has(item.itemId)));
 
+  // The duration alone, not the day it came from: the day object changes on every
+  // optimistic tap, and re-arming the timer there would push the boundary further away
+  // with each one — a vendor marking dishes all morning would never be re-asked.
+  private readonly countdown = computed(() => this.occurrence()?.nextPhaseInMs);
+
   readonly live = computed(() => broadcasting(this.occurrence()));
   readonly waiting = computed(() => awaitingStart(this.occurrence()));
   readonly startLabel = computed(() => {
@@ -184,16 +204,25 @@ export class LiveScreen {
   private readonly pendingFocus = signal<string | null>(null);
 
   constructor() {
-    this.marketDays.load();
+    this.reask();
     this.catalogue.load();
-    // Decision 8's mechanism gated on waiting (decision 27): each tick asks the gate, so
-    // the re-asks stop the moment the server says live — and the gate, not the interval,
-    // is the part under test (decision 32b).
-    interval(WAITING_POLL_MS)
+    // Decision 59: one timer, set from the server's own duration, instead of asking every
+    // 60s all morning. It decides when to ask and nothing else — the phase stays
+    // server-said, so a timer that fires early or late corrects itself on the next answer.
+    effect((onCleanup) => {
+      const countdown = this.countdown();
+      if (countdown === undefined) {
+        return;
+      }
+      const timer = setTimeout(() => this.reask(), countdown);
+      onCleanup(() => clearTimeout(timer));
+    });
+    // A backgrounded phone fires no timer, so the tab coming back asks for itself.
+    fromEvent(document, 'visibilitychange')
       .pipe(takeUntilDestroyed())
       .subscribe(() => {
-        if (awaitingStart(this.occurrence())) {
-          this.marketDays.refresh();
+        if (document.visibilityState === 'visible') {
+          this.reask();
         }
       });
     // Decision 20: the tapped row's element is destroyed when it changes group, which
@@ -209,6 +238,10 @@ export class LiveScreen {
         this.pendingFocus.set(null);
       },
     });
+  }
+
+  private reask(): void {
+    this.marketDays.loadDay(this.marketId, this.date);
   }
 
   closeStand(): void {

@@ -24,7 +24,11 @@ behind `FindMarketDay` (decision 50). **Slice 2 is complete.** The live screen c
 closed state, reopen, the inert rows and decision 10's editor link; the foot's one verb flips
 at `startTime` (decision 52); the card carries the call-off for any today and the closed state
 ahead of the menu (decisions 51, 55); the editor carries the closed state alone (decision 53).
-**Next is the vendor frontend's `FindMarketDay` read** (decisions 58-62), then slice 2b or slice 3. **Slice 2b is still
+**The `FindMarketDay` read is shipped** (decisions 58-62): `MarketHours` holds the missing-hours
+fallback, `standingOf` states the phase and `nextPhaseInMs` together on both handlers, the live
+screen reads its own `day` slot and stops loading the list, `over` is a full state with an empty
+foot and no reopen, and one timer off the countdown plus a visibility re-ask replaces the 60s
+poll — which is deleted, along with `RefreshMarketDays`. **Next is slice 2b or slice 3.** **Slice 2b is still
 not startable as written**, but on one count rather than two: the French copy for the two
 judgments is open. The rating capture window is settled — decision 50 dissolved it.
 
