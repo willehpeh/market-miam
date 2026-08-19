@@ -57,3 +57,4 @@ detailed rationale in `docs/archive/DEFERRED.md`).
 | [0048](0048-billing-bounded-context-shared-event-log.md)                | Billing is a second bounded context on the shared event log                | 2026-08-11 |
 | [0049](0049-market-day-opens-by-the-clock-closes-by-hand.md)            | A market day opens by the clock, closes by hand                            | 2026-08-12 |
 | [0050](0050-client-side-timeouts-hung-poll-throws.md)                   | Client-side timeouts: a hung poll throws instead of vanishing              | 2026-08-13 |
+| [0051](0051-market-day-constituted-with-its-markets-hours.md)           | A market day is constituted with its market's hours                        | 2026-08-19 |

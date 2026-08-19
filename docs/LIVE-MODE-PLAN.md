@@ -206,9 +206,20 @@ for decision 1. An asymmetric lifecycle in an event-sourced domain is exactly wh
 contributor "corrects", and the reason — asymmetric failure modes, not oversight — is invisible
 from the code.
 
+[0051 — A market day is constituted with its market's hours](adr/0051-market-day-constituted-with-its-markets-hours.md),
+for decision 50. The repository reading a sibling aggregate and constructing the day with its
+hours is a third shape for a cross-aggregate fact, beside the handler passing one (`setMenu`'s
+`Menu`) and ADR 0031's domain service — and 0031 says in as many words that passed-in aggregates
+are the reach a service exists to own. The rule for telling the three apart lived nowhere.
+
 Considered and skipped, because read models, routes and queries here are cheap to reverse and the
 rationale above is enough: the query split (3), live state on the menu row (14), the idempotent
-availability and close routes (19, 44), server-only liveness (21).
+availability and close routes (19, 44), server-only liveness (21). Weighed again once 50 and 56
+had shipped, since that list was written before either existed: the one phase (56) stays here —
+the rule a contributor would undo, clock truth held apart from `closed` and `absent`, is in the
+type's own comment where the decision put it — and the *item* rename (34) is 0020's shape exactly
+and would cite it for the same reason, which is thin. **Still a candidate: the no-op rule (36)**,
+which deleted two error types and governs every command in the repo, a scope written nowhere.
 
 ## Named limits
 
