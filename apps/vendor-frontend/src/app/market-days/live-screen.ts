@@ -97,8 +97,10 @@ type Row = { itemId: string; name: string };
              the page, furthest from the rows tapped all morning. -->
         <!-- Decision 10: discreet, because the rows are what this screen is for — but the
              editor stays open all market, since a vendor who brought one more tray must
-             be able to say so. -->
-        @if (!marketDay.closed) {
+             be able to say so. It closes with the market (decision 63): an edit at 15h
+             rewrites the set 2b is about to ask the vendor to judge. The screen declines
+             it, the domain still accepts it — same split as the rows above. -->
+        @if (!marketDay.inert) {
           <a [routerLink]="editorLink" class="mt-8 block text-center text-sm font-bold text-brand no-underline">
             Modifier le menu
           </a>

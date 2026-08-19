@@ -240,6 +240,16 @@ describe('LiveScreen', () => {
     expect(screen.queryByRole('link', { name: 'Modifier le menu' })).toBeNull();
   });
 
+  // Decision 63: the screen stops offering the editor once the market is over, while the
+  // domain keeps accepting the edit — the same split decision 60 makes for the rows one
+  // line above. A menu edited at 15h rewrites the set 2b is about to ask the vendor to
+  // judge, and nothing on this screen should invite that.
+  it('takes the editor link away once the market is over', async () => {
+    await renderLive((md, cat) => aLiveDay(md, cat, [], { phase: 'over' }));
+
+    expect(screen.queryByRole('link', { name: 'Modifier le menu' })).toBeNull();
+  });
+
   // Decision 48: inert means the rows stop being availability controls, not that they stop
   // being rows — 2b's rating mode lands on these same rows, so they keep their markup and
   // both groups keep their split. Asserted as disabled rather than by clicking: fireEvent
