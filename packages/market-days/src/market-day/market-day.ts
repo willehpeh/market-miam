@@ -139,7 +139,7 @@ export class MarketDay extends Aggregate {
     }
     const event: ItemOutcomeRecorded = {
       type: 'ItemOutcomeRecorded',
-      payload: { itemId: itemId.value(), outcome, ...this.stampedAt(time) },
+      payload: { itemId: itemId.value(), outcome, ...this._id.value() },
       version: 1
     };
     this.raise(event);

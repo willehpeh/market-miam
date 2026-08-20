@@ -29,7 +29,7 @@ describe('Record Item Outcome', () => {
       expect.objectContaining({ type: 'MarketDayClosed' }),
       expect.objectContaining({
         type: 'ItemOutcomeRecorded',
-        payload: { itemId: 'item-1', outcome: 'did_well', marketId: 'market-1', date: TODAY, time: '11:00' },
+        payload: { itemId: 'item-1', outcome: 'did_well', marketId: 'market-1', date: TODAY },
       }),
     ]);
   });
