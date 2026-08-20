@@ -40,7 +40,7 @@ export class Market {
     this._pitch = params.pitch;
   }
 
-  snapshot(): MarketSnapshot {
+  value(): MarketSnapshot {
     return {
       id: this._id.value(),
       name: this._name.value(),

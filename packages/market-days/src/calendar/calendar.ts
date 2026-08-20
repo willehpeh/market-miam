@@ -36,7 +36,7 @@ export class Calendar extends Aggregate {
   }
 
   registerMarketSchedule(market: Market, schedule: Schedule): void {
-    const { days, frequency, startDate } = schedule.snapshot();
+    const { days, frequency, startDate } = schedule.value();
     const scheduleId = schedule.id();
     if (this.containsSchedule(scheduleId)) {
       throw new ScheduleAlreadyRegisteredError(`Schedule already registered with ID ${ scheduleId.value() }`);
@@ -44,7 +44,7 @@ export class Calendar extends Aggregate {
     const event: MarketScheduleRegistered = {
       type: 'MarketScheduleRegistered',
       payload: {
-        market: market.snapshot(),
+        market: market.value(),
         scheduleId: scheduleId.value(),
         startDate,
         days,
@@ -56,12 +56,12 @@ export class Calendar extends Aggregate {
   }
 
   amendMarketSchedule(market: Market, schedule: Schedule): void {
-    const { days, frequency, startDate } = schedule.snapshot();
+    const { days, frequency, startDate } = schedule.value();
     const scheduleId = schedule.id();
     if (!this.containsSchedule(scheduleId)) {
       throw new NoSuchScheduleError(`No schedule with ID ${ scheduleId.value() }`);
     }
-    const marketSnapshot = market.snapshot();
+    const marketSnapshot = market.value();
     if (this._schedules.get(scheduleId.value())?.marketId !== marketSnapshot.id) {
       throw new ImmutableMarketError(`Cannot change the market of schedule ${ scheduleId.value() }`);
     }

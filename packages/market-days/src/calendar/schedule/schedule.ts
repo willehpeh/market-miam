@@ -24,7 +24,7 @@ export class Schedule {
     this._recurrence = new Recurrence(params.startDate, params.days, params.frequency);
   }
 
-  snapshot(): ScheduleSnapshot {
+  value(): ScheduleSnapshot {
     return {
       scheduleId: this._id.value(),
       ...this._recurrence.snapshot()
