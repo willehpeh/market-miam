@@ -128,9 +128,6 @@ export class MarketDay extends Aggregate {
   // The bilan (decision 64): what the vendor says about how a dish sold, once the day is
   // theirs to look back on.
   recordItemOutcome(itemId: ItemId, outcome: ItemOutcome, time: LocalTime) {
-    if (this.notToday()) {
-      throw new MarketDayNotTodayError();
-    }
     if (!this.isFinished(time)) {
       throw new MarketDayNotFinishedError();
     }
@@ -199,9 +196,13 @@ export class MarketDay extends Aggregate {
     return time.isAfter(this._hours.closing());
   }
 
-  // Decision 54's boundary, in its own words: the stand is shut, or the clock ran out.
+  // Decision 69: the stand is shut, the clock ran out, or the day is simply behind us. The
+  // last clause is what lets the bilan outlive midnight — `hasEnded` compares a wall-clock
+  // time against this day's closing, so without it Saturday's 14:30 market reads as still
+  // running at 09:00 on Sunday. The only rule the domain keeps about staleness is none:
+  // how far back a bilan is still offered is the query's to say, not the aggregate's.
   private isFinished(time: LocalTime): boolean {
-    return this._closed || this.hasEnded(time);
+    return this._closed || this.inThePast() || this.hasEnded(time);
   }
 
   private notToday(): boolean {

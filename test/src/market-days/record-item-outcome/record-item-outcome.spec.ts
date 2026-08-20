@@ -1,5 +1,5 @@
 import { InMemoryEventStore } from '@market-miam/event-sourcing';
-import { ItemNotPlannedError, ItemOutcome, MarketDayNotFinishedError, MarketDayNotTodayError } from '@market-miam/market-days';
+import { ItemNotPlannedError, ItemOutcome, MarketDayNotFinishedError } from '@market-miam/market-days';
 import { marketDayHarness } from '../market-day-harness';
 import { LAST_SATURDAY, TODAY } from '../set-market-day-menu/test-data';
 
@@ -67,10 +67,23 @@ describe('Record Item Outcome', () => {
     await expect(() => recordOutcome(TODAY, 'item-2', 'did_well')).rejects.toThrow(ItemNotPlannedError);
   });
 
-  // Decision 16's guard, unchanged by the bilan: yesterday's market is not this app's to
-  // reopen the books on, and the retrospective that would is deferred (decision 14a).
-  it('refuses a day that is not today', async () => {
-    await expect(() => recordOutcome(LAST_SATURDAY, 'item-1', 'did_well')).rejects.toThrow(MarketDayNotTodayError);
+  // Decision 69 drops the today guard for this command alone. The dashboard prompts for an
+  // unrated day up to a week back, and a vendor who does their books on Sunday morning is
+  // the vendor the whole slice exists for — a bilan is a claim about a day that is over,
+  // never about right now, which is the distinction decision 16's guard was drawn on.
+  // The menu is seeded rather than set: setMenu still refuses a past day.
+  it('accepts a day already behind the vendor', async () => {
+    store.seedWith(
+      `market-day/vendor-1/market-1/${LAST_SATURDAY}`,
+      [{ type: 'MarketDayMenuSet', payload: { itemIds: ['item-1'], marketId: 'market-1', date: LAST_SATURDAY }, version: 1 }],
+      { vendorId: 'vendor-1' },
+    );
+
+    await recordOutcome(LAST_SATURDAY, 'item-1', 'did_well');
+
+    expect(store.newEvents()).toEqual([
+      expect.objectContaining({ type: 'ItemOutcomeRecorded', payload: expect.objectContaining({ date: LAST_SATURDAY }) }),
+    ]);
   });
 
   // Decision 36's rule, one command over: a re-tapped answer must not append a second
