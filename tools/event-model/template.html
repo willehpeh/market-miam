@@ -1,0 +1,709 @@
+<title>Market Miam Event Model</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root {
+    color-scheme: light;
+    --plane: #f9f9f7;
+    --surface: #fcfcfb;
+    --ink: #0b0b0b;
+    --ink-2: #52514e;
+    --ink-3: #898781;
+    --hairline: #e1e0d9;
+    --border: rgba(11, 11, 11, 0.10);
+    --cmd: #2a78d6;
+    --evt: #eb6834;
+    --view: #1baf7a;
+    --auto: #8a63d2;
+    --reject: #c0392b;
+    --cmd-tint: rgba(42, 120, 214, 0.13);
+    --evt-tint: rgba(235, 104, 52, 0.13);
+    --view-tint: rgba(27, 175, 122, 0.15);
+    --auto-tint: rgba(138, 99, 210, 0.14);
+    --lane-tint: rgba(235, 104, 52, 0.045);
+    --mark: rgba(237, 161, 0, 0.35);
+    --shadow: 0 12px 32px rgba(11, 11, 11, 0.14);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --plane: #0d0d0d;
+      --surface: #1a1a19;
+      --ink: #ffffff;
+      --ink-2: #c3c2b7;
+      --ink-3: #898781;
+      --hairline: #2c2c2a;
+      --border: rgba(255, 255, 255, 0.10);
+      --cmd: #3987e5;
+      --evt: #d95926;
+      --view: #199e70;
+      --auto: #9a77dd;
+      --reject: #d05545;
+      --cmd-tint: rgba(57, 135, 229, 0.18);
+      --evt-tint: rgba(217, 89, 38, 0.18);
+      --view-tint: rgba(25, 158, 112, 0.20);
+      --auto-tint: rgba(154, 119, 221, 0.18);
+      --lane-tint: rgba(217, 89, 38, 0.05);
+      --mark: rgba(201, 133, 0, 0.45);
+      --shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --plane: #0d0d0d;
+    --surface: #1a1a19;
+    --ink: #ffffff;
+    --ink-2: #c3c2b7;
+    --ink-3: #898781;
+    --hairline: #2c2c2a;
+    --border: rgba(255, 255, 255, 0.10);
+    --cmd: #3987e5;
+    --evt: #d95926;
+    --view: #199e70;
+    --auto: #9a77dd;
+    --reject: #d05545;
+    --cmd-tint: rgba(57, 135, 229, 0.18);
+    --evt-tint: rgba(217, 89, 38, 0.18);
+    --view-tint: rgba(25, 158, 112, 0.20);
+    --auto-tint: rgba(154, 119, 221, 0.18);
+    --lane-tint: rgba(217, 89, 38, 0.05);
+    --mark: rgba(201, 133, 0, 0.45);
+    --shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--plane);
+    color: var(--ink);
+    font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  button { font: inherit; color: inherit; }
+
+  .wrap { max-width: 1360px; margin: 0 auto; padding: 20px clamp(14px, 3vw, 32px) 0; }
+  .wide { padding: 0 clamp(14px, 3vw, 32px) 40px; }
+
+  /* ---- header ---- */
+  header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 28px; margin-bottom: 6px; }
+  .brand h1 { font-size: clamp(21px, 3vw, 27px); font-weight: 750; letter-spacing: -0.015em; margin: 0; text-wrap: balance; }
+  .brand .eyebrow {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--ink-3); margin: 0 0 2px;
+  }
+  .stats { display: flex; gap: 22px; margin-left: auto; }
+  .stat { text-align: right; }
+  .stat b { display: block; font-size: 21px; font-weight: 700; font-variant-numeric: tabular-nums;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: -0.02em; }
+  .stat span { font-size: 11px; letter-spacing: 0.09em; text-transform: uppercase; color: var(--ink-3); }
+
+  .subtitle { color: var(--ink-2); font-size: 14px; margin: 0 0 16px; max-width: 76ch; }
+
+  /* ---- control row ---- */
+  .controls {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px;
+    padding: 10px 0 14px; position: relative; z-index: 3;
+  }
+  .search { position: relative; flex: 1 1 220px; max-width: 340px; }
+  .search input {
+    width: 100%; padding: 7px 30px 7px 12px;
+    border: 1px solid var(--hairline); border-radius: 8px;
+    background: var(--surface); color: var(--ink); font: inherit; font-size: 14px;
+  }
+  .search input::placeholder { color: var(--ink-3); }
+  .search input::-webkit-search-cancel-button { display: none; }
+  .search input:focus-visible { outline: 2px solid var(--cmd); outline-offset: 1px; }
+  .search .clear {
+    position: absolute; right: 4px; top: 50%; transform: translateY(-50%);
+    border: 0; background: none; color: var(--ink-3); cursor: pointer; padding: 4px 7px;
+    border-radius: 6px; display: none; line-height: 1;
+  }
+  .search .clear:hover { color: var(--ink); }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip {
+    border: 1px solid var(--hairline); background: var(--surface); border-radius: 999px;
+    padding: 4px 12px; font-size: 12.5px; cursor: pointer; color: var(--ink-2);
+  }
+  .chip:hover { color: var(--ink); border-color: var(--ink-3); }
+  .chip:focus-visible, .zoom button:focus-visible { outline: 2px solid var(--cmd); outline-offset: 1px; }
+  .legend { display: flex; gap: 14px; font-size: 12.5px; color: var(--ink-2); flex-wrap: wrap; }
+  .legend .key { display: inline-flex; align-items: center; gap: 6px; }
+  .legend .sw { width: 10px; height: 10px; border-radius: 3px; }
+  .zoom { display: flex; border: 1px solid var(--hairline); border-radius: 8px; overflow: hidden; margin-left: auto; }
+  .zoom button { border: 0; background: var(--surface); padding: 6px 12px; font-size: 13px; cursor: pointer; color: var(--ink-2); }
+  .zoom button:hover { color: var(--ink); }
+  .zoom .zpct { padding: 6px 10px; font-size: 12.5px; color: var(--ink-3); font-variant-numeric: tabular-nums; border-left: 1px solid var(--hairline); border-right: 1px solid var(--hairline); }
+  .matchline { font-size: 13px; color: var(--ink-2); min-height: 20px; margin: 0 0 8px; }
+  .matchline b { font-variant-numeric: tabular-nums; }
+
+  /* ---- the board ---- */
+  #scroller {
+    overflow: auto; border: 1px solid var(--hairline); border-radius: 12px; background: var(--surface);
+    max-height: calc(100vh - 90px);
+  }
+  #sizer { position: relative; }
+  #board {
+    position: absolute; left: 0; top: 0; transform-origin: 0 0;
+    display: grid; padding: 10px 24px 18px 130px; gap: 6px 14px;
+    grid-auto-flow: dense;
+  }
+  #arrows { position: absolute; inset: 0; pointer-events: none; overflow: visible; }
+  #arrows path { fill: none; stroke-width: 1.6; opacity: 0.32; transition: opacity 0.15s ease; }
+  #arrows path.consume { stroke: var(--evt); }
+  #arrows path.emit { stroke: var(--evt); }
+  #arrows path.dispatch { stroke: var(--cmd); stroke-dasharray: 5 4; }
+  #arrows.focused path { opacity: 0.06; }
+  #arrows.focused path.lit { opacity: 0.9; stroke-width: 2.2; }
+
+  .chap {
+    align-self: end; padding: 6px 2px 2px; border-bottom: 2px solid var(--hairline);
+    font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-3);
+    white-space: nowrap;
+  }
+  .lane-label {
+    position: absolute; left: 8px; margin-top: -10px; max-width: 116px; padding: 2px 9px;
+    font-size: 10.5px; font-weight: 650; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--ink-3); pointer-events: none; z-index: 2; line-height: 1.35;
+    background: color-mix(in srgb, var(--surface) 88%, transparent);
+    border: 1px solid var(--hairline); border-radius: 999px; white-space: nowrap;
+  }
+  .lane-bg { position: absolute; left: 0; right: 0; background: var(--lane-tint); pointer-events: none; border-radius: 8px; }
+
+  .trigger {
+    align-self: end; justify-self: start; display: inline-flex; align-items: center; gap: 6px;
+    font-size: 11.5px; color: var(--ink-2); padding: 3px 9px; border: 1px solid var(--hairline);
+    border-radius: 999px; background: var(--surface); white-space: nowrap;
+  }
+  .card {
+    position: relative; z-index: 1; width: 100%; text-align: left; cursor: pointer;
+    border: 0; border-radius: 7px; padding: 9px 10px 7px;
+    display: flex; flex-direction: column; gap: 2px;
+    transition: opacity 0.18s ease, box-shadow 0.15s ease;
+  }
+  .card::before { content: ""; position: absolute; left: 0; top: 0; right: 0; height: 3px; background: var(--card-color); border-radius: 7px 7px 0 0; }
+  .card:hover, .card.lit { box-shadow: inset 0 0 0 2px var(--card-color); }
+  .card:focus-visible { outline: 2px solid var(--ink); outline-offset: 1px; z-index: 2; }
+  .card .c-kind { font-size: 9.5px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--card-color); }
+  .card .c-name { font-size: 12.5px; font-weight: 650; line-height: 1.25; color: var(--ink); word-break: break-word; }
+  .card .c-sub {
+    font-size: 10.5px; color: var(--ink-2); font-variant-numeric: tabular-nums;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; word-break: break-all;
+  }
+  .card .c-meta { font-size: 10.5px; color: var(--ink-2); display: flex; gap: 8px; flex-wrap: wrap; }
+  .card .c-meta .rj { color: var(--reject); }
+  .k-command { background: var(--cmd-tint); --card-color: var(--cmd); }
+  .k-view { background: var(--view-tint); --card-color: var(--view); }
+  .k-automation { background: var(--auto-tint); --card-color: var(--auto); }
+  .k-event { background: var(--evt-tint); --card-color: var(--evt); align-self: start; }
+  .dimmed .card, .dimmed .trigger { opacity: 0.15; }
+  .dimmed .card.hit { opacity: 1; }
+
+  /* ---- detail panel ---- */
+  #panel {
+    position: fixed; z-index: 50; top: 0; right: 0; bottom: 0; width: min(460px, 96vw);
+    background: var(--surface); border-left: 1px solid var(--hairline); box-shadow: var(--shadow);
+    transform: translateX(105%); transition: transform 0.22s ease;
+    display: flex; flex-direction: column;
+  }
+  #panel.open { transform: none; }
+  .panel-head { padding: 18px 20px 12px; border-bottom: 1px solid var(--hairline); }
+  .panel-head .close {
+    position: absolute; top: 12px; right: 12px; border: 1px solid var(--hairline);
+    background: var(--surface); border-radius: 8px; width: 30px; height: 30px; cursor: pointer;
+    color: var(--ink-2); line-height: 1;
+  }
+  .panel-head .close:hover { color: var(--ink); }
+  .panel-head .close:focus-visible { outline: 2px solid var(--cmd); }
+  .panel-head h2 { margin: 0 0 6px; font-size: 16.5px; line-height: 1.3; padding-right: 30px; word-break: break-word; }
+  .badges { display: flex; flex-wrap: wrap; gap: 6px; }
+  .badge {
+    font-size: 11px; padding: 2.5px 9px; border-radius: 999px; border: 1px solid var(--hairline);
+    color: var(--ink-2); display: inline-flex; align-items: center; gap: 5px;
+  }
+  .badge .dot { width: 7px; height: 7px; border-radius: 50%; }
+  .panel-body { overflow-y: auto; padding: 4px 20px 30px; flex: 1; }
+  .sect-h {
+    font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--ink-3); margin: 18px 0 6px;
+  }
+  .pills { display: flex; flex-wrap: wrap; gap: 6px; }
+  .pill {
+    font-size: 12px; padding: 3px 10px; border-radius: 6px; font-weight: 600;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  .pill.ev { background: var(--evt-tint); color: var(--evt); }
+  .pill.cm { background: var(--cmd-tint); color: var(--cmd); }
+  .pill.vw { background: var(--view-tint); color: var(--view); }
+  .pill.er { background: none; border: 1px solid var(--reject); color: var(--reject); }
+  .pill.plain { background: none; border: 1px solid var(--hairline); color: var(--ink-2); font-family: inherit; font-weight: 500; }
+  .codeblock {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 11.5px; line-height: 1.55; background: var(--plane); border: 1px solid var(--hairline);
+    border-radius: 8px; padding: 9px 11px; overflow-x: auto; white-space: pre; color: var(--ink-2); margin: 0;
+  }
+  .specs-ul { list-style: none; margin: 0; padding: 0; }
+  .specs-ul li {
+    position: relative; padding: 5px 0 5px 18px; font-size: 13.5px; line-height: 1.4;
+    border-bottom: 1px solid var(--hairline); word-break: break-word;
+  }
+  .specs-ul li:last-child { border-bottom: 0; }
+  .specs-ul li::before {
+    content: ""; position: absolute; left: 2px; top: 12px; width: 7px; height: 7px;
+    border-radius: 50%; background: var(--view);
+  }
+  .specs-ul li.rejection::before { background: var(--reject); }
+  .specs-ul li .flag {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--ink-3); border: 1px solid var(--hairline); border-radius: 4px; padding: 0.5px 5px; margin-left: 6px;
+    white-space: nowrap;
+  }
+  .filelist { margin: 0; padding: 0; list-style: none; font-size: 11.5px; color: var(--ink-3); }
+  .filelist li { padding: 2px 0; word-break: break-all; }
+  mark { background: var(--mark); color: inherit; border-radius: 3px; padding: 0 1px; }
+  #backdrop { position: fixed; inset: 0; z-index: 45; display: none; }
+  #backdrop.open { display: block; }
+
+  footer { margin: 22px 0 0; color: var(--ink-3); font-size: 12.5px; max-width: 82ch; }
+  footer p { margin: 4px 0; }
+
+  @media (max-width: 720px) {
+    .stats { margin-left: 0; width: 100%; justify-content: flex-start; }
+    .stat { text-align: left; }
+    .zoom { margin-left: 0; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    #panel, .card, #arrows path { transition: none; }
+  }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <p class="eyebrow">market-miam monorepo</p>
+      <h1>Market Miam Event Model</h1>
+    </div>
+    <div class="stats" id="stats"></div>
+  </header>
+  <p class="subtitle">The system's behaviour as an event model: vertical slices of
+    <b>commands</b>, <b>events</b>, <b>read models</b> and <b>automations</b> on a timeline,
+    derived from the packages test suite and the domain package's declared seams.
+    Click any card for the slice's specifications — its Given/When/Then lines are the
+    <span class="mono">it</span> titles of its spec file.</p>
+
+  <div class="controls">
+    <div class="search">
+      <input id="q" type="search" placeholder="Search slices, events, specs…" aria-label="Search slices, events and specifications">
+      <button class="clear" id="qClear" aria-label="Clear search">×</button>
+    </div>
+    <div class="chips" id="chapChips" role="group" aria-label="Jump to chapter"></div>
+    <div class="zoom" role="group" aria-label="Zoom">
+      <button id="zOut" aria-label="Zoom out">−</button>
+      <span class="zpct" id="zPct">100%</span>
+      <button id="zIn" aria-label="Zoom in">+</button>
+      <button id="zFit">Fit</button>
+    </div>
+  </div>
+  <div class="legend" id="legend"></div>
+  <p class="matchline" id="matchline" role="status"></p>
+</div>
+
+<div class="wide">
+  <div id="scroller">
+    <div id="sizer">
+      <div id="board" role="group" aria-label="Event model board"></div>
+    </div>
+  </div>
+
+  <footer>
+    <p>Slices run left to right in the order the system's own tests presuppose: a slice sits after
+      every slice whose events appear in its Givens. Events sit on the stream (aggregate) lane they
+      are appended to. Solid arrows carry events — from the command that appends one to the read
+      models and automations that consume it; dashed arrows are commands dispatched by automations.</p>
+    <p>Nothing here is hand-maintained. Slices and their specifications come from
+      <span class="mono">test/src/market-days</span>; event-to-stream lanes from the event
+      declarations in <span class="mono">packages/market-days</span>; read-model and automation
+      wiring from each projection's handler map and each processor's
+      <span class="mono">eventTypes()</span>; actors from the API controllers. Regenerate with
+      <span class="mono">npm run event:model</span>.</p>
+    <p id="skipnote"></p>
+    <p>Snapshot generated from source on __GENERATED__.</p>
+  </footer>
+</div>
+
+<div id="backdrop"></div>
+<aside id="panel" aria-label="Slice detail" aria-hidden="true">
+  <div class="panel-head">
+    <button class="close" id="panelClose" aria-label="Close detail panel">✕</button>
+    <h2 id="panelTitle"></h2>
+    <div class="badges" id="panelBadges"></div>
+  </div>
+  <div class="panel-body" id="panelBody"></div>
+</aside>
+
+<script>
+const DATA = __DATA__;
+const SLICES = DATA.slices;
+const LANES = DATA.lanes;
+
+const KIND = {
+  command: { label: 'Command', color: 'cmd' },
+  view: { label: 'Read model', color: 'view' },
+  automation: { label: 'Automation', color: 'auto' },
+};
+const ACTOR = {
+  vendor: { icon: '🧑‍🍳', label: 'Vendor app' },
+  customer: { icon: '🛒', label: 'Customer storefront' },
+  automation: { icon: '⚙️', label: 'Automation' },
+};
+const CHAPTER_LABELS = {
+  vendor: 'Vendor', calendar: 'Markets & schedules', catalogue: 'Catalogue',
+  'market-day': 'Market day', storefront: 'Storefront', other: 'Other',
+};
+const chapterLabel = (c) => CHAPTER_LABELS[c] || c;
+const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+for (const s of SLICES) {
+  s.haystack = [
+    s.id, s.title, s.command, s.stream, ...(s.emits ?? []), ...(s.consumes ?? []), ...(s.dispatches ?? []),
+    ...s.errors, ...(s.readBy ?? []).map(r => r.query), ...s.specs.map(t => t.name),
+  ].filter(Boolean).join(' ').toLowerCase();
+}
+const sliceAt = new Map(SLICES.map((s, i) => [s.id, i]));
+const producerCol = {};
+for (const s of SLICES) for (const e of (s.emits ?? [])) producerCol[e] = sliceAt.get(s.id);
+const commandCol = {};
+for (const s of SLICES) if (s.kind === 'command') commandCol[s.command] = sliceAt.get(s.id);
+
+/* ---------- header, legend, chapter chips ---------- */
+document.getElementById('stats').innerHTML = [
+  [DATA.counts.slices, 'slices'], [DATA.counts.commands, 'commands'], [DATA.counts.events, 'events'],
+  [DATA.counts.views, 'read models'], [DATA.counts.specs, 'specs'],
+].map(([n, l]) => `<div class="stat"><b>${n}</b><span>${l}</span></div>`).join('');
+
+document.getElementById('legend').innerHTML = [
+  ['cmd', 'Command'], ['evt', 'Event'], ['view', 'Read model'], ['auto', 'Automation'],
+].map(([k, l]) => `<span class="key"><span class="sw" style="background:var(--${k})"></span>${l}</span>`).join('') +
+  `<span class="key"><span class="sw" style="background:var(--reject)"></span>Rejection spec</span>`;
+
+const chapters = [...new Set(SLICES.map(s => s.chapter))];
+const chapEl = document.getElementById('chapChips');
+chapEl.innerHTML = chapters.map(c => `<button class="chip" data-c="${esc(c)}">${esc(chapterLabel(c))}</button>`).join('');
+chapEl.addEventListener('click', e => {
+  const btn = e.target.closest('.chip'); if (!btn) return;
+  const col = SLICES.findIndex(s => s.chapter === btn.dataset.c);
+  const card = board.querySelector(`[data-slice="${SLICES[col].id}"]`);
+  if (card) scroller.scrollTo({ left: Math.max(0, (card.offsetLeft - 140) * zoomLevel), behavior: 'smooth' });
+});
+
+if (DATA.skipped.length) {
+  document.getElementById('skipnote').innerHTML =
+    'Off the model (infrastructure, not behaviour): ' + DATA.skipped.map(s => `<span class="mono">${esc(s)}</span>`).join('; ') + '.';
+}
+
+/* ---------- board ---------- */
+const scroller = document.getElementById('scroller');
+const sizer = document.getElementById('sizer');
+const board = document.getElementById('board');
+const N = SLICES.length;
+const ROW = { chap: 1, trigger: 2, slice: 3 };            // then one row per event lane
+const laneRow = (lane) => 4 + LANES.indexOf(lane);
+
+function buildBoard() {
+  board.style.gridTemplateColumns = `repeat(${N}, 196px)`;
+  let html = '';
+
+  // chapter headers spanning their run of columns
+  let start = 0;
+  for (let i = 1; i <= N; i++) {
+    if (i === N || SLICES[i].chapter !== SLICES[start].chapter) {
+      html += `<div class="chap" style="grid-row:${ROW.chap};grid-column:${start + 1} / ${i + 1}">${esc(chapterLabel(SLICES[start].chapter))}</div>`;
+      start = i;
+    }
+  }
+
+  SLICES.forEach((s, i) => {
+    const col = `grid-column:${i + 1}`;
+    if (s.kind === 'command' && s.actor && ACTOR[s.actor]) {
+      const a = ACTOR[s.actor];
+      html += `<span class="trigger" style="grid-row:${ROW.trigger};${col}" data-col="${i}">${a.icon} ${esc(a.label)}</span>`;
+    }
+    const rejections = s.specs.filter(t => t.kind === 'rejection').length;
+    const meta = `<span>${s.specs.length} spec${s.specs.length === 1 ? '' : 's'}</span>` +
+      (rejections ? `<span class="rj">${rejections} rejection${rejections === 1 ? '' : 's'}</span>` : '');
+    if (s.kind === 'command') {
+      html += `<button class="card k-command" style="grid-row:${ROW.slice};${col}" data-slice="${esc(s.id)}" data-col="${i}">
+        <span class="c-kind">Command</span><span class="c-name">${esc(s.title)}</span>
+        <span class="c-meta">${meta}</span></button>`;
+      for (const e of s.emits) {
+        html += `<button class="card k-event" style="grid-row:${laneRow(DATA.eventAggregate[e])};${col}"
+          data-slice="${esc(s.id)}" data-event="${esc(e)}" data-col="${i}">
+          <span class="c-kind">Event</span><span class="c-sub">${esc(e)}</span></button>`;
+      }
+    } else if (s.kind === 'view') {
+      const readers = (s.readBy ?? []).map(r =>
+        `<span>${ACTOR[r.actor]?.icon ?? ''} ${esc(r.query)}</span>`).join('');
+      html += `<button class="card k-view" style="grid-row:${ROW.slice};${col}" data-slice="${esc(s.id)}" data-col="${i}">
+        <span class="c-kind">Read model</span><span class="c-name">${esc(s.title)}</span>
+        <span class="c-meta">${readers}</span><span class="c-meta">${meta}</span></button>`;
+    } else {
+      html += `<button class="card k-automation" style="grid-row:${ROW.slice};${col}" data-slice="${esc(s.id)}" data-col="${i}">
+        <span class="c-kind">⚙ Automation</span><span class="c-name">${esc(s.title)}</span>
+        <span class="c-sub">→ ${s.dispatches.map(esc).join(', ')}</span>
+        <span class="c-meta">${meta}</span></button>`;
+    }
+  });
+  board.innerHTML = html;
+
+  // lane backgrounds + labels, positioned after layout
+  requestAnimationFrame(() => {
+    const bRect = board.getBoundingClientRect();
+    const rows = {};
+    for (const el of board.querySelectorAll('.card.k-event')) {
+      const lane = DATA.eventAggregate[el.dataset.event];
+      const r = el.getBoundingClientRect();
+      const top = (r.top - bRect.top) / zoomLevel, bot = (r.bottom - bRect.top) / zoomLevel;
+      rows[lane] = rows[lane] ? [Math.min(rows[lane][0], top), Math.max(rows[lane][1], bot)] : [top, bot];
+    }
+    let decor = '';
+    for (const lane of LANES) {
+      if (!rows[lane]) continue;
+      const [top, bot] = rows[lane];
+      decor += `<div class="lane-bg" style="top:${top - 4}px;height:${bot - top + 8}px"></div>`;
+      decor += `<div class="lane-label lane-l" style="top:${top - 4}px">${esc(chapterLabel(lane))} stream</div>`;
+    }
+    const sliceCards = [...board.querySelectorAll(`.card[style*="grid-row:${ROW.slice};"]`)];
+    if (sliceCards.length) {
+      const top = Math.min(...sliceCards.map(el => (el.getBoundingClientRect().top - bRect.top) / zoomLevel));
+      decor += `<div class="lane-label lane-l" style="top:${top}px">Slices</div>`;
+    }
+    board.insertAdjacentHTML('afterbegin', decor);
+    drawArrows();
+    fitSizer();
+    syncLaneLabels();
+  });
+}
+
+/* ---------- arrows ---------- */
+const edges = [];   // { from: cardKey, to: cardKey, cls }
+function cardEl(key) { return board.querySelector(key); }
+function buildEdges() {
+  edges.length = 0;
+  for (const s of SLICES) {
+    const me = `[data-slice="${s.id}"][data-col]:not([data-event])`;
+    if (s.kind === 'command') {
+      for (const e of s.emits) edges.push({ from: me, to: `[data-event="${e}"]`, cls: 'emit', slices: [s.id] });
+    } else {
+      for (const e of (s.consumes ?? [])) {
+        if (producerCol[e] === undefined) continue;
+        edges.push({ from: `[data-event="${e}"]`, to: me, cls: 'consume', slices: [s.id, SLICES[producerCol[e]].id] });
+      }
+      if (s.kind === 'automation') {
+        for (const c of s.dispatches) {
+          if (commandCol[c] === undefined) continue;
+          edges.push({ from: me, to: `[data-slice="${SLICES[commandCol[c]].id}"]:not([data-event])`, cls: 'dispatch', slices: [s.id, SLICES[commandCol[c]].id] });
+        }
+      }
+    }
+  }
+}
+function drawArrows() {
+  let svg = board.querySelector('#arrows');
+  if (svg) svg.remove();
+  const bRect = board.getBoundingClientRect();
+  const W = board.scrollWidth, H = board.scrollHeight;
+  const paths = [];
+  for (const ed of edges) {
+    const a = cardEl(ed.from), b = cardEl(ed.to);
+    if (!a || !b) continue;
+    const ra = a.getBoundingClientRect(), rb = b.getBoundingClientRect();
+    const z = zoomLevel;
+    const ax = { l: (ra.left - bRect.left) / z, r: (ra.right - bRect.left) / z, t: (ra.top - bRect.top) / z, b: (ra.bottom - bRect.top) / z };
+    const bx = { l: (rb.left - bRect.left) / z, r: (rb.right - bRect.left) / z, t: (rb.top - bRect.top) / z, b: (rb.bottom - bRect.top) / z };
+    let d;
+    if (Math.abs((ax.l + ax.r) / 2 - (bx.l + bx.r) / 2) < 30) {
+      // same column: straight down/up
+      const x = (ax.l + ax.r) / 2;
+      d = ax.b <= bx.t ? `M ${x} ${ax.b} L ${x} ${bx.t}` : `M ${x} ${ax.t} L ${x} ${bx.b}`;
+    } else {
+      const fromRight = bx.l >= ax.r;
+      const x1 = fromRight ? ax.r : ax.l, x2 = fromRight ? bx.l : bx.r;
+      const y1 = (ax.t + ax.b) / 2, y2 = (bx.t + bx.b) / 2;
+      const dx = Math.min(90, Math.abs(x2 - x1) / 2) * (fromRight ? 1 : -1);
+      d = `M ${x1} ${y1} C ${x1 + dx} ${y1}, ${x2 - dx} ${y2}, ${x2} ${y2}`;
+    }
+    paths.push(`<path class="${ed.cls}" data-slices="${ed.slices.join(' ')}" d="${d}" marker-end="url(#head)"/>`);
+  }
+  board.insertAdjacentHTML('beforeend',
+    `<svg id="arrows" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" aria-hidden="true">
+      <defs><marker id="head" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 0 L 8 4 L 0 8 z" fill="context-stroke"/></marker></defs>${paths.join('')}</svg>`);
+}
+
+/* ---------- hover highlighting ---------- */
+const related = new Map();   // slice id -> Set of slice ids lit together
+function buildRelated() {
+  for (const s of SLICES) related.set(s.id, new Set([s.id]));
+  for (const ed of edges) {
+    for (const id of ed.slices) for (const other of ed.slices) related.get(id)?.add(other);
+  }
+}
+board.addEventListener('mouseover', e => {
+  const card = e.target.closest('.card'); if (!card) return;
+  focusSlice(card.dataset.slice);
+});
+board.addEventListener('mouseout', e => {
+  if (!e.relatedTarget || !e.relatedTarget.closest?.('.card')) unfocus();
+});
+function focusSlice(id) {
+  const rel = related.get(id) ?? new Set([id]);
+  const svg = board.querySelector('#arrows');
+  if (svg) {
+    svg.classList.add('focused');
+    for (const p of svg.querySelectorAll('path'))
+      p.classList.toggle('lit', p.dataset.slices.split(' ').includes(id));
+  }
+  for (const c of board.querySelectorAll('.card'))
+    c.classList.toggle('lit', c.dataset.slice === id);
+}
+function unfocus() {
+  const svg = board.querySelector('#arrows');
+  if (svg) { svg.classList.remove('focused'); svg.querySelectorAll('.lit').forEach(p => p.classList.remove('lit')); }
+  board.querySelectorAll('.card.lit').forEach(c => c.classList.remove('lit'));
+}
+
+/* ---------- zoom ---------- */
+let zoomLevel = 1;
+function fitSizer() {
+  sizer.style.width = board.scrollWidth * zoomLevel + 'px';
+  sizer.style.height = board.scrollHeight * zoomLevel + 'px';
+}
+function setZoom(z, anchor) {
+  const prev = zoomLevel;
+  zoomLevel = Math.min(1.4, Math.max(0.22, z));
+  board.style.transform = `scale(${zoomLevel})`;
+  fitSizer();
+  if (anchor !== false) scroller.scrollLeft = scroller.scrollLeft / prev * zoomLevel;
+  document.getElementById('zPct').textContent = Math.round(zoomLevel * 100) + '%';
+  syncLaneLabels();
+}
+document.getElementById('zIn').addEventListener('click', () => setZoom(zoomLevel + 0.1));
+document.getElementById('zOut').addEventListener('click', () => setZoom(zoomLevel - 0.1));
+document.getElementById('zFit').addEventListener('click', () =>
+  setZoom((scroller.clientWidth - 8) / board.scrollWidth));
+
+/* lane labels shouldn't scroll away horizontally */
+function syncLaneLabels() {
+  const x = scroller.scrollLeft / zoomLevel;
+  for (const el of board.querySelectorAll('.lane-l')) el.style.transform = `translateX(${x}px)`;
+}
+scroller.addEventListener('scroll', syncLaneLabels, { passive: true });
+
+/* ---------- search ---------- */
+const qEl = document.getElementById('q'), qClear = document.getElementById('qClear');
+let query = '', qTimer;
+qEl.addEventListener('input', () => {
+  clearTimeout(qTimer);
+  qTimer = setTimeout(() => {
+    query = qEl.value.trim().toLowerCase();
+    qClear.style.display = query ? 'block' : 'none';
+    applySearch();
+  }, 120);
+});
+qClear.addEventListener('click', () => { qEl.value = ''; query = ''; qClear.style.display = 'none'; applySearch(); qEl.focus(); });
+function applySearch() {
+  board.classList.toggle('dimmed', !!query);
+  let hits = 0, specHits = 0;
+  for (const s of SLICES) {
+    const hit = !query || s.haystack.includes(query);
+    if (query && hit) { hits++; specHits += s.specs.filter(t => t.name.toLowerCase().includes(query)).length; }
+    for (const c of board.querySelectorAll(`.card[data-slice="${s.id}"]`)) c.classList.toggle('hit', hit);
+  }
+  document.getElementById('matchline').innerHTML = query
+    ? `Showing <b>${hits}</b> slice${hits === 1 ? '' : 's'}` +
+      (specHits ? ` (<b>${specHits}</b> matching spec${specHits === 1 ? '' : 's'})` : '') + ` matching “${esc(query)}”.`
+    : '';
+}
+
+/* ---------- detail panel ---------- */
+const panel = document.getElementById('panel'), backdrop = document.getElementById('backdrop');
+board.addEventListener('click', e => {
+  const card = e.target.closest('.card'); if (!card) return;
+  const s = SLICES.find(x => x.id === card.dataset.slice);
+  if (s) openPanel(s);
+});
+function pills(items, cls) {
+  return `<div class="pills">${items.map(x => `<span class="pill ${cls}">${esc(x)}</span>`).join('')}</div>`;
+}
+function markName(name) {
+  let out = esc(name);
+  if (query) {
+    const i = name.toLowerCase().indexOf(query);
+    if (i >= 0) out = esc(name.slice(0, i)) + '<mark>' + esc(name.slice(i, i + query.length)) + '</mark>' + esc(name.slice(i + query.length));
+  }
+  return out;
+}
+function openPanel(s) {
+  document.getElementById('panelTitle').textContent = s.title;
+  const k = KIND[s.kind];
+  const badges = [
+    `<span class="badge"><span class="dot" style="background:var(--${k.color})"></span>${k.label}</span>`,
+    `<span class="badge">${esc(chapterLabel(s.chapter))}</span>`,
+    `<span class="badge">${s.specs.length} spec${s.specs.length === 1 ? '' : 's'}</span>`,
+  ];
+  if (s.kind === 'command' && s.actor && ACTOR[s.actor])
+    badges.push(`<span class="badge">${ACTOR[s.actor].icon} ${esc(ACTOR[s.actor].label)}</span>`);
+  document.getElementById('panelBadges').innerHTML = badges.join('');
+
+  let html = '';
+  if (s.kind === 'command') {
+    if (s.given.length || s.givenCommands.length) {
+      html += `<h3 class="sect-h">Given — context the specs set up</h3>`;
+      if (s.given.length) html += pills(s.given, 'ev');
+      if (s.givenCommands.length) html += `<div class="pills" style="margin-top:6px">${s.givenCommands.map(c => `<span class="pill plain">via ${esc(c)}</span>`).join('')}</div>`;
+    }
+    html += `<h3 class="sect-h">When</h3>` + pills([s.command], 'cm');
+    html += `<h3 class="sect-h">Then</h3>` + pills(s.emits, 'ev');
+    if (s.payload) html += `<h3 class="sect-h">Example payload, as asserted</h3><pre class="codeblock">${esc(s.payload)}</pre>`;
+    if (s.stream) html += `<h3 class="sect-h">Stream</h3><pre class="codeblock">${esc(s.stream)}</pre>`;
+    if (s.errors.length) html += `<h3 class="sect-h">Rejects with</h3>` + pills(s.errors, 'er');
+  } else if (s.kind === 'view') {
+    html += `<h3 class="sect-h">Projected from</h3>` + pills(s.consumes, 'ev');
+    if ((s.readBy ?? []).length) {
+      html += `<h3 class="sect-h">Read by</h3><div class="pills">` +
+        s.readBy.map(r => `<span class="pill vw">${esc(r.query)}</span><span class="pill plain">${ACTOR[r.actor]?.icon ?? ''} ${esc(ACTOR[r.actor]?.label ?? r.actor)}</span>`).join('') + '</div>';
+    }
+  } else {
+    html += `<h3 class="sect-h">When</h3>` + pills(s.consumes, 'ev');
+    html += `<h3 class="sect-h">Then it dispatches</h3>` + pills(s.dispatches, 'cm');
+    if (s.errors.length) html += `<h3 class="sect-h">Rejects with</h3>` + pills(s.errors, 'er');
+  }
+
+  html += `<h3 class="sect-h">Specifications</h3><ul class="specs-ul">` + s.specs.map(t => {
+    const flags = [];
+    if (t.mods.includes('.each')) flags.push('each');
+    if (t.mods.includes('.skip') || t.mods.includes('.todo')) flags.push('skipped');
+    return `<li${t.kind === 'rejection' ? ' class="rejection"' : ''}>${markName(t.name)}${flags.map(f => `<span class="flag">${f}</span>`).join('')}</li>`;
+  }).join('') + '</ul>';
+
+  html += `<h3 class="sect-h">Derived from</h3><ul class="filelist mono">` +
+    [...s.files, ...(s.sources ?? [])].map(f => `<li>${esc(f)}</li>`).join('') + '</ul>';
+
+  document.getElementById('panelBody').innerHTML = html;
+  panel.classList.add('open'); backdrop.classList.add('open');
+  panel.setAttribute('aria-hidden', 'false');
+  document.getElementById('panelClose').focus();
+}
+function closePanel() {
+  panel.classList.remove('open'); backdrop.classList.remove('open');
+  panel.setAttribute('aria-hidden', 'true');
+}
+document.getElementById('panelClose').addEventListener('click', closePanel);
+backdrop.addEventListener('click', closePanel);
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && panel.classList.contains('open')) closePanel(); });
+
+/* ---------- boot ---------- */
+buildEdges();
+buildRelated();
+buildBoard();
+let rTimer;
+addEventListener('resize', () => { clearTimeout(rTimer); rTimer = setTimeout(() => { drawArrows(); fitSizer(); }, 120); });
+</script>
