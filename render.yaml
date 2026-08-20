@@ -138,6 +138,23 @@ projects:
                 - packages/**
                 - test/**
                 - tools/test-map/**
+          # The event model (tools/event-model) — the system's behaviour as
+          # slices of commands, events, read models and automations, derived
+          # from the packages test suite and the domain package's declared
+          # seams. Same contract as test-map: bare Node, no npm ci.
+          - type: web
+            name: event-model
+            runtime: static
+            repo: https://github.com/willehpeh/market-miam
+            buildCommand: node tools/event-model/generate.mjs
+            staticPublishPath: ./tmp/event-model
+            autoDeployTrigger: checksPass
+            buildFilter:
+              paths:
+                - apps/api/**
+                - packages/market-days/**
+                - test/**
+                - tools/event-model/**
         databases:
           - name: event-store
             databaseName: marketmiam
