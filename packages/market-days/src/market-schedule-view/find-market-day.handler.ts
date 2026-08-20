@@ -50,6 +50,7 @@ export class FindMarketDayHandler implements IQueryHandler<FindMarketDay> {
       items: items.filter(item => menu?.itemIds.includes(item.itemId)),
       closed: day?.closed ?? false,
       soldOutItemIds: menu?.soldOutItemIds ?? [],
+      outcomes: menu?.outcomes ?? {},
       market: scheduled.market,
     };
   }

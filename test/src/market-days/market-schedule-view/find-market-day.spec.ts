@@ -61,6 +61,7 @@ describe('FindMarketDay', () => {
       // minute itself: `over` starts at 14h01, which is what the countdown names.
       nextPhaseInMs: 14_460_000,
       items: [],
+      outcomes: {},
       closed: false,
       soldOutItemIds: [],
       market,
@@ -119,6 +120,23 @@ describe('FindMarketDay', () => {
       items: [expect.objectContaining({ itemId: 'item-1' })],
       soldOutItemIds: ['item-1'],
     });
+  });
+
+  // Slice 2b: the live screen reads the bilan back off the point lookup — the same row the
+  // availability came from, so one read answers both halves of the closed screen.
+  it('carries the bilan the vendor recorded', async () => {
+    await views.recordSchedule(scheduleWith(), 'vendor-id');
+    await catalogues.addItemToCatalogue(
+      { itemId: 'item-1', name: 'Bourguignon', description: '', price: 500, imageReference: '' },
+      'vendor-id',
+    );
+    await menus.setMenu({ marketId: 'market-1', date: '2024-02-10', itemIds: ['item-1'] }, 'vendor-id');
+    await menus.recordOutcome(
+      { marketId: 'market-1', date: '2024-02-10', itemId: 'item-1', outcome: 'did_well' },
+      'vendor-id',
+    );
+
+    expect(await findDay('2024-02-10')).toMatchObject({ outcomes: { 'item-1': 'did_well' } });
   });
 
   // A vendor can hold more than one schedule at the same market — a Saturday morning and a

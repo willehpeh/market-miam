@@ -58,6 +58,7 @@ describe('Reading a vendor\'s upcoming market days', () => {
       items: [],
       closed: false,
       soldOutItemIds: [],
+      outcomes: {},
       market: { name: 'Marché de Belleville', town: 'Paris', codePostal: '75011', streetAddress: 'Boulevard de Belleville', pitch: 'B12' },
     });
   });

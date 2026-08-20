@@ -71,6 +71,7 @@ describe('FindUpcomingMarketDays', () => {
         items: [],
         closed: false,
         soldOutItemIds: [],
+        outcomes: {},
         market,
       })),
     });
@@ -291,6 +292,27 @@ describe('FindUpcomingMarketDays', () => {
 
     expect(marketDays[0]).toMatchObject({ date: '2024-02-10', phase: 'trading' });
     expect(marketDays.slice(1).every(day => day.phase === 'future')).toBe(true);
+  });
+
+  // A day closed before its endTime stays in the vendor's list (decision 11), and that is
+  // exactly the day a bilan can already exist for — the vendor who shut at 11h30 and rated
+  // there and then. One occurrence type, so the list states it as the point lookup does.
+  it('carries the bilan on a day closed while its market was still running', async () => {
+    await views.recordSchedule(scheduleWith({ startDate: '2024-02-05' }), 'vendor-id');
+    await catalogues.addItemToCatalogue(
+      { itemId: 'item-1', name: 'Bourguignon', description: '', price: 500, imageReference: '' },
+      'vendor-id',
+    );
+    await menus.setMenu({ marketId: 'market-1', date: '2024-02-10', itemIds: ['item-1'] }, 'vendor-id');
+    await menus.close({ marketId: 'market-1', date: '2024-02-10' }, 'vendor-id');
+    await menus.recordOutcome(
+      { marketId: 'market-1', date: '2024-02-10', itemId: 'item-1', outcome: 'sold_out' },
+      'vendor-id',
+    );
+
+    const { marketDays } = await upcoming('vendor-id', '2024-02-10', '2024-02-10T10:00:00.000Z');
+
+    expect(marketDays[0]).toMatchObject({ date: '2024-02-10', closed: true, outcomes: { 'item-1': 'sold_out' } });
   });
 
   // Decision 59: both handlers state the countdown, from the one computation that decides
