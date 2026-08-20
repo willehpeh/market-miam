@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { bootApiTestApp, fixedClock } from '../testing/api-test-app';
+import { occurrence } from '../testing/market-day-shapes';
 import { Subscriptions } from '../event-sourcing/subscriptions';
 
 const schedule = {
@@ -46,20 +47,6 @@ describe('Reading a vendor\'s upcoming market days', () => {
     expect(response.body.marketDays.map((day: { date: string }) => day.date)).toEqual([
       '2026-07-21', '2026-07-28', '2026-08-04', '2026-08-11', '2026-08-18',
     ]);
-    expect(response.body.marketDays[0]).toEqual({
-      scheduleId: 'schedule-1',
-      marketId: 'market-1',
-      date: '2026-07-21',
-      day: 'TUE',
-      startTime: '07:00',
-      endTime: '14:30',
-      absent: false,
-      phase: 'future',
-      items: [],
-      closed: false,
-      soldOutItemIds: [],
-      outcomes: {},
-      market: { name: 'Marché de Belleville', town: 'Paris', codePostal: '75011', streetAddress: 'Boulevard de Belleville', pitch: 'B12' },
-    });
+    expect(response.body.marketDays[0]).toEqual(occurrence());
   });
 });

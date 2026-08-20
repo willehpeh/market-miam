@@ -3,6 +3,7 @@ import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { MarketDayViews, MarketDayViewStore } from '@market-miam/market-days';
 import { bootApiTestApp, fixedClock } from '../testing/api-test-app';
+import { projectedDay } from '../testing/market-day-shapes';
 import { Subscriptions } from '../event-sourcing/subscriptions';
 
 const SATURDAY = '2026-06-27';
@@ -49,7 +50,7 @@ describe('Rebuilding the market day projection', () => {
     await app.get(Subscriptions).rebuild('market-day-view');
 
     expect(await app.get(MarketDayViews).menusFor('acme-bakery', SATURDAY, SATURDAY)).toEqual([
-      { marketId: 'market-1', date: SATURDAY, itemIds: [item.itemId], soldOutItemIds: [], outcomes: {}, closed: false },
+      projectedDay({ date: SATURDAY, itemIds: [item.itemId] }),
     ]);
     expect(await app.get(MarketDayViews).menusFor('ghost-vendor', SATURDAY, SATURDAY)).toEqual([]);
   });
