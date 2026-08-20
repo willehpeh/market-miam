@@ -3,7 +3,7 @@ import { vendorIdFrom } from '@market-miam/shared-kernel';
 import {
   ItemMarkedAsAvailable,
   ItemMarkedAsSoldOut,
-  ItemOutcomeRecorded,
+  MarketDayBilanRecorded,
   MarketDayClosed,
   MarketDayMenuSet,
   MarketDayReopened
@@ -14,7 +14,7 @@ type MarketDayViewEvent =
   | MarketDayMenuSet
   | ItemMarkedAsSoldOut
   | ItemMarkedAsAvailable
-  | ItemOutcomeRecorded
+  | MarketDayBilanRecorded
   | MarketDayClosed
   | MarketDayReopened;
 
@@ -30,7 +30,7 @@ export class MarketDayViewProjection extends ProjectionFor<MarketDayViewEvent> {
       MarketDayMenuSet: e => this.handleMenuSet(e),
       ItemMarkedAsSoldOut: e => this.store.markSoldOut(e.payload, vendorIdFrom(e)),
       ItemMarkedAsAvailable: e => this.store.markAvailable(e.payload, vendorIdFrom(e)),
-      ItemOutcomeRecorded: e => this.store.recordOutcome(e.payload, vendorIdFrom(e)),
+      MarketDayBilanRecorded: e => this.store.recordBilan(e.payload, vendorIdFrom(e)),
       MarketDayClosed: e => this.store.close(e.payload, vendorIdFrom(e)),
       MarketDayReopened: e => this.store.reopen(e.payload, vendorIdFrom(e)),
     };

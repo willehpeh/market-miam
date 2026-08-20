@@ -3,33 +3,33 @@ import { ItemNotPlannedError, ItemOutcome, MarketDayNotFinishedError } from '@ma
 import { marketDayHarness } from '../market-day-harness';
 import { LAST_SATURDAY, TODAY } from '../set-market-day-menu/test-data';
 
-describe('Record Item Outcome', () => {
+describe('Record Bilan', () => {
   let store: InMemoryEventStore;
   let setMenu: (date: string, ...itemIds: string[]) => Promise<void>;
   let close: (date: string) => Promise<void>;
   let schedule: (day: { day: string; startTime?: string; endTime?: string }) => Promise<void>;
   let reopen: (date: string) => Promise<void>;
-  let recordOutcome: (date: string, itemId: string, outcome: ItemOutcome) => Promise<void>;
+  let recordBilan: (date: string, outcomes: Record<string, ItemOutcome>) => Promise<void>;
 
   beforeEach(() => {
-    ({ store, setMenu, close, reopen, schedule, recordOutcome } = marketDayHarness());
+    ({ store, setMenu, close, reopen, schedule, recordBilan } = marketDayHarness());
   });
 
   // The bilan: what the vendor says about how each dish sold, once the stand is shut.
   // Its own judgment, not the availability timeline — *it's gone right now* against
   // *it sold out that day* (decision 49).
-  it('records how an item sold on a day the vendor has closed', async () => {
-    await setMenu(TODAY, 'item-1');
+  it('records how the day sold, once the vendor has closed', async () => {
+    await setMenu(TODAY, 'item-1', 'item-2');
     await close(TODAY);
 
-    await recordOutcome(TODAY, 'item-1', 'did_well');
+    await recordBilan(TODAY, { 'item-1': 'did_well', 'item-2': 'sold_out' });
 
     expect(store.newEvents()).toEqual([
       expect.objectContaining({ type: 'MarketDayMenuSet' }),
       expect.objectContaining({ type: 'MarketDayClosed' }),
       expect.objectContaining({
-        type: 'ItemOutcomeRecorded',
-        payload: { itemId: 'item-1', outcome: 'did_well', marketId: 'market-1', date: TODAY },
+        type: 'MarketDayBilanRecorded',
+        payload: { outcomes: { 'item-1': 'did_well', 'item-2': 'sold_out' }, marketId: 'market-1', date: TODAY },
       }),
     ]);
   });
@@ -39,7 +39,7 @@ describe('Record Item Outcome', () => {
   it('refuses a day the vendor is still trading', async () => {
     await setMenu(TODAY, 'item-1');
 
-    await expect(() => recordOutcome(TODAY, 'item-1', 'did_well')).rejects.toThrow(MarketDayNotFinishedError);
+    await expect(() => recordBilan(TODAY, { 'item-1': 'did_well' })).rejects.toThrow(MarketDayNotFinishedError);
     expect(store.newEvents()).toEqual([expect.objectContaining({ type: 'MarketDayMenuSet' })]);
   });
 
@@ -49,12 +49,12 @@ describe('Record Item Outcome', () => {
     await schedule({ day: 'FRI', startTime: '07:00', endTime: '10:00' });
     await setMenu(TODAY, 'item-1');
 
-    await recordOutcome(TODAY, 'item-1', 'did_not_do_well');
+    await recordBilan(TODAY, { 'item-1': 'did_not_do_well' });
 
     expect(store.newEvents()).toEqual([
       expect.objectContaining({ type: 'MarketScheduleRegistered' }),
       expect.objectContaining({ type: 'MarketDayMenuSet' }),
-      expect.objectContaining({ type: 'ItemOutcomeRecorded', payload: expect.objectContaining({ outcome: 'did_not_do_well' }) }),
+      expect.objectContaining({ type: 'MarketDayBilanRecorded', payload: expect.objectContaining({ outcomes: { 'item-1': 'did_not_do_well' } }) }),
     ]);
   });
 
@@ -64,7 +64,7 @@ describe('Record Item Outcome', () => {
     await setMenu(TODAY, 'item-1');
     await close(TODAY);
 
-    await expect(() => recordOutcome(TODAY, 'item-2', 'did_well')).rejects.toThrow(ItemNotPlannedError);
+    await expect(() => recordBilan(TODAY, { 'item-2': 'did_well' })).rejects.toThrow(ItemNotPlannedError);
   });
 
   // Decision 69 drops the today guard for this command alone. The dashboard prompts for an
@@ -79,10 +79,10 @@ describe('Record Item Outcome', () => {
       { vendorId: 'vendor-1' },
     );
 
-    await recordOutcome(LAST_SATURDAY, 'item-1', 'did_well');
+    await recordBilan(LAST_SATURDAY, { 'item-1': 'did_well' });
 
     expect(store.newEvents()).toEqual([
-      expect.objectContaining({ type: 'ItemOutcomeRecorded', payload: expect.objectContaining({ date: LAST_SATURDAY }) }),
+      expect.objectContaining({ type: 'MarketDayBilanRecorded', payload: expect.objectContaining({ date: LAST_SATURDAY }) }),
     ]);
   });
 
@@ -91,14 +91,14 @@ describe('Record Item Outcome', () => {
   it('takes the same outcome again as a no-op, appending nothing', async () => {
     await setMenu(TODAY, 'item-1');
     await close(TODAY);
-    await recordOutcome(TODAY, 'item-1', 'did_well');
+    await recordBilan(TODAY, { 'item-1': 'did_well' });
 
-    await recordOutcome(TODAY, 'item-1', 'did_well');
+    await recordBilan(TODAY, { 'item-1': 'did_well' });
 
     expect(store.newEvents()).toEqual([
       expect.objectContaining({ type: 'MarketDayMenuSet' }),
       expect.objectContaining({ type: 'MarketDayClosed' }),
-      expect.objectContaining({ type: 'ItemOutcomeRecorded' }),
+      expect.objectContaining({ type: 'MarketDayBilanRecorded' }),
     ]);
   });
 
@@ -107,15 +107,15 @@ describe('Record Item Outcome', () => {
   it('appends when the vendor changes their mind', async () => {
     await setMenu(TODAY, 'item-1');
     await close(TODAY);
-    await recordOutcome(TODAY, 'item-1', 'did_well');
+    await recordBilan(TODAY, { 'item-1': 'did_well' });
 
-    await recordOutcome(TODAY, 'item-1', 'sold_out');
+    await recordBilan(TODAY, { 'item-1': 'sold_out' });
 
     expect(store.newEvents()).toEqual([
       expect.objectContaining({ type: 'MarketDayMenuSet' }),
       expect.objectContaining({ type: 'MarketDayClosed' }),
-      expect.objectContaining({ type: 'ItemOutcomeRecorded', payload: expect.objectContaining({ outcome: 'did_well' }) }),
-      expect.objectContaining({ type: 'ItemOutcomeRecorded', payload: expect.objectContaining({ outcome: 'sold_out' }) }),
+      expect.objectContaining({ type: 'MarketDayBilanRecorded', payload: expect.objectContaining({ outcomes: { 'item-1': 'did_well' } }) }),
+      expect.objectContaining({ type: 'MarketDayBilanRecorded', payload: expect.objectContaining({ outcomes: { 'item-1': 'sold_out' } }) }),
     ]);
   });
 
@@ -125,19 +125,19 @@ describe('Record Item Outcome', () => {
   it('clears the bilan when the day reopens', async () => {
     await setMenu(TODAY, 'item-1');
     await close(TODAY);
-    await recordOutcome(TODAY, 'item-1', 'did_well');
+    await recordBilan(TODAY, { 'item-1': 'did_well' });
     await reopen(TODAY);
     await close(TODAY);
 
-    await recordOutcome(TODAY, 'item-1', 'did_well');
+    await recordBilan(TODAY, { 'item-1': 'did_well' });
 
     expect(store.newEvents()).toEqual([
       expect.objectContaining({ type: 'MarketDayMenuSet' }),
       expect.objectContaining({ type: 'MarketDayClosed' }),
-      expect.objectContaining({ type: 'ItemOutcomeRecorded' }),
+      expect.objectContaining({ type: 'MarketDayBilanRecorded' }),
       expect.objectContaining({ type: 'MarketDayReopened' }),
       expect.objectContaining({ type: 'MarketDayClosed' }),
-      expect.objectContaining({ type: 'ItemOutcomeRecorded' }),
+      expect.objectContaining({ type: 'MarketDayBilanRecorded' }),
     ]);
   });
 
@@ -148,19 +148,19 @@ describe('Record Item Outcome', () => {
   it('drops the outcome of an item taken off the menu', async () => {
     await schedule({ day: 'FRI', startTime: '07:00', endTime: '10:00' });
     await setMenu(TODAY, 'item-1');
-    await recordOutcome(TODAY, 'item-1', 'did_well');
+    await recordBilan(TODAY, { 'item-1': 'did_well' });
     await setMenu(TODAY, 'item-2');
     await setMenu(TODAY, 'item-1');
 
-    await recordOutcome(TODAY, 'item-1', 'did_well');
+    await recordBilan(TODAY, { 'item-1': 'did_well' });
 
     expect(store.newEvents()).toEqual([
       expect.objectContaining({ type: 'MarketScheduleRegistered' }),
       expect.objectContaining({ type: 'MarketDayMenuSet' }),
-      expect.objectContaining({ type: 'ItemOutcomeRecorded' }),
+      expect.objectContaining({ type: 'MarketDayBilanRecorded' }),
       expect.objectContaining({ type: 'MarketDayMenuSet' }),
       expect.objectContaining({ type: 'MarketDayMenuSet' }),
-      expect.objectContaining({ type: 'ItemOutcomeRecorded' }),
+      expect.objectContaining({ type: 'MarketDayBilanRecorded' }),
     ]);
   });
 });

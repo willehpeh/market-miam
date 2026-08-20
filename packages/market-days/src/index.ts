@@ -1,6 +1,6 @@
 export * from './add-item-to-catalogue';
 export * from './change-item-photo';
-export * from './record-item-outcome';
+export * from './record-bilan';
 export * from './reorder-items';
 export * from './retire-item';
 export * from './revise-item';

@@ -23,11 +23,10 @@ export type MarketDayRef = {
   date: string;
 };
 
-// One bilan event's landing shape — ItemOutcomeRecorded's payload minus the time, which
-// the view does not keep: the row says what the vendor decided, never when.
-export type OutcomeMark = MarketDayRef & {
-  itemId: string;
-  outcome: ItemOutcome;
+// One bilan event's landing shape — the whole reckoning, replacing what the row held
+// (decision 72). The row says what the vendor decided, never when.
+export type BilanRecord = MarketDayRef & {
+  outcomes: Record<string, ItemOutcome>;
 };
 
 // One availability event's landing shape — the payload of ItemMarkedAsSoldOut and

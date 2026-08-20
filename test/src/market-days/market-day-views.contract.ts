@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
   AvailabilityMark,
+  BilanRecord,
   ItemOutcome,
-  OutcomeMark,
   MarketDayMenu,
   MarketDayRef,
   MarketDayView,
@@ -21,8 +21,8 @@ const menu = (overrides: Partial<MarketDayMenu> = {}): MarketDayMenu =>
 const row = (overrides: Partial<MarketDayView> = {}): MarketDayView =>
   ({ ...menu(), soldOutItemIds: [], outcomes: {}, closed: false, ...overrides });
 const mark = (itemId: string): AvailabilityMark => ({ marketId: 'market-1', date: DAY, itemId });
-const judgment = (itemId: string, outcome: ItemOutcome): OutcomeMark =>
-  ({ marketId: 'market-1', date: DAY, itemId, outcome });
+const bilan = (outcomes: Record<string, ItemOutcome>): BilanRecord =>
+  ({ marketId: 'market-1', date: DAY, outcomes });
 const day: MarketDayRef = { marketId: 'market-1', date: DAY };
 
 export function marketDayViewsContract(name: string, create: () => Store): void {
@@ -47,13 +47,26 @@ export function marketDayViewsContract(name: string, create: () => Store): void 
 
     // Slice 2b's bilan rides the same row as the availability it is judged against
     // (decision 14's one row, same reader, same breath).
-    it('records what the vendor said about an item', async () => {
+    it('records what the vendor said about the day', async () => {
       await store.setMenu(menu({ itemIds: ['item-1', 'item-2'] }), 'v1');
 
-      await store.recordOutcome(judgment('item-1', 'did_well'), 'v1');
+      await store.recordBilan(bilan({ 'item-1': 'did_well', 'item-2': 'sold_out' }), 'v1');
 
       expect(await menusOn('v1', DAY)).toEqual([
-        row({ itemIds: ['item-1', 'item-2'], outcomes: { 'item-1': 'did_well' } }),
+        row({ itemIds: ['item-1', 'item-2'], outcomes: { 'item-1': 'did_well', 'item-2': 'sold_out' } }),
+      ]);
+    });
+
+    // Set whole, like the menu above it (decision 72): a bilan that drops a line drops it
+    // from the row, rather than leaving the old answer behind to be read later.
+    it('replaces the bilan rather than merging into it', async () => {
+      await store.setMenu(menu({ itemIds: ['item-1', 'item-2'] }), 'v1');
+      await store.recordBilan(bilan({ 'item-1': 'did_well', 'item-2': 'sold_out' }), 'v1');
+
+      await store.recordBilan(bilan({ 'item-2': 'did_not_do_well' }), 'v1');
+
+      expect(await menusOn('v1', DAY)).toEqual([
+        row({ itemIds: ['item-1', 'item-2'], outcomes: { 'item-2': 'did_not_do_well' } }),
       ]);
     });
 
@@ -157,8 +170,7 @@ export function marketDayViewsContract(name: string, create: () => Store): void 
     // put back must come back unjudged (decision 66's keptBy, mirrored on the read side).
     it('keeps only the outcomes a new menu still carries', async () => {
       await store.setMenu(menu({ itemIds: ['item-1', 'item-2'] }), 'v1');
-      await store.recordOutcome(judgment('item-1', 'did_well'), 'v1');
-      await store.recordOutcome(judgment('item-2', 'sold_out'), 'v1');
+      await store.recordBilan(bilan({ 'item-1': 'did_well', 'item-2': 'sold_out' }), 'v1');
 
       await store.setMenu(menu({ itemIds: ['item-2', 'item-3'] }), 'v1');
 
@@ -172,7 +184,7 @@ export function marketDayViewsContract(name: string, create: () => Store): void 
     it('empties the bilan when the day reopens', async () => {
       await store.setMenu(menu(), 'v1');
       await store.close(day, 'v1');
-      await store.recordOutcome(judgment('item-1', 'did_well'), 'v1');
+      await store.recordBilan(bilan({ 'item-1': 'did_well' }), 'v1');
 
       await store.reopen(day, 'v1');
 
@@ -181,8 +193,8 @@ export function marketDayViewsContract(name: string, create: () => Store): void 
 
     // The aggregate refuses an outcome for an item the menu never planned, so this only
     // happens on an out-of-order replay — the same answer the availability marks give.
-    it('ignores an outcome for a day nobody planned', async () => {
-      await store.recordOutcome(judgment('item-1', 'did_well'), 'v1');
+    it('ignores a bilan for a day nobody planned', async () => {
+      await store.recordBilan(bilan({ 'item-1': 'did_well' }), 'v1');
 
       expect(await menusOn('v1', DAY)).toEqual([]);
     });

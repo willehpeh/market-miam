@@ -2,8 +2,7 @@ import { Aggregate } from '@market-miam/event-sourcing';
 import { LocalDate, LocalTime } from '@market-miam/common';
 import { VendorId } from '@market-miam/shared-kernel';
 import {
-  ItemOutcome,
-  ItemOutcomeRecorded,
+  MarketDayBilanRecorded,
   MarketDayClosed,
   MarketDayEvent,
   MarketDayMenuSet,
@@ -52,8 +51,8 @@ export class MarketDay extends Aggregate {
       case 'ItemMarkedAsSoldOut':
         this._soldOut = this._soldOut.with(new ItemId(event.payload.itemId));
         break;
-      case 'ItemOutcomeRecorded':
-        this._outcomes = this._outcomes.with(new ItemId(event.payload.itemId), event.payload.outcome);
+      case 'MarketDayBilanRecorded':
+        this._outcomes = new ItemOutcomes(event.payload.outcomes);
         break;
       case 'ItemMarkedAsAvailable':
         this._soldOut = this._soldOut.without(new ItemId(event.payload.itemId));
@@ -125,21 +124,23 @@ export class MarketDay extends Aggregate {
       : { type: 'ItemMarkedAsAvailable', payload, version: 1 });
   }
 
-  // The bilan (decision 64): what the vendor says about how a dish sold, once the day is
-  // theirs to look back on.
-  recordItemOutcome(itemId: ItemId, outcome: ItemOutcome, time: LocalTime) {
+  // The bilan (decisions 72, 73): what the vendor says about how the day sold, once it is
+  // theirs to look back on. Set whole and replacing, like setMenu above — so an unchanged
+  // reckoning appends nothing, and a line naming a dish the menu never carried refuses the
+  // whole submit rather than half-recording it.
+  recordBilan(outcomes: ItemOutcomes, time: LocalTime) {
     if (!this.isFinished(time)) {
       throw new MarketDayNotFinishedError();
     }
-    if (!this._menu.includes(itemId)) {
+    if (!outcomes.everyItemOn(this._menu)) {
       throw new ItemNotPlannedError();
     }
-    if (this._outcomes.alreadySay(itemId, outcome)) {
+    if (outcomes.equals(this._outcomes)) {
       return;
     }
-    const event: ItemOutcomeRecorded = {
-      type: 'ItemOutcomeRecorded',
-      payload: { itemId: itemId.value(), outcome, ...this._id.value() },
+    const event: MarketDayBilanRecorded = {
+      type: 'MarketDayBilanRecorded',
+      payload: { outcomes: outcomes.value(), ...this._id.value() },
       version: 1
     };
     this.raise(event);

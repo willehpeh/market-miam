@@ -45,8 +45,8 @@ describe('Recording the bilan over HTTP', () => {
   const authed = (method: 'post' | 'put' | 'get', url: string) =>
     request(app.getHttpServer())[method](url).set('Authorization', 'Bearer any-token');
 
-  const outcome = (itemId: string, outcome: string, date = TUESDAY) =>
-    authed('put', `/market-days/market-1/${date}/items/${itemId}/outcome`).send({ outcome });
+  const bilan = (outcomes: Record<string, string>, date = TUESDAY) =>
+    authed('put', `/market-days/market-1/${date}/bilan`).send({ outcomes });
 
   async function seedClosedDay(): Promise<void> {
     await authed('post', '/catalogue').send(item).expect(201);
@@ -61,22 +61,22 @@ describe('Recording the bilan over HTTP', () => {
     return response.body.marketDays[0].outcomes;
   };
 
-  it("records how a dish sold, serving it in the day's outcomes", async () => {
+  it("records how the day sold, serving it back in the day's outcomes", async () => {
     await seedClosedDay();
 
-    await outcome(item.itemId, 'did_well').expect(200);
+    await bilan({ [item.itemId]: 'did_well' }).expect(200);
     await app.get(Subscriptions).drain();
 
     expect(await upcomingOutcomes()).toEqual({ 'item-1': 'did_well' });
   });
 
-  // A phone retrying in a van with one bar must be safe — the reason this is one
-  // idempotent PUT (decision 19), and a no-op in the domain (decision 66).
-  it('answers a retried answer with 200, recording it once', async () => {
+  // A phone retrying in a van with one bar must be safe — an unchanged bilan compares
+  // equal and appends nothing, exactly as an unchanged menu does (decisions 36, 72).
+  it('answers a retried submit with 200, recording it once', async () => {
     await seedClosedDay();
 
-    await outcome(item.itemId, 'did_well').expect(200);
-    await outcome(item.itemId, 'did_well').expect(200);
+    await bilan({ [item.itemId]: 'did_well' }).expect(200);
+    await bilan({ [item.itemId]: 'did_well' }).expect(200);
     await app.get(Subscriptions).drain();
 
     expect(await upcomingOutcomes()).toEqual({ 'item-1': 'did_well' });
@@ -84,11 +84,11 @@ describe('Recording the bilan over HTTP', () => {
 
   // Overridable, in decision 49's sense: the vendor correcting themselves is the case the
   // word was written for, and the row carries what they said last.
-  it('takes a changed answer and keeps the latest', async () => {
+  it('takes a changed bilan and keeps the latest', async () => {
     await seedClosedDay();
 
-    await outcome(item.itemId, 'did_well').expect(200);
-    await outcome(item.itemId, 'sold_out').expect(200);
+    await bilan({ [item.itemId]: 'did_well' }).expect(200);
+    await bilan({ [item.itemId]: 'sold_out' }).expect(200);
     await app.get(Subscriptions).drain();
 
     expect(await upcomingOutcomes()).toEqual({ 'item-1': 'sold_out' });
@@ -102,13 +102,13 @@ describe('Recording the bilan over HTTP', () => {
     await authed('put', `/market-days/market-1/${TUESDAY}/menu`).send({ itemIds: [item.itemId] }).expect(200);
     await app.get(Subscriptions).drain();
 
-    await outcome(item.itemId, 'did_well').expect(400);
+    await bilan({ [item.itemId]: 'did_well' }).expect(400);
   });
 
-  it("rejects an item that was never on the day's menu as a bad request", async () => {
+  it("rejects a bilan naming an item that was never on the day's menu", async () => {
     await seedClosedDay();
 
-    await outcome('never-planned', 'did_well').expect(400);
+    await bilan({ 'never-planned': 'did_well' }).expect(400);
   });
 
   // Gated at the edge (ADR 0046): an unknown word never reaches the aggregate, so the read
@@ -116,13 +116,13 @@ describe('Recording the bilan over HTTP', () => {
   it('rejects an outcome the scale does not have', async () => {
     await seedClosedDay();
 
-    await outcome(item.itemId, 'sold_quite_well').expect(400);
+    await bilan({ [item.itemId]: 'sold_quite_well' }).expect(400);
   });
 
   it('requires authentication', async () => {
     await request(app.getHttpServer())
-      .put(`/market-days/market-1/${TUESDAY}/items/item-1/outcome`)
-      .send({ outcome: 'did_well' })
+      .put(`/market-days/market-1/${TUESDAY}/bilan`)
+      .send({ outcomes: { 'item-1': 'did_well' } })
       .expect(401);
   });
 });

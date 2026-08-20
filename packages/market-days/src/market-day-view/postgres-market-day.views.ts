@@ -1,6 +1,6 @@
 import { Queryable } from '@market-miam/event-sourcing';
 import { ItemOutcome } from '../market-day/events';
-import { AvailabilityMark, MarketDayMenu, MarketDayRef, MarketDayView, OutcomeMark } from './market-day-view';
+import { AvailabilityMark, BilanRecord, MarketDayMenu, MarketDayRef, MarketDayView } from './market-day-view';
 import { MarketDayViews } from './market-day-views';
 import { MarketDayViewStore } from './market-day-view.store';
 
@@ -63,14 +63,15 @@ export class PostgresMarketDayViews implements MarketDayViews, MarketDayViewStor
     );
   }
 
-  // UPDATE like the availability marks, and for the same reason: the aggregate refuses an
-  // outcome for an item the menu never planned, so a mark with no row is only ever a replay
+  // Assigned, not merged: the bilan replaces whatever stood before it (decision 72). UPDATE
+  // rather than upsert for the availability marks' reason — the aggregate refuses an outcome
+  // for an item the menu never planned, so a bilan with no row is only ever a replay
   // arriving out of order.
-  async recordOutcome(mark: OutcomeMark, vendorId: string): Promise<void> {
+  async recordBilan(bilan: BilanRecord, vendorId: string): Promise<void> {
     await this.db.query(
-      `UPDATE market_day_views SET outcomes = outcomes || jsonb_build_object($4::text, $5::text)
+      `UPDATE market_day_views SET outcomes = $4::jsonb
        WHERE vendor_id = $1 AND market_id = $2 AND day = $3`,
-      [vendorId, mark.marketId, mark.date, mark.itemId, mark.outcome],
+      [vendorId, bilan.marketId, bilan.date, JSON.stringify(bilan.outcomes)],
     );
   }
 

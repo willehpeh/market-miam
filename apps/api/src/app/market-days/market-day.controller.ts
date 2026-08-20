@@ -10,7 +10,7 @@ import {
   MarketDayOccurrence,
   MarkItemAsAvailable,
   MarkItemAsSoldOut,
-  RecordItemOutcome,
+  RecordBilan,
   ReopenMarketDay,
   SetMarketDayMenu,
   UpcomingMarketDaysView
@@ -22,7 +22,9 @@ const AvailabilityBody = z.object({ soldOut: z.boolean() });
 const ClosedBody = z.object({ closed: z.boolean() });
 // The three levels the event carries, gated at the edge (ADR 0046) so an unknown word is a
 // 400 rather than a value the read model would have to learn to ignore.
-const OutcomeBody = z.object({ outcome: z.enum(['sold_out', 'did_well', 'did_not_do_well']) });
+const BilanBody = z.object({
+  outcomes: z.record(z.string(), z.enum(['sold_out', 'did_well', 'did_not_do_well'])),
+});
 
 // Market days are derived from the schedule, but what this returns is days and their
 // menus, not schedules — so they get their own resource rather than hanging off
@@ -107,20 +109,19 @@ export class MarketDayController {
       : new MarkItemAsAvailable(vendorId, itemId, marketId, date));
   }
 
-  // Per item and idempotent, the availability route's shape (decisions 19, 64): the bilan
-  // is answered one dish at a time, so a tap that fails on bad signal fails alone, and a
-  // retried answer is a domain no-op rather than a second event on the item's timeline.
-  @Put(':marketId/:date/items/:itemId/outcome')
+  // The whole reckoning in one body — setMenu's shape rather than the availability pair's
+  // (decisions 72, 73). A bilan is bookkeeping in one sitting, so it submits once, fails
+  // once, and an unchanged re-submit is a domain no-op like an unchanged menu.
+  @Put(':marketId/:date/bilan')
   @UseGuards(JwtAuthGuard)
-  async recordOutcome(
+  async recordBilan(
     @CurrentVendor() vendor: VerifiedVendor,
     @Param('marketId') marketId: string,
     @Param('date') date: string,
-    @Param('itemId') itemId: string,
-    @Body(shapeOf(OutcomeBody)) body: z.infer<typeof OutcomeBody>,
+    @Body(shapeOf(BilanBody)) body: z.infer<typeof BilanBody>,
   ): Promise<void> {
     await this.commands.execute(
-      new RecordItemOutcome(vendor.vendorId.value(), itemId, marketId, date, body.outcome),
+      new RecordBilan(vendor.vendorId.value(), marketId, date, body.outcomes),
     );
   }
 }

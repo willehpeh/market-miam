@@ -12,11 +12,11 @@ describe('MarketDayView', () => {
   let markAvailable: (date: string, itemId?: string) => Promise<void>;
   let close: (date: string) => Promise<void>;
   let reopen: (date: string) => Promise<void>;
-  let recordOutcome: (date: string, itemId: string, outcome: ItemOutcome) => Promise<void>;
+  let recordBilan: (date: string, outcomes: Record<string, ItemOutcome>) => Promise<void>;
 
   beforeEach(() => {
     const harness = marketDayHarness();
-    ({ setMenu, markSoldOut, markAvailable, close, reopen, recordOutcome } = harness);
+    ({ setMenu, markSoldOut, markAvailable, close, reopen, recordBilan } = harness);
     views = new InMemoryMarketDayViews();
     projection = new MarketDayViewProjection(views);
     subscription = new PollingSubscription(harness.store, projection, new InMemoryCheckpoint('market-day-view'));
@@ -66,7 +66,7 @@ describe('MarketDayView', () => {
   it('projects what the vendor said about a dish', async () => {
     await setMenu(TODAY, 'item-1', 'item-2');
     await close(TODAY);
-    await recordOutcome(TODAY, 'item-1', 'did_well');
+    await recordBilan(TODAY, { 'item-1': 'did_well' });
 
     await subscription.poll();
 
@@ -80,7 +80,7 @@ describe('MarketDayView', () => {
   it('empties the bilan when the day reopens', async () => {
     await setMenu(TODAY, 'item-1');
     await close(TODAY);
-    await recordOutcome(TODAY, 'item-1', 'did_well');
+    await recordBilan(TODAY, { 'item-1': 'did_well' });
     await reopen(TODAY);
 
     await subscription.poll();

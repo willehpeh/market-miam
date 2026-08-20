@@ -131,8 +131,8 @@ describe('FindMarketDay', () => {
       'vendor-id',
     );
     await menus.setMenu({ marketId: 'market-1', date: '2024-02-10', itemIds: ['item-1'] }, 'vendor-id');
-    await menus.recordOutcome(
-      { marketId: 'market-1', date: '2024-02-10', itemId: 'item-1', outcome: 'did_well' },
+    await menus.recordBilan(
+      { marketId: 'market-1', date: '2024-02-10', outcomes: { 'item-1': 'did_well' } },
       'vendor-id',
     );
 

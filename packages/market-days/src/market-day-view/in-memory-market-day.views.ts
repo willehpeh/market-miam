@@ -1,4 +1,4 @@
-import { AvailabilityMark, MarketDayMenu, MarketDayRef, MarketDayView, OutcomeMark } from './market-day-view';
+import { AvailabilityMark, BilanRecord, MarketDayMenu, MarketDayRef, MarketDayView } from './market-day-view';
 import { MarketDayViews } from './market-day-views';
 import { MarketDayViewStore } from './market-day-view.store';
 
@@ -32,10 +32,12 @@ export class InMemoryMarketDayViews implements MarketDayViews, MarketDayViewStor
     }
   }
 
-  async recordOutcome(mark: OutcomeMark, vendorId: string): Promise<void> {
-    const day = this.menus.get(vendorId)?.get(this.keyOf(mark));
+  // Replaces rather than merges: the bilan is set whole (decision 72), so a submit that
+  // drops a line drops it here too.
+  async recordBilan(bilan: BilanRecord, vendorId: string): Promise<void> {
+    const day = this.menus.get(vendorId)?.get(this.keyOf(bilan));
     if (day) {
-      day.outcomes = { ...day.outcomes, [mark.itemId]: mark.outcome };
+      day.outcomes = { ...bilan.outcomes };
     }
   }
 

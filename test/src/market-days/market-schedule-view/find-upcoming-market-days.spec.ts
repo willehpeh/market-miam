@@ -305,8 +305,8 @@ describe('FindUpcomingMarketDays', () => {
     );
     await menus.setMenu({ marketId: 'market-1', date: '2024-02-10', itemIds: ['item-1'] }, 'vendor-id');
     await menus.close({ marketId: 'market-1', date: '2024-02-10' }, 'vendor-id');
-    await menus.recordOutcome(
-      { marketId: 'market-1', date: '2024-02-10', itemId: 'item-1', outcome: 'sold_out' },
+    await menus.recordBilan(
+      { marketId: 'market-1', date: '2024-02-10', outcomes: { 'item-1': 'sold_out' } },
       'vendor-id',
     );
 

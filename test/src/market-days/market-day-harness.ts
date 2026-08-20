@@ -13,8 +13,9 @@ import {
   AmendMarketScheduleHandler,
   RegisterMarketSchedule,
   RegisterMarketScheduleHandler,
-  RecordItemOutcome,
-  RecordItemOutcomeHandler,
+  ItemOutcomes,
+  RecordBilan,
+  RecordBilanHandler,
   ReopenMarketDay,
   ReopenMarketDayHandler,
   SetMarketDayMenuHandler,
@@ -51,7 +52,7 @@ export function marketDayHarness() {
   const amendments = new AmendMarketScheduleHandler(calendars);
   const closes = new CloseMarketDayHandler(marketDays, clock);
   const reopens = new ReopenMarketDayHandler(marketDays, clock);
-  const outcomes = new RecordItemOutcomeHandler(marketDays, clock);
+  const bilans = new RecordBilanHandler(marketDays, clock);
   return {
     store,
     catalogues,
@@ -66,8 +67,8 @@ export function marketDayHarness() {
       closes.execute(new CloseMarketDay('vendor-1', 'market-1', date)),
     reopen: (date: string): Promise<void> =>
       reopens.execute(new ReopenMarketDay('vendor-1', 'market-1', date)),
-    recordOutcome: (date: string, itemId: string, outcome: ItemOutcome): Promise<void> =>
-      outcomes.execute(new RecordItemOutcome('vendor-1', itemId, 'market-1', date, outcome)),
+    recordBilan: (date: string, outcomes: Record<string, ItemOutcome>): Promise<void> =>
+      bilans.execute(new RecordBilan('vendor-1', 'market-1', date, outcomes)),
     // The hours the aggregate decides with: registered for market-1, from a start date
     // early enough that every weekday in the specs' window recurs.
     schedule: (day: { day: string; startTime?: string; endTime?: string }): Promise<void> =>
