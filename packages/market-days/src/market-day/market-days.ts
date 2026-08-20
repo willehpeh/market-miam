@@ -20,7 +20,7 @@ export class MarketDays {
       this.vendorEvents.load(id.streamIdFor(vendorId)),
       this.calendars.forVendor(vendorId),
     ]);
-    const { marketId, date } = id.snapshot();
+    const { marketId, date } = id.value();
     const hours = calendar.hoursFor(marketId, new LocalDate(date));
     return new MarketDay(id, this.clock.today(), new MarketHours(hours?.startTime, hours?.endTime))
       .rehydrate(events);

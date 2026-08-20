@@ -25,7 +25,7 @@ export class MarketDayId {
     return this._date.equals(date);
   }
 
-  snapshot(): MarketDayIdSnapshot {
+  value(): MarketDayIdSnapshot {
     return { marketId: this._marketId.value(), date: this._date.value() };
   }
 }

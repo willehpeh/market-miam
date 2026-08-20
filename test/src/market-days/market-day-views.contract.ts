@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
   AvailabilityMark,
+  ItemOutcome,
+  OutcomeMark,
   MarketDayMenu,
   MarketDayRef,
   MarketDayView,
@@ -17,8 +19,10 @@ const DAY = '2026-06-20';
 const menu = (overrides: Partial<MarketDayMenu> = {}): MarketDayMenu =>
   ({ marketId: 'market-1', date: DAY, itemIds: ['item-1'], ...overrides });
 const row = (overrides: Partial<MarketDayView> = {}): MarketDayView =>
-  ({ ...menu(), soldOutItemIds: [], closed: false, ...overrides });
+  ({ ...menu(), soldOutItemIds: [], outcomes: {}, closed: false, ...overrides });
 const mark = (itemId: string): AvailabilityMark => ({ marketId: 'market-1', date: DAY, itemId });
+const judgment = (itemId: string, outcome: ItemOutcome): OutcomeMark =>
+  ({ marketId: 'market-1', date: DAY, itemId, outcome });
 const day: MarketDayRef = { marketId: 'market-1', date: DAY };
 
 export function marketDayViewsContract(name: string, create: () => Store): void {
@@ -39,6 +43,18 @@ export function marketDayViewsContract(name: string, create: () => Store): void 
       await store.setMenu(menu({ itemIds: ['item-1', 'item-2'] }), 'v1');
 
       expect(await menusOn('v1', DAY)).toEqual([row({ itemIds: ['item-1', 'item-2'] })]);
+    });
+
+    // Slice 2b's bilan rides the same row as the availability it is judged against
+    // (decision 14's one row, same reader, same breath).
+    it('records what the vendor said about an item', async () => {
+      await store.setMenu(menu({ itemIds: ['item-1', 'item-2'] }), 'v1');
+
+      await store.recordOutcome(judgment('item-1', 'did_well'), 'v1');
+
+      expect(await menusOn('v1', DAY)).toEqual([
+        row({ itemIds: ['item-1', 'item-2'], outcomes: { 'item-1': 'did_well' } }),
+      ]);
     });
 
     // A replay re-applies every MarketDayMenuSet for the day, so setting must replace
@@ -135,6 +151,40 @@ export function marketDayViewsContract(name: string, create: () => Store): void 
       expect(await menusOn('v1', DAY)).toEqual([
         row({ itemIds: ['item-2', 'item-3'], soldOutItemIds: ['item-2'] }),
       ]);
+    });
+
+    // The same pruning sold-out gets, for the same reason: a dish taken off the menu and
+    // put back must come back unjudged (decision 66's keptBy, mirrored on the read side).
+    it('keeps only the outcomes a new menu still carries', async () => {
+      await store.setMenu(menu({ itemIds: ['item-1', 'item-2'] }), 'v1');
+      await store.recordOutcome(judgment('item-1', 'did_well'), 'v1');
+      await store.recordOutcome(judgment('item-2', 'sold_out'), 'v1');
+
+      await store.setMenu(menu({ itemIds: ['item-2', 'item-3'] }), 'v1');
+
+      expect(await menusOn('v1', DAY)).toEqual([
+        row({ itemIds: ['item-2', 'item-3'], outcomes: { 'item-2': 'sold_out' } }),
+      ]);
+    });
+
+    // Decision 30: reopening says the day kept going, so every judgment about it is stale.
+    // Note the asymmetry with sold-out below, which survives a close and reopen untouched.
+    it('empties the bilan when the day reopens', async () => {
+      await store.setMenu(menu(), 'v1');
+      await store.close(day, 'v1');
+      await store.recordOutcome(judgment('item-1', 'did_well'), 'v1');
+
+      await store.reopen(day, 'v1');
+
+      expect(await menusOn('v1', DAY)).toEqual([row()]);
+    });
+
+    // The aggregate refuses an outcome for an item the menu never planned, so this only
+    // happens on an out-of-order replay — the same answer the availability marks give.
+    it('ignores an outcome for a day nobody planned', async () => {
+      await store.recordOutcome(judgment('item-1', 'did_well'), 'v1');
+
+      expect(await menusOn('v1', DAY)).toEqual([]);
     });
 
     // The aggregate guards marks to planned items on real days, so this only happens if a

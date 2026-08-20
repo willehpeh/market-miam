@@ -84,7 +84,7 @@ export class MarketDay extends Aggregate {
       type: 'MarketDayMenuSet',
       payload: {
         itemIds: menu.value(),
-        ...this._id.snapshot()
+        ...this._id.value()
       },
       version: 1
     };
@@ -188,7 +188,7 @@ export class MarketDay extends Aggregate {
   // Which day, and when on it — the four timestamped events all carry exactly this, and
   // spelled out per event it drifted (decision 35 puts the clock on the server).
   private stampedAt(time: LocalTime): { marketId: string; date: string; time: string } {
-    return { ...this._id.snapshot(), time: time.value() };
+    return { ...this._id.value(), time: time.value() };
   }
 
   private inThePast(): boolean {

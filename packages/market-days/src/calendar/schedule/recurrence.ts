@@ -41,7 +41,7 @@ export class Recurrence {
     );
   }
 
-  snapshot(): RecurrenceSnapshot {
+  value(): RecurrenceSnapshot {
     return {
       startDate: this._startDate.value(),
       days: this._days.map(d => d.value()),

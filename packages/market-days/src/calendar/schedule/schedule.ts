@@ -27,7 +27,7 @@ export class Schedule {
   value(): ScheduleSnapshot {
     return {
       scheduleId: this._id.value(),
-      ...this._recurrence.snapshot()
+      ...this._recurrence.value()
     };
   }
 

@@ -1,5 +1,5 @@
 import { InMemoryCheckpoint, PollingSubscription } from '@market-miam/event-sourcing';
-import { InMemoryMarketDayViews, MarketDayViewProjection } from '@market-miam/market-days';
+import { InMemoryMarketDayViews, ItemOutcome, MarketDayView, MarketDayViewProjection } from '@market-miam/market-days';
 import { SATURDAY, TODAY } from '../set-market-day-menu/test-data';
 import { marketDayHarness } from '../market-day-harness';
 
@@ -12,10 +12,11 @@ describe('MarketDayView', () => {
   let markAvailable: (date: string, itemId?: string) => Promise<void>;
   let close: (date: string) => Promise<void>;
   let reopen: (date: string) => Promise<void>;
+  let recordOutcome: (date: string, itemId: string, outcome: ItemOutcome) => Promise<void>;
 
   beforeEach(() => {
     const harness = marketDayHarness();
-    ({ setMenu, markSoldOut, markAvailable, close, reopen } = harness);
+    ({ setMenu, markSoldOut, markAvailable, close, reopen, recordOutcome } = harness);
     views = new InMemoryMarketDayViews();
     projection = new MarketDayViewProjection(views);
     subscription = new PollingSubscription(harness.store, projection, new InMemoryCheckpoint('market-day-view'));
@@ -23,13 +24,17 @@ describe('MarketDayView', () => {
 
   const menuOnSaturday = () => views.menusFor('vendor-1', SATURDAY, SATURDAY);
 
+  // One shape, so a field added to the view lands here rather than in seven literals.
+  const projected = (overrides: Partial<MarketDayView> = {}): MarketDayView =>
+    ({ marketId: 'market-1', date: TODAY, itemIds: [], soldOutItemIds: [], outcomes: {}, closed: false, ...overrides });
+
   it('should project the menu a vendor set for a market day', async () => {
     await setMenu(SATURDAY, 'item-1', 'item-2');
 
     await subscription.poll();
 
     expect(await menuOnSaturday()).toEqual([
-      { marketId: 'market-1', date: SATURDAY, itemIds: ['item-1', 'item-2'], soldOutItemIds: [], closed: false },
+      projected({ date: SATURDAY, itemIds: ['item-1', 'item-2'] }),
     ]);
   });
 
@@ -40,7 +45,7 @@ describe('MarketDayView', () => {
     await subscription.poll();
 
     expect(await menuOnSaturday()).toEqual([
-      { marketId: 'market-1', date: SATURDAY, itemIds: ['item-2'], soldOutItemIds: [], closed: false },
+      projected({ date: SATURDAY, itemIds: ['item-2'] }),
     ]);
   });
 
@@ -53,8 +58,34 @@ describe('MarketDayView', () => {
     await subscription.poll();
 
     expect(await menuToday()).toEqual([
-      { marketId: 'market-1', date: TODAY, itemIds: ['item-1', 'item-2'], soldOutItemIds: ['item-1'], closed: false },
+      projected({ itemIds: ['item-1', 'item-2'], soldOutItemIds: ['item-1'] }),
     ]);
+  });
+
+  // Slice 2b: the bilan lands on the same row as the availability it is judged against.
+  it('projects what the vendor said about a dish', async () => {
+    await setMenu(TODAY, 'item-1', 'item-2');
+    await close(TODAY);
+    await recordOutcome(TODAY, 'item-1', 'did_well');
+
+    await subscription.poll();
+
+    expect(await menuToday()).toEqual([
+      projected({ itemIds: ['item-1', 'item-2'], outcomes: { 'item-1': 'did_well' }, closed: true }),
+    ]);
+  });
+
+  // Decision 30: reopening means the day kept going, so every judgment about it is stale —
+  // the read model forgets them exactly as the aggregate does.
+  it('empties the bilan when the day reopens', async () => {
+    await setMenu(TODAY, 'item-1');
+    await close(TODAY);
+    await recordOutcome(TODAY, 'item-1', 'did_well');
+    await reopen(TODAY);
+
+    await subscription.poll();
+
+    expect(await menuToday()).toEqual([projected({ itemIds: ['item-1'] })]);
   });
 
   it('projects an item coming back as available', async () => {
@@ -65,7 +96,7 @@ describe('MarketDayView', () => {
     await subscription.poll();
 
     expect(await menuToday()).toEqual([
-      { marketId: 'market-1', date: TODAY, itemIds: ['item-1', 'item-2'], soldOutItemIds: [], closed: false },
+      projected({ itemIds: ['item-1', 'item-2'] }),
     ]);
   });
 
@@ -76,7 +107,7 @@ describe('MarketDayView', () => {
     await subscription.poll();
 
     expect(await menuToday()).toEqual([
-      { marketId: 'market-1', date: TODAY, itemIds: ['item-1'], soldOutItemIds: [], closed: true },
+      projected({ itemIds: ['item-1'], closed: true }),
     ]);
   });
 
@@ -88,7 +119,7 @@ describe('MarketDayView', () => {
     await subscription.poll();
 
     expect(await menuToday()).toEqual([
-      { marketId: 'market-1', date: TODAY, itemIds: ['item-1'], soldOutItemIds: [], closed: false },
+      projected({ itemIds: ['item-1'] }),
     ]);
   });
 
@@ -100,7 +131,7 @@ describe('MarketDayView', () => {
     await subscription.poll();
 
     expect(await menuToday()).toEqual([
-      { marketId: 'market-1', date: TODAY, itemIds: [], soldOutItemIds: [], closed: true },
+      projected({ closed: true }),
     ]);
   });
 
