@@ -23,6 +23,7 @@ export * from './mark-item-as-available';
 export * from './mark-item-as-sold-out';
 export * from './catalogue-view';
 export * from './market-day-view';
+export * from './market-prices-view';
 export * from './market-schedule-view';
 export * from './catalogue';
 export * from './register-vendor';

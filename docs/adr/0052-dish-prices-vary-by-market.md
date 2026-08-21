@@ -51,13 +51,15 @@ does not invalidate existing overrides.
 | | Rule | Mechanism |
 |---|---|---|
 | Write | Reject a mismatched override | `Catalogue.confirmPricing` tells each `Item` to accept its override (ADR 0008 — `Item` has no getters); `Pricing` throws `MismatchedPricingError` (→ 400, ADR 0045) for flat-on-variant, variant-on-flat, or an unknown variant name. `itemWithId` already throws `NoSuchItemError` |
-| Read | Ignore a mismatched override | `pricedAt` matches by view shape: `variants` present → apply the name map, `price` present → apply the number, mismatch → use the catalogue |
+| Read | Ignore a mismatched override | `priced` matches by view shape: `variants` present → apply the name map, `price` present → apply the number, mismatch → use the catalogue |
 
 A vendor flipping a dish from variants to flat silently drops that market's
 overrides for it rather than breaking the storefront.
 
 **`MarketPrices` validates and normalises on construction** (ADR 0007): each
-price through the existing `ItemPrice` (integer cents ≥ 0), each variant key
+price through the existing cents value object (integer ≥ 0, renamed
+`ItemPrice` → `Price` here, since it prices variants too and the old name is
+wanted for an item's price *at a market*), each variant key
 through `ItemName` — which trims, so ` Margherita ` matches rather than reading
 as a variant the dish lacks. `Record` gives key uniqueness free.
 
@@ -73,8 +75,19 @@ the normalised list against the catalogue second, so a blank variant name is
 answered as a blank name rather than as a variant this dish happens not to have.
 Same order `menuFor` already uses for `ItemId`.
 
-**One join point.** `pricedAt(marketId, items)` is called from both query
-handlers; every read surface inherits the precedence rule from there.
+**`MarketPrice` stays a union of primitives, not a class hierarchy.** Three
+functions in `MarketPrices` switch on its kind, and the temptation was to split
+it the way `Pricing` splits (flat vs variant). The join is what settled it: the
+fourth switch lives in the *read model*, over `CatalogueViewItem`, so one
+hierarchy would have to serve both layers and a domain object would have to
+reach into the query path to earn its keep. Two guards in `priced` cost less
+than that coupling.
+
+**One join point.** `priced(items, prices)` is called from both query handlers;
+every read surface inherits the precedence rule from there. It takes one
+market's list rather than a market id, so the lookup stays with the handlers —
+which already key their work by market — and the function has nothing
+market-shaped in it. Named for what it returns, not for a place.
 
 **The carte shows no price anywhere** — neither the cards nor the sheet they
 open. `/carte` is market-independent, so with prices varying by market it has
@@ -98,7 +111,7 @@ snapshotted into the menu event.
 ### Read model
 
 * `market-prices-view/` — projection, store, in-memory and postgres twins, keyed `(vendorId, marketId)`, `prices jsonb`; new migration
-* `pricedAt` helper, joined via the existing `Promise.all` in `find-upcoming-market-days.handler.ts:105` and `find-market-day.handler.ts:50`
+* `market-prices-view/priced-items.ts`, joined via the existing `Promise.all` in both query handlers — a shared module of functions, the shape `market-day-clock.ts` already uses for derivation those same two handlers share
 
 ### Frontend
 
@@ -109,7 +122,7 @@ snapshotted into the menu event.
 
 ### Deferred
 
-* **Per-day override** — `MarketDayPricesSet` on the market-day stream; `pricedAt` becomes day → market → catalogue. A separate event, never folded into `MarketDayMenuSet`: `Menu.equals` compares id sets to suppress no-op writes, so a price-only change would compare equal and the event would be dropped silently.
+* **Per-day override** — `MarketDayPricesSet` on the market-day stream; `priced` takes a merged list, day over market over catalogue. A separate event, never folded into `MarketDayMenuSet`: `Menu.equals` compares id sets to suppress no-op writes, so a price-only change would compare equal and the event would be dropped silently.
 * **Ordering** — the price a customer pays is captured on the order event at order time, not read back from anywhere. Snapshotting prices into the menu event would give stale truth rather than historical truth, and would forfeit the live join that lets a corrected price reach days already planned.
 * **Orphan overrides need no cleanup.** The read join is menu ∩ catalogue and occurrences come from schedules, so entries for a retired item or a cancelled schedule are unreachable. Related: *retiring an item doesn't check if it's been planned* (`NEXT_BEHAVIOURS.md`).
 

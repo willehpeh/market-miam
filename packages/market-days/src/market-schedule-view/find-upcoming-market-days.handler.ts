@@ -9,6 +9,8 @@ import { MarketDayView } from '../market-day-view/market-day-view';
 import { MarketDayViews } from '../market-day-view/market-day-views';
 import { CatalogueViewItem } from '../catalogue-view/catalogue-view';
 import { CatalogueViews } from '../catalogue-view/catalogue-views';
+import { MarketPricesViews } from '../market-prices-view/market-prices-views';
+import { priced } from '../market-prices-view/priced-items';
 import { Recurrence } from '../calendar/schedule/recurrence';
 import { notYetEnded, opensAt, parisWallClock, standingOf } from './market-day-clock';
 
@@ -25,6 +27,7 @@ export class FindUpcomingMarketDaysHandler implements IQueryHandler<FindUpcoming
     private readonly views: MarketScheduleViews,
     private readonly menus: MarketDayViews,
     private readonly catalogues: CatalogueViews,
+    private readonly prices: MarketPricesViews,
     private readonly clock: Clock,
   ) {}
 
@@ -96,14 +99,16 @@ export class FindUpcomingMarketDaysHandler implements IQueryHandler<FindUpcoming
   // window is one range scan. The menu event carries a set of ids; catalogue order is the
   // display order, and joining here means a revised name or price reaches days already planned.
   private async itemsByDay(vendorId: string, from: LocalDate, to: LocalDate): Promise<Items> {
-    const [{ items }, menus] = await Promise.all([
+    const [{ items }, menus, marketPrices] = await Promise.all([
       this.catalogues.forVendor(vendorId),
       this.menus.menusFor(vendorId, from.value(), to.value()),
+      this.prices.forVendor(vendorId),
     ]);
+    const pricesAt = new Map(marketPrices.map(market => [market.marketId, market.prices]));
     return new Map(menus.map((menu: MarketDayView) => [
       dayKey(menu.marketId, menu.date),
       {
-        items: items.filter(item => menu.itemIds.includes(item.itemId)),
+        items: priced(items.filter(item => menu.itemIds.includes(item.itemId)), pricesAt.get(menu.marketId) ?? {}),
         soldOutItemIds: menu.soldOutItemIds,
         outcomes: menu.outcomes,
         closed: menu.closed,

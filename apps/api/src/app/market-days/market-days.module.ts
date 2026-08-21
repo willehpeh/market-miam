@@ -21,6 +21,8 @@ import {
   FindUpcomingMarketDaysHandler,
   MarketDayViewProjection,
   MarketDayViewStore,
+  MarketPricesViewProjection,
+  MarketPricesViewStore,
   MarketScheduleViewProjection,
   MarketScheduleViewStore,
   CloseMarketDayHandler,
@@ -33,6 +35,7 @@ import {
   PublishStorefrontHandler,
   StorefrontPublication,
   SetMarketDayMenuHandler,
+  SetMarketPricesHandler,
   RegisterMarketScheduleHandler,
   RegisterVendorHandler,
   ReorderItemsHandler,
@@ -52,6 +55,7 @@ import { StorefrontController } from './storefront.controller';
 import { CatalogueController } from './catalogue.controller';
 import { MarketDayController } from './market-day.controller';
 import { MarketScheduleController } from './market-schedule.controller';
+import { MarketPricesController } from './market-prices.controller';
 import { PublicStorefrontController } from './public-storefront.controller';
 import { VendorErasure } from './vendor-erasure';
 
@@ -98,6 +102,11 @@ const projections = [
     useFactory: (store: MarketDayViewStore) => new MarketDayViewProjection(store),
     inject: [MarketDayViewStore],
   },
+  {
+    provide: MarketPricesViewProjection,
+    useFactory: (store: MarketPricesViewStore) => new MarketPricesViewProjection(store),
+    inject: [MarketPricesViewStore],
+  },
 ];
 
 const processors = [
@@ -120,6 +129,7 @@ const commandHandlers = [
   CancelMarketScheduleHandler,
   DeclareAbsenceHandler,
   SetMarketDayMenuHandler,
+  SetMarketPricesHandler,
   CloseMarketDayHandler,
   MarkItemAsAvailableHandler,
   MarkItemAsSoldOutHandler,
@@ -139,7 +149,7 @@ const queryHandlers = [FindCustomerStorefrontHandler, FindVendorStorefrontHandle
 // EventSourcingModule; the view stores from the global persistence module the
 // composition root picked. Nothing here knows which profile is running.
 @Module({
-  controllers: [VendorsController, StorefrontController, CatalogueController, MarketScheduleController, MarketDayController, PublicStorefrontController],
+  controllers: [VendorsController, StorefrontController, CatalogueController, MarketScheduleController, MarketDayController, MarketPricesController, PublicStorefrontController],
   providers: [
     ...clock,
     ...signedUploads,

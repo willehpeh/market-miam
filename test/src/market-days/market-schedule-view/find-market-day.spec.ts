@@ -3,6 +3,7 @@ import {
   FindMarketDayHandler,
   InMemoryCatalogueViews,
   InMemoryMarketDayViews,
+  InMemoryMarketPricesViews,
   InMemoryMarketScheduleViews,
   MarketScheduleView
 } from '@market-miam/market-days';
@@ -41,7 +42,7 @@ describe('FindMarketDay', () => {
   });
 
   function findDay(date: string, today = '2024-02-10', now = '2024-02-10T09:00:00.000Z') {
-    return new FindMarketDayHandler(views, menus, catalogues, clockAt(today, now))
+    return new FindMarketDayHandler(views, menus, catalogues, new InMemoryMarketPricesViews(), clockAt(today, now))
       .execute(new FindMarketDay('vendor-id', 'market-1', date));
   }
 

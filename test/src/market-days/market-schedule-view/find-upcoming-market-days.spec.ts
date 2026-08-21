@@ -4,6 +4,7 @@ import {
   FindUpcomingMarketDaysHandler,
   InMemoryCatalogueViews,
   InMemoryMarketDayViews,
+  InMemoryMarketPricesViews,
   InMemoryMarketScheduleViews,
   MarketScheduleView,
   UpcomingMarketDaysView
@@ -38,15 +39,17 @@ describe('FindUpcomingMarketDays', () => {
   let views: InMemoryMarketScheduleViews;
   let menus: InMemoryMarketDayViews;
   let catalogues: InMemoryCatalogueViews;
+  let prices: InMemoryMarketPricesViews;
 
   beforeEach(() => {
     views = new InMemoryMarketScheduleViews();
     menus = new InMemoryMarketDayViews();
     catalogues = new InMemoryCatalogueViews();
+    prices = new InMemoryMarketPricesViews();
   });
 
   function upcoming(vendorId: string, today = '2024-01-01', now = '2024-01-01T00:00:00.000Z') {
-    return new FindUpcomingMarketDaysHandler(views, menus, catalogues, clockAt(today, now)).execute(new FindUpcomingMarketDays(vendorId));
+    return new FindUpcomingMarketDaysHandler(views, menus, catalogues, prices, clockAt(today, now)).execute(new FindUpcomingMarketDays(vendorId));
   }
 
   const dates = (view: UpcomingMarketDaysView) => view.marketDays.map(d => ({ date: d.date, day: d.day }));
@@ -401,5 +404,71 @@ describe('FindUpcomingMarketDays', () => {
 
     const { marketDays } = await upcoming('vendor-id');
     expect(marketDays[0]).toMatchObject({ date: '2024-02-10', absent: true, items: [] });
+  });
+
+  // The catalogue price is the vendor's default; what a market charges is what a customer
+  // is quoted there (ADR 0052). Everything else about the dish still comes from the
+  // catalogue, so a rename still reaches days already planned.
+  it('quotes a dish at what its market charges for it', async () => {
+    await views.recordSchedule(scheduleWith({}), 'vendor-id');
+    await catalogues.addItemToCatalogue(item('item-1', 'Bourguignon'), 'vendor-id');
+    await menus.setMenu({ marketId: 'market-1', date: '2024-02-10', itemIds: ['item-1'] }, 'vendor-id');
+    await prices.setPrices({ marketId: 'market-1', prices: { 'item-1': 900 } }, 'vendor-id');
+
+    const { marketDays } = await upcoming('vendor-id', '2024-02-05');
+
+    expect(marketDays[0].items).toEqual([{ ...item('item-1', 'Bourguignon'), price: 900 }]);
+  });
+
+  it('quotes each variant at what its market charges, leaving the rest at catalogue prices', async () => {
+    const pizza: CatalogueViewItem = {
+      itemId: 'pizza',
+      name: 'Pizza',
+      description: '',
+      imageReference: '',
+      variants: [
+        { name: 'Margherita', description: '', price: 900 },
+        { name: 'Pepperoni', description: 'piquante', price: 1200 },
+      ],
+    };
+    await views.recordSchedule(scheduleWith({}), 'vendor-id');
+    await catalogues.addItemToCatalogue(pizza, 'vendor-id');
+    await menus.setMenu({ marketId: 'market-1', date: '2024-02-10', itemIds: ['pizza'] }, 'vendor-id');
+    await prices.setPrices({ marketId: 'market-1', prices: { pizza: { Pepperoni: 1400 } } }, 'vendor-id');
+
+    const { marketDays } = await upcoming('vendor-id', '2024-02-05');
+
+    expect(marketDays[0].items).toEqual([{
+      ...pizza,
+      variants: [
+        { name: 'Margherita', description: '', price: 900 },
+        { name: 'Pepperoni', description: 'piquante', price: 1400 },
+      ],
+    }]);
+  });
+
+  // Writes refuse a mismatched shape; by the time a vendor has flipped a dish from variants
+  // to flat, the override that survives is stale and the catalogue price is the honest
+  // answer. Degrading beats showing a price nobody set (ADR 0052).
+  it('falls back to the catalogue when the market price no longer fits the dish', async () => {
+    await views.recordSchedule(scheduleWith({}), 'vendor-id');
+    await catalogues.addItemToCatalogue(item('item-1', 'Bourguignon'), 'vendor-id');
+    await menus.setMenu({ marketId: 'market-1', date: '2024-02-10', itemIds: ['item-1'] }, 'vendor-id');
+    await prices.setPrices({ marketId: 'market-1', prices: { 'item-1': { Grande: 1400 } } }, 'vendor-id');
+
+    const { marketDays } = await upcoming('vendor-id', '2024-02-05');
+
+    expect(marketDays[0].items).toEqual([item('item-1', 'Bourguignon')]);
+  });
+
+  it('leaves a dish at catalogue prices where another market prices it', async () => {
+    await views.recordSchedule(scheduleWith({}), 'vendor-id');
+    await catalogues.addItemToCatalogue(item('item-1', 'Bourguignon'), 'vendor-id');
+    await menus.setMenu({ marketId: 'market-1', date: '2024-02-10', itemIds: ['item-1'] }, 'vendor-id');
+    await prices.setPrices({ marketId: 'market-2', prices: { 'item-1': 900 } }, 'vendor-id');
+
+    const { marketDays } = await upcoming('vendor-id', '2024-02-05');
+
+    expect(marketDays[0].items).toEqual([item('item-1', 'Bourguignon')]);
   });
 });
