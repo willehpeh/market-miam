@@ -6,8 +6,7 @@ doc. Legal and website work track their own remaining sections:
 
 ## Product
 
-* live mode — the storefront leads with the market the vendor is standing in; sold-out per dish, and closing the day (`docs/LIVE-MODE-PLAN.md`). Subsumes *mark as sold out*, shipped whole (slice 1); slice 2 — closing the day — is next. No *open market day*: the start follows from the schedule
-* item rated for market day (the miam)
+* live mode — the storefront leads with the market the vendor is standing in; sold-out per dish, closing the day, and the end-of-day bilan (`docs/LIVE-MODE-PLAN.md`). Slices 1, 2 and 2b are shipped, which subsumes *mark as sold out* and *item rated for market day*. No *open market day*: the start follows from the schedule
 * remove item photo · clear storefront cover photo
 * retiring an item doesn't check if it's been planned
 * category + tags for dishes (`ItemAddedToCatalogue` v2, form + list cards)
