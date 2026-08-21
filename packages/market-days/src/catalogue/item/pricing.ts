@@ -1,4 +1,4 @@
-import { ItemPrice } from './item-price';
+import { Price } from './price';
 import { Variants } from './variants';
 import { InvalidItemPricingError } from '../errors/invalid-item-pricing.error';
 import { MismatchedPricingError } from '../errors/mismatched-pricing.error';
@@ -27,7 +27,7 @@ export abstract class Pricing {
     if (input.price === undefined) {
       throw new InvalidItemPricingError('An item must have either a price or variants');
     }
-    return new FlatPricing(new ItemPrice(input.price));
+    return new FlatPricing(new Price(input.price));
   }
 
   abstract confirmMatchedBy(price: MarketPrice): void;
@@ -36,7 +36,7 @@ export abstract class Pricing {
 }
 
 class FlatPricing extends Pricing {
-  constructor(private readonly _price: ItemPrice) {
+  constructor(private readonly _price: Price) {
     super();
   }
 

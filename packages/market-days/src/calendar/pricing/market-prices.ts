@@ -1,4 +1,4 @@
-import { ItemId, ItemName, ItemPrice, MarketPrice } from '../../catalogue/item';
+import { ItemId, ItemName, Price, MarketPrice } from '../../catalogue/item';
 
 // What a vendor charges at one market: itemId → cents for a flat dish, variant name →
 // cents for a variant one. Sparse — anything it does not name is sold at the catalogue
@@ -21,9 +21,9 @@ function samePrice(mine: number | Record<string, number>, theirs?: number | Reco
 // Validated on the way in, so what the list holds is already whole cents (ADR 0007).
 function validated(price: MarketPrice): MarketPrice {
   return typeof price === 'number'
-    ? new ItemPrice(price).value()
+    ? new Price(price).value()
     : Object.fromEntries(Object.entries(price)
-      .map(([name, cents]) => [new ItemName(name).value(), new ItemPrice(cents).value()]));
+      .map(([name, cents]) => [new ItemName(name).value(), new Price(cents).value()]));
 }
 
 // A dish naming none of its variants says what leaving it out says — sold at catalogue

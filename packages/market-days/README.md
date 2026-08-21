@@ -11,7 +11,7 @@ them.
   - `Vendor` — registration and vendor-level identity.
   - `Storefront` — the vendor's public storefront: information and cover photo.
   - `Calendar` — the vendor's recurring market schedule.
-  - `Catalogue` — the vendor's items (`ItemName`, `ItemDescription`, `ItemPrice`).
+  - `Catalogue` — the vendor's items (`ItemName`, `ItemDescription`, `Price`).
   - `MarketDay` — items planned for a specific day, their `Quantity`, and
     sold-out state.
 - **Commands** — one module per command (`Command` + `CommandHandler`), each
