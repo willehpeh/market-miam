@@ -23,6 +23,20 @@ import { BilanPrompt } from '../market-days/bilan-prompt';
     <mm-bilan-prompt />
 
     <mm-card>
+      <ul class="divide-y divide-line">
+        @for (destination of destinations; track destination.title) {
+          <li>
+            <a [routerLink]="destination.link" class="flex items-center gap-4 py-5 no-underline">
+              <i class="fa-solid {{ destination.icon }} w-5 shrink-0 text-center text-brand" aria-hidden="true"></i>
+              <p class="flex-1 font-bold text-ink">{{ destination.title }}</p>
+              <span aria-hidden="true" class="text-2xl leading-none text-muted">›</span>
+            </a>
+          </li>
+        }
+      </ul>
+    </mm-card>
+
+    <mm-card>
       <h2 class="text-xl leading-tight">Votre vitrine</h2>
 
       @if (storefrontUrl(); as url) {
@@ -39,27 +53,14 @@ import { BilanPrompt } from '../market-days/bilan-prompt';
         </button>
       </div>
     </mm-card>
-
-    <mm-card>
-      <ul class="divide-y divide-line">
-        @for (destination of destinations; track destination.title) {
-          <li>
-            <a [routerLink]="destination.link" class="flex items-center gap-4 py-5 no-underline">
-              <i class="fa-solid {{ destination.icon }} w-5 shrink-0 text-center text-brand" aria-hidden="true"></i>
-              <p class="flex-1 font-bold text-ink">{{ destination.title }}</p>
-              <span aria-hidden="true" class="text-2xl leading-none text-muted">›</span>
-            </a>
-          </li>
-        }
-      </ul>
-    </mm-card>
   `
 })
 export class StorefrontHome {
   readonly copied = signal(false);
 
   // The vitrine's own card edits the vitrine; these are the other two things a customer
-  // sees on it, and a vendor changes them far more often than their description.
+  // sees on it, and a vendor changes them far more often than their description — which is
+  // why they sit above that card rather than under it.
   readonly destinations = [
     { title: 'Votre catalogue', link: '/dashboard/catalogue', icon: 'fa-utensils' },
     { title: 'Vos marchés', link: '/dashboard/markets', icon: 'fa-calendar-days' },
