@@ -100,6 +100,17 @@ describe('MarketsList', () => {
     );
   });
 
+  it('links each card to the prices for its market', async () => {
+    const { view, markets } = await renderList();
+    markets.schedules.set([schedule()]);
+    view.detectChanges();
+
+    expect(screen.getByRole('link', { name: /tarifs/i })).toHaveAttribute(
+      'href',
+      '/dashboard/market-prices/market-1',
+    );
+  });
+
   it('links the add button to the new-market route', async () => {
     await renderList();
     expect(screen.getByRole('link', { name: /ajouter/i })).toHaveAttribute('href', '/dashboard/markets/new');

@@ -8,7 +8,7 @@ import { MarketScheduleView } from './market-schedules';
 const DAY_ORDER = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
 
 type DayLine = { day: string; label: string; time: string };
-type ScheduleCard = { scheduleId: string; marketName: string; cadence: string; days: DayLine[] };
+type ScheduleCard = { scheduleId: string; marketId: string; marketName: string; cadence: string; days: DayLine[] };
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -27,10 +27,10 @@ type ScheduleCard = { scheduleId: string; marketName: string; cadence: string; d
 
       <ul class="mt-6 space-y-3">
         @for (card of scheduleCards(); track card.scheduleId) {
-          <li>
+          <li class="rounded-card border border-line bg-surface">
             <a
               [routerLink]="['/dashboard/markets', card.scheduleId, 'edit']"
-              class="block rounded-card border border-line bg-surface p-3 no-underline"
+              class="block p-3 no-underline"
             >
               <div class="flex items-start justify-between gap-3">
                 <h2 class="font-bold text-ink">{{ card.marketName }}</h2>
@@ -46,6 +46,13 @@ type ScheduleCard = { scheduleId: string; marketName: string; cadence: string; d
                 }
               </dl>
             </a>
+            <a
+              [routerLink]="['/dashboard/market-prices', card.marketId]"
+              class="flex items-center gap-2 border-t border-line px-3 py-2.5 text-sm font-bold text-brand no-underline"
+            >
+              <i class="fa-solid fa-tag" aria-hidden="true"></i>
+              Tarifs
+            </a>
           </li>
         } @empty {
           <li class="text-sm text-ink-soft">Votre calendrier est vide pour l'instant.</li>
@@ -60,6 +67,7 @@ export class MarketsList {
   readonly scheduleCards = computed<ScheduleCard[]>(() =>
     this.markets.schedules().map((schedule) => ({
       scheduleId: schedule.scheduleId,
+      marketId: schedule.marketId,
       marketName: schedule.market.name,
       cadence: cadenceLabel(schedule.frequency.weeks),
       days: sortedDays(schedule.days).map((day) => ({

@@ -48,6 +48,12 @@ export const appRoutes: Route[] = [
         path: 'live/:marketId/:date',
         loadComponent: () => import('./market-days/live-screen').then(m => m.LiveScreen),
       },
+      // Prices belong to the market, not to the schedule that stands at it: two schedules
+      // at one market are two cards pointing at one list (decision 1).
+      {
+        path: 'market-prices/:marketId',
+        loadComponent: () => import('./market-prices/price-editor').then(m => m.PriceEditor),
+      },
       {
         path: 'markets',
         children: [
