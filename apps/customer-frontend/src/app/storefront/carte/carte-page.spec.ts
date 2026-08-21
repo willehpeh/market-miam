@@ -17,13 +17,12 @@ const ACME: StorefrontViewModel = {
       itemId: 'item-1',
       name: 'Bœuf bourguignon',
       description: 'Mijoté 7 heures',
-      priceLabel: '13,00 €',
       photo: {
         src: 'https://cdn.test/photo/item-1',
         srcset: 'https://cdn.test/photo/item-1 800w, https://cdn.test/photo/item-1-big 1600w',
       },
     },
-    { itemId: 'item-2', name: 'Tarte tatin', description: 'Aux pommes', priceLabel: '6,00 €', photo: null },
+    { itemId: 'item-2', name: 'Tarte tatin', description: 'Aux pommes', photo: null },
   ],
   upcomingMarkets: [],
 };
@@ -51,14 +50,15 @@ describe('CartePage', () => {
     });
   });
 
-  it('lists every item the vendor makes, with prices', () => {
+  // The carte is tied to no market, so it quotes no money: the same dish sells for
+  // different prices depending on which market the vendor is standing at.
+  it('lists every item the vendor makes, and prices none of them', () => {
     const text = render(ACME).nativeElement.textContent as string;
 
     expect(text).toContain('Notre carte');
     expect(text).toContain('Bœuf bourguignon');
-    expect(text).toContain('13,00 €');
     expect(text).toContain('Tarte tatin');
-    expect(text).toContain('6,00 €');
+    expect(text).not.toContain('€');
   });
 
   // A page of its own is a browse, not a list you scan past on the way to something else —
@@ -108,7 +108,7 @@ describe('CartePage', () => {
     expect(dialog.open).toBe(true);
     expect(dialog.textContent).toContain('Bœuf bourguignon');
     expect(dialog.textContent).toContain('Mijoté 7 heures');
-    expect(dialog.textContent).toContain('13,00 €');
+    expect(dialog.textContent).not.toContain('€');
     // The same candidates as the card, so the sheet opens on a photo the browser
     // already has instead of fetching a second URL while the old pixels linger.
     const photo = dialog.querySelector('img') as HTMLImageElement;
@@ -125,10 +125,9 @@ describe('CartePage', () => {
           itemId: 'pizza',
           name: 'Pizza',
           description: 'Wood-fired',
-          priceLabel: 'dès 9,00 €',
           variants: [
-            { name: 'Margherita', description: 'tomato & basil', priceLabel: '9,00 €' },
-            { name: 'Pepperoni', description: 'spicy', priceLabel: '12,00 €' },
+            { name: 'Margherita', description: 'tomato & basil' },
+            { name: 'Pepperoni', description: 'spicy' },
           ],
           photo: null,
         },
@@ -143,10 +142,9 @@ describe('CartePage', () => {
     expect(text).toMatch(/formats/i);
     expect(text).toContain('Margherita');
     expect(text).toContain('tomato & basil');
-    expect(text).toContain('9,00 €');
     expect(text).toContain('Pepperoni');
     expect(text).toContain('spicy');
-    expect(text).toContain('12,00 €');
+    expect(text).not.toContain('€');
   });
 
   // Same reasoning as the storefront description: jsdom lays nothing out, so the class is
@@ -159,8 +157,7 @@ describe('CartePage', () => {
           itemId: 'pizza',
           name: 'Pizza',
           description: 'Pâte maturée 48 h.\n\nFour à bois.',
-          priceLabel: 'dès 9,00 €',
-          variants: [{ name: 'Margherita', description: '250 g\npour une personne', priceLabel: '9,00 €' }],
+          variants: [{ name: 'Margherita', description: '250 g\npour une personne' }],
           photo: null,
         },
       ],
@@ -186,7 +183,6 @@ describe('CartePage', () => {
     const scroller = fixture.nativeElement.querySelector('dialog .overflow-y-auto') as HTMLElement;
     expect(scroller.querySelector('img')).not.toBeNull();
     expect(scroller.textContent).toContain('Bœuf bourguignon');
-    expect(scroller.textContent).toContain('13,00 €');
     expect(scroller.textContent).toContain('Mijoté 7 heures');
   });
 

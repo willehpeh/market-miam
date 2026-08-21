@@ -116,7 +116,9 @@ import { DragToDismiss } from '../../core/drag-to-dismiss';
           }
           <div class="mt-5 flex items-baseline justify-between gap-3">
             <h3 id="item-sheet-title" class="text-2xl font-bold text-ink">{{ item.name }}</h3>
-            <p class="shrink-0 text-2xl font-bold text-ink">{{ item.priceLabel }}</p>
+            @if (item.priceLabel) {
+              <p class="shrink-0 text-2xl font-bold text-ink">{{ item.priceLabel }}</p>
+            }
           </div>
           <p class="mt-3 whitespace-pre-line text-lg text-ink-soft">{{ item.description }}</p>
           @if (item.variants; as variants) {
@@ -126,7 +128,9 @@ import { DragToDismiss } from '../../core/drag-to-dismiss';
                 <li class="border-t border-line py-3">
                   <span class="flex items-baseline justify-between gap-3">
                     <span class="text-lg font-bold text-ink">{{ variant.name }}</span>
-                    <span class="shrink-0 text-lg font-semibold text-ink">{{ variant.priceLabel }}</span>
+                    @if (variant.priceLabel) {
+                      <span class="shrink-0 text-lg font-semibold text-ink">{{ variant.priceLabel }}</span>
+                    }
                   </span>
                   @if (variant.description) {
                     <span class="mt-1 block whitespace-pre-line text-base text-ink-soft">{{ variant.description }}</span>

@@ -89,39 +89,40 @@ market's list rather than a market id, so the lookup stays with the handlers —
 which already key their work by market — and the function has nothing
 market-shaped in it. Named for what it returns, not for a place.
 
-**The carte shows the highest price a dish is sold at anywhere** — the maximum
-over its catalogue price and every market that prices it. *Revises the earlier
-decision in this ADR that the carte should show no price at all*, which was
-never built.
+**The carte shows no price, and a market card shows one only while that market
+is trading.** *Revises the maximum this ADR decided in its second pass*, which
+was never built. The first pass said no price at all; this returns to it, for a
+reason that pass did not have.
 
-A carte with no prices reads as a page missing something, on the one page a
-stranger is most likely to land on from a search. A carte showing the catalogue
-price can quote below what a market charges, and being charged more than the
-price you were shown is the one surprise that costs trust. The maximum can only
-surprise downward.
+The maximum was chosen because being charged more than you were shown is the
+surprise that costs trust, and a maximum can only surprise downward. It still
+displays a figure no customer is ever charged, on the page a stranger is most
+likely to land on, and it left a question open that had to be answered before it
+could ship: what French price-display law asks of a figure that is not the
+price. Showing none closes that question rather than researching it.
 
-Vendors would rather not advertise that prices vary, and this does not state it
-— though anyone who taps through to a market page still infers it. That is
-accepted: the pleasant surprise is worth more than the concealment, which was
-never achievable once market pages quote real prices.
+A carte is tied to no market, so there is no one price it could honestly name.
+It answers *what can they make*; the home page answers *should I go*, and that
+is where the money belongs — on a market that is **trading**, the one place a
+price is unambiguous, because the customer is at that stall and that stall's
+list is what they will pay.
 
-- **Only markets the vendor currently schedules count.** Otherwise a cancelled
-  schedule leaves a price list with no card, no *Tarifs* link, and no way to
-  reach it — while it goes on setting the public carte forever.
-- **For a variant dish the maximum is over each market's *dès* figure**, not per
-  variant. Taking the highest of each variant separately would display a
-  combination charged at no market.
-- **The catalogue price is inside the maximum**, so a vendor who has priced no
-  market sees exactly what they set.
-- **One market's price silently governs the whole public carte**, which no
-  vendor would predict. The price editor says so on the rows that set it, and
-  the item edit form shows the carte figure when it differs from the price being
-  typed. Nothing is added to the catalogue list, which stays a scan view.
+- **A day still to come quotes nothing.** Thursday's card is a plan, not a till.
+  Any price on it is today's, and a vendor who reprices that market before
+  Thursday would have shown a number they never meant to charge.
+- **A carte with no prices reads as a page missing something** — the objection
+  that carried the maximum. Accepted: it is a browse of everything ever made,
+  and the trading card above it carries the day's prices when there are any.
+- **Nothing couples a market's price to a public figure**, so the coupling this
+  ADR undertook to surface — in the price editor and the item edit form — has
+  nothing left to warn about.
 
-**No customer-frontend component changes.** `CustomerStorefront.items` feeds the
-carte alone (`carte-page.ts:41`); the home page reads `market.items`, already
-priced per market. Both come pre-priced from the query, so `ItemCard` and
-`ItemSheet` stay exactly as they are — the maximum is a join, not a display rule.
+**Frontend only.** `priceLabel` becomes optional in `storefront-view-model.ts`
+and is set only where a market is charging: never for `CustomerStorefront.items`,
+and for a day's menu only when `inProgress`. `ItemCard`, `ItemSheet` and
+`MarketCard` guard the element rather than draw an empty one. The query keeps
+sending every price it always sent, so the day a price belongs on the carte
+again, it is already there.
 
 **`Menu`, `MarketDayMenuSet` and `MarketDay` are untouched.** Prices are not
 snapshotted into the menu event.
@@ -200,15 +201,11 @@ the route without the false implication.
 / `providers` / `fake` / `store`, as every other area here has. Two unrelated
 screens read it, so it does not belong to the schedule slice.
 
-**Item edit form shows the carte figure when it differs** from the price being
-typed, so *why did my price not change* is answered where the expectation forms.
-The catalogue list is untouched.
-
 ### Deferred
 
 * **Per-day override** — `MarketDayPricesSet` on the market-day stream; `priced` takes a merged list, day over market over catalogue. A separate event, never folded into `MarketDayMenuSet`: `Menu.equals` compares id sets to suppress no-op writes, so a price-only change would compare equal and the event would be dropped silently.
 * **Ordering** — the price a customer pays is captured on the order event at order time, not read back from anywhere. Snapshotting prices into the menu event would give stale truth rather than historical truth, and would forfeit the live join that lets a corrected price reach days already planned.
-* **Orphan overrides need no cleanup, on one condition: every reader filters through schedules.** The day join is menu ∩ catalogue over occurrences the schedules produce, and the carte's maximum counts only currently-scheduled markets. That is a rule new readers must follow, not a happy accident — a reader that skips it makes a cancelled schedule's prices live on with no screen able to reach them. Related: *retiring an item doesn't check if it's been planned* (`NEXT_BEHAVIOURS.md`).
+* **Orphan overrides need no cleanup, on one condition: every reader filters through schedules.** The day join is menu ∩ catalogue over occurrences the schedules produce, and nothing else reads a price list at all now that the carte quotes none. That is a rule new readers must follow, not a happy accident — a reader that skips it makes a cancelled schedule's prices live on with no screen able to reach them. Related: *retiring an item doesn't check if it's been planned* (`NEXT_BEHAVIOURS.md`).
 
 ### Rejected
 

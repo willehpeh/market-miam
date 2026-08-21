@@ -18,7 +18,6 @@ const ACME: StorefrontViewModel = {
       itemId: 'item-1',
       name: 'Bœuf bourguignon',
       description: 'Mijoté 7 heures',
-      priceLabel: '13,00 €',
       photo: {
         src: 'https://cdn.test/photo/item-1',
         srcset: 'https://cdn.test/photo/item-1 800w, https://cdn.test/photo/item-1-big 1600w',
@@ -28,7 +27,6 @@ const ACME: StorefrontViewModel = {
       itemId: 'item-2',
       name: 'Tarte tatin',
       description: 'Aux pommes',
-      priceLabel: '6,00 €',
       photo: null,
     },
   ],
@@ -184,7 +182,36 @@ describe('StorefrontPage', () => {
     const cards = fixture.nativeElement.querySelectorAll('app-market-card');
     expect(cards.length).toBe(2);
     expect((cards[1].textContent as string)).toContain('Tarte tatin');
-    expect((cards[1].textContent as string)).toContain('6,00 €');
+    expect((cards[1].textContent as string)).not.toContain('€');
+  });
+
+  // A day still to come quotes nothing: the view model prices a menu only while its market
+  // is trading, and the card draws no room for a price it was not given.
+  it('quotes no price on a market that is not trading', () => {
+    const fixture = TestBed.createComponent(StorefrontPage);
+    view.set({
+      ...ACME,
+      upcomingMarkets: [{ ...ACME.upcomingMarkets[0], items: [ACME.items[1]] }],
+    });
+    fixture.detectChanges();
+
+    const card = fixture.nativeElement.querySelector('app-market-card') as HTMLElement;
+    expect(card.textContent).toContain('Tarte tatin');
+    expect(card.textContent).not.toContain('€');
+  });
+
+  it('quotes the market\'s price on the market that is trading', () => {
+    const fixture = TestBed.createComponent(StorefrontPage);
+    view.set({
+      ...ACME,
+      upcomingMarkets: [
+        { ...ACME.upcomingMarkets[0], inProgress: true, items: [{ ...ACME.items[1], priceLabel: '7,50 €' }] },
+      ],
+    });
+    fixture.detectChanges();
+
+    const card = fixture.nativeElement.querySelector('app-market-card') as HTMLElement;
+    expect(card.textContent).toContain('7,50 €');
   });
 
   // The card at the top and the first card of the list were the same market a screen apart —

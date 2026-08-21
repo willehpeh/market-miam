@@ -1,9 +1,10 @@
 # Prix par marché — plan
 
-A vendor does not charge the same price for the same dish at every market. Backend shipped:
-the price list is set whole per market, validated against the catalogue, projected, and joined
-onto every day a customer sees. What is **not** built is all of the frontend, and the carte's
-maximum.
+A vendor does not charge the same price for the same dish at every market. Shipped end to
+end: the price list is set whole per market, validated against the catalogue, projected,
+joined onto every day a customer sees, edited on its own screen and quoted by the menu
+picker. The customer carte quotes nothing — a price appears only on a market that is
+trading, and it is that market's.
 
 Reasoning lives in [ADR 0052](adr/0052-dish-prices-vary-by-market.md); this file is the
 slicing and the running record.
@@ -23,8 +24,8 @@ backend shipped. Do not re-litigate without a reason.
 | 6 | Catalogue price is **static text beside a labelled input**, never a placeholder | A placeholder vanishes on focus, so the vendor loses the number they are comparing against exactly when they type it. ~~Placeholder~~ — the ADR said placeholder before this was grilled |
 | 7 | **Two row states, each with a non-colour cue** — overridden (`bg-brand-soft` + *Tarif marché*), dirty (`border-brand` edge + a count on the save button) | WCAG 1.4.1. The count is what gives a **cleared** row something to show, and how a vendor forty rows down knows there is unsaved work |
 | 8 | Menu-editor picker quotes the **market** price, same *Tarif marché* cue. **No price editing on a day screen** — a *Tarifs de ce marché →* link instead | The picker currently quotes a number the customer will not be charged. Editing from a day implies the price belongs to that day; it belongs to the market, and the edit would silently move every other day at it |
-| 9 | The carte shows the **maximum** over the catalogue price and every currently-scheduled market | Being charged more than you were shown is the one surprise that costs trust; a maximum can only surprise downward. Vendors would rather not advertise variance, and this does not state it. Only scheduled markets count, or a cancelled schedule sets the public carte forever with no screen able to reach it |
-| 10 | The coupling is **surfaced**, not hidden — price editor marks rows that set the carte, item edit form shows the carte figure when it differs | One market's price governing the whole public carte is a side effect no vendor would predict. The catalogue list stays a scan view |
+| 9 | The carte shows **no price at all**. A price appears only on a market card while that market is **trading**, and it is that market's price. ~~The maximum over the catalogue price and every scheduled market~~ | A carte is tied to no market, so there is no one price it could honestly name. A maximum can only surprise downward, but it still advertises a number nobody is charged, and it left the display question open; showing none closes it. A trading market is the one place a price is unambiguous — the customer is at that stall, and that stall's list is what they will pay |
+| 10 | ~~The coupling is surfaced~~ — moot once the carte quotes nothing | Nothing couples a market's price to a public figure any more, so there is no side effect left to warn a vendor about |
 | 11 | Pricing gets its **own facade and state slice** | Two unrelated screens read it. Every other area here has the full set (`facade` / `state` / `effects` / `providers` / `fake` / `store`) |
 
 Small rules that follow, already implemented where the backend covers them:
@@ -101,24 +102,24 @@ next to a number it does not describe.
 `live-screen.ts` quotes no prices, so the picker was the only place quoting one a customer
 would not be charged.
 
-## Slice 8 — carte maximum (next)
+## Slice 8 — the carte quotes nothing (done)
 
-`FindCustomerStorefront` joins prices and schedules to price `items` at the maximum over the
-catalogue price and every currently-scheduled market — for a variant dish, the maximum of
-each market's *dès* figure, not per variant. No customer-frontend component changes:
-`CustomerStorefront.items` feeds the carte alone, and both cards and sheet already render
-whatever the query hands them.
+Frontend only, in `storefront-view-model.ts`: `priceLabel` is now optional and set only
+where a market is charging — never for `items`, and for a day's menu only when
+`inProgress`. The three components that drew it guard the element rather than render an
+empty one. `CustomerStorefront` still carries every price; nothing was removed from the
+API, so the day a price belongs on the carte again it is already there.
 
-## Slice 9 — the coupling, said out loud
+This replaces the maximum, and dissolves the French display question with it: a trading
+market quotes exactly what its own list charges, so there is no displayed figure anyone
+could be charged above.
 
-Price editor marks the rows that set the carte figure; item edit form shows it when it
-differs from the price being typed. Depends on 6 and 8.
+## ~~Slice 9 — the coupling, said out loud~~
+
+Dropped with decision 10. There is no public figure for a market's price to govern.
 
 ## Open
 
-- **French price display.** Showing a maximum and charging less is the safer direction — the
-  offence is charging *above* what is displayed — but that is not researched, and the
-  liability is the vendor's. Check before slice 8 ships.
 - **Collapsing variant dishes** in the editor, if catalogues get long enough to hurt. Does
   not change the payload.
 - **Per-day override**, deferred in the ADR: `MarketDayPricesSet` on the market-day stream,

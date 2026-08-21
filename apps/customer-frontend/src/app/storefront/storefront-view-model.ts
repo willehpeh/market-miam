@@ -7,8 +7,11 @@ export type ItemViewModel = {
   itemId: string;
   name: string;
   description: string;
-  priceLabel: string;
-  variants?: { name: string; description: string; priceLabel: string }[];
+  // Only where a market is charging it. The carte is tied to no market, so there is no one
+  // price it could name — the same dish sells for different money depending on where the
+  // vendor is standing.
+  priceLabel?: string;
+  variants?: { name: string; description: string; priceLabel?: string }[];
   photo: { src: string; srcset: string } | null;
   // Only ever set on a market day's items — the carte has no availability to speak of.
   // A variant dish greys whole (decision 9).
@@ -29,7 +32,8 @@ export type MarketViewModel = {
   cancelled: boolean;
   inProgress: boolean;
   // Full items, so the featured card can render the same cards as the carte and open the
-  // same sheet. The upcoming list draws only their names and prices.
+  // same sheet. The upcoming list draws only their names — a price appears only while the
+  // market is trading.
   items: ItemViewModel[];
 };
 
@@ -62,7 +66,7 @@ export function toViewModel(storefront: CustomerStorefront): StorefrontViewModel
     phone: storefront.phone,
     coverReference: storefront.coverPhoto,
     socialImageUrl: storefront.coverPhoto ? cloudinaryUrl(storefront.coverPhoto, 'c_fill,w_1200,h_630,q_auto,f_auto') : null,
-    items: storefront.items.map(toItemViewModel),
+    items: storefront.items.map((item) => toItemViewModel(item, false)),
     upcomingMarkets: storefront.upcomingMarkets.map(toMarketViewModel),
   };
 }
@@ -89,22 +93,22 @@ function formatEuros(cents: number): string {
 }
 
 // One mapping for both the carte and a market day's menu — they are the same catalogue
-// items, and an item must not read differently depending on which section it lands in.
-function toItemViewModel(item: CatalogueItem): ItemViewModel {
+// items, and an item must not read differently depending on which section it lands in,
+// beyond whether a market is charging for it there.
+function toItemViewModel(item: CatalogueItem, priced: boolean): ItemViewModel {
   const photo = item.imageReference ? itemPhoto(item.imageReference) : null;
-  const base = { itemId: item.itemId, name: item.name, description: item.description, photo, priceLabel: priceLabelFor(item) };
+  const base = { itemId: item.itemId, name: item.name, description: item.description, photo };
   return item.variants
     ? {
         ...base,
-        variants: item.variants.map(variant => ({ name: variant.name, description: variant.description, priceLabel: formatEuros(variant.price) })),
+        ...(priced ? { priceLabel: `dès ${formatEuros(Math.min(...item.variants.map(variant => variant.price)))}` } : {}),
+        variants: item.variants.map(variant => ({
+          name: variant.name,
+          description: variant.description,
+          ...(priced ? { priceLabel: formatEuros(variant.price) } : {}),
+        })),
       }
-    : base;
-}
-
-function priceLabelFor(item: CatalogueItem): string {
-  return item.variants
-    ? `dès ${formatEuros(Math.min(...item.variants.map(variant => variant.price)))}`
-    : formatEuros(item.price ?? 0);
+    : { ...base, ...(priced ? { priceLabel: formatEuros(item.price ?? 0) } : {}) };
 }
 
 // ponytail: French single-region labels, keyed off the DTO's own weekday + date parts
@@ -126,7 +130,7 @@ function toMarketViewModel(market: UpcomingMarket): MarketViewModel {
     inProgress: market.inProgress,
     // Flagged in place, never re-sorted: shuffling rows under a reader's thumb is worse
     // than a dead row (decision 7).
-    items: market.items.map(item => ({ ...toItemViewModel(item), soldOut: market.soldOutItemIds.includes(item.itemId) })),
+    items: market.items.map(item => ({ ...toItemViewModel(item, market.inProgress), soldOut: market.soldOutItemIds.includes(item.itemId) })),
   };
 }
 

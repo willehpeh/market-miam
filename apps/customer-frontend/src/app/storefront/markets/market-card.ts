@@ -46,7 +46,7 @@ import { ItemCard } from '../items/item-card';
       @if (day.items.length) {
         @if (featured()) {
           <!-- The featured day is browsable like the carte: same cards, same sheet. The
-               upcoming list stays on names and prices, or one page would carry the same
+               upcoming list stays on names, or one page would carry the same
                item cards once per market. aria-live on the list only (decision 20): the
                poll greys rows with no user action, and scoping it wider would re-announce
                everything around them. -->
@@ -60,7 +60,9 @@ import { ItemCard } from '../items/item-card';
             @for (item of day.items; track item.itemId) {
               <li class="flex justify-between gap-3 py-0.5 text-sm">
                 <span class="min-w-0 break-words text-ink">{{ item.name }}</span>
-                <span class="shrink-0 font-mono text-ink-soft">{{ item.priceLabel }}</span>
+                @if (item.priceLabel) {
+                  <span class="shrink-0 font-mono text-ink-soft">{{ item.priceLabel }}</span>
+                }
               </li>
             }
           </ul>

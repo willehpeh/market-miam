@@ -36,7 +36,9 @@ import { ItemViewModel } from '../storefront-view-model';
       <span class="block w-full">
         <span class="flex justify-between gap-3 w-full">
           <span class="line-clamp-2 text-lg font-bold" [class.text-ink]="!dish.soldOut" [class.text-neutral-500]="dish.soldOut">{{ dish.name }}</span>
-          <span class="shrink-0 text-lg font-bold" [class.text-ink]="!dish.soldOut" [class.text-neutral-500]="dish.soldOut">{{ dish.priceLabel }}</span>
+          @if (dish.priceLabel) {
+            <span class="shrink-0 text-lg font-bold" [class.text-ink]="!dish.soldOut" [class.text-neutral-500]="dish.soldOut">{{ dish.priceLabel }}</span>
+          }
         </span>
       </span>
       <!-- Availability is the badge's text, never the greying alone (decision 20) — and

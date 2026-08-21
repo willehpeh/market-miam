@@ -2,6 +2,24 @@ import { StorefrontViewModel, toViewModel } from './storefront-view-model';
 import { CustomerStorefront } from './customer-storefront';
 
 describe('toViewModel', () => {
+  // The carte is tied to no market, so there is no one price it could name: the same dish
+  // sells for different money depending on where the vendor is standing.
+  it('gives a carte item no price', () => {
+    const storefront: CustomerStorefront = {
+      status: 'published',
+      name: 'Chez Test',
+      description: '',
+      phone: '',
+      coverPhoto: null,
+      upcomingMarkets: [],
+      items: [{ itemId: 'boeuf', name: 'Bourguignon', description: '', price: 1300, imageReference: '' }],
+    };
+
+    const view = toViewModel(storefront) as Extract<StorefrontViewModel, { status: 'published' }>;
+
+    expect(view.items[0].priceLabel).toBeUndefined();
+  });
+
   // One crop, a ladder of widths: the card and the sheet render the same candidates, so
   // opening the sheet finds the photo the card already loaded in the browser cache instead
   // of flashing the previous item while a second URL downloads.
@@ -29,7 +47,7 @@ describe('toViewModel', () => {
     });
   });
 
-  it('labels a variant item "dès {min}" and maps each variant', () => {
+  it('maps each variant of a carte item, without pricing any of them', () => {
     const storefront: CustomerStorefront = {
       status: 'published',
       name: 'Chez Test',
@@ -54,17 +72,17 @@ describe('toViewModel', () => {
     const view = toViewModel(storefront) as Extract<StorefrontViewModel, { status: 'published' }>;
     const item = view.items[0];
 
-    expect(item.priceLabel).toBe('dès 9,00 €');
+    expect(item.priceLabel).toBeUndefined();
     expect(item.photo).toBeNull();
     expect(item.variants).toEqual([
-      { name: 'Margherita', description: '', priceLabel: '9,00 €' },
-      { name: 'Pepperoni', description: 'spicy', priceLabel: '12,00 €' },
+      { name: 'Margherita', description: '' },
+      { name: 'Pepperoni', description: 'spicy' },
     ]);
   });
 
-  // The menu is the day's offering, so it carries names and prices — the carte below
-  // already has the photos and the descriptions.
-  it('lists a market day\'s menu with the same price labels as the carte', () => {
+  // A market that is trading is the one place a price is unambiguous: the customer is at
+  // that stall, and that stall's list is what they will be charged.
+  it('prices a market day\'s menu while the market is trading', () => {
     const storefront: CustomerStorefront = {
       status: 'published',
       name: 'Chez Test',
@@ -80,7 +98,7 @@ describe('toViewModel', () => {
           postalCode: '69002',
           town: 'Lyon',
           cancelled: false,
-          inProgress: false,
+          inProgress: true,
           items: [
             { itemId: 'boeuf', name: 'Bourguignon', description: '', price: 1300, imageReference: '' },
             {
@@ -114,5 +132,36 @@ describe('toViewModel', () => {
     ]);
     // The carte carries no availability — soldOut is a market-day fact only.
     expect(view.items.every(item => item.soldOut === undefined)).toBe(true);
+  });
+
+  // Thursday's card is a plan, not a till. The prices it would quote are today's, and a
+  // vendor who reprices that market before Thursday would have shown a number they never
+  // meant to charge.
+  it('leaves a market day\'s menu unpriced until the market is trading', () => {
+    const storefront: CustomerStorefront = {
+      status: 'published',
+      name: 'Chez Test',
+      description: '',
+      phone: '',
+      coverPhoto: null,
+      items: [],
+      upcomingMarkets: [
+        {
+          date: '2026-06-18',
+          weekday: 'THU',
+          marketName: 'Marché Saint-Antoine',
+          postalCode: '69002',
+          town: 'Lyon',
+          cancelled: false,
+          inProgress: false,
+          items: [{ itemId: 'boeuf', name: 'Bourguignon', description: '', price: 1300, imageReference: '' }],
+          soldOutItemIds: [],
+        },
+      ],
+    };
+
+    const view = toViewModel(storefront) as Extract<StorefrontViewModel, { status: 'published' }>;
+
+    expect(view.upcomingMarkets[0].items[0].priceLabel).toBeUndefined();
   });
 });
