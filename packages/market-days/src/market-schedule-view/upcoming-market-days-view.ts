@@ -26,6 +26,10 @@ export type MarketDayOccurrence = {
   // The vendor packed up (or never came). Independent of inProgress, which stays schedule
   // truth — a closed market is still *en cours* by the clock (decision 13).
   closed: boolean;
+  // That close came before the market opened, so the day was called off rather than traded
+  // (decision 75) — there is nothing to look back on, and the bilan doors stay shut. Said by
+  // the server like the phase above, not re-derived from `closed` and the hours on a screen.
+  calledOff: boolean;
   // The bilan, by item: what the vendor said about how each dish sold (decision 64).
   // Sparse — an item they have not judged yet is absent, which is how a screen tells an
   // unanswered row from an answered one. Vendor payload only, like the phase: the customer

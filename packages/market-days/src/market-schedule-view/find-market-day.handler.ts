@@ -9,7 +9,7 @@ import { CatalogueViews } from '../catalogue-view/catalogue-views';
 import { MarketPricesViews } from '../market-prices-view/market-prices-views';
 import { priced } from '../market-prices-view/priced-items';
 import { Recurrence } from '../calendar/schedule/recurrence';
-import { parisWallClock, standingOf } from './market-day-clock';
+import { calledOff, parisWallClock, standingOf } from './market-day-clock';
 
 @QueryHandler(FindMarketDay)
 export class FindMarketDayHandler implements IQueryHandler<FindMarketDay> {
@@ -56,6 +56,7 @@ export class FindMarketDayHandler implements IQueryHandler<FindMarketDay> {
         marketPrices.find(market => market.marketId === scheduled.marketId)?.prices ?? {},
       ),
       closed: day?.closed ?? false,
+      calledOff: calledOff(occurrence, day?.closedAt),
       soldOutItemIds: menu?.soldOutItemIds ?? [],
       outcomes: menu?.outcomes ?? {},
       market: scheduled.market,

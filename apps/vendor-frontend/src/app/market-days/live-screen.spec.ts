@@ -349,6 +349,17 @@ describe('LiveScreen', () => {
     expect(screen.getByRole('button', { name: 'Rouvrir le stand' })).toBeTruthy();
   });
 
+  // Decision 75: *je ne peux pas venir* before the market opened calls the day off — the
+  // rows stay dead, because a closed stand takes no marks, but there is no morning to look
+  // back on and the domain would refuse the bilan.
+  it('offers no bilan on a stand called off before the market opened', async () => {
+    await renderLive((md, cat) => aLiveDay(md, cat, [], { phase: 'due', closed: true, calledOff: true }));
+
+    expect(screen.queryByRole('link', { name: 'Faire le bilan' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Bourguignon' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Rouvrir le stand' })).toBeTruthy();
+  });
+
   // The domain refuses a bilan for a day still being traded, and the screen declines the
   // same thing rather than offering a door onto a refusal.
   it('offers no bilan while the stand is still open', async () => {

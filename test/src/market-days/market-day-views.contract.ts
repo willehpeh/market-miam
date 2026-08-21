@@ -3,6 +3,7 @@ import {
   AvailabilityMark,
   BilanRecord,
   ItemOutcome,
+  MarketDayClosure,
   MarketDayMenu,
   MarketDayRef,
   MarketDayView,
@@ -24,6 +25,9 @@ const mark = (itemId: string): AvailabilityMark => ({ marketId: 'market-1', date
 const bilan = (outcomes: Record<string, ItemOutcome>): BilanRecord =>
   ({ marketId: 'market-1', date: DAY, outcomes });
 const day: MarketDayRef = { marketId: 'market-1', date: DAY };
+// The stand shut at 11h: the row keeps the time, so a day called off before its market
+// opened can be told from one packed up early (decision 75).
+const closure: MarketDayClosure = { ...day, time: '11:00' };
 
 export function marketDayViewsContract(name: string, create: () => Store): void {
   describe(`MarketDayViews contract: ${name}`, () => {
@@ -183,7 +187,7 @@ export function marketDayViewsContract(name: string, create: () => Store): void 
     // Note the asymmetry with sold-out below, which survives a close and reopen untouched.
     it('empties the bilan when the day reopens', async () => {
       await store.setMenu(menu(), 'v1');
-      await store.close(day, 'v1');
+      await store.close(closure, 'v1');
       await store.recordBilan(bilan({ 'item-1': 'did_well' }), 'v1');
 
       await store.reopen(day, 'v1');
@@ -216,8 +220,8 @@ export function marketDayViewsContract(name: string, create: () => Store): void 
     it('marks a planned day closed, and open again on reopen', async () => {
       await store.setMenu(menu(), 'v1');
 
-      await store.close(day, 'v1');
-      expect(await menusOn('v1', DAY)).toEqual([row({ closed: true })]);
+      await store.close(closure, 'v1');
+      expect(await menusOn('v1', DAY)).toEqual([row({ closed: true, closedAt: '11:00' })]);
 
       await store.reopen(day, 'v1');
       expect(await menusOn('v1', DAY)).toEqual([row({ closed: false })]);
@@ -229,7 +233,7 @@ export function marketDayViewsContract(name: string, create: () => Store): void 
       await store.setMenu(menu({ itemIds: ['item-1', 'item-2'] }), 'v1');
       await store.markSoldOut(mark('item-1'), 'v1');
 
-      await store.close(day, 'v1');
+      await store.close(closure, 'v1');
       await store.reopen(day, 'v1');
 
       expect(await menusOn('v1', DAY)).toEqual([
@@ -240,9 +244,9 @@ export function marketDayViewsContract(name: string, create: () => Store): void 
     // Not the mark's reasoning: a vendor who never planned a menu still closes the day
     // when they cannot come, so the close is the first thing that row ever holds.
     it('records a close for a day nobody planned as a closed day with no menu', async () => {
-      await store.close(day, 'v1');
+      await store.close(closure, 'v1');
 
-      expect(await menusOn('v1', DAY)).toEqual([row({ itemIds: [], closed: true })]);
+      expect(await menusOn('v1', DAY)).toEqual([row({ itemIds: [], closed: true, closedAt: '11:00' })]);
     });
 
     // Reopen keeps the mark's reasoning: there is nothing to reopen without a close, so a
@@ -258,11 +262,11 @@ export function marketDayViewsContract(name: string, create: () => Store): void 
     // silently reopen a day the log later closed.
     it('keeps the day closed when its menu is set again', async () => {
       await store.setMenu(menu(), 'v1');
-      await store.close(day, 'v1');
+      await store.close(closure, 'v1');
 
       await store.setMenu(menu({ itemIds: ['item-2'] }), 'v1');
 
-      expect(await menusOn('v1', DAY)).toEqual([row({ itemIds: ['item-2'], closed: true })]);
+      expect(await menusOn('v1', DAY)).toEqual([row({ itemIds: ['item-2'], closed: true, closedAt: '11:00' })]);
     });
 
     it('clears every menu', async () => {

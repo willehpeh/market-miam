@@ -8,7 +8,7 @@ import { MarketDayView } from '../market-day-view/market-day-view';
 import { MarketDayViews } from '../market-day-view/market-day-views';
 import { CatalogueViews } from '../catalogue-view/catalogue-views';
 import { Recurrence } from '../calendar/schedule/recurrence';
-import { parisWallClock, standingOf } from './market-day-clock';
+import { calledOff, parisWallClock, standingOf } from './market-day-clock';
 
 // The occurrence as the schedule describes it, before it is narrowed to what the prompt
 // renders: the hours are what the clock needs to say whether the market is finished.
@@ -91,8 +91,12 @@ export class FindUnratedMarketDaysHandler implements IQueryHandler<FindUnratedMa
   }
 
   // The domain's own predicate (decision 69), off the same clock the commands use — closed,
-  // ended, or simply past. The prompt never offers a bilan the aggregate would refuse.
+  // ended, or simply past, and never a day called off before it opened (decision 75). The
+  // prompt never offers a bilan the aggregate would refuse.
   private isFinished(occurrence: Occurrence, menu: MarketDayView | undefined, now: LocalDateTime): boolean {
+    if (calledOff(occurrence, menu?.closedAt)) {
+      return false;
+    }
     const { phase } = standingOf(occurrence, now);
     return menu?.closed === true || phase === 'over' || phase === 'past';
   }

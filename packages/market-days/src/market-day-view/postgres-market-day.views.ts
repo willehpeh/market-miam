@@ -1,10 +1,10 @@
 import { Queryable } from '@market-miam/event-sourcing';
 import { ItemOutcome } from '../market-day/events';
-import { AvailabilityMark, BilanRecord, MarketDayMenu, MarketDayRef, MarketDayView } from './market-day-view';
+import { AvailabilityMark, BilanRecord, MarketDayClosure, MarketDayMenu, MarketDayRef, MarketDayView } from './market-day-view';
 import { MarketDayViews } from './market-day-views';
 import { MarketDayViewStore } from './market-day-view.store';
 
-type Row = { market_id: string; day: string; item_ids: string[]; sold_out: string[]; outcomes: Record<string, ItemOutcome>; closed: boolean };
+type Row = { market_id: string; day: string; item_ids: string[]; sold_out: string[]; outcomes: Record<string, ItemOutcome>; closed: boolean; closed_at: string | null };
 
 export class PostgresMarketDayViews implements MarketDayViews, MarketDayViewStore {
   constructor(private readonly db: Queryable) {}
@@ -14,7 +14,7 @@ export class PostgresMarketDayViews implements MarketDayViews, MarketDayViewStor
   // correctly as text; the ORDER BY is the tail of the same key.
   async menusFor(vendorId: string, from: string, to: string): Promise<MarketDayView[]> {
     const { rows } = await this.db.query<Row>(
-      `SELECT market_id, day, item_ids, sold_out, outcomes, closed FROM market_day_views
+      `SELECT market_id, day, item_ids, sold_out, outcomes, closed, closed_at FROM market_day_views
        WHERE vendor_id = $1 AND day BETWEEN $2 AND $3
        ORDER BY day, market_id`,
       [vendorId, from, to],
@@ -26,6 +26,7 @@ export class PostgresMarketDayViews implements MarketDayViews, MarketDayViewStor
       soldOutItemIds: row.sold_out,
       outcomes: row.outcomes,
       closed: row.closed,
+      closedAt: row.closed_at ?? undefined,
     }));
   }
 
@@ -78,12 +79,12 @@ export class PostgresMarketDayViews implements MarketDayViews, MarketDayViewStor
   // Upsert, unlike the availability marks: closing a day nobody planned is a real thing a
   // vendor does — the *je ne peux pas venir* door — so the row starts here, menu-less. The
   // menu columns are left alone on conflict, so a close never disturbs a planned day.
-  async close(day: MarketDayRef, vendorId: string): Promise<void> {
+  async close(closure: MarketDayClosure, vendorId: string): Promise<void> {
     await this.db.query(
-      `INSERT INTO market_day_views (vendor_id, market_id, day, item_ids, sold_out, closed)
-       VALUES ($1, $2, $3, '{}', '{}', true)
-       ON CONFLICT (vendor_id, market_id, day) DO UPDATE SET closed = true`,
-      [vendorId, day.marketId, day.date],
+      `INSERT INTO market_day_views (vendor_id, market_id, day, item_ids, sold_out, closed, closed_at)
+       VALUES ($1, $2, $3, '{}', '{}', true, $4)
+       ON CONFLICT (vendor_id, market_id, day) DO UPDATE SET closed = true, closed_at = EXCLUDED.closed_at`,
+      [vendorId, closure.marketId, closure.date, closure.time],
     );
   }
 
@@ -91,7 +92,7 @@ export class PostgresMarketDayViews implements MarketDayViews, MarketDayViewStor
   // row is only ever a replay reaching it out of order.
   async reopen(day: MarketDayRef, vendorId: string): Promise<void> {
     await this.db.query(
-      `UPDATE market_day_views SET closed = false, outcomes = '{}'::jsonb
+      `UPDATE market_day_views SET closed = false, closed_at = NULL, outcomes = '{}'::jsonb
        WHERE vendor_id = $1 AND market_id = $2 AND day = $3`,
       [vendorId, day.marketId, day.date],
     );

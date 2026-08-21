@@ -10,17 +10,27 @@ export type MarketDayView = {
   // prompt reads to know a day is unrated (decision 65).
   outcomes: Record<string, ItemOutcome>;
   closed: boolean;
+  // What time the stand shut, on the market's own wall clock. Kept because the two closes
+  // are different facts: shut before opening is a day called off, shut after is a day
+  // packed up early, and only the second is one to look back on (decision 75).
+  closedAt?: string;
 };
 
 // What MarketDayMenuSet carries — sold-out is never set with the menu, it survives it
 // through the intersection (mirroring market-day.ts:24), so setMenu never receives it.
-export type MarketDayMenu = Omit<MarketDayView, 'soldOutItemIds' | 'outcomes' | 'closed'>;
+export type MarketDayMenu = Omit<MarketDayView, 'soldOutItemIds' | 'outcomes' | 'closed' | 'closedAt'>;
 
-// Which day an event lands on. MarketDayClosed and MarketDayReopened carry a time too,
-// which the view does not keep — the row says closed or not, never since when.
+// Which day an event lands on. MarketDayReopened carries a time too, which the view does
+// not keep — a day that is open again is open, never since when.
 export type MarketDayRef = {
   marketId: string;
   date: string;
+};
+
+// One close event's landing shape. The time is the payload's, not the store's own clock:
+// the event says what the market's wall clock read (decision 35).
+export type MarketDayClosure = MarketDayRef & {
+  time: string;
 };
 
 // One bilan event's landing shape — the whole reckoning, replacing what the row held

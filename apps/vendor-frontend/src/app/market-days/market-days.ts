@@ -29,6 +29,10 @@ export interface MarketDayView {
   // The vendor shut the stand — not schedule truth, so a closed day is still *en cours*
   // by the clock (decision 13). The customer's list drops it; this screen keeps it to reopen.
   closed: boolean;
+  // That close came before the market opened: the day was called off, never traded, so
+  // there is nothing to look back on and no bilan to be had (decision 75). Said by the
+  // server like the phase above — the device clock decides nothing here either.
+  calledOff: boolean;
   itemIds: string[];
   // Which of the day's items sold out during service — may name an id the catalogue has
   // since retired, which readers ignore, mirroring the API's own contract.

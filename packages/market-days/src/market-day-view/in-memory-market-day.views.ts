@@ -1,4 +1,4 @@
-import { AvailabilityMark, BilanRecord, MarketDayMenu, MarketDayRef, MarketDayView } from './market-day-view';
+import { AvailabilityMark, BilanRecord, MarketDayClosure, MarketDayMenu, MarketDayRef, MarketDayView } from './market-day-view';
 import { MarketDayViews } from './market-day-views';
 import { MarketDayViewStore } from './market-day-view.store';
 
@@ -14,7 +14,9 @@ export class InMemoryMarketDayViews implements MarketDayViews, MarketDayViewStor
     const outcomes = Object.fromEntries(
       Object.entries(existing?.outcomes ?? {}).filter(([itemId]) => menu.itemIds.includes(itemId)),
     );
-    forVendor.set(this.keyOf(menu), this.copyOf({ ...menu, soldOutItemIds: soldOut, outcomes, closed: existing?.closed ?? false }));
+    forVendor.set(this.keyOf(menu), this.copyOf(
+      { ...menu, soldOutItemIds: soldOut, outcomes, closed: existing?.closed ?? false, closedAt: existing?.closedAt },
+    ));
     this.menus.set(vendorId, forVendor);
   }
 
@@ -43,11 +45,11 @@ export class InMemoryMarketDayViews implements MarketDayViews, MarketDayViewStor
 
   // Upsert, unlike the availability marks: closing a day nobody planned is a real thing a
   // vendor does — the *je ne peux pas venir* door — so the row starts here, menu-less.
-  async close(day: MarketDayRef, vendorId: string): Promise<void> {
+  async close(closure: MarketDayClosure, vendorId: string): Promise<void> {
     const forVendor = this.menus.get(vendorId) ?? new Map<string, MarketDayView>();
-    const row = forVendor.get(this.keyOf(day))
-      ?? { marketId: day.marketId, date: day.date, itemIds: [], soldOutItemIds: [], outcomes: {}, closed: false };
-    forVendor.set(this.keyOf(day), { ...row, closed: true });
+    const row = forVendor.get(this.keyOf(closure))
+      ?? { marketId: closure.marketId, date: closure.date, itemIds: [], soldOutItemIds: [], outcomes: {}, closed: false };
+    forVendor.set(this.keyOf(closure), { ...row, closed: true, closedAt: closure.time });
     this.menus.set(vendorId, forVendor);
   }
 
@@ -55,6 +57,7 @@ export class InMemoryMarketDayViews implements MarketDayViews, MarketDayViewStor
     const row = this.menus.get(vendorId)?.get(this.keyOf(day));
     if (row) {
       row.closed = false;
+      row.closedAt = undefined;
       // Decision 30: the day kept going, so every judgment made about it is stale.
       row.outcomes = {};
     }

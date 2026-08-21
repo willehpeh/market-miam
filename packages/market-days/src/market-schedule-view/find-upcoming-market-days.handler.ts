@@ -12,9 +12,9 @@ import { CatalogueViews } from '../catalogue-view/catalogue-views';
 import { MarketPricesViews } from '../market-prices-view/market-prices-views';
 import { priced } from '../market-prices-view/priced-items';
 import { Recurrence } from '../calendar/schedule/recurrence';
-import { notYetEnded, opensAt, parisWallClock, standingOf } from './market-day-clock';
+import { calledOff, notYetEnded, opensAt, parisWallClock, standingOf } from './market-day-clock';
 
-type DayMenu = { items: CatalogueViewItem[]; soldOutItemIds: string[]; outcomes: Record<string, ItemOutcome>; closed: boolean };
+type DayMenu = { items: CatalogueViewItem[]; soldOutItemIds: string[]; outcomes: Record<string, ItemOutcome>; closed: boolean; closedAt?: string };
 type Items = Map<string, DayMenu>;
 
 const dayKey = (marketId: string, date: string) => `${marketId}|${date}`;
@@ -90,6 +90,7 @@ export class FindUpcomingMarketDaysHandler implements IQueryHandler<FindUpcoming
         soldOutItemIds: menu?.soldOutItemIds ?? [],
         outcomes: menu?.outcomes ?? {},
         closed: day?.closed ?? false,
+        calledOff: calledOff(occurrence, day?.closedAt),
         market: schedule.market,
       };
     });
@@ -112,6 +113,7 @@ export class FindUpcomingMarketDaysHandler implements IQueryHandler<FindUpcoming
         soldOutItemIds: menu.soldOutItemIds,
         outcomes: menu.outcomes,
         closed: menu.closed,
+        closedAt: menu.closedAt,
       },
     ]));
   }

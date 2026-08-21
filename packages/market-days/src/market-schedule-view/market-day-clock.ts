@@ -39,6 +39,13 @@ function wallClockOn(day: Timed, time: LocalTime): LocalDateTime {
   return new LocalDateTime(new LocalDate(day.date), time);
 }
 
+// A stand shut before its market opened was called off, not traded (decision 75) — the
+// vendor never stood there, so the day is never finished, never judged, and never worth
+// prompting about. The aggregate draws the same line at market-day.ts, off the same hours.
+export function calledOff(day: Timed, closedAt?: string): boolean {
+  return !!closedAt && hoursOf(day).opening().isAfter(new LocalTime(closedAt));
+}
+
 // A market day lives until it ends, not until it starts — customers want the menu during
 // the market, and a vendor plans the morning of. What a missing time means is MarketHours'
 // to say (decision 62).

@@ -141,6 +141,39 @@ describe('Record Bilan', () => {
     ]);
   });
 
+  // Decision 75: *je ne peux pas venir* at 11h for a market that opens at 14h calls the day
+  // off — the vendor never stands there, so there is nothing to look back on. The clock
+  // running past 18h does not make one, either: the same day is still one they never traded.
+  it('refuses a stand called off before its market opened', async () => {
+    await schedule({ day: 'FRI', startTime: '14:00', endTime: '18:00' });
+    await setMenu(TODAY, 'item-1');
+    await close(TODAY);
+
+    await expect(() => recordBilan(TODAY, { 'item-1': 'did_well' })).rejects.toThrow(MarketDayNotFinishedError);
+    expect(store.newEvents()).toEqual([
+      expect.objectContaining({ type: 'MarketScheduleRegistered' }),
+      expect.objectContaining({ type: 'MarketDayMenuSet' }),
+      expect.objectContaining({ type: 'MarketDayClosed' }),
+    ]);
+  });
+
+  // The other side of decision 75, and the vendor 2b was written for: they stood at the
+  // market from 7h, packed up at 11h, and that day is theirs to judge.
+  it('accepts a stand the vendor packed up once the market had opened', async () => {
+    await schedule({ day: 'FRI', startTime: '07:00', endTime: '18:00' });
+    await setMenu(TODAY, 'item-1');
+    await close(TODAY);
+
+    await recordBilan(TODAY, { 'item-1': 'did_well' });
+
+    expect(store.newEvents()).toEqual([
+      expect.objectContaining({ type: 'MarketScheduleRegistered' }),
+      expect.objectContaining({ type: 'MarketDayMenuSet' }),
+      expect.objectContaining({ type: 'MarketDayClosed' }),
+      expect.objectContaining({ type: 'MarketDayBilanRecorded' }),
+    ]);
+  });
+
   // The same trap sold-out has at market-day.ts:42, reachable on the day 2b exists for: an
   // ended day is never closed, so setMenu still accepts it (decision 54 kept that boundary,
   // decision 63 only took the link away). Drop a dish and bring it back and its old answer

@@ -176,6 +176,18 @@ describe('Bilan', () => {
     expect(screen.queryByRole('link', { name: /en direct/i })).toBeNull();
   });
 
+  // Decision 75: a market called off before it opened never happened, so the screen
+  // declines it — and says so in words that do not promise a bilan later.
+  it('declines a market the vendor called off before it opened', async () => {
+    await renderBilan((marketDays, catalogue) => {
+      marketDays.showing(day({ phase: 'due', closed: true, calledOff: true, itemIds: ['item-1'] }));
+      catalogue.items.set(carte);
+    });
+
+    expect(screen.getByText(/n'a pas eu lieu/i)).toBeTruthy();
+    expect(screen.queryByRole('group')).toBeNull();
+  });
+
   // A day the vendor closed is finished whatever the clock says (decision 69).
   it('judges a day the vendor called off before its hours ran out', async () => {
     await renderBilan((marketDays, catalogue) => {

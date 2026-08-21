@@ -87,8 +87,12 @@ const CHOICES: { outcome: ItemOutcome; label: string }[] = [
         } @else {
           <!-- Decision 71: the screen declines what the domain declines, and says why.
                Refusing a day still being traded is the screen agreeing with decision 54
-               rather than second-guessing it. -->
-          <p class="mt-6 text-sm text-ink-soft">Ce marché n'est pas encore terminé.</p>
+               rather than second-guessing it. Decision 75 adds the second reason, and it is
+               not a matter of waiting: a market called off before it opened never happened,
+               and *pas encore* would promise a bilan that never comes. -->
+          <p class="mt-6 text-sm text-ink-soft">
+            {{ marketDay.calledOff ? "Ce marché n'a pas eu lieu." : "Ce marché n'est pas encore terminé." }}
+          </p>
           @if (marketDay.live) {
             <a [routerLink]="liveLink" class="mt-4 inline-block font-bold text-brand no-underline">
               Voir le marché en direct
@@ -133,6 +137,7 @@ export class Bilan {
           label: longDate(occurrence.day, occurrence.date),
           marketName: occurrence.market.name,
           finished: isFinished(occurrence),
+          calledOff: occurrence.calledOff,
           // Only a day the live screen would accept gets a link to it: a February market
           // is unfinished too, and that door opens onto a refusal.
           live: hasLiveScreen(occurrence),

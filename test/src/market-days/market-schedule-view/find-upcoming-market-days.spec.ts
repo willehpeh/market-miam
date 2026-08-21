@@ -73,6 +73,7 @@ describe('FindUpcomingMarketDays', () => {
         phase: 'future',
         items: [],
         closed: false,
+        calledOff: false,
         soldOutItemIds: [],
         outcomes: {},
         market,
@@ -307,7 +308,7 @@ describe('FindUpcomingMarketDays', () => {
       'vendor-id',
     );
     await menus.setMenu({ marketId: 'market-1', date: '2024-02-10', itemIds: ['item-1'] }, 'vendor-id');
-    await menus.close({ marketId: 'market-1', date: '2024-02-10' }, 'vendor-id');
+    await menus.close({ marketId: 'market-1', date: '2024-02-10', time: '11:00' }, 'vendor-id');
     await menus.recordBilan(
       { marketId: 'market-1', date: '2024-02-10', outcomes: { 'item-1': 'sold_out' } },
       'vendor-id',
@@ -374,7 +375,7 @@ describe('FindUpcomingMarketDays', () => {
   // *Stand fermé* from this flag (decisions 11, 45). Only the customer stops seeing it.
   it("carries the day's closure onto its occurrence", async () => {
     await views.recordSchedule(scheduleWith({ startDate: '2024-02-05' }), 'vendor-id');
-    await menus.close({ marketId: 'market-1', date: '2024-02-10' }, 'vendor-id');
+    await menus.close({ marketId: 'market-1', date: '2024-02-10', time: '11:00' }, 'vendor-id');
 
     const { marketDays } = await upcoming('vendor-id');
 

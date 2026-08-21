@@ -132,9 +132,20 @@ describe('FindUnratedMarketDays', () => {
   it('asks about a stand the vendor closed early', async () => {
     await views.recordSchedule(scheduleWith(), 'vendor-id');
     await planned(['item-1']);
-    await menus.close({ marketId: 'market-1', date: SATURDAY }, 'vendor-id');
+    await menus.close({ marketId: 'market-1', date: SATURDAY, time: '11:00' }, 'vendor-id');
 
     expect((await findUnrated(SATURDAY, `${SATURDAY}T10:00:00.000Z`)).marketDays).toHaveLength(1);
+  });
+
+  // Decision 75: *je ne peux pas venir* at 7h for a market that opens at 8h is a day the
+  // vendor never stood at, so there is nothing to look back on — and the clock running past
+  // 14h does not make something. The aggregate refuses the bilan; the prompt never offers it.
+  it('passes over a stand called off before its market opened', async () => {
+    await views.recordSchedule(scheduleWith(), 'vendor-id');
+    await planned(['item-1']);
+    await menus.close({ marketId: 'market-1', date: SATURDAY, time: '07:00' }, 'vendor-id');
+
+    expect((await findUnrated(SATURDAY, `${SATURDAY}T15:00:00.000Z`)).marketDays).toEqual([]);
   });
 
   // Seven days, not unbounded: a backlog from the first market day onward turns a nudge

@@ -20,6 +20,7 @@ export const occurrence = (overrides: Partial<MarketDayOccurrence> = {}): Market
   nextPhaseInMs: undefined,
   items: [],
   closed: false,
+  calledOff: false,
   soldOutItemIds: [],
   outcomes: {},
   market: {
@@ -39,5 +40,6 @@ export const projectedDay = (overrides: Partial<MarketDayView> = {}): MarketDayV
   soldOutItemIds: [],
   outcomes: {},
   closed: false,
+  closedAt: undefined,
   ...overrides,
 });

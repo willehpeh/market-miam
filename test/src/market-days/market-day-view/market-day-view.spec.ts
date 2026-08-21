@@ -71,7 +71,7 @@ describe('MarketDayView', () => {
     await subscription.poll();
 
     expect(await menuToday()).toEqual([
-      projected({ itemIds: ['item-1', 'item-2'], outcomes: { 'item-1': 'did_well' }, closed: true }),
+      projected({ itemIds: ['item-1', 'item-2'], outcomes: { 'item-1': 'did_well' }, closed: true, closedAt: '11:00' }),
     ]);
   });
 
@@ -107,7 +107,7 @@ describe('MarketDayView', () => {
     await subscription.poll();
 
     expect(await menuToday()).toEqual([
-      projected({ itemIds: ['item-1'], closed: true }),
+      projected({ itemIds: ['item-1'], closed: true, closedAt: '11:00' }),
     ]);
   });
 
@@ -131,7 +131,7 @@ describe('MarketDayView', () => {
     await subscription.poll();
 
     expect(await menuToday()).toEqual([
-      projected({ closed: true }),
+      projected({ closed: true, closedAt: '11:00' }),
     ]);
   });
 

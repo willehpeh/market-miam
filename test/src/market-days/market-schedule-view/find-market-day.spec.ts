@@ -64,6 +64,7 @@ describe('FindMarketDay', () => {
       items: [],
       outcomes: {},
       closed: false,
+      calledOff: false,
       soldOutItemIds: [],
       market,
     });
@@ -112,15 +113,27 @@ describe('FindMarketDay', () => {
     );
     await menus.setMenu({ marketId: 'market-1', date: '2024-01-13', itemIds: ['item-1'] }, 'vendor-id');
     await menus.markSoldOut({ marketId: 'market-1', date: '2024-01-13', itemId: 'item-1' }, 'vendor-id');
-    await menus.close({ marketId: 'market-1', date: '2024-01-13' }, 'vendor-id');
+    await menus.close({ marketId: 'market-1', date: '2024-01-13', time: '11:00' }, 'vendor-id');
 
     expect(await findDay('2024-01-13')).toMatchObject({
       date: '2024-01-13',
       closed: true,
+      // Shut at 11h, three hours into the market: packed up early, not called off.
+      calledOff: false,
       phase: 'past',
       items: [expect.objectContaining({ itemId: 'item-1' })],
       soldOutItemIds: ['item-1'],
     });
+  });
+
+  // Decision 75: the screens ask the server where a day stands, so the difference between a
+  // stand packed up early and one called off before it opened is said here rather than
+  // re-derived from `closed` and the hours on a phone.
+  it('says when a day was called off rather than traded', async () => {
+    await views.recordSchedule(scheduleWith(), 'vendor-id');
+    await menus.close({ marketId: 'market-1', date: '2024-01-13', time: '07:00' }, 'vendor-id');
+
+    expect(await findDay('2024-01-13')).toMatchObject({ closed: true, calledOff: true });
   });
 
   // Slice 2b: the live screen reads the bilan back off the point lookup — the same row the

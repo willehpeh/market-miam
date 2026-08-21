@@ -7,7 +7,7 @@ import { Spinner } from '../core/spinner';
 import { formatTime, longDate } from '../core/french-date';
 import { CatalogueFacade } from '../catalogue/catalogue.facade';
 import { MarketDayFacade } from './market-day.facade';
-import { awaitingStart, broadcasting, isFinished, isToday } from './live-status';
+import { awaitingStart, broadcasting, isFinished, isOver, isToday } from './live-status';
 import { ClosedNotice } from './closed-notice';
 import { ReopenStand } from './reopen-stand';
 
@@ -131,9 +131,10 @@ type Row = { itemId: string; name: string };
         <!-- Decision 70: reckoning is its own route, so the foot carries a door rather
              than a tenth state on this screen. Below the close verb, not above it, so
              Rouvrir keeps standing exactly where Fermer stood (decision 38) — and on an
-             ended day it is the only thing here. The same flag as the rows: what makes
-             them inert is what makes the day judgeable. -->
-        @if (marketDay.inert) {
+             ended day it is the only thing here. Nearly the flag the rows read, except for
+             the day called off before it opened: inert like any closed stand, but never
+             traded, so there is nothing to look back on (decision 75). -->
+        @if (marketDay.judgeable) {
           <a [routerLink]="bilanLink" class="btn-link mt-8 flex w-full max-w-xs mx-auto">Faire le bilan</a>
         }
 
@@ -178,11 +179,13 @@ export class LiveScreen {
           closed: occurrence.closed,
           trading: occurrence.phase === 'trading',
           over: occurrence.phase === 'over',
-          // One flag for three readings: the rows stop being availability controls when
-          // the vendor packs up and again when the clock ends the day (decision 48), and
-          // that same finished day is the one the domain will accept a bilan for
-          // (decision 69).
-          inert: isFinished(occurrence),
+          // The rows stop being availability controls when the vendor packs up and again
+          // when the clock ends the day (decision 48).
+          inert: isOver(occurrence),
+          // Nearly the same day, one exception: a stand called off before the market opened
+          // is just as inert, and has nothing to look back on (decision 75). The domain
+          // refuses that bilan, so the door does not offer it.
+          judgeable: isFinished(occurrence),
         }
       : undefined;
   });

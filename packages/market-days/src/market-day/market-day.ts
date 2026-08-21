@@ -29,6 +29,9 @@ export class MarketDay extends Aggregate {
   private _soldOut = new SoldOutItems();
   private _outcomes = new ItemOutcomes();
   private _closed = false;
+  // When the stand shut, not just that it did: shutting before the market opened is a
+  // different fact from packing up early (decision 75), and a boolean cannot tell them apart.
+  private _closedAt?: LocalTime;
 
   // The hours come from the vendor's calendar, read by the repository — the day is
   // constituted with everything it decides on, without ever importing a schedule (ADR 0051).
@@ -59,9 +62,11 @@ export class MarketDay extends Aggregate {
         break;
       case 'MarketDayClosed':
         this._closed = true;
+        this._closedAt = new LocalTime(event.payload.time);
         break;
       case 'MarketDayReopened':
         this._closed = false;
+        this._closedAt = undefined;
         // Decision 30: the day kept going, so every judgment made about it is stale. Same
         // shape as MarketDayMenuSet pruning sold-out above.
         this._outcomes = new ItemOutcomes();
@@ -203,7 +208,15 @@ export class MarketDay extends Aggregate {
   // running at 09:00 on Sunday. The only rule the domain keeps about staleness is none:
   // how far back a bilan is still offered is the query's to say, not the aggregate's.
   private isFinished(time: LocalTime): boolean {
-    return this._closed || this.inThePast() || this.hasEnded(time);
+    return !this.calledOff() && (this._closed || this.inThePast() || this.hasEnded(time));
+  }
+
+  // Decision 75: a stand shut before its market opened was called off, not traded — the
+  // vendor never stood there, so the day is never finished and never judged, whatever the
+  // clock does to it later. Closing at 11h on a market that opened at 8h is the opposite
+  // fact, and still ends the day.
+  private calledOff(): boolean {
+    return !!this._closedAt && this._hours.opening().isAfter(this._closedAt);
   }
 
   private notToday(): boolean {

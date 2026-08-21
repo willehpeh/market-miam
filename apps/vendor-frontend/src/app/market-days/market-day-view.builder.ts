@@ -13,6 +13,7 @@ export const marketDayView = (overrides: Partial<MarketDayView> = {}): MarketDay
   phase: 'future',
   nextPhaseInMs: undefined,
   closed: false,
+  calledOff: false,
   itemIds: [],
   soldOutItemIds: [],
   outcomes: {},

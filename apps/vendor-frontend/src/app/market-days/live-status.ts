@@ -27,7 +27,14 @@ export const broadcasting = (day: MarketDayView | undefined): boolean =>
   day?.phase === 'trading' && day.itemIds.length > 0;
 
 // The domain's own predicate for a day that can be judged (decision 69): closed, ended,
-// or simply past. Read off the server-said phase like every other question here — a
+// or simply past — but never one called off before it opened, which the vendor never
+// traded (decision 75). Read off the server's word like every other question here — a
 // bilan is the one command in this feature that is not about now.
 export const isFinished = (day: MarketDayView | undefined): boolean =>
-  !!day && (day.closed || day.phase === 'over' || day.phase === 'past');
+  !!day && !day.calledOff && (day.closed || day.phase === 'over' || day.phase === 'past');
+
+// What stops the day being run: the rows are not availability controls once the stand is
+// shut or the clock has ended it. Wider than isFinished above, because a called-off day is
+// shut too — the aggregate refuses a mark on it, so the rows must not offer one.
+export const isOver = (day: MarketDayView | undefined): boolean =>
+  !!day && (day.closed || isFinished(day));
