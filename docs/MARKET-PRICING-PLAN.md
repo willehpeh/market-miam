@@ -87,12 +87,21 @@ so on the row without waiting for a blur, and the save button is disabled while 
 Dropping it silently would send the dish back to its carte price, which is the one outcome
 a vendor who typed a number cannot see coming.
 
-## Slice 7 — menu editor (next)
+## Slice 7 — menu editor (done)
 
-Picker quotes the market price with its cue; *Tarifs de ce marché →* link on the day screen.
-The prices slice loads here too.
+Picker quotes the market price with the same *Tarif marché* cue, *Tarifs de ce marché →*
+under the market name, prices join the screen's loading gate. 8 tests in
+`menu-editor.spec.ts` — the picker's price label had none before this.
 
-## Slice 8 — carte maximum
+For a dish sold by variant, **the cue describes the figure beside it and nothing else**: a
+market price on a dearer variant leaves the row uncued, because the *dès* shown is still the
+carte's. The alternative — cueing whenever the market prices any variant — puts the marker
+next to a number it does not describe.
+
+`live-screen.ts` quotes no prices, so the picker was the only place quoting one a customer
+would not be charged.
+
+## Slice 8 — carte maximum (next)
 
 `FindCustomerStorefront` joins prices and schedules to price `items` at the maximum over the
 catalogue price and every currently-scheduled market — for a variant dish, the maximum of

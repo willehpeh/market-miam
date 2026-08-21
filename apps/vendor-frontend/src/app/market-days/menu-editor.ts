@@ -4,6 +4,9 @@ import { Card } from '../core/card';
 import { Spinner } from '../core/spinner';
 import { longDate } from '../core/french-date';
 import { CatalogueFacade } from '../catalogue/catalogue.facade';
+import { CatalogueItemView } from '../catalogue/catalogue';
+import { MarketPricesFacade } from '../market-prices/market-prices.facade';
+import { PriceList } from '../market-prices/market-prices';
 import { formatEuros } from '../catalogue/money';
 import { MarketDayFacade } from './market-day.facade';
 import { hasLiveScreen } from './live-status';
@@ -23,6 +26,12 @@ import { ReopenStand } from './reopen-stand';
       } @else if (day(); as marketDay) {
         <h1 class="text-xl leading-tight">{{ marketDay.label }}</h1>
         <p class="mt-3 text-sm text-ink-soft">{{ marketDay.marketName }}</p>
+        <a
+          [routerLink]="['/dashboard/market-prices', marketId]"
+          class="mt-1 inline-block text-sm font-bold text-brand no-underline"
+        >
+          Tarifs de ce marché →
+        </a>
 
         @if (marketDay.closed) {
           <mm-closed-notice />
@@ -39,6 +48,9 @@ import { ReopenStand } from './reopen-stand';
                     (change)="toggle(item.itemId)"
                   />
                   <span class="min-w-0 flex-1 break-words font-bold text-ink">{{ item.name }}</span>
+                  @if (item.atMarketPrice) {
+                    <span class="shrink-0 text-xs font-bold text-brand">Tarif marché</span>
+                  }
                   <span class="shrink-0 font-mono text-sm text-muted">{{ item.priceLabel }}</span>
                 </label>
               </li>
@@ -63,6 +75,7 @@ import { ReopenStand } from './reopen-stand';
 export class MenuEditor {
   private readonly marketDays = inject(MarketDayFacade);
   private readonly catalogue = inject(CatalogueFacade);
+  private readonly prices = inject(MarketPricesFacade);
   private readonly route = inject(ActivatedRoute);
 
   // Params are read once, and `touched` below is keyed to them. Both ways in — the
@@ -73,9 +86,13 @@ export class MenuEditor {
   readonly marketId = this.route.snapshot.paramMap.get('marketId') ?? '';
   readonly date = this.route.snapshot.paramMap.get('date') ?? '';
 
-  // Both feeds gate the spinner: days can land before the carte, and rendering on days
+  // Every feed gates the spinner: days can land before the carte, and rendering on days
   // alone would briefly claim an empty carte while the catalogue is still on the wire.
-  readonly loading = computed(() => this.marketDays.loading() || this.catalogue.loading());
+  // Prices landing last would quote every dish at its carte price for a frame — the very
+  // number this screen exists to stop showing.
+  readonly loading = computed(
+    () => this.marketDays.loading() || this.catalogue.loading() || this.prices.loading(),
+  );
 
   private readonly occurrence = computed(() =>
     this.marketDays.days().find((candidate) => candidate.marketId === this.marketId && candidate.date === this.date),
@@ -100,13 +117,17 @@ export class MenuEditor {
   private readonly touched = signal<ReadonlySet<string> | null>(null);
   private readonly selected = computed(() => this.touched() ?? new Set(this.occurrence()?.itemIds ?? []));
 
+  // What this market charges, not what the carte says: quoting the carte price here names
+  // a number the customer will not be charged (decision 8).
+  private readonly set = computed<PriceList>(
+    () => this.prices.markets().find((market) => market.marketId === this.marketId)?.prices ?? {},
+  );
+
   readonly items = computed(() =>
     this.catalogue.items().map((item) => ({
       itemId: item.itemId,
       name: item.name,
-      priceLabel: item.variants
-        ? `dès ${formatEuros(Math.min(...item.variants.map((variant) => variant.price)))}`
-        : formatEuros(item.price ?? 0),
+      ...quote(item, this.set()[item.itemId]),
       chosen: this.selected().has(item.itemId),
     })),
   );
@@ -114,6 +135,7 @@ export class MenuEditor {
   constructor() {
     this.marketDays.load();
     this.catalogue.load();
+    this.prices.load();
   }
 
   toggle(itemId: string): void {
@@ -127,4 +149,22 @@ export class MenuEditor {
   save(): void {
     this.marketDays.setMenu(this.marketId, this.date, [...this.selected()]);
   }
+}
+
+// The cue describes the figure beside it and nothing else: a market price on a dearer
+// variant leaves the row uncued, because the `dès` shown is still the carte's.
+function quote(
+  item: CatalogueItemView,
+  set: number | Record<string, number> | undefined,
+): { priceLabel: string; atMarketPrice: boolean } {
+  if (!item.variants) {
+    const market = typeof set === 'number' ? set : undefined;
+    return { priceLabel: formatEuros(market ?? item.price ?? 0), atMarketPrice: market !== undefined };
+  }
+  const variants = item.variants.map((variant) => {
+    const market = typeof set === 'object' ? set[variant.name] : undefined;
+    return { price: market ?? variant.price, atMarketPrice: market !== undefined };
+  });
+  const cheapest = variants.reduce((lowest, variant) => (variant.price < lowest.price ? variant : lowest));
+  return { priceLabel: `dès ${formatEuros(cheapest.price)}`, atMarketPrice: cheapest.atMarketPrice };
 }

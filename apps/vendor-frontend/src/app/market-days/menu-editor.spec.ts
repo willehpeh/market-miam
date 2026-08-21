@@ -8,25 +8,31 @@ import { CatalogueFacade } from '../catalogue/catalogue.facade';
 import { FakeCatalogueFacade } from '../catalogue/fake.catalogue.facade';
 import { CatalogueItemView } from '../catalogue/catalogue';
 import { catalogueItem } from '../catalogue/catalogue-item.builder';
+import { MarketPricesFacade } from '../market-prices/market-prices.facade';
+import { FakeMarketPricesFacade } from '../market-prices/fake.market-prices.facade';
 
 const item = (itemId: string, name: string): CatalogueItemView => catalogueItem({ itemId, name });
 
-async function renderEditor(setup: (marketDays: FakeMarketDayFacade, catalogue: FakeCatalogueFacade) => void) {
+async function renderEditor(
+  setup: (marketDays: FakeMarketDayFacade, catalogue: FakeCatalogueFacade, prices: FakeMarketPricesFacade) => void,
+) {
   const marketDays = new FakeMarketDayFacade();
   const catalogue = new FakeCatalogueFacade();
-  setup(marketDays, catalogue);
+  const prices = new FakeMarketPricesFacade();
+  setup(marketDays, catalogue, prices);
   const view = await render(MenuEditor, {
     providers: [
       provideRouter([]),
       { provide: MarketDayFacade, useValue: marketDays },
       { provide: CatalogueFacade, useValue: catalogue },
+      { provide: MarketPricesFacade, useValue: prices },
       {
         provide: ActivatedRoute,
         useValue: { snapshot: { paramMap: convertToParamMap({ marketId: 'market-1', date: '2026-08-15' }) } },
       },
     ],
   });
-  return { view, marketDays, catalogue };
+  return { view, marketDays, catalogue, prices };
 }
 
 describe('MenuEditor', () => {
@@ -148,5 +154,111 @@ describe('MenuEditor', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Rouvrir le stand' }));
 
     expect(marketDays.closures).toEqual([{ marketId: 'market-1', date: '2026-08-15', closed: false }]);
+  });
+
+  // The picker quoted the carte price at every market, which for a market with its own
+  // prices is a number the customer will not be charged.
+  it('quotes a dish at what this market charges', async () => {
+    await renderEditor((marketDays, catalogue, prices) => {
+      marketDays.days.set([day()]);
+      catalogue.items.set([item('item-1', 'Bœuf bourguignon')]);
+      prices.markets.set([{ marketId: 'market-1', prices: { 'item-1': 1500 } }]);
+    });
+
+    expect(screen.getByText(/15,00/)).toBeInTheDocument();
+  });
+
+  it('marks the dishes it is quoting at a market price', async () => {
+    await renderEditor((marketDays, catalogue, prices) => {
+      marketDays.days.set([day()]);
+      catalogue.items.set([item('item-1', 'Bœuf bourguignon'), item('item-2', 'Tarte aux pommes')]);
+      prices.markets.set([{ marketId: 'market-1', prices: { 'item-1': 1500 } }]);
+    });
+
+    expect(screen.getAllByText(/tarif marché/i)).toHaveLength(1);
+  });
+
+  it('quotes the carte price where this market sets none', async () => {
+    await renderEditor((marketDays, catalogue, prices) => {
+      marketDays.days.set([day()]);
+      catalogue.items.set([item('item-1', 'Bœuf bourguignon')]);
+      prices.markets.set([{ marketId: 'market-9', prices: { 'item-1': 1500 } }]);
+    });
+
+    expect(screen.getByText(/13,00/)).toBeInTheDocument();
+    expect(screen.queryByText(/tarif marché/i)).toBeNull();
+  });
+
+  const pizza = () =>
+    catalogueItem({
+      itemId: 'pizza',
+      name: 'Pizza',
+      price: undefined,
+      variants: [
+        { name: 'Margherita', description: '', price: 900 },
+        { name: 'Pepperoni', description: '', price: 1200 },
+      ],
+    });
+
+  it('takes the cheapest variant at what this market charges for it', async () => {
+    await renderEditor((marketDays, catalogue, prices) => {
+      marketDays.days.set([day()]);
+      catalogue.items.set([pizza()]);
+      prices.markets.set([{ marketId: 'market-1', prices: { pizza: { Margherita: 800 } } }]);
+    });
+
+    expect(screen.getByText(/dès\s+8,00/)).toBeInTheDocument();
+    expect(screen.getByText(/tarif marché/i)).toBeInTheDocument();
+  });
+
+  // The cue describes the figure beside it. A market price on the dearer variant does not
+  // change what "dès" names, so the row still quotes — and reads as — the carte's.
+  it('leaves the row uncued when the cheapest variant is still the carte\'s', async () => {
+    await renderEditor((marketDays, catalogue, prices) => {
+      marketDays.days.set([day()]);
+      catalogue.items.set([pizza()]);
+      prices.markets.set([{ marketId: 'market-1', prices: { pizza: { Pepperoni: 1400 } } }]);
+    });
+
+    expect(screen.getByText(/dès\s+9,00/)).toBeInTheDocument();
+    expect(screen.queryByText(/tarif marché/i)).toBeNull();
+  });
+
+  it('takes a market price that undercuts a dearer variant', async () => {
+    await renderEditor((marketDays, catalogue, prices) => {
+      marketDays.days.set([day()]);
+      catalogue.items.set([pizza()]);
+      prices.markets.set([{ marketId: 'market-1', prices: { pizza: { Pepperoni: 500 } } }]);
+    });
+
+    expect(screen.getByText(/dès\s+5,00/)).toBeInTheDocument();
+    expect(screen.getByText(/tarif marché/i)).toBeInTheDocument();
+  });
+
+  // No price editing from a day: editing here would imply the price belongs to this day,
+  // and it belongs to the market — the edit would silently move every other day at it.
+  it('sends the vendor to the market for its prices rather than editing them here', async () => {
+    await renderEditor((marketDays, catalogue) => {
+      marketDays.days.set([day()]);
+      catalogue.items.set([item('item-1', 'Bœuf bourguignon')]);
+    });
+
+    expect(screen.getByRole('link', { name: /tarifs de ce marché/i })).toHaveAttribute(
+      'href',
+      '/dashboard/market-prices/market-1',
+    );
+  });
+
+  // Prices landing after the carte would quote every dish at its carte price for a frame —
+  // the very number this screen exists to stop showing.
+  it('keeps waiting while this market\'s prices are still arriving', async () => {
+    await renderEditor((marketDays, catalogue, prices) => {
+      marketDays.days.set([day()]);
+      catalogue.items.set([item('item-1', 'Bœuf bourguignon')]);
+      prices.loading.set(true);
+    });
+
+    expect(screen.getByRole('status', { name: /chargement/i })).toBeTruthy();
+    expect(screen.queryByText(/13,00/)).toBeNull();
   });
 });
