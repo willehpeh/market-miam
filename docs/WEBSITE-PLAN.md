@@ -6,7 +6,7 @@
 
 Single page, French, plain CSS over `packages/design-system/tokens.css`.
 
-- Hero → problem → *Disponible aujourd'hui* (vitrine, carte, marchés, menu du jour, pendant le marché) → *Ce qui arrive ensuite* → pilot terms → footer
+- Hero → problem → *Disponible aujourd'hui* (vitrine, carte, marchés, menu du jour, pendant le marché, après le marché) → *Ce qui arrive ensuite* → pilot terms → footer
 - Tally popup lead capture, form `aQX9NB` (nom / adresse mail / marchés où vous exercez)
 - `og:*` + `twitter:*` + canonical in `Base.astro`; `og.jpg` 1200×630
 - Hero shot links to the live demo storefront
@@ -96,13 +96,15 @@ close → waste-watch → miam. What's behind what remains:
 
 | Bullet | Reality |
 |---|---|
-| post-market feedback per dish | Slice 2b of `LIVE-MODE-PLAN.md`. Decisions settled, unbuilt; blocked on close shipping first |
+| ~~post-market feedback per dish~~ | **Shipped** — slice 2b of `LIVE-MODE-PLAN.md`, now the *Après le marché* card (below) |
 | repères over time | Waste-watch. Not built, and the last thing before the miam |
-| le miam | **Nothing built.** No aggregate, no event, no handler; `NEXT_BEHAVIOURS.md` has *item rated for market day* unstarted. Furthest-out thing on the page — have an answer ready for *"when?"* |
+| le miam | **Nothing built.** No aggregate, no event, no handler; `NEXT_BEHAVIOURS.md` had *item rated for market day*, since folded into live mode. Furthest-out thing on the page — have an answer ready for *"when?"* |
 
-Five shipped cards against three coming, so the shipped-to-promised ratio the cap exists to
-protect is comfortable now — which is headroom to spend on the close clause, not an invitation
-to lengthen the roadmap.
+**Cut to two bullets once slice 2b shipped.** The bilan is live, so it left the roadmap for
+*Disponible aujourd'hui* — and the repères bullet directly under it stopped promising to build
+on something that did not exist. *Vos réponses* now names a real screen. Six shipped cards
+against two coming, which is the widest the ratio has been; the cap is a ceiling on the
+promised side, and that headroom does not license adding any back.
 
 **Why the miam earns its line despite being unbuilt:** it's the namesake, and it's the only
 roadmap item where the *customer* does something rather than the vendor doing admin — which
@@ -203,10 +205,9 @@ Capture: same demo account as the storefront shot so names match; ~1200px wide; 
 
 **Decision: capture, then hold.** The hero storefront shot does the selling. Dashboard shots lengthen the page and go stale every time that UI changes. Ship them only if pilot conversations stall on *"is this a hassle to maintain?"*
 
-### 6. The close clause (on the day slice 2 deploys)
+### 6. The close clause — done
 
-One sentence, appended to the *Pendant le marché* card in `index.astro` — **not before the
-deploy**, because *Disponible aujourd'hui* claims only what a vendor can do that afternoon:
+Shipped as written, appended to the *Pendant le marché* card once slice 2 was deployed:
 
 > Et quand vous remballez — ou si vous ne pouvez pas venir — vous fermez le stand : votre
 > vitrine cesse d'annoncer un marché où vous n'êtes plus.
@@ -214,6 +215,18 @@ deploy**, because *Disponible aujourd'hui* claims only what a vendor can do that
 It carries both doors of decision 45 (*Fermer le stand*, *Je ne peux pas venir aujourd'hui*)
 without naming either label, so vendor-app copy can move without dragging the site with it.
 The customer-side promise is the one worth selling: nobody walks over for nothing.
+
+Slice 2b landed with it, as the *Après le marché* card — the end-of-day bilan. Two things the
+roadmap's old wording got wrong and the card does not: the bilan is **one form submitted
+whole**, not *un geste par plat* (live-mode decision 72), and the dishes marked épuisé during
+service **arrive already ticked** (decision 49), which is the whole reason it is not a chore.
+Deliberately factual rather than benefit-shaped: the payoff is the repères, and the bullet
+immediately below it is where that gets promised.
+
+**Prix par marché is shipped and deliberately not on the page.** A dish can cost different
+amounts at different markets, and a customer sees that market's price while it is trading —
+but it is vendor-side admin that does not sell a pilot, and the page was already at five
+cards. Add it to *Votre carte* as one sentence if a pilot conversation ever turns on it.
 
 ### 7. Reshoot the hero storefront (`storefront-demo.webp`)
 
