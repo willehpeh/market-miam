@@ -71,6 +71,21 @@ class Viewer extends Handler implements Projection {
 // One window comfortably covers any capped backoff between consecutive failures.
 const BACKOFF_CAP_MS = 30_000;
 
+// Mirrors HealthController's own threshold; the route owns the policy, this only has to
+// step over it — strictly over, since the route treats sitting exactly on the threshold
+// as still alive.
+const SILENCE_THRESHOLD_MS = 900_000;
+const PAST_SILENCE_MS = SILENCE_THRESHOLD_MS + 60_000;
+
+// PollSchedule.pokedWithBackstop's default. The worst a healthy consumer can read is one
+// whole interval, which is what the threshold above has to clear.
+const BACKSTOP_MS = 300_000;
+
+type StatusBody = { subscriptions: { name: string; consecutiveFailures: number; secondsSinceLastPoll: number }[] };
+
+const subscriptionNamed = (body: StatusBody, name: string) =>
+  body.subscriptions.find(subscription => subscription.name === name);
+
 describe('Stuck-subscription health', () => {
   let app: INestApplication;
 
@@ -122,8 +137,8 @@ describe('Stuck-subscription health', () => {
     expect(response.body).toEqual({
       status: 'ok',
       subscriptions: [
-        { name: 'shipper', kind: 'processor', consecutiveFailures: 0 },
-        { name: 'viewer', kind: 'projection', consecutiveFailures: 0 },
+        { name: 'shipper', kind: 'processor', consecutiveFailures: 0, secondsSinceLastPoll: 0 },
+        { name: 'viewer', kind: 'projection', consecutiveFailures: 0, secondsSinceLastPoll: 0 },
       ],
     });
   });
@@ -140,7 +155,7 @@ describe('Stuck-subscription health', () => {
     const response = await request(app.getHttpServer()).get('/health').expect(503);
     expect(response.body.status).toBe('stuck');
     expect(response.body.subscriptions).toContainEqual(
-      { name: 'shipper', kind: 'processor', consecutiveFailures: expect.any(Number) },
+      { name: 'shipper', kind: 'processor', consecutiveFailures: expect.any(Number), secondsSinceLastPoll: expect.any(Number) },
     );
   });
 
@@ -168,7 +183,7 @@ describe('Stuck-subscription health', () => {
 
     const response = await request(app.getHttpServer()).get('/health').expect(200);
     expect(response.body.subscriptions).toContainEqual(
-      { name: 'shipper', kind: 'processor', consecutiveFailures: 0 },
+      { name: 'shipper', kind: 'processor', consecutiveFailures: 0, secondsSinceLastPoll: expect.any(Number) },
     );
   });
 
@@ -182,8 +197,68 @@ describe('Stuck-subscription health', () => {
 
     const response = await request(app.getHttpServer()).get('/health').expect(200);
     expect(response.body.subscriptions).toContainEqual(
-      { name: 'shipper', kind: 'processor', consecutiveFailures: 0 },
+      { name: 'shipper', kind: 'processor', consecutiveFailures: 0, secondsSinceLastPoll: expect.any(Number) },
     );
+  });
+
+  // The gap ADR 0050 left open, from the health route's side: a poll that hangs never
+  // rejects, so retry() never engages and consecutiveFailures stays 0 forever while
+  // exhaustMap discards every later poke. Counting failures cannot tell "never failed"
+  // apart from "never ran" — only elapsed time can.
+  it('goes unavailable once a processor has stopped completing polls at all', async () => {
+    await boot();
+    app.get(Shipper).behave = () => new Promise<void>(() => undefined);
+
+    await vi.advanceTimersByTimeAsync(0);
+    await vi.advanceTimersByTimeAsync(PAST_SILENCE_MS);
+
+    const response = await request(app.getHttpServer()).get('/health').expect(503);
+    expect(response.body.status).toBe('stuck');
+    const shipper = subscriptionNamed(response.body, 'shipper');
+    expect(shipper?.consecutiveFailures).toBe(0);
+    expect(shipper?.secondsSinceLastPoll).toBeGreaterThan(SILENCE_THRESHOLD_MS / 1000);
+  });
+
+  // The same silence from a projection is stale reads, not lost side effects — the warn
+  // half of the asymmetry holds for hangs exactly as it does for failures.
+  it('stays ok while only a projection has gone silent', async () => {
+    await boot();
+    app.get(Viewer).behave = () => new Promise<void>(() => undefined);
+
+    await vi.advanceTimersByTimeAsync(0);
+    await vi.advanceTimersByTimeAsync(PAST_SILENCE_MS);
+
+    const response = await request(app.getHttpServer()).get('/health').expect(200);
+    expect(subscriptionNamed(response.body, 'viewer')?.secondsSinceLastPoll)
+      .toBeGreaterThan(SILENCE_THRESHOLD_MS / 1000);
+  });
+
+  // The threshold's one real constraint: it sits above the poll schedule's backstop, so a
+  // subscription with nothing to do — no pokes at all, waking only on the timer — is idle,
+  // not silent. Landing between two ticks is the worst case, and one whole interval is as
+  // stale as healthy ever gets however long the stretch runs.
+  it('stays ok through a long idle stretch driven only by the backstop', async () => {
+    await boot();
+
+    await vi.advanceTimersByTimeAsync(PAST_SILENCE_MS * 2);
+
+    const response = await request(app.getHttpServer()).get('/health').expect(200);
+    expect(subscriptionNamed(response.body, 'shipper')?.secondsSinceLastPoll)
+      .toBeLessThanOrEqual(BACKSTOP_MS / 1000);
+  });
+
+  // A yield is a completed cycle, not a missed one: the consumer polled, found another
+  // writer holding the position, and stopped. Conflicts must not page by the silence
+  // route any more than they do by the failure count.
+  it('does not go silent while only yielding to a concurrent writer', async () => {
+    await boot();
+    app.get(Shipper).behave = () => Promise.reject(new CheckpointConflictError('shipper', 0));
+
+    await vi.advanceTimersByTimeAsync(0);
+    await vi.advanceTimersByTimeAsync(PAST_SILENCE_MS);
+
+    const response = await request(app.getHttpServer()).get('/health').expect(200);
+    expect(subscriptionNamed(response.body, 'shipper')?.consecutiveFailures).toBe(0);
   });
 
   // The durable record (O11Y-PLAN step 5): a zero-duration error span per failed poll,

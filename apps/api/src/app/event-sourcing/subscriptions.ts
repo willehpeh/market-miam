@@ -46,6 +46,7 @@ export interface SubscriptionStatus {
   name: string;
   kind: CheckpointKind;
   consecutiveFailures: number;
+  secondsSinceLastPoll: number;
 }
 
 @Injectable()
@@ -55,6 +56,12 @@ export class Subscriptions implements OnApplicationBootstrap, OnApplicationShutd
   // Consecutive real failures per consumer, kept by the background poller — what the
   // health route reads. Conflicts never count; a successful poll clears the entry.
   private readonly failures = new Map<string, number>();
+  // When each consumer last finished a polling cycle. The failure count alone cannot tell
+  // "never failed" from "never ran": a poll that hangs rather than rejects leaves retry()
+  // unengaged and the count at zero forever, while exhaustMap discards every later poke
+  // (ADR 0050). Elapsed time is the only signal that separates the two, so the health
+  // route reads liveness from here and severity from the count above.
+  private readonly lastPolled = new Map<string, number>();
 
   constructor(
     private readonly discovery: DiscoveryService,
@@ -70,6 +77,10 @@ export class Subscriptions implements OnApplicationBootstrap, OnApplicationShutd
 
   onApplicationBootstrap(): void {
     this.consumers = this.buildConsumers();
+    // Boot is the baseline, not the epoch: a consumer that has yet to finish its first
+    // cycle is starting up, not silent, and would otherwise read as maximally stale on
+    // the first request after a deploy.
+    this.consumers.forEach((consumer) => this.polled(consumer.name));
     this.startPolling();
   }
 
@@ -79,11 +90,20 @@ export class Subscriptions implements OnApplicationBootstrap, OnApplicationShutd
   }
 
   status(): SubscriptionStatus[] {
+    const now = Date.now();
     return this.consumers.map(({ name, kind }) => ({
       name,
       kind,
       consecutiveFailures: this.failures.get(name) ?? 0,
+      secondsSinceLastPoll: Math.round((now - (this.lastPolled.get(name) ?? now)) / 1000),
     }));
+  }
+
+  // A finished cycle, however it finished. A poll that yielded to a concurrent writer
+  // still ran to completion, so it counts as liveness — conflicts must no more page by
+  // silence than they do by the failure count.
+  private polled(name: string): void {
+    this.lastPolled.set(name, Date.now());
   }
 
   async drain(): Promise<void> {
@@ -92,7 +112,7 @@ export class Subscriptions implements OnApplicationBootstrap, OnApplicationShutd
     // max cascade depth (today: 1). If cascades ever chain deeper than the
     // subscription count, loop until a round produces no new events instead.
     for (let i = 0; i < this.consumers.length; i++) {
-      await Promise.all(this.consumers.map((consumer) => poll(consumer.subscription)));
+      await Promise.all(this.consumers.map((consumer) => this.pollDirectly(consumer)));
     }
   }
 
@@ -117,7 +137,7 @@ export class Subscriptions implements OnApplicationBootstrap, OnApplicationShutd
       await consumer.handler.reset();
       await consumer.checkpoint.reset();
     });
-    await poll(consumer.subscription);
+    await this.pollDirectly(consumer);
   }
 
   private buildConsumers(): CheckpointedConsumer[] {
@@ -170,7 +190,12 @@ export class Subscriptions implements OnApplicationBootstrap, OnApplicationShutd
 
   private wakeSubscription() {
     return (consumer: CheckpointedConsumer) => this.schedule.pokes().pipe(
-      exhaustMap(() => consumer.subscription.poll().then(() => this.failures.delete(consumer.name))),
+      exhaustMap(() =>
+        consumer.subscription.poll().then(() => {
+          this.polled(consumer.name);
+          this.failures.delete(consumer.name);
+        }),
+      ),
       // ponytail: exponential backoff, capped, reset once a poll succeeds. Infinite
       // retries are deliberate — a transient store outage should recover, not kill
       // the consumer. A poison event (handler throws on the same event every time)
@@ -185,6 +210,7 @@ export class Subscriptions implements OnApplicationBootstrap, OnApplicationShutd
         delay: (error, retryCount) => {
           if (error instanceof CheckpointConflictError) {
             this.logger.log(`Subscription poll yielded to a concurrent writer: ${error.message}`);
+            this.polled(consumer.name);
           } else {
             this.logger.error('Subscription poll failed', error);
             this.pollFailed(consumer, retryCount, error);
@@ -193,6 +219,21 @@ export class Subscriptions implements OnApplicationBootstrap, OnApplicationShutd
         },
       }),
     );
+  }
+
+  // The background poller treats a checkpoint conflict as a retry signal; a poll asked
+  // for directly — drain(), rebuild() — treats it as done. It means a concurrent poll
+  // owns the position and is draining the same backlog: whichever poll wins each event's
+  // CAS carries the drain to the end, and the loser has nothing left to do (ADR 0036).
+  private pollDirectly(consumer: CheckpointedConsumer): Promise<void> {
+    return consumer.subscription
+      .poll()
+      .catch((error: unknown) => {
+        if (!(error instanceof CheckpointConflictError)) {
+          throw error;
+        }
+      })
+      .then(() => this.polled(consumer.name));
   }
 
   // The retry callback is the only seam that knows recovery depth (resetOnSuccess, so
@@ -213,16 +254,4 @@ export class Subscriptions implements OnApplicationBootstrap, OnApplicationShutd
     span.setStatus({ code: SpanStatusCode.ERROR });
     span.end();
   }
-}
-
-// The background poller treats a checkpoint conflict as a retry signal; a poll asked
-// for directly — drain(), rebuild() — treats it as done. It means a concurrent poll
-// owns the position and is draining the same backlog: whichever poll wins each event's
-// CAS carries the drain to the end, and the loser has nothing left to do (ADR 0036).
-function poll(subscription: Subscription): Promise<void> {
-  return subscription.poll().catch((error: unknown) => {
-    if (!(error instanceof CheckpointConflictError)) {
-      throw error;
-    }
-  });
 }
