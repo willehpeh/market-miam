@@ -143,4 +143,44 @@ describe('Pricing a market over HTTP', () => {
       expect.objectContaining({ itemId: item.itemId, price: item.price }),
     ]);
   });
+
+  it('gives the vendor back what they charge at a market', async () => {
+    await seedCatalogueAndSchedule();
+    await setPrices({ [item.itemId]: 1500 }).expect(200);
+    await app.get(Subscriptions).drain();
+
+    const response = await authed('get', '/market-prices').expect(200);
+    expect(response.body).toEqual({
+      markets: [{ marketId: 'market-1', prices: { [item.itemId]: 1500 } }],
+    });
+  });
+
+  it('gives back every market the vendor prices', async () => {
+    await seedCatalogueAndSchedule();
+    await authed('post', '/market-schedules').send({
+      ...schedule,
+      scheduleId: 'schedule-2',
+      market: { ...schedule.market, id: 'market-2', name: 'Marché d\'Aligre' },
+    }).expect(201);
+    await setPrices({ [item.itemId]: 1500 }, 'market-1').expect(200);
+    await setPrices({ [item.itemId]: 1700 }, 'market-2').expect(200);
+    await app.get(Subscriptions).drain();
+
+    const response = await authed('get', '/market-prices').expect(200);
+    expect(response.body.markets).toEqual([
+      { marketId: 'market-1', prices: { [item.itemId]: 1500 } },
+      { marketId: 'market-2', prices: { [item.itemId]: 1700 } },
+    ]);
+  });
+
+  it('gives back nothing for a vendor who has priced no market', async () => {
+    await seedCatalogueAndSchedule();
+
+    const response = await authed('get', '/market-prices').expect(200);
+    expect(response.body).toEqual({ markets: [] });
+  });
+
+  it('requires authentication to read what a vendor charges', async () => {
+    await request(app.getHttpServer()).get('/market-prices').expect(401);
+  });
 });

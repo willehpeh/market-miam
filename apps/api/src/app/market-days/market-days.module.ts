@@ -16,6 +16,7 @@ import {
   FindCustomerStorefrontHandler,
   FindVendorCatalogueHandler,
   FindVendorStorefrontHandler,
+  FindMarketPricesHandler,
   FindVendorSchedulesHandler,
   FindMarketDayHandler,
   FindUpcomingMarketDaysHandler,
@@ -143,7 +144,7 @@ const commandHandlers = [
 
 const domainServices = [StorefrontPublication];
 
-const queryHandlers = [FindCustomerStorefrontHandler, FindVendorStorefrontHandler, FindVendorCatalogueHandler, FindVendorSchedulesHandler, FindUpcomingMarketDaysHandler, FindMarketDayHandler];
+const queryHandlers = [FindCustomerStorefrontHandler, FindVendorStorefrontHandler, FindVendorCatalogueHandler, FindVendorSchedulesHandler, FindUpcomingMarketDaysHandler, FindMarketDayHandler, FindMarketPricesHandler];
 
 // EventStore / CommandGateway / QueryGateway come from the global
 // EventSourcingModule; the view stores from the global persistence module the

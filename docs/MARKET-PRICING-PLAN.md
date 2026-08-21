@@ -60,12 +60,14 @@ handlers. Takes one market's list, not a market id, so the lookup stays with the
 
 Commits `7100fa8` (rename `ItemPrice` → `Price`), `d182d77`.
 
-## Slice 5 — read path (next)
+## Slice 5 — read path (done)
 
-`FindMarketPrices` over `MarketPricesViews.forVendor`, `GET /market-prices`. Blocks slice 6:
-the editor cannot render existing overrides without it.
+`FindMarketPrices` over `MarketPricesViews.forVendor`, `GET /market-prices`. Wrapped as
+`VendorMarketPricesView = { markets }` rather than a bare JSON array, since every other read
+here returns a named list. 4 tests in `market-prices.spec.ts`; vendor scoping stays the read
+model contract's, not the route's.
 
-## Slice 6 — vendor price editor
+## Slice 6 — vendor price editor (next)
 
 Route, market card restructure (decision 2), form over every catalogue dish, two row states,
 save button count. Signal Forms with `applyEach`, as `add-item.ts:410` already does for

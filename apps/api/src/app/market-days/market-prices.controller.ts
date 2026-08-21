@@ -1,9 +1,9 @@
-import { Body, Controller, Param, Put, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Put, UseGuards } from '@nestjs/common';
 import { z } from 'zod';
 import { CurrentVendor, JwtAuthGuard } from '@market-miam/auth-nestjs';
 import type { VerifiedVendor } from '@market-miam/auth';
-import { CommandGateway } from '@market-miam/event-sourcing';
-import { SetMarketPrices } from '@market-miam/market-days';
+import { CommandGateway, QueryGateway } from '@market-miam/event-sourcing';
+import { FindMarketPrices, SetMarketPrices, VendorMarketPricesView } from '@market-miam/market-days';
 import { shapeOf } from '../shape-of.pipe';
 
 // Either shape a dish can be priced in, gated at the edge (ADR 0046) so a string where
@@ -17,7 +17,18 @@ const PricesBody = z.object({
 // rather than hanging off /market-schedules.
 @Controller('market-prices')
 export class MarketPricesController {
-  constructor(private readonly commands: CommandGateway) {}
+  constructor(
+    private readonly commands: CommandGateway,
+    private readonly queries: QueryGateway,
+  ) {}
+
+  // Every market at once: the editor needs the whole set to know which of them sets the
+  // carte price, so a point lookup would buy a narrower read model for nothing.
+  @Get()
+  @UseGuards(JwtAuthGuard)
+  list(@CurrentVendor() vendor: VerifiedVendor): Promise<VendorMarketPricesView> {
+    return this.queries.execute(new FindMarketPrices(vendor.vendorId.value()));
+  }
 
   // The whole list every time, like the menu: clearing a market is an empty `prices`
   // rather than a DELETE, and what the list does not name sells at the catalogue price.
