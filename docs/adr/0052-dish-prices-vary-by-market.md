@@ -89,10 +89,39 @@ market's list rather than a market id, so the lookup stays with the handlers —
 which already key their work by market — and the function has nothing
 market-shaped in it. Named for what it returns, not for a place.
 
-**The carte shows no price anywhere** — neither the cards nor the sheet they
-open. `/carte` is market-independent, so with prices varying by market it has
-no price to state; hiding it on the card alone would leave the removal one tap
-deep.
+**The carte shows the highest price a dish is sold at anywhere** — the maximum
+over its catalogue price and every market that prices it. *Revises the earlier
+decision in this ADR that the carte should show no price at all*, which was
+never built.
+
+A carte with no prices reads as a page missing something, on the one page a
+stranger is most likely to land on from a search. A carte showing the catalogue
+price can quote below what a market charges, and being charged more than the
+price you were shown is the one surprise that costs trust. The maximum can only
+surprise downward.
+
+Vendors would rather not advertise that prices vary, and this does not state it
+— though anyone who taps through to a market page still infers it. That is
+accepted: the pleasant surprise is worth more than the concealment, which was
+never achievable once market pages quote real prices.
+
+- **Only markets the vendor currently schedules count.** Otherwise a cancelled
+  schedule leaves a price list with no card, no *Tarifs* link, and no way to
+  reach it — while it goes on setting the public carte forever.
+- **For a variant dish the maximum is over each market's *dès* figure**, not per
+  variant. Taking the highest of each variant separately would display a
+  combination charged at no market.
+- **The catalogue price is inside the maximum**, so a vendor who has priced no
+  market sees exactly what they set.
+- **One market's price silently governs the whole public carte**, which no
+  vendor would predict. The price editor says so on the rows that set it, and
+  the item edit form shows the carte figure when it differs from the price being
+  typed. Nothing is added to the catalogue list, which stays a scan view.
+
+**No customer-frontend component changes.** `CustomerStorefront.items` feeds the
+carte alone (`carte-page.ts:41`); the home page reads `market.items`, already
+priced per market. Both come pre-priced from the query, so `ItemCard` and
+`ItemSheet` stay exactly as they are — the maximum is a join, not a display rule.
 
 **`Menu`, `MarketDayMenuSet` and `MarketDay` are untouched.** Prices are not
 snapshotted into the menu event.
@@ -115,16 +144,71 @@ snapshotted into the menu event.
 
 ### Frontend
 
-* **vendor** — per-market price editor: a row per flat dish, a row per variant, catalogue price as placeholder, blank meaning unchanged. This is most of the slice
-* **vendor** — the menu-editor picker reads the catalogue store directly (`docs/MENU-DU-JOUR-PLAN.md:204`), so it would show list prices while planning a market. Route it through that market's prices
-* **customer** — hide prices on `/carte`: `priceLabel` on the card, and both the item price line and the per-variant prices in the sheet, whose *Formats* list becomes name and description only. `ItemCard` (`markets/market-card.ts:55`) and `ItemSheet` (`storefront-page.ts:81`) are each shared with the home page, where the prices stay — one input per component, set by the carte. Do not strip either component
-* **customer** — nothing else. The handlers return already-priced `CatalogueViewItem`s, so `priceLabelFor` (`storefront-view-model.ts:104`) derives *dès {min} €* per market for free, including when the cheapest variant differs between markets
+**Read path.** `GET /market-prices` returns the vendor's whole set, which is
+what `MarketPricesViews.forVendor` already answers — a point lookup would mean a
+narrower read-model method existing to serve one screen. The client filters by
+market, and the price editor needs every market anyway to know which of its rows
+sets the carte price.
+
+**Screen.** `/dashboard/market-prices/:marketId`, reached from a *Tarifs* link
+in the market card. The card stops being one big anchor and becomes a container
+holding two links — an anchor cannot nest. Two schedules at one market give two
+cards pointing at one prices URL, which is correct rather than confusing: it is
+one market and one list. The markets list is **not** deduplicated to markets;
+its subject is still *where and when your customers find you*.
+
+**A form with one save, patched on success** — `SetMarketDayMenu`'s pattern, not
+the live screen's. Optimism there is justified by market wifi and by a screen
+flip standing in for a receipt (`ChangeItemAvailability`, `ChangeStandClosure`,
+both rolled back from failure props). Neither applies to a vendor at a table,
+and a whole-list rollback would need the previous list carried on failure, which
+nothing else here holds.
+
+**Every catalogue dish, in catalogue order** — a row per flat dish, a row per
+variant, blank meaning the catalogue price. No picker: it would add an
+interaction to save scrolling, and a picker is what makes *selected but priced
+nothing* reachable at all. Collapsing variant dishes is a later refinement that
+would not change the payload.
+
+**The catalogue price is static text beside a labelled input, never a
+placeholder.** A placeholder disappears on focus, so the vendor loses the number
+they are comparing against at the moment they type, and screen readers treat it
+inconsistently. *Supersedes the placeholder in this ADR's earlier wording.*
+
+**Two row states, each with a non-colour cue** (WCAG 1.4.1):
+
+| State | Means | Shown as |
+|---|---|---|
+| Overridden | differs from the catalogue, saved | `bg-brand-soft` + *Tarif marché* |
+| Dirty | edited this session, unsaved | `border-brand` leading edge, and a count on the save button |
+
+The count is what gives a cleared row something to show — blanking a 12,00 back
+to the catalogue price leaves nothing in the field to highlight — and it is how
+a vendor forty rows down knows there is unsaved work.
+
+**Menu editor.** The picker reads the catalogue store directly
+(`docs/MENU-DU-JOUR-PLAN.md:204`) and would quote list prices while planning a
+market, which is the number the customer will not be charged. It shows the
+market price, carrying the same *Tarif marché* cue.
+
+**No price editing on a day screen.** Editing a price from a market *day*
+implies the price belongs to that day; it belongs to the market, and the edit
+would silently move every other day at it. A *Tarifs de ce marché →* link gives
+the route without the false implication.
+
+**Pricing gets its own facade and state slice** — `facade` / `state` / `effects`
+/ `providers` / `fake` / `store`, as every other area here has. Two unrelated
+screens read it, so it does not belong to the schedule slice.
+
+**Item edit form shows the carte figure when it differs** from the price being
+typed, so *why did my price not change* is answered where the expectation forms.
+The catalogue list is untouched.
 
 ### Deferred
 
 * **Per-day override** — `MarketDayPricesSet` on the market-day stream; `priced` takes a merged list, day over market over catalogue. A separate event, never folded into `MarketDayMenuSet`: `Menu.equals` compares id sets to suppress no-op writes, so a price-only change would compare equal and the event would be dropped silently.
 * **Ordering** — the price a customer pays is captured on the order event at order time, not read back from anywhere. Snapshotting prices into the menu event would give stale truth rather than historical truth, and would forfeit the live join that lets a corrected price reach days already planned.
-* **Orphan overrides need no cleanup.** The read join is menu ∩ catalogue and occurrences come from schedules, so entries for a retired item or a cancelled schedule are unreachable. Related: *retiring an item doesn't check if it's been planned* (`NEXT_BEHAVIOURS.md`).
+* **Orphan overrides need no cleanup, on one condition: every reader filters through schedules.** The day join is menu ∩ catalogue over occurrences the schedules produce, and the carte's maximum counts only currently-scheduled markets. That is a rule new readers must follow, not a happy accident — a reader that skips it makes a cancelled schedule's prices live on with no screen able to reach them. Related: *retiring an item doesn't check if it's been planned* (`NEXT_BEHAVIOURS.md`).
 
 ### Rejected
 
@@ -136,3 +220,5 @@ snapshotted into the menu event.
 | A percentage adjustment per market | Cash prices are round — a 10 € dish becomes 12 €, not 11 € |
 
 Builds on ADRs 0007, 0008, 0009, 0033, 0039, 0045, 0046, 0047, 0051.
+
+Shape and slicing: `docs/MARKET-PRICING-PLAN.md` (frontend decisions 1–11).
