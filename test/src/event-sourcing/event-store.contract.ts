@@ -155,13 +155,27 @@ export function eventStoreContract(
       ]);
     });
 
-    it('stamps every appended event with a numeric timestamp', async () => {
+    // Milliseconds, not seconds: the only reader subtracts this from a consumer's
+    // Date.now() (processing.lag_ms), so a unit mismatch would not fail loudly — it
+    // would report a lag ~1000x too large. Bounded against the wall clock rather than
+    // merely typed, because the type alone cannot tell the units apart; a seconds
+    // value lands in 1970 and misses this window by decades.
+    // The window is deliberately wide. PostgresEventStore stamps from the database
+    // clock precisely so the measurement does not depend on the appending process's
+    // clock — a containerised Postgres was observed ~11ms ahead of its host — so a
+    // tight bound would assert clock agreement, which is the thing being avoided.
+    it('stamps every appended event with a millisecond-epoch timestamp', async () => {
+      const skewToleranceMs = 60_000;
+      const before = Date.now();
+
       await store.append('stream-1', [dummyEvent('First'), dummyEvent('Second')], 0);
 
       const timestamps = (await store.load('stream-1')).map((e) => e.timestamp);
-
       expect(timestamps).toHaveLength(2);
-      expect(timestamps.every((t) => typeof t === 'number')).toBe(true);
+      for (const timestamp of timestamps) {
+        expect(timestamp).toBeGreaterThanOrEqual(before - skewToleranceMs);
+        expect(timestamp).toBeLessThanOrEqual(Date.now() + skewToleranceMs);
+      }
     });
 
     it('assigns a unique id to every appended event', async () => {

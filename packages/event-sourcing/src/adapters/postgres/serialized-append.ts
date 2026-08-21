@@ -48,14 +48,21 @@ export class SerializedAppend {
     );
     // Single statement: all-or-nothing, one round-trip under the advisory lock, and no
     // per-event promise to lose. ORDER BY ord pins global_position assignment to batch order.
+    // created_at comes from the database, not the appending process: it is read back only
+    // to be subtracted from a *consumer's* clock (processing.lag_ms), which the Subscription
+    // lag trigger alerts on — sourced app-side, that measurement absorbs the skew between
+    // two machines. clock_timestamp(), not now(): now() is transaction-start time, and under
+    // the advisory lock a transaction can begin well before it reaches this insert. The
+    // column stays ms-epoch bigint, so rows written before this change read back unchanged.
     await this.client.query(
       `INSERT INTO events
              (id, stream_id, stream_position, event_type, payload, metadata, version, created_at)
-       SELECT e.id, $2, e.stream_position, e.event_type, e.payload, $6::jsonb, e.version, $8
+       SELECT e.id, $2, e.stream_position, e.event_type, e.payload, $6::jsonb, e.version,
+              (EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint
          FROM unnest($1::uuid[], $3::integer[], $4::text[], $5::jsonb[], $7::integer[])
                 WITH ORDINALITY AS e(id, stream_position, event_type, payload, version, ord)
         ORDER BY e.ord`,
-      [ids, this.streamId, positions, types, payloads, metadata ? JSON.stringify(metadata) : null, versions, Date.now()]
+      [ids, this.streamId, positions, types, payloads, metadata ? JSON.stringify(metadata) : null, versions]
     );
   }
 
