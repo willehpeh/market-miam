@@ -6,20 +6,20 @@ import { Card } from '../core/card';
 import { COPIED_NOTICE_DELAY, Share } from '../core/share';
 import { StorefrontFacade } from '../storefront/storefront.facade';
 import { storefrontUrl } from '../storefront/storefront-url';
-import { NextMenuCard } from '../market-days/next-menu-card';
+import { MarketDayCards } from '../market-days/market-day-cards';
 import { BilanPrompt } from '../market-days/bilan-prompt';
 
 @Component({
   selector: 'mm-storefront-home',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, Card, NextMenuCard, BilanPrompt],
+  imports: [RouterLink, Card, MarketDayCards, BilanPrompt],
   host: { class: 'contents' },
   template: `
-    <mm-next-menu-card />
+    <mm-market-day-cards />
 
-    <!-- Under the next market, not above it: a vendor opening the app on a market morning
-         wants today first, and a nag that outranks it every day for a week is the wrong
-         way round (decision 65). -->
+    <!-- Under the market cards, not above them: a vendor opening the app on a market
+         morning wants today first, and a nag that outranks it every day for a week is the
+         wrong way round (decision 65). -->
     <mm-bilan-prompt />
 
     <mm-card>

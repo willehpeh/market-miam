@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/angular';
 import { provideRouter } from '@angular/router';
-import { NextMenuCard } from './next-menu-card';
+import { MarketDayCards } from './market-day-cards';
 import { MarketDayFacade } from './market-day.facade';
 import { FakeMarketDayFacade } from './fake.market-day.facade';
 import { MarketDayView } from './market-days';
@@ -9,13 +9,13 @@ import { marketDayView as day } from './market-day-view.builder';
 async function renderCard(days: MarketDayView[]) {
   const marketDays = new FakeMarketDayFacade();
   marketDays.days.set(days);
-  const view = await render(NextMenuCard, {
+  const view = await render(MarketDayCards, {
     providers: [provideRouter([]), { provide: MarketDayFacade, useValue: marketDays }],
   });
   return { view, marketDays };
 }
 
-describe('NextMenuCard', () => {
+describe('MarketDayCards', () => {
   it('names the next market day, with the hours a vendor plans quantities around', async () => {
     await renderCard([day()]);
 
@@ -115,6 +115,36 @@ describe('NextMenuCard', () => {
     await renderCard([day({ itemIds: ['item-1'] })]);
 
     expect(screen.queryByRole('button', { name: "Je ne peux pas venir aujourd'hui" })).toBeNull();
+  });
+
+  // Decision 76: two cards, because they answer different questions — today is a market to
+  // run, the next one a market to plan. One card could only ever be one of them.
+  it('names today and the market after it, in that order', async () => {
+    await renderCard([day({ phase: 'due' }), day({ date: '2026-08-16', day: 'SUN' })]);
+
+    expect(screen.getAllByRole('heading').map(heading => heading.textContent?.trim()))
+      .toEqual(["Aujourd'hui", 'Prochain marché']);
+    expect(screen.getByText(/samedi 15 août/i)).toBeTruthy();
+    expect(screen.getByText(/dimanche 16 août/i)).toBeTruthy();
+  });
+
+  // The bug decision 76 was written for: a closed today held the only card in the app that
+  // opens a menu, so the vendor who called off Saturday morning could not plan Sunday until
+  // Saturday's hours ran out.
+  it('still opens the following market when today is closed', async () => {
+    await renderCard([day({ phase: 'due', closed: true }), day({ date: '2026-08-16', day: 'SUN' })]);
+
+    expect(screen.getByText('Stand fermé')).toBeTruthy();
+    expect(screen.getByRole('link', { name: /planifier le menu/i }).getAttribute('href'))
+      .toBe('/dashboard/menus/market-1/2026-08-16');
+  });
+
+  // A vendor at their last booked market sees the day they are standing in, and nothing is
+  // owed about a next market the schedule does not have.
+  it('shows today alone when nothing follows it', async () => {
+    await renderCard([day({ phase: 'trading' })]);
+
+    expect(screen.getAllByRole('heading').map(heading => heading.textContent?.trim())).toEqual(["Aujourd'hui"]);
   });
 
   // Decision 51: closed is read before items, or a closed menu-less day still reads

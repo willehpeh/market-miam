@@ -4,13 +4,16 @@ import { Card } from '../core/card';
 import { longDate, timeRange } from '../core/french-date';
 import { MarketDayFacade } from './market-day.facade';
 import { hasLiveScreen, isToday } from './live-status';
+import { MarketDayView } from './market-days';
 import { ClosedNotice } from './closed-notice';
 import { ReopenStand } from './reopen-stand';
 
 @Component({
-  selector: 'mm-next-menu-card',
+  selector: 'mm-market-day-cards',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ClosedNotice, ReopenStand, RouterLink, Card],
+  // Two cards, so each has to be its own grid child rather than two stacked inside one.
+  host: { class: 'contents' },
   styles: `
     /* A door, not a call to action — it sits under the card's action and must not compete
        with it (decision 55). */
@@ -28,10 +31,10 @@ import { ReopenStand } from './reopen-stand';
     }
   `,
   template: `
-    <mm-card>
-      <h2 class="text-xl leading-tight">Prochain marché</h2>
+    @for (day of cards(); track day.marketId + day.date) {
+      <mm-card>
+        <h2 class="text-xl leading-tight">{{ day.heading }}</h2>
 
-      @if (next(); as day) {
         <p class="mt-4 font-bold text-ink">{{ day.label }}</p>
         <p class="text-sm text-muted">{{ day.marketName }}</p>
         @if (day.hours) {
@@ -60,25 +63,47 @@ import { ReopenStand } from './reopen-stand';
             </button>
           }
         }
-      } @else {
+      </mm-card>
+    } @empty {
+      <mm-card>
+        <h2 class="text-xl leading-tight">Prochain marché</h2>
         <p class="mt-3 text-sm text-ink-soft">Aucun marché dans les 8 prochaines semaines.</p>
-      }
-    </mm-card>
+      </mm-card>
+    }
   `,
 })
-export class NextMenuCard {
+export class MarketDayCards {
   private readonly marketDays = inject(MarketDayFacade);
 
-  readonly next = computed(() => {
-    const day = this.marketDays.days().find((candidate) => !candidate.absent);
-    if (!day) {
-      return null;
-    }
+  // Two cards, not one (decision 76): today is a market to run and the next one is a market
+  // to plan, and while a closed or trading today held the single card, the day after it was
+  // reachable from nowhere in the app. Today first — a vendor opening the app on a market
+  // morning wants the morning.
+  readonly cards = computed(() => {
+    const days = this.marketDays.days().filter(day => !day.absent);
+    const today = days.find(isToday);
+    const next = days.find(day => !isToday(day));
+    return [
+      ...(today ? [this.cardFor("Aujourd'hui", today)] : []),
+      ...(next ? [this.cardFor('Prochain marché', next)] : []),
+    ];
+  });
+
+  callOff(day: { marketId: string; date: string }): void {
+    this.marketDays.close(day.marketId, day.date);
+  }
+
+  constructor() {
+    this.marketDays.load();
+  }
+
+  private cardFor(heading: string, day: MarketDayView) {
     const items = day.itemIds.length;
     // The doorway flips on planning plus the server-said today, never the clock alone
     // (decisions 27, 42) — so it leads to the live screen from midnight, not from startTime.
     const live = hasLiveScreen(day);
     return {
+      heading,
       label: longDate(day.day, day.date),
       marketName: day.market.name,
       hours: timeRange(day),
@@ -90,13 +115,5 @@ export class NextMenuCard {
       today: isToday(day),
       closed: day.closed,
     };
-  });
-
-  callOff(day: { marketId: string; date: string }): void {
-    this.marketDays.close(day.marketId, day.date);
-  }
-
-  constructor() {
-    this.marketDays.load();
   }
 }
