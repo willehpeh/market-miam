@@ -6,6 +6,7 @@ import { CommandGateway, QueryGateway } from '@market-miam/event-sourcing';
 import {
   CloseMarketDay,
   FindMarketDay,
+  FindUnratedMarketDays,
   FindUpcomingMarketDays,
   MarketDayOccurrence,
   MarkItemAsAvailable,
@@ -13,6 +14,7 @@ import {
   RecordBilan,
   ReopenMarketDay,
   SetMarketDayMenu,
+  UnratedMarketDaysView,
   UpcomingMarketDaysView
 } from '@market-miam/market-days';
 import { shapeOf } from '../shape-of.pipe';
@@ -40,6 +42,16 @@ export class MarketDayController {
   @UseGuards(JwtAuthGuard)
   upcoming(@CurrentVendor() vendor: VerifiedVendor): Promise<UpcomingMarketDaysView> {
     return this.queries.execute(new FindUpcomingMarketDays(vendor.vendorId.value()));
+  }
+
+  // The one backward-looking read: the upcoming list looks forward and drops a day at
+  // endTime, so a market finished this afternoon is in nothing the vendor's app reads
+  // (decision 65). A literal segment, and it must stay above :marketId/:date — which it
+  // could never shadow, being one segment where that is two, but the order says so anyway.
+  @Get('unrated')
+  @UseGuards(JwtAuthGuard)
+  unrated(@CurrentVendor() vendor: VerifiedVendor): Promise<UnratedMarketDaysView> {
+    return this.queries.execute(new FindUnratedMarketDays(vendor.vendorId.value()));
   }
 
   // Addressed by market and date rather than read out of the upcoming list: a closed day
