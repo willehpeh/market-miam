@@ -129,6 +129,7 @@ describe('Onboarding launch', () => {
     httpCtrl.expectOne('/api/catalogue').flush({ items: [] });
     httpCtrl.expectOne('/api/market-schedules').flush({ schedules: [] });
     httpCtrl.expectOne('/api/market-days/upcoming').flush({ marketDays: [] });
+    httpCtrl.expectOne('/api/market-days/unrated').flush({ marketDays: [] });
   });
 
   // The steps card names what is still missing; a half-filled form does not.
@@ -144,6 +145,7 @@ describe('Onboarding launch', () => {
     httpCtrl.expectOne('/api/catalogue').flush({ items: [] });
     httpCtrl.expectOne('/api/market-schedules').flush({ schedules: [] });
     httpCtrl.expectOne('/api/market-days/upcoming').flush({ marketDays: [] });
+    httpCtrl.expectOne('/api/market-days/unrated').flush({ marketDays: [] });
   });
 
   it('sends the vendor to the dashboard once they confirm their storefront', async () => {
@@ -161,6 +163,7 @@ describe('Onboarding launch', () => {
     httpCtrl.expectOne('/api/catalogue').flush({ items: [] });
     httpCtrl.expectOne('/api/market-schedules').flush({ schedules: [] });
     httpCtrl.expectOne('/api/market-days/upcoming').flush({ marketDays: [] });
+    httpCtrl.expectOne('/api/market-days/unrated').flush({ marketDays: [] });
     await view.fixture.whenStable();
 
     fireEvent.click(screen.getByRole('link', { name: /informations de la vitrine/i }));
@@ -172,11 +175,15 @@ describe('Onboarding launch', () => {
     httpCtrl.expectOne('/api/storefront').flush(null);
 
     await waitFor(() => expect(router.url).toBe('/dashboard'));
-    // No second GETs: every load is warm-only, so returning to the dashboard keeps what
+    // No second GETs: those loads are warm-only, so returning to the dashboard keeps what
     // the store already holds instead of re-reading a lagging projection.
     httpCtrl.expectNone('/api/catalogue');
     httpCtrl.expectNone('/api/market-schedules');
     httpCtrl.expectNone('/api/market-days/upcoming');
+    // The one exception, by design: the prompt asks again on every arrival. A market that
+    // ended while the app sat open, or a bilan recorded on another phone, both change the
+    // answer without any action here to patch the store with.
+    httpCtrl.expectOne('/api/market-days/unrated').flush({ marketDays: [] });
   });
 
   it('surfaces the load error code and stays on the landing page', async () => {

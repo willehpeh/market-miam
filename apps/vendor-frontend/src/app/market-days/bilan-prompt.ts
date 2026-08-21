@@ -42,7 +42,4 @@ export class BilanPrompt {
       : undefined;
   });
 
-  constructor() {
-    this.marketDays.loadUnrated();
-  }
 }

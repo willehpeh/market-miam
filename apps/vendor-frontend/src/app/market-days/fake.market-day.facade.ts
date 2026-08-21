@@ -10,7 +10,7 @@ export class FakeMarketDayFacade implements MarketDayFacade {
   readonly unrated = signal<UnratedMarketDay[]>([]);
   readonly unratedLoading = signal(false);
   loaded = false;
-  loadedUnrated = false;
+  loadedUnrated = 0;
   loadedDays: { marketId: string; date: string }[] = [];
   savedMenu: { marketId: string; date: string; itemIds: string[] } | undefined;
   availabilityChanges: { marketId: string; date: string; itemId: string; soldOut: boolean }[] = [];
@@ -26,7 +26,7 @@ export class FakeMarketDayFacade implements MarketDayFacade {
   }
 
   loadUnrated(): void {
-    this.loadedUnrated = true;
+    this.loadedUnrated += 1;
   }
 
   // The screen it stands for renders the slot, so a fake that moved only the list would

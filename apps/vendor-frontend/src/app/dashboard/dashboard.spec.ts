@@ -120,6 +120,27 @@ describe('Dashboard', () => {
     expect(markets.loaded).toBe(true);
   });
 
+  // Warmed ahead of the gate, like the days above it: the prompt renders behind loaded(),
+  // and loaded() waits on this very flag.
+  it('asks for the unrated days on arrival, before the card that reads them', async () => {
+    const { marketDays } = await renderDashboard();
+
+    expect(marketDays.loadedUnrated).toBe(1);
+  });
+
+  // The loop this pins: a load dispatched from inside loaded() flips loaded() false, which
+  // destroys the card that dispatched it, which the response then re-creates — for ever,
+  // since loadUnrated is deliberately ungated by freshness.
+  it('asks once, however the loading flag turns over', async () => {
+    const { marketDays, view } = await renderDashboard();
+    marketDays.unratedLoading.set(true);
+    view.detectChanges();
+    marketDays.unratedLoading.set(false);
+    view.detectChanges();
+
+    expect(marketDays.loadedUnrated).toBe(1);
+  });
+
   it('marks the markets step done and shows the count once schedules exist', async () => {
     const { view, markets } = await renderBlank();
     markets.schedules.set([aSchedule]);

@@ -47,8 +47,11 @@ export class Dashboard {
   constructor() {
     this.catalogue.load();
     this.markets.load();
-    // Warmed here, ahead of the card that reads it: asking from inside the published
-    // branch would flip loaded() back to false on first paint and flicker the spinner.
+    // Both warmed here, ahead of the cards that read them: asking from inside the published
+    // branch flips loaded() back to false, and the branch that asked is destroyed with it.
+    // The days survived that as a flicker, being gated on freshness; the unrated days are
+    // deliberately not, so the response re-creates the card, which asks again, for ever.
     this.marketDays.load();
+    this.marketDays.loadUnrated();
   }
 }

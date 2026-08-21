@@ -22,10 +22,13 @@ async function renderPrompt(setup: (marketDays: FakeMarketDayFacade) => void = (
 }
 
 describe('BilanPrompt', () => {
-  it('asks for the unrated days on the way in', async () => {
-    const { marketDays } = await renderPrompt();
+  // Reads, never asks. The dashboard warms the days ahead of the gate it renders behind —
+  // asking from in here dispatched a load that closed that gate, which destroyed this card,
+  // which re-created it on the response, which asked again.
+  it('reads the days the dashboard already asked for', async () => {
+    const { marketDays } = await renderPrompt((facade) => facade.unrated.set([saturday]));
 
-    expect(marketDays.loadedUnrated).toBe(true);
+    expect(marketDays.loadedUnrated).toBe(0);
   });
 
   // A nudge with nothing to nudge about is not a card — the dashboard is sparse enough
