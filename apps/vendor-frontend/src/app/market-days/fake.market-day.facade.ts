@@ -1,17 +1,21 @@
 import { Injectable, signal } from '@angular/core';
 import { MarketDayFacade } from './market-day.facade';
-import { MarketDaySlot, MarketDayView } from './market-days';
+import { ItemOutcome, MarketDaySlot, MarketDayView, UnratedMarketDay } from './market-days';
 
 @Injectable()
 export class FakeMarketDayFacade implements MarketDayFacade {
   readonly days = signal<MarketDayView[]>([]);
   readonly loading = signal(false);
   readonly day = signal<MarketDaySlot>({ status: 'loading' });
+  readonly unrated = signal<UnratedMarketDay[]>([]);
+  readonly unratedLoading = signal(false);
   loaded = false;
+  loadedUnrated = false;
   loadedDays: { marketId: string; date: string }[] = [];
   savedMenu: { marketId: string; date: string; itemIds: string[] } | undefined;
   availabilityChanges: { marketId: string; date: string; itemId: string; soldOut: boolean }[] = [];
   closures: { marketId: string; date: string; closed: boolean }[] = [];
+  recordedBilan: { marketId: string; date: string; outcomes: Record<string, ItemOutcome> } | undefined;
 
   load(): void {
     this.loaded = true;
@@ -19,6 +23,10 @@ export class FakeMarketDayFacade implements MarketDayFacade {
 
   loadDay(marketId: string, date: string): void {
     this.loadedDays.push({ marketId, date });
+  }
+
+  loadUnrated(): void {
+    this.loadedUnrated = true;
   }
 
   // The screen it stands for renders the slot, so a fake that moved only the list would
@@ -46,6 +54,10 @@ export class FakeMarketDayFacade implements MarketDayFacade {
 
   reopen(marketId: string, date: string): void {
     this.closures.push({ marketId, date, closed: false });
+  }
+
+  recordBilan(marketId: string, date: string, outcomes: Record<string, ItemOutcome>): void {
+    this.recordedBilan = { marketId, date, outcomes };
   }
 
   // The optimistic patch is part of the port's contract — the row moves on the call, not

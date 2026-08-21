@@ -35,7 +35,11 @@ export class Dashboard {
   private readonly marketDays = inject(MarketDayFacade);
   // The next-menu card's empty state is a warning, so the whole home waits for the days
   // rather than letting the card paint "aucun marché" and take it back a moment later.
-  readonly loaded = computed(() => !!this.storefront.view() && !this.marketDays.loading());
+  // The bilan prompt joins the gate for the same reason: a card appearing a moment late
+  // shifts everything under it out from beneath the vendor's thumb.
+  readonly loaded = computed(
+    () => !!this.storefront.view() && !this.marketDays.loading() && !this.marketDays.unratedLoading(),
+  );
   readonly published = computed(() => this.storefront.view()?.published === true);
   private readonly catalogue = inject(CatalogueFacade);
   private readonly markets = inject(MarketScheduleFacade);

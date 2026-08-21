@@ -15,6 +15,7 @@ export const marketDayView = (overrides: Partial<MarketDayView> = {}): MarketDay
   closed: false,
   itemIds: [],
   soldOutItemIds: [],
+  outcomes: {},
   market: { name: 'Marché de la Croix-Rousse', codePostal: '69004', town: 'Lyon' },
   ...overrides,
 });

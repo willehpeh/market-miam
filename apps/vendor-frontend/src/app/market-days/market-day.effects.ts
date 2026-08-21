@@ -19,6 +19,12 @@ import {
   LoadMarketDays,
   LoadMarketDaysFailure,
   LoadMarketDaysSuccess,
+  LoadUnratedMarketDays,
+  LoadUnratedMarketDaysFailure,
+  LoadUnratedMarketDaysSuccess,
+  RecordBilan,
+  RecordBilanFailure,
+  RecordBilanSuccess,
   SetMarketDayMenu,
   SetMarketDayMenuFailure,
   SetMarketDayMenuSuccess,
@@ -39,6 +45,18 @@ export class MarketDayEffects {
         this.marketDays.upcoming().pipe(
           map(days => LoadMarketDaysSuccess({ days })),
           catchError((error: HttpErrorResponse) => of(LoadMarketDaysFailure({ status: error.status }))),
+        ),
+      ),
+    ),
+  );
+
+  loadUnrated$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(LoadUnratedMarketDays),
+      switchMap(() =>
+        this.marketDays.unrated().pipe(
+          map(marketDays => LoadUnratedMarketDaysSuccess({ marketDays })),
+          catchError(() => of(LoadUnratedMarketDaysFailure())),
         ),
       ),
     ),
@@ -97,6 +115,31 @@ export class MarketDayEffects {
         ),
       ),
     ),
+  );
+
+  // switchMap like setMenu: one whole-set save per screen, and the last submit wins.
+  recordBilan$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(RecordBilan),
+      switchMap(({ marketId, date, outcomes }) =>
+        this.marketDays.recordBilan(marketId, date, outcomes).pipe(
+          map(() => RecordBilanSuccess({ marketId, date, outcomes })),
+          catchError(() => of(RecordBilanFailure())),
+        ),
+      ),
+    ),
+  );
+
+  // The dashboard, unconditionally (decision 74): the live screen is a dead end for a
+  // day already judged, and a failed bilan does not navigate at all — the answers stay
+  // on screen and the interceptor surfaces the error.
+  navigateAfterBilan$ = createEffect(
+    () =>
+      this.actions$.pipe(
+        ofType(RecordBilanSuccess),
+        tap(() => void this.router.navigate(['/dashboard'])),
+      ),
+    { dispatch: false },
   );
 
   // Back to the day, not to the dashboard: the card's own gate decides, so a menu saved

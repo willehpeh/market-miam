@@ -1,7 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { map, Observable } from 'rxjs';
-import { MarketDays, MarketDayView } from './market-days';
+import { ItemOutcome, MarketDays, MarketDayView, UnratedMarketDay } from './market-days';
 import { environment } from '../../environments/environment';
 
 type SentDay = Omit<MarketDayView, 'itemIds'> & { items: { itemId: string }[] };
@@ -19,6 +19,14 @@ export class HttpMarketDays implements MarketDays {
     return this.http
       .get<UpcomingResponse>(`${environment.apiBaseUrl}/api/market-days/upcoming`)
       .pipe(map(({ marketDays }) => marketDays.map(withItemIds)));
+  }
+
+  // The one backward-looking read, and its own route: the upcoming list looks forward and
+  // drops a day at endTime (decision 65).
+  unrated(): Observable<UnratedMarketDay[]> {
+    return this.http
+      .get<{ marketDays: UnratedMarketDay[] }>(`${environment.apiBaseUrl}/api/market-days/unrated`)
+      .pipe(map(({ marketDays }) => marketDays));
   }
 
   day(marketId: string, date: string): Observable<MarketDayView> {
@@ -40,5 +48,11 @@ export class HttpMarketDays implements MarketDays {
 
   changeClosure(marketId: string, date: string, closed: boolean): Observable<void> {
     return this.http.put<void>(`${environment.apiBaseUrl}/api/market-days/${marketId}/${date}/closed`, { closed });
+  }
+
+  // The whole set in one body, setMenu's shape rather than the availability pair's
+  // (decisions 72, 73): a bilan is bookkeeping in one sitting, not a stream of taps.
+  recordBilan(marketId: string, date: string, outcomes: Record<string, ItemOutcome>): Observable<void> {
+    return this.http.put<void>(`${environment.apiBaseUrl}/api/market-days/${marketId}/${date}/bilan`, { outcomes });
   }
 }

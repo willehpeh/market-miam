@@ -251,8 +251,8 @@ describe('LiveScreen', () => {
   });
 
   // Decision 48: inert means the rows stop being availability controls, not that they stop
-  // being rows — 2b's rating mode lands on these same rows, so they keep their markup and
-  // both groups keep their split. Asserted as disabled rather than by clicking: fireEvent
+  // being rows — they keep their markup and both groups keep their split, which is what
+  // decision 70 left standing when the bilan took its own route. Asserted as disabled rather than by clicking: fireEvent
   // dispatches straight to the listener, where a browser suppresses activation entirely.
   it('stops the rows being availability controls once the stand is closed', async () => {
     await renderLive((md, cat) => aLiveDay(md, cat, ['item-2'], { phase: 'trading', closed: true }));
@@ -322,12 +322,39 @@ describe('LiveScreen', () => {
 
   // Decision 48's treatment, for the same reason one phase later: *épuisé* is a claim
   // about a stall that is no longer there, and decision 49 reads these marks back as a
-  // rating. The rows stay rows — 2b's judgments land on them.
+  // rating. The rows stay rows; the bilan is a link at the foot, not a mode on them.
   it('stops the rows being availability controls once the market is over', async () => {
     await renderLive((md, cat) => aLiveDay(md, cat, ['item-2'], { phase: 'over' }));
 
     expect(screen.getByRole('button', { name: 'Bourguignon' })).toBeDisabled();
     expect(within(screen.getByRole('region', { name: /épuisé/i })).getByRole('button', { name: 'Tatin' })).toBeDisabled();
+  });
+
+  // Decision 70: the bilan took its own route, so the foot decision 60 left empty carries
+  // the door to it rather than the rating itself.
+  it('offers the bilan once the market is over', async () => {
+    await renderLive((md, cat) => aLiveDay(md, cat, [], { phase: 'over' }));
+
+    expect(screen.getByRole('link', { name: 'Faire le bilan' }).getAttribute('href')).toBe(
+      '/dashboard/bilan/market-1/2026-08-15',
+    );
+  });
+
+  // A closed day is finished whatever the clock says (decision 69), so the vendor who
+  // packed up at 11h can judge the morning without waiting for endTime.
+  it('offers the bilan on a stand the vendor closed early', async () => {
+    await renderLive((md, cat) => aLiveDay(md, cat, [], { phase: 'trading', closed: true }));
+
+    expect(screen.getByRole('link', { name: 'Faire le bilan' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Rouvrir le stand' })).toBeTruthy();
+  });
+
+  // The domain refuses a bilan for a day still being traded, and the screen declines the
+  // same thing rather than offering a door onto a refusal.
+  it('offers no bilan while the stand is still open', async () => {
+    await renderLive((md, cat) => aLiveDay(md, cat, [], { phase: 'trading' }));
+
+    expect(screen.queryByRole('link', { name: 'Faire le bilan' })).toBeNull();
   });
 
   // A live defect the moment `over` can reach the screen: decision 50 makes reopen raise

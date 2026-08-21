@@ -28,11 +28,13 @@ const day = {
   phase: 'future',
   closed: false,
   soldOutItemIds: [],
+  outcomes: {},
   market: { name: 'Marché de la Croix-Rousse', town: 'Lyon', codePostal: '69004' },
 };
 
 const availability = (itemId: string) => `/api/market-days/market-1/2026-08-15/items/${itemId}/availability`;
 const closure = '/api/market-days/market-1/2026-08-15/closed';
+const bilan = '/api/market-days/market-1/2026-08-15/bilan';
 
 const asSent = (items: Record<string, unknown>[]) => ({ marketDays: [{ ...day, items }] });
 
@@ -420,6 +422,96 @@ describe('MarketDays', () => {
     httpCtrl.expectOne(closure).flush(null, { status: 500, statusText: 'Server Error' });
 
     expect(facade.days().map(each => each.closed)).toEqual([false, false]);
+  });
+
+  // Its own route, not a widening of the upcoming list: that one looks forward and drops a
+  // day at endTime, which is the whole reason the prompt exists (decision 65).
+  it('reads the unrated days from their own route', async () => {
+    facade.loadUnrated();
+
+    const req = httpCtrl.expectOne('/api/market-days/unrated');
+    expect(req.request.method).toBe('GET');
+    req.flush({ marketDays: [{ marketId: 'market-1', date: '2026-08-15', day: 'SAT', marketName: 'Le marché' }] });
+
+    await waitFor(() =>
+      expect(facade.unrated()).toEqual([
+        { marketId: 'market-1', date: '2026-08-15', day: 'SAT', marketName: 'Le marché' },
+      ]));
+  });
+
+  // Arriving at a dashboard that no longer nags is the receipt the bilan needs no toast
+  // for (decision 74).
+  it('drops the day from the prompt once its bilan is recorded', async () => {
+    facade.loadUnrated();
+    httpCtrl.expectOne('/api/market-days/unrated').flush({
+      marketDays: [
+        { marketId: 'market-1', date: '2026-08-15', day: 'SAT', marketName: 'Le marché' },
+        { marketId: 'market-2', date: '2026-08-15', day: 'SAT', marketName: 'L\'autre marché' },
+      ],
+    });
+
+    facade.recordBilan('market-1', '2026-08-15', { 'item-1': 'did_well' });
+    httpCtrl.expectOne(bilan).flush(null);
+
+    await waitFor(() => expect(facade.unrated().map(day => day.marketId)).toEqual(['market-2']));
+  });
+
+  // A nudge that failed to load is silent, not broken: nothing else on the dashboard
+  // depends on it, and the next visit asks again.
+  it('stays silent when the unrated days fail to load', async () => {
+    facade.loadUnrated();
+
+    httpCtrl.expectOne('/api/market-days/unrated').flush(null, { status: 500, statusText: 'Server Error' });
+
+    expect(facade.unrated()).toEqual([]);
+    expect(facade.unratedLoading()).toBe(false);
+  });
+
+  // Decision 72: setMenu's shape, not the availability pair's — a bilan is bookkeeping in
+  // one sitting, so it submits once and the whole set replaces what was there.
+  it('puts the whole bilan for the day', () => {
+    facade.recordBilan('market-1', '2026-08-15', { 'item-1': 'sold_out', 'item-2': 'did_well' });
+
+    const req = httpCtrl.expectOne(bilan);
+    expect(req.request.method).toBe('PUT');
+    expect(req.request.body).toEqual({ outcomes: { 'item-1': 'sold_out', 'item-2': 'did_well' } });
+    req.flush(null);
+  });
+
+  // On the response, not on dispatch (decision 74): a whole-set save has nothing to show
+  // optimistically that the form is not already showing.
+  it('takes the outcomes from the response, without refetching', async () => {
+    facade.load();
+    httpCtrl.expectOne('/api/market-days/upcoming').flush(asSent([{ itemId: 'item-1' }]));
+
+    facade.recordBilan('market-1', '2026-08-15', { 'item-1': 'did_well' });
+    httpCtrl.expectOne(bilan).flush(null);
+
+    await waitFor(() => expect(facade.days()[0].outcomes).toEqual({ 'item-1': 'did_well' }));
+    httpCtrl.expectNone('/api/market-days/upcoming');
+  });
+
+  // The dashboard, unconditionally: the live screen is a dead end for a day already
+  // finished, so the bilan does not share the menu save's conditional exit below.
+  it('returns to the dashboard once the bilan is recorded', async () => {
+    const router = TestBed.inject(Router);
+    facade.recordBilan('market-1', '2026-08-15', { 'item-1': 'did_well' });
+
+    httpCtrl.expectOne(bilan).flush(null);
+
+    await waitFor(() => expect(router.url).toBe('/dashboard'));
+  });
+
+  // A failed bilan leaves the form standing with every answer in it, so it must not
+  // navigate — the interceptor is what surfaces the error.
+  it('stays on the bilan when recording it fails', async () => {
+    const router = TestBed.inject(Router);
+    await router.navigateByUrl('/dashboard/markets');
+
+    facade.recordBilan('market-1', '2026-08-15', { 'item-1': 'did_well' });
+    httpCtrl.expectOne(bilan).flush(null, { status: 500, statusText: 'Server Error' });
+
+    await waitFor(() => expect(router.url).toBe('/dashboard/markets'));
   });
 
   it('returns to the dashboard once the menu is saved', async () => {

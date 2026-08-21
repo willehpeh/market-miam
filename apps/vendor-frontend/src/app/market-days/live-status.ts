@@ -25,3 +25,9 @@ export const awaitingStart = (day: MarketDayView | undefined): boolean =>
 // broadcasts nothing, so being at the market is not enough.
 export const broadcasting = (day: MarketDayView | undefined): boolean =>
   day?.phase === 'trading' && day.itemIds.length > 0;
+
+// The domain's own predicate for a day that can be judged (decision 69): closed, ended,
+// or simply past. Read off the server-said phase like every other question here — a
+// bilan is the one command in this feature that is not about now.
+export const isFinished = (day: MarketDayView | undefined): boolean =>
+  !!day && (day.closed || day.phase === 'over' || day.phase === 'past');

@@ -7,7 +7,7 @@ import { Spinner } from '../core/spinner';
 import { formatTime, longDate } from '../core/french-date';
 import { CatalogueFacade } from '../catalogue/catalogue.facade';
 import { MarketDayFacade } from './market-day.facade';
-import { awaitingStart, broadcasting, isToday } from './live-status';
+import { awaitingStart, broadcasting, isFinished, isToday } from './live-status';
 import { ClosedNotice } from './closed-notice';
 import { ReopenStand } from './reopen-stand';
 
@@ -51,7 +51,8 @@ type Row = { itemId: string; name: string };
              receipt — no toast, no confirm (decision 7). A closed stand sinks the rows onto
              the canvas and drops their border — the raised card is what says *tappable*, so
              that is what goes, not the legibility. Decision 48 keeps them as rows, split into
-             the same two groups, because 2b's rating mode lands on them. -->
+             the same two groups — and decision 70 left them there when the bilan took its
+             own route, so nothing but availability has ever landed on them. -->
         <ul class="mt-6 space-y-2">
           @for (item of active(); track item.itemId) {
             <li>
@@ -109,10 +110,10 @@ type Row = { itemId: string; name: string };
         <!-- Decision 52: one slot, one verb, flipping at startTime. Keyed to the phase
              alone rather than to broadcasting: the banner above claims something about a menu,
              this offers to call the day off, which needs none. -->
-        <!-- Decision 60: an ended day has an empty foot. No close verb, because ADR 0049
-             defines a close as an early endTime and the clock already ran out; and no
-             Rouvrir, because decision 50 refuses one past endTime and the failure path is
-             a silent snap-back. 2b's rating is what lands here. -->
+        <!-- Decision 60: an ended day has no close verb, because ADR 0049 defines a close
+             as an early endTime and the clock already ran out; and no Rouvrir, because
+             decision 50 refuses one past endTime and the failure path is a silent
+             snap-back. What lands here is the bilan's door, below. -->
         @if (!marketDay.over) {
           @if (marketDay.closed) {
             <mm-reopen-stand [marketId]="marketId" [date]="date" />
@@ -125,6 +126,15 @@ type Row = { itemId: string; name: string };
               }
             </button>
           }
+        }
+
+        <!-- Decision 70: reckoning is its own route, so the foot carries a door rather
+             than a tenth state on this screen. Below the close verb, not above it, so
+             Rouvrir keeps standing exactly where Fermer stood (decision 38) — and on an
+             ended day it is the only thing here. The same flag as the rows: what makes
+             them inert is what makes the day judgeable. -->
+        @if (marketDay.inert) {
+          <a [routerLink]="bilanLink" class="btn-link mt-8 flex w-full max-w-xs mx-auto">Faire le bilan</a>
         }
 
         <p aria-live="polite" class="sr-only">{{ note() }}</p>
@@ -148,6 +158,7 @@ export class LiveScreen {
   readonly date = this.route.snapshot.paramMap.get('date') ?? '';
 
   readonly editorLink = ['/dashboard/menus', this.marketId, this.date];
+  readonly bilanLink = ['/dashboard/bilan', this.marketId, this.date];
 
   // The slot's own state, not the list's: *not fetched yet* has to outrank the guard
   // branch, or the screen says "pas aujourd'hui" for one frame on every entry.
@@ -167,9 +178,11 @@ export class LiveScreen {
           closed: occurrence.closed,
           trading: occurrence.phase === 'trading',
           over: occurrence.phase === 'over',
-          // One flag for both readings of decision 48: the rows stop being availability
-          // controls when the vendor packs up, and again when the clock ends the day.
-          inert: occurrence.closed || occurrence.phase === 'over',
+          // One flag for three readings: the rows stop being availability controls when
+          // the vendor packs up and again when the clock ends the day (decision 48), and
+          // that same finished day is the one the domain will accept a bilan for
+          // (decision 69).
+          inert: isFinished(occurrence),
         }
       : undefined;
   });
