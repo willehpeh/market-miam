@@ -5,6 +5,28 @@ Conventions live in [CONTRIBUTING.md](CONTRIBUTING.md), the shape of the monorep
 [`docs/adr/`](docs/adr/README.md) and the plan documents under [`docs/`](docs). Read those
 first — this file is only for things about *running* the repo that those pages get to assume.
 
+## `nx test api` is flaky on local macOS
+
+`npx nx test api` fails intermittently on a Mac, and **the failures move**: a different
+spec fails each run, sometimes none at all. A representative three runs on a clean tree:
+
+```
+Tests  195 passed (195)
+Tests  195 passed (195)
+Tests  4 failed | 191 passed (195)   # catalogue-rebuild, market-day-close,
+                                     # market-schedule, request-shape
+```
+
+**This is not a real failure, and the spec that failed is not broken.** The API specs drive
+HTTP through supertest against `app.getHttpServer()`, which binds an ephemeral port; macOS
+allocates those in a way that collides under vitest's parallelism. Diagnosed previously —
+CI runs the same suite on Linux and is green.
+
+So: never "fix" an API spec because it failed once, and never conclude a change broke the
+API suite from a single red run. Re-run it, and check a recent run on `main` before
+believing it. The social suite (`npx nx test test`) binds no ports and is unaffected — use
+it as the reliable local signal.
+
 ## Node in Claude Code web and mobile sessions
 
 `npm ci` fails in a Claude Code on the web / mobile container:
