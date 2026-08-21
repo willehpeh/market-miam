@@ -1,7 +1,7 @@
 import { ItemAddedToCatalogue, ItemRetired, ItemRevised, ItemPhotoChanged, ItemsReordered, CatalogueEvent } from './events';
 import { Aggregate } from '@market-miam/event-sourcing';
 import { ImageReference } from '@market-miam/common';
-import { Item, ItemDescription, ItemId, ItemName, Pricing } from './item';
+import { Item, ItemDescription, ItemId, ItemName, MarketPrice, Pricing } from './item';
 import { NoSuchItemError } from './errors/no-such-item.error';
 import { ItemAlreadyInCatalogueError } from './errors/item-already-in-catalogue.error';
 import { IncompleteReorderError } from './errors/incomplete-reorder.error';
@@ -126,6 +126,10 @@ export class Catalogue extends Aggregate {
 
   hasAtLeastOneItem(): boolean {
     return this._items.length > 0;
+  }
+
+  confirmPricing(prices: Map<ItemId, MarketPrice>): void {
+    prices.forEach((price, itemId) => this.itemWithId(itemId).confirmPricedBy(price));
   }
 
   confirmAll(itemIds: ItemId[]): void {

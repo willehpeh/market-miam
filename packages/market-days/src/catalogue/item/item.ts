@@ -1,7 +1,7 @@
 import { ItemId } from './item-id';
 import { ItemName } from './item-name';
 import { ItemDescription } from './item-description';
-import { Pricing } from './pricing';
+import { MarketPrice, Pricing } from './pricing';
 import { ImageReference } from '@market-miam/common';
 
 export class Item {
@@ -22,6 +22,10 @@ export class Item {
     this._name = name;
     this._description = description;
     this._pricing = pricing;
+  }
+
+  confirmPricedBy(price: MarketPrice): void {
+    this._pricing.confirmMatchedBy(price);
   }
 
   changePhoto(imageReference: ImageReference): void {
