@@ -67,15 +67,27 @@ Commits `7100fa8` (rename `ItemPrice` → `Price`), `d182d77`.
 here returns a named list. 4 tests in `market-prices.spec.ts`; vendor scoping stays the read
 model contract's, not the route's.
 
-## Slice 6 — vendor price editor (next)
+## Slice 6 — vendor price editor (done)
 
-Route, market card restructure (decision 2), form over every catalogue dish, two row states,
-save button count. Signal Forms with `applyEach`, as `add-item.ts:410` already does for
-variant rows; `catalogue/money.ts` for cents. Own facade and state slice (decision 11).
+Route, market card restructured into a container, Signal Forms over every catalogue dish
+with `applyEach`, both row states, count on the save button. Own facade and state slice.
+22 tests in `price-editor.spec.ts`, 9 in `market-prices.spec.ts`.
 
-**This is most of the remaining work.**
+Two things the decisions did not cover, settled while building:
 
-## Slice 7 — menu editor
+- **Row layout**: dish name on its own line, the field and the carte price side by side
+  beneath it, so the two numbers are adjacent to compare. Variants nest under the dish name.
+- **The screen gates on all three feeds** — schedules, catalogue, prices. Schedules landing
+  late would say a market stood at weekly is no longer programmed; prices landing late would
+  seed every row at its carte price, and a vendor typing into that saves over a list they
+  never saw.
+
+A blank field is legal, so only a *filled* field that will not parse is an error — it says
+so on the row without waiting for a blur, and the save button is disabled while one stands.
+Dropping it silently would send the dish back to its carte price, which is the one outcome
+a vendor who typed a number cannot see coming.
+
+## Slice 7 — menu editor (next)
 
 Picker quotes the market price with its cue; *Tarifs de ce marché →* link on the day screen.
 The prices slice loads here too.
