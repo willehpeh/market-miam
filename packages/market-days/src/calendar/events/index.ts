@@ -3,3 +3,4 @@ export * from './market-schedule-registered';
 export * from './market-schedule-cancelled';
 export * from './market-schedule-amended';
 export * from './absence-declared';
+export * from './market-prices-set';

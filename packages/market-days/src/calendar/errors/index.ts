@@ -3,3 +3,4 @@ export * from './no-such-schedule.error';
 export * from './invalid-date-range.error';
 export * from './schedule-already-registered.error';
 export * from './immutable-market.error';
+export * from './unscheduled-market.error';

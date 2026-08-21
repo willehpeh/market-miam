@@ -19,7 +19,13 @@ week, and one omission is a wrong price on a public storefront.
 ## Decision
 
 **Overrides hang off the market, on `Calendar`, keyed by `marketId`** — not
-`scheduleId`, because two schedules can sit at one market.
+`scheduleId`, because two schedules can sit at one market. `Calendar` owns them
+because it is the only thing that knows which markets a vendor attends; it
+learns them through schedules, so it is an incidental registry rather than a
+natural owner, and that is the whole of the argument. The cost is real:
+`Calendar` now describes itself with an "and". Accepted over a `MarketPricing`
+aggregate on its own stream, which buys cohesion for a third load per command
+and moves the guard below off the aggregate that can enforce it.
 
 **One event, set whole (ADR 0047):**
 
@@ -50,9 +56,22 @@ does not invalidate existing overrides.
 A vendor flipping a dish from variants to flat silently drops that market's
 overrides for it rather than breaking the storefront.
 
-**`MarketPrices` validates on construction** (ADR 0007): each price through the
-existing `ItemPrice` (integer cents ≥ 0), each variant key through `ItemName`,
-empty variant maps rejected. `Record` gives key uniqueness free.
+**`MarketPrices` validates and normalises on construction** (ADR 0007): each
+price through the existing `ItemPrice` (integer cents ≥ 0), each variant key
+through `ItemName` — which trims, so ` Margherita ` matches rather than reading
+as a variant the dish lacks. `Record` gives key uniqueness free.
+
+**A dish overriding none of its variants is dropped, not rejected.** `{ pizza:
+{} }` says what leaving pizza out says, so it is normalised to absence — which
+is the sparseness rule already stated, applied to itself. Rejecting it would 400
+an ordinary action if the editor ever lets a vendor pick a dish before typing a
+price; storing it would make two lists that mean the same thing compare unequal,
+so picking a dish and typing nothing would land an event saying nothing.
+
+**Shape before catalogue.** The handler builds `MarketPrices` first and matches
+the normalised list against the catalogue second, so a blank variant name is
+answered as a blank name rather than as a variant this dish happens not to have.
+Same order `menuFor` already uses for `ItemId`.
 
 **One join point.** `pricedAt(marketId, items)` is called from both query
 handlers; every read surface inherits the precedence rule from there.
@@ -70,8 +89,8 @@ snapshotted into the menu event.
 ### Domain — `packages/market-days/src/`
 
 * `calendar/events/market-prices-set.ts`, added to `CalendarEvent`
-* `calendar/pricing/market-prices.ts` and `calendar/errors/mismatched-pricing.error.ts`
-* `Calendar`: `_prices`, an `apply` case, `setMarketPrices(marketId, prices)` refusing a market it does not schedule
+* `calendar/pricing/market-prices.ts`; `catalogue/errors/mismatched-pricing.error.ts` — with `Pricing` and `Variants`, which are what throw it, not with the calendar
+* `Calendar`: `_prices`, an `apply` case, `setMarketPrices(marketId, prices)` refusing a market it does not schedule. **A client-bug check, not an invariant** — nothing breaks if it passes, since an orphan list is unreachable (below). It earns its place by costing one `if` over state already in memory, and by catching the same failure as the `NoSuchItemError` beside it: prices the vendor believes they set, going nowhere. Its one false rejection — pricing a market whose schedule was cancelled over a seasonal break — is unreachable through an editor that lists markets from schedules
 * `Catalogue.confirmPricing` → `Item.confirmPricedBy` → `Pricing.confirmMatchedBy`
 * `set-market-prices/` command + handler, loading `Catalogues` alongside `Calendars` — the *handler passes* shape of ADR 0051, as `SetMarketDayMenuHandler` already does
 * Controller route and zod request shape (ADR 0046)
@@ -99,7 +118,7 @@ snapshotted into the menu event.
 | Option | Why not |
 |---|---|
 | Per-day overrides only | The vendor re-enters a stable fact at every occurrence; one omission is a wrong public price |
-| Prices on the catalogue item, keyed by market | Retire and revise would drop overrides naturally, but what a dish costs at a market is calendar knowledge, and `MarketDays` already reads `Calendar` on every command (ADR 0051) |
+| Prices on the catalogue item, keyed by market | Retire and revise would drop overrides naturally, but a dish's price at a market is keyed by market, and the catalogue knows nothing about markets |
 | Riding in `MarketScheduleAmended` | Amending hours would have to restate every price |
 | A percentage adjustment per market | Cash prices are round — a 10 € dish becomes 12 €, not 11 € |
 

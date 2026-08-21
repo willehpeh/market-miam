@@ -2,16 +2,16 @@ import { MarketScheduleViewStore } from './market-schedule-view.store';
 import { MarketScheduleView } from './market-schedule-view';
 import { CheckpointedProjection, EventHandlerMap, ProjectionFor, StoredEvent } from '@market-miam/event-sourcing';
 import { vendorIdFrom } from '@market-miam/shared-kernel';
-import { AbsenceDeclared, CalendarEvent, MarketScheduleAmended, MarketScheduleCancelled, MarketScheduleRegistered } from '../calendar/events';
+import { AbsenceDeclared, MarketScheduleAmended, MarketScheduleCancelled, MarketScheduleRegistered, ScheduleEvent } from '../calendar/events';
 
 @CheckpointedProjection('market-schedule-view')
-export class MarketScheduleViewProjection extends ProjectionFor<CalendarEvent> {
+export class MarketScheduleViewProjection extends ProjectionFor<ScheduleEvent> {
 
   constructor(private readonly store: MarketScheduleViewStore) {
     super();
   }
 
-  protected handlers(): EventHandlerMap<CalendarEvent> {
+  protected handlers(): EventHandlerMap<ScheduleEvent> {
     return {
       MarketScheduleRegistered: e => this.handleRegistered(e),
       MarketScheduleAmended: e => this.handleAmended(e),
