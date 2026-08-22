@@ -147,8 +147,8 @@ Slice 1 is **started, backend only**. Two commits, both green on `npx nx test te
 
 | | |
 |---|---|
-| `1f17230` | the first test and the naive handler that passes it |
-| `34c4c95` | refactor only — the fold extracted, two loop faults fixed, no spec touched |
+| *Read back what the vendor said about a dish at a market* | the first test, and the naive handler that passes it |
+| *Separate deciding what to read from deciding what it means* | refactor only — the fold extracted, two loop faults fixed, no spec touched |
 
 **What exists.** `packages/market-days/src/selling-record/` — `find-selling-record.ts` (the
 query), `selling-record-view.ts` (`Bilan` · `ItemRecord` · `MarketRecord` ·
@@ -272,7 +272,7 @@ Settled by grilling. Do not re-litigate without a reason.
 | 13 | **Streak tokens are *Épuisé* · *Bien* · *Reste*, not the form's full labels** | A third register for three facts, bought deliberately: the pile heading above supplies the full phrase so the mapping is learnable at a glance, and full labels wrap a five-bilan streak to three lines inside a 224 px card |
 | 14 | **The editor line is inert text; colour never carries meaning alone** | The row is a `<label>` around a checkbox, so a link inside it is a nested interactive and a misfire that ticks the dish. And every pile and token carries its word — WCAG 1.4.1, which the price editor already holds itself to (`MARKET-PRICING-PLAN.md` decision 7), and which a screen read in market sun does not forgive |
 | 15 | **The handler takes `MarketDayViews` and a `Clock`, nothing else** | Settled by what the first test forced rather than up front. `FindUnratedMarketDays` reads schedules and the catalogue only to decide whether a day is *finished*; a day carries `outcomes` only where the aggregate already accepted a bilan, so that question is already answered. Retired dishes drop on the frontend's own catalogue join, which every surface makes anyway for names |
-| 16 | **The fold is a private method; the tests stay on the handler** | ADR 0006 — public surfaces, not internals. A spec on the fold would pin the shape the slice still needs free, and keeping the tests on the handler is exactly what let `34c4c95` move the fold without touching one |
+| 16 | **The fold is a private method; the tests stay on the handler** | ADR 0006 — public surfaces, not internals. A spec on the fold would pin the shape the slice still needs free, and keeping the tests on the handler is exactly what let the refactor commit move the fold without touching one |
 | 17 | **Only `bilans` has a meaningful order** | Oldest first, decision 6, and `menusFor` gives it for free. The order of markets and of dishes within them is incidental — every surface joins the catalogue for names and renders in that order — so no test should assert it, and a test that does will break on a harmless change to the fold |
 
 ## Deferred — trigger-gated
