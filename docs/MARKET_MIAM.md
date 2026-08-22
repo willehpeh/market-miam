@@ -89,14 +89,22 @@ A customer can request a catalogue item for a specific market day — “I wish 
 ## Post-Market Tracking
 
 Lightweight vendor feedback loop, folded into the menu du jour rather than a
-separate phase. **During the market:** the vendor taps *sold out* per dish
-(domain built: `ItemMarkedAsSoldOut`; no UI yet). **After the market:** three
-outcomes per dish per market day — *did well / did not do well / sold out*.
+separate phase. **Both halves are shipped.** *During the market:* the vendor taps
+*sold out* per dish on the live screen (`ItemMarkedAsSoldOut` /
+`ItemMarkedAsAvailable`). *After the market:* *le bilan* — three outcomes per dish
+per market day, *bien vendu / moins bien vendu / épuisé*, recorded whole
+(`MarketDayBilanRecorded`), with a dashboard prompt for a finished day nobody
+judged. See `LIVE-MODE-PLAN.md` slices 1 and 2b.
 
 *(This supersedes the original brought/left quantity design — two numbers per
 item deriving sell-through and waste % — which asked for more bookkeeping than
-a trader packing up a stand will do. Trend data per item per market remains the
-goal.)*
+a trader packing up a stand will do.)*
+
+**Trend data per item per market** — the goal that survived that supersession — is
+now being built on top of it: the bilans read back as *(dish × market)* piles
+rather than scores, since three broad categories over a handful of market days are
+useless as a measurement and useful as sorting bins. Backend done, frontend not
+started. See `BILAN-RETROSPECTIVE-PLAN.md`.
 
 ## Tech Stack (as built)
 
@@ -138,12 +146,21 @@ further Ordering context, not an extension of Billing (ADR 0048).
 |AbsenceDeclared            |Calendar  |Operational    |
 |MarketDayMenuSet           |MarketDay |Before market  |
 |ItemMarkedAsSoldOut        |MarketDay |During market  |
+|ItemMarkedAsAvailable      |MarketDay |During market  |
+|MarketDayClosed            |MarketDay |During market  |
+|MarketDayReopened          |MarketDay |During market  |
+|MarketDayBilanRecorded     |MarketDay |After market   |
+|MarketPricesSet            |Calendar  |Setup          |
 
 ### Events still to come
 
 - The customer-signal events (`ItemMiamed`, `ItemRequested`) — nothing built
-- Market-day lifecycle — `MarketDayClosed`/`MarketDayReopened` (no `open`: the start follows from the schedule) and `ItemMarkedAsAvailable`, all in `LIVE-MODE-PLAN.md`; then the post-market outcome event, which hangs off closing
 - `AbsenceCancelled` (declared absences can't yet be retracted)
+
+The market-day lifecycle events this list used to promise have all landed —
+`MarketDayClosed`/`MarketDayReopened` (no `open`: the start follows from the
+schedule), `ItemMarkedAsAvailable`, and `MarketDayBilanRecorded`, the post-market
+outcome event that hangs off closing.
 
 ## MVP Strategy — status
 
@@ -152,8 +169,8 @@ The MVP is **vendor-facing first**: the catalogue and market day planning tool, 
 1. **Build the catalogue** — ✅ shipped end-to-end (add, revise, re-photo, retire, reorder, variants)
 1. **Plan market days** — ✅ shipped end-to-end (`SetMarketDayMenu` → `MarketDayMenuSet`, the whole day's menu in one command; read model, `PUT /market-days/:marketId/:date/menu`, the menu joined onto upcoming days, a *Prochain marché* card and menu editor in the vendor app, and the day's menu leading the storefront) — see `MENU-DU-JOUR-PLAN.md`
 1. **Publish** — ✅ shipped: publication readiness + public storefront (next market, upcoming markets, absences) at the vendor's subdomain, with the carte on its own `/carte` page — see `LIVE-MODE-PLAN.md` slice 0
-1. **Sold-out tracking** — domain built (`ItemMarkedAsSoldOut`); **no UI**. Cheapest public-roadmap item to ship — a frontend job, not a domain one
-1. **Post-market review** — not built (three-outcomes model, above)
+1. **Sold-out tracking** — ✅ shipped: per-dish marks during service on the vendor's live screen, greyed in place on the customer storefront — see `LIVE-MODE-PLAN.md` slice 1
+1. **Post-market review** — ✅ shipped: *le bilan* on its own route, the whole set in one submit, the *épuisé* prefill a recorded bilan outranks, and a dashboard prompt for an unjudged day — see `LIVE-MODE-PLAN.md` slice 2b. Reading it back across market days is in progress (`BILAN-RETROSPECTIVE-PLAN.md`)
 
 Later phases: customer miams, item requests, notifications, pre-ordering.
 
