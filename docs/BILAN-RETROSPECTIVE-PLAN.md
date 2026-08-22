@@ -156,6 +156,17 @@ already makes, and it is deliberately *cheaper* than that one:
   bilan's prefill and nothing else; two sources for one fact is how the piles start
   disagreeing with the screen the vendor filled in.
 
+**Measured, on Node 22.** The fold itself is nothing: 0.027 ms median for a pilot vendor
+(104 rows → 80 dish×market cells), 0.14 ms for an implausibly busy one (260 rows, 600 cells),
+and 0.23 ms over five years of pilot data — the case decision 5 names as the trigger, still
+a quarter of a millisecond. The database leg is not measured here (no Postgres in this
+sandbox) but is the whole cost: a ~104-row prefix scan plus one intra-region round trip and
+`pg`'s array/jsonb deserialisation, call it 2–5 ms, against which the fold is under 1 %.
+Server-side the request is single-digit milliseconds; what a vendor actually waits for is one
+more HTTPS round trip on market 4G, and the editor already makes three in parallel — so the
+fourth adds latency only if it is the slowest, which a same-table read three times the size of
+the days feed will not be.
+
 Six months, then capped to the last eight bilans per pair in the fold: a weekly market gives
 ~26 to choose from, a monthly one gives six, and a calendar window alone would punish the
 infrequent market for being infrequent. The window bounds the scan; the cap bounds the
@@ -207,7 +218,7 @@ Settled by grilling. Do not re-litigate without a reason.
 |---|---|---|
 | 1 | **Piles, never scores.** No percentage, no average, no rank, no chart | At n=3 to n=8 with three unordered-ish categories, every derived number is more confident than the data. A pile is a claim the streak beneath it can be checked against in one glance |
 | 2 | **(dish × market), never dish alone** | The clientele is the market's, and the product already accepts this everywhere it matters — prices vary by market (ADR 0052). A carte-wide average over four markets is the one aggregate guaranteed to describe no morning the vendor will actually have |
-| 3 | **One query returns the whole set; three surfaces slice it** | `MARKET-PRICING-PLAN.md` decision 3, same reasoning: a pilot vendor is ~20 dishes × ~4 markets × ≤8 tokens, a few kB, and the alternative is three narrow read-model methods for three views of one fold |
+| 3 | **One query returns the whole set; three surfaces slice it** | `MARKET-PRICING-PLAN.md` decision 3, same reasoning: a pilot vendor is ~20 dishes × ~4 markets × ≤8 bilans — **33 kB of JSON, 3.0 kB gzipped**, measured with real UUID ids — and the alternative is three narrow read-model methods for three views of one fold. A compact shape (`outcomes[]` plus one `since` instead of `{date,outcome}` objects) halves the raw bytes and saves only 13 % on the wire, because the UUIDs are the incompressible part: not worth the shape. If a vendor ever makes the whole set expensive, narrowing slice A to `?market=` is the lever, not re-encoding |
 | 4 | **The pile rule lives in the frontend, the window in the handler** | The thresholds are a UX rule the pilot will move (`FindUnratedMarketDaysHandler.WINDOW_DAYS`'s own argument), and moving them must cost no migration and no rebuild. The window is what bounds the scan, so it belongs where the scan is |
 | 5 | **No new read model in slice 1** | Decision 14a named the seam but the fold is a bounded prefix scan on the key migration `0013_market_day_views_key_order` already reordered for exactly this window read. Building the projection first shapes a table around a query whose shape the pilot has not yet moved. **Trigger: the fold shows up in a trace, or the window has to span years** |
 | 6 | **The streak reads oldest → newest** | It is the only element here that can show direction, and direction is what a mean cannot. Reversed, an improving dish reads as a declining one |
