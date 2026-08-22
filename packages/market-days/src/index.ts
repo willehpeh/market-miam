@@ -25,6 +25,7 @@ export * from './catalogue-view';
 export * from './market-day-view';
 export * from './market-prices-view';
 export * from './market-schedule-view';
+export * from './selling-record';
 export * from './catalogue';
 export * from './register-vendor';
 export * from './vendor/events';
