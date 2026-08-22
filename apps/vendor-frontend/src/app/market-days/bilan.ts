@@ -50,7 +50,7 @@ const CHOICES: { outcome: ItemOutcome; label: string }[] = [
                   <div class="mt-1 flex gap-1.5">
                     @for (choice of choices; track choice.outcome) {
                       <label
-                        class="flex-1 rounded-field p-2 text-center text-xs font-bold has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-brand"
+                        class="flex flex-1 items-center justify-center rounded-field p-2 text-center text-xs font-bold has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-brand"
                         [class]="
                           row.outcome === choice.outcome
                             ? 'bg-brand text-white'
