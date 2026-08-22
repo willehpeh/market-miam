@@ -142,38 +142,32 @@ once slice 1 exists: one route, one component, one link on the market card.
 
 ## Where this stands
 
-Slice 1 is **started, backend only**. Two commits, both green on `npx nx test test`
-(637 tests), lint and typecheck clean:
+The **package-level read is complete**; nothing above it is started. Green on
+`npx nx test test` (643 tests), lint and typecheck clean, and Stryker over
+`selling-record/` scores **100 % — 19 mutants, 19 killed, none survived**.
 
-| | |
+| Commit | |
 |---|---|
 | *Read back what the vendor said about a dish at a market* | the first test, and the naive handler that passes it |
 | *Separate deciding what to read from deciding what it means* | refactor only — the fold extracted, two loop faults fixed, no spec touched |
+| *Show a dish's last eight bilans, not all of them* | the cap; the only test of the six that was ever red |
+| *Pin the six-month window at its boundary* | the window constant made load-bearing |
+| *Pin the four things the handler does that nothing else owns* | no bilan · partial bilan · two markets one day · empty set |
 
 **What exists.** `packages/market-days/src/selling-record/` — `find-selling-record.ts` (the
 query), `selling-record-view.ts` (`Bilan` · `ItemRecord` · `MarketRecord` ·
 `SellingRecordView`), `find-selling-record.handler.ts` (`execute` reads the window,
-`recordsFrom` folds it), and `index.ts`, exported from the package barrel. One spec:
-`test/src/market-days/selling-record/find-selling-record.spec.ts`, driving the handler
-against `InMemoryMarketDayViews` in `find-unrated-market-days.spec.ts`'s idiom.
+`recordsFrom` folds it, `WINDOW_DAYS` 183 and `MOST_RECENT` 8), and `index.ts`, exported from
+the package barrel. Six tests in
+`test/src/market-days/selling-record/find-selling-record.spec.ts`, driving the handler against
+`InMemoryMarketDayViews` in `find-unrated-market-days.spec.ts`'s idiom.
 
-**The next step is the eight-bilan cap** — the first test that makes the handler do something
-it does not already do. `recordsFrom` is where it goes; that is why it was extracted before
-the test rather than during it.
+Five of those six were **green on writing**. That is worth knowing rather than hiding: only
+the cap drove new code, and the rest are guards, kept because the mutation run says each one
+is killing something. A future test here should expect the same — this handler is small, and
+most of what looks like its behaviour belongs to decision 18's lower layers.
 
-**Then five more, and only five**, because most of what looks like this handler's behaviour
-belongs to a layer below it (decision 18): the six-month window drops an older bilan; a day
-with no bilan contributes nothing; a partially judged day yields only the dishes answered;
-two markets on one day stay apart; and a vendor with nothing judged reads `{ markets: [] }`.
-
-Four things that look like they belong on that list do not. *A reopen empties the bilan*,
-*replaces the bilan rather than merging into it*, *keeps only the outcomes a new menu still
-carries* and *reads no other vendor's menus in the window* are already owned, by name, by
-`market-day-views.contract.ts` — both twins are held to them. Asserted again through this
-handler they would test `InMemoryMarketDayViews`, and they would go red for defects that are
-not in the code they point at.
-
-**Then the rest of slice 1**, none of it started: `GET /selling-record` with its zod shape
+**Next, and none of it started:** `GET /selling-record` with its zod shape
 and `JwtAuthGuard`; `FindSellingRecordHandler` into `queryHandlers` in
 `market-days.module.ts` (nothing to add to either persistence module — `MarketDayViews` is
 already provided in both); the frontend `selling-record/` facade set on `market-prices/`'s
