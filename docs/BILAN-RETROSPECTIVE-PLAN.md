@@ -63,22 +63,33 @@ last, and the only forward-looking pile on the page.
 
 Ties break toward the most recent bilan. No pile ever shows a percentage or an average.
 
-**2. The streak.** Under each dish, its last bilans as short words, oldest → newest:
+**2. The streak.** Under each dish, its last bilans as **short tokens** — *Épuisé* · *Bien* ·
+*Reste* — oldest → newest:
 
 ```
-Tajine d'agneau
-Bien vendu · Épuisé · Épuisé · Épuisé          depuis le 12 juillet
+Ça reste                                                   ← the pile heading
+  Chorba                                            6,00 €
+  Reste · Bien · Reste · Reste           depuis le 12 juil.
 ```
 
 Chronological, not most-recent-first: the sequence is the only thing here that can show a
-*trend*, and reversed it makes *getting better* read as *getting worse*. The words are the
-evidence under the pile's claim, so a vendor who disagrees with the pile can see instantly
-why it said that. Capped at six, prefixed `…` when truncated, with the date of the oldest
-one shown so staleness is the reader's to judge and not the algorithm's to hide.
+*trend*, and reversed it makes *getting better* read as *getting worse*. The tokens are the
+evidence under the pile's claim, so a vendor who disagrees with the pile sees instantly why
+it said that. Capped at six, prefixed `…` when truncated, with the date of the oldest one
+shown so staleness is the reader's to judge and not the algorithm's to hide.
 
-**3. The line in the menu editor.** The same streak, capped at three, as one `text-xs` line
-under the dish name while the vendor is ticking the menu for that market. No navigation, no
-new screen, and it lands at the exact moment the data exists to improve.
+*Épuisé / Bien / Reste* rather than the form's full labels, which is a third register for the
+same three facts and needs justifying: the pile heading directly above supplies the full
+phrase, so the mapping is learnable in one glance, and full labels are what break the row on a
+phone — five *Moins bien vendu* chips wrap to three lines inside a 224 px card. The token is
+never the only carrier of its meaning; see decision 14.
+
+**3. The line in the menu editor.** The **pile name alone**, as one `text-xs` line under the
+dish row while the vendor is ticking the menu for that market — *Toujours épuisé*, *Ça reste*.
+Not the streak: it does not fit (see *Mobile* below), and the split is better design anyway.
+The editor is a decision taken in seconds and the pile is the conclusion; the streak is the
+evidence, and evidence belongs on the page you open when you doubt the conclusion. No
+navigation, no new screen, and it lands at the exact moment the data exists to improve.
 
 ## Where it hangs, in value order
 
@@ -86,8 +97,10 @@ new screen, and it lands at the exact moment the data exists to improve.
 the line needs no market label. This is the whole feature at its cheapest: the recall
 arrives inside the decision instead of waiting behind a link the vendor will not open at 6h.
 Vertical, so it does not squeeze the dish name the way an inline cue did (`MARKET-PRICING-PLAN.md`
-decision 6's neighbour). Silent for a dish never brought here — a screen of *aucun bilan* is
-a nag, not a hint.
+decision 6's neighbour). It sits **below the whole row**, indented to the dish name rather
+than nested inside the name column — the name column is 105 px wide at 320 px and the row's
+full width is 168 px, and that difference is the whole margin the line has to live in. Silent
+for a dish never brought here — a screen of *aucun bilan* is a nag, not a hint.
 
 **B — `Ce qui se vend à <marché>`.** A second link on the market card in *Vos marchés*, under
 *Tarifs* — the card is already a container with two destinations (`MARKET-PRICING-PLAN.md`
@@ -97,8 +110,10 @@ stated and not interpreted: a dish that stays at one market and empties at anoth
 is priced differently is a pricing conversation, and the vendor is better placed to have it
 than we are.
 
-**C — `Où ça se vend`, on a catalogue dish.** The transpose: one line per market for one
-dish. This is the cross-market finding a vendor cannot hold in their head — *le tajine part
+**C — `Où ça se vend`, on a catalogue dish.** The transpose: one **block** per market for one
+dish — market name, pile, streak, each on its own line rather than a name-and-verdict row,
+which overflows the moment a market is called *Marché de Bourg-la-Reine*. The transpose is
+also what keeps this off a (dish × market) matrix, which no phone can hold. This is the cross-market finding a vendor cannot hold in their head — *le tajine part
 à Sceaux et reste à Antony* — and it is the one that changes a route, not just a quantity.
 
 **Deliberately not built:**
@@ -144,6 +159,44 @@ Six months, then capped to the last eight bilans per pair in the fold: a weekly 
 infrequent market for being infrequent. The window bounds the scan; the cap bounds the
 payload; the pile rule reads what survives both.
 
+## Mobile is the case, not an edge case
+
+The vendor app is mobile-first and unprefixed throughout — there is no desktop layout to
+fall back to, and the reader is holding a phone at a market. The chrome is fixed and known:
+`main` is `px-6`, `Card`'s section is `p-6`, and a menu-editor row is `p-3` with a `size-5`
+checkbox and `gap-3`. That leaves, measured rather than guessed:
+
+| Viewport | Card content | Menu row | Under the dish name | Full row, indented |
+|---|---|---|---|---|
+| 320 px | 224 px | 200 px | **105 px** ≈ 17 char | 168 px ≈ 28 char |
+| 360 px | 264 px | 240 px | 145 px ≈ 24 char | 208 px ≈ 35 char |
+| 375 px | 279 px | 255 px | 160 px ≈ 27 char | 223 px ≈ 37 char |
+| 414 px | 318 px | 294 px | 199 px ≈ 33 char | 262 px ≈ 44 char |
+
+**This is what killed the streak in the editor.** The line as first specified —
+`3 derniers bilans : Bien vendu · Épuisé · Épuisé` — is 48 characters, so two lines at 375 px
+and three at 320 px; with the vocabulary's own worst case,
+`3 derniers bilans : Moins bien vendu · Moins bien vendu · Bien vendu`, it is 68 characters
+and four lines at 320 px. At a ~16 px `text-xs` line box that is +32 to +64 px on **every**
+row, and a twenty-dish carte pays it twenty times: roughly a full extra screen of scrolling
+added to the one screen that has to be fast. The longest pile name, *Ça dépend des jours*, is
+19 characters — one line at every width above, once the line is given the row's full width
+rather than the name column's.
+
+Three rules follow, and they are the reason the rest holds up:
+
+- **Nothing scrolls horizontally, so nothing is a table.** Every surface is a stack of
+  blocks whose only overflow direction is down. The one shape that would have forced a
+  sideways scroll — dishes × markets as a grid — is precisely what surface C's transpose
+  exists to avoid.
+- **Everything wraps; nothing truncates.** Tokens wrap in order, so a wrapped streak is still
+  a streak. No `text-overflow: ellipsis` on a pile name or a dish name: a vendor who has set
+  large text on their phone must lose layout, never words.
+- **The editor line is inert text and never a link.** The menu-editor row is a `<label>`
+  wrapping the checkbox, so an anchor inside it would be an interactive nested in a label —
+  a real accessibility fault, and in practice a tap that toggles the dish when the vendor
+  meant to read its record. Surface B is reached from *Vos marchés*, never from a row.
+
 ## Decisions
 
 Settled by grilling. Do not re-litigate without a reason.
@@ -160,6 +213,9 @@ Settled by grilling. Do not re-litigate without a reason.
 | 8 | **Group headings speak market French; the bilan form stays neutral** | Opposite constraints. A radio label is a verdict the vendor is being asked to pronounce on their own morning, so it must not editorialise; a heading is describing a pile of trays, and *Ça reste* is both kinder and more precise than *Moins bien vendu* five times down a list |
 | 9 | **`Ce qui se vend`, not `Ce qui marche`** | *Ce qui marche* is the idiom and would be the better phrase anywhere else. On a screen carrying *marché* six times it is a collision, and the pun costs more than the idiom is worth |
 | 10 | **Nothing on the bilan screen, nothing on the dashboard** | Anchoring on one, noise on the other — see *Deliberately not built* above |
+| 12 | **The pile goes in the editor, the streak stays on the record page** | Forced by the 105 px name column, but right on its own terms: the editor is a decision taken in seconds and wants the conclusion, and a vendor who doubts the conclusion is exactly the vendor who will open the page holding the evidence |
+| 13 | **Streak tokens are *Épuisé* · *Bien* · *Reste*, not the form's full labels** | A third register for three facts, bought deliberately: the pile heading above supplies the full phrase so the mapping is learnable at a glance, and full labels wrap a five-bilan streak to three lines inside a 224 px card |
+| 14 | **The editor line is inert text; colour never carries meaning alone** | The row is a `<label>` around a checkbox, so a link inside it is a nested interactive and a misfire that ticks the dish. And every pile and token carries its word — WCAG 1.4.1, which the price editor already holds itself to (`MARKET-PRICING-PLAN.md` decision 7), and which a screen read in market sun does not forgive |
 | 11 | **The editor line gates the spinner with the other three feeds** | The menu editor already waits on days, catalogue and prices so no row paints a wrong price for a frame. A fourth feed landing late would reflow every row under the vendor's thumb, which is the same failure the dashboard's `loaded()` gate exists to stop |
 
 ## Deferred — trigger-gated
