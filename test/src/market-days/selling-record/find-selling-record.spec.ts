@@ -67,4 +67,16 @@ describe('FindSellingRecord', () => {
       '2026-06-07', '2026-06-08', '2026-06-09', '2026-06-10',
     ]);
   });
+
+  // Six months, so a weekly market offers ~26 bilans to choose from and a monthly one six.
+  // The boundary is the thing worth pinning: without it any window wider than the fixtures
+  // passes, and the constant means nothing.
+  it('forgets a bilan older than six months', async () => {
+    await judged('2026-02-19', { 'item-1': 'did_well' });   // 184 days before today
+    await judged('2026-02-21', { 'item-1': 'sold_out' });   // 182 days before today
+
+    const [market] = (await findRecord()).markets;
+
+    expect(market.items[0].bilans).toEqual([{ date: '2026-02-21', outcome: 'sold_out' }]);
+  });
 });
