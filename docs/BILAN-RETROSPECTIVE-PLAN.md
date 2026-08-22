@@ -161,12 +161,17 @@ against `InMemoryMarketDayViews` in `find-unrated-market-days.spec.ts`'s idiom.
 it does not already do. `recordsFrom` is where it goes; that is why it was extracted before
 the test rather than during it.
 
-**Then, still through the handler**, each naming a behaviour the domain makes true rather
-than a mechanic of the fold: a reopen withdraws the day's judgment (`MarketDayReopened`
-empties `outcomes`); a re-recorded bilan replaces rather than duplicates (`recordBilan`
-assigns, and the row PK gives one entry per market-dish-date); a menu re-set after a bilan
-prunes the outcome (`setMenu` intersects with the new `itemIds`); a called-off day
-contributes nothing; two markets on one day stay apart; a second vendor sees none of it.
+**Then five more, and only five**, because most of what looks like this handler's behaviour
+belongs to a layer below it (decision 18): the six-month window drops an older bilan; a day
+with no bilan contributes nothing; a partially judged day yields only the dishes answered;
+two markets on one day stay apart; and a vendor with nothing judged reads `{ markets: [] }`.
+
+Four things that look like they belong on that list do not. *A reopen empties the bilan*,
+*replaces the bilan rather than merging into it*, *keeps only the outcomes a new menu still
+carries* and *reads no other vendor's menus in the window* are already owned, by name, by
+`market-day-views.contract.ts` — both twins are held to them. Asserted again through this
+handler they would test `InMemoryMarketDayViews`, and they would go red for defects that are
+not in the code they point at.
 
 **Then the rest of slice 1**, none of it started: `GET /selling-record` with its zod shape
 and `JwtAuthGuard`; `FindSellingRecordHandler` into `queryHandlers` in
@@ -274,6 +279,7 @@ Settled by grilling. Do not re-litigate without a reason.
 | 15 | **The handler takes `MarketDayViews` and a `Clock`, nothing else** | Settled by what the first test forced rather than up front. `FindUnratedMarketDays` reads schedules and the catalogue only to decide whether a day is *finished*; a day carries `outcomes` only where the aggregate already accepted a bilan, so that question is already answered. Retired dishes drop on the frontend's own catalogue join, which every surface makes anyway for names |
 | 16 | **The fold is a private method; the tests stay on the handler** | ADR 0006 — public surfaces, not internals. A spec on the fold would pin the shape the slice still needs free, and keeping the tests on the handler is exactly what let the refactor commit move the fold without touching one |
 | 17 | **Only `bilans` has a meaningful order** | Oldest first, decision 6, and `menusFor` gives it for free. The order of markets and of dishes within them is incidental — every surface joins the catalogue for names and renders in that order — so no test should assert it, and a test that does will break on a harmless change to the fold |
+| 18 | **Three layers own the read side, and this handler is the third** | The projection specs drive real commands through real handlers and poll a real subscription — they own *events → view*. `market-day-views.contract.ts` holds both twins to the store's own rules — it owns *what a write does to a row*. A query spec seeds the view through store methods and drives the handler — it owns *view → payload*, and nothing else. Every existing query spec does this (`find-unrated-market-days`, `find-upcoming-market-days`, `find-market-day`, `find-vendor-catalogue`), and the handler could not do otherwise: it depends on `MarketDayViews`, a port (ADR 0016), so it cannot see an event |
 
 ## Deferred — trigger-gated
 
