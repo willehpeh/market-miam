@@ -7,6 +7,7 @@ doc. Legal and website work track their own remaining sections:
 ## Product
 
 * live mode — the storefront leads with the market the vendor is standing in; sold-out per dish, closing the day, and the end-of-day bilan (`docs/LIVE-MODE-PLAN.md`). Slices 1, 2 and 2b are shipped, which subsumes *mark as sold out* and *item rated for market day*. No *open market day*: the start follows from the schedule
+* what the bilan says over time — the recorded outcomes read back as (dish × market) piles: a line in the menu editor, a *Ce qui se vend* page per market, and the transpose on a catalogue dish (`docs/BILAN-RETROSPECTIVE-PLAN.md`). Decision 14a of the live-mode plan coming due; read-side only, no new event
 * remove item photo · clear storefront cover photo
 * retiring an item doesn't check if it's been planned
 * category + tags for dishes (`ItemAddedToCatalogue` v2, form + list cards)
