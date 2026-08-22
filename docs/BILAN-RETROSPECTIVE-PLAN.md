@@ -142,9 +142,10 @@ once slice 1 exists: one route, one component, one link on the market card.
 
 ## Where this stands
 
-The **package-level read is complete**; nothing above it is started. Green on
-`npx nx test test` (643 tests), lint and typecheck clean, and Stryker over
-`selling-record/` scores **100 % — 19 mutants, 19 killed, none survived**.
+**The backend half is complete**; the frontend half is not started. Green on
+`npx nx test test` (643) and `npx nx test api` (221), lint, typecheck and
+`nx build api` clean, and Stryker over `selling-record/` scores **100 % — 19
+mutants, 19 killed, none survived**.
 
 | Commit | |
 |---|---|
@@ -153,6 +154,7 @@ The **package-level read is complete**; nothing above it is started. Green on
 | *Show a dish's last eight bilans, not all of them* | the cap; the only test of the six that was ever red |
 | *Pin the six-month window at its boundary* | the window constant made load-bearing |
 | *Pin the four things the handler does that nothing else owns* | no bilan · partial bilan · two markets one day · empty set |
+| *Serve the selling record over HTTP* | `GET /selling-record`, its own controller, module wiring |
 
 **What exists.** `packages/market-days/src/selling-record/` — `find-selling-record.ts` (the
 query), `selling-record-view.ts` (`Bilan` · `ItemRecord` · `MarketRecord` ·
@@ -160,19 +162,36 @@ query), `selling-record-view.ts` (`Bilan` · `ItemRecord` · `MarketRecord` ·
 `recordsFrom` folds it, `WINDOW_DAYS` 183 and `MOST_RECENT` 8), and `index.ts`, exported from
 the package barrel. Six tests in
 `test/src/market-days/selling-record/find-selling-record.spec.ts`, driving the handler against
-`InMemoryMarketDayViews` in `find-unrated-market-days.spec.ts`'s idiom.
+`InMemoryMarketDayViews` in `find-unrated-market-days.spec.ts`'s idiom. Over HTTP:
+`apps/api/src/app/market-days/selling-record.controller.ts` and its three-test spec, with
+`SellingRecordController` and `FindSellingRecordHandler` in `market-days.module.ts`.
+
+**No contract tests were needed, and none should be added.** Slice 1 adds no read-model
+method, so there is no new twin behaviour to hold anyone to.
+`market-day-views.contract.ts` already runs against both `InMemoryMarketDayViews` and
+`PostgresMarketDayViews`, and already pins everything this read leans on: outcomes coming
+back through `menusFor`, the window answered in date-then-market order — which is what
+decision 6's chronological guarantee actually rests on — and vendor isolation. Decision 5
+is what bought that; the projection would have cost a new contract and two adapters.
+
+**A vendor's history cannot be manufactured.** `setMenu` refuses a past day
+(`MarketDayInThePastError`), so a second, older bilan is unreachable through the API — which
+is why the API spec judges one day and leaves the fold across dates to the handler spec. It
+also means a demo vendor's back catalogue cannot be seeded over HTTP; anything wanting
+history has to go at the event log or the read model directly.
 
 Five of those six were **green on writing**. That is worth knowing rather than hiding: only
 the cap drove new code, and the rest are guards, kept because the mutation run says each one
 is killing something. A future test here should expect the same — this handler is small, and
 most of what looks like its behaviour belongs to decision 18's lower layers.
 
-**Next, and none of it started:** `GET /selling-record` with its zod shape
-and `JwtAuthGuard`; `FindSellingRecordHandler` into `queryHandlers` in
-`market-days.module.ts` (nothing to add to either persistence module — `MarketDayViews` is
-already provided in both); the frontend `selling-record/` facade set on `market-prices/`'s
-pattern; `pile.ts` and its spec; then the `.hint` line and a fourth term in the menu editor's
-`loading()` gate.
+**Next, and none of it started —** all of it frontend: the `selling-record/` facade set on
+`market-prices/`'s pattern (facade · state · effects · providers · fake · store · http);
+`pile.ts` holding the rule from *The three display primitives*, with an `it.each` spec over
+its boundaries — 2 bilans versus 3, a dominant outcome at exactly half, the tie-break toward
+the most recent — which is the one genuine table in this slice and matches how the repo
+already uses `it.each` (`local-date`, `local-time`, `email`); then the `.hint` line on the
+menu editor and a fourth term in its `loading()` gate (decision 11).
 
 Two things about running the repo that cost time otherwise, both from `CLAUDE.md`: use
 `npm install`, never `npm ci`, and restore `package-lock.json` afterwards; and `npx nx test
