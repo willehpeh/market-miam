@@ -37,10 +37,12 @@ import { ReopenStand } from './reopen-stand';
           <mm-closed-notice />
         <mm-reopen-stand [marketId]="marketId" [date]="date" />
         } @else {
-          <ul class="mt-6 space-y-2">
+          <!-- space-y-3, not -2: the cue below floats 8px above its own card, and at a
+               2 it would come to rest on the card above. -->
+          <ul class="mt-6 space-y-3">
             @for (item of items(); track item.itemId) {
               <li>
-                <label class="flex items-center gap-3 rounded-card border border-line bg-surface p-3">
+                <label class="relative flex items-center gap-3 rounded-card border border-line bg-surface p-3">
                   <input
                     type="checkbox"
                     class="size-5 shrink-0"
@@ -49,9 +51,19 @@ import { ReopenStand } from './reopen-stand';
                   />
                   <span class="min-w-0 flex-1 break-words font-bold text-ink">{{ item.name }}</span>
                   @if (item.atMarketPrice) {
-                    <span class="shrink-0 text-xs font-bold text-brand">Tarif marché</span>
+                    <!-- Out of the flow and notched into the top border, the way a legend
+                         sits on a fieldset: inline, the cue took ~85px off every row that
+                         carried it, and the dish name — the one thing a vendor scans for —
+                         wrapped to pay for it. The row it labels is on bg-surface inside a
+                         bg-surface card, so the same fill hides the border behind it and
+                         nothing else has to move. Kept here in the DOM, after the name and
+                         before the price, so the checkbox's accessible name still reads in
+                         the order the row is written. -->
+                    <span class="absolute -top-2 right-3 bg-surface px-1.5 text-xs font-bold text-brand">
+                      Tarif marché
+                    </span>
                   }
-                  <span class="shrink-0 font-mono text-sm text-muted">{{ item.priceLabel }}</span>
+                  <span class="shrink-0 text-sm text-muted">{{ item.priceLabel }}</span>
                 </label>
               </li>
             } @empty {
