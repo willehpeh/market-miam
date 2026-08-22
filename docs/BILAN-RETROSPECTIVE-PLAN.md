@@ -47,6 +47,16 @@ crates all morning anyway.
 
 ## The three display primitives
 
+Drawn, at a real 360 px phone width, in [`design/ce-qui-se-vend-screens.html`](design/ce-qui-se-vend-screens.html)
+— fonts inlined, so it needs no network — and rendered beside it as
+[`a-menu-editor`](design/ce-qui-se-vend-a-menu-editor.png) ·
+[`b-market-record`](design/ce-qui-se-vend-b-market-record.png) ·
+[`c-dish-transpose`](design/ce-qui-se-vend-c-dish-transpose.png). The reasoning lives here
+and only here; that file carries the screens and nothing else, so there is one copy of each
+to keep true. (`LIVE-MODE-PLAN.md` points its wireframe at `tmp/live-mode.png`, which is
+gitignored and gone — hence committing these rather than linking them.)
+
+
 **1. The pile.** Every (dish × market) pair falls into exactly one of five, and the pile is
 named in market French rather than in the form's neutral radio labels:
 
