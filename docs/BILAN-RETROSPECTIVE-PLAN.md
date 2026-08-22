@@ -132,12 +132,53 @@ vendor's whole set (`MARKET-PRICING-PLAN.md` decision 3's shape), `GET /selling-
 `/market-prices` rather than hanging off `/market-schedules`, and a cross-day aggregate is no
 more a market day than a price list is a schedule — the pile rule as a pure frontend function
 in the same shape `live-status.ts` set, and primitive 3 on the menu
-editor. No new read model, no new event, no new route.
+editor. No new read model, no new event, no migration.
 
 **Slice 2 — surface B.** The market page, rendering the same payload in full. Nearly free
 once slice 1 exists: one route, one component, one link on the market card.
 
 **Slice 3 — surface C.** The transpose on a catalogue dish. Same payload again.
+
+
+## Where this stands
+
+Slice 1 is **started, backend only**. Two commits, both green on `npx nx test test`
+(637 tests), lint and typecheck clean:
+
+| | |
+|---|---|
+| `1f17230` | the first test and the naive handler that passes it |
+| `34c4c95` | refactor only — the fold extracted, two loop faults fixed, no spec touched |
+
+**What exists.** `packages/market-days/src/selling-record/` — `find-selling-record.ts` (the
+query), `selling-record-view.ts` (`Bilan` · `ItemRecord` · `MarketRecord` ·
+`SellingRecordView`), `find-selling-record.handler.ts` (`execute` reads the window,
+`recordsFrom` folds it), and `index.ts`, exported from the package barrel. One spec:
+`test/src/market-days/selling-record/find-selling-record.spec.ts`, driving the handler
+against `InMemoryMarketDayViews` in `find-unrated-market-days.spec.ts`'s idiom.
+
+**The next step is the eight-bilan cap** — the first test that makes the handler do something
+it does not already do. `recordsFrom` is where it goes; that is why it was extracted before
+the test rather than during it.
+
+**Then, still through the handler**, each naming a behaviour the domain makes true rather
+than a mechanic of the fold: a reopen withdraws the day's judgment (`MarketDayReopened`
+empties `outcomes`); a re-recorded bilan replaces rather than duplicates (`recordBilan`
+assigns, and the row PK gives one entry per market-dish-date); a menu re-set after a bilan
+prunes the outcome (`setMenu` intersects with the new `itemIds`); a called-off day
+contributes nothing; two markets on one day stay apart; a second vendor sees none of it.
+
+**Then the rest of slice 1**, none of it started: `GET /selling-record` with its zod shape
+and `JwtAuthGuard`; `FindSellingRecordHandler` into `queryHandlers` in
+`market-days.module.ts` (nothing to add to either persistence module — `MarketDayViews` is
+already provided in both); the frontend `selling-record/` facade set on `market-prices/`'s
+pattern; `pile.ts` and its spec; then the `.hint` line and a fourth term in the menu editor's
+`loading()` gate.
+
+Two things about running the repo that cost time otherwise, both from `CLAUDE.md`: use
+`npm install`, never `npm ci`, and restore `package-lock.json` afterwards; and `npx nx test
+test` is the reliable signal — `npx nx test api` flakes on macOS for reasons that are not
+your change.
 
 ## The read
 
@@ -226,10 +267,13 @@ Settled by grilling. Do not re-litigate without a reason.
 | 8 | **Group headings speak market French; the bilan form stays neutral** | Opposite constraints. A radio label is a verdict the vendor is being asked to pronounce on their own morning, so it must not editorialise; a heading is describing a pile of trays, and *Ça reste* is both kinder and more precise than *Moins bien vendu* five times down a list |
 | 9 | **`Ce qui se vend`, not `Ce qui marche`** | *Ce qui marche* is the idiom and would be the better phrase anywhere else. On a screen carrying *marché* six times it is a collision, and the pun costs more than the idiom is worth |
 | 10 | **Nothing on the bilan screen, nothing on the dashboard** | Anchoring on one, noise on the other — see *Deliberately not built* above |
+| 11 | **The editor line gates the spinner with the other three feeds** | The menu editor already waits on days, catalogue and prices so no row paints a wrong price for a frame. A fourth feed landing late would reflow every row under the vendor's thumb, which is the same failure the dashboard's `loaded()` gate exists to stop |
 | 12 | **The pile goes in the editor, the streak stays on the record page** | Forced by the 105 px name column, but right on its own terms: the editor is a decision taken in seconds and wants the conclusion, and a vendor who doubts the conclusion is exactly the vendor who will open the page holding the evidence |
 | 13 | **Streak tokens are *Épuisé* · *Bien* · *Reste*, not the form's full labels** | A third register for three facts, bought deliberately: the pile heading above supplies the full phrase so the mapping is learnable at a glance, and full labels wrap a five-bilan streak to three lines inside a 224 px card |
 | 14 | **The editor line is inert text; colour never carries meaning alone** | The row is a `<label>` around a checkbox, so a link inside it is a nested interactive and a misfire that ticks the dish. And every pile and token carries its word — WCAG 1.4.1, which the price editor already holds itself to (`MARKET-PRICING-PLAN.md` decision 7), and which a screen read in market sun does not forgive |
-| 11 | **The editor line gates the spinner with the other three feeds** | The menu editor already waits on days, catalogue and prices so no row paints a wrong price for a frame. A fourth feed landing late would reflow every row under the vendor's thumb, which is the same failure the dashboard's `loaded()` gate exists to stop |
+| 15 | **The handler takes `MarketDayViews` and a `Clock`, nothing else** | Settled by what the first test forced rather than up front. `FindUnratedMarketDays` reads schedules and the catalogue only to decide whether a day is *finished*; a day carries `outcomes` only where the aggregate already accepted a bilan, so that question is already answered. Retired dishes drop on the frontend's own catalogue join, which every surface makes anyway for names |
+| 16 | **The fold is a private method; the tests stay on the handler** | ADR 0006 — public surfaces, not internals. A spec on the fold would pin the shape the slice still needs free, and keeping the tests on the handler is exactly what let `34c4c95` move the fold without touching one |
+| 17 | **Only `bilans` has a meaningful order** | Oldest first, decision 6, and `menusFor` gives it for free. The order of markets and of dishes within them is incidental — every surface joins the catalogue for names and renders in that order — so no test should assert it, and a test that does will break on a harmless change to the fold |
 
 ## Deferred — trigger-gated
 
