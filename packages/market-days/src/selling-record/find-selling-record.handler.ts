@@ -13,6 +13,10 @@ export class FindSellingRecordHandler implements IQueryHandler<FindSellingRecord
   // it is a UX rule the pilot is expected to move.
   private static readonly WINDOW_DAYS = 183;
 
+  // What the streak shows at most, and about what a vendor can hold in their head. The
+  // window bounds the scan; this bounds the payload.
+  private static readonly MOST_RECENT = 8;
+
   constructor(
     private readonly menus: MarketDayViews,
     private readonly clock: Clock,
@@ -43,7 +47,10 @@ export class FindSellingRecordHandler implements IQueryHandler<FindSellingRecord
     }
     return [...byMarket].map(([marketId, items]) => ({
       marketId,
-      items: [...items].map(([itemId, bilans]) => ({ itemId, bilans })),
+      items: [...items].map(([itemId, bilans]) => ({
+        itemId,
+        bilans: bilans.slice(-FindSellingRecordHandler.MOST_RECENT),
+      })),
     }));
   }
 }
