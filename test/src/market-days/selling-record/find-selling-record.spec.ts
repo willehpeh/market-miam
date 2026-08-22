@@ -79,4 +79,48 @@ describe('FindSellingRecord', () => {
 
     expect(market.items[0].bilans).toEqual([{ date: '2026-02-21', outcome: 'sold_out' }]);
   });
+
+  // Three situations reach this state and the handler cannot tell them apart, which is the
+  // point: a day called off before it opened, a day still being traded, and a day simply
+  // never judged all carry no outcomes. If this ever wants to be three tests, phase logic
+  // has crept into a handler that deliberately has none (decision 15).
+  it('passes over a day carrying no bilan', async () => {
+    await menus.setMenu({ marketId: 'market-1', date: '2026-08-15', itemIds: ['item-1'] }, 'vendor-id');
+
+    expect(await findRecord()).toEqual({ markets: [] });
+  });
+
+  // The bilan is set whole but a vendor may answer only some of it, and the dashboard
+  // prompt goes on asking until they finish. Until they do, an unanswered dish has nothing
+  // to say here.
+  it('records only the dishes a partial bilan answered', async () => {
+    await menus.setMenu({ marketId: 'market-1', date: '2026-08-15', itemIds: ['item-1', 'item-2'] }, 'vendor-id');
+    await menus.recordBilan({ marketId: 'market-1', date: '2026-08-15', outcomes: { 'item-2': 'did_well' } }, 'vendor-id');
+
+    const [market] = (await findRecord()).markets;
+
+    expect(market.items).toEqual([{ itemId: 'item-2', bilans: [{ date: '2026-08-15', outcome: 'did_well' }] }]);
+  });
+
+  // A morning market and an evening one are two records, not one blurred together. Looked
+  // up rather than indexed: the order markets come back in is incidental (decision 17), and
+  // a test that asserts it breaks on a harmless change to the fold.
+  it('keeps two markets on the same day apart', async () => {
+    await judged('2026-08-15', { 'item-1': 'sold_out' });
+    await menus.setMenu({ marketId: 'market-2', date: '2026-08-15', itemIds: ['item-1'] }, 'vendor-id');
+    await menus.recordBilan({ marketId: 'market-2', date: '2026-08-15', outcomes: { 'item-1': 'did_not_do_well' } }, 'vendor-id');
+
+    const { markets } = await findRecord();
+    const outcomesAt = (marketId: string) =>
+      markets.find(market => market.marketId === marketId)?.items[0].bilans.map(bilan => bilan.outcome);
+
+    expect(outcomesAt('market-1')).toEqual(['sold_out']);
+    expect(outcomesAt('market-2')).toEqual(['did_not_do_well']);
+  });
+
+  // The state every vendor is in until they finish their first bilan, and what the menu
+  // editor renders against on day one.
+  it('reads an empty set for a vendor who has judged nothing', async () => {
+    expect(await findRecord()).toEqual({ markets: [] });
+  });
 });
