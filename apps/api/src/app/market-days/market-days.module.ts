@@ -19,6 +19,7 @@ import {
   FindMarketPricesHandler,
   FindVendorSchedulesHandler,
   FindMarketDayHandler,
+  FindSellingRecordHandler,
   FindUnratedMarketDaysHandler,
   FindUpcomingMarketDaysHandler,
   MarketDayViewProjection,
@@ -58,6 +59,7 @@ import { CatalogueController } from './catalogue.controller';
 import { MarketDayController } from './market-day.controller';
 import { MarketScheduleController } from './market-schedule.controller';
 import { MarketPricesController } from './market-prices.controller';
+import { SellingRecordController } from './selling-record.controller';
 import { PublicStorefrontController } from './public-storefront.controller';
 import { VendorErasure } from './vendor-erasure';
 
@@ -145,13 +147,13 @@ const commandHandlers = [
 
 const domainServices = [StorefrontPublication];
 
-const queryHandlers = [FindCustomerStorefrontHandler, FindVendorStorefrontHandler, FindVendorCatalogueHandler, FindVendorSchedulesHandler, FindUpcomingMarketDaysHandler, FindUnratedMarketDaysHandler, FindMarketDayHandler, FindMarketPricesHandler];
+const queryHandlers = [FindCustomerStorefrontHandler, FindVendorStorefrontHandler, FindVendorCatalogueHandler, FindVendorSchedulesHandler, FindUpcomingMarketDaysHandler, FindUnratedMarketDaysHandler, FindMarketDayHandler, FindMarketPricesHandler, FindSellingRecordHandler];
 
 // EventStore / CommandGateway / QueryGateway come from the global
 // EventSourcingModule; the view stores from the global persistence module the
 // composition root picked. Nothing here knows which profile is running.
 @Module({
-  controllers: [VendorsController, StorefrontController, CatalogueController, MarketScheduleController, MarketDayController, MarketPricesController, PublicStorefrontController],
+  controllers: [VendorsController, StorefrontController, CatalogueController, MarketScheduleController, MarketDayController, MarketPricesController, SellingRecordController, PublicStorefrontController],
   providers: [
     ...clock,
     ...signedUploads,
