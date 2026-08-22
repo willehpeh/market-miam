@@ -128,8 +128,10 @@ also what keeps this off a (dish × market) matrix, which no phone can hold. Thi
 ## Slices
 
 **Slice 1 — the read, and the editor line.** `FindSellingRecord(vendorId)` returning the
-vendor's whole set (`MARKET-PRICING-PLAN.md` decision 3's shape), `GET /item-records`, the
-pile rule as a pure frontend function beside `live-status.ts`, and primitive 3 on the menu
+vendor's whole set (`MARKET-PRICING-PLAN.md` decision 3's shape), `GET /selling-record` as its own resource — prices took
+`/market-prices` rather than hanging off `/market-schedules`, and a cross-day aggregate is no
+more a market day than a price list is a schedule — the pile rule as a pure frontend function
+in the same shape `live-status.ts` set, and primitive 3 on the menu
 editor. No new read model, no new event, no new route.
 
 **Slice 2 — surface B.** The market page, rendering the same payload in full. Nearly free
@@ -207,7 +209,7 @@ Settled by grilling. Do not re-litigate without a reason.
 | 2 | **(dish × market), never dish alone** | The clientele is the market's, and the product already accepts this everywhere it matters — prices vary by market (ADR 0052). A carte-wide average over four markets is the one aggregate guaranteed to describe no morning the vendor will actually have |
 | 3 | **One query returns the whole set; three surfaces slice it** | `MARKET-PRICING-PLAN.md` decision 3, same reasoning: a pilot vendor is ~20 dishes × ~4 markets × ≤8 tokens, a few kB, and the alternative is three narrow read-model methods for three views of one fold |
 | 4 | **The pile rule lives in the frontend, the window in the handler** | The thresholds are a UX rule the pilot will move (`FindUnratedMarketDaysHandler.WINDOW_DAYS`'s own argument), and moving them must cost no migration and no rebuild. The window is what bounds the scan, so it belongs where the scan is |
-| 5 | **No new read model in slice 1** | Decision 14a named the seam but the fold is a bounded prefix scan on the key ADR 0013 already ordered for it. Building the projection first shapes a table around a query whose shape the pilot has not yet moved. **Trigger: the fold shows up in a trace, or the window has to span years** |
+| 5 | **No new read model in slice 1** | Decision 14a named the seam but the fold is a bounded prefix scan on the key migration `0013_market_day_views_key_order` already reordered for exactly this window read. Building the projection first shapes a table around a query whose shape the pilot has not yet moved. **Trigger: the fold shows up in a trace, or the window has to span years** |
 | 6 | **The streak reads oldest → newest** | It is the only element here that can show direction, and direction is what a mean cannot. Reversed, an improving dish reads as a declining one |
 | 7 | **`Ça dépend des jours` is a pile, not a gap** | An inconsistent dish is a real answer — it says *this one rides on the weather, decide on the morning* — and burying it in an *unclassified* bucket would hide the finding that most deserves the vendor's own judgment |
 | 8 | **Group headings speak market French; the bilan form stays neutral** | Opposite constraints. A radio label is a verdict the vendor is being asked to pronounce on their own morning, so it must not editorialise; a heading is describing a pile of trays, and *Ça reste* is both kinder and more precise than *Moins bien vendu* five times down a list |
