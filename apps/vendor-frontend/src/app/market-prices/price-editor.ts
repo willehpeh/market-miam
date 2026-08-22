@@ -41,18 +41,27 @@ type DishModel = { itemId: string; name: string; rows: RowModel[] };
               }
               @for (row of dish.rows; track r; let r = $index) {
                 <div
-                  class="rounded-card border-l-4 p-2"
+                  class="relative rounded-card border-l-4 p-2"
                   [class.mt-3]="r > 0"
                   [class.bg-brand-soft]="row.stored().value()"
                   [class.border-transparent]="row.price().value() === row.stored().value()"
                   [class.border-brand]="row.price().value() !== row.stored().value()"
                 >
-                  <div class="flex items-baseline justify-between gap-3">
-                    <label [attr.for]="'price-' + d + '-' + r" class="field-label">{{ row.label().value() }}</label>
-                    @if (row.stored().value()) {
-                      <span class="shrink-0 text-xs font-bold text-brand">Tarif marché</span>
-                    }
-                  </div>
+                  <!-- pr-24 holds the corner open: the cue is out of the flow, so nothing
+                       else stops an uppercase variant label running underneath it. -->
+                  <label [attr.for]="'price-' + d + '-' + r" class="field-label block pr-24">
+                    {{ row.label().value() }}
+                  </label>
+                  @if (row.stored().value()) {
+                    <!-- Pinned top-right and out of the flow, as on the menu editor, so the
+                         cue stops shortening the label beside it. It does not straddle the
+                         edge the way that one does, because this block has no top border to
+                         notch and is bg-brand-soft on a bg-surface card: a cue crossing that
+                         boundary would be half white, half tint. Inside the corner it sits
+                         wholly on the tint, which is painted under exactly the condition
+                         that shows it. -->
+                    <span class="absolute right-2 top-2 text-xs font-bold text-brand">Tarif marché</span>
+                  }
                   <div class="mt-1 flex items-baseline gap-3">
                     <input
                       [id]="'price-' + d + '-' + r"
