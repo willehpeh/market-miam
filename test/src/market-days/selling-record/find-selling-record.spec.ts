@@ -51,4 +51,20 @@ describe('FindSellingRecord', () => {
       ],
     });
   });
+
+  // Eight is what the streak shows at most, and what a vendor can hold in their head. The
+  // window is what bounds the scan; this bounds the payload, and it keeps the *newest*
+  // eight, still oldest first.
+  it('keeps only the last eight bilans for a dish', async () => {
+    for (let week = 1; week <= 10; week++) {
+      await judged(`2026-06-${String(week).padStart(2, '0')}`, { 'item-1': 'did_well' });
+    }
+
+    const [market] = (await findRecord()).markets;
+
+    expect(market.items[0].bilans.map(bilan => bilan.date)).toEqual([
+      '2026-06-03', '2026-06-04', '2026-06-05', '2026-06-06',
+      '2026-06-07', '2026-06-08', '2026-06-09', '2026-06-10',
+    ]);
+  });
 });
