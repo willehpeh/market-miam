@@ -15,7 +15,9 @@ export class FakeMarketDayFacade implements MarketDayFacade {
   savedMenu: { marketId: string; date: string; itemIds: string[] } | undefined;
   availabilityChanges: { marketId: string; date: string; itemId: string; soldOut: boolean }[] = [];
   closures: { marketId: string; date: string; closed: boolean }[] = [];
-  recordedBilan: { marketId: string; date: string; outcomes: Record<string, ItemOutcome> } | undefined;
+  recordedBilan:
+    | { marketId: string; date: string; outcomes: Record<string, ItemOutcome>; complete: boolean }
+    | undefined;
 
   load(): void {
     this.loaded = true;
@@ -56,8 +58,8 @@ export class FakeMarketDayFacade implements MarketDayFacade {
     this.closures.push({ marketId, date, closed: false });
   }
 
-  recordBilan(marketId: string, date: string, outcomes: Record<string, ItemOutcome>): void {
-    this.recordedBilan = { marketId, date, outcomes };
+  recordBilan(marketId: string, date: string, outcomes: Record<string, ItemOutcome>, complete: boolean): void {
+    this.recordedBilan = { marketId, date, outcomes, complete };
   }
 
   // The optimistic patch is part of the port's contract — the row moves on the call, not

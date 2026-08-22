@@ -121,9 +121,9 @@ export class MarketDayEffects {
   recordBilan$ = createEffect(() =>
     this.actions$.pipe(
       ofType(RecordBilan),
-      switchMap(({ marketId, date, outcomes }) =>
+      switchMap(({ marketId, date, outcomes, complete }) =>
         this.marketDays.recordBilan(marketId, date, outcomes).pipe(
-          map(() => RecordBilanSuccess({ marketId, date, outcomes })),
+          map(() => RecordBilanSuccess({ marketId, date, outcomes, complete })),
           catchError(() => of(RecordBilanFailure())),
         ),
       ),

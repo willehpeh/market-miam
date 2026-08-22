@@ -119,6 +119,7 @@ describe('Bilan', () => {
       marketId: 'market-1',
       date: '2026-08-15',
       outcomes: { 'item-1': 'sold_out', 'item-2': 'did_not_do_well' },
+      complete: true,
     });
   });
 
@@ -134,6 +135,36 @@ describe('Bilan', () => {
     finish();
 
     expect(marketDays.recordedBilan?.outcomes).toEqual({ 'item-1': 'did_well' });
+  });
+
+  // The word the dashboard's prompt turns on: a bilan the vendor left half-answered is one
+  // the unrated query is right to name again (decision 65), so it must not be reported as
+  // whole and masked.
+  it('says a half-answered bilan is not whole', async () => {
+    const { marketDays } = await renderBilan((marketDays, catalogue) => {
+      marketDays.showing(day({ phase: 'past', itemIds: ['item-1', 'item-2'] }));
+      catalogue.items.set(carte);
+    });
+
+    answer('Bourguignon', 'Bien vendu');
+    finish();
+
+    expect(marketDays.recordedBilan?.complete).toBe(false);
+  });
+
+  // Why the screen is the one that says so, rather than the reducer counting stored ids: a
+  // retired dish has no row to answer, and the query does not count it either — so a day
+  // carrying one is whole when every row the vendor can see is answered.
+  it('says a bilan is whole when the only dish left unanswered has left the catalogue', async () => {
+    const { marketDays } = await renderBilan((marketDays, catalogue) => {
+      marketDays.showing(day({ phase: 'past', itemIds: ['item-1', 'item-retired'] }));
+      catalogue.items.set(carte);
+    });
+
+    answer('Bourguignon', 'Bien vendu');
+    finish();
+
+    expect(marketDays.recordedBilan?.complete).toBe(true);
   });
 
   it('keeps the last answer when the vendor changes their mind', async () => {

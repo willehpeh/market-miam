@@ -16,5 +16,10 @@ export abstract class MarketDayFacade {
   abstract markAvailable(marketId: string, date: string, itemId: string): void;
   abstract close(marketId: string, date: string): void;
   abstract reopen(marketId: string, date: string): void;
-  abstract recordBilan(marketId: string, date: string, outcomes: Record<string, ItemOutcome>): void;
+  abstract recordBilan(
+    marketId: string,
+    date: string,
+    outcomes: Record<string, ItemOutcome>,
+    complete: boolean,
+  ): void;
 }

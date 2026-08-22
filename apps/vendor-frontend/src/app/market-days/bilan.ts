@@ -180,12 +180,16 @@ export class Bilan {
     this.answered.update(answered => ({ ...answered, [itemId]: outcome }));
   }
 
+  // The rows go up with a word for whether they were all answered, because this screen is
+  // the only place that can say so: its rows are the menu joined to the catalogue, which is
+  // what the unrated query counts against, and a retired dish would make the same tally off
+  // the stored ids come out one short for ever. A day with no rows answers *yes* vacuously,
+  // and nothing turns on it — such a day is never prompted for in the first place.
   finish(): void {
+    const rows = this.rows();
     const outcomes = Object.fromEntries(
-      this.rows()
-        .filter(row => row.outcome)
-        .map(row => [row.itemId, row.outcome as ItemOutcome]),
+      rows.filter(row => row.outcome).map(row => [row.itemId, row.outcome as ItemOutcome]),
     );
-    this.marketDays.recordBilan(this.marketId, this.date, outcomes);
+    this.marketDays.recordBilan(this.marketId, this.date, outcomes, rows.every(row => !!row.outcome));
   }
 }

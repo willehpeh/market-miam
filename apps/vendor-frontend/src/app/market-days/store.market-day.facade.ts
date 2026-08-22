@@ -66,7 +66,7 @@ export class StoreMarketDayFacade implements MarketDayFacade {
     this.store.dispatch(ChangeStandClosure({ marketId, date, closed: false }));
   }
 
-  recordBilan(marketId: string, date: string, outcomes: Record<string, ItemOutcome>): void {
-    this.store.dispatch(RecordBilan({ marketId, date, outcomes }));
+  recordBilan(marketId: string, date: string, outcomes: Record<string, ItemOutcome>, complete: boolean): void {
+    this.store.dispatch(RecordBilan({ marketId, date, outcomes, complete }));
   }
 }

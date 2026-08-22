@@ -58,13 +58,17 @@ export const LoadUnratedMarketDaysFailure = createAction('[Market Days] Load Unr
 
 // The bilan, whole (decision 72). No optimistic patch: a whole-set save has nothing to
 // show that the form is not already showing, and a failure leaves every answer standing.
+// `complete` is the screen's own reading of its rows, not a count the reducer could make:
+// the bilan has a row per menu item *that is still in the catalogue*, which is the same
+// join the unrated query reads against, and a retired dish would make a count off the
+// stored ids disagree with it.
 export const RecordBilan = createAction(
   '[Market Days] Record Bilan',
-  props<{ marketId: string; date: string; outcomes: Record<string, ItemOutcome> }>(),
+  props<{ marketId: string; date: string; outcomes: Record<string, ItemOutcome>; complete: boolean }>(),
 );
 export const RecordBilanSuccess = createAction(
   '[Market Days] Record Bilan Success',
-  props<{ marketId: string; date: string; outcomes: Record<string, ItemOutcome> }>(),
+  props<{ marketId: string; date: string; outcomes: Record<string, ItemOutcome>; complete: boolean }>(),
 );
 export const RecordBilanFailure = createAction('[Market Days] Record Bilan Failure');
 
@@ -75,6 +79,10 @@ export interface MarketDayState {
   day: MarketDaySlot;
   unrated: UnratedMarketDay[];
   unratedLoading: boolean;
+  // Days whose bilan was saved whole and which the unrated query may still name anyway:
+  // the projection lags the response by 4–275ms and the dashboard re-asks on arrival, so
+  // the vendor's own finished bilan came back as *à faire* and stayed until a refresh.
+  judged: string[];
 }
 
 export const initialState: MarketDayState = {
@@ -84,11 +92,16 @@ export const initialState: MarketDayState = {
   day: { status: 'loading' },
   unrated: [],
   unratedLoading: false,
+  judged: [],
 };
 
 // A schedule change redraws which days exist, and only the API can expand the
 // recurrence — so stale, not patched like the menu save below.
 const wentStale = (state: MarketDayState): MarketDayState => ({ ...state, fresh: false });
+
+// A day's identity as one string, for the mask below — both halves of it, for the reason
+// patchDay gives underneath.
+const dayKey = (marketId: string, date: string) => `${marketId}|${date}`;
 
 // Which day a patch addresses, said once. Two markets can share a date (decision 25), so
 // every optimistic patch below has to name both halves — and each rewriting of that made a
@@ -137,8 +150,19 @@ export const marketDayFeature = createFeature({
     on(SetMarketDayMenuSuccess, (state, { marketId, date, itemIds }): MarketDayState =>
       patchDay(state, marketId, date, day => ({ ...day, itemIds }))),
     on(LoadUnratedMarketDays, (state): MarketDayState => ({ ...state, unratedLoading: true })),
-    on(LoadUnratedMarketDaysSuccess, (state, { marketDays }): MarketDayState =>
-      ({ ...state, unratedLoading: false, unrated: marketDays })),
+    // The dashboard asks on every arrival, deliberately — a market ending mid-session has
+    // nothing else to raise the prompt — so the answer is filtered rather than the question
+    // withheld: a day judged whole is held back until the query stops naming it, which is
+    // the projection catching up and the mask's own cue to drop it.
+    on(LoadUnratedMarketDaysSuccess, (state, { marketDays }): MarketDayState => {
+      const named = new Set(marketDays.map(day => dayKey(day.marketId, day.date)));
+      return {
+        ...state,
+        unratedLoading: false,
+        unrated: marketDays.filter(day => !state.judged.includes(dayKey(day.marketId, day.date))),
+        judged: state.judged.filter(key => named.has(key)),
+      };
+    }),
     on(LoadUnratedMarketDaysFailure, (state): MarketDayState => ({ ...state, unratedLoading: false })),
     // On the response, like the menu above and for the same reason — and unreduced on
     // failure, which leaves the form standing with every answer in it (decision 74).
@@ -146,10 +170,16 @@ export const marketDayFeature = createFeature({
     // receipt, which is why the bilan needs no toast (decision 74).
     // ponytail: dropped whatever was answered, so a bilan left half-finished stops nagging
     // until the next dashboard load re-asks — re-read the query here if that proves real.
-    on(RecordBilanSuccess, (state, { marketId, date, outcomes }): MarketDayState => ({
-      ...patchDay(state, marketId, date, day => ({ ...day, outcomes })),
-      unrated: state.unrated.filter(day => day.marketId !== marketId || day.date !== date),
-    })),
+    // Only a whole bilan joins the mask: a partial one is genuinely still unrated
+    // (decision 65), so the re-read putting it back is the query being right, not late.
+    on(RecordBilanSuccess, (state, { marketId, date, outcomes, complete }): MarketDayState => {
+      const key = dayKey(marketId, date);
+      return {
+        ...patchDay(state, marketId, date, day => ({ ...day, outcomes })),
+        unrated: state.unrated.filter(day => day.marketId !== marketId || day.date !== date),
+        judged: complete && !state.judged.includes(key) ? [...state.judged, key] : state.judged,
+      };
+    }),
     // Optimistic on dispatch like the marks below, and for the same reason one rung up:
     // the whole-screen flip is the vendor's receipt (decision 38).
     on(ChangeStandClosure, (state, { marketId, date, closed }): MarketDayState =>

@@ -450,10 +450,62 @@ describe('MarketDays', () => {
       ],
     });
 
-    facade.recordBilan('market-1', '2026-08-15', { 'item-1': 'did_well' });
+    facade.recordBilan('market-1', '2026-08-15', { 'item-1': 'did_well' }, true);
     httpCtrl.expectOne(bilan).flush(null);
 
     await waitFor(() => expect(facade.unrated().map(day => day.marketId)).toEqual(['market-2']));
+  });
+
+  // The bug the mask exists for: the dashboard re-asks on arrival, the query answers off a
+  // projection that lags the response by 4–275ms, and the vendor's own finished bilan came
+  // back as *à faire* — and stayed, because nothing reads it again until a refresh.
+  it('holds back a day it has just judged while the query still names it', async () => {
+    facade.recordBilan('market-1', '2026-08-15', { 'item-1': 'did_well' }, true);
+    httpCtrl.expectOne(bilan).flush(null);
+
+    facade.loadUnrated();
+    httpCtrl.expectOne('/api/market-days/unrated').flush({
+      marketDays: [
+        { marketId: 'market-1', date: '2026-08-15', day: 'SAT', marketName: 'Le marché' },
+        { marketId: 'market-2', date: '2026-08-15', day: 'SAT', marketName: "L'autre marché" },
+      ],
+    });
+
+    await waitFor(() => expect(facade.unrated().map(day => day.marketId)).toEqual(['market-2']));
+  });
+
+  // The mask is a wait, not a blocklist: the first answer that no longer names the day is
+  // the projection catching up, and after it the query is believed again.
+  it('believes the query again once it has caught up', async () => {
+    facade.recordBilan('market-1', '2026-08-15', { 'item-1': 'did_well' }, true);
+    httpCtrl.expectOne(bilan).flush(null);
+    facade.loadUnrated();
+    httpCtrl.expectOne('/api/market-days/unrated').flush({
+      marketDays: [{ marketId: 'market-1', date: '2026-08-15', day: 'SAT', marketName: 'Le marché' }],
+    });
+
+    facade.loadUnrated();
+    httpCtrl.expectOne('/api/market-days/unrated').flush({ marketDays: [] });
+    facade.loadUnrated();
+    httpCtrl.expectOne('/api/market-days/unrated').flush({
+      marketDays: [{ marketId: 'market-1', date: '2026-08-15', day: 'SAT', marketName: 'Le marché' }],
+    });
+
+    await waitFor(() => expect(facade.unrated().map(day => day.marketId)).toEqual(['market-1']));
+  });
+
+  // Partial counts as unrated (decision 65), so a query that names it again is right rather
+  // than late — and the prompt is the only thing that will tell the vendor.
+  it('lets a half-answered bilan come back on the next read', async () => {
+    facade.recordBilan('market-1', '2026-08-15', { 'item-1': 'did_well' }, false);
+    httpCtrl.expectOne(bilan).flush(null);
+
+    facade.loadUnrated();
+    httpCtrl.expectOne('/api/market-days/unrated').flush({
+      marketDays: [{ marketId: 'market-1', date: '2026-08-15', day: 'SAT', marketName: 'Le marché' }],
+    });
+
+    await waitFor(() => expect(facade.unrated().map(day => day.marketId)).toEqual(['market-1']));
   });
 
   // A nudge that failed to load is silent, not broken: nothing else on the dashboard
@@ -470,7 +522,7 @@ describe('MarketDays', () => {
   // Decision 72: setMenu's shape, not the availability pair's — a bilan is bookkeeping in
   // one sitting, so it submits once and the whole set replaces what was there.
   it('puts the whole bilan for the day', () => {
-    facade.recordBilan('market-1', '2026-08-15', { 'item-1': 'sold_out', 'item-2': 'did_well' });
+    facade.recordBilan('market-1', '2026-08-15', { 'item-1': 'sold_out', 'item-2': 'did_well' }, true);
 
     const req = httpCtrl.expectOne(bilan);
     expect(req.request.method).toBe('PUT');
@@ -484,7 +536,7 @@ describe('MarketDays', () => {
     facade.load();
     httpCtrl.expectOne('/api/market-days/upcoming').flush(asSent([{ itemId: 'item-1' }]));
 
-    facade.recordBilan('market-1', '2026-08-15', { 'item-1': 'did_well' });
+    facade.recordBilan('market-1', '2026-08-15', { 'item-1': 'did_well' }, true);
     httpCtrl.expectOne(bilan).flush(null);
 
     await waitFor(() => expect(facade.days()[0].outcomes).toEqual({ 'item-1': 'did_well' }));
@@ -495,7 +547,7 @@ describe('MarketDays', () => {
   // finished, so the bilan does not share the menu save's conditional exit below.
   it('returns to the dashboard once the bilan is recorded', async () => {
     const router = TestBed.inject(Router);
-    facade.recordBilan('market-1', '2026-08-15', { 'item-1': 'did_well' });
+    facade.recordBilan('market-1', '2026-08-15', { 'item-1': 'did_well' }, true);
 
     httpCtrl.expectOne(bilan).flush(null);
 
@@ -508,7 +560,7 @@ describe('MarketDays', () => {
     const router = TestBed.inject(Router);
     await router.navigateByUrl('/dashboard/markets');
 
-    facade.recordBilan('market-1', '2026-08-15', { 'item-1': 'did_well' });
+    facade.recordBilan('market-1', '2026-08-15', { 'item-1': 'did_well' }, true);
     httpCtrl.expectOne(bilan).flush(null, { status: 500, statusText: 'Server Error' });
 
     await waitFor(() => expect(router.url).toBe('/dashboard/markets'));
