@@ -103,7 +103,7 @@ navigation, no new screen, and it lands at the exact moment the data exists to i
 
 ## Where it hangs, in value order
 
-**A — the menu editor row.** `/dashboard/menus/:marketId/:date` already knows the market, so
+**A — the menu editor row. Shipped.** `/dashboard/menus/:marketId/:date` already knows the market, so
 the line needs no market label. This is the whole feature at its cheapest: the recall
 arrives inside the decision instead of waiting behind a link the vendor will not open at 6h.
 Vertical, so it does not squeeze the dish name the way an inline cue did (`MARKET-PRICING-PLAN.md`
@@ -112,7 +112,7 @@ than nested inside the name column — the name column is 105 px wide at 320 px 
 full width is 168 px, and that difference is the whole margin the line has to live in. Silent
 for a dish never brought here — a screen of *aucun bilan* is a nag, not a hint.
 
-**B — `Ce qui se vend à <marché>`.** A second link on the market card in *Vos marchés*, under
+**B — `Ce qui se vend à <marché>`. Deferred.** A second link on the market card in *Vos marchés*, under
 *Tarifs* — the card is already a container with two destinations (`MARKET-PRICING-PLAN.md`
 decision 2), so this is a precedent, not a new pattern. The page is the five piles, each a
 short list of dishes with their streaks, and each dish's price **at that market** beside it,
@@ -120,11 +120,14 @@ stated and not interpreted: a dish that stays at one market and empties at anoth
 is priced differently is a pricing conversation, and the vendor is better placed to have it
 than we are.
 
-**C — `Où ça se vend`, on a catalogue dish.** The transpose: one **block** per market for one
+**C — `Où ça se vend`, on a catalogue dish. Deferred.** The transpose: one **block** per market for one
 dish — market name, pile, streak, each on its own line rather than a name-and-verdict row,
 which overflows the moment a market is called *Marché de Bourg-la-Reine*. The transpose is
 also what keeps this off a (dish × market) matrix, which no phone can hold. This is the cross-market finding a vendor cannot hold in their head — *le tajine part
 à Sceaux et reste à Antony* — and it is the one that changes a route, not just a quantity.
+
+B and C keep their design here rather than being cut: the reasoning is what the trigger will
+need when it fires, and it cost nothing to keep true.
 
 **Deliberately not built:**
 
@@ -144,10 +147,12 @@ more a market day than a price list is a schedule — the pile rule as a pure fr
 in the same shape `live-status.ts` set, and primitive 3 on the menu
 editor. No new read model, no new event, no migration.
 
-**Slice 2 — surface B.** The market page, rendering the same payload in full. Nearly free
-once slice 1 exists: one route, one component, one link on the market card.
+**Slice 2 — surface B. Deferred.** The market page, rendering the same payload in full.
+Nearly free once slice 1 exists — one route, one component, one link on the market card — and
+deferred anyway; see *Deferred* below for the trigger.
 
-**Slice 3 — surface C.** The transpose on a catalogue dish. Same payload again.
+**Slice 3 — surface C. Deferred.** The transpose on a catalogue dish. Same payload again,
+and it reuses whatever slice 2 builds, so the two move together.
 
 
 ## Where this stands
@@ -234,10 +239,9 @@ lookup and the `.hint` line.
   the absence has no single name — the editor stays silent, surface B will call it *Jamais
   apporté ici* — so each surface names it and the rule stays in one place.
 
-**Next: slices 2 and 3** — surface B (`Ce qui se vend à <marché>`, the five piles as short
-lists off the market card) and surface C (`Où ça se vend`, one block per market on a
-catalogue dish). Both consume the same facade; both need the streak, which the editor did
-not.
+**Slices 2 and 3 are deferred** (below). Slice 1 stands on its own: the editor line is the
+surface that lands at the moment the data exists to improve, and it needs nothing the other
+two would have built.
 
 Two things about running the repo that cost time otherwise, both from `CLAUDE.md`: use
 `npm install`, never `npm ci`, and restore `package-lock.json` afterwards; and `npx nx test
@@ -344,6 +348,29 @@ Settled by grilling. Do not re-litigate without a reason.
 | 21 | **A recorded bilan stales the cached set; it never patches it** | The set is cached like prices and the catalogue — every menu editor opened asks for it, and it is the largest of that screen's four feeds — and a bilan is the only thing that moves it. Patching would mean turning outcomes-keyed-by-item into this shape on the client, which is a second implementation of the handler's fold and free to drift from the one the API answers with. The next screen refetches |
 
 ## Deferred — trigger-gated
+
+- **Surfaces B and C — slices 2 and 3.** The per-market page and the transpose on a catalogue
+  dish. Deferred as unnecessary for now: the editor line is where the pile changes a decision,
+  and the other two are places to go *reading*, which a pilot vendor has not asked to do.
+  Nothing is wasted by waiting — no code was written for them, and both consume the payload
+  slice 1 already serves.
+
+  **This leaves one knowing gap, and it is the point of the trigger.** Decision 12 split the
+  claim from its evidence: the pile goes in the editor, the streak stays on the record page,
+  *because a vendor who doubts the conclusion is exactly the vendor who will open the page
+  holding the evidence*. That page now does not exist, so the editor states a conclusion with
+  no way to check it beyond the vendor's own memory of the market — which for three to eight
+  recent mornings at a market they stood at is a real check, just not one the app provides.
+  **Trigger: the first vendor who asks where a pile came from, disagrees with one, or wants to
+  see a dish's record across their markets.** That vendor is the one the record page was
+  designed for, and their asking is the evidence that it is worth building.
+
+  **A second consequence, worth watching rather than acting on.** Decision 3 sends the whole
+  set — every market, every dish — because three surfaces were going to slice it. One narrow
+  surface consumes it now, so a pilot vendor's menu editor fetches ~33 kB (3.0 kB gzipped) to
+  render one short line per dish for one market. Still cheap, and still the fourth of four
+  parallel requests rather than the slowest. Decision 3 already names the lever if that stops
+  being true: narrow surface A to `?market=`, rather than re-encoding the payload.
 
 - **Splitting *épuisé tôt* from *épuisé en fin de marché*.** The pile *Toujours épuisé* is
   ambiguous today, and the ambiguity is the difference between a triumph and a lost morning:
