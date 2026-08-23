@@ -80,7 +80,7 @@ the schedule) but does announce the end, by **closing** the day. Not yet built �
 
 ### Miam
 
-Domain-specific term for a customer expressing appetite/intent for an item. Not a public rating — a private demand signal for the vendor. Avoids the verification/gaming problems of a “like” system. Frames the interaction as “I want to eat this” rather than “I approve of this.” **Not yet built** — the furthest-out item on the public roadmap, and the namesake.
+Domain-specific term for a customer expressing appetite/intent for an item. Not a public rating — a private demand signal for the vendor. Avoids the verification/gaming problems of a “like” system. Frames the interaction as “I want to eat this” rather than “I approve of this.” **Not yet built, and deferred with no date (2026-08).** It was the furthest-out item on the public roadmap until that roadmap was removed from the site once the MVP completed — so the namesake is currently not explained anywhere public. See `WEBSITE-PLAN.md`.
 
 ### Item Request
 
@@ -164,15 +164,17 @@ outcome event that hangs off closing.
 
 ## MVP Strategy — status
 
+**The MVP is complete as of 2026-08** — all five steps below are shipped end to end. That is what removed the now-versus-later split from the website: with nothing left in the MVP to promise, a *Ce qui arrive ensuite* section had nothing honest to hold (`WEBSITE-PLAN.md`).
+
 The MVP is **vendor-facing first**: the catalogue and market day planning tool, with the customer-facing published page as the visible output.
 
 1. **Build the catalogue** — ✅ shipped end-to-end (add, revise, re-photo, retire, reorder, variants)
 1. **Plan market days** — ✅ shipped end-to-end (`SetMarketDayMenu` → `MarketDayMenuSet`, the whole day's menu in one command; read model, `PUT /market-days/:marketId/:date/menu`, the menu joined onto upcoming days, a *Prochain marché* card and menu editor in the vendor app, and the day's menu leading the storefront) — see `MENU-DU-JOUR-PLAN.md`
 1. **Publish** — ✅ shipped: publication readiness + public storefront (next market, upcoming markets, absences) at the vendor's subdomain, with the carte on its own `/carte` page — see `LIVE-MODE-PLAN.md` slice 0
 1. **Sold-out tracking** — ✅ shipped: per-dish marks during service on the vendor's live screen, greyed in place on the customer storefront — see `LIVE-MODE-PLAN.md` slice 1
-1. **Post-market review** — ✅ shipped: *le bilan* on its own route, the whole set in one submit, the *épuisé* prefill a recorded bilan outranks, and a dashboard prompt for an unjudged day — see `LIVE-MODE-PLAN.md` slice 2b. Reading it back across market days is in progress (`BILAN-RETROSPECTIVE-PLAN.md`)
+1. **Post-market review** — ✅ shipped: *le bilan* on its own route, the whole set in one submit, the *épuisé* prefill a recorded bilan outranks, and a dashboard prompt for an unjudged day — see `LIVE-MODE-PLAN.md` slice 2b. Reading it back across market days is ✅ shipped too: `GET /selling-record` folds six months of bilans into (dish × market) piles, surfaced as a line under each dish in the menu editor. The other two surfaces it was designed for are deferred (`BILAN-RETROSPECTIVE-PLAN.md`)
 
-Later phases: customer miams, item requests, notifications, pre-ordering.
+Later phases, none scheduled: customer miams (deferred 2026-08), item requests, notifications, pre-ordering.
 
 ## Business Model
 

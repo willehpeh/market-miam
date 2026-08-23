@@ -13,42 +13,60 @@ const cta = {
   'data-tally-emoji-animation': 'wave',
 };
 
-const aujourdhui = [
+const groupes = [
   {
-    titre: 'Votre vitrine',
-    texte:
-      'chez-vous.marketmiam.fr — votre photo, vos couleurs, votre présentation. Une adresse que vous donnez à vos clients et qui ne disparaît pas.',
+    titre: 'Une fois pour toutes',
+    lede: 'Vous l’installez une fois, avec nous, pendant la mise en route. Ensuite vous n’y touchez plus.',
+    cartes: [
+      {
+        titre: 'Votre vitrine',
+        texte:
+          'chez-vous.marketmiam.fr — votre photo, vos couleurs, votre présentation. Une adresse que vous donnez à vos clients et qui ne disparaît pas.',
+      },
+      {
+        titre: 'Votre carte',
+        texte:
+          'Tous vos plats, décrits une bonne fois pour toutes. Vous les ressortez d’un marché à l’autre au lieu de tout retaper à chaque fois.',
+      },
+      {
+        titre: 'Vos marchés',
+        texte:
+          'Quels marchés, quels jours, quels horaires. Vos habitués savent quand vous êtes chez eux, et n’ont plus à demander si vous venez aussi le mercredi.',
+      },
+    ],
   },
   {
-    titre: 'Votre carte',
-    texte:
-      'Tous vos plats, décrits une bonne fois pour toutes. Vous les ressortez d’un marché à l’autre au lieu de tout retaper à chaque fois.',
+    titre: 'À chaque marché',
+    lede: 'Le rythme de la semaine, depuis votre téléphone. Quelques touches à chaque fois.',
+    cartes: [
+      {
+        titre: 'Le menu du jour',
+        texte:
+          'Ce que vous servez à chaque marché, publié la veille ou le matin même. Vos habitués savent ce qui les attend avant de sortir de chez eux.',
+      },
+      {
+        titre: 'Pendant le marché',
+        texte:
+          'Un plat est parti ? Une touche, et il passe en épuisé sur votre vitrine. Vos clients en route le voient avant d’arriver. Et quand vous remballez — ou si vous ne pouvez pas venir — vous fermez le stand : votre vitrine cesse d’annoncer un marché où vous n’êtes plus.',
+      },
+      {
+        titre: 'Après le marché',
+        texte:
+          'De retour chez vous, vous dites en une fois comment chaque plat est parti — bien vendu, moins bien vendu, épuisé. Ceux que vous aviez marqués épuisés pendant le marché sont déjà cochés.',
+      },
+    ],
   },
   {
-    titre: 'Vos marchés',
-    texte:
-      'Quels marchés, quels jours, quels horaires. Et vos clients d’un marché découvrent qu’ils peuvent aussi vous retrouver ailleurs dans la semaine.',
+    titre: 'Au fil des marchés',
+    lede: 'Rien de plus à saisir : ce que vous avez déjà répondu revient vous aider à préparer.',
+    cartes: [
+      {
+        titre: 'Ce qui part, et ce qui reste',
+        texte:
+          'Quand vous préparez le menu d’un marché, chaque plat vous rappelle comment il y est parti les fois précédentes — toujours épuisé, ça part bien, ça reste. Marché par marché : un plat qui s’arrache ici peut rentrer avec vous d’ailleurs.',
+      },
+    ],
   },
-  {
-    titre: 'Le menu du jour',
-    texte:
-      'Ce que vous servez à chaque marché, publié la veille ou le matin même. Vos habitués savent ce qui les attend avant de sortir de chez eux.',
-  },
-  {
-    titre: 'Pendant le marché',
-    texte:
-      'Un plat est parti ? Une touche, et il passe en épuisé sur votre vitrine. Vos clients en route le voient avant d’arriver. Et quand vous remballez — ou si vous ne pouvez pas venir — vous fermez le stand : votre vitrine cesse d’annoncer un marché où vous n’êtes plus.',
-  },
-  {
-    titre: 'Après le marché',
-    texte:
-      'De retour chez vous, vous dites en une fois comment chaque plat est parti — bien vendu, moins bien vendu, épuisé. Ceux que vous aviez marqués épuisés pendant le marché sont déjà cochés.',
-  },
-];
-
-const bientot = [
-  'Au fil des semaines, vos réponses deviennent des repères : quoi préparer la veille, et en quelle quantité',
-  'Le <strong>miam</strong> : vos clients disent ce qui leur fait envie avant le marché — sans commander, sans payer',
 ];
 ---
 
@@ -64,11 +82,11 @@ const bientot = [
     <section class="hero">
       <div>
         <p class="eyebrow">Pour les traiteurs de marché</p>
-        <h1>Plus besoin de poster votre menu en story à 6&nbsp;h du matin.</h1>
+        <h1>Le lien avec vos habitués ne s’arrête pas quand vous remballez.</h1>
         <p class="lede">
           Market Miam donne à chaque traiteur sa propre vitrine : votre carte, vos marchés,
-          et le menu du jour publié marché par marché. Vos habitués la consultent quand ils
-          veulent — elle ne s’efface pas au bout de 24&nbsp;heures.
+          et le menu du jour publié marché par marché. Une adresse à donner une fois, que vos
+          habitués gardent — et consultent entre deux marchés.
         </p>
         <div class="hero-actions">
           <button class="btn btn-solid" {...cta}>Rejoignez les premiers traiteurs</button>
@@ -92,11 +110,13 @@ const bientot = [
 
     <section class="band">
       <div class="wrap">
-        <h2>Vous vendez sur les marchés. Pour prévenir vos clients, vous êtes obligé de bricoler.</h2>
+        <h2>Vous vendez sur les marchés. Tout le reste, vous le bricolez.</h2>
         <ul class="problems">
           <li>
-            <strong>Votre menu disparaît en une journée.</strong>
-            Une story, un post, un message dans un groupe — et le lendemain il n’en reste rien.
+            <strong>Entre deux marchés, vous n’existez plus.</strong>
+            Un habitué qui veut savoir ce que vous servez cette semaine, montrer votre stand à
+            un ami, ou vérifier que vous serez bien là — n’a rien à consulter et personne à
+            qui demander.
           </li>
           <li>
             <strong>Vous racontez vos plats au téléphone, dix fois par jour.</strong>
@@ -111,35 +131,28 @@ const bientot = [
       </div>
     </section>
 
+    {/* Grouped by what each thing costs the vendor — once, every market, or nothing —
+        because "combien de temps ça va me prendre ?" is the objection, and a flat list of
+        seven cards answers it nowhere. The last group holds one card on purpose: the
+        section ends on the thing that gives back rather than burying it seventh. */}
     <section class="wrap section">
-      <p class="eyebrow">Disponible aujourd’hui</p>
-      <h2>Ce que Market Miam vous donne aujourd’hui</h2>
-      <div class="cards">
-        {
-          aujourdhui.map((item) => (
-            <article class="card">
-              <h3>{item.titre}</h3>
-              <p>{item.texte}</p>
-            </article>
-          ))
-        }
-      </div>
-    </section>
-
-    <section class="wrap section">
-      <p class="eyebrow">En cours de développement</p>
-      <h2>Ce qui arrive ensuite</h2>
-      <p class="lede lede-tight">
-        De quoi ne plus préparer à l’aveugle : savoir quoi apporter, et combien. Ce n’est
-        pas encore en ligne, et nous préférons vous le dire franchement. Nous le
-        construisons dans cet ordre.
-      </p>
-      <ul class="next">
-        {/* set:html — the entries carry inline markup; they are literals above, not input.
-            The span keeps each entry one flex item, so the li's gap stays between the
-            arrow and the text instead of opening up mid-sentence. */}
-        {bientot.map((item) => <li><span set:html={item} /></li>)}
-      </ul>
+      <h2>Ce que Market Miam vous donne</h2>
+      {
+        groupes.map((groupe, index) => (
+          <div class:list={['groupe', index === groupes.length - 1 && 'groupe-final']}>
+            <h3>{groupe.titre}</h3>
+            <p class="lede lede-tight">{groupe.lede}</p>
+            <div class="cards">
+              {groupe.cartes.map((carte) => (
+                <article class="card">
+                  <h4>{carte.titre}</h4>
+                  <p>{carte.texte}</p>
+                </article>
+              ))}
+            </div>
+          </div>
+        ))
+      }
     </section>
 
     <section class="band band-deep">
@@ -267,7 +280,18 @@ const bientot = [
     max-width: 26ch;
   }
 
+  /* Brand-deep and over a rule, because size alone did not separate a group heading from
+     a card title — both are bold and dark, and the three groups read as one long list.
+     The colour is the same structural-label language as .eyebrow. */
   h3 {
+    font-size: clamp(1.15rem, 2.2vw, 1.4rem);
+    font-weight: 700;
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+    color: var(--mm-brand-deep);
+  }
+
+  h4 {
     font-size: 1.1rem;
     font-weight: 700;
     margin-bottom: 0.5rem;
@@ -419,6 +443,26 @@ const bientot = [
     font-weight: 600;
   }
 
+  .groupe {
+    margin-top: clamp(2.25rem, 5vw, 3.25rem);
+    padding-top: clamp(1.5rem, 3vw, 2rem);
+    border-top: 1px solid var(--mm-line-strong);
+  }
+
+  /* The last group holds one card, which the auto-fit grid stretches the full width. Left
+     plain it reads as a tile someone forgot to pair; tinted, it reads as the payoff the
+     section is built towards, which is what it is. */
+  .groupe-final .card {
+    background: var(--mm-brand-soft);
+    border-color: transparent;
+  }
+
+  /* Inside a group the cards follow their own lede, not a section heading, so they sit
+     closer than the ungrouped 2.25rem would put them. */
+  .groupe .cards {
+    margin-top: 1.25rem;
+  }
+
   .cards {
     margin-top: 2.25rem;
     display: grid;
@@ -436,35 +480,6 @@ const bientot = [
   .card p {
     color: var(--mm-ink-soft);
     font-size: 0.98rem;
-  }
-
-  .next {
-    list-style: none;
-    margin-top: 1.75rem;
-    display: grid;
-    gap: 0.75rem;
-    max-width: 52ch;
-    color: var(--mm-ink-soft);
-  }
-
-  .next li {
-    display: flex;
-    gap: 0.7rem;
-  }
-
-  /* :global — the strong comes from set:html, so it carries no scope attribute
-     and a plain `.next strong` would never match it. Still contained: .next
-     itself keeps the scope, so this reaches nothing outside this list. */
-  .next :global(strong) {
-    color: var(--mm-brand-deep);
-    font-weight: 700;
-  }
-
-  .next li::before {
-    content: '→';
-    color: var(--mm-brand);
-    font-family: var(--mm-font-mono);
-    flex: none;
   }
 
   .terms {

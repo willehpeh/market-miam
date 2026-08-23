@@ -6,7 +6,7 @@
 
 Single page, French, plain CSS over `packages/design-system/tokens.css`.
 
-- Hero → problem → *Disponible aujourd'hui* (vitrine, carte, marchés, menu du jour, pendant le marché, après le marché) → *Ce qui arrive ensuite* → pilot terms → footer
+- Hero → problem → *Ce que Market Miam vous donne*, in three groups by what each thing costs the vendor (**Une fois pour toutes**: vitrine, carte, marchés · **À chaque marché**: menu du jour, pendant, après · **Au fil des marchés**: ce qui part et ce qui reste) → pilot terms → footer
 - Tally popup lead capture, form `aQX9NB` (nom / adresse mail / marchés où vous exercez)
 - `og:*` + `twitter:*` + canonical in `Base.astro`; `og.jpg` 1200×630
 - Hero shot links to the live demo storefront
@@ -83,7 +83,7 @@ The hero shot links to it from a `<figcaption>`. A text link, not a second butto
 has one job and a second button competes with it. New tab + `rel="noopener"` so the detour
 doesn't cost the landing page.
 
-### Roadmap section (`f32ace5`, `a49c622`, `64ab3a4`)
+### Roadmap section — removed (`f32ace5`, `a49c622`, `64ab3a4`, then deleted)
 
 The lede ends *"Nous le construisons dans cet ordre."* — order beats disclaimer. The section
 already says once that none of it is online; repeating that across a longer list reads as
@@ -99,6 +99,15 @@ close → waste-watch → miam. What's behind what remains:
 | ~~post-market feedback per dish~~ | **Shipped** — slice 2b of `LIVE-MODE-PLAN.md`, now the *Après le marché* card (below) |
 | repères over time | Waste-watch. Not built, and the last thing before the miam |
 | le miam | **Nothing built.** No aggregate, no event, no handler; `NEXT_BEHAVIOURS.md` had *item rated for market day*, since folded into live mode. Furthest-out thing on the page — have an answer ready for *"when?"* |
+
+**Deleted entirely once the MVP completed.** Its two remaining bullets resolved in opposite
+directions on the same day: the repères shipped (`BILAN-RETROSPECTIVE-PLAN.md` slice 1) and
+the miam was deferred with no trigger date. A section headed *Ce qui arrive ensuite* holding
+one item nobody has committed to is worse than no section — the whole point of the
+now-versus-later split was that *later* was short and moving. With the MVP complete there is
+no later to separate from, so the split went too, and the repères became the third group's
+single card. Everything below is kept as the record of why the section existed and what its
+wording got wrong; **it is history, not a plan to restore.**
 
 **Cut to two bullets once slice 2b shipped.** The bilan is live, so it left the roadmap for
 *Disponible aujourd'hui* — and the repères bullet directly under it stopped promising to build
@@ -116,6 +125,57 @@ Roadmap length is capped on purpose. Three shipped things against four coming wa
 edge; more future items and the shipped-to-promised ratio tips the page into reading like a
 pre-launch teaser, which is the opposite of the intent. The cap is a ceiling on the *promised*
 side — the ratio moving to five-against-three as features ship does not license adding any back.
+
+### Hero premise corrected — the Instagram framing was wrong
+
+The `h1` was *Plus besoin de poster votre menu en story à 6 h du matin*, and the lede paid it
+off with *elle ne s'efface pas au bout de 24 heures*. **Not many vendors post menus to
+Instagram**, so both relieved a chore the reader does not have. The problem band's first
+bullet carried the same premise (*Une story, un post, un message dans un groupe*).
+
+Replaced with the relationship the address actually serves:
+
+> Le lien avec vos habitués ne s'arrête pas quand vous remballez.
+
+*Remballez* is the site's own word — it is already in the *Pendant le marché* card — so the
+hero and the product speak the same trade French.
+
+**Cross-market discovery was the second wrong premise, and it had shipped.** The obvious
+replacement hero was *find you at your other markets*; it is also wrong, because **customers
+mostly care about their local market only**. That killed a card that had been live for a
+while — *Vos marchés* promised *vos clients d'un marché découvrent qu'ils peuvent aussi vous
+retrouver ailleurs dans la semaine*, a benefit aimed at nobody. It now sells the local fact:
+which days you are at **their** market.
+
+The page's own `<head>` had been right all along — the meta description leads on *mieux
+servir vos habitués* and the slogan is *l'adresse de votre stand*. The `h1` was the outlier,
+so this made the page consistent rather than pointing it somewhere new. Metas deliberately
+untouched: they already agree, and changing `og:description` restales every link shared so
+far (§1).
+
+### Features grouped by what they cost the vendor
+
+Seven flat cards was a wall, and it answered nowhere the objection a traiteur actually has —
+*combien de temps ça va me prendre ?* Three groups do: **une fois pour toutes** (three cards),
+**à chaque marché** (three), **au fil des marchés** (one). Each group heading is itself a
+selling line, and the group lede under *Une fois pour toutes* is the only place the page says
+the setup is done **with** the vendor, which is a pilot argument the feature list previously
+made nowhere.
+
+The last group holds one card on purpose: the section now **ends** on the thing that gives
+back rather than burying it seventh, and it puts the repères directly under *Après le marché*,
+where the one obviously follows from the other.
+
+Two presentation faults found by screenshotting the built page, not by reading it:
+
+- **Group headings did not out-rank card titles.** Both bold and dark, a size step alone was
+  invisible; they now take `--mm-brand-deep` and sit over a `--mm-line-strong` rule.
+- **The lone card stretched the full grid width** and read as a tile someone forgot to pair.
+  Tinted `--mm-brand-soft`, it reads as the payoff. Contrast checked: `--mm-ink-soft` on
+  `--mm-brand-soft` is 6.05:1.
+
+Card titles dropped `h3` → `h4` so the group headings could take `h3` and the outline stays
+honest.
 
 ## Remaining
 
@@ -253,8 +313,8 @@ the same shot so it regenerates too — which means a forced re-scrape, per §1.
 - **Vocabulary is the product's, not the web's** — vitrine, carte, plats, traiteur. *Carte* = the standing list, *menu* = the day's. Matches the vendor app and the customer storefront, so a vendor meets the same words before and after signing up.
 - **In-page CTAs match the Tally form title**; the header one doesn't, because it's navigation rather than the ask.
 - **Demo link is a text link under the shot, not a second button** — the page converts to the pilot, and a second button competes.
-- **The miam is on the roadmap although nothing is built** — namesake, and the only customer-side item. Roadmap, not promise; the section says so in its own lede.
-- **`--mm-brand` for decoration, `--mm-brand-deep` for brand-as-text on light.** Measured on the roadmap list: `--mm-brand` is 3.90:1 against that section's background at 16px, under the 4.5:1 AA floor; `--mm-brand-deep` is 7.75:1. The file already followed this split (`.eyebrow`, `.foot a`, `.legal a`) — now it's written down.
+- ~~**The miam is on the roadmap although nothing is built**~~ — **superseded 2026-08: the miam is off the page entirely**, along with the roadmap that held it. It was the right call while *later* was a short, moving list; with the MVP complete and the miam deferred without a date, keeping it would have been a one-item *coming soon* section, which reads as a teaser rather than a queue. The cost is real and accepted: the site no longer explains its own name. Restore a line only if a pilot conversation actually stumbles on *why Miam?* — and put it in the pilot block, not in a revived roadmap.
+- **`--mm-brand` for decoration, `--mm-brand-deep` for brand-as-text on light.** Measured on the since-deleted roadmap list: `--mm-brand` was 3.90:1 against that section's background at 16px, under the 4.5:1 AA floor; `--mm-brand-deep` is 7.75:1. Followed by `.eyebrow`, `.foot a`, `.legal a`, and now by the feature-group `h3`s, which is why those are brand-deep rather than brand.
 - **Tally over Formspree** — unlimited responses free, and Belgium-based, so French vendors' data stays in the EU. Free tier shows Tally branding; Pro (€20/mo) removes it, not needed yet.
 - **Popup, not inline iframe** — page stays on-brand, branding is less visible in an overlay.
 - **Price named before it's charged** — stating it avoids a cold ask at conversion and filters people who were never customers. Now literal: it *is* charged.
@@ -269,10 +329,14 @@ the same shot so it regenerates too — which means a forced re-scrape, per §1.
   cohort of five to ten, it ends when that fills, and the page deliberately promises nothing
   about when — because with a flat price, the end of the pilot costs a vendor nothing.
 - **The price freeze ships with the price** — *Le tarif ne bouge pas — ce qui arrive ensuite
-  est compris, sans supplément.* Load-bearing, not decoration: without *gratuit*, the roadmap
-  section flips valence from "you're not paying for the unbuilt part" to "you're paying 15 €
-  for a product whose own page says three things are missing". The freeze is what turns that
-  back into a reason to join now, and it costs nothing — 15 € was the price either way.
+  est compris, sans supplément.* Load-bearing when written, for a reason that has since
+  expired: without *gratuit*, the roadmap section flipped valence from "you're not paying for
+  the unbuilt part" to "you're paying 15 € for a product whose own page says three things are
+  missing", and the freeze turned that back into a reason to join now. **The roadmap is gone,
+  so the page no longer says anything is missing** and the line is no longer repairing
+  anything. Kept anyway, and the wording still stands on its own — it now reads as plainly
+  what it says, that future work is included. Deliberately not reworded: it costs nothing,
+  and *ce qui arrive ensuite* needs no antecedent to parse.
 - **No billing system, deliberately** — ADR 0048 settles Billing's architecture but
   `packages/billing` does not exist. Five to ten vendors are invoiced by hand from the
   micro-entreprise; non-payment is handled by unpublishing a storefront by hand.
@@ -283,10 +347,14 @@ the same shot so it regenerates too — which means a forced re-scrape, per §1.
   convention and stays the headline, but a traiteur en franchise de TVA cannot reclaim the
   20 %, so HT-only would be a surprise at the first invoice. One parenthesis, no surprise.
 - **Storefront shot in the hero, not the dashboard** — it's what a vendor is buying.
-- **"Market Miam" appears in one on-page heading** — the *Disponible aujourd'hui* h2, *Ce que Market Miam vous donne aujourd'hui* (was *dès l'inscription*, which stopped covering the section once a market-morning feature joined it; the brand stays in the heading either way). Before that, the name was in `<title>`, metas, alt text and body copy but in no `h1`–`h6` on the whole site — a weak signal for brand queries. The hero h1 stays a brand-free hook; that section is the natural home because it's literally what Market Miam gives you.
+- **"Market Miam" appears in one on-page heading** — *Ce que Market Miam vous donne* (was *dès l'inscription*, then *…vous donne aujourd'hui*; *aujourd'hui* was contrast against a *Ce qui arrive ensuite* section that no longer exists, so it went with it. The brand stays in the heading through every rewording, which is the part that matters). Before that, the name was in `<title>`, metas, alt text and body copy but in no `h1`–`h6` on the whole site — a weak signal for brand queries. The hero h1 stays a brand-free hook; that section is the natural home because it's literally what Market Miam gives you.
 - **`public/` holds generated assets, not originals.** Regeneration recipe in the app README.
 
 ## Astro traps hit here (save the next person the debugging)
+
+*(The `.next` list these were learned on was deleted with the roadmap section. Kept because
+the traps are Astro's, not that list's, and the next `set:html` or flex `<li>` on this site
+will hit them again.)*
 
 - **`set:html` content escapes scoped CSS.** Astro compiles a scoped `.next strong` to
   `strong[data-astro-cid-…]`, and an element injected via `set:html` never carries that
