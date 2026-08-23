@@ -7,9 +7,10 @@ export type ItemViewModel = {
   itemId: string;
   name: string;
   description: string;
-  // Only where a market is charging it. The carte is tied to no market, so there is no one
+  // Only on the featured market's menu. The carte is tied to no market, so there is no one
   // price it could name — the same dish sells for different money depending on where the
-  // vendor is standing.
+  // vendor is standing — and the days below the featured one are a schedule rather than a
+  // menu.
   priceLabel?: string;
   variants?: { name: string; description: string; priceLabel?: string }[];
   photo: { src: string; srcset: string } | null;
@@ -32,8 +33,8 @@ export type MarketViewModel = {
   cancelled: boolean;
   inProgress: boolean;
   // Full items, so the featured card can render the same cards as the carte and open the
-  // same sheet. The upcoming list draws only their names — a price appears only while the
-  // market is trading.
+  // same sheet. The upcoming list draws only their names — only the featured market's items
+  // are priced, so there is no figure for those rows to have drawn.
   items: ItemViewModel[];
 };
 
@@ -67,7 +68,10 @@ export function toViewModel(storefront: CustomerStorefront): StorefrontViewModel
     coverReference: storefront.coverPhoto,
     socialImageUrl: storefront.coverPhoto ? cloudinaryUrl(storefront.coverPhoto, 'c_fill,w_1200,h_630,q_auto,f_auto') : null,
     items: storefront.items.map((item) => toItemViewModel(item, false)),
-    upcomingMarkets: storefront.upcomingMarkets.map(toMarketViewModel),
+    // Index 0 is the featured day, the same way `storefront-page.ts` and `live-status.ts`
+    // read it. That card is where the trip gets decided — at home, before setting out,
+    // which is exactly when a price is worth knowing.
+    upcomingMarkets: storefront.upcomingMarkets.map((market, index) => toMarketViewModel(market, index === 0)),
   };
 }
 
@@ -116,7 +120,7 @@ function toItemViewModel(item: CatalogueItem, priced: boolean): ItemViewModel {
 const WEEKDAYS: Record<string, string> = { MON: 'LUN', TUE: 'MAR', WED: 'MER', THU: 'JEU', FRI: 'VEN', SAT: 'SAM', SUN: 'DIM' };
 const MONTHS = ['JANV', 'FÉVR', 'MARS', 'AVR', 'MAI', 'JUIN', 'JUIL', 'AOÛT', 'SEPT', 'OCT', 'NOV', 'DÉC'];
 
-function toMarketViewModel(market: UpcomingMarket): MarketViewModel {
+function toMarketViewModel(market: UpcomingMarket, featured: boolean): MarketViewModel {
   const [, month, day] = market.date.split('-');
   return {
     date: market.date,
@@ -130,7 +134,7 @@ function toMarketViewModel(market: UpcomingMarket): MarketViewModel {
     inProgress: market.inProgress,
     // Flagged in place, never re-sorted: shuffling rows under a reader's thumb is worse
     // than a dead row (decision 7).
-    items: market.items.map(item => ({ ...toItemViewModel(item, market.inProgress), soldOut: market.soldOutItemIds.includes(item.itemId) })),
+    items: market.items.map(item => ({ ...toItemViewModel(item, featured), soldOut: market.soldOutItemIds.includes(item.itemId) })),
   };
 }
 

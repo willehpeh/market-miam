@@ -185,9 +185,10 @@ describe('StorefrontPage', () => {
     expect((cards[1].textContent as string)).not.toContain('€');
   });
 
-  // A day still to come quotes nothing: the view model prices a menu only while its market
-  // is trading, and the card draws no room for a price it was not given.
-  it('quotes no price on a market that is not trading', () => {
+  // The card draws no room for a price it was not given. Which menus carry one is the view
+  // model's rule — only the featured market's — and this is the half that has to hold
+  // whatever that rule becomes.
+  it('draws no price on a menu it was given none for', () => {
     const fixture = TestBed.createComponent(StorefrontPage);
     view.set({
       ...ACME,
@@ -200,12 +201,12 @@ describe('StorefrontPage', () => {
     expect(card.textContent).not.toContain('€');
   });
 
-  it('quotes the market\'s price on the market that is trading', () => {
+  it('quotes the price it is given on the featured market', () => {
     const fixture = TestBed.createComponent(StorefrontPage);
     view.set({
       ...ACME,
       upcomingMarkets: [
-        { ...ACME.upcomingMarkets[0], inProgress: true, items: [{ ...ACME.items[1], priceLabel: '7,50 €' }] },
+        { ...ACME.upcomingMarkets[0], items: [{ ...ACME.items[1], priceLabel: '7,50 €' }] },
       ],
     });
     fixture.detectChanges();

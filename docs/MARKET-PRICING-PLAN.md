@@ -3,8 +3,8 @@
 A vendor does not charge the same price for the same dish at every market. Shipped end to
 end: the price list is set whole per market, validated against the catalogue, projected,
 joined onto every day a customer sees, edited on its own screen and quoted by the menu
-picker. The customer carte quotes nothing — a price appears only on a market that is
-trading, and it is that market's.
+picker. The customer carte quotes nothing — a price appears on the **featured *Prochain
+marché* card** and nowhere else, and it is that market's.
 
 Reasoning lives in [ADR 0052](adr/0052-dish-prices-vary-by-market.md); this file is the
 slicing and the running record.
@@ -24,8 +24,9 @@ backend shipped. Do not re-litigate without a reason.
 | 6 | Catalogue price is **static text beside a labelled input**, never a placeholder | A placeholder vanishes on focus, so the vendor loses the number they are comparing against exactly when they type it. ~~Placeholder~~ — the ADR said placeholder before this was grilled |
 | 7 | **Two row states, each with a non-colour cue** — overridden (`bg-brand-soft` + *Tarif marché*), dirty (`border-brand` edge + a count on the save button) | WCAG 1.4.1. The count is what gives a **cleared** row something to show, and how a vendor forty rows down knows there is unsaved work |
 | 8 | Menu-editor picker quotes the **market** price, same *Tarif marché* cue. **No price editing on a day screen** — a *Tarifs de ce marché →* link instead | The picker currently quotes a number the customer will not be charged. Editing from a day implies the price belongs to that day; it belongs to the market, and the edit would silently move every other day at it |
-| 9 | The carte shows **no price at all**. A price appears only on a market card while that market is **trading**, and it is that market's price. ~~The maximum over the catalogue price and every scheduled market~~ | A carte is tied to no market, so there is no one price it could honestly name. A maximum can only surprise downward, but it still advertises a number nobody is charged, and it left the display question open; showing none closes it. A trading market is the one place a price is unambiguous — the customer is at that stall, and that stall's list is what they will pay |
+| 9 | The carte shows **no price at all**. A price appears on the **featured *Prochain marché* card** and nowhere else, and it is that market's price. ~~Only while that market is trading~~ ~~The maximum over the catalogue price and every scheduled market~~ | A carte is tied to no market, so there is no one price it could honestly name. A maximum can only surprise downward, but it still advertises a number nobody is charged, and it left the display question open; showing none closes it. **Trading was the wrong boundary, revised 2026-08** — see decision 11 |
 | 10 | ~~The coupling is surfaced~~ — moot once the carte quotes nothing | Nothing couples a market's price to a public figure any more, so there is no side effect left to warn a vendor about |
+| 11 | **The gate is *featured*, not *trading*** | Decision 9 optimised for unambiguity and in doing so picked the moment the price is least needed: while the market is trading, the customer is standing in front of the stall, reading its chalkboard. The decision a price actually informs — *is it worth the trip, what will I spend* — is taken at home before setting out, which is exactly when the page was hiding it. The data was never the obstacle: `find-upcoming-market-days.handler.ts` runs every upcoming day through `priced()` with that day's own list, so each card has always carried the right number and slice 8 simply declined to draw it. **Only the featured card**, not all five: the days below it are a schedule rather than a menu, and pricing them puts the same catalogue on one page five times over, each with its own figures. **The accepted cost, which decision 9 bought and this gives back**: a price shown for Saturday is one the vendor can still change before Saturday, so the page can quote a number they never meant to charge. Ordinary for any published price, and the storefront is live so it always serves the current list — the exposure is a customer's memory of an earlier visit, not a stale page |
 | 11 | Pricing gets its **own facade and state slice** | Two unrelated screens read it. Every other area here has the full set (`facade` / `state` / `effects` / `providers` / `fake` / `store`) |
 
 Small rules that follow, already implemented where the backend covers them:
@@ -113,6 +114,25 @@ API, so the day a price belongs on the carte again it is already there.
 This replaces the maximum, and dissolves the French display question with it: a trading
 market quotes exactly what its own list charges, so there is no displayed figure anyone
 could be charged above.
+
+### Slice 8b — the featured card quotes (done, 2026-08)
+
+Decision 11 moved the gate. One argument in `storefront-view-model.ts` —
+`toMarketViewModel(market, index === 0)`, replacing `market.inProgress` — because index 0 is
+the featured day, read the same way `storefront-page.ts` and `live-status.ts` already read
+it. Nothing else moved: the API was already serving each day at its own market's prices, and
+both render paths (`item-card.ts` for the featured menu, the compact list in
+`market-card.ts`) already guarded a `priceLabel` they were never given.
+
+The compact list keeps its guard rather than losing its price span, so *featured* stays one
+rule in one place: a non-featured menu carries no `priceLabel`, so those rows have no figure
+to draw. Nothing in a template has to remember not to render something.
+
+Two tests changed sides in `storefront-view-model.spec.ts` — the featured menu is priced
+whether or not its market is trading, and the days below it are not — and two in
+`storefront-page.spec.ts` were renamed: they drive hand-built view models, so what they
+actually guard is that a card draws no room for a price it was not given, which holds
+whatever the view model's rule becomes.
 
 ## ~~Slice 9 — the coupling, said out loud~~
 

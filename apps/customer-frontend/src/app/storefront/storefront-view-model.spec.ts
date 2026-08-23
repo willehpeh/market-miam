@@ -1,6 +1,33 @@
 import { StorefrontViewModel, toViewModel } from './storefront-view-model';
 import { CustomerStorefront } from './customer-storefront';
 
+type PublishedStorefront = Extract<CustomerStorefront, { status: 'published' }>;
+type Market = PublishedStorefront['upcomingMarkets'][number];
+
+const dish = { itemId: 'boeuf', name: 'Bourguignon', description: '', price: 1300, imageReference: '' };
+
+const market = (date: string, marketName: string, items: Market['items']): Market => ({
+  date,
+  weekday: 'THU',
+  marketName,
+  postalCode: '69002',
+  town: 'Lyon',
+  cancelled: false,
+  inProgress: false,
+  items,
+  soldOutItemIds: [],
+});
+
+const withMarkets = (upcomingMarkets: Market[]): CustomerStorefront => ({
+  status: 'published',
+  name: 'Chez Test',
+  description: '',
+  phone: '',
+  coverPhoto: null,
+  items: [],
+  upcomingMarkets,
+});
+
 describe('toViewModel', () => {
   // The carte is tied to no market, so there is no one price it could name: the same dish
   // sells for different money depending on where the vendor is standing.
@@ -134,34 +161,31 @@ describe('toViewModel', () => {
     expect(view.items.every(item => item.soldOut === undefined)).toBe(true);
   });
 
-  // Thursday's card is a plan, not a till. The prices it would quote are today's, and a
-  // vendor who reprices that market before Thursday would have shown a number they never
-  // meant to charge.
-  it('leaves a market day\'s menu unpriced until the market is trading', () => {
-    const storefront: CustomerStorefront = {
-      status: 'published',
-      name: 'Chez Test',
-      description: '',
-      phone: '',
-      coverPhoto: null,
-      items: [],
-      upcomingMarkets: [
-        {
-          date: '2026-06-18',
-          weekday: 'THU',
-          marketName: 'Marché Saint-Antoine',
-          postalCode: '69002',
-          town: 'Lyon',
-          cancelled: false,
-          inProgress: false,
-          items: [{ itemId: 'boeuf', name: 'Bourguignon', description: '', price: 1300, imageReference: '' }],
-          soldOutItemIds: [],
-        },
-      ],
-    };
+  // The featured card is where the trip is decided — before leaving home, which is exactly
+  // when a price is worth knowing and used to be hidden. Priced whether or not the market
+  // is trading yet.
+  it("prices the featured market's menu, trading or not", () => {
+    const storefront = withMarkets([
+      market('2026-06-18', 'Marché Saint-Antoine', [dish]),
+    ]);
 
     const view = toViewModel(storefront) as Extract<StorefrontViewModel, { status: 'published' }>;
 
-    expect(view.upcomingMarkets[0].items[0].priceLabel).toBeUndefined();
+    expect(view.upcomingMarkets[0].inProgress).toBe(false);
+    expect(view.upcomingMarkets[0].items[0].priceLabel).toBe('13,00 €');
+  });
+
+  // Only the featured card. The days below it are a schedule, not a menu — pricing all five
+  // puts the same catalogue on the page five times over, each with its own numbers.
+  it('leaves the markets below the featured one unpriced', () => {
+    const storefront = withMarkets([
+      market('2026-06-18', 'Marché Saint-Antoine', [dish]),
+      market('2026-06-20', 'Marché de la Croix-Rousse', [dish]),
+    ]);
+
+    const view = toViewModel(storefront) as Extract<StorefrontViewModel, { status: 'published' }>;
+
+    expect(view.upcomingMarkets[0].items[0].priceLabel).toBe('13,00 €');
+    expect(view.upcomingMarkets[1].items[0].priceLabel).toBeUndefined();
   });
 });
