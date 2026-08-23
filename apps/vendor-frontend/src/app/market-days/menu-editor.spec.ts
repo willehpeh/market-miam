@@ -10,29 +10,47 @@ import { CatalogueItemView } from '../catalogue/catalogue';
 import { catalogueItem } from '../catalogue/catalogue-item.builder';
 import { MarketPricesFacade } from '../market-prices/market-prices.facade';
 import { FakeMarketPricesFacade } from '../market-prices/fake.market-prices.facade';
+import { SellingRecordFacade } from '../selling-record/selling-record.facade';
+import { FakeSellingRecordFacade } from '../selling-record/fake.selling-record.facade';
+import { MarketRecord } from '../selling-record/selling-record';
+import { ItemOutcome } from './market-days';
 
 const item = (itemId: string, name: string): CatalogueItemView => catalogueItem({ itemId, name });
 
+// Oldest bilan first, as the fold hands them over. The dates only have to increase: nothing
+// on this screen shows them, and only their order decides the tie-break.
+const broughtTo = (marketId: string, itemId: string, ...outcomes: ItemOutcome[]): MarketRecord => ({
+  marketId,
+  items: [{ itemId, bilans: outcomes.map((outcome, index) => ({ date: `2026-07-0${index + 1}`, outcome })) }],
+});
+
 async function renderEditor(
-  setup: (marketDays: FakeMarketDayFacade, catalogue: FakeCatalogueFacade, prices: FakeMarketPricesFacade) => void,
+  setup: (
+    marketDays: FakeMarketDayFacade,
+    catalogue: FakeCatalogueFacade,
+    prices: FakeMarketPricesFacade,
+    record: FakeSellingRecordFacade,
+  ) => void,
 ) {
   const marketDays = new FakeMarketDayFacade();
   const catalogue = new FakeCatalogueFacade();
   const prices = new FakeMarketPricesFacade();
-  setup(marketDays, catalogue, prices);
+  const record = new FakeSellingRecordFacade();
+  setup(marketDays, catalogue, prices, record);
   const view = await render(MenuEditor, {
     providers: [
       provideRouter([]),
       { provide: MarketDayFacade, useValue: marketDays },
       { provide: CatalogueFacade, useValue: catalogue },
       { provide: MarketPricesFacade, useValue: prices },
+      { provide: SellingRecordFacade, useValue: record },
       {
         provide: ActivatedRoute,
         useValue: { snapshot: { paramMap: convertToParamMap({ marketId: 'market-1', date: '2026-08-15' }) } },
       },
     ],
   });
-  return { view, marketDays, catalogue, prices };
+  return { view, marketDays, catalogue, prices, record };
 }
 
 describe('MenuEditor', () => {
@@ -109,11 +127,13 @@ describe('MenuEditor', () => {
     expect(marketDays.savedMenu).toEqual({ marketId: 'market-1', date: '2026-08-15', itemIds: [] });
   });
 
-  it('loads the days and the catalogue it needs', async () => {
-    const { marketDays, catalogue } = await renderEditor(() => undefined);
+  it('loads every feed it needs', async () => {
+    const { marketDays, catalogue, prices, record } = await renderEditor(() => undefined);
 
     expect(marketDays.loaded).toBe(true);
     expect(catalogue.loaded).toBe(true);
+    expect(prices.loaded).toBe(true);
+    expect(record.loaded).toBe(true);
   });
 
 
@@ -260,5 +280,123 @@ describe('MenuEditor', () => {
 
     expect(screen.getByRole('status', { name: /chargement/i })).toBeTruthy();
     expect(screen.queryByText(/13,00/)).toBeNull();
+  });
+
+  it('names the pile under a dish it has brought to this market before', async () => {
+    await renderEditor((marketDays, catalogue, prices, record) => {
+      marketDays.days.set([day()]);
+      catalogue.items.set([item('item-1', 'Bourguignon')]);
+      record.markets.set([broughtTo('market-1', 'item-1', 'sold_out', 'sold_out', 'did_well')]);
+    });
+
+    expect(screen.getByText('Toujours épuisé')).toBeTruthy();
+  });
+
+  it('calls a dish that mostly did well Ça part bien', async () => {
+    await renderEditor((marketDays, catalogue, prices, record) => {
+      marketDays.days.set([day()]);
+      catalogue.items.set([item('item-1', 'Bourguignon')]);
+      record.markets.set([broughtTo('market-1', 'item-1', 'did_well', 'did_well', 'sold_out')]);
+    });
+
+    expect(screen.getByText('Ça part bien')).toBeTruthy();
+  });
+
+  // Moins bien vendu is a fair thing to tick once and a scolding thing to read down a
+  // column; Ça reste is what the vendor says out loud about a tray that came home.
+  it('calls a dish that mostly came home Ça reste', async () => {
+    await renderEditor((marketDays, catalogue, prices, record) => {
+      marketDays.days.set([day()]);
+      catalogue.items.set([item('item-1', 'Bourguignon')]);
+      record.markets.set([
+        broughtTo('market-1', 'item-1', 'did_not_do_well', 'did_not_do_well', 'did_well'),
+      ]);
+    });
+
+    expect(screen.getByText('Ça reste')).toBeTruthy();
+  });
+
+  // Not a failure to classify but a real finding: this dish rides on weather or crowd, and
+  // burying it in an unclassified bucket would hide what most deserves the vendor's own
+  // judgment (decision 7).
+  it('calls a dish with no dominant outcome Ça dépend des jours', async () => {
+    await renderEditor((marketDays, catalogue, prices, record) => {
+      marketDays.days.set([day()]);
+      catalogue.items.set([item('item-1', 'Bourguignon')]);
+      record.markets.set([
+        broughtTo('market-1', 'item-1', 'sold_out', 'did_well', 'did_not_do_well'),
+      ]);
+    });
+
+    expect(screen.getByText('Ça dépend des jours')).toBeTruthy();
+  });
+
+  // Shows its answers and claims nothing. Three is where a pile starts being a claim, so
+  // two sold-out mornings must not read as Toujours épuisé.
+  it('claims nothing about a dish with only two bilans here', async () => {
+    await renderEditor((marketDays, catalogue, prices, record) => {
+      marketDays.days.set([day()]);
+      catalogue.items.set([item('item-1', 'Bourguignon')]);
+      record.markets.set([broughtTo('market-1', 'item-1', 'sold_out', 'sold_out')]);
+    });
+
+    expect(screen.getByText('Trop tôt pour dire')).toBeTruthy();
+    expect(screen.queryByText('Toujours épuisé')).toBeNull();
+  });
+
+  // Jamais apporté ici is a pile on the record page, where it is the only forward-looking
+  // one. Here it would be a line under most of the carte saying nothing.
+  it('says nothing under a dish it has never brought here', async () => {
+    await renderEditor((marketDays, catalogue, prices, record) => {
+      marketDays.days.set([day()]);
+      catalogue.items.set([item('item-1', 'Bourguignon'), item('item-2', 'Tatin')]);
+      record.markets.set([broughtTo('market-1', 'item-1', 'sold_out', 'sold_out', 'sold_out')]);
+    });
+
+    expect(screen.getByText('Toujours épuisé')).toBeTruthy();
+    expect(screen.queryByText('Trop tôt pour dire')).toBeNull();
+  });
+
+  // The clientele is the market's, not the carte's: a dish that empties at la Croix-Rousse
+  // can come home from Monplaisir, and a line pooling the two describes no morning the
+  // vendor will actually have (decision 2).
+  it('reads only what this market said, never another market\'s', async () => {
+    await renderEditor((marketDays, catalogue, prices, record) => {
+      marketDays.days.set([day()]);
+      catalogue.items.set([item('item-1', 'Bourguignon')]);
+      record.markets.set([
+        broughtTo('market-9', 'item-1', 'sold_out', 'sold_out', 'sold_out'),
+      ]);
+    });
+
+    expect(screen.queryByText('Toujours épuisé')).toBeNull();
+  });
+
+  // Two outcomes can both reach half. The recent morning is the one that describes the
+  // clientele the vendor is packing for tomorrow, so it breaks the tie.
+  it('breaks a tie toward the most recent bilan', async () => {
+    await renderEditor((marketDays, catalogue, prices, record) => {
+      marketDays.days.set([day()]);
+      catalogue.items.set([item('item-1', 'Bourguignon')]);
+      record.markets.set([
+        broughtTo('market-1', 'item-1', 'sold_out', 'sold_out', 'did_well', 'did_well'),
+      ]);
+    });
+
+    expect(screen.getByText('Ça part bien')).toBeTruthy();
+    expect(screen.queryByText('Toujours épuisé')).toBeNull();
+  });
+
+  // A fourth feed landing late would reflow every row under the vendor's thumb — the pile
+  // line appearing after the fact moves the row below it while they are aiming at it.
+  it('keeps waiting while the selling record is still arriving', async () => {
+    await renderEditor((marketDays, catalogue, prices, record) => {
+      marketDays.days.set([day()]);
+      catalogue.items.set([item('item-1', 'Bourguignon')]);
+      record.loading.set(true);
+    });
+
+    expect(screen.getByRole('status', { name: /chargement/i })).toBeTruthy();
+    expect(screen.queryByText('Bourguignon')).toBeNull();
   });
 });

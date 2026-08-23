@@ -7,11 +7,25 @@ import { CatalogueFacade } from '../catalogue/catalogue.facade';
 import { CatalogueItemView } from '../catalogue/catalogue';
 import { MarketPricesFacade } from '../market-prices/market-prices.facade';
 import { PriceList } from '../market-prices/market-prices';
+import { SellingRecordFacade } from '../selling-record/selling-record.facade';
+import { pile, PileName } from '../selling-record/pile';
 import { formatEuros } from '../catalogue/money';
 import { MarketDayFacade } from './market-day.facade';
 import { hasLiveScreen } from './live-status';
 import { ClosedNotice } from './closed-notice';
 import { ReopenStand } from './reopen-stand';
+
+// Decoration, never the carrier: every pile says its word, and these only tint it (WCAG
+// 1.4.1, decision 14). The three that are claims are set in their own colour and bold; the
+// two that withhold one stay muted and regular, so a vendor scanning the carte can see at a
+// glance which lines are telling them something.
+const TONES: Record<PileName, string> = {
+  'Toujours épuisé': 'font-bold text-warn',
+  'Ça part bien': 'font-bold text-success',
+  'Ça reste': 'font-bold text-danger',
+  'Ça dépend des jours': 'text-muted',
+  'Trop tôt pour dire': 'text-muted',
+};
 
 @Component({
   selector: 'mm-menu-editor',
@@ -65,6 +79,16 @@ import { ReopenStand } from './reopen-stand';
                   }
                   <span class="shrink-0 text-sm text-muted">{{ item.priceLabel }}</span>
                 </label>
+                @if (item.pile) {
+                  <!-- Outside the <label>, so it is never part of the checkbox's accessible
+                       name, and inert: the row is a label around a checkbox, so a link here
+                       would be a nested interactive and a tap that ticks the dish when the
+                       vendor meant to read its record (decision 14). Indented pl-11 — the
+                       label's p-3 plus the size-5 box plus gap-3 — to hang under the dish
+                       name, and given the row's full width, which is what lets the longest
+                       pile stay on one line at 320 px. -->
+                  <p class="mt-1 pl-11 text-xs {{ item.pileTone }}">{{ item.pile }}</p>
+                }
               </li>
             } @empty {
               <li class="text-sm text-ink-soft">Votre carte est vide pour l'instant.</li>
@@ -88,6 +112,7 @@ export class MenuEditor {
   private readonly marketDays = inject(MarketDayFacade);
   private readonly catalogue = inject(CatalogueFacade);
   private readonly prices = inject(MarketPricesFacade);
+  private readonly record = inject(SellingRecordFacade);
   private readonly route = inject(ActivatedRoute);
 
   // Params are read once, and `touched` below is keyed to them. Both ways in — the
@@ -101,9 +126,15 @@ export class MenuEditor {
   // Every feed gates the spinner: days can land before the carte, and rendering on days
   // alone would briefly claim an empty carte while the catalogue is still on the wire.
   // Prices landing last would quote every dish at its carte price for a frame — the very
-  // number this screen exists to stop showing.
+  // number this screen exists to stop showing. The record is the fourth for the same
+  // reason (decision 11): a pile line appearing after the fact moves the row below it
+  // while the vendor is aiming at it.
   readonly loading = computed(
-    () => this.marketDays.loading() || this.catalogue.loading() || this.prices.loading(),
+    () =>
+      this.marketDays.loading() ||
+      this.catalogue.loading() ||
+      this.prices.loading() ||
+      this.record.loading(),
   );
 
   private readonly occurrence = computed(() =>
@@ -135,19 +166,32 @@ export class MenuEditor {
     () => this.prices.markets().find((market) => market.marketId === this.marketId)?.prices ?? {},
   );
 
+  // Keyed like `set` above, and read the same way: what this market has said about a dish,
+  // never what another market did (decision 2).
+  private readonly bilans = computed(() => {
+    const items = this.record.markets().find((market) => market.marketId === this.marketId)?.items ?? [];
+    return new Map(items.map((record) => [record.itemId, record.bilans]));
+  });
+
   readonly items = computed(() =>
-    this.catalogue.items().map((item) => ({
-      itemId: item.itemId,
-      name: item.name,
-      ...quote(item, this.set()[item.itemId]),
-      chosen: this.selected().has(item.itemId),
-    })),
+    this.catalogue.items().map((item) => {
+      const pileName = pile(this.bilans().get(item.itemId) ?? []);
+      return {
+        itemId: item.itemId,
+        name: item.name,
+        ...quote(item, this.set()[item.itemId]),
+        pile: pileName,
+        pileTone: pileName ? TONES[pileName] : '',
+        chosen: this.selected().has(item.itemId),
+      };
+    }),
   );
 
   constructor() {
     this.marketDays.load();
     this.catalogue.load();
     this.prices.load();
+    this.record.load();
   }
 
   toggle(itemId: string): void {
