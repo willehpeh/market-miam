@@ -303,8 +303,8 @@ describe('MenuEditor', () => {
   });
 
   // Moins bien vendu is a fair thing to tick once and a scolding thing to read down a
-  // column; Ça reste is what the vendor says out loud about a tray that came home.
-  it('calls a dish that mostly came home Ça reste', async () => {
+  // column; Il en reste is what the vendor says out loud about a tray that came home.
+  it('calls a dish that mostly came home Il en reste', async () => {
     await renderEditor((marketDays, catalogue, prices, record) => {
       marketDays.days.set([day()]);
       catalogue.items.set([item('item-1', 'Bourguignon')]);
@@ -313,7 +313,7 @@ describe('MenuEditor', () => {
       ]);
     });
 
-    expect(screen.getByText('Ça reste')).toBeTruthy();
+    expect(screen.getByText('Il en reste')).toBeTruthy();
   });
 
   // Not a failure to classify but a real finding: this dish rides on weather or crowd, and

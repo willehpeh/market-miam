@@ -10,14 +10,14 @@ import { Bilan } from './selling-record';
 export type PileName =
   | 'Toujours épuisé'
   | 'Ça part bien'
-  | 'Ça reste'
+  | 'Il en reste'
   | 'Ça dépend des jours'
   | 'Trop tôt pour dire';
 
 const NAMES: Record<ItemOutcome, PileName> = {
   sold_out: 'Toujours épuisé',
   did_well: 'Ça part bien',
-  did_not_do_well: 'Ça reste',
+  did_not_do_well: 'Il en reste',
 };
 
 const ENOUGH_TO_CLAIM = 3;

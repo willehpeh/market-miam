@@ -22,7 +22,7 @@ import { ReopenStand } from './reopen-stand';
 const TONES: Record<PileName, string> = {
   'Toujours épuisé': 'font-bold text-warn',
   'Ça part bien': 'font-bold text-success',
-  'Ça reste': 'font-bold text-danger',
+  'Il en reste': 'font-bold text-danger',
   'Ça dépend des jours': 'text-muted',
   'Trop tôt pour dire': 'text-muted',
 };

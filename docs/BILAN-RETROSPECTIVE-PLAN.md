@@ -64,7 +64,7 @@ named in market French rather than in the form's neutral radio labels:
 |---|---|---|
 | **Toujours épuisé** | ≥3 bilans, `sold_out` in at least half | The form has to say *Épuisé* neutrally; a heading can say what it means |
 | **Ça part bien** | ≥3 bilans, `did_well` in at least half | |
-| **Ça reste** | ≥3 bilans, `did_not_do_well` in at least half | *Moins bien vendu* is a fair thing to tick once and a scolding thing to read down a column. *Ça reste* is what the vendor says out loud about a tray that came home |
+| **Il en reste** | ≥3 bilans, `did_not_do_well` in at least half | *Moins bien vendu* is a fair thing to tick once and a scolding thing to read down a column. *Il en reste* is what the vendor says out loud about a tray that came home. It was **Ça reste** until 2026-08: *ça reste* can be read as *it stays*, or even *it's still fine*, and names no leftovers at all — *il en reste* says the only thing that happened |
 | **Ça dépend des jours** | ≥3 bilans, no outcome reaching half | Not a failure to classify — a real finding. This dish rides on weather or crowd |
 | **Trop tôt pour dire** | 1–2 bilans | Shows its answers, claims nothing |
 
@@ -77,7 +77,7 @@ Ties break toward the most recent bilan. No pile ever shows a percentage or an a
 *Reste* — oldest → newest:
 
 ```
-Ça reste                                                   ← the pile heading
+Il en reste                                                ← the pile heading
   Chorba                                            6,00 €
   Reste · Bien · Reste · Reste           depuis le 12 juil.
 ```
@@ -95,7 +95,7 @@ phone — five *Moins bien vendu* chips wrap to three lines inside a 224 px card
 never the only carrier of its meaning; see decision 14.
 
 **3. The line in the menu editor.** The **pile name alone**, as one `text-xs` line under the
-dish row while the vendor is ticking the menu for that market — *Toujours épuisé*, *Ça reste*.
+dish row while the vendor is ticking the menu for that market — *Toujours épuisé*, *Il en reste*.
 Not the streak: it does not fit (see *Mobile* below), and the split is better design anyway.
 The editor is a decision taken in seconds and the pile is the conclusion; the streak is the
 evidence, and evidence belongs on the page you open when you doubt the conclusion. No
@@ -332,7 +332,7 @@ Settled by grilling. Do not re-litigate without a reason.
 | 5 | **No new read model in slice 1** | Decision 14a named the seam but the fold is a bounded prefix scan on the key migration `0013_market_day_views_key_order` already reordered for exactly this window read. Building the projection first shapes a table around a query whose shape the pilot has not yet moved. **Trigger: the fold shows up in a trace, or the window has to span years** |
 | 6 | **The streak reads oldest → newest** | It is the only element here that can show direction, and direction is what a mean cannot. Reversed, an improving dish reads as a declining one |
 | 7 | **`Ça dépend des jours` is a pile, not a gap** | An inconsistent dish is a real answer — it says *this one rides on the weather, decide on the morning* — and burying it in an *unclassified* bucket would hide the finding that most deserves the vendor's own judgment |
-| 8 | **Group headings speak market French; the bilan form stays neutral** | Opposite constraints. A radio label is a verdict the vendor is being asked to pronounce on their own morning, so it must not editorialise; a heading is describing a pile of trays, and *Ça reste* is both kinder and more precise than *Moins bien vendu* five times down a list |
+| 8 | **Group headings speak market French; the bilan form stays neutral** | Opposite constraints. A radio label is a verdict the vendor is being asked to pronounce on their own morning, so it must not editorialise; a heading is describing a pile of trays, and *Il en reste* is both kinder and more precise than *Moins bien vendu* five times down a list |
 | 9 | **`Ce qui se vend`, not `Ce qui marche`** | *Ce qui marche* is the idiom and would be the better phrase anywhere else. On a screen carrying *marché* six times it is a collision, and the pun costs more than the idiom is worth |
 | 10 | **Nothing on the bilan screen, nothing on the dashboard** | Anchoring on one, noise on the other — see *Deliberately not built* above |
 | 11 | **The editor line gates the spinner with the other three feeds** | The menu editor already waits on days, catalogue and prices so no row paints a wrong price for a frame. A fourth feed landing late would reflow every row under the vendor's thumb, which is the same failure the dashboard's `loaded()` gate exists to stop |
@@ -346,6 +346,7 @@ Settled by grilling. Do not re-litigate without a reason.
 | 19 | **`pile.ts` gets no spec of its own; the piles are driven through the menu editor** | The frontend tests pure derivations through the component that uses them, without exception: `quote` — this same component, this same shape — has no spec, nor do `hasLiveScreen`, `formatEuros` or `longDate`. This plan previously called for an `it.each` table over the rule's boundaries and cited `local-date`, `local-time` and `email`; those are backend, and the whole vendor frontend contains exactly one `it.each`. Reading the boundary off the rendered line is also where the right answer is visible — *Trop tôt pour dire* appearing under the row, not a string returned from a function |
 | 20 | **The pile line's colour is decoration, and is not tested** | Every pile says its word, so the tint only speeds up scanning (WCAG 1.4.1, decision 14) — the three piles that make a claim are coloured and bold, the two that withhold one stay muted and regular. The existing `--mm-warn` / `--mm-success` / `--mm-danger` all clear 4.5:1 on `--mm-surface` at this size, so the mockup's darkened variants were not needed as tokens. No spec asserts it: the frontend has zero `toHaveClass` assertions, and a test on a class would pin the decoration and not the meaning. `PileName` is a closed union so the tone map is exhaustive at compile time |
 | 21 | **A recorded bilan stales the cached set; it never patches it** | The set is cached like prices and the catalogue — every menu editor opened asks for it, and it is the largest of that screen's four feeds — and a bilan is the only thing that moves it. Patching would mean turning outcomes-keyed-by-item into this shape on the client, which is a second implementation of the handler's fold and free to drift from the one the API answers with. The next screen refetches |
+| 22 | **The *did_not_do_well* pile is *Il en reste*, not *Ça reste*** | *Ça reste* was the original and it is too vague to survive a phone screen: *rester* alone reads as *to stay* or *to remain the same*, so the heading could be taken for *it's still fine* — the opposite of what it means — and it never names the leftovers, which are the entire fact. *Il en reste* is the sentence a vendor actually says about a tray that came home, and `en` does the naming without repeating the dish. The short streak token stays **Reste**: it sits under the full phrase, which is what makes it learnable (decision 13), and the abbreviation is unambiguous once the heading above has said it |
 
 ## Deferred — trigger-gated
 
