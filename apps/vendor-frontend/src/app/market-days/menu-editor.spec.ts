@@ -292,6 +292,21 @@ describe('MenuEditor', () => {
     expect(screen.getByText('Toujours épuisé')).toBeTruthy();
   });
 
+  // The row is a <label> around a checkbox, so anything inside it is read out as part of
+  // the control's name. The pile is a claim about the dish, not a name for the tick —
+  // and text inside the label is also a tap that ticks the dish when the vendor meant to
+  // read it (decision 14). Guards the structure, which the visuals are free to move.
+  it('keeps the pile out of the name of the checkbox it sits under', async () => {
+    await renderEditor((marketDays, catalogue, prices, record) => {
+      marketDays.days.set([day()]);
+      catalogue.items.set([item('item-1', 'Bourguignon')]);
+      record.markets.set([broughtTo('market-1', 'item-1', 'sold_out', 'sold_out', 'sold_out')]);
+    });
+
+    expect(screen.getByRole('checkbox', { name: /Bourguignon/ })).toBeTruthy();
+    expect(screen.queryByRole('checkbox', { name: /Toujours épuisé/ })).toBeNull();
+  });
+
   it('calls a dish that mostly did well Ça part bien', async () => {
     await renderEditor((marketDays, catalogue, prices, record) => {
       marketDays.days.set([day()]);

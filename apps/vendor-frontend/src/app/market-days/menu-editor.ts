@@ -55,8 +55,15 @@ const TONES: Record<PileName, string> = {
                2 it would come to rest on the card above. -->
           <ul class="mt-6 space-y-3">
             @for (item of items(); track item.itemId) {
-              <li>
-                <label class="relative flex items-center gap-3 rounded-card border border-line bg-surface p-3">
+              <!-- The card is the <li>, not the <label>: the pile line below has to sit
+                   inside the card to read as belonging to this dish, and it must stay
+                   outside the label so it is neither part of the checkbox's name nor a tap
+                   that ticks the dish. The label keeps its own p-3 and so still fills the
+                   row edge to edge — moving the padding to the <li> would have shrunk the
+                   tap target by a 12px ring. The positioning context moves with the border, since the
+                   Tarif marché cue is notched into the card's top edge, not the label's. -->
+              <li class="relative rounded-card border border-line bg-surface">
+                <label class="flex items-center gap-3 p-3">
                   <input
                     type="checkbox"
                     class="size-5 shrink-0"
@@ -80,14 +87,15 @@ const TONES: Record<PileName, string> = {
                   <span class="shrink-0 text-sm text-muted">{{ item.priceLabel }}</span>
                 </label>
                 @if (item.pile) {
-                  <!-- Outside the <label>, so it is never part of the checkbox's accessible
-                       name, and inert: the row is a label around a checkbox, so a link here
-                       would be a nested interactive and a tap that ticks the dish when the
-                       vendor meant to read its record (decision 14). Indented pl-11 — the
-                       label's p-3 plus the size-5 box plus gap-3 — to hang under the dish
-                       name, and given the row's full width, which is what lets the longest
-                       pile stay on one line at 320 px. -->
-                  <p class="mt-1 pl-11 text-xs {{ item.pileTone }}">{{ item.pile }}</p>
+                  <!-- Inert, and outside the label: a link here would be an interactive
+                       nested in a label, and any text here would be read out as part of the
+                       checkbox's name (decision 14). Indented pl-11 — the label's p-3 plus
+                       the size-5 box plus gap-3 — to hang under the dish name, and given the
+                       row's full width, which is what lets the longest pile stay on one line
+                       at 320 px. pr-3/pb-3 finish the card's padding, which the <li> cannot
+                       carry without costing the label its full-width hit area; -mt-1 takes
+                       the label's own bottom padding back down to 8px. -->
+                  <p class="-mt-1 pb-3 pl-11 pr-3 text-xs {{ item.pileTone }}">{{ item.pile }}</p>
                 }
               </li>
             } @empty {

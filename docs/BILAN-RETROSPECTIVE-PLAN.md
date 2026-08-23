@@ -107,9 +107,10 @@ navigation, no new screen, and it lands at the exact moment the data exists to i
 the line needs no market label. This is the whole feature at its cheapest: the recall
 arrives inside the decision instead of waiting behind a link the vendor will not open at 6h.
 Vertical, so it does not squeeze the dish name the way an inline cue did (`MARKET-PRICING-PLAN.md`
-decision 6's neighbour). It sits **below the whole row**, indented to the dish name rather
-than nested inside the name column — the name column is 105 px wide at 320 px and the row's
-full width is 168 px, and that difference is the whole margin the line has to live in. Silent
+decision 6's neighbour). It sits **below the whole row and inside the same card**, indented to
+the dish name rather than nested inside the name column — the name column is 105 px wide at
+320 px and the row's full width is 168 px, and that difference is the whole margin the line
+has to live in. Silent
 for a dish never brought here — a screen of *aucun bilan* is a nag, not a hint.
 
 **B — `Ce qui se vend à <marché>`. Deferred.** A second link on the market card in *Vos marchés*, under
@@ -347,6 +348,7 @@ Settled by grilling. Do not re-litigate without a reason.
 | 20 | **The pile line's colour is decoration, and is not tested** | Every pile says its word, so the tint only speeds up scanning (WCAG 1.4.1, decision 14) — the three piles that make a claim are coloured and bold, the two that withhold one stay muted and regular. The existing `--mm-warn` / `--mm-success` / `--mm-danger` all clear 4.5:1 on `--mm-surface` at this size, so the mockup's darkened variants were not needed as tokens. No spec asserts it: the frontend has zero `toHaveClass` assertions, and a test on a class would pin the decoration and not the meaning. `PileName` is a closed union so the tone map is exhaustive at compile time |
 | 21 | **A recorded bilan stales the cached set; it never patches it** | The set is cached like prices and the catalogue — every menu editor opened asks for it, and it is the largest of that screen's four feeds — and a bilan is the only thing that moves it. Patching would mean turning outcomes-keyed-by-item into this shape on the client, which is a second implementation of the handler's fold and free to drift from the one the API answers with. The next screen refetches |
 | 22 | **The *did_not_do_well* pile is *Il en reste*, not *Ça reste*** | *Ça reste* was the original and it is too vague to survive a phone screen: *rester* alone reads as *to stay* or *to remain the same*, so the heading could be taken for *it's still fine* — the opposite of what it means — and it never names the leftovers, which are the entire fact. *Il en reste* is the sentence a vendor actually says about a tray that came home, and `en` does the naming without repeating the dish. The short streak token stays **Reste**: it sits under the full phrase, which is what makes it learnable (decision 13), and the abbreviation is unambiguous once the heading above has said it |
+| 23 | **The card is the `<li>`; the `<label>` keeps its own padding** | The pile has to be *inside* the dish's card to read as belonging to it, and *outside* the `<label>` so it is neither spoken as part of the checkbox's name nor a tap that ticks the dish (decision 14). Both at once only works if the border and background move off the label and onto the `<li>`. The padding stays on the label rather than moving with the border: a padded `<li>` would leave a 12 px ring around the row that looks tappable and is not, so the label keeps `p-3` and the pile line carries `pr-3`/`pb-3` to finish the card. `relative` follows the border, because the *Tarif marché* cue is notched into the card's top edge. Shipped one commit late — surface A first rendered the line below the card entirely, which the committed mockup never showed |
 
 ## Deferred — trigger-gated
 
