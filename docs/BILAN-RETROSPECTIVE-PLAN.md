@@ -137,7 +137,7 @@ also what keeps this off a (dish × market) matrix, which no phone can hold. Thi
 
 ## Slices
 
-**Slice 1 — the read, and the editor line.** `FindSellingRecord(vendorId)` returning the
+**Slice 1 — the read, and the editor line. Shipped.** `FindSellingRecord(vendorId)` returning the
 vendor's whole set (`MARKET-PRICING-PLAN.md` decision 3's shape), `GET /selling-record` as its own resource — prices took
 `/market-prices` rather than hanging off `/market-schedules`, and a cross-day aggregate is no
 more a market day than a price list is a schedule — the pile rule as a pure frontend function
@@ -152,10 +152,13 @@ once slice 1 exists: one route, one component, one link on the market card.
 
 ## Where this stands
 
-**The backend half is complete**; the frontend half is not started. Green on
-`npx nx test test` (643) and `npx nx test api` (221), lint, typecheck and
-`nx build api` clean, and Stryker over `selling-record/` scores **100 % — 19
-mutants, 19 killed, none survived**.
+**Slice 1 is complete, back and front.** Green on `npx nx test test` (643),
+`npx nx test api` (221) and `npx nx test vendor-frontend` (461), lint, typecheck,
+`nx build api` and `nx build vendor-frontend` clean. Stryker over `selling-record/` on the
+backend scores **100 % — 19 mutants, 19 killed, none survived**; the frontend is outside
+Stryker's net, so `pile.ts`'s four boundaries were mutated by hand instead (the threshold,
+the at-least-half comparison, the recency reversal, the empty guard) and every one is
+killed by exactly one test.
 
 | Commit | |
 |---|---|
@@ -195,13 +198,46 @@ the cap drove new code, and the rest are guards, kept because the mutation run s
 is killing something. A future test here should expect the same — this handler is small, and
 most of what looks like its behaviour belongs to decision 18's lower layers.
 
-**Next, and none of it started —** all of it frontend: the `selling-record/` facade set on
-`market-prices/`'s pattern (facade · state · effects · providers · fake · store · http);
-`pile.ts` holding the rule from *The three display primitives*, with an `it.each` spec over
-its boundaries — 2 bilans versus 3, a dominant outcome at exactly half, the tie-break toward
-the most recent — which is the one genuine table in this slice and matches how the repo
-already uses `it.each` (`local-date`, `local-time`, `email`); then the `.hint` line on the
-menu editor and a fourth term in its `loading()` gate (decision 11).
+### The frontend half
+
+Driven through the seam the frontend actually splits on, which is **not** outside-in through
+one surface: a component spec renders the real component against fake facades, and a facade
+spec wires the real facade through real reducer and effects to `HttpTestingController`. The
+component half came first, because the fake written to satisfy the component is the
+specification the real facade then has to meet.
+
+| Behaviour | Where |
+|---|---|
+| The five piles, one test each | `menu-editor.spec.ts` |
+| Silence for a dish never brought here · only this market's bilans · the tie-break | `menu-editor.spec.ts` |
+| The fourth term in the spinner gate, and asking for the feed at all | `menu-editor.spec.ts` |
+| Asks · loading · exposes · fails quietly · does not refetch · refetches after a bilan | `selling-record.spec.ts` |
+
+**What exists.** `apps/vendor-frontend/src/app/selling-record/` — `selling-record.ts` (the
+payload types and the `SellingRecord` gateway), `pile.ts` (the whole rule, returning a
+`PileName` or `undefined`), and the facade set on `market-prices/`'s pattern: `.facade` ·
+`.state` · `.effects` · `.providers` · `fake.` · `store.` · `http.`. Registered in
+`app.config.ts`. On the menu editor: `TONES`, the fourth `loading()` term, the `bilans`
+lookup and the `.hint` line.
+
+**Three things the tests forced that the plan had not called:**
+
+- **A failed load must release the spinner.** The editor gates on this feed, so a failure
+  that left `loading` set would hold the whole screen behind a spinner over the one feed it
+  can do without. No piles is a degradation; no menu is an outage.
+- **A recorded bilan has to stale the cache.** The set is cached like prices and the
+  catalogue, and a bilan is the only thing that moves it — without the invalidation a vendor
+  who records Saturday's bilan sees piles that do not know about Saturday until they reload
+  the app. Staled rather than patched: patching would be a second implementation of the
+  fold, free to drift from the one the API answers with.
+- **`pile()` owns the empty case too.** It returns `undefined` rather than a name, because
+  the absence has no single name — the editor stays silent, surface B will call it *Jamais
+  apporté ici* — so each surface names it and the rule stays in one place.
+
+**Next: slices 2 and 3** — surface B (`Ce qui se vend à <marché>`, the five piles as short
+lists off the market card) and surface C (`Où ça se vend`, one block per market on a
+catalogue dish). Both consume the same facade; both need the streak, which the editor did
+not.
 
 Two things about running the repo that cost time otherwise, both from `CLAUDE.md`: use
 `npm install`, never `npm ci`, and restore `package-lock.json` afterwards; and `npx nx test
@@ -303,6 +339,9 @@ Settled by grilling. Do not re-litigate without a reason.
 | 16 | **The fold is a private method; the tests stay on the handler** | ADR 0006 — public surfaces, not internals. A spec on the fold would pin the shape the slice still needs free, and keeping the tests on the handler is exactly what let the refactor commit move the fold without touching one |
 | 17 | **Only `bilans` has a meaningful order** | Oldest first, decision 6, and `menusFor` gives it for free. The order of markets and of dishes within them is incidental — every surface joins the catalogue for names and renders in that order — so no test should assert it, and a test that does will break on a harmless change to the fold |
 | 18 | **Three layers own the read side, and this handler is the third** | The projection specs drive real commands through real handlers and poll a real subscription — they own *events → view*. `market-day-views.contract.ts` holds both twins to the store's own rules — it owns *what a write does to a row*. A query spec seeds the view through store methods and drives the handler — it owns *view → payload*, and nothing else. Every existing query spec does this (`find-unrated-market-days`, `find-upcoming-market-days`, `find-market-day`, `find-vendor-catalogue`), and the handler could not do otherwise: it depends on `MarketDayViews`, a port (ADR 0016), so it cannot see an event |
+| 19 | **`pile.ts` gets no spec of its own; the piles are driven through the menu editor** | The frontend tests pure derivations through the component that uses them, without exception: `quote` — this same component, this same shape — has no spec, nor do `hasLiveScreen`, `formatEuros` or `longDate`. This plan previously called for an `it.each` table over the rule's boundaries and cited `local-date`, `local-time` and `email`; those are backend, and the whole vendor frontend contains exactly one `it.each`. Reading the boundary off the rendered line is also where the right answer is visible — *Trop tôt pour dire* appearing under the row, not a string returned from a function |
+| 20 | **The pile line's colour is decoration, and is not tested** | Every pile says its word, so the tint only speeds up scanning (WCAG 1.4.1, decision 14) — the three piles that make a claim are coloured and bold, the two that withhold one stay muted and regular. The existing `--mm-warn` / `--mm-success` / `--mm-danger` all clear 4.5:1 on `--mm-surface` at this size, so the mockup's darkened variants were not needed as tokens. No spec asserts it: the frontend has zero `toHaveClass` assertions, and a test on a class would pin the decoration and not the meaning. `PileName` is a closed union so the tone map is exhaustive at compile time |
+| 21 | **A recorded bilan stales the cached set; it never patches it** | The set is cached like prices and the catalogue — every menu editor opened asks for it, and it is the largest of that screen's four feeds — and a bilan is the only thing that moves it. Patching would mean turning outcomes-keyed-by-item into this shape on the client, which is a second implementation of the handler's fold and free to drift from the one the API answers with. The next screen refetches |
 
 ## Deferred — trigger-gated
 
