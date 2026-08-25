@@ -40,6 +40,23 @@ describe('ShreddingEventStore', () => {
     });
   });
 
+  // The prefix check above only says an envelope was written. This says the thing
+  // the class exists for: the plaintext is not recoverable from what was stored.
+  // A no-op cipher emitting `enc:v2:<iv>:<tag>:<base64 plaintext>` passes the
+  // prefix check and fails this one.
+  it('leaves no trace of the plaintext in the stored event', async () => {
+    const { store, inner } = shreddingOver();
+
+    await store.append('vendor-v1', [registered('vendor@example.com')], 0, v1);
+
+    const [atRest] = await inner.load('vendor-v1');
+    expect(JSON.stringify(atRest)).not.toContain('vendor@example.com');
+
+    // ...and not merely base64-hidden inside the envelope's ciphertext segment.
+    const [, , , , ciphertext] = (atRest.payload['email'] as string).split(':');
+    expect(Buffer.from(ciphertext, 'base64').toString('utf8')).not.toContain('vendor@example.com');
+  });
+
   it('leaves unregistered fields of a registered event as plaintext at rest', async () => {
     const { store, inner } = shreddingOver();
 
@@ -244,7 +261,7 @@ describe('ShreddingEventStore', () => {
     bytes[0] ^= 0xff;
     stored.payload['email'] = `enc:v2:${iv}:${tag}:${bytes.toString('base64')}`;
 
-    await expect(store.load('vendor-v1')).rejects.toThrow();
+    await expect(store.load('vendor-v1')).rejects.toThrow(/authentication failed/);
   });
 
   it('detects a ciphertext swapped between two same-type events in one stream', async () => {
@@ -257,7 +274,7 @@ describe('ShreddingEventStore', () => {
     first.payload['email'] = second.payload['email'];
     second.payload['email'] = swapped;
 
-    await expect(store.load('vendor-v1')).rejects.toThrow();
+    await expect(store.load('vendor-v1')).rejects.toThrow(/authentication failed/);
   });
 
   it('detects a ciphertext moved to a same-position event in another stream', async () => {
@@ -271,7 +288,7 @@ describe('ShreddingEventStore', () => {
     const [theirs] = await inner.load('vendor-v1-other');
     ours.payload['email'] = theirs.payload['email'];
 
-    await expect(store.load('vendor-v1')).rejects.toThrow();
+    await expect(store.load('vendor-v1')).rejects.toThrow(/authentication failed/);
   });
 
   it('still decrypts values sealed under the enc:v1 envelope', async () => {

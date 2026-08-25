@@ -57,6 +57,21 @@ export function vendorStorefrontViewsContract(name: string, create: () => Store)
       expect(await store.findByVendor('v1')).toEqual({ name: '', description: '', phone: '', imageReference: '', published: true });
     });
 
+    // A published storefront is live to the public. Both adapters preserve the flag
+    // only by construction — Postgres names just its own columns in DO UPDATE — so a
+    // full-row upsert would silently return a live storefront to its coming-soon page.
+    it('editInformation preserves published', async () => {
+      await store.publish('v1');
+      await store.editInformation('v1', info);
+      expect(await store.findByVendor('v1')).toEqual({ ...info, imageReference: '', published: true });
+    });
+
+    it('setCoverPhoto preserves published', async () => {
+      await store.publish('v1');
+      await store.setCoverPhoto('v1', 'img-1');
+      expect(await store.findByVendor('v1')).toEqual({ name: '', description: '', phone: '', imageReference: 'img-1', published: true });
+    });
+
     it('clear empties the store', async () => {
       await store.editInformation('v1', info);
       await store.clear();
