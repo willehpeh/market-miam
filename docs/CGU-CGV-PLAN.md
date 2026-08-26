@@ -21,7 +21,7 @@ a question to put to counsel, not an answer.
 | Éditeur: William Alexander, micro-entreprise, 95 av. de Verdun 93230 Romainville, SIREN 794 431 874, TVA FR 08 794 431 874, `contact@marketmiam.fr` | `apps/website/src/pages/mentions-legales.astro` |
 | No published phone — deliberate, risk accepted | `WEBSITE-PLAN.md` §3 |
 | Price: 15 € HT / mois (18 € TTC), first month free, no engagement, no commission | `apps/website/src/pages/index.astro:6,168` |
-| Price freeze: *le tarif ne bouge pas, ce qui arrive ensuite est compris* | `index.astro:172` |
+| ~~Price freeze: *le tarif ne bouge pas*~~ — **withdrawn, decision 6.** Still published; must come off the site before the CGV ships (§8) | `index.astro:172` |
 | Pilot = 5–10 hand-onboarded traiteurs; ends when the cohort fills, no date promised | `WEBSITE-PLAN.md` |
 | No billing system — invoiced by hand, non-payment handled by unpublishing by hand | `WEBSITE-PLAN.md` decisions; ADR 0048 |
 | Hosting Render (US), identity Auth0 (Okta, US), photos Cloudinary, forms Tally (BE) | `MARKET_MIAM.md`, `PRIVACY-PLAN.md` |
@@ -31,63 +31,68 @@ a question to put to counsel, not an answer.
 | Scope of what actually ships: vitrine, carte, calendrier, menu du jour, épuisé, bilan, repères | `MARKET_MIAM.md` MVP status |
 | Trademark: INPI check clear, registration requested 2026-08, **confirmation pending** | `MARKET_MIAM.md` |
 
-## 2. Blocking decisions — only the owner can make these
+## 2. Decisions taken — 2026-08-26
 
-Each carries a recommended default. A draft can be written against the defaults with
-the clause marked, but none of them is safe to guess silently.
+Settled with the owner, one question at a time. These are the draft's premises; a
+lawyer may push back on any of them, but none is now a guess.
 
-1. **Eligibility and B2B-only.** Professionals only? SIREN required at signup? France
-   only? This decides whether consumer law reaches the contract at all — and note
-   art. L221-3 C. conso extends consumer protections to professionals with ≤5 employees
-   contracting *outside their main activity*, which a traiteur buying a vitrine is
-   arguably doing. *Default: B2B only, France only, declared professional activity
-   warranted by the vendor; grant a 14-day withdrawal right anyway as cheap insurance.*
-2. **When the paid month starts.** At registration, or at storefront publication? The
-   free month runs from which of the two? What happens to an account that registers and
-   never publishes? *Default: billing starts at first publication; unpublished accounts
-   are free and dormant.*
-3. **Billing cycle and invoicing mechanics.** Monthly anniversary or calendar month?
-   Pro rata on mid-month termination, or month indivisible? Payment means (virement,
-   prélèvement SEPA, Stripe link)? Payment term in days? *Default: monthly anniversary,
-   no pro rata, no refund, invoice by email, 30 days net.* French B2B CGV must state
-   late penalties (min. 3× taux d'intérêt légal) and the 40 € indemnité forfaitaire —
-   those are mandatory mentions, not negotiable, but the payment term is a choice.
-4. **Non-payment ladder.** How many days of grace, how much notice before the vitrine
-   is unpublished, is data kept during suspension, when is the account deleted?
-   Today this is entirely manual and undocumented. *Default: reminder at D+7,
-   unpublish at D+15 with notice, account and data kept 3 months, then deleted.*
-5. **How the vendor terminates, and what happens next.** There is no cancellation UI —
-   is email to `contact@` the route? Notice period? On termination: is the subdomain
-   released for reuse, is an export offered, how long before erasure? *Default: email,
-   effective end of the paid month, subdomain released after 30 days, export on request,
-   erasure at 30 days.*
-6. **What the price freeze actually promises.** *Le tarif ne bouge pas* is published.
-   Is it perpetual and personal to the pilot cohort, or a freeze for a stated term
-   for everyone? The CGV cannot be vaguer than the landing page without contradicting
-   it. *Default: perpetual for pilot vendors as long as the subscription runs without
-   interruption; a stated notice period (3 months) for everyone else.*
-7. **Availability and support commitment.** Any uptime figure, maintenance windows,
-   support channel and response time? *Default: obligation de moyens, no SLA figure,
-   support by email best-effort, planned maintenance announced in advance.* Note the
-   product has no status page and no backup/restore commitment written anywhere.
-8. **Is the hand-onboarding contractual?** The site promises *nous mettons votre vitrine
-   en place avec vous*. Is that a deliverable of the pilot contract or a courtesy?
-   *Default: named in the pilot annex as an included service, not an obligation de
-   résultat, and time-boxed.*
-9. **Marketing permissions.** `WEBSITE-PLAN.md` wants dashboard screenshots, storefront
-   shots and a client testimonial, and already links a live demo storefront. Does
-   subscribing grant Market Miam a right to show the vendor's vitrine, name and logo as
-   a reference? *Default: yes, opt-out, revocable on request.*
-10. **Termination for cause by Market Miam.** Grounds (illegal content, non-payment,
-    abuse), notice, and whether there is an appeal. Needed regardless, and required in
-    a specific shape if DSA/P2B apply — see §6.
-11. **Change-of-terms process.** Notice period, how vendors are told, what a refusal
-    means. *Default: 30 days by email, refusal = termination without penalty.* Note P2B
-    would impose a 15-day floor if it applies.
-12. **Jurisdiction and applicable law.** French law is a given; the competent court is
-    a choice, and the éditeur is an EI not registered at the RCS. *Default: French law,
-    tribunal judiciaire de Bobigny.* Also decide: French only, or a translated version
-    with French prevailing.
+1. **Eligibility — B2B only, France only, professional activity warranted at signup,
+   SIREN collected.** A 14-day droit de rétractation is granted *voluntarily* rather
+   than because it is owed: art. L221-3 C. conso reaches professionals with ≤5 employees
+   contracting outside their main activity, and a traiteur buying a vitrine is close
+   enough to the line that granting the right is cheaper than arguing about it. The first
+   month is free anyway, so it costs nothing in practice. Draft it as a granted right,
+   not an admission that consumer law applies.
+2. **Billing starts at first publication, with a dormancy cap.** The free month runs from
+   `StorefrontPublished`; a registered account that never publishes is free and dormant,
+   and is closed after **90 days** of inactivity with notice. *(Cap length assumed at 90
+   days — the only number in this list not explicitly confirmed.)*
+3. **Anniversary month, no pro rata, virement, 30 days net.** Billed monthly on the
+   publication anniversary; a month begun is a month owed, no refund on mid-month exit.
+   Invoice by email, paid by bank transfer. Mandatory French B2B mentions apply and are
+   not negotiable: late penalties at 3× the taux d'intérêt légal and the 40 € indemnité
+   forfaitaire de recouvrement.
+4. **Non-payment ladder.** Due at 30 days → reminder at D+7 → written notice, then the
+   vitrine is unpublished at D+15 → account and data kept intact 3 months, then deleted.
+   A vendor who pays inside those 3 months gets their vitrine back untouched.
+5. **Termination by the vendor: by email to `contact@`, effective at the end of the paid
+   month.** No notice period beyond that — *sans engagement* on the landing page is a
+   published promise and this keeps it. The subdomain is held 30 days then released for
+   reuse, an export is provided on request, and data is erased at 30 days.
+6. **No price freeze.** 15 € HT/mois buys what ships today, with no promise about what
+   comes later. **Payment and ordering features, when they land, are optional and sit in
+   a separate tier at 50 €.** Changes to an existing vendor's price take effect 3 months
+   after written notice with a free right to leave, and no increase falls in a vendor's
+   first 12 months. This supersedes the published freeze and partly resolves *pricing
+   tiers and feature gating*, an Open Item in `MARKET_MIAM.md` — see §8 for what has to
+   change on the site first.
+7. **Availability: obligation de moyens.** No uptime figure, no service credits. Planned
+   maintenance announced in advance where possible. Support by email, best-effort, no
+   response-time target. Backups described as taken regularly, with no guaranteed
+   recovery point. Nothing here needs tooling that does not exist.
+8. **Onboarding assistance is contractual, in the pilot annex.** Included at no extra
+   cost, covering the initial vitrine, carte and calendrier, time-boxed to the first 30
+   days, obligation de moyens. Keeps *« nous mettons votre vitrine en place avec vous »*
+   honest without turning it into an unlimited managed service.
+9. **Marketing use is opt-in, per use, in writing.** No blanket reference licence.
+   Consequence for `WEBSITE-PLAN.md`: the §5 dashboard screenshots and the deferred
+   client testimonial each need their own permission from the vendor concerned, and that
+   permission is per-asset, not per-vendor.
+10. **Termination by Market Miam is graded, reasoned and answerable.** Immediate for
+    illegal or dangerous content; 15 days' notice to cure any other breach (non-payment
+    per decision 4, misuse, false professional status); 30 days for termination without
+    fault. Every case carries a written statement of reasons and a right of reply. This
+    is deliberately the shape DSA art. 17 and P2B both require, adopted regardless of
+    whether either applies — see §6.
+11. **Changing the terms: 30 days' notice by email**, continued use is acceptance,
+    refusal is a free termination with nothing further owed. Past versions stay
+    retrievable at their own URLs so it is provable which version a vendor accepted.
+    30 days clears P2B's 15-day floor with margin.
+12. **French law, tribunal judiciaire de Bobigny, French text only.** Bobigny is the
+    venue for Romainville. The tribunal judiciaire rather than the tribunal de commerce:
+    the éditeur is an entrepreneur individuel not registered at the RCS, so naming the
+    commercial court invites a competence argument. A prior attempt at amicable
+    settlement is named as a first step. No English version to keep in sync.
 
 ## 3. Facts to confirm outside the repo
 
@@ -156,9 +161,12 @@ belong to this document rather than that one:
   *Réservations & commandes : <téléphone>*, which is initiation by any plain reading.
   Small-enterprise exemptions would lift the internal complaint-handling and mediator
   obligations even if it applies, leaving T&C transparency, a 15-day notice floor on
-  changes, and statements of reasons on suspension. **Recommendation: draft to that
-  standard anyway** — it costs three clauses and closes the question, and the answer
-  flips outright if item requests or pre-ordering ever ship.
+  changes, and statements of reasons on suspension. **Decisions 10 and 11 adopt that
+  standard**, so the question no longer blocks the draft — 30 days' notice clears the
+  15-day floor and every suspension carries reasons and a right of reply. Counsel still
+  needs to answer it for the record, because the answer flips outright when the 50 €
+  ordering tier ships (decision 6): at that point transactions run through the platform
+  and P2B applies on any reading.
 - **Contrat conclu par voie électronique** (art. 1127-1 et s. C. civ.) — the double-clic
   and the steps/languages/archiving statements. Derogable between professionals; say so
   explicitly rather than relying on it.
@@ -178,8 +186,30 @@ Publication: a `/cgu` route in `apps/website`, footer link beside *Mentions lég
 and the same URL linked from the registration checkbox. The vendor app should link it
 too — a vendor meets the terms where they sign, not only where they were sold.
 
+## 8. Site copy that must change before the CGV ships
+
+Decision 6 contradicts what is currently published. The CGV cannot go up while the
+landing page promises otherwise — a contract that disagrees with the sales page is worse
+than no contract.
+
+| What | Where | Why |
+|---|---|---|
+| *« Le tarif ne bouge pas — ce qui arrive ensuite est compris, sans supplément. »* | `apps/website/src/pages/index.astro:172` | Withdrawn. Replace with the price-change rule from decision 6, which carries its own reassurance: 3 months' notice, free exit, no increase in the first year |
+| Decision entry *"The price freeze ships with the price"* | `WEBSITE-PLAN.md` | Superseded — record it as such rather than deleting, per that doc's own convention |
+| Deferred entry *"A 50 € tier (préco + réservation) — deliberately not on the page"* | `WEBSITE-PLAN.md` | Partly superseded: the tier is now a decided direction. Whether it goes *on the page* is still a separate call, and the reasoning there — a pricing table at the moment you ask for trust — still stands |
+| Open Item *"Pricing tiers and feature gating"* | `MARKET_MIAM.md` | Partly resolved: two tiers, gated on payment/ordering. What sits in each beyond that is still open |
+| *« Premier mois offert. Sans engagement. »* | `index.astro:93,168` | Unchanged and still accurate — decisions 2 and 5 were chosen to keep it true |
+
 ## What is needed to start drafting
 
-§2's twelve decisions. §3 and §4 can run in parallel — they change what the draft
-*claims*, not whether it can be written — and §4's items are the ones that need code,
-so they want starting early. Nothing else is blocking.
+**Nothing.** §2 is settled, so the draft can be written now against those twelve
+premises. Three things run alongside it rather than blocking it:
+
+- **§8 first, or at least in the same breath** — the site and the contract have to stop
+  disagreeing about the price freeze before either is published.
+- **§3 and §4** change what the draft *claims*, not whether it can be written. §4 is the
+  long pole: capturing acceptance at registration needs an event and a checkbox, and a
+  vitrine's own mentions légales need a SIREN field the domain does not have.
+- **§6** goes to counsel with the draft, not before it.
+
+One number to confirm: the 90-day dormancy cap in decision 2.
