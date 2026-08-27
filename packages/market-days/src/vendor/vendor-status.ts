@@ -1,10 +1,8 @@
 type Status = 'registered' | 'unregistered';
 
 export class VendorStatus {
-  private readonly _status: Status;
 
-  private constructor(status: Status) {
-    this._status = status;
+  private constructor(private readonly _status: Status) {
   }
 
   static registered(): VendorStatus {
