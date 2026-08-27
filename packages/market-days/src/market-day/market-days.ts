@@ -1,4 +1,4 @@
-import { VendorId } from '@market-miam/shared-kernel';
+import { MarketId, VendorId } from '@market-miam/shared-kernel';
 import { Clock, LocalDate } from '@market-miam/common';
 import { MarketDay } from './market-day';
 import { MarketHours } from './market-hours';
@@ -21,7 +21,7 @@ export class MarketDays {
       this.calendars.forVendor(vendorId),
     ]);
     const { marketId, date } = id.value();
-    const hours = calendar.hoursFor(marketId, new LocalDate(date));
+    const hours = calendar.hoursFor(new MarketId(marketId), new LocalDate(date));
     return new MarketDay(id, this.clock.today(), new MarketHours(hours?.startTime, hours?.endTime))
       .rehydrate(events);
   }
