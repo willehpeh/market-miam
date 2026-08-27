@@ -12,7 +12,9 @@ export class FindVendorStorefrontHandler implements IQueryHandler<FindVendorStor
 
   async execute(query: FindVendorStorefront): Promise<VendorStorefront | undefined> {
     const view = await this.views.findByVendor(query.vendorId);
-    if (!view) return undefined;
+    if (!view) {
+      return undefined;
+    }
     const subdomain = await this.subdomains.subdomainFor(query.vendorId);
     return { ...view, subdomain: subdomain ?? null };
   }
