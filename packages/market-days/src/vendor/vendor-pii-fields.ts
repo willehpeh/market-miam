@@ -1,12 +1,39 @@
-import { PiiFields } from '@market-miam/event-sourcing';
+import { DomainEvent, EventOfType } from '@market-miam/event-sourcing';
+import { CalendarEvent } from '../calendar/events';
+import { CatalogueEvent } from '../catalogue/events';
+import { MarketDayEvent } from '../market-day';
+import { StorefrontEvent } from '../storefront/events';
+import { VendorEvent } from './events';
+
+type MarketDaysEvent = VendorEvent | StorefrontEvent | CatalogueEvent | CalendarEvent | MarketDayEvent;
+
+type PiiFieldsOf<E extends DomainEvent> = {
+  [K in E['type']]: (keyof EventOfType<E, K>['payload'] & string)[];
+};
 
 /** The registry of which event payload fields hold PII, encrypted at rest and
- * crypto-shredded on erasure. Any new event carrying PII MUST be added here — an
- * event not listed is stored in plaintext, silently. There is no runtime check for
- * this; the guard is this comment plus vendor-pii-fields.spec.ts (which only covers
- * the events already listed).
+ * crypto-shredded on erasure.
  */
-export const vendorPiiFields: PiiFields = {
+export const vendorPiiFields: PiiFieldsOf<MarketDaysEvent> = {
   VendorRegistered: ['email'],
   StorefrontInformationEdited: ['name', 'description', 'phone'],
+  StorefrontOpened: [],
+  StorefrontCoverPhotoSet: [],
+  StorefrontPublished: [],
+  ItemAddedToCatalogue: [],
+  ItemRetired: [],
+  ItemRevised: [],
+  ItemPhotoChanged: [],
+  ItemsReordered: [],
+  MarketScheduleRegistered: [],
+  MarketScheduleCancelled: [],
+  MarketScheduleAmended: [],
+  AbsenceDeclared: [],
+  MarketPricesSet: [],
+  MarketDayMenuSet: [],
+  ItemMarkedAsSoldOut: [],
+  ItemMarkedAsAvailable: [],
+  MarketDayBilanRecorded: [],
+  MarketDayClosed: [],
+  MarketDayReopened: [],
 };
