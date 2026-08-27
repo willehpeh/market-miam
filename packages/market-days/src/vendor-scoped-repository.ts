@@ -3,7 +3,7 @@ import { VendorId } from '@market-miam/shared-kernel';
 import { VendorScopedEvents } from './vendor-scoped-events';
 
 export abstract class VendorScopedRepository<A extends Aggregate> {
-  constructor(
+  protected constructor(
     private readonly vendorEvents: VendorScopedEvents,
     private readonly prefix: string,
     private readonly create: (vendorId: VendorId) => A,
