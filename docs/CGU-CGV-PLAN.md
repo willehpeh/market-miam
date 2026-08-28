@@ -45,8 +45,7 @@ lawyer may push back on any of them, but none is now a guess.
    not an admission that consumer law applies.
 2. **Billing starts at first publication, with a dormancy cap.** The free month runs from
    `StorefrontPublished`; a registered account that never publishes is free and dormant,
-   and is closed after **90 days** of inactivity with notice. *(Cap length assumed at 90
-   days — the only number in this list not explicitly confirmed.)*
+   and is closed after **90 days** of inactivity with notice.
 3. **Anniversary month, no pro rata, virement, 30 days net.** Billed monthly on the
    publication anniversary; a month begun is a month owed, no refund on mid-month exit.
    Invoice by email, paid by bank transfer. Mandatory French B2B mentions apply and are
@@ -70,10 +69,13 @@ lawyer may push back on any of them, but none is now a guess.
    maintenance announced in advance where possible. Support by email, best-effort, no
    response-time target. Backups described as taken regularly, with no guaranteed
    recovery point. Nothing here needs tooling that does not exist.
-8. **Onboarding assistance is contractual, in the pilot annex.** Included at no extra
-   cost, covering the initial vitrine, carte and calendrier, time-boxed to the first 30
-   days, obligation de moyens. Keeps *« nous mettons votre vitrine en place avec vous »*
-   honest without turning it into an unlimited managed service.
+8. **Onboarding assistance is contractual.** Included at no extra cost, covering the
+   initial vitrine, carte and calendrier, time-boxed to the first 30 days, obligation de
+   moyens. Keeps *« nous mettons votre vitrine en place avec vous »* honest without
+   turning it into an unlimited managed service. **Amended by decision 13**: this was to
+   live in a pilot annex; with the pilot gone it is a plain term owed to every vendor,
+   which is the same promise made to an unbounded number of people — the cap on that is
+   decision 13's retained manual onboarding, not a clause.
 9. **Marketing use is opt-in, per use, in writing.** No blanket reference licence.
    Consequence for `WEBSITE-PLAN.md`: the §5 dashboard screenshots and the deferred
    client testimonial each need their own permission from the vendor concerned, and that
@@ -94,6 +96,70 @@ lawyer may push back on any of them, but none is now a guess.
     commercial court invites a competence argument. A prior attempt at amicable
     settlement is named as a first step. No English version to keep in sync.
 
+### Added 2026-08-26, after the pilot and verification questions
+
+13. **The pilot phase is removed. The product is sold as-is, and onboarding stays
+    manual — option (a).** No cohort of 5–10, no *phase pilote*, no annex: one uniform
+    contract for every vendor. Anyone can buy; you still set them up by hand.
+    **Self-serve — option (b) — is deferred, and it is deferred on product gaps, not on
+    wording.** Two things block it and neither is legal work:
+
+    - **Subdomain assignment has no code path.** `SubdomainRegistry` exposes
+      `vendorFor`, `subdomainFor`, `removeFor` — no claim, no assign. The only
+      `INSERT INTO subdomain_registry` in the tree is a container spec. ADR 0032 states
+      the consequence plainly: *"a vendor cannot reach 'ready' unaided — an operator
+      must seed their `subdomain_registry` row before they can go live"*, and names the
+      `SubdomainAssigned` command as *"the natural next step, not a nicety"*. Until it
+      ships, every new customer costs one hand-run SQL statement against production.
+    - **Payment collection.** Decision 3 — virement, invoice by email, chase by hand —
+      was chosen for a cohort of 5–10. Unbounded signups make Stripe the right answer,
+      which is the option rejected in that question. A free month with no payment method
+      captured is also an open door once nobody is vetting signups personally.
+
+    Under (b), §4's acceptance capture stops being a parallel task and becomes a launch
+    blocker: hand-onboarding lets agreement be evidenced in an email thread, self-serve
+    leaves the checkbox as the only proof there is.
+
+14. **Vendors are verified — professional status, at signup, level L2.** The SIREN is
+    collected and checked against the public business register: the establishment
+    exists, it is administratively active, and its NAF code is plausible for the trade
+    (56.21Z, 47.81Z, 56.10C, 10.13B and neighbours). Automatic, free, no document upload
+    and no review queue. Rejected: checksum-only (catches typos, nothing else) and
+    document review (Kbis and ID, i.e. storing identity documents for a 15 €/month
+    product).
+
+    - **Never called KYC**, in the terms or in the code. KYC is an AML/CFT term of art
+      attaching to financial institutions and payment service providers under the Code
+      monétaire et financier; Market Miam is neither and handles no funds. The word
+      imports obligations that do not apply and cannot be met. It is
+      *vérification du statut professionnel*. Actual KYC arrives only with the ordering
+      tier, as **Stripe's** obligation on a connected account — ADR 0048 already places
+      connected-account/KYC onboarding in Ordering and explicitly off `Vendor`.
+    - **It is a gate on publication, never a badge on the vitrine.** Verification
+      establishes that a registered business exists. It says nothing about hygiene,
+      agrément sanitaire, carte de commerçant ambulant or market authorisations, all of
+      which stay vendor warranties in the CGU. A *« Vérifié par Market Miam »* mark
+      would imply the food was vetted — a liability volunteered for nothing.
+    - **It hardens decision 1.** B2B-only currently rests on an unchecked
+      self-declaration; L2 turns the warranty into a check, which is what keeps consumer
+      law out in fact rather than in argument.
+    - **Where it lands.** `StorefrontPublication.publish()` already composes readiness
+      as boolean clauses — `hasTitle`, `hasCoverPhoto`, `hasAtLeastOneItem`,
+      `hasAtLeastOneSchedule`, `hasSubdomain`. Verification is one more of the same
+      shape, which is also how ADR 0048 describes the entitlement seam landing. An
+      unverified vendor builds their carte and calendrier and simply cannot publish.
+      Expect a distinct `VendorProfessionalStatusVerified` event rather than a
+      `VendorRegistered` v2: verification happens after registration and can be re-run
+      (ADR 0009).
+    - **It reverses a recorded privacy decision.** `PRIVACY-PLAN.md` records that the
+      address field was dropped and that the art. 30 register must not claim one. A
+      register lookup returns the establishment address, and §4's vitrine mentions
+      légales want it independently. Storing only the SIREN and a verified-at timestamp
+      is the minimal version but does not serve the mentions-légales half. Either way:
+      a new row in the privacy table, a new entry in
+      `packages/market-days/src/vendor/vendor-pii-fields.ts`, and ADR 0025 shredding
+      applying to whatever is kept.
+
 ## 3. Facts to confirm outside the repo
 
 - **Trademark registration outcome.** Pending since 2026-08. The IP clause's strength
@@ -105,6 +171,10 @@ lawyer may push back on any of them, but none is now a guess.
 - **Cloudinary is entirely undocumented on the legal side.** It appears in
   `MARKET_MIAM.md` and in `apps/api/src/app/signed-uploads/`, and nowhere in
   `PRIVACY-PLAN.md`'s sub-processor list. Add it there too.
+- **Which business-register API, and on what terms.** INSEE's Sirene API and the
+  DINUM *recherche d'entreprises* API both serve decision 14's L2 check; one needs a
+  free key and one does not, and their rate limits and reuse terms differ. Confirm
+  before building — this is past what the plan doc can assert from memory.
 - **Insurance (RC professionnelle).** Whether one exists decides whether the liability
   cap can be stated as a multiple of fees paid or must be bare.
 - **B2B e-invoicing timetable.** The French reform obliges every VAT-registered business
@@ -122,7 +192,8 @@ is a small piece of work, not a wording choice.
 |---|---|---|
 | **No acceptance is captured anywhere.** Registration goes Auth0 → `VendorRegistered`; no checkbox, no stored version, no timestamp. There is no proof any vendor agreed to anything | Acceptance recorded with the version accepted and when | A checkbox in the registration flow + either `VendorRegistered` v2 or a `TermsAccepted` event (ADR 0014 for payload shape; not PII, so no encryption) |
 | **No version history.** A CGU that changes needs its past versions retrievable to prove what a given vendor accepted | Versioned, dated, archived pages | `apps/website` route per version, or a `/cgu/2026-09` scheme |
-| **No vendor mentions légales on the vitrine.** Each storefront is a public commercial page; LCEN art. 6-III wants the vendor identified — name, address, SIREN, contact. The storefront holds name, description, phone and nothing else; **no SIREN field exists in the domain at all** | Either the vitrine carries the vendor's legal identity, or the CGU makes the vendor responsible for it and gives them somewhere to put it | New storefront fields + `StorefrontInformationEdited` v2; PII register in `vendor-pii-fields.ts` must follow |
+| **No vendor mentions légales on the vitrine.** Each storefront is a public commercial page; LCEN art. 6-III wants the vendor identified — name, address, SIREN, contact. The storefront holds name, description, phone and nothing else; **no SIREN field exists in the domain at all** | Either the vitrine carries the vendor's legal identity, or the CGU makes the vendor responsible for it and gives them somewhere to put it | New storefront fields + `StorefrontInformationEdited` v2; PII register in `vendor-pii-fields.ts` must follow. **Shares a field with decision 14** — verification collects the SIREN anyway, so build the two together |
+| **No professional-status verification** (decision 14). Nothing checks that a vendor is a real, active, food-trade business | The CGU asserts B2B-only eligibility and makes verification a condition of publication | Register lookup at signup, a `VendorProfessionalStatusVerified` event, one more clause in `StorefrontPublication` |
 | **No export.** RGPD portability and §2.5's exit clause both assume one; there is no export endpoint, and the ops transport for `erase`/`rebuild` is still deferred (`NEXT_BEHAVIOURS.md`) | A stated route and a deadline (one month) | Manual for the pilot, stated as such |
 | **No takedown or notice mechanism.** DSA art. 16 wants a notice-and-action route; art. 17 wants a statement of reasons when content is removed | A contact point and a described procedure | An email route is enough at this size, but it has to exist and be named |
 | **No suspension mechanic.** Non-payment and abuse both end in *unpublish by hand* with nothing recorded | Grounds, notice, effect on data | Manual for now; ADR 0048's entitlement seam is the eventual home |
@@ -178,9 +249,11 @@ belong to this document rather than that one:
 
 One document or two? *CGU* (using the service: account, content rules, moderation,
 liability, IP) and *CGV* (price, invoicing, term, termination) address the same signer
-and French practice routinely merges them as **CGU/CGV**. Recommend one page,
-two parts, one version number — with the pilot's specifics as a dated annex so the
-cohort's terms can be quoted without forking the main text.
+and French practice routinely merges them as **CGU/CGV**. One page, two parts, one
+version number. **No annex** — decision 13 removed the pilot, so there is no cohort with
+terms of its own and every vendor signs the same text. That is a real simplification:
+one document to version, one URL to archive, no risk of the annex and the main text
+drifting.
 
 Publication: a `/cgu` route in `apps/website`, footer link beside *Mentions légales*,
 and the same URL linked from the registration checkbox. The vendor app should link it
@@ -188,9 +261,12 @@ too — a vendor meets the terms where they sign, not only where they were sold.
 
 ## 8. Site copy that must change before the CGV ships
 
-Decision 6 contradicts what is currently published. The CGV cannot go up while the
-landing page promises otherwise — a contract that disagrees with the sales page is worse
-than no contract.
+Decisions 6 and 13 both contradict what is currently published. The CGV cannot go up
+while the landing page promises otherwise — a contract that disagrees with the sales
+page is worse than no contract. Decision 13 is the larger edit of the two: the pilot is
+not a section of the page, it is the page's stated purpose (`WEBSITE-PLAN.md`:
+*"convert vendors into the pilot — 5–10 hand-onboarded traiteurs, not self-serve
+signup"*), so removing it touches the CTAs, the closing band and the form it opens.
 
 | What | Where | Why |
 |---|---|---|
@@ -199,17 +275,22 @@ than no contract.
 | Deferred entry *"A 50 € tier (préco + réservation) — deliberately not on the page"* | `WEBSITE-PLAN.md` | Partly superseded: the tier is now a decided direction. Whether it goes *on the page* is still a separate call, and the reasoning there — a pricing table at the moment you ask for trust — still stands |
 | Open Item *"Pricing tiers and feature gating"* | `MARKET_MIAM.md` | Partly resolved: two tiers, gated on payment/ordering. What sits in each beyond that is still open |
 | *« Premier mois offert. Sans engagement. »* | `index.astro:93,168` | Unchanged and still accurate — decisions 2 and 5 were chosen to keep it true |
+| *« Rejoindre le pilote »* (header) · *« Rejoignez les premiers traiteurs »* (both in-page CTAs) | `index.astro:78,92,179` | Decision 13. The CTAs currently sell joining a cohort. The recorded rule that in-page CTAs match the Tally form's title still holds — so the form title moves with them, or the form goes |
+| *« La phase pilote »* / *« Nous accompagnons cinq à dix traiteurs, personnellement. »* and the four terms below it | `index.astro:160–176` | Decision 13. Three of the four terms survive unchanged (premier mois offert, aucune commission, vos clients restent vos clients); the band's framing and its heading do not. The personal-onboarding promise stays true — decision 8 keeps it — but it is no longer scarce |
+| Page purpose, CTA rule, and the decisions defining the pilot as a hand-onboarded cohort | `WEBSITE-PLAN.md` | Decision 13. Record as superseded, per that doc's convention; the *why* is worth keeping, since option (b) would revive most of it |
+| Tally lead capture as the conversion path | `index.astro`, form `aQX9NB` | Decision 13 keeps onboarding manual, so a lead form still fits — but its title and its consent copy both name the pilot (`WEBSITE-PLAN.md` §2). Changing that copy is Art. 13 information, so it moves with the form, not after it |
 
 ## What is needed to start drafting
 
-**Nothing.** §2 is settled, so the draft can be written now against those twelve
-premises. Three things run alongside it rather than blocking it:
+**Nothing.** §2 is settled — fourteen decisions — so the draft can be written now
+against those premises. Three things run alongside it rather than blocking it:
 
-- **§8 first, or at least in the same breath** — the site and the contract have to stop
-  disagreeing about the price freeze before either is published.
+- **§8 first, or at least in the same breath.** The site and the contract have to stop
+  disagreeing, and decision 13 makes that a real copy pass rather than one line.
 - **§3 and §4** change what the draft *claims*, not whether it can be written. §4 is the
-  long pole: capturing acceptance at registration needs an event and a checkbox, and a
-  vitrine's own mentions légales need a SIREN field the domain does not have.
+  long pole, and decision 14 added to it: acceptance capture needs an event and a
+  checkbox, and the SIREN now has two callers — the vitrine's own mentions légales and
+  the verification check — so build the field once, for both.
 - **§6** goes to counsel with the draft, not before it.
 
-One number to confirm: the 90-day dormancy cap in decision 2.
+Nothing in §2 is now unconfirmed.
