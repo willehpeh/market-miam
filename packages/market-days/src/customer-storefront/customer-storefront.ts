@@ -29,6 +29,10 @@ export type CustomerStorefront =
       phone: string;
       coverPhoto: string | null;
       items: CatalogueViewItem[];
+      // Whether the carte draws the prices it is carrying. The vendor's choice, opted in
+      // by default; every price stays in the payload either way, and the featured market
+      // card is not governed by it — that figure is the market's, not the carte's.
+      cartePricesVisible: boolean;
       upcomingMarkets: UpcomingMarket[];
     }
   | {
