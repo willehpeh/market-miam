@@ -13,6 +13,8 @@ export class Storefront extends Aggregate {
   private _coverPhoto: CoverPhoto = new NoCoverPhoto();
   private _name?: StorefrontName;
   private _published = false;
+  // Opted in: a vitrine that has never said otherwise quotes its prices.
+  private _cartePricesVisible = true;
 
   apply(event: StorefrontEvent): void {
     switch (event.type) {
@@ -27,6 +29,9 @@ export class Storefront extends Aggregate {
         break;
       case 'StorefrontPublished':
         this._published = true;
+        break;
+      case 'CartePricesHidden':
+        this._cartePricesVisible = false;
         break;
     }
   }
@@ -72,6 +77,9 @@ export class Storefront extends Aggregate {
 
   hideCartePrices() {
     this.assertOpen();
+    if (!this._cartePricesVisible) {
+      return;
+    }
     const event: CartePricesHidden = {
       type: 'CartePricesHidden',
       payload: {},

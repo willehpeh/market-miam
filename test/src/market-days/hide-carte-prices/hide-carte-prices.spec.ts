@@ -29,6 +29,20 @@ describe('Hide Carte Prices', () => {
     })]);
   });
 
+  // A re-statement, not a change: the same stance setCoverPhoto and publish take. A
+  // second event would say the prices were hidden twice, which is not a thing that
+  // happened.
+  it('takes a second hide as a no-op, appending nothing', async () => {
+    openStorefront();
+    await handler.execute(TestHideCartePrices.valid());
+
+    await handler.execute(TestHideCartePrices.valid());
+
+    expect(store.newEvents()).toEqual([
+      expect.objectContaining({ type: 'CartePricesHidden' })
+    ]);
+  });
+
   function openStorefront() {
     store.seedWith('storefront-vendor-id', [{ type: 'StorefrontOpened', payload: { vendorId: 'vendor-id' }, version: 1 }], { vendorId: 'vendor-id' });
   }
