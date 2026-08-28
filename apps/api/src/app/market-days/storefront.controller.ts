@@ -9,6 +9,7 @@ import {
   FindVendorStorefront,
   PublishStorefront,
   SetStorefrontCoverPhoto,
+  ShowCartePrices,
   VendorStorefront,
 } from '@market-miam/market-days';
 import { CloudinarySignedUpload, SignedUploads } from '../signed-uploads';
@@ -74,12 +75,18 @@ export class StorefrontController {
     );
   }
 
+  // One idempotent route behind both commands, the availability pair's shape
+  // (market-day.controller.ts): a vendor flips a switch to state the choice they want,
+  // and a re-statement is a domain no-op.
   @Put('carte-prices')
   @UseGuards(JwtAuthGuard)
   async setCartePriceVisibility(
     @CurrentVendor() vendor: VerifiedVendor,
     @Body(shapeOf(CartePricesBody)) body: z.infer<typeof CartePricesBody>,
   ): Promise<void> {
-    await this.commands.execute(new HideCartePrices(vendor.vendorId.value()));
+    const vendorId = vendor.vendorId.value();
+    await this.commands.execute(body.visible
+      ? new ShowCartePrices(vendorId)
+      : new HideCartePrices(vendorId));
   }
 }

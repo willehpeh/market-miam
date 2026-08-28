@@ -33,4 +33,19 @@ describe('Choosing whether the carte quotes prices, over HTTP', () => {
       expect.objectContaining({ type: 'CartePricesHidden', payload: {} }),
     ]);
   });
+
+  // One idempotent route behind both commands, the availability pair's shape: a vendor
+  // toggling a switch states the choice they want, and re-stating it is a domain no-op.
+  it('records a vendor putting the prices back', async () => {
+    await openStorefrontFor(app, 'acme-bakery');
+    await setVisibility(false).expect(200);
+
+    await setVisibility(true).expect(200);
+
+    expect(await storedEvents()).toEqual([
+      expect.objectContaining({ type: 'StorefrontOpened' }),
+      expect.objectContaining({ type: 'CartePricesHidden' }),
+      expect.objectContaining({ type: 'CartePricesShown', payload: {} }),
+    ]);
+  });
 });
