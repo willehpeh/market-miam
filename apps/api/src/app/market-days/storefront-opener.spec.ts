@@ -30,6 +30,7 @@ describe('Opening a storefront on registration', () => {
       phone: '',
       imageReference: '',
       published: false,
+      cartePricesVisible: true,
     });
   });
 
