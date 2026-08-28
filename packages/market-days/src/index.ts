@@ -35,6 +35,7 @@ export * from './storefront';
 export * from './set-storefront-cover-photo';
 export * from './edit-storefront-information';
 export * from './hide-carte-prices';
+export * from './show-carte-prices';
 export * from './open-storefront';
 export * from './publish-storefront';
 export * from './opens-storefronts';

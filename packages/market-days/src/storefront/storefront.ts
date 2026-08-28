@@ -1,7 +1,7 @@
 import { Aggregate } from '@market-miam/event-sourcing';
 import { ImageReference, PhoneNumber } from '@market-miam/common';
 import { VendorId } from '@market-miam/shared-kernel';
-import { CartePricesHidden, StorefrontCoverPhotoSet, StorefrontEvent, StorefrontInformationEdited, StorefrontOpened, StorefrontPublished } from './events';
+import { CartePricesHidden, CartePricesShown, StorefrontCoverPhotoSet, StorefrontEvent, StorefrontInformationEdited, StorefrontOpened, StorefrontPublished } from './events';
 import { CoverPhoto, NoCoverPhoto, SetCoverPhoto } from './cover-photo';
 import { StorefrontName } from './storefront-name';
 import { StorefrontDescription } from './storefront-description';
@@ -32,6 +32,9 @@ export class Storefront extends Aggregate {
         break;
       case 'CartePricesHidden':
         this._cartePricesVisible = false;
+        break;
+      case 'CartePricesShown':
+        this._cartePricesVisible = true;
         break;
     }
   }
@@ -82,6 +85,15 @@ export class Storefront extends Aggregate {
     }
     const event: CartePricesHidden = {
       type: 'CartePricesHidden',
+      payload: {},
+      version: 1
+    };
+    this.raise(event);
+  }
+
+  showCartePrices() {
+    const event: CartePricesShown = {
+      type: 'CartePricesShown',
       payload: {},
       version: 1
     };

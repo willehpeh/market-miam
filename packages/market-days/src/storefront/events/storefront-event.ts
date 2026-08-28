@@ -3,10 +3,12 @@ import { StorefrontInformationEdited } from './storefront-information-edited';
 import { StorefrontOpened } from './storefront-opened';
 import { StorefrontPublished } from './storefront-published';
 import { CartePricesHidden } from './carte-prices-hidden';
+import { CartePricesShown } from './carte-prices-shown';
 
 export type StorefrontEvent = |
   StorefrontOpened |
   StorefrontCoverPhotoSet |
   StorefrontInformationEdited |
   StorefrontPublished |
-  CartePricesHidden;
+  CartePricesHidden |
+  CartePricesShown;
