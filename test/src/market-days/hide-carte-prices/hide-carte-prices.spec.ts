@@ -1,5 +1,5 @@
 import { InMemoryEventStore } from '@market-miam/event-sourcing';
-import { HideCartePricesHandler, Storefronts, VendorScopedEvents } from '@market-miam/market-days';
+import { HideCartePricesHandler, StorefrontNotOpenError, Storefronts, VendorScopedEvents } from '@market-miam/market-days';
 import { TestHideCartePrices } from './test-data';
 
 // Prices on the carte are the vendor's choice, and they are opted in: a storefront that
@@ -12,6 +12,10 @@ describe('Hide Carte Prices', () => {
   beforeEach(() => {
     store = new InMemoryEventStore();
     handler = new HideCartePricesHandler(new Storefronts(new VendorScopedEvents(store)));
+  });
+
+  it('rejects hiding prices on a storefront that has not been opened', async () => {
+    await expect(handler.execute(TestHideCartePrices.valid())).rejects.toThrow(StorefrontNotOpenError);
   });
 
   it('stops the carte quoting prices to customers', async () => {

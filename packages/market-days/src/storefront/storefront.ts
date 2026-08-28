@@ -71,6 +71,7 @@ export class Storefront extends Aggregate {
   }
 
   hideCartePrices() {
+    this.assertOpen();
     const event: CartePricesHidden = {
       type: 'CartePricesHidden',
       payload: {},
