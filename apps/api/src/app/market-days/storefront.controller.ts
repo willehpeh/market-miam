@@ -5,6 +5,7 @@ import type { VerifiedVendor } from '@market-miam/auth';
 import { CommandGateway, QueryGateway } from '@market-miam/event-sourcing';
 import {
   EditStorefrontInformation,
+  HideCartePrices,
   FindVendorStorefront,
   PublishStorefront,
   SetStorefrontCoverPhoto,
@@ -15,6 +16,7 @@ import { shapeOf } from '../shape-of.pipe';
 
 const InformationBody = z.object({ name: z.string(), description: z.string(), phone: z.string().optional() });
 const CoverPhotoBody = z.object({ version: z.number() });
+const CartePricesBody = z.object({ visible: z.boolean() });
 
 function coverPhotoPublicId(vendorId: string): string {
   return `vendors/${vendorId}/storefront/cover-photo`;
@@ -70,5 +72,14 @@ export class StorefrontController {
     await this.commands.execute(
       new SetStorefrontCoverPhoto(vendorId, `v${body.version}/${coverPhotoPublicId(vendorId)}`),
     );
+  }
+
+  @Put('carte-prices')
+  @UseGuards(JwtAuthGuard)
+  async setCartePriceVisibility(
+    @CurrentVendor() vendor: VerifiedVendor,
+    @Body(shapeOf(CartePricesBody)) body: z.infer<typeof CartePricesBody>,
+  ): Promise<void> {
+    await this.commands.execute(new HideCartePrices(vendor.vendorId.value()));
   }
 }
