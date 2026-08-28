@@ -12,6 +12,7 @@ const dto = (soldOutItemIds: string[], inProgress = true): CustomerStorefront =>
   description: '',
   phone: '',
   coverPhoto: null,
+  cartePricesVisible: true,
   items: [],
   upcomingMarkets: [
     {
