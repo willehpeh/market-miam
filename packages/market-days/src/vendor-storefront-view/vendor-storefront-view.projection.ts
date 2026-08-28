@@ -15,7 +15,11 @@ export class VendorStorefrontViewProjection extends ProjectionFor<StorefrontEven
       StorefrontOpened: e => this.handleStorefrontOpened(e),
       StorefrontCoverPhotoSet: e => this.handleStorefrontCoverPhotoSet(e),
       StorefrontInformationEdited: e => this.handleStorefrontInformationEdited(e),
-      StorefrontPublished: e => this.store.publish(vendorIdFrom(e))
+      StorefrontPublished: e => this.store.publish(vendorIdFrom(e)),
+      // The vendor view does not carry the carte-price choice yet — the read side is a
+      // later slice. The map is total, so the event has to say so out loud rather than
+      // be quietly absent.
+      CartePricesHidden: () => Promise.resolve()
     };
   }
 

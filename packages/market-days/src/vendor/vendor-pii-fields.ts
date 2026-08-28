@@ -20,6 +20,7 @@ export const vendorPiiFields: PiiFieldsOf<MarketDaysEvent> = {
   StorefrontOpened: [],
   StorefrontCoverPhotoSet: [],
   StorefrontPublished: [],
+  CartePricesHidden: [],
   ItemAddedToCatalogue: [],
   ItemRetired: [],
   ItemRevised: [],

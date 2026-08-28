@@ -1,7 +1,7 @@
 import { Aggregate } from '@market-miam/event-sourcing';
 import { ImageReference, PhoneNumber } from '@market-miam/common';
 import { VendorId } from '@market-miam/shared-kernel';
-import { StorefrontCoverPhotoSet, StorefrontEvent, StorefrontInformationEdited, StorefrontOpened, StorefrontPublished } from './events';
+import { CartePricesHidden, StorefrontCoverPhotoSet, StorefrontEvent, StorefrontInformationEdited, StorefrontOpened, StorefrontPublished } from './events';
 import { CoverPhoto, NoCoverPhoto, SetCoverPhoto } from './cover-photo';
 import { StorefrontName } from './storefront-name';
 import { StorefrontDescription } from './storefront-description';
@@ -65,6 +65,15 @@ export class Storefront extends Aggregate {
         description: description.value(),
         phone: phone.value()
       },
+      version: 1
+    };
+    this.raise(event);
+  }
+
+  hideCartePrices() {
+    const event: CartePricesHidden = {
+      type: 'CartePricesHidden',
+      payload: {},
       version: 1
     };
     this.raise(event);
