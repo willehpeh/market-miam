@@ -92,6 +92,9 @@ export class Storefront extends Aggregate {
   }
 
   showCartePrices() {
+    if (this._cartePricesVisible) {
+      return;
+    }
     const event: CartePricesShown = {
       type: 'CartePricesShown',
       payload: {},

@@ -22,6 +22,21 @@ describe('Show Carte Prices', () => {
     })]);
   });
 
+  // The opt-in, stated from the outside: a vendor who has never touched the choice is
+  // already showing prices, so asking for them again is a re-statement and appends
+  // nothing. Nothing is written at open time for this to undo.
+  it('appends nothing on a storefront that never hid its prices', async () => {
+    openStorefront();
+
+    await handler.execute(TestShowCartePrices.valid());
+
+    expect(store.newEvents()).toEqual([]);
+  });
+
+  function openStorefront() {
+    store.seedWith('storefront-vendor-id', [{ type: 'StorefrontOpened', payload: { vendorId: 'vendor-id' }, version: 1 }], { vendorId: 'vendor-id' });
+  }
+
   function openStorefrontHidingPrices() {
     store.seedWith('storefront-vendor-id', [
       { type: 'StorefrontOpened', payload: { vendorId: 'vendor-id' }, version: 1 },
