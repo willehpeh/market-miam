@@ -1,5 +1,5 @@
 import { InMemoryEventStore } from '@market-miam/event-sourcing';
-import { ShowCartePricesHandler, Storefronts, VendorScopedEvents } from '@market-miam/market-days';
+import { ShowCartePricesHandler, StorefrontNotOpenError, Storefronts, VendorScopedEvents } from '@market-miam/market-days';
 import { TestShowCartePrices } from './test-data';
 
 describe('Show Carte Prices', () => {
@@ -9,6 +9,10 @@ describe('Show Carte Prices', () => {
   beforeEach(() => {
     store = new InMemoryEventStore();
     handler = new ShowCartePricesHandler(new Storefronts(new VendorScopedEvents(store)));
+  });
+
+  it('rejects showing prices on a storefront that has not been opened', async () => {
+    await expect(handler.execute(TestShowCartePrices.valid())).rejects.toThrow(StorefrontNotOpenError);
   });
 
   it('puts the prices back on a carte that was hiding them', async () => {
