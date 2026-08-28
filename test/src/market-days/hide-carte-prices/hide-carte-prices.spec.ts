@@ -1,0 +1,31 @@
+import { InMemoryEventStore } from '@market-miam/event-sourcing';
+import { HideCartePricesHandler, Storefronts, VendorScopedEvents } from '@market-miam/market-days';
+import { TestHideCartePrices } from './test-data';
+
+// Prices on the carte are the vendor's choice, and they are opted in: a storefront that
+// has never said otherwise shows them. So hiding is the only fact worth recording, and
+// showing again is its counterpart — never a flag written at open time.
+describe('Hide Carte Prices', () => {
+  let store: InMemoryEventStore;
+  let handler: HideCartePricesHandler;
+
+  beforeEach(() => {
+    store = new InMemoryEventStore();
+    handler = new HideCartePricesHandler(new Storefronts(new VendorScopedEvents(store)));
+  });
+
+  it('stops the carte quoting prices to customers', async () => {
+    openStorefront();
+
+    await handler.execute(TestHideCartePrices.valid());
+
+    expect(store.newEvents()).toEqual([expect.objectContaining({
+      type: 'CartePricesHidden',
+      payload: {}
+    })]);
+  });
+
+  function openStorefront() {
+    store.seedWith('storefront-vendor-id', [{ type: 'StorefrontOpened', payload: { vendorId: 'vendor-id' }, version: 1 }], { vendorId: 'vendor-id' });
+  }
+});
