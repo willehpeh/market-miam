@@ -259,6 +259,33 @@ Publication: a `/cgu` route in `apps/website`, footer link beside *Mentions lég
 and the same URL linked from the registration checkbox. The vendor app should link it
 too — a vendor meets the terms where they sign, not only where they were sold.
 
+**Shipped 2026-08-29 as a draft.** `apps/website/src/pages/cgu.astro` holds the full text,
+27 articles, one document with the commercial half opening at article 16 over a rule
+rather than a second `<h1>`.
+
+The page is **deliberately not published**. `VERSION.date` is `null`, which does three
+things: a *Projet* banner says the text binds nobody, `noindex` keeps it out of search,
+and it is linked from no footer. Setting the date is the gesture that publishes — and it
+travels with two other edits, named in the file's header comment: add the footer links
+(site and vendor app), and drop `/cgu` from the sitemap filter.
+
+Two mechanics worth knowing, both found by building rather than reading:
+
+- **`<meta slot="head">` in a page is silently dropped.** `Base.astro` has only a default
+  `<slot />`, so a page-level robots tag renders nowhere while looking exactly like a
+  working noindex — the same class of trap as the `set:html` scoping one already recorded
+  in `WEBSITE-PLAN.md`. `Base.astro` now takes a `noindex` prop instead.
+- **Archived versions must never reach the sitemap.** `sitemap()` took no filter, so every
+  frozen `/cgu/2026-09` would have been submitted for indexing to compete with the version
+  in force. The filter in `astro.config.mjs` excludes the whole `/cgu` subtree; the archive
+  half of that rule is permanent, the `/cgu` half comes off at publication.
+
+Still open in the text itself, for counsel: the liability cap (article 26) is expressed as
+the sums paid over twelve months, which wants checking against art. 1170 C. civ. and
+art. L442-1 C. com.; and article 13's closing paragraph defers the art. 28 processing terms
+to a later amendment rather than annexing a dormant DPA, which is the §5 question answered
+by deferral rather than by decision.
+
 ## 8. Site copy that must change before the CGV ships
 
 Decisions 6 and 13 both contradict what is currently published. The CGV cannot go up
@@ -270,7 +297,7 @@ signup"*), so removing it touches the CTAs, the closing band and the form it ope
 
 | What | Where | Why |
 |---|---|---|
-| *« Le tarif ne bouge pas — ce qui arrive ensuite est compris, sans supplément. »* | `apps/website/src/pages/index.astro:172` | Withdrawn. Replace with the price-change rule from decision 6, which carries its own reassurance: 3 months' notice, free exit, no increase in the first year |
+| ✅ *« Le tarif ne bouge pas — ce qui arrive ensuite est compris, sans supplément. »* | `apps/website/src/pages/index.astro:172` | **Done 2026-08-29.** Withdrawn. Replace with the price-change rule from decision 6, which carries its own reassurance: 3 months' notice, free exit, no increase in the first year |
 | Decision entry *"The price freeze ships with the price"* | `WEBSITE-PLAN.md` | Superseded — record it as such rather than deleting, per that doc's own convention |
 | Deferred entry *"A 50 € tier (préco + réservation) — deliberately not on the page"* | `WEBSITE-PLAN.md` | Partly superseded: the tier is now a decided direction. Whether it goes *on the page* is still a separate call, and the reasoning there — a pricing table at the moment you ask for trust — still stands |
 | Open Item *"Pricing tiers and feature gating"* | `MARKET_MIAM.md` | Partly resolved: two tiers, gated on payment/ordering. What sits in each beyond that is still open |
@@ -280,17 +307,20 @@ signup"*), so removing it touches the CTAs, the closing band and the form it ope
 | Page purpose, CTA rule, and the decisions defining the pilot as a hand-onboarded cohort | `WEBSITE-PLAN.md` | Decision 13. Record as superseded, per that doc's convention; the *why* is worth keeping, since option (b) would revive most of it |
 | Tally lead capture as the conversion path | `index.astro`, form `aQX9NB` | Decision 13 keeps onboarding manual, so a lead form still fits — but its title and its consent copy both name the pilot (`WEBSITE-PLAN.md` §2). Changing that copy is Art. 13 information, so it moves with the form, not after it |
 
-## What is needed to start drafting
+## Where this stands
 
-**Nothing.** §2 is settled — fourteen decisions — so the draft can be written now
-against those premises. Three things run alongside it rather than blocking it:
+**The draft is written** (§7). What remains, in the order it blocks publication:
 
-- **§8 first, or at least in the same breath.** The site and the contract have to stop
-  disagreeing, and decision 13 makes that a real copy pass rather than one line.
-- **§3 and §4** change what the draft *claims*, not whether it can be written. §4 is the
-  long pole, and decision 14 added to it: acceptance capture needs an event and a
-  checkbox, and the SIREN now has two callers — the vitrine's own mentions légales and
-  the verification check — so build the field once, for both.
-- **§6** goes to counsel with the draft, not before it.
+1. **Legal review.** The text is built from §2's fourteen decisions and §6's regulatory
+   reading; neither has been seen by a lawyer. The two clauses flagged in §7 are the ones
+   to point at first.
+2. **§8's site copy** — the pilot removal shipped 2026-08-29, along with the price-freeze
+   line and the two pilot references in `/mentions-legales`. What is left is outside the
+   repo: the Tally form's title and its consent copy both still name the pilot, and the
+   consent copy is Art. 13 information rather than marketing text.
+3. **§4's code.** Acceptance capture is the one that matters — until it exists, no
+   vendor's agreement to a version is provable, and the text at article 4 promises it is.
+   The SIREN field now has two callers (§4, decision 14), so it gets built once.
+4. **§3's confirmations** change what the text claims, not whether it stands.
 
-Nothing in §2 is now unconfirmed.
+Publication is the three-part gesture in §7, not a date change alone.

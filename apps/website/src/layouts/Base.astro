@@ -2,11 +2,17 @@
 interface Props {
   title: string;
   description?: string;
+  /* Keeps a page out of search results. There is no `slot="head"` here — a
+     <meta slot="head"> in a page is dropped silently, which looks exactly like a
+     working noindex. Pass this instead. Excluding the page from the sitemap is a
+     separate job, in astro.config.mjs. */
+  noindex?: boolean;
 }
 
 const {
   title,
   description = 'Traiteurs de marché : mieux servir vos habitués, mieux préparer chaque marché. Votre vitrine, votre carte, vos marchés — et le menu du jour, chaque matin.',
+  noindex = false,
 } = Astro.props;
 
 // Astro.site comes from `site` in astro.config.mjs — the one place the origin lives.
@@ -42,6 +48,7 @@ const schema = {
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content={description} />
+    {noindex && <meta name="robots" content="noindex, nofollow" />}
     <link rel="canonical" href={canonical} />
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
 
