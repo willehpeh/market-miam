@@ -1,5 +1,5 @@
 import { awaitingStart, broadcasting } from './live-status';
-import { marketDayView as day } from './market-day-view.builder';
+import { marketDayView as day } from '../market-day-view.builder';
 
 describe('awaitingStart — the waiting poll\'s gate (decision 32b)', () => {
   it('holds for a planned today before its market starts', () => {

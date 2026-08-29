@@ -67,7 +67,7 @@ describe('MarketDayCards', () => {
     await renderCard([day()]);
 
     expect(screen.getByRole('link', { name: /le menu/i }).getAttribute('href'))
-      .toBe('/dashboard/menus/market-1/2026-08-15');
+      .toBe('/dashboard/market/market-1/2026-08-15/menu');
   });
 
   // The card is the switch (decisions 27, 41, 43): once the day is today and carries a
@@ -77,7 +77,7 @@ describe('MarketDayCards', () => {
     await renderCard([day({ phase: 'due', itemIds: ['item-1'] })]);
 
     expect(screen.getByRole('link', { name: /suivre le marché/i }).getAttribute('href'))
-      .toBe('/dashboard/live/market-1/2026-08-15');
+      .toBe('/dashboard/market/market-1/2026-08-15/live');
   });
 
   // The flip is caused by planning, not by the clock — an unplanned today still opens
@@ -86,7 +86,7 @@ describe('MarketDayCards', () => {
     await renderCard([day({ phase: 'due' })]);
 
     expect(screen.getByRole('link', { name: /planifier le menu/i }).getAttribute('href'))
-      .toBe('/dashboard/menus/market-1/2026-08-15');
+      .toBe('/dashboard/market/market-1/2026-08-15/menu');
   });
 
   it('offers nothing to plan when there is no market day', async () => {
@@ -136,7 +136,7 @@ describe('MarketDayCards', () => {
 
     expect(screen.getByText('Stand fermé')).toBeTruthy();
     expect(screen.getByRole('link', { name: /planifier le menu/i }).getAttribute('href'))
-      .toBe('/dashboard/menus/market-1/2026-08-16');
+      .toBe('/dashboard/market/market-1/2026-08-16/menu');
   });
 
   // A vendor at their last booked market sees the day they are standing in, and nothing is

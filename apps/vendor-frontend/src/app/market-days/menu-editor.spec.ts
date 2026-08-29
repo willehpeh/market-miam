@@ -143,7 +143,7 @@ describe('MenuEditor', () => {
     await renderEditor((marketDays) => marketDays.days.set([day({ phase: 'due', itemIds: ['item-1'] })]));
 
     expect(screen.getByRole('link', { name: /retour/i }).getAttribute('href')).toBe(
-      '/dashboard/live/market-1/2026-08-15',
+      '/dashboard/market/market-1/2026-08-15/live',
     );
   });
 

@@ -16,10 +16,6 @@ import { BilanPrompt } from '../market-days/bilan-prompt';
   host: { class: 'contents' },
   template: `
     <mm-market-day-cards />
-
-    <!-- Under the market cards, not above them: a vendor opening the app on a market
-         morning wants today first, and a nag that outranks it every day for a week is the
-         wrong way round (decision 65). -->
     <mm-bilan-prompt />
 
     <mm-card>
@@ -58,30 +54,23 @@ import { BilanPrompt } from '../market-days/bilan-prompt';
 export class StorefrontHome {
   readonly copied = signal(false);
 
-  // The vitrine's own card edits the vitrine; these are the other two things a customer
-  // sees on it, and a vendor changes them far more often than their description — which is
-  // why they sit above that card rather than under it.
-  readonly destinations = [
+  readonly destinations: {
+    title: string, link: string, icon: string
+  }[] = [
     { title: 'Votre catalogue', link: '/dashboard/catalogue', icon: 'fa-utensils' },
-    { title: 'Vos marchés', link: '/dashboard/markets', icon: 'fa-calendar-days' },
+    { title: 'Vos marchés', link: '/dashboard/markets', icon: 'fa-calendar-days' }
   ];
   private readonly storefront = inject(StorefrontFacade);
   readonly storefrontUrl = computed(() => storefrontUrl(this.storefront.view()?.subdomain));
   private readonly sharing = inject(Share);
   private readonly copiedNoticeDelay = inject(COPIED_NOTICE_DELAY);
-
-  // switchMap rather than a timer per tap: every copy is its own receipt, so a new one
-  // supersedes the pending reset instead of inheriting the previous tap's deadline. A
-  // second copy used to lose its confirmation the moment the first tap's timer came due.
   private readonly copies = new Subject<void>();
 
   constructor() {
-    this.copies
-      .pipe(
-        switchMap(() => timer(this.copiedNoticeDelay)),
-        takeUntilDestroyed(),
-      )
-      .subscribe(() => this.copied.set(false));
+    this.copies.pipe(
+      switchMap(() => timer(this.copiedNoticeDelay)),
+      takeUntilDestroyed()
+    ).subscribe(() => this.copied.set(false));
   }
 
   async share(): Promise<void> {

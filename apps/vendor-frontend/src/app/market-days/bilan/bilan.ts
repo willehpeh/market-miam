@@ -1,12 +1,12 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { Card } from '../core/card';
-import { Spinner } from '../core/spinner';
-import { longDate } from '../core/french-date';
-import { CatalogueFacade } from '../catalogue/catalogue.facade';
-import { MarketDayFacade } from './market-day.facade';
-import { hasLiveScreen, isFinished } from './live-status';
-import { ItemOutcome } from './market-days';
+import { Card } from '../../core/card';
+import { Spinner } from '../../core/spinner';
+import { longDate } from '../../core/french-date';
+import { CatalogueFacade } from '../../catalogue/catalogue.facade';
+import { MarketDayFacade } from '../market-day.facade';
+import { hasLiveScreen, isFinished } from '../live-screen/live-status';
+import { ItemOutcome } from '../market-days';
 
 // Worst to best, and the order the vendor reads them in. Working copy, not settled
 // vocabulary: *moins bien vendu* over *mal vendu* because the comparative is a fact about
@@ -121,7 +121,7 @@ export class Bilan {
   readonly date = this.route.snapshot.paramMap.get('date') ?? '';
 
   readonly choices = CHOICES;
-  readonly liveLink = ['/dashboard/live', this.marketId, this.date];
+  readonly liveLink = ['/dashboard/market', this.marketId, this.date, 'live'];
 
   readonly loading = computed(() => this.marketDays.day().status === 'loading' || this.catalogue.loading());
 

@@ -2,14 +2,14 @@ import { afterRenderEffect, ChangeDetectionStrategy, Component, computed, effect
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { fromEvent } from 'rxjs';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { Card } from '../core/card';
-import { Spinner } from '../core/spinner';
-import { formatTime, longDate } from '../core/french-date';
-import { CatalogueFacade } from '../catalogue/catalogue.facade';
-import { MarketDayFacade } from './market-day.facade';
+import { Card } from '../../core/card';
+import { Spinner } from '../../core/spinner';
+import { formatTime, longDate } from '../../core/french-date';
+import { CatalogueFacade } from '../../catalogue/catalogue.facade';
+import { MarketDayFacade } from '../market-day.facade';
 import { awaitingStart, broadcasting, isFinished, isOver, isToday } from './live-status';
-import { ClosedNotice } from './closed-notice';
-import { ReopenStand } from './reopen-stand';
+import { ClosedNotice } from '../closed-notice';
+import { ReopenStand } from '../reopen-stand';
 
 type Row = { itemId: string; name: string };
 
@@ -158,8 +158,8 @@ export class LiveScreen {
   readonly marketId = this.route.snapshot.paramMap.get('marketId') ?? '';
   readonly date = this.route.snapshot.paramMap.get('date') ?? '';
 
-  readonly editorLink = ['/dashboard/menus', this.marketId, this.date];
-  readonly bilanLink = ['/dashboard/bilan', this.marketId, this.date];
+  readonly editorLink = ['/dashboard/market', this.marketId, this.date, 'menu'];
+  readonly bilanLink = ['/dashboard/market', this.marketId, this.date, 'bilan'];
 
   // The slot's own state, not the list's: *not fetched yet* has to outrank the guard
   // branch, or the screen says "pas aujourd'hui" for one frame on every entry.

@@ -2,14 +2,14 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/ang
 import { vi } from 'vitest';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { LiveScreen } from './live-screen';
-import { MarketDayFacade } from './market-day.facade';
-import { FakeMarketDayFacade } from './fake.market-day.facade';
-import { marketDayView as day } from './market-day-view.builder';
-import { MarketDayView } from './market-days';
-import { CatalogueFacade } from '../catalogue/catalogue.facade';
-import { FakeCatalogueFacade } from '../catalogue/fake.catalogue.facade';
-import { CatalogueItemView } from '../catalogue/catalogue';
-import { catalogueItem } from '../catalogue/catalogue-item.builder';
+import { MarketDayFacade } from '../market-day.facade';
+import { FakeMarketDayFacade } from '../fake.market-day.facade';
+import { marketDayView as day } from '../market-day-view.builder';
+import { MarketDayView } from '../market-days';
+import { CatalogueFacade } from '../../catalogue/catalogue.facade';
+import { FakeCatalogueFacade } from '../../catalogue/fake.catalogue.facade';
+import { CatalogueItemView } from '../../catalogue/catalogue';
+import { catalogueItem } from '../../catalogue/catalogue-item.builder';
 
 const item = (itemId: string, name: string): CatalogueItemView => catalogueItem({ itemId, name });
 
@@ -227,7 +227,7 @@ describe('LiveScreen', () => {
     await renderLive((md, cat) => aLiveDay(md, cat, [], { phase: 'trading' }));
 
     expect(screen.getByRole('link', { name: 'Modifier le menu' }).getAttribute('href')).toBe(
-      '/dashboard/menus/market-1/2026-08-15',
+      '/dashboard/market/market-1/2026-08-15/menu',
     );
   });
 
@@ -336,7 +336,7 @@ describe('LiveScreen', () => {
     await renderLive((md, cat) => aLiveDay(md, cat, [], { phase: 'over' }));
 
     expect(screen.getByRole('link', { name: 'Faire le bilan' }).getAttribute('href')).toBe(
-      '/dashboard/bilan/market-1/2026-08-15',
+      '/dashboard/market/market-1/2026-08-15/bilan',
     );
   });
 

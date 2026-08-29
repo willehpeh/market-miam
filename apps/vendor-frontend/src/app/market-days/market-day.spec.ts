@@ -54,7 +54,7 @@ describe('MarketDays', () => {
         provideRouter([
           { path: 'dashboard', children: [] },
           { path: 'dashboard/markets', children: [] },
-          { path: 'dashboard/live/:marketId/:date', children: [] },
+          { path: 'dashboard/market/:marketId/:date/live', children: [] },
         ]),
         { provide: MarketDayFacade, useClass: StoreMarketDayFacade },
         { provide: MarketSchedules, useClass: HttpMarketSchedules },
@@ -586,7 +586,7 @@ describe('MarketDays', () => {
     facade.setMenu('market-1', '2026-08-15', ['item-1']);
     httpCtrl.expectOne('/api/market-days/market-1/2026-08-15/menu').flush(null);
 
-    await waitFor(() => expect(router.url).toBe('/dashboard/live/market-1/2026-08-15'));
+    await waitFor(() => expect(router.url).toBe('/dashboard/market/market-1/2026-08-15/live'));
   });
 
   it('stops loading and stays empty when the request fails', () => {

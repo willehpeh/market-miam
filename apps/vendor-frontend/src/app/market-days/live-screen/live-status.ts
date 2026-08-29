@@ -1,4 +1,4 @@
-import { MarketDayView } from './market-days';
+import { MarketDayView } from '../market-days';
 
 // The live screen's two banner states, read off the server-said occurrence — the clock
 // never decides anything on the vendor's side (decisions 21, 27). Extracted so the

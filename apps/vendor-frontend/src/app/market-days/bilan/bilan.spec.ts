@@ -1,13 +1,13 @@
 import { fireEvent, render, screen, within } from '@testing-library/angular';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { Bilan } from './bilan';
-import { MarketDayFacade } from './market-day.facade';
-import { FakeMarketDayFacade } from './fake.market-day.facade';
-import { marketDayView as day } from './market-day-view.builder';
-import { CatalogueFacade } from '../catalogue/catalogue.facade';
-import { FakeCatalogueFacade } from '../catalogue/fake.catalogue.facade';
-import { CatalogueItemView } from '../catalogue/catalogue';
-import { catalogueItem } from '../catalogue/catalogue-item.builder';
+import { MarketDayFacade } from '../market-day.facade';
+import { FakeMarketDayFacade } from '../fake.market-day.facade';
+import { marketDayView as day } from '../market-day-view.builder';
+import { CatalogueFacade } from '../../catalogue/catalogue.facade';
+import { FakeCatalogueFacade } from '../../catalogue/fake.catalogue.facade';
+import { CatalogueItemView } from '../../catalogue/catalogue';
+import { catalogueItem } from '../../catalogue/catalogue-item.builder';
 
 const item = (itemId: string, name: string): CatalogueItemView => catalogueItem({ itemId, name });
 
@@ -191,7 +191,7 @@ describe('Bilan', () => {
     expect(screen.getByText(/pas encore terminé/i)).toBeTruthy();
     expect(screen.queryByRole('group')).toBeNull();
     expect(screen.getByRole('link', { name: /en direct/i }).getAttribute('href')).toBe(
-      '/dashboard/live/market-1/2026-08-15',
+      '/dashboard/market/market-1/2026-08-15/live',
     );
   });
 

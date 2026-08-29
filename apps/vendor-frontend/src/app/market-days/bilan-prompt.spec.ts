@@ -48,7 +48,7 @@ describe('BilanPrompt', () => {
     expect(screen.getByText(/samedi 15 août/i)).toBeTruthy();
     expect(screen.getByText('Marché de la Croix-Rousse')).toBeTruthy();
     expect(screen.getByRole('link', { name: /faire le bilan/i }).getAttribute('href')).toBe(
-      '/dashboard/bilan/market-1/2026-08-15',
+      '/dashboard/market/market-1/2026-08-15/bilan',
     );
   });
 

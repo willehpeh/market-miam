@@ -37,7 +37,7 @@ export class BilanPrompt {
       ? {
           label: longDate(day.day, day.date),
           marketName: day.marketName,
-          link: ['/dashboard/bilan', day.marketId, day.date],
+          link: ['/dashboard/market', day.marketId, day.date, 'bilan'],
         }
       : undefined;
   });

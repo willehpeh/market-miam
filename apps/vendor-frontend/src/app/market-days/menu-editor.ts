@@ -11,7 +11,7 @@ import { SellingRecordFacade } from '../selling-record/selling-record.facade';
 import { pile, PileName } from '../selling-record/pile';
 import { formatEuros } from '../catalogue/money';
 import { MarketDayFacade } from './market-day.facade';
-import { hasLiveScreen } from './live-status';
+import { hasLiveScreen } from './live-screen/live-status';
 import { ClosedNotice } from './closed-notice';
 import { ReopenStand } from './reopen-stand';
 
@@ -152,7 +152,7 @@ export class MenuEditor {
   // Back to the day, not always to the dashboard: the card's own gate picks, so a vendor
   // who came from the live screen to add a tray is put back on it.
   readonly back = computed(() =>
-    hasLiveScreen(this.occurrence()) ? `/dashboard/live/${this.marketId}/${this.date}` : '/dashboard',
+    hasLiveScreen(this.occurrence()) ? `/dashboard/market/${this.marketId}/${this.date}/live` : '/dashboard',
   );
 
   readonly day = computed(() => {

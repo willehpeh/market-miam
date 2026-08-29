@@ -3,7 +3,7 @@ import { RouterLink } from '@angular/router';
 import { Card } from '../core/card';
 import { longDate, timeRange } from '../core/french-date';
 import { MarketDayFacade } from './market-day.facade';
-import { hasLiveScreen, isToday } from './live-status';
+import { hasLiveScreen, isToday } from './live-screen/live-status';
 import { MarketDayView } from './market-days';
 import { ClosedNotice } from './closed-notice';
 import { ReopenStand } from './reopen-stand';
@@ -12,11 +12,8 @@ import { ReopenStand } from './reopen-stand';
   selector: 'mm-market-day-cards',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ClosedNotice, ReopenStand, RouterLink, Card],
-  // Two cards, so each has to be its own grid child rather than two stacked inside one.
   host: { class: 'contents' },
   styles: `
-    /* A door, not a call to action — it sits under the card's action and must not compete
-       with it (decision 55). */
     .plain {
       background: transparent;
       color: var(--color-ink-soft);
@@ -40,12 +37,8 @@ import { ReopenStand } from './reopen-stand';
         @if (day.hours) {
           <p class="text-sm text-muted">{{ day.hours }}</p>
         }
-        <!-- Stated either way: an unplanned day and a deliberately cleared one are both
-             legal, and without this line they look identical. -->
         <p class="mt-3 text-sm text-ink-soft">{{ day.menu }}</p>
-
-        <!-- Decision 51: closed is read before the menu is, or a closed day still offers
-             the planning verb and a save decision 29 refuses. -->
+        
         @if (day.closed) {
           <mm-closed-notice />
           <mm-reopen-stand [marketId]="day.marketId" [date]="day.date" />
@@ -54,9 +47,7 @@ import { ReopenStand } from './reopen-stand';
             <i class="fa-solid fa-calendar-check" aria-hidden="true"></i>
             {{ day.action }}
           </a>
-
-          <!-- Decision 55: the vendor who cannot come opens the app to this screen, so the
-               call-off is here rather than behind a verb about planning. -->
+          
           @if (day.today) {
             <button type="button" class="plain mt-4 flex w-full justify-center text-sm" (click)="callOff(day)">
               Je ne peux pas venir aujourd'hui
@@ -109,7 +100,7 @@ export class MarketDayCards {
       hours: timeRange(day),
       menu: items ? `${items} plat${items > 1 ? 's' : ''} au menu` : 'Aucun plat au menu',
       action: live ? 'Suivre le marché' : items ? 'Modifier le menu' : 'Planifier le menu',
-      link: [live ? '/dashboard/live' : '/dashboard/menus', day.marketId, day.date],
+      link: ['/dashboard/market', day.marketId, day.date, live ? 'live' : 'menu'],
       marketId: day.marketId,
       date: day.date,
       today: isToday(day),
