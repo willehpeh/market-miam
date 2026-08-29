@@ -3,31 +3,34 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { StorefrontHost } from '../core/storefront-host';
 import { StorefrontFeed } from './storefront-feed';
-import { CustomerStorefront } from './customer-storefront';
+import { CustomerStorefront, PublishedCustomerStorefront } from './customer-storefront';
+import { UpcomingMarket } from './markets/upcoming-market';
 import { StorefrontViewModel, toViewModel } from './storefront-view-model';
 
-const dto = (soldOutItemIds: string[], inProgress = true): CustomerStorefront => ({
+// Running, with a menu — the shape the poll's gate holds over (decision 26).
+const day = (overrides: Partial<UpcomingMarket> = {}): UpcomingMarket => ({
+  date: '2026-08-15',
+  weekday: 'SAT',
+  marketName: 'Marché de la Croix-Rousse',
+  startTime: '08:00',
+  endTime: '13:00',
+  postalCode: '69004',
+  town: 'Lyon',
+  cancelled: false,
+  inProgress: true,
+  items: [{ itemId: 'item-1', name: 'Bœuf bourguignon', description: '', price: 1300, imageReference: '' }],
+  soldOutItemIds: [],
+  ...overrides,
+});
+
+const dto = (...upcomingMarkets: UpcomingMarket[]): PublishedCustomerStorefront => ({
   status: 'published',
   name: 'Acme Bakery',
   description: '',
   phone: '',
   coverPhoto: null,
   items: [],
-  upcomingMarkets: [
-    {
-      date: '2026-08-15',
-      weekday: 'SAT',
-      marketName: 'Marché de la Croix-Rousse',
-      startTime: '08:00',
-      endTime: '13:00',
-      postalCode: '69004',
-      town: 'Lyon',
-      cancelled: false,
-      inProgress,
-      items: [{ itemId: 'item-1', name: 'Bœuf bourguignon', description: '', price: 1300, imageReference: '' }],
-      soldOutItemIds,
-    },
-  ],
+  upcomingMarkets,
 });
 
 const isFetch = (url: string) => url.endsWith('/api/public/storefront/acme');
@@ -66,6 +69,18 @@ describe('StorefrontFeed', () => {
     TestBed.tick();
   };
 
+  // The poll's gate, driven the only way it is ever read: hand the feed a storefront, then
+  // let the tab come back and see whether it re-asks.
+  const sitsStillOver = async (storefront: CustomerStorefront): Promise<void> => {
+    createFeed();
+    httpCtrl.expectOne(({ url }) => isFetch(url)).flush(storefront);
+    await settled();
+
+    becomeVisible();
+
+    httpCtrl.expectNone(({ url }) => isFetch(url));
+  };
+
   afterEach(() => {
     httpCtrl.verify();
   });
@@ -75,7 +90,7 @@ describe('StorefrontFeed', () => {
   it('asks for the storefront named by the host', async () => {
     createFeed();
 
-    httpCtrl.expectOne(({ url }) => isFetch(url)).flush(dto([]));
+    httpCtrl.expectOne(({ url }) => isFetch(url)).flush(dto(day()));
 
     expect((await settled())?.status).toBe('published');
   });
@@ -91,43 +106,48 @@ describe('StorefrontFeed', () => {
   // visibility re-fetch is the one that earns its keep (decision 8).
   it('re-asks when the tab becomes visible while live', async () => {
     createFeed();
-    httpCtrl.expectOne(({ url }) => isFetch(url)).flush(dto([]));
+    httpCtrl.expectOne(({ url }) => isFetch(url)).flush(dto(day()));
     await settled();
 
     becomeVisible();
 
-    httpCtrl.expectOne(({ url }) => isFetch(url)).flush(dto(['item-1']));
+    httpCtrl.expectOne(({ url }) => isFetch(url)).flush(dto(day({ soldOutItemIds: ['item-1'] })));
     const refreshed = await settled();
     expect(refreshed?.status === 'published' && refreshed.upcomingMarkets[0].items[0].soldOut).toBe(true);
   });
 
-  it('sits still while the storefront is not broadcasting', async () => {
-    createFeed();
-    httpCtrl.expectOne(({ url }) => isFetch(url)).flush(dto([], false));
-    await settled();
+  it('sits still before the market starts', () => sitsStillOver(dto(day({ inProgress: false }))));
 
-    becomeVisible();
+  // A menu is what there is to re-ask for; without one the page keeps its normal face.
+  it('sits still over an empty menu', () => sitsStillOver(dto(day({ items: [] }))));
 
-    httpCtrl.expectNone(({ url }) => isFetch(url));
-  });
+  // The gate reads the featured day, the one the page leads with — a later market being
+  // live is not this page's claim to make.
+  it('sits still while only a later market is live', () =>
+    sitsStillOver(dto(day({ inProgress: false, items: [] }), day())));
+
+  it('sits still with no market days at all', () => sitsStillOver(dto()));
+
+  it('sits still for a storefront that is not published', () =>
+    sitsStillOver({ status: 'coming-soon', name: 'Acme Bakery' }));
 
   // Dropping the layout on a flaky market-hall tunnel would be a bigger lie than a stale
   // menu: failures keep the last view (decision 8).
   it('keeps the last view when a re-ask fails', async () => {
     createFeed();
-    httpCtrl.expectOne(({ url }) => isFetch(url)).flush(dto([]));
+    httpCtrl.expectOne(({ url }) => isFetch(url)).flush(dto(day()));
     const first = await settled();
 
     becomeVisible();
     httpCtrl.expectOne(({ url }) => isFetch(url)).flush(null, { status: 500, statusText: 'Server Error' });
 
     expect(await settled()).toEqual(first);
-    expect(await settled()).toEqual(toViewModel(dto([])));
+    expect(await settled()).toEqual(toViewModel(dto(day())));
   });
 
   it('stays quiet while the tab is hidden', async () => {
     createFeed();
-    httpCtrl.expectOne(({ url }) => isFetch(url)).flush(dto([]));
+    httpCtrl.expectOne(({ url }) => isFetch(url)).flush(dto(day()));
     await settled();
     Object.defineProperty(document, 'visibilityState', { value: 'hidden', configurable: true });
 
