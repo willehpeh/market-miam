@@ -1,6 +1,6 @@
 # Website — Status & Remaining Work
 
-`apps/website` (Astro, static) at `marketmiam.fr` / `www.`. Purpose: convert vendors into the pilot — 5–10 hand-onboarded traiteurs, not self-serve signup. Sells what ships today; names what doesn't.
+`apps/website` (Astro, static) at `marketmiam.fr` / `www.`. Purpose: convert traiteurs into paying vendors, onboarded by hand — not self-serve signup. Sells what ships today; names what doesn't. *(Was: convert into the pilot, a cohort of 5–10. The pilot is gone — see* Pilot framing removed *below.)*
 
 ## Shipped (`d1eef8c` … `64ab3a4`)
 
@@ -60,16 +60,63 @@ when the menu du jour moved into *Disponible aujourd'hui* (152 chars, still miss
   feature-keyword title would undersell it and date at every launch. The slogan title
   stays (decision below); keyword coverage is content pages' job, still open.
 
-### CTAs (`55073a6`, `d233015`)
+### CTAs (`55073a6`, `d233015`, then repointed)
 
-Both in-page CTAs read *Rejoignez les premiers traiteurs*, matching the title of the Tally
-form they open. The header CTA keeps *Rejoindre le pilote* — it's navigation, not the ask.
-*La phase pilote* stays as the programme's name in the eyebrow and the note under the hero
-button.
+**Superseded 2026-08-29 — the labels changed with the pilot, the rule behind them did
+not.** Both in-page CTAs now read *Ouvrons votre vitrine*, and the Tally form title moves
+with them; the header CTA reads *Créer ma vitrine*, still navigation rather than the ask.
+*(Was: *Rejoignez les premiers traiteurs* in page and *Rejoindre le pilote* in the header,
+with *La phase pilote* as the programme's name in the eyebrow.)*
+
+Two things picked the new wording. *Ouvrir une vitrine* is the domain's own verb —
+`StorefrontOpened`, the `OpensStorefronts` processor — and the first person plural carries
+the setup-with-you promise that replaced the cohort as the reason to sign up. *Créer ma
+vitrine* is lifted verbatim from `apps/vendor-frontend/src/app/onboarding/welcome.ts:31`,
+so the header button and the first button a vendor meets after signing up say the same
+thing. That is the vocabulary pass applied to the funnel rather than to the nouns.
 
 Centred below `56rem`, flush left above it — the same breakpoint where the hero splits into
 two columns, so the CTA realigns with the text it belongs to rather than at a width of its
 own.
+
+### Pilot framing removed (2026-08-29)
+
+The *phase pilote* is gone: the product is sold as-is, to anyone, at 15 € HT — with
+onboarding still done by hand. Decisions 6 and 13 of `CGU-CGV-PLAN.md`; the reasoning
+lives there, this records what it did to the page.
+
+**The structure did not change.** Hero → problem → *Ce que Market Miam vous donne* →
+offer → footer never depended on the pilot, and neither did the hero, the problem band or
+any of the seven cards. What changed was five strings and one band:
+
+| | Was | Now |
+|---|---|---|
+| Eyebrow | *La phase pilote* | *La mise en route* — the page's own phrase, already in the first group's lede |
+| `h2` | *Nous accompagnons cinq à dix traiteurs, personnellement.* | *Nous installons votre vitrine avec vous.* |
+| Lede | *Vous n'êtes pas un numéro dans une file d'attente…* | Names what actually gets set up. The queue metaphor was scarcity by another route; *nous construisons la suite à partir de ce que vous nous dites* survives, because it is still true |
+| Terms 1, 3, 4 | — | **Unchanged.** Premier mois offert, aucune commission, vos clients restent vos clients |
+| Term 2 | *Le tarif ne bouge pas* | *Pas d'augmentation la première année* + three months' notice and a free exit — decision 6b's actual rule |
+| `.pilot-actions` | — | `.offer-actions`; the class was named after a programme that no longer exists |
+
+**The band kept its job by changing what is scarce.** It sold a cohort of five to ten;
+it now sells personal setup, which is scarce in the market rather than in supply. The
+alternative — a flat pricing block — was rejected: it drops the page's only warm moment
+right where it asks for trust.
+
+**`<title>` and the metas were not touched, deliberately.** `Base.astro`'s description is
+mission-first and never named the pilot, so `og:description` is unchanged and no already
+shared link needs a forced re-scrape (§1). This is the second time that metas-lead-on-mission
+choice has paid for itself.
+
+**The Tally form stays as the funnel.** Onboarding is manual, so a lead form is still the
+right mechanism — there is no buy button to build until self-serve exists. Only its title
+moves (with the CTAs, per the rule above) and its consent copy stops naming the pilot (§2).
+
+**Vendor verification does *not* go on the form.** Decision 14 checks professional status
+against the public business register, but it gates *publication*, not signup, and under
+manual onboarding every vendor is spoken to before going live. A fourth field on a form
+headed *deux minutes, trois questions* would be friction at the top of the funnel for
+nothing. The form keeps its three questions.
 
 ### Demo storefront link (`d7afdff`)
 
@@ -207,6 +254,12 @@ Above *Envoyer* — the short version, replacing the original three-sentence blo
 
 > Vos réponses servent uniquement à vous recontacter au sujet de la phase pilote. Ni revendues, ni transmises à des tiers. Conservation, vos droits et comment les exercer : https://marketmiam.fr/mentions-legales
 
+**Both quoted blocks still say *phase pilote*, which no longer exists (2026-08-29).** They
+need the purpose restated — recontacting you about Market Miam — and the same edit is owed
+on `/mentions-legales`, which describes the form's finalité in the same words. This is Art.
+13 information, so it is not cosmetic: the stated purpose has to match the actual one. The
+rest of both blocks is unaffected, and the notes below still hold.
+
 - **The URL must be absolute.** The form renders in Tally's overlay, so a relative
   `/mentions-legales` resolves against `tally.so`. Open it in a new tab — navigating away
   loses a half-filled form. If someone later "tidies" this to a relative path, it breaks
@@ -301,9 +354,9 @@ the same shot so it regenerates too — which means a forced re-scrape, per §1.
 | Item | Add when |
 |------|----------|
 | ~~Pilot price freeze~~ | **Shipped 2026-08**, alongside the price itself — see the decisions above for why it stopped being optional at that moment. |
-| A 50 € tier (préco + réservation) | **Deliberately not on the page**, and not just "later". It turns the reassurance block into a pricing table, and a vendor reads *the good stuff costs 50, 15 buys the brochure* — at the exact moment you're asking for trust. Feature gating is still an Open Item in `MARKET_MIAM.md`, so publishing a split would commit in public to something undecided. And preordering is unscoped: no aggregate, no events, and it drags in payments, no-shows and customer PII the product currently avoids by design. |
+| A 50 € tier (préco + réservation) | **Decided as a direction 2026-08-29** (`CGU-CGV-PLAN.md` decision 6) and **still deliberately not on the page**, which is the part that matters here. Not just "later". It turns the reassurance block into a pricing table, and a vendor reads *the good stuff costs 50, 15 buys the brochure* — at the exact moment you're asking for trust. Feature gating is still an Open Item in `MARKET_MIAM.md`, so publishing a split would commit in public to something undecided. And preordering is unscoped: no aggregate, no events, and it drags in payments, no-shows and customer PII the product currently avoids by design. |
 | Analytics | Real traffic worth measuring. Needs a cookie banner if it sets cookies. |
-| Client testimonial + real storefront shots | First *vendor* is actually live — the demo doesn't count. |
+| Client testimonial + real storefront shots | First *vendor* is actually live — the demo doesn't count. **And each asset needs that vendor's written permission**: marketing use is opt-in per use, not a term of the contract (`CGU-CGV-PLAN.md` decision 9). Same for the §5 dashboard shots. |
 | Second page | One page stops being enough |
 | Build-time image optimisation | Several images. `astro:assets` currently fails: optimised output lands in `dist/apps/website/_astro/` but is read from `apps/website/.astro/_astro/` — the out-of-tree `outDir` in `astro.config.mjs`. Fixing `cacheDir` would pay for itself at that point. |
 
@@ -311,7 +364,7 @@ the same shot so it regenerates too — which means a forced re-scrape, per §1.
 
 - **Slogan is "l'adresse de votre stand"** — `<title>` + footer. Old *"votre étal, en ligne"* implied e-commerce, which is what this deliberately isn't (no marketplace, no commission). *Étal* also reads as butcher/fishmonger display; *stand* is what the demo storefront already says.
 - **Vocabulary is the product's, not the web's** — vitrine, carte, plats, traiteur. *Carte* = the standing list, *menu* = the day's. Matches the vendor app and the customer storefront, so a vendor meets the same words before and after signing up.
-- **In-page CTAs match the Tally form title**; the header one doesn't, because it's navigation rather than the ask.
+- **In-page CTAs match the Tally form title**; the header one doesn't, because it's navigation rather than the ask. The rule survived the pilot's removal; only the labels changed — *Ouvrons votre vitrine* in page, *Créer ma vitrine* in the header (see *CTAs* above).
 - **Demo link is a text link under the shot, not a second button** — the page converts to the pilot, and a second button competes.
 - ~~**The miam is on the roadmap although nothing is built**~~ — **superseded 2026-08: the miam is off the page entirely**, along with the roadmap that held it. It was the right call while *later* was a short, moving list; with the MVP complete and the miam deferred without a date, keeping it would have been a one-item *coming soon* section, which reads as a teaser rather than a queue. The cost is real and accepted: the site no longer explains its own name. Restore a line only if a pilot conversation actually stumbles on *why Miam?* — and put it in the pilot block, not in a revived roadmap.
 - **`--mm-brand` for decoration, `--mm-brand-deep` for brand-as-text on light.** Measured on the since-deleted roadmap list: `--mm-brand` was 3.90:1 against that section's background at 16px, under the 4.5:1 AA floor; `--mm-brand-deep` is 7.75:1. Followed by `.eyebrow`, `.foot a`, `.legal a`, and now by the feature-group `h3`s, which is why those are brand-deep rather than brand.
@@ -328,7 +381,7 @@ the same shot so it regenerates too — which means a forced re-scrape, per §1.
   from the other. **The pilot is no longer defined by being free**: it is the hand-onboarded
   cohort of five to ten, it ends when that fills, and the page deliberately promises nothing
   about when — because with a flat price, the end of the pilot costs a vendor nothing.
-- **The price freeze ships with the price** — *Le tarif ne bouge pas — ce qui arrive ensuite
+- ~~**The price freeze ships with the price**~~ — **superseded 2026-08-29, decision 6 of `CGU-CGV-PLAN.md`: there is no freeze.** 15 € buys what ships today with no promise about what follows, and payment/ordering land later as an optional 50 € tier. What replaced the line on the page is the rule that actually binds — no increase in the first year, three months' notice, free exit. Everything below is why the freeze existed; it is history, not a line to restore. *Le tarif ne bouge pas — ce qui arrive ensuite
   est compris, sans supplément.* Load-bearing when written, for a reason that has since
   expired: without *gratuit*, the roadmap section flipped valence from "you're not paying for
   the unbuilt part" to "you're paying 15 € for a product whose own page says three things are
@@ -338,11 +391,16 @@ the same shot so it regenerates too — which means a forced re-scrape, per §1.
   what it says, that future work is included. Deliberately not reworded: it costs nothing,
   and *ce qui arrive ensuite* needs no antecedent to parse.
 - **No billing system, deliberately** — ADR 0048 settles Billing's architecture but
-  `packages/billing` does not exist. Five to ten vendors are invoiced by hand from the
+  `packages/billing` does not exist. Vendors are invoiced by hand from the
   micro-entreprise; non-payment is handled by unpublishing a storefront by hand.
   `NEXT_BEHAVIOURS.md`'s *subscription as a publication requirement* triggers on the first
   paid plan — that trigger has now fired, and staying manual is the standing answer until
-  the cohort outgrows it, not an oversight.
+  the volume outgrows it, not an oversight. **With the pilot gone (2026-08-29) there is no
+  cohort size bounding that volume**, so what used to be "manual until five to ten becomes
+  more" is now "manual until it hurts" — the ceiling is real and undated. The same is true
+  of subdomain assignment, which has no code path at all (ADR 0032) and costs one hand-run
+  SQL statement per vendor. Both are named as blockers on self-serve in `CGU-CGV-PLAN.md`
+  decision 13.
 - **HT and TTC are both shown** — *15 € HT par mois (18 € TTC)*. HT alone is the correct B2B
   convention and stays the headline, but a traiteur en franchise de TVA cannot reclaim the
   20 %, so HT-only would be a surprise at the first invoice. One parenthesis, no surprise.

@@ -178,7 +178,7 @@ Later phases, none scheduled: customer miams (deferred 2026-08), item requests, 
 
 ## Business Model
 
-Subscription-based (monthly fee) rather than transaction-based (commission per order). Aligns incentives with vendor success rather than extracting from their margins. Named on the website: free during the pilot, then 15 € HT/month. Pricing tiers and feature gating remain undecided (Open Items) — which is why no tier split appears publicly.
+Subscription-based (monthly fee) rather than transaction-based (commission per order). Aligns incentives with vendor success rather than extracting from their margins. Named on the website: premier mois offert, then 15 € HT/month (18 € TTC). **The pilot phase was removed 2026-08-29** — the product is sold as-is to anyone, with onboarding still done by hand (`CGU-CGV-PLAN.md` decisions 6 and 13). Two tiers are now a decided direction: 15 € for what ships, and an optional 50 € tier carrying payment and ordering when they land. What sits in each beyond that split is still open, and **the split stays off the public page** for the reason recorded in `WEBSITE-PLAN.md` — a pricing table where the page asks for trust.
 
 ## Trademark Note
 
@@ -188,7 +188,7 @@ The original name “Market Monster” carried a minor risk from Monster Beverag
 
 - Customer-facing bounded context design (when customer signals land)
 - Notification mechanics (for item requests, sold-out alerts)
-- Pricing tiers and feature gating — blocks any public tier split (`WEBSITE-PLAN.md`)
+- Pricing tiers and feature gating — the 15 €/50 € split is decided (`CGU-CGV-PLAN.md` decision 6); what each tier holds beyond payment and ordering is not. Still blocks any public tier split (`WEBSITE-PLAN.md`)
 - Trademark registration confirmation (requested 2026-08; INPI check came back clear)
 
 *(Resolved since the vision draft: aggregate boundaries and invariants — see the
