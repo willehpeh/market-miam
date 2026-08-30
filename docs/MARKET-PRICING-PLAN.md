@@ -24,9 +24,12 @@ backend shipped. Do not re-litigate without a reason.
 | 6 | Catalogue price is **static text beside a labelled input**, never a placeholder | A placeholder vanishes on focus, so the vendor loses the number they are comparing against exactly when they type it. ~~Placeholder~~ — the ADR said placeholder before this was grilled |
 | 7 | **Two row states, each with a non-colour cue** — overridden (`bg-brand-soft` + *Tarif marché*), dirty (`border-brand` edge + a count on the save button) | WCAG 1.4.1. The count is what gives a **cleared** row something to show, and how a vendor forty rows down knows there is unsaved work |
 | 8 | Menu-editor picker quotes the **market** price, same *Tarif marché* cue. **No price editing on a day screen** — a *Tarifs de ce marché →* link instead | The picker currently quotes a number the customer will not be charged. Editing from a day implies the price belongs to that day; it belongs to the market, and the edit would silently move every other day at it |
-| 9 | The carte shows **no price at all**. A price appears on the **featured *Prochain marché* card** and nowhere else, and it is that market's price. ~~Only while that market is trading~~ ~~The maximum over the catalogue price and every scheduled market~~ | A carte is tied to no market, so there is no one price it could honestly name. A maximum can only surprise downward, but it still advertises a number nobody is charged, and it left the display question open; showing none closes it. **Trading was the wrong boundary, revised 2026-08** — see decision 11 |
+| 9 | ~~The carte shows **no price at all**~~ ~~, and a price appears on the featured card and nowhere else~~. **Superseded by decision 12, 2026-08-28** — whether the carte quotes is the vendor's choice now. What survives: the **featured *Prochain marché* card** quotes that market's price, and no other market card quotes anything. ~~Only while that market is trading~~ ~~The maximum over the catalogue price and every scheduled market~~ | A carte is tied to no market, so there is no one price it could honestly name. A maximum can only surprise downward, but it still advertises a number nobody is charged, and it left the display question open; showing none closes it. **Trading was the wrong boundary, revised 2026-08** — see decision 11 |
 | 10 | ~~The coupling is surfaced~~ — moot once the carte quotes nothing | Nothing couples a market's price to a public figure any more, so there is no side effect left to warn a vendor about |
 | 11 | **The gate is *featured*, not *trading*** | Decision 9 optimised for unambiguity and in doing so picked the moment the price is least needed: while the market is trading, the customer is standing in front of the stall, reading its chalkboard. The decision a price actually informs — *is it worth the trip, what will I spend* — is taken at home before setting out, which is exactly when the page was hiding it. The data was never the obstacle: `find-upcoming-market-days.handler.ts` runs every upcoming day through `priced()` with that day's own list, so each card has always carried the right number and slice 8 simply declined to draw it. **Only the featured card**, not all five: the days below it are a schedule rather than a menu, and pricing them puts the same catalogue on one page five times over, each with its own figures. **The accepted cost, which decision 9 bought and this gives back**: a price shown for Saturday is one the vendor can still change before Saturday, so the page can quote a number they never meant to charge. Ordinary for any published price, and the storefront is live so it always serves the current list — the exposure is a customer's memory of an earlier visit, not a stale page |
+| 12 | **The carte's prices are the vendor's choice, shown by default** — a switch in `catalogue-list`, `PUT /storefront/carte-prices` | Decision 9 answered *should a carte carry prices* for every vendor at once, and recorded the objection it was overruling: a carte with no prices reads as a page missing something. That is a judgement about a business, not about a data model — a chalkboard usually carries prices, some traiteurs quote on request. Decision 9's reasoning survives as the reason a priced carte quotes the **catalogue** price and the market's list stays with the market. Full argument in [ADR 0053](adr/0053-carte-prices-are-the-vendors-choice.md) |
+| 12b | The switch sits in **`catalogue-list`**, not `catalogue-page` | It governs the whole carte, so it has no business on the screens for one dish or for the ordering — disappearing on the child routes is the point, not a cost. And it lands on the screen that shows the price column it governs |
+| 12c | **No tooltip.** One warning line, shown only while the prices are hidden | An explanation folded behind a question mark is read by nobody: you do not open a tooltip to learn what you did not know to ask. The one sentence that stops a vendor reporting the featured card as a bug — *Sur votre vitrine, « Prochain marché » affiche toujours ses prix* — stands in the open, at the moment hiding makes it true. It names the block, not "votre prochain marché", which would read as one Saturday rather than a fixed place every market occupies in turn |
 | 11 | Pricing gets its **own facade and state slice** | Two unrelated screens read it. Every other area here has the full set (`facade` / `state` / `effects` / `providers` / `fake` / `store`) |
 
 Small rules that follow, already implemented where the backend covers them:
@@ -134,6 +137,44 @@ whether or not its market is trading, and the days below it are not — and two 
 actually guard is that a card draws no room for a price it was not given, which holds
 whatever the view model's rule becomes.
 
+## Slice 10 — the vendor's choice (done, 2026-08-28)
+
+Decision 12, end to end, in the order the write side asks for.
+
+**Domain.** `ShowCartePrices` / `HideCartePrices` → `CartePricesShown` /
+`CartePricesHidden` on `Storefront`, empty payloads, the command-pair idiom
+`CloseMarketDay`/`ReopenMarketDay` already uses. Opted in as the *absence* of an event:
+the aggregate initialises visible, so showing a storefront that never hid raises nothing
+and no backfill exists to write. Both methods fold into one private change — identical
+guards, and the two no-op rules are each other's negation, which had already let
+`assertOpen` drift onto one and not the other. 6 tests across two folders in
+`test/src/market-days/`.
+
+**HTTP.** One idempotent `PUT /storefront/carte-prices { visible }` behind both commands
+— the availability pair's shape (`market-day.controller.ts`), for its reason: a vendor
+states the choice they want and a re-statement costs nothing. Zod at the edge, two rows in
+`request-shape.spec.ts`.
+
+**Read.** The projection's handlers land on `vendor_storefront_views.carte_prices_visible`
+(migration `0019`, `DEFAULT true` — the opt-in said a third time, in the schema).
+`CustomerStorefront` gains `cartePricesVisible`, read from the same view that already fed
+it. Every price stays in the payload, so the frontend decides — slice 8's stance, which is
+what made this a one-argument change: `toItemViewModel(item, storefront.cartePricesVisible)`
+where it passed a hard `false`. No template moved; `item-card.ts` had guarded a `priceLabel`
+it was never given since slice 8.
+
+**Vendor switch.** In `catalogue-list`, driven through both frontend layers — the component
+spec against the fake facade (7 tests), the storefront spec against the real store and
+`HttpTestingController` (4). Optimistic, unlike the price editor's form: that screen chose a
+form because a rollback would have to carry the previous list, and a boolean carries its own,
+so the failure action restores it by negating what was attempted.
+
+**The gate.** The switch is not rendered until the vitrine has loaded. The choice rides
+`GET /storefront` (dispatched once at login by `onboarding.effects.ts`), not the catalogue
+feed, so a switch drawn on a guess would tell a vendor who hid their prices that they are
+showing — and their first tap would save over a state they never saw. Slice 6 paid for this
+lesson already.
+
 ## ~~Slice 9 — the coupling, said out loud~~
 
 Dropped with decision 10. There is no public figure for a market's price to govern.
@@ -148,8 +189,10 @@ Dropped with decision 10. There is no public figure for a market's price to gove
 ## Known issues (not blockers)
 
 - `nx test api` is flaky on macOS; the failures move between runs. See `CLAUDE.md`.
-- `MARKET_MIAM.md` does not list `MarketPricesSet`, and four other shipped events still sit
-  under *Events still to come*. Pre-existing drift plus this slice's; unowned.
+- ~~`MARKET_MIAM.md` does not list `MarketPricesSet`, and four other shipped events still sit
+  under *Events still to come*.~~ Closed: the catalogue lists `MarketPricesSet`, and slice 10
+  added `CartePricesHidden`/`CartePricesShown` alongside it. *Events still to come* now holds
+  only the customer-signal events and `AbsenceCancelled`, none of which are built.
 
 ## Commands
 

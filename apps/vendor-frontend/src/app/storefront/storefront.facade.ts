@@ -13,4 +13,5 @@ export abstract class StorefrontFacade {
   abstract save(name: string, description: string, phone: string): void;
   abstract uploadCoverPhoto(file: File): void;
   abstract publish(): void;
+  abstract setCartePricesVisible(visible: boolean): void;
 }

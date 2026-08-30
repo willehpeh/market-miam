@@ -12,7 +12,7 @@ import { PhotoUploads } from './photo-uploads';
 import { FakePhotoUploads } from './fake.photo-uploads';
 import { SignedUpload } from './signed-upload';
 
-const ACME = { name: 'Acme Bakery', description: 'Fresh bread daily', phone: '', imageReference: '', subdomain: null, published: false };
+const ACME = { name: 'Acme Bakery', description: 'Fresh bread daily', phone: '', imageReference: '', subdomain: null, published: false, cartePricesVisible: true };
 
 const notFound = { status: 404, statusText: 'Not Found' };
 
@@ -153,6 +153,7 @@ describe('Storefront', () => {
       imageReference: 'v1/acme/cover',
       subdomain: null,
       published: false,
+      cartePricesVisible: true,
     });
     expect(facade.saved()).toBe(true);
   });
@@ -235,5 +236,56 @@ describe('Storefront', () => {
     expect(facade.publishing()).toBe(false);
     expect(facade.view()?.published).toBe(false);
     expect(facade.publishError()).toBe(true);
+  });
+
+  describe('carte prices', () => {
+    const loaded = () => {
+      store.dispatch(LoadStorefront());
+      httpCtrl.expectOne('/api/storefront').flush(ACME);
+    };
+
+    it('tells the server the vendor has hidden them', () => {
+      loaded();
+
+      facade.setCartePricesVisible(false);
+
+      const req = httpCtrl.expectOne('/api/storefront/carte-prices');
+      expect(req.request.method).toBe('PUT');
+      expect(req.request.body).toEqual({ visible: false });
+      req.flush(null);
+    });
+
+    // Optimistic, unlike the price editor's form: a boolean carries its own previous value,
+    // so the rollback needs nothing held aside. The switch answers the tap, not the network.
+    it('flips the view before the server answers', () => {
+      loaded();
+
+      facade.setCartePricesVisible(false);
+
+      expect(facade.view()?.cartePricesVisible).toBe(false);
+      httpCtrl.expectOne('/api/storefront/carte-prices').flush(null);
+    });
+
+    it('puts the choice back when the write fails', () => {
+      loaded();
+      facade.setCartePricesVisible(false);
+
+      httpCtrl.expectOne('/api/storefront/carte-prices').flush(null, serverError);
+
+      expect(facade.view()?.cartePricesVisible).toBe(true);
+    });
+
+    it('shows them again when the vendor turns them back on', () => {
+      loaded();
+      facade.setCartePricesVisible(false);
+      httpCtrl.expectOne('/api/storefront/carte-prices').flush(null);
+
+      facade.setCartePricesVisible(true);
+
+      const req = httpCtrl.expectOne('/api/storefront/carte-prices');
+      expect(req.request.body).toEqual({ visible: true });
+      expect(facade.view()?.cartePricesVisible).toBe(true);
+      req.flush(null);
+    });
   });
 });

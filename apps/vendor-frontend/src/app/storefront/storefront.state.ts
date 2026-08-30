@@ -32,6 +32,19 @@ export const UploadCoverPhotoSuccess = createAction(
 export const UploadCoverPhotoFailure = createAction('[Storefront] Upload Cover Photo Failure');
 export const HideSavedModal = createAction('[@Effect navigateHomeOnSaved$] Hide Saved Modal');
 
+export const SetCartePricesVisible = createAction(
+  '[Storefront] Set Carte Prices Visible',
+  props<{ visible: boolean }>(),
+);
+
+export const SetCartePricesVisibleSuccess = createAction(
+  '[Storefront] Set Carte Prices Visible Success',
+);
+export const SetCartePricesVisibleFailure = createAction(
+  '[Storefront] Set Carte Prices Visible Failure',
+  props<{ visible: boolean }>(),
+);
+
 export const PublishStorefront = createAction('[Storefront] Publish Storefront');
 export const PublishStorefrontSuccess = createAction('[Storefront] Publish Storefront Success');
 export const PublishStorefrontFailure = createAction('[Storefront] Publish Storefront Failure');
@@ -67,7 +80,7 @@ export const storefrontFeature = createFeature({
     on(EditStorefrontSuccess, (state, { name, description, phone }): StorefrontState => ({
       ...state,
       saved: true,
-      view: { ...(state.view ?? { imageReference: '', subdomain: null, published: false }), name, description, phone },
+      view: { ...(state.view ?? { imageReference: '', subdomain: null, published: false, cartePricesVisible: true }), name, description, phone },
     })),
     on(UploadCoverPhoto, (state): StorefrontState => ({ ...state, coverPhotoUploading: true, coverPhotoError: false })),
     on(UploadCoverPhotoSuccess, (state, { imageReference }): StorefrontState => ({
@@ -77,6 +90,12 @@ export const storefrontFeature = createFeature({
     })),
     on(UploadCoverPhotoFailure, (state): StorefrontState => ({ ...state, coverPhotoUploading: false, coverPhotoError: true })),
     on(HideSavedModal, (state): StorefrontState => ({ ...state, saved: false })),
+    // Optimistic both ways: the switch answers the tap, and a failure puts back the only
+    // other value the choice can hold. Nothing has to be carried aside for the rollback.
+    on(SetCartePricesVisible, SetCartePricesVisibleFailure, (state, { visible }): StorefrontState => ({
+      ...state,
+      view: state.view ? { ...state.view, cartePricesVisible: visible } : state.view,
+    })),
     on(PublishStorefront, (state): StorefrontState => ({ ...state, publishing: true, publishError: false })),
     on(PublishStorefrontSuccess, (state): StorefrontState => ({
       ...state,

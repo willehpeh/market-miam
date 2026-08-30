@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/c
 import { RouterLink } from '@angular/router';
 import { CloudinaryUrlPipe } from '../core/cloudinary-url.pipe';
 import { CatalogueFacade } from './catalogue.facade';
+import { StorefrontFacade } from '../storefront/storefront.facade';
 import { formatEuros } from './money';
 
 const ITEM_THUMBNAIL_TRANSFORMATION = 'c_fill,w_200,h_200,q_auto,f_webp';
@@ -10,6 +11,45 @@ const ITEM_THUMBNAIL_TRANSFORMATION = 'c_fill,w_200,h_200,q_auto,f_webp';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterLink, CloudinaryUrlPipe],
   template: `
+    <!-- The choice lives here, not on the page above it: it governs the whole carte, so it
+         has no business on the screens for one dish or for the ordering. Rendered only once
+         the vitrine has loaded — a switch that guesses would tell a vendor who hid their
+         prices that they are showing, and their first tap would save over it. -->
+    @if (storefrontView(); as vitrine) {
+      <div class="mt-4 flex items-center gap-4 rounded-field border border-line bg-surface-sunk px-3 py-2.5">
+        <div class="min-w-0 flex-1">
+          <p class="text-sm font-bold text-ink">Prix sur la page&nbsp;Carte</p>
+          <span class="font-mono text-[0.65rem] font-bold uppercase tracking-label text-muted">
+            {{ vitrine.cartePricesVisible ? 'Affichés' : 'Masqués' }}
+          </span>
+        </div>
+        <button
+          type="button"
+          role="switch"
+          aria-label="Prix sur la page Carte"
+          [attr.aria-checked]="vitrine.cartePricesVisible"
+          (click)="setCartePricesVisible(!vitrine.cartePricesVisible)"
+          class="relative h-[30px] w-[52px] shrink-0 rounded-pill border p-0 shadow-none"
+          [class.bg-brand]="vitrine.cartePricesVisible"
+          [class.border-brand]="vitrine.cartePricesVisible"
+          [class.bg-line-strong]="!vitrine.cartePricesVisible"
+          [class.border-line-strong]="!vitrine.cartePricesVisible"
+        >
+          <span
+            class="absolute top-[2px] size-[22px] rounded-pill bg-surface shadow-soft transition-[left]"
+            [class.left-[26px]]="vitrine.cartePricesVisible"
+            [class.left-[2px]]="!vitrine.cartePricesVisible"
+          ></span>
+        </button>
+      </div>
+      @if (!vitrine.cartePricesVisible) {
+        <p class="mt-2 flex items-start gap-1.5 px-1 text-xs leading-snug text-muted">
+          <i class="fa-solid fa-circle-info mt-0.5 shrink-0 text-brand" aria-hidden="true"></i>
+          Sur votre vitrine, « Prochain marché » affiche toujours ses prix.
+        </p>
+      }
+    }
+
     <div class="mt-4 flex flex-wrap gap-2">
       <a routerLink="/dashboard/catalogue/new" class="btn-link">
         <i class="fa-solid fa-plus" aria-hidden="true"></i>
@@ -70,6 +110,13 @@ const ITEM_THUMBNAIL_TRANSFORMATION = 'c_fill,w_200,h_200,q_auto,f_webp';
 })
 export class CatalogueList {
   private readonly catalogue = inject(CatalogueFacade);
+  private readonly storefront = inject(StorefrontFacade);
+
+  readonly storefrontView = this.storefront.view;
+
+  setCartePricesVisible(visible: boolean): void {
+    this.storefront.setCartePricesVisible(visible);
+  }
 
   readonly thumbnailTransformation = ITEM_THUMBNAIL_TRANSFORMATION;
   readonly items = computed(() =>

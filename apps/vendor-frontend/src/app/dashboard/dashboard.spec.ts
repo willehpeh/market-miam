@@ -44,11 +44,12 @@ const completeStorefront: StorefrontView = {
   imageReference: 'v42/storefronts/acme/cover-photo',
   subdomain: null,
   published: false,
+      cartePricesVisible: true,
 };
 
 async function renderBlank() {
   const ctx = await renderDashboard();
-  ctx.storefront.view.set({ name: '', description: '', phone: '', imageReference: '', subdomain: null, published: false });
+  ctx.storefront.view.set({ name: '', description: '', phone: '', imageReference: '', subdomain: null, published: false, cartePricesVisible: true });
   ctx.view.detectChanges();
   return ctx;
 }
