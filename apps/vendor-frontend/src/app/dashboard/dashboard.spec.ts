@@ -13,7 +13,7 @@ import { FakeMarketScheduleFacade } from '../markets/fake.market-schedule.facade
 import { MarketScheduleView } from '../markets/market-schedules';
 import { MarketDayFacade } from '../market-days/market-day.facade';
 import { FakeMarketDayFacade } from '../market-days/fake.market-day.facade';
-import { marketDayView } from '../market-days/market-day-view.builder';
+import { testMarketDayView } from '../market-days/test-market-day-view.builder';
 import { COPIED_NOTICE_DELAY, Share } from '../core/share';
 import { FakeShare } from '../core/fake.share';
 
@@ -350,7 +350,7 @@ describe('Dashboard', () => {
   it('waits for the market days before showing anything, even days it already holds', async () => {
     const { storefront, marketDays, view } = await renderDashboard();
     marketDays.loading.set(true);
-    marketDays.days.set([marketDayView()]);
+    marketDays.days.set([testMarketDayView()]);
     storefront.view.set({ ...completeStorefront, subdomain: 'acme', published: true });
     view.detectChanges();
 

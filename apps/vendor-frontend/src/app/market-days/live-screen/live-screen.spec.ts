@@ -4,7 +4,7 @@ import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/route
 import { LiveScreen } from './live-screen';
 import { MarketDayFacade } from '../market-day.facade';
 import { FakeMarketDayFacade } from '../fake.market-day.facade';
-import { marketDayView as day } from '../market-day-view.builder';
+import { testMarketDayView as day } from '../test-market-day-view.builder';
 import { MarketDayView } from '../market-days';
 import { CatalogueFacade } from '../../catalogue/catalogue.facade';
 import { FakeCatalogueFacade } from '../../catalogue/fake.catalogue.facade';

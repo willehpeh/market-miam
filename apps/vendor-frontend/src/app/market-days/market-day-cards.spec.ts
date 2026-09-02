@@ -4,7 +4,7 @@ import { MarketDayCards } from './market-day-cards';
 import { MarketDayFacade } from './market-day.facade';
 import { FakeMarketDayFacade } from './fake.market-day.facade';
 import { MarketDayView } from './market-days';
-import { marketDayView as day } from './market-day-view.builder';
+import { testMarketDayView as day } from './test-market-day-view.builder';
 
 async function renderCard(days: MarketDayView[]) {
   const marketDays = new FakeMarketDayFacade();
