@@ -15,10 +15,6 @@ import { hasLiveScreen } from './live-screen/live-status';
 import { ClosedNotice } from './closed-notice';
 import { ReopenStand } from './reopen-stand';
 
-// Decoration, never the carrier: every pile says its word, and these only tint it (WCAG
-// 1.4.1, decision 14). The three that are claims are set in their own colour and bold; the
-// two that withhold one stay muted and regular, so a vendor scanning the carte can see at a
-// glance which lines are telling them something.
 const TONES: Record<PileName, string> = {
   'Toujours épuisé': 'font-bold text-warn',
   'Ça part bien': 'font-bold text-success',
@@ -51,17 +47,8 @@ const TONES: Record<PileName, string> = {
           <mm-closed-notice />
         <mm-reopen-stand [marketId]="marketId" [date]="date" />
         } @else {
-          <!-- space-y-3, not -2: the cue below floats 8px above its own card, and at a
-               2 it would come to rest on the card above. -->
           <ul class="mt-6 space-y-3">
             @for (item of items(); track item.itemId) {
-              <!-- The card is the <li>, not the <label>: the pile line below has to sit
-                   inside the card to read as belonging to this dish, and it must stay
-                   outside the label so it is neither part of the checkbox's name nor a tap
-                   that ticks the dish. The label keeps its own p-3 and so still fills the
-                   row edge to edge — moving the padding to the <li> would have shrunk the
-                   tap target by a 12px ring. The positioning context moves with the border, since the
-                   Tarif marché cue is notched into the card's top edge, not the label's. -->
               <li class="relative rounded-card border border-line bg-surface">
                 <label class="flex items-center gap-3 p-3">
                   <input
@@ -72,14 +59,6 @@ const TONES: Record<PileName, string> = {
                   />
                   <span class="min-w-0 flex-1 break-words font-bold text-ink">{{ item.name }}</span>
                   @if (item.atMarketPrice) {
-                    <!-- Out of the flow and notched into the top border, the way a legend
-                         sits on a fieldset: inline, the cue took ~85px off every row that
-                         carried it, and the dish name — the one thing a vendor scans for —
-                         wrapped to pay for it. The row it labels is on bg-surface inside a
-                         bg-surface card, so the same fill hides the border behind it and
-                         nothing else has to move. Kept here in the DOM, after the name and
-                         before the price, so the checkbox's accessible name still reads in
-                         the order the row is written. -->
                     <span class="absolute -top-2 right-3 bg-surface px-1.5 text-xs font-bold text-brand">
                       Tarif marché
                     </span>
@@ -87,14 +66,6 @@ const TONES: Record<PileName, string> = {
                   <span class="shrink-0 text-sm text-muted">{{ item.priceLabel }}</span>
                 </label>
                 @if (item.pile) {
-                  <!-- Inert, and outside the label: a link here would be an interactive
-                       nested in a label, and any text here would be read out as part of the
-                       checkbox's name (decision 14). Indented pl-11 — the label's p-3 plus
-                       the size-5 box plus gap-3 — to hang under the dish name, and given the
-                       row's full width, which is what lets the longest pile stay on one line
-                       at 320 px. pr-3/pb-3 finish the card's padding, which the <li> cannot
-                       carry without costing the label its full-width hit area; -mt-1 takes
-                       the label's own bottom padding back down to 8px. -->
                   <p class="-mt-1 pb-3 pl-11 pr-3 text-xs {{ item.pileTone }}">{{ item.pile }}</p>
                 }
               </li>
@@ -123,20 +94,9 @@ export class MenuEditor {
   private readonly record = inject(SellingRecordFacade);
   private readonly route = inject(ActivatedRoute);
 
-  // Params are read once, and `touched` below is keyed to them. Both ways in — the
-  // dashboard card and the live screen (decision 10) — arrive from another route, so the
-  // component is built fresh each time. An editor→editor link is the one that arms this:
-  // go reactive first, or day A's ticks silently become day B's saved menu on a param-only
-  // navigation. VENDOR-FRONTEND-FOLLOWUPS.md §3.
   readonly marketId = this.route.snapshot.paramMap.get('marketId') ?? '';
   readonly date = this.route.snapshot.paramMap.get('date') ?? '';
 
-  // Every feed gates the spinner: days can land before the carte, and rendering on days
-  // alone would briefly claim an empty carte while the catalogue is still on the wire.
-  // Prices landing last would quote every dish at its carte price for a frame — the very
-  // number this screen exists to stop showing. The record is the fourth for the same
-  // reason (decision 11): a pile line appearing after the fact moves the row below it
-  // while the vendor is aiming at it.
   readonly loading = computed(
     () =>
       this.marketDays.loading() ||
@@ -149,8 +109,6 @@ export class MenuEditor {
     this.marketDays.days().find((candidate) => candidate.marketId === this.marketId && candidate.date === this.date),
   );
 
-  // Back to the day, not always to the dashboard: the card's own gate picks, so a vendor
-  // who came from the live screen to add a tray is put back on it.
   readonly back = computed(() =>
     hasLiveScreen(this.occurrence()) ? `/dashboard/market/${this.marketId}/${this.date}/live` : '/dashboard',
   );
@@ -162,20 +120,13 @@ export class MenuEditor {
       : undefined;
   });
 
-  // Seeded from the day whenever it lands, and owned by the vendor from their first tick:
-  // once touched is set, a store update — the optimistic patch, say — cannot take their
-  // choices back.
   private readonly touched = signal<ReadonlySet<string> | null>(null);
   private readonly selected = computed(() => this.touched() ?? new Set(this.occurrence()?.itemIds ?? []));
 
-  // What this market charges, not what the carte says: quoting the carte price here names
-  // a number the customer will not be charged (decision 8).
   private readonly set = computed<PriceList>(
     () => this.prices.markets().find((market) => market.marketId === this.marketId)?.prices ?? {},
   );
 
-  // Keyed like `set` above, and read the same way: what this market has said about a dish,
-  // never what another market did (decision 2).
   private readonly bilans = computed(() => {
     const items = this.record.markets().find((market) => market.marketId === this.marketId)?.items ?? [];
     return new Map(items.map((record) => [record.itemId, record.bilans]));
@@ -215,8 +166,6 @@ export class MenuEditor {
   }
 }
 
-// The cue describes the figure beside it and nothing else: a market price on a dearer
-// variant leaves the row uncued, because the `dès` shown is still the carte's.
 function quote(
   item: CatalogueItemView,
   set: number | Record<string, number> | undefined,
