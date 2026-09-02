@@ -23,7 +23,6 @@ export class StoreCatalogueFacade implements CatalogueFacade {
   readonly photoError = this.store.selectSignal(catalogueFeature.selectPhotoError);
   readonly photoTooLarge = this.store.selectSignal(catalogueFeature.selectPhotoTooLarge);
   readonly newPhotoReference = this.store.selectSignal(catalogueFeature.selectNewPhotoReference);
-  readonly menuEditorItems = this.store.selectSignal(catalogueFeature.selectItems);
 
   // Only a stale cache refetches: a re-GET would put a projection that lags the response
   // back over an optimistic patch. Emptiness is a real answer — a brand-new vendor has no

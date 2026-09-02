@@ -10,7 +10,6 @@ export class FakeCatalogueFacade implements CatalogueFacade {
   readonly photoError = signal(false);
   readonly photoTooLarge = signal(false);
   readonly newPhotoReference = signal('');
-  readonly menuEditorItems = signal<any[]>([]);
 
   loaded = false;
   began = false;
