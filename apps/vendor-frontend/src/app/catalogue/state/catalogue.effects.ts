@@ -4,34 +4,27 @@ import { Router } from '@angular/router';
 import { Store } from '@ngrx/store';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { catchError, filter, map, of, switchMap, tap, withLatestFrom } from 'rxjs';
-import { Catalogue } from './catalogue';
-import { PhotoUploads } from '../storefront/photo-uploads';
-import { MAX_SOURCE_BYTES, MAX_UPLOAD_BYTES, PhotoDownscale } from '../storefront/photo-downscale';
+import { Catalogue } from '../catalogue';
+import { PhotoUploads } from '../../storefront/photo-uploads';
+import { MAX_SOURCE_BYTES, MAX_UPLOAD_BYTES, PhotoDownscale } from '../../storefront/photo-downscale';
+import {
+  catalogueFeature,
+
+
+
+
+
+} from './catalogue.state';
 import {
   AddItem,
-  AddItemFailure,
-  AddItemSuccess,
-  catalogueFeature,
-  LoadCatalogue,
-  LoadCatalogueFailure,
-  LoadCatalogueSuccess,
-  ReorderItems,
-  ReorderItemsFailure,
-  ReorderItemsSuccess,
-  RetireItem,
-  RetireItemFailure,
-  RetireItemSuccess,
-  ReviseItem,
-  ReviseItemFailure,
-  ReviseItemSuccess,
+  AddItemFailure, AddItemSuccess,
   ChangeItemPhoto,
   ChangeItemPhotoFailure,
-  ChangeItemPhotoSuccess,
-  UploadItemPhoto,
-  UploadItemPhotoFailure,
-  UploadItemPhotoSuccess,
-  UploadItemPhotoTooLarge,
-} from './catalogue.state';
+  ChangeItemPhotoSuccess, LoadCatalogue, LoadCatalogueFailure,
+  LoadCatalogueSuccess, ReorderItems, ReorderItemsFailure, ReorderItemsSuccess, RetireItem,
+  RetireItemFailure, RetireItemSuccess, ReviseItem, ReviseItemFailure, ReviseItemSuccess, UploadItemPhoto,
+  UploadItemPhotoFailure, UploadItemPhotoSuccess, UploadItemPhotoTooLarge
+} from './catalogue.actions';
 
 @Injectable()
 export class CatalogueEffects {

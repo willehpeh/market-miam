@@ -2,7 +2,15 @@ import { inject, Injectable } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { CatalogueFacade } from './catalogue.facade';
 import { ItemRevision, NewItem } from './catalogue';
-import { AddItem, BeginItem, catalogueFeature, ChangeItemPhoto, LoadCatalogue, ReorderItems, RetireItem, ReviseItem, UploadItemPhoto } from './catalogue.state';
+import { catalogueFeature } from './state/catalogue.state';
+import {
+  AddItem, BeginItem,
+  ChangeItemPhoto, LoadCatalogue,
+  ReorderItems,
+  RetireItem,
+  ReviseItem,
+  UploadItemPhoto
+} from './state/catalogue.actions';
 
 @Injectable()
 export class StoreCatalogueFacade implements CatalogueFacade {
