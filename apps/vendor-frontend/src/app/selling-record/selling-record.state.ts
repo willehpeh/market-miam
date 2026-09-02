@@ -1,6 +1,7 @@
 import { createAction, createFeature, createReducer, on, props } from '@ngrx/store';
 import { MarketRecord } from './selling-record';
-import { RecordBilanSuccess } from '../market-days/market-day.state';
+
+import { RecordBilanSuccess } from '../market-days/store/market-day.actions';
 
 export const LoadSellingRecord = createAction('[Selling Record] Load Selling Record');
 export const LoadSellingRecordSuccess = createAction(

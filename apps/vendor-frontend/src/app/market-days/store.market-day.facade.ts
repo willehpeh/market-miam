@@ -3,15 +3,15 @@ import { Store } from '@ngrx/store';
 import { MarketDayFacade } from './market-day.facade';
 import { ItemOutcome } from './market-days';
 import {
-  ChangeItemAvailability,
-  ChangeStandClosure,
-  LoadMarketDay,
-  LoadMarketDays,
-  LoadUnratedMarketDays,
   marketDayFeature,
-  RecordBilan,
-  SetMarketDayMenu,
-} from './market-day.state';
+
+} from './store/market-day.state';
+import {
+  ChangeItemAvailability,
+  ChangeStandClosure, LoadMarketDay, LoadMarketDays,
+  LoadUnratedMarketDays,
+  RecordBilan, SetMarketDayMenu
+} from './store/market-day.actions';
 
 @Injectable()
 export class StoreMarketDayFacade implements MarketDayFacade {

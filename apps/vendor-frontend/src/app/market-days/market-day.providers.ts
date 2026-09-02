@@ -3,8 +3,8 @@ import { provideState } from '@ngrx/store';
 import { provideEffects } from '@ngrx/effects';
 import { MarketDays } from './market-days';
 import { HttpMarketDays } from './http.market-days';
-import { marketDayFeature } from './market-day.state';
-import { MarketDayEffects } from './market-day.effects';
+import { marketDayFeature } from './store/market-day.state';
+import { MarketDayEffects } from './store/market-day.effects';
 import { MarketDayFacade } from './market-day.facade';
 import { StoreMarketDayFacade } from './store.market-day.facade';
 

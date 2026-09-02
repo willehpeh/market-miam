@@ -8,7 +8,8 @@ import { sellingRecordFeature } from './selling-record.state';
 import { SellingRecordEffects } from './selling-record.effects';
 import { SellingRecordFacade } from './selling-record.facade';
 import { StoreSellingRecordFacade } from './store.selling-record.facade';
-import { RecordBilanSuccess } from '../market-days/market-day.state';
+
+import { RecordBilanSuccess } from '../market-days/store/market-day.actions';
 
 const markets: MarketRecord[] = [
   { marketId: 'market-1', items: [{ itemId: 'item-1', bilans: [{ date: '2026-07-04', outcome: 'sold_out' }] }] },
