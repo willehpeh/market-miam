@@ -26,7 +26,11 @@
             "input": "apps/customer-frontend/public"
           }
         ],
-        "styles": ["apps/customer-frontend/src/styles.css"],
+        "styles": [
+          "node_modules/@fortawesome/fontawesome-free/css/fontawesome.css",
+          "node_modules/@fortawesome/fontawesome-free/css/solid.css",
+          "apps/customer-frontend/src/styles.css"
+        ],
         "server": "apps/customer-frontend/src/main.server.ts",
         "ssr": {
           "entry": "apps/customer-frontend/src/server.ts"

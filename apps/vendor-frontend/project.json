@@ -34,6 +34,8 @@
           }
         ],
         "styles": [
+          "node_modules/@fortawesome/fontawesome-free/css/fontawesome.css",
+          "node_modules/@fortawesome/fontawesome-free/css/solid.css",
           "apps/vendor-frontend/src/styles.css"
         ]
       },
@@ -42,8 +44,8 @@
           "budgets": [
             {
               "type": "initial",
-              "maximumWarning": "580kb",
-              "maximumError": "620kb"
+              "maximumWarning": "660kb",
+              "maximumError": "720kb"
             },
             {
               "type": "anyComponentStyle",

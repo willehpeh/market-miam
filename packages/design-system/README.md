@@ -48,3 +48,34 @@ curl -A "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/120.0.0.0 Saf
 
 The `unicode-range` values in `fonts.css` are Google's own, copied from that response.
 Keep them in step with the files.
+
+## Icons
+
+Font Awesome Free 6, as an npm dependency — `@fortawesome/fontawesome-free`. It used to
+arrive from `kit.fontawesome.com`, which is the same third-party-IP problem the fonts had
+and the same reason it had to go: a storefront visitor should not be announced to anyone
+to see an icon.
+
+It is not imported from here, because it is a package rather than a file: each Angular app
+names the two stylesheets in its `project.json` `styles` array, ahead of its own
+`styles.css`.
+
+```json
+"styles": [
+  "node_modules/@fortawesome/fontawesome-free/css/fontawesome.css",
+  "node_modules/@fortawesome/fontawesome-free/css/solid.css",
+  "apps/<app>/src/styles.css"
+]
+```
+
+**Solid only.** Every icon in the repo is `<i class="fa-solid fa-…">`; `all.css` would add
+the brands and regular faces and their webfonts for nothing. Adding a `fa-brands` icon
+means adding `brands.css` beside these two — the build then emits that webfont as well.
+
+`admin-frontend` is deliberately not wired: it uses no icons.
+
+The CSS carries all ~2000 icon definitions whether or not a page uses them (about 84 kB
+raw, ~19 kB over the wire, and the build cannot tree-shake class names out of templates).
+That is the accepted cost of the CDN going away. If it ever stops being acceptable, the
+lever is `@fortawesome/angular-fontawesome`, which imports icons one by one — at the price
+of rewriting every `<i>` as an `<fa-icon>`.
