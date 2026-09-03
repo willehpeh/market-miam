@@ -24,24 +24,10 @@ out-of-tree `outDir` in `astro.config.mjs` and the build fails.
 
 ## Fonts
 
-`public/fonts/` holds the two typefaces, self-hosted so that no visitor IP reaches
-Google before consent. `@font-face` lives in `src/layouts/Base.astro`; the family names
-come from `packages/design-system/tokens.css`.
+Self-hosted, and shared with the vendor apps: the files and the `@font-face` live in
+[`packages/design-system`](../../packages/design-system/README.md), which also holds the
+provenance and the refresh recipe. `Base.astro` imports `fonts.css` from its frontmatter
+and preloads the one file every page needs.
 
-| Family | Files | Notes |
-|--------|-------|-------|
-| Hanken Grotesk | `hanken-grotesk-{latin,latin-ext}.woff2` | Variable, `wght 100 900` — one file per subset covers every weight |
-| Space Mono | `space-mono-{400,700}-{latin,latin-ext}.woff2` | Static; only the two weights the site uses |
-
-Fetched from Google Fonts v12 (Hanken) / v17 (Space Mono). To refresh, request the CSS
-with a browser `User-Agent` — without one Google serves legacy `ttf` instead of `woff2` —
-then download the URLs for the `latin` and `latin-ext` subsets only:
-
-```sh
-curl -A "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36" \
-  "https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@100..900&family=Space+Mono:wght@400;700&display=swap"
-```
-
-Cyrillic and Vietnamese subsets are deliberately skipped. Note that `→` (U+2192, used by
-`.next li::before`) is outside both subsets and renders in the fallback monospace — that
-was already true when the fonts came from Google.
+The frontmatter import is deliberate — inside a `<style>` block Astro does not rebase the
+`url()`s and the woff2 would be looked for next to the page. See the design-system README.
