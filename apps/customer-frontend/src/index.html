@@ -6,13 +6,18 @@
     <base href="/" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="icon" type="image/x-icon" href="favicon.ico" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- No font or icon CDN here, deliberately. A storefront is a public page whose
+         visitors consented to nothing, so their IP is not ours to hand to Google or
+         Font Awesome (ADR 0054). The faces come from packages/design-system/fonts.css
+         and Font Awesome from the npm package, both served from our own origin. CI
+         fails if a third-party host reappears. -->
     <link
-      href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@100..900&family=Space+Mono:wght@400;700&display=swap"
-      rel="stylesheet"
+      rel="preload"
+      href="/fonts/hanken-grotesk-latin.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
     />
-    <script src="https://kit.fontawesome.com/a2fd6e4a9f.js" crossorigin="anonymous"></script>
   </head>
   <body>
     <app-root></app-root>

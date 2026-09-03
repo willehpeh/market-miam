@@ -40,6 +40,18 @@ jobs:
           fi
           echo "NX_HEAD=${{ github.sha }}" >> "$GITHUB_ENV"
 
+      # Fonts and icons are served from our own origin so that loading a page —
+      # a public storefront above all — hands no visitor's IP to a CDN they never
+      # chose (ADR 0054). A <link> or <script> to one of these hosts is the easy
+      # way to undo that by accident, so it fails here rather than in review.
+      - name: No third-party asset hosts in the app shells
+        run: |
+          if grep -rn -E 'fonts\.(googleapis|gstatic)\.com|kit\.fontawesome\.com|cdnjs\.cloudflare\.com' \
+               apps/*/src/index.html apps/website/src/layouts/ ; then
+            echo "::error::A page shell references a third-party font or icon host. Self-host it instead — see ADR 0054."
+            exit 1
+          fi
+
       - run: npx nx affected -t lint --base=$NX_BASE --head=$NX_HEAD --parallel=3
       - run: npx nx affected -t typecheck --base=$NX_BASE --head=$NX_HEAD --parallel=3
       - run: npx nx affected -t test --base=$NX_BASE --head=$NX_HEAD --parallel=3

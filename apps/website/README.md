@@ -24,9 +24,13 @@ out-of-tree `outDir` in `astro.config.mjs` and the build fails.
 
 ## Fonts
 
-`public/fonts/` holds the two typefaces, self-hosted so that no visitor IP reaches
-Google before consent. `@font-face` lives in `src/layouts/Base.astro`; the family names
-come from `packages/design-system/tokens.css`.
+`packages/design-system/fonts/` holds the two typefaces, self-hosted so that no visitor
+IP reaches Google before consent — shared with the three Angular apps, which had been
+loading them from Google's CDN until the faces moved into the design system.
+`@font-face` lives in `packages/design-system/fonts.css`, imported by `Base.astro`; the
+family names come from `tokens.css` beside it. `public/fonts` here is a symlink to that
+directory, so Astro serves the same six files at the same `/fonts/…` URLs the Angular
+builds copy them to.
 
 | Family | Files | Notes |
 |--------|-------|-------|

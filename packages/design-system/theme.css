@@ -10,12 +10,14 @@
    maps them into Tailwind's @theme so utilities generate. Plain-CSS consumers
    (Astro website) import tokens.css directly.
 
-   Fonts (Hanken Grotesk + Space Mono) must be loaded in each app's index.html.
+   Fonts (Hanken Grotesk + Space Mono) come with this file, via fonts.css — no
+   app needs a <link> for them, and none should reach a CDN for one.
 
    Switch density:  <html data-density="dense">
    ============================================================================ */
 
 @import "./tokens.css";
+@import "./fonts.css";
 
 @theme {
   /* ---- brand + surfaces + ink + sidebar + status: sourced from tokens.css - */

@@ -31,9 +31,16 @@
             "glob": "**/*",
             "input": "apps/vendor-frontend/src/assets",
             "output": "assets"
+          },
+          {
+            "glob": "**/*.woff2",
+            "input": "packages/design-system/fonts",
+            "output": "fonts"
           }
         ],
         "styles": [
+          "node_modules/@fortawesome/fontawesome-free/css/fontawesome.min.css",
+          "node_modules/@fortawesome/fontawesome-free/css/solid.min.css",
           "apps/vendor-frontend/src/styles.css"
         ]
       },
