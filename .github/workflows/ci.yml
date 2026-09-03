@@ -10,6 +10,11 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
+permissions:
+  contents: read
+  # nx-set-shas below asks the API for this workflow's last successful run.
+  actions: read
+
 jobs:
   ci:
     runs-on: ubuntu-latest
@@ -26,19 +31,24 @@ jobs:
 
       - run: npm ci
 
-      # A PR compares against its base branch. A push to main compares against
-      # the previous main commit — not github.event.before, which is the
-      # all-zeros sha on force-push and branch creation, silently changing what
-      # "affected" means. HEAD~1 is identical for the ordinary merge flow and
-      # well-defined in every case (fetch-depth: 0 above guarantees it exists).
-      - name: Set affected range
-        run: |
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            echo "NX_BASE=${{ github.event.pull_request.base.sha }}" >> "$GITHUB_ENV"
-          else
-            echo "NX_BASE=$(git rev-parse HEAD~1)" >> "$GITHUB_ENV"
-          fi
-          echo "NX_HEAD=${{ github.sha }}" >> "$GITHUB_ENV"
+      # Sets NX_BASE and NX_HEAD for the affected commands below. A PR still
+      # compares against the commit it originated from, exactly as the range
+      # this replaces did; a push to main now compares against the last
+      # SUCCESSFUL run of this workflow rather than against HEAD~1.
+      #
+      # HEAD~1 was wrong, and quietly. GitHub raises one workflow run per push,
+      # at its tip, so a push of six commits to main checked only the sixth —
+      # and the five below it were never checked by anything, since a later PR
+      # correctly compares against a base that is already past them. 0d58167
+      # broke a container spec that way and it stayed red and unseen for a week.
+      # Comparing against the last green run also keeps a failing range in scope
+      # until it actually goes green, instead of moving on with the next commit.
+      #
+      # Needs the fetch-depth: 0 above, and the actions: read permission.
+      # Pinned to the commit v5.0.1 names — the tag is annotated, so
+      # refs/tags/v5.0.1 is a tag object and only this, its dereferenced commit,
+      # resolves as an action ref.
+      - uses: nrwl/nx-set-shas@afb73a62d26e41464e9254689e1fd6122ee683c1 # v5.0.1
 
       - run: npx nx affected -t lint --base=$NX_BASE --head=$NX_HEAD --parallel=3
       - run: npx nx affected -t typecheck --base=$NX_BASE --head=$NX_HEAD --parallel=3
