@@ -3,6 +3,7 @@
    Consumed by vendor-frontend and customer-frontend.
    Usage (in each app's styles.css):
      @import "tailwindcss" source("..");
+     @import "../../../packages/design-system/fonts.css";
      @import "../../../packages/design-system/theme.css";
    Then use utilities: bg-brand, text-ink, rounded-card, font-mono, shadow-frame…
 
@@ -10,7 +11,8 @@
    maps them into Tailwind's @theme so utilities generate. Plain-CSS consumers
    (Astro website) import tokens.css directly.
 
-   Fonts (Hanken Grotesk + Space Mono) must be loaded in each app's index.html.
+   Fonts (Hanken Grotesk + Space Mono) are self-hosted: import fonts.css too,
+   from the same place. Nothing loads them from a CDN.
 
    Switch density:  <html data-density="dense">
    ============================================================================ */
