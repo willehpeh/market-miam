@@ -60,3 +60,4 @@ detailed rationale in `docs/archive/DEFERRED.md`).
 | [0051](0051-market-day-constituted-with-its-markets-hours.md)           | A market day is constituted with its market's hours                        | 2026-08-19 |
 | [0052](0052-dish-prices-vary-by-market.md)                              | Dish prices vary by market, not by day                                     | 2026-08-21 |
 | [0053](0053-carte-prices-are-the-vendors-choice.md)                     | The carte's prices are the vendor's choice, shown by default               | 2026-08-28 |
+| [0054](0054-vendor-legal-identity-for-storefront-mentions-legales.md)   | Vendor legal identity: the storefront's mentions légales                   | 2026-09-03 |

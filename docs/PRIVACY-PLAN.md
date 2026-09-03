@@ -64,4 +64,7 @@ prose for Render.
   claims it as such; the encryption already matches.
 - **Decided (2026-08-02): the address field was dropped** — ADR 0025's context was ahead
   of the implementation (noted there); no address exists in the code or events, and the
-  register must not claim one.
+  register must not claim one. **Reopened by ADR 0054**: LCEN obliges the
+  vendor to publish one, so an address returns as part of the legal identity — with
+  *obligation légale* as its basis, not contrat. Its own art. 30 entry, not a revision of
+  this line's history.
