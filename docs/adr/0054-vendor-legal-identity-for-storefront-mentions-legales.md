@@ -18,8 +18,8 @@ snapshot, not a publishable contact. So no storefront can carry a compliant
 notice, and `docs/archive/VENDOR_REGISTRATION_AND_PII.md` already names the gap:
 "a distinct profile event carrying address/postcode is still future".
 
-A reading of the texts, not advice. The médiateur obligation is worth one
-confirmation before it goes to pilot vendors.
+A reading of the texts, not advice. R616-1's exact wording is worth a
+professional's confirmation before it goes to pilot vendors.
 
 ## Decision
 
@@ -62,7 +62,7 @@ the way Catalogue and Calendar already are — no new mechanism:
 | Email de contact public | LCEN art. 19 | **not** the Auth0 one; default it, don't reuse it |
 | Téléphone | LCEN art. 19 | reuse `phone` |
 | Régime TVA (assujetti / franchise) | | drives the TVA line |
-| Médiateur : nom + site | C. conso. R616-1 | see below |
+| Médiateur : nom + site | C. conso. L616-1 | optional — see below |
 
 Only if a société: forme juridique, capital social, ville du greffe (RCS),
 représentant légal (→ directeur de la publication). For an EI capital does not
@@ -103,15 +103,17 @@ duty and move onto the page only if a sale is ever concluded there.
   légale*, not contrat — the erasure right does not reach it while the page
   lives, and the 404 on erasure is what makes shredding it coherent. Record this
   in the art. 30 register (`PRIVACY-PLAN.md` §2) as its own entry.
-- **The médiateur blocks onboarding, not publication.** Most vendors have no
-  subscription (~50–100 €/yr; CM2C, Medicys, AME). Surface it at onboarding with
-  links; a vendor who finishes catalogue and schedule then hits a paid
-  prerequisite abandons.
-- A storefront privacy section is now owed too, and cannot yet be written
-  honestly: `apps/customer-frontend/src/index.html` loads Google Fonts and a Font
-  Awesome kit from CDNs, sending every visitor's IP to third parties — exactly
-  what `WEBSITE-PLAN.md` §4 self-hosted the fonts to avoid. Fix that first.
-  Cloudinary (US) serves the photos and stays disclosed.
+- **The médiateur is warned, not required.** L616-1 obliges the *vendor* to
+  name one on their own supports. It is not part of the LCEN notice, so a
+  storefront without it still carries a complete art. 19 page, and the
+  infraction — L641-1, up to 3 000 € personne physique / 15 000 € morale,
+  DGCCRF — is the vendor's. Most have no subscription (~50–100 €/yr; CM2C,
+  Medicys, AME), and one who finishes catalogue and schedule then hits a paid
+  prerequisite abandons. Name the exposure, link the three, keep evidence of
+  the warning.
+- A storefront privacy section is now owed too. The CDN fonts and icons that
+  blocked it are self-hosted since 2026-09-03; Cloudinary (US) serves the photos
+  and stays disclosed.
 - The hébergeur block is a constant: Market Miam, then Render — as
   `mentions-legales.astro` already reads.
 - Art. 6-II is satisfied as a side effect: we hold what a request would ask for.
@@ -124,6 +126,6 @@ duty and move onto the page only if a sale is ever concluded there.
 | Market Miam's own mentions covering the storefronts | We are not the éditeur of vendor content; identifying ourselves does not identify them |
 | The fields in Billing | Inverts ADR 0048's seam; a Stripe-less deployment still owes LCEN |
 | The fields on `Storefront` | It holds presentation; the legal identity outlives the shop window and is what Billing would later duplicate |
-| Making the médiateur optional | Publishing a knowingly incomplete notice |
+| Requiring the médiateur | Enforcing the vendor's own L616-1 duty at the cost of onboarding; the notice is complete without it |
 
 Builds on ADRs 0009, 0024, 0025, 0031, 0045, 0046, 0048, 0052, 0053.
