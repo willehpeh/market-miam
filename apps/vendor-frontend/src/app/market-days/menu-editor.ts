@@ -6,7 +6,6 @@ import { longDate } from '../core/french-date';
 import { CatalogueFacade } from '../catalogue/catalogue.facade';
 import { CatalogueItemView } from '../catalogue/catalogue';
 import { MarketPricesFacade } from '../market-prices/market-prices.facade';
-import { PriceList } from '../market-prices/market-prices';
 import { SellingRecordFacade } from '../selling-record/selling-record.facade';
 import { pile, PileName } from '../selling-record/pile';
 import { formatEuros } from '../catalogue/money';
@@ -123,9 +122,7 @@ export class MenuEditor {
   private readonly touched = signal<ReadonlySet<string> | null>(null);
   private readonly selected = computed(() => this.touched() ?? new Set(this.occurrence()?.itemIds ?? []));
 
-  private readonly set = computed<PriceList>(
-    () => this.prices.markets().find((market) => market.marketId === this.marketId)?.prices ?? {},
-  );
+  private readonly set = this.prices.pricesFor(this.marketId);
 
   private readonly bilans = this.record.bilansFor(this.marketId);
 

@@ -1,4 +1,4 @@
-import { createAction, createFeature, createReducer, on, props } from '@ngrx/store';
+import { createAction, createFeature, createReducer, createSelector, on, props } from '@ngrx/store';
 import { MarketPricesView, PriceList } from './market-prices';
 
 export const LoadMarketPrices = createAction('[Market Prices] Load Market Prices');
@@ -43,3 +43,9 @@ export const marketPricesFeature = createFeature({
     })),
   ),
 });
+
+export const selectPricesFor = (marketId: string) =>
+  createSelector(
+    marketPricesFeature.selectMarkets,
+    (markets) => markets.find((market) => market.marketId === marketId)?.prices ?? {},
+  );

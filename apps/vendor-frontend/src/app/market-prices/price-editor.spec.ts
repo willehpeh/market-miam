@@ -91,7 +91,7 @@ describe('PriceEditor', () => {
   it('fills a field with what the dish already costs at this market', async () => {
     await renderEditor((catalogue, prices) => {
       catalogue.items.set([catalogueItem({ itemId: 'item-1', price: 1300 })]);
-      prices.markets.set([{ marketId: 'market-1', prices: { 'item-1': 1500 } }]);
+      prices.byMarket.set({ 'market-1': { 'item-1': 1500 } });
     });
 
     expect(screen.getByLabelText('Bœuf bourguignon')).toHaveValue('15,00');
@@ -100,7 +100,7 @@ describe('PriceEditor', () => {
   it('leaves a field blank where the market charges the carte price', async () => {
     await renderEditor((catalogue, prices) => {
       catalogue.items.set([catalogueItem({ itemId: 'item-1', price: 1300 })]);
-      prices.markets.set([{ marketId: 'market-2', prices: { 'item-1': 1500 } }]);
+      prices.byMarket.set({ 'market-2': { 'item-1': 1500 } });
     });
 
     expect(screen.getByLabelText('Bœuf bourguignon')).toHaveValue('');
@@ -119,7 +119,7 @@ describe('PriceEditor', () => {
           ],
         }),
       ]);
-      prices.markets.set([{ marketId: 'market-1', prices: { pizza: { Pepperoni: 1400 } } }]);
+      prices.byMarket.set({ 'market-1': { pizza: { Pepperoni: 1400 } } });
     });
 
     expect(screen.getByLabelText('Margherita')).toHaveValue('');
@@ -131,7 +131,7 @@ describe('PriceEditor', () => {
   it('ignores a stored price whose shape no longer fits the dish', async () => {
     await renderEditor((catalogue, prices) => {
       catalogue.items.set([catalogueItem({ itemId: 'item-1', price: 1300 })]);
-      prices.markets.set([{ marketId: 'market-1', prices: { 'item-1': { Grande: 1500 } } }]);
+      prices.byMarket.set({ 'market-1': { 'item-1': { Grande: 1500 } } });
     });
 
     expect(screen.getByLabelText('Bœuf bourguignon')).toHaveValue('');
@@ -177,7 +177,7 @@ describe('PriceEditor', () => {
   it('sends an empty list when every field is blank', async () => {
     const { prices } = await renderEditor((catalogue, priced) => {
       catalogue.items.set([catalogueItem({ itemId: 'item-1', price: 1300 })]);
-      priced.markets.set([{ marketId: 'market-1', prices: { 'item-1': 1500 } }]);
+      priced.byMarket.set({ 'market-1': { 'item-1': 1500 } });
     });
 
     fireEvent.input(screen.getByLabelText('Bœuf bourguignon'), { target: { value: '' } });
@@ -213,7 +213,7 @@ describe('PriceEditor', () => {
         catalogueItem({ itemId: 'item-1', name: 'Bœuf bourguignon', price: 1300 }),
         catalogueItem({ itemId: 'item-2', name: 'Tarte aux pommes', price: 650 }),
       ]);
-      prices.markets.set([{ marketId: 'market-1', prices: { 'item-1': 1500 } }]);
+      prices.byMarket.set({ 'market-1': { 'item-1': 1500 } });
     });
 
     expect(screen.getAllByText(/tarif marché/i)).toHaveLength(1);
@@ -237,7 +237,7 @@ describe('PriceEditor', () => {
   it('counts a row cleared back to the carte price', async () => {
     await renderEditor((catalogue, prices) => {
       catalogue.items.set([catalogueItem({ itemId: 'item-1', price: 1300 })]);
-      prices.markets.set([{ marketId: 'market-1', prices: { 'item-1': 1500 } }]);
+      prices.byMarket.set({ 'market-1': { 'item-1': 1500 } });
     });
 
     fireEvent.input(screen.getByLabelText('Bœuf bourguignon'), { target: { value: '' } });
@@ -248,7 +248,7 @@ describe('PriceEditor', () => {
   it('counts nothing before the vendor changes anything', async () => {
     await renderEditor((catalogue, prices) => {
       catalogue.items.set([catalogueItem({ itemId: 'item-1', price: 1300 })]);
-      prices.markets.set([{ marketId: 'market-1', prices: { 'item-1': 1500 } }]);
+      prices.byMarket.set({ 'market-1': { 'item-1': 1500 } });
     });
 
     expect(screen.getByRole('button', { name: /^enregistrer$/i })).toBeInTheDocument();

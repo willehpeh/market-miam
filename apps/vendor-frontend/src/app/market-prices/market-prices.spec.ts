@@ -48,13 +48,23 @@ describe('MarketPrices', () => {
     expect(facade.loading()).toBe(true);
   });
 
-  it('exposes the markets once loaded', () => {
+  it('hands over a market\'s prices once loaded', () => {
     facade.load();
 
     httpCtrl.expectOne('/api/market-prices').flush({ markets });
 
-    expect(facade.markets()).toEqual(markets);
+    expect(facade.pricesFor('market-1')()).toEqual({ 'item-1': 1500 });
     expect(facade.loading()).toBe(false);
+  });
+
+  // The one call the screen can rely on, so the field it renders is empty rather than
+  // seeded from a carte number the market does not charge.
+  it('reads a market with no stored prices as one with no prices set', () => {
+    facade.load();
+
+    httpCtrl.expectOne('/api/market-prices').flush({ markets });
+
+    expect(facade.pricesFor('market-9')()).toEqual({});
   });
 
   it('stays empty when the request fails', () => {
@@ -62,7 +72,7 @@ describe('MarketPrices', () => {
 
     httpCtrl.expectOne('/api/market-prices').flush(null, { status: 500, statusText: 'Server Error' });
 
-    expect(facade.markets()).toEqual([]);
+    expect(facade.pricesFor('market-1')()).toEqual({});
     expect(facade.loading()).toBe(false);
   });
 
@@ -78,7 +88,7 @@ describe('MarketPrices', () => {
     facade.setPrices('market-1', { 'item-1': 1500 });
     httpCtrl.expectOne('/api/market-prices/market-1').flush(null);
 
-    expect(facade.markets()).toEqual([{ marketId: 'market-1', prices: { 'item-1': 1500 } }]);
+    expect(facade.pricesFor('market-1')()).toEqual({ 'item-1': 1500 });
   });
 
   it('replaces a market\'s list rather than appending to it', () => {
@@ -88,7 +98,7 @@ describe('MarketPrices', () => {
     facade.setPrices('market-1', { 'item-1': 1700 });
     httpCtrl.expectOne('/api/market-prices/market-1').flush(null);
 
-    expect(facade.markets()).toEqual([{ marketId: 'market-1', prices: { 'item-1': 1700 } }]);
+    expect(facade.pricesFor('market-1')()).toEqual({ 'item-1': 1700 });
   });
 
   it('leaves the stored list alone when the save fails', () => {
@@ -98,7 +108,7 @@ describe('MarketPrices', () => {
     facade.setPrices('market-1', { 'item-1': 1700 });
     httpCtrl.expectOne('/api/market-prices/market-1').flush(null, { status: 500, statusText: 'Server Error' });
 
-    expect(facade.markets()).toEqual(markets);
+    expect(facade.pricesFor('market-1')()).toEqual({ 'item-1': 1500 });
   });
 
   // A second GET would land after the patch and put the lagging projection back over it.

@@ -122,9 +122,7 @@ export class PriceEditor {
     () => this.schedules.schedules().find((schedule) => schedule.marketId === this.marketId)?.market.name,
   );
 
-  private readonly set = computed<PriceList>(
-    () => this.prices.markets().find((market) => market.marketId === this.marketId)?.prices ?? {},
-  );
+  private readonly set = this.prices.pricesFor(this.marketId);
 
   private readonly model = linkedSignal<{ items: CatalogueItemView[]; set: PriceList }, { dishes: DishModel[] }>({
     source: () => ({ items: this.catalogue.items(), set: this.set() }),

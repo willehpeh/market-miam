@@ -185,7 +185,7 @@ describe('MenuEditor', () => {
     await renderEditor((marketDays, catalogue, prices) => {
       marketDays.days.set([day()]);
       catalogue.items.set([item('item-1', 'Bœuf bourguignon')]);
-      prices.markets.set([{ marketId: 'market-1', prices: { 'item-1': 1500 } }]);
+      prices.byMarket.set({ 'market-1': { 'item-1': 1500 } });
     });
 
     expect(screen.getByText(/15,00/)).toBeInTheDocument();
@@ -195,7 +195,7 @@ describe('MenuEditor', () => {
     await renderEditor((marketDays, catalogue, prices) => {
       marketDays.days.set([day()]);
       catalogue.items.set([item('item-1', 'Bœuf bourguignon'), item('item-2', 'Tarte aux pommes')]);
-      prices.markets.set([{ marketId: 'market-1', prices: { 'item-1': 1500 } }]);
+      prices.byMarket.set({ 'market-1': { 'item-1': 1500 } });
     });
 
     expect(screen.getAllByText(/tarif marché/i)).toHaveLength(1);
@@ -205,7 +205,7 @@ describe('MenuEditor', () => {
     await renderEditor((marketDays, catalogue, prices) => {
       marketDays.days.set([day()]);
       catalogue.items.set([item('item-1', 'Bœuf bourguignon')]);
-      prices.markets.set([{ marketId: 'market-9', prices: { 'item-1': 1500 } }]);
+      prices.byMarket.set({ 'market-9': { 'item-1': 1500 } });
     });
 
     expect(screen.getByText(/13,00/)).toBeInTheDocument();
@@ -227,7 +227,7 @@ describe('MenuEditor', () => {
     await renderEditor((marketDays, catalogue, prices) => {
       marketDays.days.set([day()]);
       catalogue.items.set([pizza()]);
-      prices.markets.set([{ marketId: 'market-1', prices: { pizza: { Margherita: 800 } } }]);
+      prices.byMarket.set({ 'market-1': { pizza: { Margherita: 800 } } });
     });
 
     expect(screen.getByText(/dès\s+8,00/)).toBeInTheDocument();
@@ -240,7 +240,7 @@ describe('MenuEditor', () => {
     await renderEditor((marketDays, catalogue, prices) => {
       marketDays.days.set([day()]);
       catalogue.items.set([pizza()]);
-      prices.markets.set([{ marketId: 'market-1', prices: { pizza: { Pepperoni: 1400 } } }]);
+      prices.byMarket.set({ 'market-1': { pizza: { Pepperoni: 1400 } } });
     });
 
     expect(screen.getByText(/dès\s+9,00/)).toBeInTheDocument();
@@ -251,7 +251,7 @@ describe('MenuEditor', () => {
     await renderEditor((marketDays, catalogue, prices) => {
       marketDays.days.set([day()]);
       catalogue.items.set([pizza()]);
-      prices.markets.set([{ marketId: 'market-1', prices: { pizza: { Pepperoni: 500 } } }]);
+      prices.byMarket.set({ 'market-1': { pizza: { Pepperoni: 500 } } });
     });
 
     expect(screen.getByText(/dès\s+5,00/)).toBeInTheDocument();
