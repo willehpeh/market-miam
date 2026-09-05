@@ -127,14 +127,12 @@ export class MenuEditor {
     () => this.prices.markets().find((market) => market.marketId === this.marketId)?.prices ?? {},
   );
 
-  private readonly bilans = computed(() => {
-    const items = this.record.markets().find((market) => market.marketId === this.marketId)?.items ?? [];
-    return new Map(items.map((record) => [record.itemId, record.bilans]));
-  });
+  private readonly bilans = this.record.bilansFor(this.marketId);
 
-  readonly items = computed(() =>
-    this.catalogue.items().map((item) => {
-      const pileName = pile(this.bilans().get(item.itemId) ?? []);
+  readonly items = computed(() => {
+    const bilans = this.bilans();
+    return this.catalogue.items().map((item) => {
+      const pileName = pile(bilans[item.itemId] ?? []);
       return {
         itemId: item.itemId,
         name: item.name,
@@ -143,8 +141,8 @@ export class MenuEditor {
         pileTone: pileName ? TONES[pileName] : '',
         chosen: this.selected().has(item.itemId),
       };
-    }),
-  );
+    });
+  });
 
   constructor() {
     this.marketDays.load();
