@@ -308,6 +308,18 @@ describe('Dashboard', () => {
     expect(screen.getByRole('link', { name: 'Vos marchés' })).toHaveAttribute('href', '/dashboard/markets');
   });
 
+  it('leads to the QR code from the published home', async () => {
+    await renderReady({ published: true });
+
+    expect(screen.getByRole('link', { name: /qr code/i })).toHaveAttribute('href', '/dashboard/qr-code');
+  });
+
+  it('keeps the QR code off the setup home, where there is nothing to scan yet', async () => {
+    await renderBlank();
+
+    expect(screen.queryByRole('link', { name: /qr code/i })).not.toBeInTheDocument();
+  });
+
   it('links to the live storefront once published', async () => {
     await renderReady({ published: true });
 
