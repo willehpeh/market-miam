@@ -51,6 +51,11 @@ import { BilanPrompt } from '../market-days/bilan-prompt';
           <i class="fa-solid" [class.fa-share-nodes]="!copied()" [class.fa-check]="copied()" aria-hidden="true"></i>
           {{ copied() ? 'Lien copié' : 'Partager' }}
         </button>
+        <!-- Its own row: three labels across a phone would wrap, and "Lien copié" is the
+             widest of them. -->
+        <a routerLink="/dashboard/qr-code" class="btn-soft col-span-2">
+          <i class="fa-solid fa-qrcode" aria-hidden="true"></i> QR code pour votre stand
+        </a>
       </div>
     </mm-card>
   `

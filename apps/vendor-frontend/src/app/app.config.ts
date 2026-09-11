@@ -18,6 +18,8 @@ import { provideOnboarding } from './onboarding/onboarding.providers';
 import { provideNgrx } from './core/ngrx.providers';
 import { Share } from './core/share';
 import { WebShare } from './core/web.share';
+import { QrCodeDownload } from './qr-code/qr-code-download';
+import { CanvasQrCodeDownload } from './qr-code/canvas.qr-code-download';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -33,6 +35,7 @@ export const appConfig: ApplicationConfig = {
       withInterceptors(isDevMode() ? [devAuthInterceptor, errorInterceptor] : [authHttpInterceptorFn, errorInterceptor]),
     ),
     { provide: Share, useClass: WebShare },
+    { provide: QrCodeDownload, useClass: CanvasQrCodeDownload },
     provideNotifications(),
     provideAuth(),
     provideVendor(),
