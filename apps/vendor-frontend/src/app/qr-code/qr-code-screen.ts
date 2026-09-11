@@ -4,7 +4,7 @@ import { Spinner } from '../core/spinner';
 import { StorefrontFacade } from '../storefront/storefront.facade';
 import { storefrontUrl } from '../storefront/storefront-url';
 import { brandedQrCode } from './branded-qr-code';
-import { QrCodeDownload } from './qr-code-download';
+import { QrCodeExport, QrCodeImage } from './qr-code-export';
 
 @Component({
   selector: 'mm-qr-code-screen',
@@ -36,19 +36,30 @@ import { QrCodeDownload } from './qr-code-download';
           Imprimez-le pour votre stand ou vos menus : l'image est en haute définition, prête pour l'impression.
         </p>
 
-        @if (downloadError()) {
-          <p role="alert" class="mt-4 text-center text-sm text-danger">Le téléchargement a échoué. Réessayez.</p>
+        @if (exportError()) {
+          <p role="alert" class="mt-4 text-center text-sm text-danger">L'image n'a pas pu être préparée. Réessayez.</p>
         }
 
-        <button
-          type="button"
-          class="mt-4 flex w-full max-w-xs mx-auto justify-center"
-          [disabled]="downloading()"
-          (click)="download()"
-        >
-          <i class="fa-solid fa-download" aria-hidden="true"></i>
-          {{ downloading() ? 'Préparation…' : "Télécharger l'image" }}
-        </button>
+        <!-- The sheet leads: on a phone it is the way to a printer, a WhatsApp group or the
+             photo roll, and the download is what is left where there is no sheet. -->
+        <div class="mx-auto mt-4 flex w-full max-w-xs flex-col gap-3">
+          @if (shareable) {
+            <button type="button" class="flex justify-center" [disabled]="busy()" (click)="share()">
+              <i class="fa-solid fa-share-nodes" aria-hidden="true"></i>
+              {{ busy() === 'share' ? 'Préparation…' : 'Partager' }}
+            </button>
+          }
+          <button
+            type="button"
+            class="flex justify-center"
+            [class.quiet]="shareable"
+            [disabled]="busy()"
+            (click)="download()"
+          >
+            <i class="fa-solid fa-download" aria-hidden="true"></i>
+            {{ busy() === 'save' ? 'Préparation…' : "Télécharger l'image" }}
+          </button>
+        </div>
       } @else {
         <p class="mt-4 text-sm text-muted">
           Votre adresse web est en cours d'attribution. Votre QR code sera prêt dès qu'elle le sera.
@@ -59,11 +70,12 @@ import { QrCodeDownload } from './qr-code-download';
 })
 export class QrCodeScreen {
   private readonly storefront = inject(StorefrontFacade);
-  private readonly downloads = inject(QrCodeDownload);
+  private readonly exports = inject(QrCodeExport);
   readonly view = this.storefront.view;
   readonly published = computed(() => this.view()?.published === true);
-  readonly downloading = signal(false);
-  readonly downloadError = signal(false);
+  readonly shareable = this.exports.canShare();
+  readonly busy = signal<'save' | 'share' | null>(null);
+  readonly exportError = signal(false);
 
   // Built from the address alone, in the browser: the app knows the subdomain and the
   // base domain, and nothing else goes into the code (ADR 0055).
@@ -82,19 +94,27 @@ export class QrCodeScreen {
     };
   });
 
-  async download(): Promise<void> {
+  download(): Promise<void> {
+    return this.export('save', (image) => this.exports.save(image));
+  }
+
+  share(): Promise<void> {
+    return this.export('share', (image) => this.exports.share(image));
+  }
+
+  private async export(action: 'save' | 'share', through: (image: QrCodeImage) => Promise<unknown>): Promise<void> {
     const code = this.code();
     if (!code) {
       return;
     }
-    this.downloadError.set(false);
-    this.downloading.set(true);
+    this.exportError.set(false);
+    this.busy.set(action);
     try {
-      await this.downloads.save({ svg: code.svg, caption: code.label, fileName: code.fileName });
+      await through({ svg: code.svg, caption: code.label, fileName: code.fileName });
     } catch {
-      this.downloadError.set(true);
+      this.exportError.set(true);
     } finally {
-      this.downloading.set(false);
+      this.busy.set(null);
     }
   }
 }

@@ -36,12 +36,17 @@ one brand colour and data in the other, and decodes it with `jsqr` at the shorte
 address, a typical one, and the longest label a hostname allows. The screen's spec
 pins that what the vendor sees is that same SVG.
 
-**Export is a port with a fake, per ADR 0022.** `QrCodeDownload.save()` takes the SVG,
-a caption and a file name. `CanvasQrCodeDownload` decodes the SVG into an image,
-draws it at 2048 px with the address set under it in the design font, encodes a PNG
-and offers it through an anchor — browser plumbing jsdom cannot run, so it carries no
-spec, exactly as `CanvasPhotoDownscale` does; `FakeQrCodeDownload` is what the screen
-is tested against. The port rejects when it could not deliver, and the screen says so.
+**Export is a port with a fake, per ADR 0022.** `QrCodeExport` takes the SVG, a
+caption and a file name, and either `save`s or `share`s it. `CanvasQrCodeExport`
+decodes the SVG into an image, draws it at 2048 px with the address set under it in
+the design font and encodes a PNG; `save` offers that through an anchor, `share` hands
+it as a file to the device's share sheet, which on a phone is the way to a printer, a
+WhatsApp group or the photo roll. `canShare()` asks the browser with a stand-in PNG,
+and the screen shows *Partager* only where the answer is yes — the download stays
+everywhere. Backing out of the sheet comes back as nothing, as it does for links in
+`Share`; not managing to make the file rejects, and the screen says so. Browser
+plumbing jsdom cannot run carries no spec, exactly as `CanvasPhotoDownscale` does;
+`FakeQrCodeExport` is what the screen is tested against.
 
 ## Consequences
 

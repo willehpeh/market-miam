@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { QrCodeDownload, QrCodeImage } from './qr-code-download';
+import { QrCodeExport, QrCodeImage } from './qr-code-export';
 
 // 2048 px across is 17 cm at 300 dpi: an A5 flyer or a stall sign prints sharp, and a
 // phone screen shows it downscaled. The SVG carries its own quiet zone, so the margin
@@ -16,35 +16,65 @@ const PAPER = '#ffffff';
 // jsdom, which has none. The code itself is pure and tested in branded-qr-code.spec.ts;
 // what is left here is browser plumbing, and it rejects rather than fails quietly.
 @Injectable()
-export class CanvasQrCodeDownload extends QrCodeDownload {
-  async save({ svg, caption, fileName }: QrCodeImage): Promise<void> {
-    const image = await decode(svg);
-    const codeSide = WIDTH - 2 * MARGIN;
-    const captionTop = MARGIN + codeSide;
-    const canvas = document.createElement('canvas');
-    canvas.width = WIDTH;
-    canvas.height = captionTop + CAPTION_SIZE + MARGIN;
-    const context = canvas.getContext('2d');
-    if (!context) {
-      throw new Error('No 2d canvas context');
-    }
-    context.fillStyle = PAPER;
-    context.fillRect(0, 0, canvas.width, canvas.height);
-    context.drawImage(image, MARGIN, MARGIN, codeSide, codeSide);
-
-    await loadFont();
-    context.fillStyle = INK;
-    context.textAlign = 'center';
-    context.textBaseline = 'top';
-    context.font = fitting(context, caption, WIDTH - 2 * MARGIN);
-    context.fillText(caption, WIDTH / 2, captionTop);
-
-    const blob = await toPng(canvas);
-    if (!blob) {
-      throw new Error('PNG encoding failed');
-    }
-    offer(blob, fileName);
+export class CanvasQrCodeExport extends QrCodeExport {
+  // Asked with a stand-in file: canShare judges the type, and a share sheet that takes
+  // one PNG takes ours.
+  canShare(): boolean {
+    return (
+      typeof navigator.canShare === 'function' &&
+      navigator.canShare({ files: [new File([], 'qr-code.png', { type: 'image/png' })] })
+    );
   }
+
+  async save(image: QrCodeImage): Promise<void> {
+    offer(await render(image), image.fileName);
+  }
+
+  // The sheet only opens inside the tap's activation window, which the render fits well
+  // within: decoding an 9 kB SVG and a font the page already has is tens of milliseconds
+  // against the seconds browsers allow.
+  async share(image: QrCodeImage): Promise<'shared' | null> {
+    const file = new File([await render(image)], image.fileName, { type: 'image/png' });
+    try {
+      await navigator.share({ files: [file], title: image.caption });
+      return 'shared';
+    } catch (error) {
+      // Backing out of the sheet is the vendor's choice; anything else is ours to report.
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        return null;
+      }
+      throw error;
+    }
+  }
+}
+
+async function render({ svg, caption }: QrCodeImage): Promise<Blob> {
+  const image = await decode(svg);
+  const codeSide = WIDTH - 2 * MARGIN;
+  const captionTop = MARGIN + codeSide;
+  const canvas = document.createElement('canvas');
+  canvas.width = WIDTH;
+  canvas.height = captionTop + CAPTION_SIZE + MARGIN;
+  const context = canvas.getContext('2d');
+  if (!context) {
+    throw new Error('No 2d canvas context');
+  }
+  context.fillStyle = PAPER;
+  context.fillRect(0, 0, canvas.width, canvas.height);
+  context.drawImage(image, MARGIN, MARGIN, codeSide, codeSide);
+
+  await loadFont();
+  context.fillStyle = INK;
+  context.textAlign = 'center';
+  context.textBaseline = 'top';
+  context.font = fitting(context, caption, WIDTH - 2 * MARGIN);
+  context.fillText(caption, WIDTH / 2, captionTop);
+
+  const blob = await toPng(canvas);
+  if (!blob) {
+    throw new Error('PNG encoding failed');
+  }
+  return blob;
 }
 
 function decode(svg: string): Promise<HTMLImageElement> {

@@ -5,8 +5,8 @@ import { QrCodeScreen } from './qr-code-screen';
 import { StorefrontFacade } from '../storefront/storefront.facade';
 import { FakeStorefrontFacade } from '../storefront/fake.storefront.facade';
 import { StorefrontView } from '../storefront/storefront';
-import { QrCodeDownload } from './qr-code-download';
-import { FakeQrCodeDownload } from './fake.qr-code-download';
+import { QrCodeExport } from './qr-code-export';
+import { FakeQrCodeExport } from './fake.qr-code-export';
 import { brandedQrCode } from './branded-qr-code';
 
 const published: StorefrontView = {
@@ -19,21 +19,22 @@ const published: StorefrontView = {
   cartePricesVisible: true,
 };
 
-async function renderScreen(view?: StorefrontView) {
+async function renderScreen(view?: StorefrontView, shareable = true) {
   const rendered = await render(QrCodeScreen, {
     providers: [
+      { provide: FakeQrCodeExport, useFactory: () => Object.assign(new FakeQrCodeExport(), { shareable }) },
       provideRouter([]),
       { provide: StorefrontFacade, useClass: FakeStorefrontFacade },
-      { provide: QrCodeDownload, useClass: FakeQrCodeDownload },
+      { provide: QrCodeExport, useExisting: FakeQrCodeExport },
     ],
   });
   const storefront = TestBed.inject(StorefrontFacade) as FakeStorefrontFacade;
-  const downloads = TestBed.inject(QrCodeDownload) as FakeQrCodeDownload;
+  const exports = TestBed.inject(QrCodeExport) as FakeQrCodeExport;
   if (view) {
     storefront.view.set(view);
     rendered.detectChanges();
   }
-  return { rendered, storefront, downloads };
+  return { rendered, storefront, exports };
 }
 
 describe('QrCodeScreen', () => {
@@ -61,44 +62,98 @@ describe('QrCodeScreen', () => {
   });
 
   it('hands the code, the address and a file named after the stall to the download', async () => {
-    const { downloads } = await renderScreen(published);
+    const { exports } = await renderScreen(published);
 
     fireEvent.click(screen.getByRole('button', { name: /télécharger/i }));
 
-    await waitFor(() => expect(downloads.saved).toHaveLength(1));
-    expect(downloads.saved[0]).toEqual({
+    await waitFor(() => expect(exports.saved).toHaveLength(1));
+    expect(exports.saved[0]).toEqual({
       svg: brandedQrCode('https://chez-mohamed.marketmiam.fr').svg,
       caption: 'chez-mohamed.marketmiam.fr',
       fileName: 'qr-code-chez-mohamed.png',
     });
-    expect(screen.getByRole('button', { name: /télécharger/i })).toBeEnabled();
+    await waitFor(() => expect(screen.getByRole('button', { name: /télécharger/i })).toBeEnabled());
   });
 
   it('holds the button while the file is being prepared', async () => {
-    const { downloads, rendered } = await renderScreen(published);
-    downloads.holding = true;
+    const { exports, rendered } = await renderScreen(published);
+    exports.holding = true;
 
     fireEvent.click(screen.getByRole('button', { name: /télécharger/i }));
 
     await waitFor(() => expect(screen.getByRole('button', { name: 'Préparation…' })).toBeDisabled());
-    downloads.finish();
+    exports.finish();
     await waitFor(() => expect(screen.getByRole('button', { name: /télécharger/i })).toBeEnabled());
     rendered.detectChanges();
   });
 
-  it('says so when the download fails, and lets the vendor try again', async () => {
-    const { downloads } = await renderScreen(published);
-    downloads.outcome = 'failed';
+  it('says so when the file cannot be made, and lets the vendor try again', async () => {
+    const { exports } = await renderScreen(published);
+    exports.outcome = 'failed';
 
     fireEvent.click(screen.getByRole('button', { name: /télécharger/i }));
 
-    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent(/le téléchargement a échoué/i));
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent(/n.a pas pu être préparée/i));
     expect(screen.getByRole('button', { name: /télécharger/i })).toBeEnabled();
 
-    downloads.outcome = 'saved';
+    exports.outcome = 'done';
     fireEvent.click(screen.getByRole('button', { name: /télécharger/i }));
 
     await waitFor(() => expect(screen.queryByRole('alert')).not.toBeInTheDocument());
+  });
+
+  it('offers the image to the share sheet where the device has one that takes files', async () => {
+    const { exports } = await renderScreen(published);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Partager' }));
+
+    await waitFor(() => expect(exports.shared).toHaveLength(1));
+    expect(exports.shared[0]).toEqual({
+      svg: brandedQrCode('https://chez-mohamed.marketmiam.fr').svg,
+      caption: 'chez-mohamed.marketmiam.fr',
+      fileName: 'qr-code-chez-mohamed.png',
+    });
+    expect(exports.saved).toHaveLength(0);
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+
+  it('keeps the sheet off a device that cannot share files, leaving the download', async () => {
+    await renderScreen(published, false);
+
+    expect(screen.queryByRole('button', { name: 'Partager' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /télécharger/i })).toBeInTheDocument();
+  });
+
+  it('says nothing when the vendor backs out of the sheet', async () => {
+    const { exports } = await renderScreen(published);
+    exports.outcome = 'backed-out';
+
+    fireEvent.click(screen.getByRole('button', { name: 'Partager' }));
+
+    await waitFor(() => expect(exports.shared).toHaveLength(1));
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Partager' })).toBeEnabled());
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+
+  it('says so when the image for the sheet cannot be made', async () => {
+    const { exports } = await renderScreen(published);
+    exports.outcome = 'failed';
+
+    fireEvent.click(screen.getByRole('button', { name: 'Partager' }));
+
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent(/n.a pas pu être préparée/i));
+  });
+
+  it('holds both actions while the sheet is being prepared, naming the one in progress', async () => {
+    const { exports } = await renderScreen(published);
+    exports.holding = true;
+
+    fireEvent.click(screen.getByRole('button', { name: 'Partager' }));
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Préparation…' })).toBeDisabled());
+    expect(screen.getByRole('button', { name: /télécharger/i })).toBeDisabled();
+    exports.finish();
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Partager' })).toBeEnabled());
   });
 
   it('warns that the code leads nowhere until the vitrine is published', async () => {
