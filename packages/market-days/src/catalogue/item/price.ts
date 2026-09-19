@@ -13,6 +13,10 @@ export class Price {
     this._value = value;
   }
 
+  equals(other: Price): boolean {
+    return this._value === other._value;
+  }
+
   value(): number {
     return this._value;
   }

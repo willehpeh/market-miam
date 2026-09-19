@@ -65,10 +65,14 @@ export class Catalogue extends Aggregate {
   }
 
   reviseItem(itemId: ItemId, name: ItemName, description: ItemDescription, pricing: Pricing) {
-    this.assertHasItem(itemId);
+    if (this.itemWithId(itemId).isDescribedAs(name, description, pricing)) {
+      return;
+    }
     const event: ItemRevised = {
       type: 'ItemRevised',
       payload: {
+  // A revision that changes nothing appends nothing — the same stance as setMenu and
+  // setMarketPrices. The edit form is saved whole, so this is the common case, not a corner.
         itemId: itemId.value(),
         name: name.value(),
         description: description.value(),

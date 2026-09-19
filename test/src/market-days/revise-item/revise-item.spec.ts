@@ -64,6 +64,42 @@ describe('Revise item', () => {
     ]);
   });
 
+  // A re-statement, not a change: the stance setMenu, setCoverPhoto and setMarketPrices
+  // already take. The edit form is saved whole, so saving it untouched must not put a
+  // second copy of the dish in the log — that is the one growth of the catalogue stream
+  // the vendor never asked for.
+  it('raises nothing when the revision changes nothing', async () => {
+    const added = TestAddItemToCatalogue.simple();
+    await new AddItemToCatalogueHandler(catalogues).execute(added);
+    await handler.execute(TestReviseItem.with({ itemId: added.itemId }));
+
+    await handler.execute(TestReviseItem.with({ itemId: added.itemId }));
+
+    expect(store.newEvents()).toEqual([
+      expect.objectContaining({ type: 'ItemAddedToCatalogue' }),
+      expect.objectContaining({ type: 'ItemRevised' }),
+    ]);
+  });
+
+  // Fresh commands with equal content, not the same object twice: the variants are compared
+  // by what they say, and in the order they say it.
+  it('raises nothing when the variant revision changes nothing', async () => {
+    const added = TestAddItemToCatalogue.simple();
+    await new AddItemToCatalogueHandler(catalogues).execute(added);
+    const variants = () => [
+      { name: 'Small', description: '', price: 800 },
+      { name: 'Large', description: 'extra', price: 1200 },
+    ];
+    await handler.execute(TestReviseItem.withVariants(added.itemId, variants()));
+
+    await handler.execute(TestReviseItem.withVariants(added.itemId, variants()));
+
+    expect(store.newEvents()).toEqual([
+      expect.objectContaining({ type: 'ItemAddedToCatalogue' }),
+      expect.objectContaining({ type: 'ItemRevised' }),
+    ]);
+  });
+
   describe('rejects an invalid pricing shape', () => {
     it('rejects revising to both a price and variants', async () => {
       const added = TestAddItemToCatalogue.simple();
