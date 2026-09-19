@@ -6,12 +6,13 @@ import { CoverPhoto, NoCoverPhoto, SetCoverPhoto } from './cover-photo';
 import { StorefrontName } from './storefront-name';
 import { StorefrontDescription } from './storefront-description';
 import { StorefrontNotOpenError } from './storefront-not-open.error';
+import { StorefrontInformation } from './storefront-information';
 
 export class Storefront extends Aggregate {
 
   private _opened = false;
   private _coverPhoto: CoverPhoto = new NoCoverPhoto();
-  private _name?: StorefrontName;
+  private _information?: StorefrontInformation;
   private _published = false;
   // Opted in: a vitrine that has never said otherwise quotes its prices.
   private _cartePricesVisible = true;
@@ -25,7 +26,7 @@ export class Storefront extends Aggregate {
         this._coverPhoto = new SetCoverPhoto(new ImageReference(event.payload.imageReference));
         break;
       case 'StorefrontInformationEdited':
-        this._name = new StorefrontName(event.payload.name);
+        this._information = new StorefrontInformation(event.payload);
         break;
       case 'StorefrontPublished':
         this._published = true;
@@ -64,8 +65,13 @@ export class Storefront extends Aggregate {
     this.raise(event);
   }
 
+  // An edit that changes nothing appends nothing — the same stance as setCoverPhoto and the
+  // carte-price toggles, and worth more here: this is the one storefront event carrying PII.
   editInformation(name: StorefrontName, description: StorefrontDescription, phone: PhoneNumber) {
     this.assertOpen();
+    if (this._information?.sameAs(name, description, phone)) {
+      return;
+    }
     const event: StorefrontInformationEdited = {
       type: 'StorefrontInformationEdited',
       payload: {
@@ -113,8 +119,9 @@ export class Storefront extends Aggregate {
     this.raise(event);
   }
 
+  // A name is required to edit the information at all, so having any is having a title.
   hasTitle(): boolean {
-    return this._name !== undefined;
+    return this._information !== undefined;
   }
 
   hasCoverPhoto(): boolean {
