@@ -1,4 +1,4 @@
-import { HttpBackend, HttpClient } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { map, Observable } from 'rxjs';
 import { PhotoUploads, UploadedPhoto } from './photo-uploads';
@@ -12,7 +12,7 @@ interface CloudinaryUploadResponse {
 
 @Injectable()
 export class CloudinaryPhotoUploads implements PhotoUploads {
-  private readonly http = new HttpClient(inject(HttpBackend));
+  private readonly http = inject(HttpClient);
 
   upload(file: File, signed: SignedUpload): Observable<UploadedPhoto> {
     const form = new FormData();

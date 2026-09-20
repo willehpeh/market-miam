@@ -52,4 +52,12 @@ describe('errorInterceptor', () => {
     expect(caught).toBe(404);
     expect(notifications.message()).toBeUndefined();
   });
+
+  it('leaves failures from other origins to their own handlers', () => {
+    http.post('https://api.cloudinary.com/v1_1/test-cloud/image/upload', new FormData()).subscribe({ error: () => undefined });
+
+    httpCtrl.expectOne('https://api.cloudinary.com/v1_1/test-cloud/image/upload').flush(null, { status: 500, statusText: 'Server Error' });
+
+    expect(notifications.message()).toBeUndefined();
+  });
 });
