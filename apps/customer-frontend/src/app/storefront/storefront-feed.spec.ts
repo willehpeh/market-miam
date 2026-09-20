@@ -29,6 +29,7 @@ const dto = (...upcomingMarkets: UpcomingMarket[]): PublishedCustomerStorefront 
   description: '',
   phone: '',
   coverPhoto: null,
+  cartePricesVisible: true,
   items: [],
   upcomingMarkets,
 });

@@ -14,6 +14,9 @@ import {
   PublishStorefront,
   PublishStorefrontFailure,
   PublishStorefrontSuccess,
+  SetCartePricesVisible,
+  SetCartePricesVisibleFailure,
+  SetCartePricesVisibleSuccess,
   UploadCoverPhoto,
   UploadCoverPhotoFailure,
   UploadCoverPhotoSuccess,
@@ -88,6 +91,20 @@ export class StorefrontEffects {
             ),
           ),
           catchError(() => of(UploadCoverPhotoFailure())),
+        ),
+      ),
+    ),
+  );
+
+  // The reducer has already flipped the view; this only has to put it back if the write
+  // does not land, which is why the failure carries the value to restore.
+  setCartePricesVisible$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(SetCartePricesVisible),
+      switchMap(({ visible }) =>
+        this.storefront.setCartePricesVisible(visible).pipe(
+          map(() => SetCartePricesVisibleSuccess()),
+          catchError(() => of(SetCartePricesVisibleFailure({ visible: !visible }))),
         ),
       ),
     ),

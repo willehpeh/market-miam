@@ -66,6 +66,7 @@ describe('Public storefront', () => {
       phone: '0102030405',
       coverPhoto: 'v7/cover',
       items: [],
+      cartePricesVisible: true,
       upcomingMarkets: [],
     });
   });
@@ -234,6 +235,31 @@ describe('Public storefront', () => {
     expect(res.body.items).toEqual([
       { itemId: 'item-1', name: 'Bœuf bourguignon', description: 'Mijoté 7 heures', price: 1300, imageReference: 'v7/item-1' },
       { itemId: 'item-2', name: 'Tarte tatin', description: 'Aux pommes', price: 600, imageReference: '' },
+    ]);
+  });
+
+  // The prices stay on the wire either way — the flag says whether the carte draws them,
+  // so the day a vendor turns them back on the figures are already there. The featured
+  // market card is not governed by it: that price is the market's, not the carte's.
+  it('tells the customer page that a storefront quotes its carte prices by default', async () => {
+    await seedStorefront([opened, infoEdited, coverSet, published]);
+
+    const res = await request(app.getHttpServer()).get('/public/storefront/acme').expect(200);
+
+    expect(res.body.cartePricesVisible).toBe(true);
+  });
+
+  it('tells the customer page when the vendor has hidden them, still carrying the prices', async () => {
+    await seedStorefront([opened, infoEdited, coverSet, published, { type: 'CartePricesHidden', payload: {}, version: 1 }]);
+    await seedCatalogue([
+      { type: 'ItemAddedToCatalogue', payload: { itemId: 'item-1', name: 'Bœuf bourguignon', description: 'Mijoté', price: 1300 }, version: 1 },
+    ]);
+
+    const res = await request(app.getHttpServer()).get('/public/storefront/acme').expect(200);
+
+    expect(res.body.cartePricesVisible).toBe(false);
+    expect(res.body.items).toEqual([
+      { itemId: 'item-1', name: 'Bœuf bourguignon', description: 'Mijoté', price: 1300, imageReference: '' },
     ]);
   });
 

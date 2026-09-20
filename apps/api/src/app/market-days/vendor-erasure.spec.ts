@@ -65,6 +65,7 @@ describe('Erasing a vendor', () => {
       phone: SHREDDED,
       imageReference: '',
       published: false,
+      cartePricesVisible: true,
       subdomain: null,
     });
   });

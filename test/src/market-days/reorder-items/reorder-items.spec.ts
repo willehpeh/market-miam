@@ -4,6 +4,7 @@ import {
   AddItemToCatalogueHandler,
   Catalogues,
   IncompleteReorderError,
+  NoSuchItemError,
   ReorderItems,
   ReorderItemsHandler,
   RetireItem,
@@ -11,6 +12,7 @@ import {
   VendorScopedEvents,
 } from '@market-miam/market-days';
 import { TestAddItemToCatalogue } from '../add-item-to-catalogue/test-data';
+import { VendorId } from '@market-miam/shared-kernel';
 
 describe('Reorder items', () => {
   let store: InMemoryEventStore;
@@ -41,6 +43,34 @@ describe('Reorder items', () => {
     ]);
   });
 
+  // A re-statement, not a change: saving the reorder page untouched must not put a second
+  // copy of the order in the log — the same stance setMenu and setMarketPrices take.
+  it('raises nothing when the order is the one already recorded', async () => {
+    await addItems('starter', 'main');
+    await handler.execute(new ReorderItems({ vendorId: 'vendor-id', itemIds: ['main', 'starter'] }));
+
+    await handler.execute(new ReorderItems({ vendorId: 'vendor-id', itemIds: ['main', 'starter'] }));
+
+    expect(store.newEvents()).toEqual([
+      expect.objectContaining({ type: 'ItemAddedToCatalogue' }),
+      expect.objectContaining({ type: 'ItemAddedToCatalogue' }),
+      expect.objectContaining({ type: 'ItemsReordered', payload: { itemIds: ['main', 'starter'] } }),
+    ]);
+  });
+
+  // Before any reorder the order is the order of addition, which is what the carte shows
+  // (catalogue view, ORDER BY seq) — so restating it is a re-statement too.
+  it('raises nothing when the order is the one the items were added in', async () => {
+    await addItems('starter', 'main');
+
+    await handler.execute(new ReorderItems({ vendorId: 'vendor-id', itemIds: ['starter', 'main'] }));
+
+    expect(store.newEvents()).toEqual([
+      expect.objectContaining({ type: 'ItemAddedToCatalogue' }),
+      expect.objectContaining({ type: 'ItemAddedToCatalogue' }),
+    ]);
+  });
+
   it('refuses an order that leaves an item out', async () => {
     await addItems('starter', 'main');
 
@@ -64,6 +94,20 @@ describe('Reorder items', () => {
     expect(store.newEvents()).toContainEqual(
       expect.objectContaining({ type: 'ItemsReordered', payload: { itemIds: ['dessert', 'starter'] } }),
     );
+  });
+
+  // The command path cannot produce this — reorderItems refuses an order that names an item
+  // the catalogue does not hold — so this is the rehydration guard, the one revise has: a
+  // stream that orders an item it never added fails loudly rather than replaying to a
+  // catalogue with a hole in its order.
+  it('refuses to rehydrate a catalogue whose stream orders an item it never added', async () => {
+    store.seedWith('catalogue-vendor-id', [{
+      type: 'ItemsReordered',
+      payload: { itemIds: ['never-added'] },
+      version: 1,
+    }], { vendorId: 'vendor-id' });
+
+    await expect(catalogues.forVendor(new VendorId('vendor-id'))).rejects.toThrow(NoSuchItemError);
   });
 
   it('refuses an order naming a retired item', async () => {

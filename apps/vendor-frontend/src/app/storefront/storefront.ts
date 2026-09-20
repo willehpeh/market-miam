@@ -8,6 +8,8 @@ export interface StorefrontView {
   imageReference: string;
   subdomain: string | null;
   published: boolean;
+  // Whether the public carte quotes its prices. The vendor's choice, opted in by default.
+  cartePricesVisible: boolean;
 }
 
 export abstract class Storefront {
@@ -16,4 +18,5 @@ export abstract class Storefront {
   abstract coverPhotoSignature(): Observable<SignedUpload>;
   abstract setCoverPhoto(version: number): Observable<void>;
   abstract publish(): Observable<void>;
+  abstract setCartePricesVisible(visible: boolean): Observable<void>;
 }

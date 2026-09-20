@@ -5,9 +5,11 @@ import type { VerifiedVendor } from '@market-miam/auth';
 import { CommandGateway, QueryGateway } from '@market-miam/event-sourcing';
 import {
   EditStorefrontInformation,
+  HideCartePrices,
   FindVendorStorefront,
   PublishStorefront,
   SetStorefrontCoverPhoto,
+  ShowCartePrices,
   VendorStorefront,
 } from '@market-miam/market-days';
 import { CloudinarySignedUpload, SignedUploads } from '../signed-uploads';
@@ -15,6 +17,7 @@ import { shapeOf } from '../shape-of.pipe';
 
 const InformationBody = z.object({ name: z.string(), description: z.string(), phone: z.string().optional() });
 const CoverPhotoBody = z.object({ version: z.number() });
+const CartePricesBody = z.object({ visible: z.boolean() });
 
 function coverPhotoPublicId(vendorId: string): string {
   return `vendors/${vendorId}/storefront/cover-photo`;
@@ -70,5 +73,20 @@ export class StorefrontController {
     await this.commands.execute(
       new SetStorefrontCoverPhoto(vendorId, `v${body.version}/${coverPhotoPublicId(vendorId)}`),
     );
+  }
+
+  // One idempotent route behind both commands, the availability pair's shape
+  // (market-day.controller.ts): a vendor flips a switch to state the choice they want,
+  // and a re-statement is a domain no-op.
+  @Put('carte-prices')
+  @UseGuards(JwtAuthGuard)
+  async setCartePriceVisibility(
+    @CurrentVendor() vendor: VerifiedVendor,
+    @Body(shapeOf(CartePricesBody)) body: z.infer<typeof CartePricesBody>,
+  ): Promise<void> {
+    const vendorId = vendor.vendorId.value();
+    await this.commands.execute(body.visible
+      ? new ShowCartePrices(vendorId)
+      : new HideCartePrices(vendorId));
   }
 }

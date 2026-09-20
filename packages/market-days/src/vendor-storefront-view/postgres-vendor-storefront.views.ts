@@ -3,19 +3,26 @@ import { VendorStorefrontView } from './vendor-storefront-view';
 import { VendorStorefrontViews } from './vendor-storefront-views';
 import { VendorStorefrontViewStore } from './vendor-storefront-view.store';
 
-type Row = { name: string; description: string; phone: string; image_reference: string; published: boolean };
+type Row = { name: string; description: string; phone: string; image_reference: string; published: boolean; carte_prices_visible: boolean };
 
 export class PostgresVendorStorefrontViews implements VendorStorefrontViews, VendorStorefrontViewStore {
   constructor(private readonly db: Queryable) {}
 
   async findByVendor(vendorId: string): Promise<VendorStorefrontView | undefined> {
     const { rows } = await this.db.query<Row>(
-      'SELECT name, description, phone, image_reference, published FROM vendor_storefront_views WHERE vendor_id = $1',
+      'SELECT name, description, phone, image_reference, published, carte_prices_visible FROM vendor_storefront_views WHERE vendor_id = $1',
       [vendorId],
     );
     const [row] = rows;
     return row
-      ? { name: row.name, description: row.description, phone: row.phone, imageReference: row.image_reference, published: row.published }
+      ? {
+          name: row.name,
+          description: row.description,
+          phone: row.phone,
+          imageReference: row.image_reference,
+          published: row.published,
+          cartePricesVisible: row.carte_prices_visible,
+        }
       : undefined;
   }
 
@@ -47,6 +54,14 @@ export class PostgresVendorStorefrontViews implements VendorStorefrontViews, Ven
       `INSERT INTO vendor_storefront_views (vendor_id, published) VALUES ($1, true)
        ON CONFLICT (vendor_id) DO UPDATE SET published = true`,
       [vendorId],
+    );
+  }
+
+  async setCartePricesVisible(vendorId: string, visible: boolean): Promise<void> {
+    await this.db.query(
+      `INSERT INTO vendor_storefront_views (vendor_id, carte_prices_visible) VALUES ($1, $2)
+       ON CONFLICT (vendor_id) DO UPDATE SET carte_prices_visible = EXCLUDED.carte_prices_visible`,
+      [vendorId, visible],
     );
   }
 

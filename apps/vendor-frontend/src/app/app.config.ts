@@ -15,6 +15,8 @@ import { provideNgrx } from './core/ngrx.providers';
 import { Share } from './core/share';
 import { WebShare } from './core/web.share';
 import { provideEnvHttp } from './core/http/provide-env-http';
+import { QrCodeExport } from './qr-code/qr-code-export';
+import { CanvasQrCodeExport } from './qr-code/canvas.qr-code-export';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -22,6 +24,7 @@ export const appConfig: ApplicationConfig = {
     provideRouter(appRoutes, withInMemoryScrolling({ scrollPositionRestoration: 'enabled' })),
     provideEnvHttp(),
     { provide: Share, useClass: WebShare },
+    { provide: QrCodeExport, useClass: CanvasQrCodeExport },
     provideNotifications(),
     provideAuth(),
     provideVendor(),

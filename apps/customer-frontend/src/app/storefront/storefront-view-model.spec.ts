@@ -24,20 +24,39 @@ const withMarkets = (upcomingMarkets: Market[]): CustomerStorefront => ({
   description: '',
   phone: '',
   coverPhoto: null,
+  cartePricesVisible: true,
   items: [],
   upcomingMarkets,
 });
 
 describe('toViewModel', () => {
-  // The carte is tied to no market, so there is no one price it could name: the same dish
-  // sells for different money depending on where the vendor is standing.
-  it('gives a carte item no price', () => {
+  // The vendor's choice, and they are opted in. A carte is tied to no market, so the figure
+  // it names is the catalogue's — what a dish costs before any market's own list revises it.
+  it('prices a carte item when the vendor shows carte prices', () => {
     const storefront: CustomerStorefront = {
       status: 'published',
       name: 'Chez Test',
       description: '',
       phone: '',
       coverPhoto: null,
+      cartePricesVisible: true,
+      upcomingMarkets: [],
+      items: [dish],
+    };
+
+    const view = toViewModel(storefront) as Extract<StorefrontViewModel, { status: 'published' }>;
+
+    expect(view.items[0].priceLabel).toBe('13,00 €');
+  });
+
+  it('gives a carte item no price when the vendor has hidden them', () => {
+    const storefront: CustomerStorefront = {
+      status: 'published',
+      name: 'Chez Test',
+      description: '',
+      phone: '',
+      coverPhoto: null,
+      cartePricesVisible: false,
       upcomingMarkets: [],
       items: [{ itemId: 'boeuf', name: 'Bourguignon', description: '', price: 1300, imageReference: '' }],
     };
@@ -57,6 +76,7 @@ describe('toViewModel', () => {
       description: '',
       phone: '',
       coverPhoto: null,
+      cartePricesVisible: true,
       upcomingMarkets: [],
       items: [{ itemId: 'boeuf', name: 'Bourguignon', description: '', price: 1300, imageReference: 'v1/boeuf' }],
     };
@@ -74,13 +94,49 @@ describe('toViewModel', () => {
     });
   });
 
-  it('maps each variant of a carte item, without pricing any of them', () => {
+  // The variant dish's two figures: the dish names its cheapest as a dès, each variant
+  // names its own. Same shape the featured market's menu draws, at catalogue prices.
+  it('prices every variant of a carte item when prices are shown', () => {
     const storefront: CustomerStorefront = {
       status: 'published',
       name: 'Chez Test',
       description: '',
       phone: '',
       coverPhoto: null,
+      cartePricesVisible: true,
+      upcomingMarkets: [],
+      items: [
+        {
+          itemId: 'pizza',
+          name: 'Pizza',
+          description: 'Wood-fired',
+          imageReference: '',
+          variants: [
+            { name: 'Margherita', description: '', price: 900 },
+            { name: 'Pepperoni', description: 'spicy', price: 1200 },
+          ],
+        },
+      ],
+    };
+
+    const view = toViewModel(storefront) as Extract<StorefrontViewModel, { status: 'published' }>;
+    const item = view.items[0];
+
+    expect(item.priceLabel).toBe('dès 9,00 €');
+    expect(item.variants).toEqual([
+      { name: 'Margherita', description: '', priceLabel: '9,00 €' },
+      { name: 'Pepperoni', description: 'spicy', priceLabel: '12,00 €' },
+    ]);
+  });
+
+  it('maps each variant of a carte item, pricing none of them when prices are hidden', () => {
+    const storefront: CustomerStorefront = {
+      status: 'published',
+      name: 'Chez Test',
+      description: '',
+      phone: '',
+      coverPhoto: null,
+      cartePricesVisible: false,
       upcomingMarkets: [],
       items: [
         {
@@ -116,6 +172,7 @@ describe('toViewModel', () => {
       description: '',
       phone: '',
       coverPhoto: null,
+      cartePricesVisible: true,
       items: [],
       upcomingMarkets: [
         {

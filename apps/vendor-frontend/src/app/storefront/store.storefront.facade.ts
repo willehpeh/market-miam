@@ -1,7 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { StorefrontFacade } from './storefront.facade';
-import { EditStorefront, PublishStorefront, storefrontFeature, UploadCoverPhoto } from './storefront.state';
+import { EditStorefront, PublishStorefront, SetCartePricesVisible, storefrontFeature, UploadCoverPhoto } from './storefront.state';
 
 @Injectable()
 export class StoreStorefrontFacade implements StorefrontFacade {
@@ -25,5 +25,9 @@ export class StoreStorefrontFacade implements StorefrontFacade {
 
   publish(): void {
     this.store.dispatch(PublishStorefront());
+  }
+
+  setCartePricesVisible(visible: boolean): void {
+    this.store.dispatch(SetCartePricesVisible({ visible }));
   }
 }

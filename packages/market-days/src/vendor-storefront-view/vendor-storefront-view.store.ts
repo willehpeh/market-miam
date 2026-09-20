@@ -3,5 +3,6 @@ export abstract class VendorStorefrontViewStore {
   abstract setCoverPhoto(vendorId: string, imageReference: string): Promise<void>;
   abstract editInformation(vendorId: string, information: { name: string; description: string; phone: string }): Promise<void>;
   abstract publish(vendorId: string): Promise<void>;
+  abstract setCartePricesVisible(vendorId: string, visible: boolean): Promise<void>;
   abstract clear(): Promise<void>;
 }

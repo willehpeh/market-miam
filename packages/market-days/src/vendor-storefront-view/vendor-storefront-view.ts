@@ -4,4 +4,6 @@ export type VendorStorefrontView = {
   phone: string;
   imageReference: string;
   published: boolean;
+  // Opted in: a storefront that has never chosen quotes its prices.
+  cartePricesVisible: boolean;
 };

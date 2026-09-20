@@ -10,6 +10,9 @@ export type PublishedCustomerStorefront = {
   phone: string;
   coverPhoto: string | null;
   items: CatalogueItem[];
+  // Whether the carte quotes its prices — the vendor's choice, opted in by default. Every
+  // price is carried either way; this says only whether the carte draws them.
+  cartePricesVisible: boolean;
   upcomingMarkets: UpcomingMarket[];
 };
 

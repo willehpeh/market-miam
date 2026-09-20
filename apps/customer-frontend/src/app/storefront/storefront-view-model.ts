@@ -7,10 +7,10 @@ export type ItemViewModel = {
   itemId: string;
   name: string;
   description: string;
-  // Only on the featured market's menu. The carte is tied to no market, so there is no one
-  // price it could name — the same dish sells for different money depending on where the
-  // vendor is standing — and the days below the featured one are a schedule rather than a
-  // menu.
+  // On the featured market's menu, and on the carte when the vendor shows carte prices.
+  // The two figures differ on purpose: the featured card names what that market charges,
+  // while the carte — tied to no market — can only name the catalogue price. The days
+  // below the featured one are a schedule rather than a menu, so they name nothing.
   priceLabel?: string;
   variants?: { name: string; description: string; priceLabel?: string }[];
   photo: { src: string; srcset: string } | null;
@@ -67,7 +67,7 @@ export function toViewModel(storefront: CustomerStorefront): StorefrontViewModel
     phone: storefront.phone,
     coverReference: storefront.coverPhoto,
     socialImageUrl: storefront.coverPhoto ? cloudinaryUrl(storefront.coverPhoto, 'c_fill,w_1200,h_630,q_auto,f_auto') : null,
-    items: storefront.items.map((item) => toItemViewModel(item, false)),
+    items: storefront.items.map((item) => toItemViewModel(item, storefront.cartePricesVisible)),
     // Index 0 is the featured day, the same way `storefront-page.ts` and `live-status.ts`
     // read it. That card is where the trip gets decided — at home, before setting out,
     // which is exactly when a price is worth knowing.

@@ -35,6 +35,7 @@ describe('Storefront view projection', () => {
       phone: '',
       imageReference: '',
       published: false,
+      cartePricesVisible: true,
     });
   });
 });

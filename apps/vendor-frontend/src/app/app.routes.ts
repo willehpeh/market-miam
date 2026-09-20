@@ -20,6 +20,10 @@ export const appRoutes: Route[] = [
         loadComponent: () => import('./storefront/storefront-form').then(m => m.StorefrontForm),
       },
       {
+        path: 'qr-code',
+        loadComponent: () => import('./qr-code/qr-code-screen').then(m => m.QrCodeScreen),
+      },
+      {
         path: 'catalogue',
         children: catalogueRoutes,
       },

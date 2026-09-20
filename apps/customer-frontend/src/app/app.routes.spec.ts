@@ -16,6 +16,7 @@ const ACME: CustomerStorefront = {
   description: 'Fresh bread daily',
   phone: '0102030405',
   coverPhoto: '',
+  cartePricesVisible: true,
   items: [
     { itemId: 'item-1', name: 'Bœuf bourguignon', description: 'Mijoté 7 heures', price: 1300, imageReference: '' },
     { itemId: 'item-2', name: 'Tarte tatin', description: 'Aux pommes', price: 600, imageReference: '' },

@@ -44,11 +44,12 @@ const completeStorefront: StorefrontView = {
   imageReference: 'v42/storefronts/acme/cover-photo',
   subdomain: null,
   published: false,
+      cartePricesVisible: true,
 };
 
 async function renderBlank() {
   const ctx = await renderDashboard();
-  ctx.storefront.view.set({ name: '', description: '', phone: '', imageReference: '', subdomain: null, published: false });
+  ctx.storefront.view.set({ name: '', description: '', phone: '', imageReference: '', subdomain: null, published: false, cartePricesVisible: true });
   ctx.view.detectChanges();
   return ctx;
 }
@@ -305,6 +306,18 @@ describe('Dashboard', () => {
 
     expect(screen.getByRole('link', { name: 'Votre catalogue' })).toHaveAttribute('href', '/dashboard/catalogue');
     expect(screen.getByRole('link', { name: 'Vos marchés' })).toHaveAttribute('href', '/dashboard/markets');
+  });
+
+  it('leads to the QR code from the published home', async () => {
+    await renderReady({ published: true });
+
+    expect(screen.getByRole('link', { name: /qr code/i })).toHaveAttribute('href', '/dashboard/qr-code');
+  });
+
+  it('keeps the QR code off the setup home, where there is nothing to scan yet', async () => {
+    await renderBlank();
+
+    expect(screen.queryByRole('link', { name: /qr code/i })).not.toBeInTheDocument();
   });
 
   it('links to the live storefront once published', async () => {

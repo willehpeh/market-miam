@@ -13,6 +13,12 @@ export class Variant {
     this._price = new Price(price);
   }
 
+  equals(other: Variant): boolean {
+    return this._name.value() === other._name.value()
+      && this._description.value() === other._description.value()
+      && this._price.equals(other._price);
+  }
+
   value(): { name: string; description: string; price: number } {
     return { name: this._name.value(), description: this._description.value(), price: this._price.value() };
   }

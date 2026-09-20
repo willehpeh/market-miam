@@ -53,6 +53,11 @@ export class Catalogue extends Aggregate {
       case 'ItemRetired':
         this._items = this._items.filter(item => !item.hasId(new ItemId(event.payload.itemId)));
         break;
+      // The order is the vendor's, and the write side keeps it for the same reason the view
+      // does: a reorder that restates it is a re-statement, not a change (see reorderItems).
+      case 'ItemsReordered':
+        this._items = event.payload.itemIds.map(itemId => this.itemWithId(new ItemId(itemId)));
+        break;
     }
   }
 
@@ -64,8 +69,12 @@ export class Catalogue extends Aggregate {
     return item;
   }
 
+  // A revision that changes nothing appends nothing — the same stance as setMenu and
+  // setMarketPrices. The edit form is saved whole, so this is the common case, not a corner.
   reviseItem(itemId: ItemId, name: ItemName, description: ItemDescription, pricing: Pricing) {
-    this.assertHasItem(itemId);
+    if (this.itemWithId(itemId).isDescribedAs(name, description, pricing)) {
+      return;
+    }
     const event: ItemRevised = {
       type: 'ItemRevised',
       payload: {
@@ -97,6 +106,9 @@ export class Catalogue extends Aggregate {
       && this._items.every(item => itemIds.some(itemId => item.hasId(itemId)));
     if (!coversEveryItem) {
       throw new IncompleteReorderError(`A new order must list each of the ${ this._items.length } items in the catalogue exactly once`);
+    }
+    if (this.isOrderedAs(itemIds)) {
+      return;
     }
     const event: ItemsReordered = {
       type: 'ItemsReordered',
@@ -134,6 +146,11 @@ export class Catalogue extends Aggregate {
 
   confirmAll(itemIds: ItemId[]): void {
     itemIds.forEach(itemId => this.assertHasItem(itemId));
+  }
+
+  // Only meaningful once itemIds is known to name every item exactly once.
+  private isOrderedAs(itemIds: ItemId[]): boolean {
+    return this._items.every((item, index) => item.hasId(itemIds[index]));
   }
 
   private hasItem(itemId: ItemId): boolean {

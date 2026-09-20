@@ -257,6 +257,12 @@ stylesheet and both `preconnect`s are gone, so no visitor IP reaches Google befo
 consent (LG München 2022 went against exactly that). Provenance and refresh recipe in
 `apps/website/README.md`.
 
+**Moved 2026-09: the files and the `@font-face` now live in `packages/design-system`**,
+because the vendor and customer apps needed the same fix and ADR 0054 makes it a
+prerequisite for a storefront privacy section. The site imports `fonts.css` from
+`Base.astro`'s frontmatter and no longer keeps a `public/fonts/`; the recipe moved to
+`packages/design-system/README.md` with it. Nothing about the decision changed.
+
 ### 5. Vendor dashboard screenshots
 
 Two only: `/dashboard/catalogue` and `/dashboard/markets`, both populated (5–6 dishes **with photos**, 3–4 markets). Skip forms, onboarding, dashboard home — forms don't sell.
