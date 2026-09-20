@@ -231,7 +231,7 @@ honest.
 | Check | Status |
 |-------|--------|
 | Load on a phone | Layout has now been checked at 390px in headless Chromium (Playwright against the built `dist/`), so the old *"Chrome refused to resize"* blocker is gone. A real device is still worth one look — a screenshot can't catch tap targets, iOS font fallback, or the Tally overlay on a small screen. |
-| Click a CTA on the real domain | **Still unverified.** Tally popup has only ever been confirmed against `localhost`. |
+| Click a CTA on the real domain | **Still unverified, and unverifiable from here.** Tally popup has only ever been confirmed against `localhost`, and `tally.so` is denied by the agent egress proxy (403 to CONNECT) from both curl and WebFetch — same wall as `demo.marketmiam.fr` below. **Checking the form's title, fields and consent copy is a human step**, not something an agent session can do; paste the text into the session if it needs reviewing against the rules in §2. |
 | Click the demo link on the real domain | **Still unverified.** `demo.marketmiam.fr` has never been loaded from a dev container — the agent proxy 403s that host. |
 | Paste URL into WhatsApp | First moment `/og.jpg` is reachable; confirms the card renders |
 
