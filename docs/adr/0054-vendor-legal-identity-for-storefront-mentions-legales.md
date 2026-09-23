@@ -1,6 +1,6 @@
 # 0054. Vendor legal identity: the storefront's mentions légales
 
-Date: 2026-09-03 · Status: Accepted
+Date: 2026-09-03 · Status: Accepted · Amended 2026-09-23 by [0056](0056-legal-identity-outlives-erasure.md) — the legal identity outlives erasure by 5 years under its own key, and carries its own phone
 
 ## Context
 
@@ -60,7 +60,7 @@ the way Catalogue and Calendar already are — no new mechanism:
 | Dénomination légale | LCEN 6-III-1 | the person, not the enseigne |
 | Adresse professionnelle | LCEN 6-III-1 | |
 | Email de contact public | LCEN art. 19 | **not** the Auth0 one; default it, don't reuse it |
-| Téléphone | LCEN art. 19 | reuse `phone` |
+| Téléphone | LCEN art. 19 | ~~reuse `phone`~~ its own copy, prefilled from `phone` (ADR 0056) |
 | Régime TVA (assujetti / franchise) | | drives the TVA line |
 | Médiateur : nom + site | C. conso. L616-1 | optional — see below |
 
@@ -117,6 +117,8 @@ duty and move onto the page only if a sale is ever concluded there.
 - The hébergeur block is a constant: Market Miam, then Render — as
   `mentions-legales.astro` already reads.
 - Art. 6-II is satisfied as a side effect: we hold what a request would ask for.
+  *(2026-09-23: only while the account lives — décret 2021-1362 extends it 5 years
+  past closure; ADR 0056.)*
 
 ## Rejected
 

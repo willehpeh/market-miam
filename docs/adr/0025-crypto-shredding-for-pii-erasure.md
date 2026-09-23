@@ -1,6 +1,6 @@
 # 0025. Crypto-shredding for GDPR erasure of PII
 
-Date: 2026-06-10 · Status: Accepted · Amended 2026-07-07 — shredded-read representation changed from `null` to the `SHREDDED` sentinel
+Date: 2026-06-10 · Status: Accepted · Amended 2026-07-07 — shredded-read representation changed from `null` to the `SHREDDED` sentinel · Amended 2026-09-23 by [0056](0056-legal-identity-outlives-erasure.md) — a second per-vendor key, `{vendorId}:legal`, whose shred erasure defers
 
 ## Context
 
@@ -44,3 +44,5 @@ design: `docs/archive/VENDOR_REGISTRATION_AND_PII.md`.
 - Subject resolution is vendorId-from-metadata for now; per-field subject
   mapping is a known extension point if customer PII ever lands in vendor
   streams.
+  *(2026-09-23: taken per event type by ADR 0056 — `VendorLegalIdentityRecorded`
+  encrypts under `{vendorId}:legal`.)*

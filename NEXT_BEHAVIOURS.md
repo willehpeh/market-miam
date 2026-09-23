@@ -2,7 +2,7 @@
 
 The single backlog (ADR 0017). One line per item; rationale lives in the linked
 doc. Legal and website work track their own remaining sections:
-`docs/PRIVACY-PLAN.md` · `docs/WEBSITE-PLAN.md`.
+`docs/PRIVACY-PLAN.md` · `docs/WEBSITE-PLAN.md` · `docs/MENTIONS-LEGALES-PLAN.md`.
 
 ## Product
 
