@@ -7,7 +7,10 @@ lawyer on 2026-09-23; this plan is what it takes to ship them with the vendor's 
 
 The approved wording lives in the doc *Market Miam — politiques de confidentialité
 (brouillons)*: **Politique A** (espace traiteur) and **Politique B** (vitrines publiques),
-full versions. Copy them verbatim. A rewording goes back to the lawyer.
+full versions. Copy them verbatim. A rewording goes back to the lawyer. One sentence already
+has: on 2026-09-23 the retention line for the legal identity dropped *"reste chiffrée"* for
+*"accessible seulement pour répondre à une demande légale"* (`PRIVACY-PLAN.md` §1 rule). The
+lawyer hasn't seen that change yet.
 
 ## Decisions taken while drafting
 
@@ -35,12 +38,17 @@ Each slice is reviewable and committable alone. Deploying is gated by the rollou
 | 8 | Rollout to the live client | |
 | 9 | Readiness gate: `hasCompleteLegalIdentity()` | |
 
-### 2. Domain
+### 2. Domain — shipped (`a396ce6`)
 
-- Full-state event on `vendor-{vendorId}` (ADR 0024). Fields and derivations as ADR 0054's
-  tables: SIRET typed, SIREN and TVA derived, société-only fields optional as a group.
-- Value objects validate in their constructors (ADR 0007); the SIRET check is Luhn.
-- Every field in `vendorPiiFields`, encrypted under `{vendorId}:legal` (ADR 0056).
+- `RecordVendorLegalIdentity` → `VendorLegalIdentityRecorded`, full state, flat payload with
+  `null` for absent optionals. Recording the same identity again raises nothing.
+  An unregistered vendor is rejected.
+- Value objects: `Siret` (Luhn; derives SIREN and TVA), `VatRegime` (`assujetti` | `franchise`;
+  no TVA number under franchise), `LegalName`, `BusinessAddress`, `ContactPhone` (required),
+  `Mediator` (name and site as a pair), `CompanyDetails` (all four or none).
+- Every field except `vendorId` sits in `vendorPiiFields`. `vendorPiiKeyScopes` seals them under
+  `{vendorId}:legal`. It is passed to `ShreddingEventStore` and wired through
+  `EventSourcingModule.forRoot` in production and the API test apps.
 
 ### 3. Erasure
 
@@ -53,7 +61,8 @@ Each slice is reviewable and committable alone. Deploying is gated by the rollou
 
 ### 4. Read model + HTTP
 
-- `GET`/`PUT` for the vendor, zod at the edge (ADR 0046).
+- `GET`/`PUT` for the vendor, zod at the edge (ADR 0046). The `PUT` dispatches the existing
+  `RecordVendorLegalIdentity`. `vatRegime` is an enum at the edge too.
 - `FindCustomerStorefront` carries the éditeur block. The hébergeur block is a constant (Market
   Miam, then Render) and stays out of the payload.
 
@@ -63,7 +72,8 @@ Each slice is reviewable and committable alone. Deploying is gated by the rollou
   manual entry as the fallback for Sirene non-diffusion.
 - The médiateur is **warned, not required** (ADR 0054). Name CM2C, Medicys and AME, and keep
   evidence that the warning was shown.
-- State that the phone is published, at the field.
+- State that the phone is published, at the field. Prefill it from the storefront's `phone`
+  (ADR 0056).
 - Link policy A from the footer (`core/layout.ts`) and from Auth0 Universal Login's privacy-policy
   setting, so it is readable before sign-up.
 
