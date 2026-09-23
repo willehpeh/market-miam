@@ -26,7 +26,7 @@ Each slice is reviewable and committable alone. Deploying is gated by the rollou
 | # | Slice | Status |
 |---|---|---|
 | 1 | Decisions on paper: ADR 0056, amendments to 0054 and 0025, `PRIVACY-PLAN.md` | done |
-| 2 | Domain: `RecordVendorLegalIdentity` → `VendorLegalIdentityRecorded` | |
+| 2 | Domain: `RecordVendorLegalIdentity` → `VendorLegalIdentityRecorded` | done |
 | 3 | Erasure keeps the `:legal` key and stamps its shred date | |
 | 4 | Read model + HTTP: vendor read/write, éditeur block on the public storefront query | |
 | 5 | Vendor app: the legal-identity form, and links to policy A | |

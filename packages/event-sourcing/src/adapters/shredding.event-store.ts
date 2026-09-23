@@ -7,6 +7,10 @@ import { StoredEvent } from '../domain/stored-event';
 
 export type PiiFields = Record<string, string[]>;
 
+// Event types whose PII seals under a key of their own, `{subject}:{scope}`, so it can
+// outlive the shredding of the subject's main key (ADR 0056).
+export type KeyScopes = Record<string, string>;
+
 // A shredded field reads back as this sentinel string, not null — so read-model
 // columns stay NOT NULL and value objects never see null.
 export const SHREDDED = '<shredded>';
@@ -24,6 +28,7 @@ export class ShreddingEventStore implements EventStore, Events {
     private readonly keys: DataKeys,
     private readonly pii: PiiFields,
     private readonly subjectKey: string,
+    private readonly keyScopes: KeyScopes = {},
   ) {}
 
   async append(
@@ -60,7 +65,7 @@ export class ShreddingEventStore implements EventStore, Events {
     if (fields.length === 0) {
       return event;
     }
-    const key = await this.keys.getOrCreateKeyFor(this.subjectOf(metadata));
+    const key = await this.keys.getOrCreateKeyFor(this.scoped(this.subjectOf(metadata), event.type));
     const payload = { ...event.payload };
     for (const field of fields) {
       const value = payload[field];
@@ -118,7 +123,12 @@ export class ShreddingEventStore implements EventStore, Events {
     if (typeof subjectId !== 'string' || subjectId.length === 0) {
       return Promise.resolve(null);
     }
-    return this.keys.findKeyFor(subjectId);
+    return this.keys.findKeyFor(this.scoped(subjectId, event.type));
+  }
+
+  private scoped(subjectId: string, eventType: string): string {
+    const scope = this.keyScopes[eventType];
+    return scope ? `${subjectId}:${scope}` : subjectId;
   }
 
   private subjectOf(metadata?: Record<string, unknown>): string {

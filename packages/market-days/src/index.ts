@@ -28,6 +28,7 @@ export * from './market-schedule-view';
 export * from './selling-record';
 export * from './catalogue';
 export * from './register-vendor';
+export * from './record-vendor-legal-identity';
 export * from './vendor/events';
 export * from './vendor';
 export * from './storefront/events';

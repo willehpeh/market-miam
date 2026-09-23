@@ -4,7 +4,7 @@ import { Test } from '@nestjs/testing';
 import { Clock } from '@market-miam/common';
 import { StaticTokenVerifier, type VerifiedVendor } from '@market-miam/auth';
 import { AuthModule } from '@market-miam/auth-nestjs';
-import { vendorPiiFields } from '@market-miam/market-days';
+import { vendorPiiFields, vendorPiiKeyScopes } from '@market-miam/market-days';
 import { MarketDaysModule } from '../market-days/market-days.module';
 import { EventSourcingModule } from '../event-sourcing/event-sourcing.module';
 import { PostgresPersistenceModule } from '../persistence/postgres-persistence.module';
@@ -45,7 +45,7 @@ export async function bootPostgresApp(
       }),
       AuthModule.forRootAsync({ useFactory: () => new StaticTokenVerifier(vendor) }),
       PostgresPersistenceModule,
-      EventSourcingModule.forRoot(vendorPiiFields),
+      EventSourcingModule.forRoot(vendorPiiFields, vendorPiiKeyScopes),
       MarketDaysModule,
     ],
     providers: [...globalFilters],

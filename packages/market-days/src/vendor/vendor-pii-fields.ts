@@ -1,4 +1,4 @@
-import { DomainEvent, EventOfType } from '@market-miam/event-sourcing';
+import { DomainEvent, EventOfType, KeyScopes } from '@market-miam/event-sourcing';
 import { CalendarEvent } from '../calendar/events';
 import { CatalogueEvent } from '../catalogue/events';
 import { MarketDayEvent } from '../market-day';
@@ -16,6 +16,10 @@ type PiiFieldsOf<E extends DomainEvent> = {
  */
 export const vendorPiiFields: PiiFieldsOf<MarketDaysEvent> = {
   VendorRegistered: ['email'],
+  VendorLegalIdentityRecorded: [
+    'siret', 'siren', 'vatNumber', 'legalName', 'address', 'contactEmail', 'phone', 'vatRegime',
+    'mediatorName', 'mediatorUrl', 'legalForm', 'shareCapital', 'registryCity', 'legalRepresentative',
+  ],
   StorefrontInformationEdited: ['name', 'description', 'phone'],
   StorefrontOpened: [],
   StorefrontCoverPhotoSet: [],
@@ -38,4 +42,11 @@ export const vendorPiiFields: PiiFieldsOf<MarketDaysEvent> = {
   MarketDayBilanRecorded: [],
   MarketDayClosed: [],
   MarketDayReopened: [],
+};
+
+/** Event types sealed under their own per-vendor key. The legal identity outlives the
+ * vendor's erasure by five years, so erasure must not reach its key (ADR 0056).
+ */
+export const vendorPiiKeyScopes: KeyScopes = {
+  VendorLegalIdentityRecorded: 'legal',
 };
