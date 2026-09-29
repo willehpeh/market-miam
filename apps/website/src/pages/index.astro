@@ -43,7 +43,7 @@ const groupes = [
       legende: 'Dans l’application, pendant un marché',
       alt: 'Écran de l’application pendant un marché : les plats du jour, un plat passé en épuisé et le bouton « Fermer le stand »',
       width: 640,
-      height: 1037,
+      height: 956,
     },
     cartes: [
       {
@@ -71,7 +71,7 @@ const groupes = [
       legende: 'Dans l’application, avant un marché',
       alt: 'Préparation d’un menu dans l’application : sous chaque plat, comment il s’est vendu sur ce marché, par exemple « Ça part bien »',
       width: 640,
-      height: 1002,
+      height: 977,
     },
     cartes: [
       {
@@ -174,15 +174,13 @@ const groupes = [
             </div>
             {groupe.capture && (
               <figure class="capture">
-                <div class="ecran">
-                  <img
-                    src={groupe.capture.src}
-                    alt={groupe.capture.alt}
-                    width={groupe.capture.width}
-                    height={groupe.capture.height}
-                    loading="lazy"
-                  />
-                </div>
+                <img
+                  src={groupe.capture.src}
+                  alt={groupe.capture.alt}
+                  width={groupe.capture.width}
+                  height={groupe.capture.height}
+                  loading="lazy"
+                />
                 <figcaption>{groupe.capture.legende}</figcaption>
               </figure>
             )}
@@ -507,8 +505,10 @@ const groupes = [
      a phone the screen follows the cards; wide, the cards stack beside it.
      The vendor app shares this page's tokens and fonts, so a bare screenshot reads as more
      page, and on a phone, where it sits in the same column as the cards, as a stack of
-     buttons to press. The dark bezel and the caption say it is a picture of a phone. It is
-     narrower than the cards at every width for the same reason. */
+     buttons to press. So the shot keeps the app's own canvas around its card, and wears the
+     hero shot's border, radius and shadow: the edge of a screen, not of a card. With the
+     caption and a width narrower than the cards, that is enough; a dark phone bezel was
+     tried and was far too heavy for the page. */
   .groupe-capture {
     display: grid;
     gap: 2rem;
@@ -520,18 +520,13 @@ const groupes = [
     margin-inline: auto;
   }
 
-  .ecran {
-    background: var(--mm-canvas);
-    border: 0.5rem solid var(--mm-sidebar);
-    border-radius: 2rem;
-    padding: 1.4rem 0.6rem;
-    box-shadow: 0 18px 36px -16px rgb(42 36 30 / 0.45);
-  }
-
-  .ecran img {
+  .capture img {
     display: block;
     width: 100%;
     height: auto;
+    border: 1px solid var(--mm-line-strong);
+    border-radius: 16px;
+    box-shadow: 0 18px 40px -18px rgb(42 36 30 / 0.35);
   }
 
   .capture figcaption {

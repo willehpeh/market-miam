@@ -312,7 +312,12 @@ text and showed none of it, and those two screens are the product doing the thin
 claim. *Une fois pour toutes* gets no screen on purpose, since it is forms.
 
 Rules for replacing them: phone screenshots, no dish photos in frame (the demo account's look
-generated), the white card cropped out of the vendor app's canvas, recipe in the app README.
+generated), full phone width with the app's own background kept, recipe in the app README.
+They wear the hero shot's border, radius and shadow plus a caption. **Not a dark phone
+bezel**: tried, and far too heavy for the page. **Not cropped to the white card either**:
+the vendor app shares the site's tokens and fonts, so a bare card reads as page content,
+and on a phone as buttons to press. The app's background around the card is what marks
+it as a screen.
 They carry a date (*Mardi 29 septembre*); that ages fine, but reshoot if the screens change.
 
 ### 6. The close clause — done
