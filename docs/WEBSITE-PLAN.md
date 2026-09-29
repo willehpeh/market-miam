@@ -177,6 +177,38 @@ Two presentation faults found by screenshotting the built page, not by reading i
 Card titles dropped `h3` → `h4` so the group headings could take `h3` and the outline stays
 honest.
 
+### Voice pass — the page read as machine-written
+
+The copy was accurate but its rhythm was a template: an em-dash in nearly every paragraph,
+lists of three everywhere, *pas X : Y* reveals (*Vous n'êtes pas un numéro…*), one-word
+closers (*Jamais.*), setup-and-punch headings (*Vous vendez sur les marchés. Tout le reste,
+vous le bricolez.*) and aphorisms (*un plat qui s'arrache ici peut rentrer avec vous
+d'ailleurs*). Each is fine once; together they are what a reader now recognises as AI copy,
+and that costs trust on a page whose whole pitch is a person onboarding you by hand.
+
+Rewritten to say the concrete thing in a plain sentence. Rules the page now follows:
+
+- **Em-dashes only in the slogan.** Commas, full stops, or a second sentence instead.
+- **No rhetorical questions, no fragments for effect, no *not X but Y*.**
+- **Name the real thing** — the pile labels in the app (*Toujours épuisé*, *Ça part bien*,
+  *Il en reste*), *un seul formulaire*, *ajouter un plat ou changer un horaire* — rather than
+  a benefit-shaped paraphrase.
+- **Don't overclaim.** *Ensuite vous n'y touchez plus* was false (vendors edit their carte);
+  it now says what they come back for.
+
+What moved: the `h1` is now *Vos habitués savent quand vous venez, et ce que vous servez.* —
+same premise as before (the local relationship, not Instagram, not cross-market discovery),
+stated as the two facts the vitrine delivers. The features heading is *Comment fonctionne
+Market Miam* (brand kept in a heading, per the decision below). The close clause and the price
+freeze were reworded with both of their meanings intact: both doors of decision 45 are still
+there unnamed, and future work is still included at no extra cost. Nothing about pricing,
+vocabulary, the CTAs or the slogan changed.
+
+Metas deliberately untouched, for the same reason as before: `og:description` restales every
+link already shared. The default description still has the old rhythm (*Votre vitrine, votre
+carte, vos marchés — et le menu du jour, chaque matin.*); change it together with the
+`og.jpg` reshoot in Remaining §7, which forces a re-scrape anyway.
+
 ## Remaining
 
 ### 1. Post-deploy verification (blocking, do first)
@@ -273,7 +305,8 @@ Capture: same demo account as the storefront shot so names match; ~1200px wide; 
 
 ### 6. The close clause — done
 
-Shipped as written, appended to the *Pendant le marché* card once slice 2 was deployed:
+Shipped as below, appended to the *Pendant le marché* card once slice 2 was deployed (since
+reworded in the voice pass, same two doors):
 
 > Et quand vous remballez — ou si vous ne pouvez pas venir — vous fermez le stand : votre
 > vitrine cesse d'annoncer un marché où vous n'êtes plus.
