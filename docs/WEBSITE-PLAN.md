@@ -204,10 +204,12 @@ freeze were reworded with both of their meanings intact: both doors of decision 
 there unnamed, and future work is still included at no extra cost. Nothing about pricing,
 vocabulary, the CTAs or the slogan changed.
 
-Metas deliberately untouched, for the same reason as before: `og:description` restales every
-link already shared. The default description still has the old rhythm (*Votre vitrine, votre
-carte, vos marchés — et le menu du jour, chaque matin.*); change it together with the
-`og.jpg` reshoot in Remaining §7, which forces a re-scrape anyway.
+The default meta description followed in the same pass: *Traiteurs de marché : vos habitués
+savent quand vous venez et ce que vous servez, et vous voyez, marché par marché, quels plats
+partent et lesquels restent.* 156 chars. Still mission-first (serve the regulars, then prepare
+better) and still not vitrine-led, per the SEO notes above; it just says both halves as facts
+instead of as a slogan plus a list. **This restales `og:description` on every link already
+shared** (§1): a forced re-scrape after deploy, or let the caches expire.
 
 ## Remaining
 
