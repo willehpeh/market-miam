@@ -303,7 +303,17 @@ Two only: `/dashboard/catalogue` and `/dashboard/markets`, both populated (5–6
 
 Capture: same demo account as the storefront shot so names match; ~1200px wide; no browser chrome; check no real email is in frame. Login can't be automated (credentials), but an already-authenticated tab can be driven.
 
-**Decision: capture, then hold.** The hero storefront shot does the selling. Dashboard shots lengthen the page and go stale every time that UI changes. Ship them only if pilot conversations stall on *"is this a hassle to maintain?"*
+~~**Decision: capture, then hold.**~~ **Superseded 2026-09: two vendor-app screens are on the
+page**, each beside the group it illustrates. The live market screen (*En direct*, a dish
+under *Épuisés*, *Fermer le stand*) sits with *À chaque marché*, and the menu editor showing
+the sales labels under each dish sits with *Au fil des marchés*. The hold was right about
+forms and wrong about these: the page described what happens on market day in seven cards of
+text and showed none of it, and those two screens are the product doing the thing the cards
+claim. *Une fois pour toutes* gets no screen on purpose, since it is forms.
+
+Rules for replacing them: phone screenshots, no dish photos in frame (the demo account's look
+generated), the white card cropped out of the vendor app's canvas, recipe in the app README.
+They carry a date (*Mardi 29 septembre*); that ages fine, but reshoot if the screens change.
 
 ### 6. The close clause — done
 

@@ -38,6 +38,12 @@ const groupes = [
   {
     titre: 'À chaque marché',
     lede: 'Tout se fait depuis votre téléphone.',
+    capture: {
+      src: '/app-pendant-le-marche.webp',
+      alt: 'Écran de l’application pendant un marché : les plats du jour, un plat passé en épuisé et le bouton « Fermer le stand »',
+      width: 640,
+      height: 1037,
+    },
     cartes: [
       {
         titre: 'Le menu du jour',
@@ -59,11 +65,17 @@ const groupes = [
   {
     titre: 'Au fil des marchés',
     lede: 'Vous n’avez rien de plus à remplir. Vos réponses d’après-marché servent à préparer les suivants.',
+    capture: {
+      src: '/app-reperes.webp',
+      alt: 'Préparation d’un menu dans l’application : sous chaque plat, comment il s’est vendu sur ce marché, par exemple « Ça part bien »',
+      width: 640,
+      height: 1002,
+    },
     cartes: [
       {
         titre: 'Ce qui part, ce qui reste',
         texte:
-          'Quand vous préparez le menu d’un marché, chaque plat affiche comment il s’est vendu sur ce marché les fois précédentes : « Toujours épuisé », « Ça part bien » ou « Il en reste ». Chaque marché est compté à part, parce qu’un plat qui part vite à l’un peut très bien rester à l’autre.',
+          'Quand vous préparez le menu d’un marché, chaque plat affiche comment il s’est vendu sur ce marché les fois précédentes, par exemple « Toujours épuisé » ou « Il en reste ». Chaque marché est compté à part, parce qu’un plat qui part vite à l’un peut très bien rester à l’autre.',
       },
     ],
   },
@@ -139,17 +151,35 @@ const groupes = [
       <h2>Comment fonctionne Market&nbsp;Miam</h2>
       {
         groupes.map((groupe, index) => (
-          <div class:list={['groupe', index === groupes.length - 1 && 'groupe-final']}>
-            <h3>{groupe.titre}</h3>
-            <p class="lede lede-tight">{groupe.lede}</p>
-            <div class="cards">
-              {groupe.cartes.map((carte) => (
-                <article class="card">
-                  <h4>{carte.titre}</h4>
-                  <p>{carte.texte}</p>
-                </article>
-              ))}
+          <div
+            class:list={[
+              'groupe',
+              index === groupes.length - 1 && 'groupe-final',
+              groupe.capture && 'groupe-capture',
+            ]}
+          >
+            <div>
+              <h3>{groupe.titre}</h3>
+              <p class="lede lede-tight">{groupe.lede}</p>
+              <div class="cards">
+                {groupe.cartes.map((carte) => (
+                  <article class="card">
+                    <h4>{carte.titre}</h4>
+                    <p>{carte.texte}</p>
+                  </article>
+                ))}
+              </div>
             </div>
+            {groupe.capture && (
+              <img
+                class="capture"
+                src={groupe.capture.src}
+                alt={groupe.capture.alt}
+                width={groupe.capture.width}
+                height={groupe.capture.height}
+                loading="lazy"
+              />
+            )}
           </div>
         ))
       }
@@ -464,6 +494,35 @@ const groupes = [
      closer than the ungrouped 2.25rem would put them. */
   .groupe .cards {
     margin-top: 1.25rem;
+  }
+
+  /* Only the groups a vendor does something in on market day carry a screen: that is the
+     part a traiteur cannot picture from the words. Setup is forms, and forms don't sell. On
+     a phone the screen follows the cards; wide, the cards stack beside it. */
+  .groupe-capture {
+    display: grid;
+    gap: 2rem;
+  }
+
+  .capture {
+    display: block;
+    width: 100%;
+    max-width: 19rem;
+    height: auto;
+    margin-inline: auto;
+    filter: drop-shadow(0 14px 24px rgb(42 36 30 / 0.16));
+  }
+
+  @media (min-width: 56rem) {
+    .groupe-capture {
+      grid-template-columns: 1fr 19rem;
+      align-items: start;
+      gap: 3rem;
+    }
+
+    .groupe-capture .cards {
+      grid-template-columns: 1fr;
+    }
   }
 
   .cards {
