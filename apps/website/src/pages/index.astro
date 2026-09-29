@@ -40,6 +40,7 @@ const groupes = [
     lede: 'Tout se fait depuis votre téléphone.',
     capture: {
       src: '/app-pendant-le-marche.webp',
+      legende: 'Dans l’application, pendant un marché',
       alt: 'Écran de l’application pendant un marché : les plats du jour, un plat passé en épuisé et le bouton « Fermer le stand »',
       width: 640,
       height: 1037,
@@ -67,6 +68,7 @@ const groupes = [
     lede: 'Vous n’avez rien de plus à remplir. Vos réponses d’après-marché servent à préparer les suivants.',
     capture: {
       src: '/app-reperes.webp',
+      legende: 'Dans l’application, avant un marché',
       alt: 'Préparation d’un menu dans l’application : sous chaque plat, comment il s’est vendu sur ce marché, par exemple « Ça part bien »',
       width: 640,
       height: 1002,
@@ -171,14 +173,18 @@ const groupes = [
               </div>
             </div>
             {groupe.capture && (
-              <img
-                class="capture"
-                src={groupe.capture.src}
-                alt={groupe.capture.alt}
-                width={groupe.capture.width}
-                height={groupe.capture.height}
-                loading="lazy"
-              />
+              <figure class="capture">
+                <div class="ecran">
+                  <img
+                    src={groupe.capture.src}
+                    alt={groupe.capture.alt}
+                    width={groupe.capture.width}
+                    height={groupe.capture.height}
+                    loading="lazy"
+                  />
+                </div>
+                <figcaption>{groupe.capture.legende}</figcaption>
+              </figure>
             )}
           </div>
         ))
@@ -498,24 +504,46 @@ const groupes = [
 
   /* Only the groups a vendor does something in on market day carry a screen: that is the
      part a traiteur cannot picture from the words. Setup is forms, and forms don't sell. On
-     a phone the screen follows the cards; wide, the cards stack beside it. */
+     a phone the screen follows the cards; wide, the cards stack beside it.
+     The vendor app shares this page's tokens and fonts, so a bare screenshot reads as more
+     page, and on a phone, where it sits in the same column as the cards, as a stack of
+     buttons to press. The dark bezel and the caption say it is a picture of a phone. It is
+     narrower than the cards at every width for the same reason. */
   .groupe-capture {
     display: grid;
     gap: 2rem;
   }
 
   .capture {
+    width: 100%;
+    max-width: 16rem;
+    margin-inline: auto;
+  }
+
+  .ecran {
+    background: var(--mm-canvas);
+    border: 0.5rem solid var(--mm-sidebar);
+    border-radius: 2rem;
+    padding: 1.4rem 0.6rem;
+    box-shadow: 0 18px 36px -16px rgb(42 36 30 / 0.45);
+  }
+
+  .ecran img {
     display: block;
     width: 100%;
-    max-width: 19rem;
     height: auto;
-    margin-inline: auto;
-    filter: drop-shadow(0 14px 24px rgb(42 36 30 / 0.16));
+  }
+
+  .capture figcaption {
+    margin-top: 0.85rem;
+    font-size: 0.9rem;
+    color: var(--mm-muted);
+    text-align: center;
   }
 
   @media (min-width: 56rem) {
     .groupe-capture {
-      grid-template-columns: 1fr 19rem;
+      grid-template-columns: 1fr 17rem;
       align-items: start;
       gap: 3rem;
     }
