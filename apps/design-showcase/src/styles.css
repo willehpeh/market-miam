@@ -1,0 +1,4 @@
+@import "tailwindcss" source("..");
+/* theme(static): emit every design token, not just the ones a utility here happens to
+   use — the page shows radii and shadows through var(), which Tailwind cannot see. */
+@import "../../../packages/design-system/theme.css" theme(static);

@@ -25,6 +25,7 @@ Decisions are recorded in [`docs/adr/`](docs/adr/README.md).
 | `vendor-frontend` | Angular | Vendor-facing app: onboarding, storefront, dashboard. |
 | `customer-frontend` | Angular (SSR) | Public per-vendor storefront customers visit. |
 | `website` | Astro | Marketing / landing site. |
+| `design-showcase` | Astro | The design system rendered from `packages/design-system` — tokens, type, component classes, icons. |
 | `admin-api` | NestJS | Internal admin backend (early stage). |
 | `admin-frontend` | Angular | Internal admin app (early stage). |
 

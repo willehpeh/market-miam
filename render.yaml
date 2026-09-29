@@ -123,6 +123,24 @@ projects:
                 - package-lock.json
                 - nx.json
                 - tsconfig.base.json
+          # The design-system showcase (apps/design-showcase), on its bare onrender.com
+          # URL: a name under marketmiam.fr would sit in the storefronts' wildcard. It
+          # rebuilds on the frontends' sources too — its icon list is read from them.
+          - type: web
+            name: design-showcase
+            runtime: static
+            repo: https://github.com/willehpeh/market-miam
+            buildCommand: npm ci && npx nx build design-showcase
+            staticPublishPath: ./dist/apps/design-showcase
+            autoDeployTrigger: checksPass
+            buildFilter:
+              paths:
+                - apps/design-showcase/**
+                - apps/*-frontend/src/**
+                - packages/design-system/**
+                - package.json
+                - package-lock.json
+                - nx.json
           # The interactive test map (tools/test-map). Built with bare Node — the
           # generator reads spec files straight off the checkout, no npm ci needed.
           - type: web

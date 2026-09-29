@@ -1,0 +1,28 @@
+---
+// Fonts from the frontmatter, not an @import in styles.css — see the design-system
+// README: Astro does not rebase url() inside an @import'ed sheet.
+import '../../../../packages/design-system/fonts.css';
+import '@fortawesome/fontawesome-free/css/fontawesome.css';
+import '@fortawesome/fontawesome-free/css/solid.css';
+import '../styles.css';
+
+interface Props {
+  title: string;
+}
+
+const { title } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex" />
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <title>{title}</title>
+  </head>
+  <body class="bg-canvas">
+    <slot />
+  </body>
+</html>

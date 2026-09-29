@@ -27,6 +27,9 @@ export default [
             // The custom rule module lives at the workspace root so both the
             // flat config and its spec (test project) can import it.
             '^.*/eslint-rules/.*$',
+            // The design system is CSS and fonts, not an Nx project; the showcase
+            // reads its source as text to render the tokens.
+            '^.*/packages/design-system/.*$',
           ],
           depConstraints: [
             {

@@ -8,6 +8,8 @@ The brand, in three files, consumed by every app that has a face.
 | `theme.css` | maps the tokens into Tailwind v4's `@theme` so utilities generate, plus a base layer and a few component shortcuts | `vendor-frontend`, `customer-frontend` |
 | `fonts.css` | `@font-face` for the two typefaces, self-hosted | every app that renders text in them |
 
+All of it is rendered, from this source, by [`apps/design-showcase`](../../apps/design-showcase/README.md).
+
 ## Fonts
 
 `fonts/` holds the two typefaces as `woff2`. They are **self-hosted, not linked from
