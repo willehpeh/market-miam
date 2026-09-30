@@ -1,0 +1,26 @@
+---
+import type { Token } from '../lib/design-system';
+import { utilityFor } from '../lib/design-system';
+import { contrast, describeContrast } from '../lib/contrast';
+
+interface Props {
+  token: Token;
+  surface: string;
+}
+
+const { token, surface } = Astro.props;
+const utility = utilityFor(token.name);
+---
+
+<figure class="overflow-hidden rounded-card border border-line bg-surface" data-swatch={token.name}>
+  <div class="h-16 border-b border-line" style={`background: var(${token.name})`}></div>
+  <figcaption class="space-y-1 p-3 text-sm">
+    <code class="block font-mono text-xs font-bold text-ink">{token.name}</code>
+    {utility && <code class="block font-mono text-xs text-ink-soft">*-{utility}</code>}
+    <p class="font-mono text-xs text-muted">
+      <span data-value>{token.value}</span> ·
+      <span data-contrast>{describeContrast(contrast(token.value, surface))}</span> on surface
+    </p>
+    {token.note && <p class="text-xs text-muted">{token.note}</p>}
+  </figcaption>
+</figure>

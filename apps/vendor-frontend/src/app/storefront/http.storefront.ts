@@ -25,6 +25,10 @@ export class HttpStorefront implements Storefront {
     return this.http.put<void>(`${environment.apiBaseUrl}/api/storefront/cover-photo`, { version });
   }
 
+  setCartePricesVisible(visible: boolean): Observable<void> {
+    return this.http.put<void>(`${environment.apiBaseUrl}/api/storefront/carte-prices`, { visible });
+  }
+
   publish(): Observable<void> {
     return this.http.post<void>(`${environment.apiBaseUrl}/api/storefront/publish`, {});
   }

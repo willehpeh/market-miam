@@ -15,7 +15,9 @@ export class VendorStorefrontViewProjection extends ProjectionFor<StorefrontEven
       StorefrontOpened: e => this.handleStorefrontOpened(e),
       StorefrontCoverPhotoSet: e => this.handleStorefrontCoverPhotoSet(e),
       StorefrontInformationEdited: e => this.handleStorefrontInformationEdited(e),
-      StorefrontPublished: e => this.store.publish(vendorIdFrom(e))
+      StorefrontPublished: e => this.store.publish(vendorIdFrom(e)),
+      CartePricesHidden: e => this.store.setCartePricesVisible(vendorIdFrom(e), false),
+      CartePricesShown: e => this.store.setCartePricesVisible(vendorIdFrom(e), true)
     };
   }
 

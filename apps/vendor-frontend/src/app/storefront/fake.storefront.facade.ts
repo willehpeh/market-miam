@@ -14,6 +14,7 @@ export class FakeStorefrontFacade implements StorefrontFacade {
   savedInfo: { name: string; description: string; phone: string } | undefined;
   uploadedFile: File | undefined;
   publishCalled = false;
+  cartePricesVisibility: boolean | undefined;
 
   save(name: string, description: string, phone: string): void {
     this.savedInfo = { name, description, phone };
@@ -25,5 +26,9 @@ export class FakeStorefrontFacade implements StorefrontFacade {
 
   publish(): void {
     this.publishCalled = true;
+  }
+
+  setCartePricesVisible(visible: boolean): void {
+    this.cartePricesVisibility = visible;
   }
 }

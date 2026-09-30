@@ -1,5 +1,5 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { VendorId } from '@market-miam/shared-kernel';
+import { MarketId, VendorId } from '@market-miam/shared-kernel';
 import { SetMarketPrices } from './set-market-prices';
 import { Calendars, MarketPrices, PriceList } from '../calendar';
 import { Catalogues } from '../catalogue';
@@ -16,7 +16,7 @@ export class SetMarketPricesHandler implements ICommandHandler<SetMarketPrices> 
     const prices = await this.pricesFor(vendorId, command.prices);
 
     const calendar = await this.calendars.forVendor(vendorId);
-    calendar.setMarketPrices(command.marketId, prices);
+    calendar.setMarketPrices(new MarketId(command.marketId), prices);
     await this.calendars.save(calendar, vendorId);
   }
 

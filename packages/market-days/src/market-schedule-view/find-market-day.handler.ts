@@ -2,13 +2,12 @@ import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { Clock, LocalDate } from '@market-miam/common';
 import { FindMarketDay } from './find-market-day';
 import { MarketDayOccurrence } from './upcoming-market-days-view';
-import { MarketScheduleView } from './market-schedule-view';
 import { MarketScheduleViews } from './market-schedule-views';
 import { MarketDayViews } from '../market-day-view/market-day-views';
 import { CatalogueViews } from '../catalogue-view/catalogue-views';
 import { MarketPricesViews } from '../market-prices-view/market-prices-views';
-import { priced } from '../market-prices-view/priced-items';
-import { Recurrence } from '../calendar/schedule/recurrence';
+import { dayMenus, menuFor } from './day-menus';
+import { scheduledDays } from './scheduled-days';
 import { calledOff, parisWallClock, standingOf } from './market-day-clock';
 
 @QueryHandler(FindMarketDay)
@@ -28,19 +27,18 @@ export class FindMarketDayHandler implements IQueryHandler<FindMarketDay> {
     // taking the first that names the market would answer for the wrong weekday.
     const covering = schedules
       .filter(schedule => schedule.marketId === query.marketId)
-      .flatMap(schedule => Recurrence.fromSnapshot(schedule).occurrencesWithin(date, date)
-        .map(occurrence => ({ schedule, occurrence })));
+      .flatMap(schedule => scheduledDays(schedule, date, date).map(occurrence => ({ schedule, occurrence })));
     if (covering.length === 0) {
       return undefined;
     }
     const { schedule: scheduled, occurrence } = covering[0];
     const now = parisWallClock(this.clock.now());
-    const absent = this.isAbsent(scheduled, query.date);
-    const [{ items }, [day], marketPrices] = await Promise.all([
-      this.catalogues.forVendor(query.vendorId),
-      this.menus.menusFor(query.vendorId, query.date, query.date),
-      this.prices.forVendor(query.vendorId),
-    ]);
+    const { absent } = occurrence;
+    const day = menuFor(
+      await dayMenus({ catalogues: this.catalogues, menus: this.menus, prices: this.prices }, query.vendorId, query.date, query.date),
+      scheduled.marketId,
+      query.date,
+    );
     const menu = absent ? undefined : day;
     return {
       scheduleId: scheduled.scheduleId,
@@ -51,19 +49,12 @@ export class FindMarketDayHandler implements IQueryHandler<FindMarketDay> {
       endTime: occurrence.endTime,
       absent,
       ...standingOf(occurrence, now),
-      items: priced(
-        items.filter(item => menu?.itemIds.includes(item.itemId)),
-        marketPrices.find(market => market.marketId === scheduled.marketId)?.prices ?? {},
-      ),
+      items: menu?.items ?? [],
       closed: day?.closed ?? false,
       calledOff: calledOff(occurrence, day?.closedAt),
       soldOutItemIds: menu?.soldOutItemIds ?? [],
       outcomes: menu?.outcomes ?? {},
       market: scheduled.market,
     };
-  }
-
-  private isAbsent(schedule: MarketScheduleView, date: string): boolean {
-    return (schedule.absences ?? []).some(range => range.from <= date && date <= range.to);
   }
 }

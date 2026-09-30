@@ -3,7 +3,7 @@ import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/route
 import { MenuEditor } from './menu-editor';
 import { MarketDayFacade } from './market-day.facade';
 import { FakeMarketDayFacade } from './fake.market-day.facade';
-import { marketDayView as day } from './market-day-view.builder';
+import { testMarketDayView as day } from './test-market-day-view.builder';
 import { CatalogueFacade } from '../catalogue/catalogue.facade';
 import { FakeCatalogueFacade } from '../catalogue/fake.catalogue.facade';
 import { CatalogueItemView } from '../catalogue/catalogue';
@@ -12,16 +12,19 @@ import { MarketPricesFacade } from '../market-prices/market-prices.facade';
 import { FakeMarketPricesFacade } from '../market-prices/fake.market-prices.facade';
 import { SellingRecordFacade } from '../selling-record/selling-record.facade';
 import { FakeSellingRecordFacade } from '../selling-record/fake.selling-record.facade';
-import { MarketRecord } from '../selling-record/selling-record';
+import { Bilan } from '../selling-record/selling-record';
 import { ItemOutcome } from './market-days';
 
 const item = (itemId: string, name: string): CatalogueItemView => catalogueItem({ itemId, name });
 
 // Oldest bilan first, as the fold hands them over. The dates only have to increase: nothing
 // on this screen shows them, and only their order decides the tie-break.
-const broughtTo = (marketId: string, itemId: string, ...outcomes: ItemOutcome[]): MarketRecord => ({
-  marketId,
-  items: [{ itemId, bilans: outcomes.map((outcome, index) => ({ date: `2026-07-0${index + 1}`, outcome })) }],
+const brought = (
+  marketId: string,
+  itemId: string,
+  ...outcomes: ItemOutcome[]
+): Record<string, Record<string, Bilan[]>> => ({
+  [marketId]: { [itemId]: outcomes.map((outcome, index) => ({ date: `2026-07-0${index + 1}`, outcome })) },
 });
 
 async function renderEditor(
@@ -143,7 +146,7 @@ describe('MenuEditor', () => {
     await renderEditor((marketDays) => marketDays.days.set([day({ phase: 'due', itemIds: ['item-1'] })]));
 
     expect(screen.getByRole('link', { name: /retour/i }).getAttribute('href')).toBe(
-      '/dashboard/live/market-1/2026-08-15',
+      '/dashboard/market/market-1/2026-08-15/live',
     );
   });
 
@@ -182,7 +185,7 @@ describe('MenuEditor', () => {
     await renderEditor((marketDays, catalogue, prices) => {
       marketDays.days.set([day()]);
       catalogue.items.set([item('item-1', 'Bœuf bourguignon')]);
-      prices.markets.set([{ marketId: 'market-1', prices: { 'item-1': 1500 } }]);
+      prices.byMarket.set({ 'market-1': { 'item-1': 1500 } });
     });
 
     expect(screen.getByText(/15,00/)).toBeInTheDocument();
@@ -192,7 +195,7 @@ describe('MenuEditor', () => {
     await renderEditor((marketDays, catalogue, prices) => {
       marketDays.days.set([day()]);
       catalogue.items.set([item('item-1', 'Bœuf bourguignon'), item('item-2', 'Tarte aux pommes')]);
-      prices.markets.set([{ marketId: 'market-1', prices: { 'item-1': 1500 } }]);
+      prices.byMarket.set({ 'market-1': { 'item-1': 1500 } });
     });
 
     expect(screen.getAllByText(/tarif marché/i)).toHaveLength(1);
@@ -202,7 +205,7 @@ describe('MenuEditor', () => {
     await renderEditor((marketDays, catalogue, prices) => {
       marketDays.days.set([day()]);
       catalogue.items.set([item('item-1', 'Bœuf bourguignon')]);
-      prices.markets.set([{ marketId: 'market-9', prices: { 'item-1': 1500 } }]);
+      prices.byMarket.set({ 'market-9': { 'item-1': 1500 } });
     });
 
     expect(screen.getByText(/13,00/)).toBeInTheDocument();
@@ -224,7 +227,7 @@ describe('MenuEditor', () => {
     await renderEditor((marketDays, catalogue, prices) => {
       marketDays.days.set([day()]);
       catalogue.items.set([pizza()]);
-      prices.markets.set([{ marketId: 'market-1', prices: { pizza: { Margherita: 800 } } }]);
+      prices.byMarket.set({ 'market-1': { pizza: { Margherita: 800 } } });
     });
 
     expect(screen.getByText(/dès\s+8,00/)).toBeInTheDocument();
@@ -237,7 +240,7 @@ describe('MenuEditor', () => {
     await renderEditor((marketDays, catalogue, prices) => {
       marketDays.days.set([day()]);
       catalogue.items.set([pizza()]);
-      prices.markets.set([{ marketId: 'market-1', prices: { pizza: { Pepperoni: 1400 } } }]);
+      prices.byMarket.set({ 'market-1': { pizza: { Pepperoni: 1400 } } });
     });
 
     expect(screen.getByText(/dès\s+9,00/)).toBeInTheDocument();
@@ -248,7 +251,7 @@ describe('MenuEditor', () => {
     await renderEditor((marketDays, catalogue, prices) => {
       marketDays.days.set([day()]);
       catalogue.items.set([pizza()]);
-      prices.markets.set([{ marketId: 'market-1', prices: { pizza: { Pepperoni: 500 } } }]);
+      prices.byMarket.set({ 'market-1': { pizza: { Pepperoni: 500 } } });
     });
 
     expect(screen.getByText(/dès\s+5,00/)).toBeInTheDocument();
@@ -286,17 +289,32 @@ describe('MenuEditor', () => {
     await renderEditor((marketDays, catalogue, prices, record) => {
       marketDays.days.set([day()]);
       catalogue.items.set([item('item-1', 'Bourguignon')]);
-      record.markets.set([broughtTo('market-1', 'item-1', 'sold_out', 'sold_out', 'did_well')]);
+      record.bilans.set(brought('market-1', 'item-1', 'sold_out', 'sold_out', 'did_well'));
     });
 
     expect(screen.getByText('Toujours épuisé')).toBeTruthy();
+  });
+
+  // The row is a <label> around a checkbox, so anything inside it is read out as part of
+  // the control's name. The pile is a claim about the dish, not a name for the tick —
+  // and text inside the label is also a tap that ticks the dish when the vendor meant to
+  // read it (decision 14). Guards the structure, which the visuals are free to move.
+  it('keeps the pile out of the name of the checkbox it sits under', async () => {
+    await renderEditor((marketDays, catalogue, prices, record) => {
+      marketDays.days.set([day()]);
+      catalogue.items.set([item('item-1', 'Bourguignon')]);
+      record.bilans.set(brought('market-1', 'item-1', 'sold_out', 'sold_out', 'sold_out'));
+    });
+
+    expect(screen.getByRole('checkbox', { name: /Bourguignon/ })).toBeTruthy();
+    expect(screen.queryByRole('checkbox', { name: /Toujours épuisé/ })).toBeNull();
   });
 
   it('calls a dish that mostly did well Ça part bien', async () => {
     await renderEditor((marketDays, catalogue, prices, record) => {
       marketDays.days.set([day()]);
       catalogue.items.set([item('item-1', 'Bourguignon')]);
-      record.markets.set([broughtTo('market-1', 'item-1', 'did_well', 'did_well', 'sold_out')]);
+      record.bilans.set(brought('market-1', 'item-1', 'did_well', 'did_well', 'sold_out'));
     });
 
     expect(screen.getByText('Ça part bien')).toBeTruthy();
@@ -308,9 +326,7 @@ describe('MenuEditor', () => {
     await renderEditor((marketDays, catalogue, prices, record) => {
       marketDays.days.set([day()]);
       catalogue.items.set([item('item-1', 'Bourguignon')]);
-      record.markets.set([
-        broughtTo('market-1', 'item-1', 'did_not_do_well', 'did_not_do_well', 'did_well'),
-      ]);
+      record.bilans.set(brought('market-1', 'item-1', 'did_not_do_well', 'did_not_do_well', 'did_well'));
     });
 
     expect(screen.getByText('Il en reste')).toBeTruthy();
@@ -323,9 +339,7 @@ describe('MenuEditor', () => {
     await renderEditor((marketDays, catalogue, prices, record) => {
       marketDays.days.set([day()]);
       catalogue.items.set([item('item-1', 'Bourguignon')]);
-      record.markets.set([
-        broughtTo('market-1', 'item-1', 'sold_out', 'did_well', 'did_not_do_well'),
-      ]);
+      record.bilans.set(brought('market-1', 'item-1', 'sold_out', 'did_well', 'did_not_do_well'));
     });
 
     expect(screen.getByText('Ça dépend des jours')).toBeTruthy();
@@ -337,7 +351,7 @@ describe('MenuEditor', () => {
     await renderEditor((marketDays, catalogue, prices, record) => {
       marketDays.days.set([day()]);
       catalogue.items.set([item('item-1', 'Bourguignon')]);
-      record.markets.set([broughtTo('market-1', 'item-1', 'sold_out', 'sold_out')]);
+      record.bilans.set(brought('market-1', 'item-1', 'sold_out', 'sold_out'));
     });
 
     expect(screen.getByText('Trop tôt pour dire')).toBeTruthy();
@@ -350,7 +364,7 @@ describe('MenuEditor', () => {
     await renderEditor((marketDays, catalogue, prices, record) => {
       marketDays.days.set([day()]);
       catalogue.items.set([item('item-1', 'Bourguignon'), item('item-2', 'Tatin')]);
-      record.markets.set([broughtTo('market-1', 'item-1', 'sold_out', 'sold_out', 'sold_out')]);
+      record.bilans.set(brought('market-1', 'item-1', 'sold_out', 'sold_out', 'sold_out'));
     });
 
     expect(screen.getByText('Toujours épuisé')).toBeTruthy();
@@ -364,9 +378,7 @@ describe('MenuEditor', () => {
     await renderEditor((marketDays, catalogue, prices, record) => {
       marketDays.days.set([day()]);
       catalogue.items.set([item('item-1', 'Bourguignon')]);
-      record.markets.set([
-        broughtTo('market-9', 'item-1', 'sold_out', 'sold_out', 'sold_out'),
-      ]);
+      record.bilans.set(brought('market-9', 'item-1', 'sold_out', 'sold_out', 'sold_out'));
     });
 
     expect(screen.queryByText('Toujours épuisé')).toBeNull();
@@ -378,9 +390,7 @@ describe('MenuEditor', () => {
     await renderEditor((marketDays, catalogue, prices, record) => {
       marketDays.days.set([day()]);
       catalogue.items.set([item('item-1', 'Bourguignon')]);
-      record.markets.set([
-        broughtTo('market-1', 'item-1', 'sold_out', 'sold_out', 'did_well', 'did_well'),
-      ]);
+      record.bilans.set(brought('market-1', 'item-1', 'sold_out', 'sold_out', 'did_well', 'did_well'));
     });
 
     expect(screen.getByText('Ça part bien')).toBeTruthy();

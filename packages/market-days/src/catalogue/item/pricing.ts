@@ -32,6 +32,8 @@ export abstract class Pricing {
 
   abstract confirmMatchedBy(price: MarketPrice): void;
 
+  abstract equals(other: Pricing): boolean;
+
   abstract value(): PricingSnapshot;
 }
 
@@ -44,6 +46,10 @@ class FlatPricing extends Pricing {
     if (typeof price !== 'number') {
       throw new MismatchedPricingError('A flat-priced dish cannot take a price per variant');
     }
+  }
+
+  equals(other: Pricing): boolean {
+    return other instanceof FlatPricing && this._price.equals(other._price);
   }
 
   value(): PricingSnapshot {
@@ -61,6 +67,10 @@ class VariantPricing extends Pricing {
       throw new MismatchedPricingError('A dish sold by variant cannot take a single price');
     }
     this._variants.confirmNamed(Object.keys(price));
+  }
+
+  equals(other: Pricing): boolean {
+    return other instanceof VariantPricing && this._variants.equals(other._variants);
   }
 
   value(): PricingSnapshot {

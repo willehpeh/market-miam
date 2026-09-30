@@ -41,7 +41,9 @@ Public-facing vocabulary is deliberately the product's, not the code's: *vitrine
 
 ### Storefront (vitrine)
 
-The vendor's public page — name, description, phone, cover photo. Opened
+The vendor's public page — name, description, phone, cover photo, and whether the
+carte quotes its prices (ADR 0053; opted in, so the absence of a
+`CartePricesHidden` means shown). Opened
 automatically on registration (the `OpensStorefronts` processor); published only
 when ready: title, cover photo, at least one dish, at least one schedule, and an
 assigned subdomain (ADRs 0031/0032; description no longer gates publication,
@@ -135,6 +137,8 @@ further Ordering context, not an extension of Billing (ADR 0048).
 |StorefrontInformationEdited|Storefront|Setup          |
 |StorefrontCoverPhotoSet    |Storefront|Setup          |
 |StorefrontPublished        |Storefront|Setup          |
+|CartePricesHidden          |Storefront|Setup          |
+|CartePricesShown           |Storefront|Setup          |
 |ItemAddedToCatalogue       |Catalogue |Setup          |
 |ItemRevised                |Catalogue |Setup          |
 |ItemPhotoChanged           |Catalogue |Setup          |

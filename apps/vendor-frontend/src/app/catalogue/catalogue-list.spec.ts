@@ -1,17 +1,34 @@
 import { TestBed } from '@angular/core/testing';
-import { render, screen } from '@testing-library/angular';
+import { fireEvent, render, screen } from '@testing-library/angular';
 import { provideRouter } from '@angular/router';
 import { CatalogueList } from './catalogue-list';
 import { CatalogueFacade } from './catalogue.facade';
 import { FakeCatalogueFacade } from './fake.catalogue.facade';
 import { catalogueItem } from './catalogue-item.builder';
+import { StorefrontFacade } from '../storefront/storefront.facade';
+import { FakeStorefrontFacade } from '../storefront/fake.storefront.facade';
+
+const storefrontView = (cartePricesVisible: boolean) => ({
+  name: 'Chez Marie',
+  description: '',
+  phone: '',
+  imageReference: '',
+  subdomain: null,
+  published: true,
+  cartePricesVisible,
+});
 
 async function renderList() {
   const view = await render(CatalogueList, {
-    providers: [provideRouter([]), { provide: CatalogueFacade, useClass: FakeCatalogueFacade }],
+    providers: [
+      provideRouter([]),
+      { provide: CatalogueFacade, useClass: FakeCatalogueFacade },
+      { provide: StorefrontFacade, useClass: FakeStorefrontFacade },
+    ],
   });
   const catalogue = TestBed.inject(CatalogueFacade) as FakeCatalogueFacade;
-  return { view, catalogue };
+  const storefront = TestBed.inject(StorefrontFacade) as FakeStorefrontFacade;
+  return { view, catalogue, storefront };
 }
 
 const item = catalogueItem;
@@ -130,5 +147,74 @@ describe('CatalogueList', () => {
     view.detectChanges();
 
     expect(screen.queryByText(/carte est vide/i)).toBeNull();
+  });
+
+  // The vendor's own choice about their public carte, on the screen that shows the prices
+  // it governs. Opted in, so a vendor who never touched it reads as showing them.
+  it('shows the carte prices as displayed when the vendor has not hidden them', async () => {
+    const { view, storefront } = await renderList();
+    storefront.view.set(storefrontView(true));
+    view.detectChanges();
+
+    expect(screen.getByRole('switch')).toHaveAttribute('aria-checked', 'true');
+    expect(screen.getByText('Affichés')).toBeInTheDocument();
+  });
+
+  it('shows them as masked when the vendor has hidden them', async () => {
+    const { view, storefront } = await renderList();
+    storefront.view.set(storefrontView(false));
+    view.detectChanges();
+
+    expect(screen.getByRole('switch')).toHaveAttribute('aria-checked', 'false');
+    expect(screen.getByText('Masqués')).toBeInTheDocument();
+  });
+
+  // The choice rides a different feed from the catalogue (the vitrine, loaded once at
+  // login). A switch drawn before it lands would tell a vendor who hid their prices that
+  // they are showing, and their first tap would save over a state they never saw.
+  it('offers no switch until the vitrine has loaded', async () => {
+    const { view } = await renderList();
+    view.detectChanges();
+
+    expect(screen.queryByRole('switch')).not.toBeInTheDocument();
+  });
+
+  it('hides the prices when the vendor turns the switch off', async () => {
+    const { view, storefront } = await renderList();
+    storefront.view.set(storefrontView(true));
+    view.detectChanges();
+
+    fireEvent.click(screen.getByRole('switch'));
+
+    expect(storefront.cartePricesVisibility).toBe(false);
+  });
+
+  it('shows them again when the vendor turns it back on', async () => {
+    const { view, storefront } = await renderList();
+    storefront.view.set(storefrontView(false));
+    view.detectChanges();
+
+    fireEvent.click(screen.getByRole('switch'));
+
+    expect(storefront.cartePricesVisibility).toBe(true);
+  });
+
+  // Not behind a tooltip: nobody opens one to read what they do not know to ask. It is the
+  // sentence that stops a vendor reporting the featured card as a bug, so it stands in the
+  // open — but only once hiding has made it true.
+  it('warns that the featured market still quotes, once the prices are hidden', async () => {
+    const { view, storefront } = await renderList();
+    storefront.view.set(storefrontView(false));
+    view.detectChanges();
+
+    expect(screen.getByText(/Prochain marché.*affiche toujours ses prix/)).toBeInTheDocument();
+  });
+
+  it('leaves the warning out while the prices are showing', async () => {
+    const { view, storefront } = await renderList();
+    storefront.view.set(storefrontView(true));
+    view.detectChanges();
+
+    expect(screen.queryByText(/Prochain marché.*affiche toujours ses prix/)).not.toBeInTheDocument();
   });
 });

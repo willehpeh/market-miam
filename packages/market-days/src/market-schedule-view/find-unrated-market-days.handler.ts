@@ -7,7 +7,7 @@ import { MarketScheduleViews } from './market-schedule-views';
 import { MarketDayView } from '../market-day-view/market-day-view';
 import { MarketDayViews } from '../market-day-view/market-day-views';
 import { CatalogueViews } from '../catalogue-view/catalogue-views';
-import { Recurrence } from '../calendar/schedule/recurrence';
+import { scheduledDays } from './scheduled-days';
 import { calledOff, parisWallClock, standingOf } from './market-day-clock';
 
 // The occurrence as the schedule describes it, before it is narrowed to what the prompt
@@ -61,10 +61,9 @@ export class FindUnratedMarketDaysHandler implements IQueryHandler<FindUnratedMa
   }
 
   private occurrencesOf(schedule: MarketScheduleView, from: LocalDate, to: LocalDate): Occurrence[] {
-    const absences = schedule.absences ?? [];
-    return Recurrence.fromSnapshot(schedule).occurrencesWithin(from, to)
+    return scheduledDays(schedule, from, to)
       // A declared absence suppresses the menu, so a day inside one has nothing to judge.
-      .filter(occurrence => !absences.some(range => range.from <= occurrence.date && occurrence.date <= range.to))
+      .filter(occurrence => !occurrence.absent)
       .map(occurrence => ({
         marketId: schedule.marketId,
         date: occurrence.date,

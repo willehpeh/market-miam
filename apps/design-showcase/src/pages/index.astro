@@ -1,0 +1,270 @@
+---
+import Base from '../layouts/Base.astro';
+import Section from '../components/Section.astro';
+import Swatch from '../components/Swatch.astro';
+import Example from '../components/Example.astro';
+import {
+  accents,
+  colourGroups,
+  componentClasses,
+  densities,
+  fontTokens,
+  noteFor,
+  radii,
+  shadows,
+  trackings,
+  utilityFor,
+} from '../lib/design-system';
+import { iconsInUse } from '../lib/icons';
+
+const surface = colourGroups.flatMap((group) => group.tokens).find((token) => token.name === '--mm-surface')?.value ?? '#ffffff';
+
+const weights: Record<string, number[]> = {
+  '--mm-font-sans': [400, 500, 700, 800],
+  '--mm-font-mono': [400, 700],
+};
+
+// The base layer styles bare elements, so these need no class at all.
+const baseExamples = [
+  {
+    title: '<button>',
+    note: 'Every button is a primary action by default. Disabled fades it and drops pointer events.',
+    code: '<button type="button">Publier la carte</button>\n<button type="button" disabled>Publier la carte</button>',
+  },
+  {
+    title: '<input type="text"> · <input type="tel"> · <textarea>',
+    note: 'Full width, 16px text so iOS Safari does not zoom the field on focus.',
+    code: [
+      '<label class="block w-72 space-y-1.5"><span class="field-label">Nom du plat</span>',
+      '  <input type="text" placeholder="Tajine d’agneau aux pruneaux"></label>',
+      '<label class="block w-72 space-y-1.5"><span class="field-label">Téléphone</span>',
+      '  <input type="tel" placeholder="06 12 34 56 78" disabled></label>',
+      '<label class="block w-full space-y-1.5"><span class="field-label">Description</span>',
+      '  <textarea rows="3" placeholder="Mijoté six heures, servi avec semoule."></textarea></label>',
+    ].join('\n'),
+  },
+];
+
+// One example per component class; a class with none is called out below.
+const componentExamples = [
+  { className: 'btn-link', code: '<a class="btn-link" href="#components">Voir ma vitrine</a>' },
+  { className: 'btn-link-alt', code: '<a class="btn-link-alt" href="#components">Modifier la carte</a>' },
+  {
+    className: 'btn-soft',
+    code: '<a class="btn-soft" href="#components">Annuler</a>\n<button type="button" class="btn-soft">Plus tard</button>',
+  },
+  { className: 'quiet', code: '<button type="button" class="quiet">Retirer du marché</button>' },
+  {
+    className: 'icon-btn',
+    code: [
+      '<button type="button" class="icon-btn" aria-label="Monter"><i class="fa-solid fa-arrow-up"></i></button>',
+      '<button type="button" class="icon-btn" aria-label="Supprimer"><i class="fa-solid fa-trash"></i></button>',
+      '<button type="button" class="icon-btn" aria-label="Descendre" disabled><i class="fa-solid fa-arrow-down"></i></button>',
+    ].join('\n'),
+  },
+  { className: 'kicker', code: '<p class="kicker">Samedi 3 octobre · Marché des Lices</p>' },
+  { className: 'field-label', code: '<span class="field-label">Prix au marché</span>' },
+  { className: 'hatch', code: '<div class="hatch h-32 w-48 rounded-card"></div>' },
+];
+
+const shown = new Set(componentExamples.map((example) => example.className));
+const unshown = componentClasses.filter((className) => !shown.has(className));
+
+const sections = [
+  ['colours', 'Colours'],
+  ['type', 'Type'],
+  ['shape', 'Radii & shadows'],
+  ['base', 'Base elements'],
+  ['components', 'Component classes'],
+  ['icons', 'Icons'],
+];
+---
+
+<Base title="Market Miam design system">
+  <div class="lg:grid lg:grid-cols-[16rem_1fr]">
+    <aside class="bg-sidebar px-4 py-6 text-sidebar-ink lg:sticky lg:top-0 lg:h-screen lg:overflow-y-auto lg:px-6">
+      <p class="font-mono text-xs font-bold tracking-kicker text-sidebar-muted uppercase">Market Miam</p>
+      <p class="mt-1 text-lg font-bold text-white">Design system</p>
+
+      <nav class="mt-8 border-t border-sidebar-line pt-4" aria-label="Sections">
+        <ul class="flex flex-wrap gap-x-4 gap-y-2 lg:block lg:space-y-2">
+          {sections.map(([id, label]) => <li><a class="text-sm text-sidebar-ink no-underline hover:text-white" href={`#${id}`}>{label}</a></li>)}
+        </ul>
+      </nav>
+
+      <fieldset class="mt-8 border-t border-sidebar-line pt-4">
+        <legend class="font-mono text-xs font-bold tracking-label text-sidebar-muted uppercase">Accent</legend>
+        <div class="mt-3 grid grid-cols-2 gap-2">
+          {accents.map((accent, index) => (
+            <label class="flex cursor-pointer items-center gap-2 rounded-field border border-sidebar-line px-2.5 py-1.5 text-sm has-checked:border-sidebar-ink has-checked:text-white">
+              <input type="radio" name="accent" value={accent} checked={index === 0} class="accent-brand" />
+              {accent}
+            </label>
+          ))}
+        </div>
+      </fieldset>
+
+      {densities.map((density) => (
+        <label class="mt-4 flex cursor-pointer items-center gap-2 text-sm">
+          <input type="checkbox" name="density" value={density} class="accent-brand" />
+          <span class="capitalize">{density}</span>
+        </label>
+      ))}
+    </aside>
+
+    <main class="max-w-5xl space-y-16 px-4 py-10 lg:px-12">
+      <header class="space-y-3">
+        <h1 class="text-4xl">Market Miam design system</h1>
+        <p class="max-w-2xl text-ink-soft">
+          Everything the apps with a face share, rendered from
+          <code class="font-mono text-sm">packages/design-system</code> itself. Tokens, notes and
+          class lists are read from the CSS at build time, so this page changes when the source does.
+          The accent and density controls set the same attributes an app would.
+        </p>
+      </header>
+
+      <Section id="colours" title="Colours">
+        <Fragment slot="intro">
+          <p>
+            Tailwind apps use the utility suffix (<code class="font-mono text-sm">bg-brand</code>,
+            <code class="font-mono text-sm">text-ink</code>…); plain-CSS consumers use the
+            <code class="font-mono text-sm">--mm-*</code> property. Only the brand triad changes with the
+            accent: <code class="font-mono text-sm">&lt;html data-theme="olive"&gt;</code>.
+          </p>
+        </Fragment>
+        {colourGroups.map((group) => (
+          <div class="space-y-3">
+            <h3 class="field-label">{group.title}</h3>
+            <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+              {group.tokens.map((token) => <Swatch token={token} surface={surface} />)}
+            </div>
+          </div>
+        ))}
+      </Section>
+
+      <Section id="type" title="Type">
+        <Fragment slot="intro">
+          <p>Two self-hosted faces. Mono is for data and badges — small and tracked — never prose or headings.</p>
+        </Fragment>
+        {fontTokens.map((token) => (
+          <article class="space-y-3 rounded-card border border-line bg-surface p-5">
+            <p class="font-mono text-xs text-muted">
+              {token.name} · font-{utilityFor(token.name)} · {token.value}
+            </p>
+            {(weights[token.name] ?? [400]).map((weight) => (
+              <p class="text-2xl" style={`font-family: var(${token.name}); font-weight: ${weight}`}>
+                {weight} — Tajine, taboulé et crème brûlée à 8,50 €
+              </p>
+            ))}
+          </article>
+        ))}
+        <Example
+          title="Headings"
+          note="The base layer makes every h1–h6 bold and tight; size comes from utilities."
+          code={'<h3 class="text-3xl">Ce qui se vend</h3>\n<h4 class="text-lg">Marché des Lices, samedi</h4>'}
+        />
+        <div class="grid gap-3 sm:grid-cols-2">
+          {trackings.map((token) => (
+            <article class="space-y-2 rounded-card border border-line bg-surface p-5">
+              <p class="font-mono text-sm font-bold uppercase" style={`letter-spacing: var(${token.name})`}>Samedi 3 octobre</p>
+              <p class="font-mono text-xs text-muted">{token.utility} · {token.value}</p>
+            </article>
+          ))}
+        </div>
+      </Section>
+
+      <Section id="shape" title="Radii & shadows">
+        <Fragment slot="intro">
+          <p>Dense density tightens the field and card radii — toggle it to see.</p>
+        </Fragment>
+        <div class="grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-5">
+          {radii.map((token) => (
+            <figure class="space-y-2">
+              <div class="h-24 border-2 border-brand bg-brand-soft" style={`border-radius: var(${token.name})`}></div>
+              <figcaption class="font-mono text-xs text-muted">
+                {token.utility.replace('radius-', 'rounded-')} · {token.value}{token.note && <span class="block">{token.note}</span>}
+              </figcaption>
+            </figure>
+          ))}
+          {shadows.map((token) => (
+            <figure class="space-y-2">
+              <div class="h-24 rounded-card bg-surface" style={`box-shadow: var(${token.name})`}></div>
+              <figcaption class="font-mono text-xs text-muted">{token.utility}</figcaption>
+            </figure>
+          ))}
+        </div>
+      </Section>
+
+      <Section id="base" title="Base elements">
+        <Fragment slot="intro">
+          <p>Styled by the base layer, so plain HTML already looks right.</p>
+        </Fragment>
+        {baseExamples.map((example) => <Example {...example} />)}
+      </Section>
+
+      <Section id="components" title="Component classes">
+        <Fragment slot="intro">
+          <p>The shortcuts in the components layer. Notes are the comments above each rule in <code class="font-mono text-sm">theme.css</code>.</p>
+        </Fragment>
+        {unshown.length > 0 && (
+          <p class="rounded-card border border-warn bg-warn-soft p-4 text-sm text-warn">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+            No example here yet for {unshown.map((className) => `.${className}`).join(', ')} — add one in
+            <code class="font-mono">apps/design-showcase/src/pages/index.astro</code>.
+          </p>
+        )}
+        <div class="grid gap-4 lg:grid-cols-2">
+          {componentExamples.map((example) => <Example title={`.${example.className}`} note={noteFor(example.className)} code={example.code} />)}
+        </div>
+      </Section>
+
+      <Section id="icons" title="Icons">
+        <Fragment slot="intro">
+          <p>
+            Font Awesome Free 6, solid only. These are the {iconsInUse.length} icons the apps use today, found in their
+            templates — reach for one of them before adding another.
+          </p>
+        </Fragment>
+        <ul class="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6">
+          {iconsInUse.map((icon) => (
+            <li class="flex flex-col items-center gap-2 rounded-card border border-line bg-surface p-4 text-center">
+              <i class={`fa-solid fa-${icon} text-xl text-ink`} aria-hidden="true"></i>
+              <code class="font-mono text-xs text-muted">{icon}</code>
+            </li>
+          ))}
+        </ul>
+      </Section>
+    </main>
+  </div>
+</Base>
+
+<script>
+  import { contrast, describeContrast } from '../lib/contrast';
+
+  const root = document.documentElement;
+
+  // Re-read every swatch from the live custom properties: the accent changes the brand triad.
+  function refreshSwatches() {
+    const styles = getComputedStyle(root);
+    const surface = styles.getPropertyValue('--mm-surface').trim();
+    document.querySelectorAll<HTMLElement>('[data-swatch]').forEach((swatch) => {
+      const value = styles.getPropertyValue(swatch.dataset.swatch ?? '').trim();
+      swatch.querySelector('[data-value]')!.textContent = value;
+      swatch.querySelector('[data-contrast]')!.textContent = describeContrast(contrast(value, surface));
+    });
+  }
+
+  document.querySelectorAll<HTMLInputElement>('input[name="accent"]').forEach((input) =>
+    input.addEventListener('change', () => {
+      root.dataset.theme = input.value;
+      refreshSwatches();
+    }),
+  );
+
+  document.querySelectorAll<HTMLInputElement>('input[name="density"]').forEach((input) =>
+    input.addEventListener('change', () => {
+      if (input.checked) root.dataset.density = input.value;
+      else delete root.dataset.density;
+    }),
+  );
+</script>

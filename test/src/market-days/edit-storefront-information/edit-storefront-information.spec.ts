@@ -36,6 +36,20 @@ describe('Edit Storefront Information', () => {
     ]);
   });
 
+  // A re-statement, not a change: the same stance setCoverPhoto and the carte-price toggles
+  // take. The form is saved whole, so saving it untouched must not append a second copy of
+  // the vendor's name and phone to the log — PII, sealed and decrypted on every rehydrate.
+  it('raises nothing when the information is unchanged', async () => {
+    openStorefront();
+    await handler.execute(TestEditStorefrontInformation.valid());
+
+    await handler.execute(TestEditStorefrontInformation.valid());
+
+    expect(store.newEvents()).toEqual([
+      expect.objectContaining({ type: 'StorefrontInformationEdited' }),
+    ]);
+  });
+
   it('allows an absent phone number', async () => {
     openStorefront();
     const command = TestEditStorefrontInformation.with({ phone: '' });

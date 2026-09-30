@@ -13,7 +13,7 @@ import { FakeMarketScheduleFacade } from '../markets/fake.market-schedule.facade
 import { MarketScheduleView } from '../markets/market-schedules';
 import { MarketDayFacade } from '../market-days/market-day.facade';
 import { FakeMarketDayFacade } from '../market-days/fake.market-day.facade';
-import { marketDayView } from '../market-days/market-day-view.builder';
+import { testMarketDayView } from '../market-days/test-market-day-view.builder';
 import { COPIED_NOTICE_DELAY, Share } from '../core/share';
 import { FakeShare } from '../core/fake.share';
 
@@ -44,11 +44,12 @@ const completeStorefront: StorefrontView = {
   imageReference: 'v42/storefronts/acme/cover-photo',
   subdomain: null,
   published: false,
+      cartePricesVisible: true,
 };
 
 async function renderBlank() {
   const ctx = await renderDashboard();
-  ctx.storefront.view.set({ name: '', description: '', phone: '', imageReference: '', subdomain: null, published: false });
+  ctx.storefront.view.set({ name: '', description: '', phone: '', imageReference: '', subdomain: null, published: false, cartePricesVisible: true });
   ctx.view.detectChanges();
   return ctx;
 }
@@ -307,6 +308,18 @@ describe('Dashboard', () => {
     expect(screen.getByRole('link', { name: 'Vos marchés' })).toHaveAttribute('href', '/dashboard/markets');
   });
 
+  it('leads to the QR code from the published home', async () => {
+    await renderReady({ published: true });
+
+    expect(screen.getByRole('link', { name: /qr code/i })).toHaveAttribute('href', '/dashboard/qr-code');
+  });
+
+  it('keeps the QR code off the setup home, where there is nothing to scan yet', async () => {
+    await renderBlank();
+
+    expect(screen.queryByRole('link', { name: /qr code/i })).not.toBeInTheDocument();
+  });
+
   it('links to the live storefront once published', async () => {
     await renderReady({ published: true });
 
@@ -350,7 +363,7 @@ describe('Dashboard', () => {
   it('waits for the market days before showing anything, even days it already holds', async () => {
     const { storefront, marketDays, view } = await renderDashboard();
     marketDays.loading.set(true);
-    marketDays.days.set([marketDayView()]);
+    marketDays.days.set([testMarketDayView()]);
     storefront.view.set({ ...completeStorefront, subdomain: 'acme', published: true });
     view.detectChanges();
 

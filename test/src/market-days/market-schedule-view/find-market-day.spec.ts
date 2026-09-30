@@ -200,4 +200,26 @@ describe('FindMarketDay', () => {
 
     expect(await findDay('2024-02-10')).toBeUndefined();
   });
+
+  // Two markets on one date is a supported shape (decision 2 — closing the morning market
+  // promotes the evening one), and the day's own row is keyed by market as well as date.
+  // Reading the date alone would answer for whichever market's row came back first.
+  it('reads the menu of the market asked about, not another market on the same date', async () => {
+    await views.recordSchedule(scheduleWith(), 'vendor-id');
+    await views.recordSchedule(scheduleWith({ scheduleId: 'schedule-2', marketId: 'market-2' }), 'vendor-id');
+    await catalogues.addItemToCatalogue(
+      { itemId: 'item-1', name: 'Bourguignon', description: '', price: 500, imageReference: '' },
+      'vendor-id',
+    );
+    await menus.setMenu({ marketId: 'market-2', date: '2024-02-10', itemIds: ['item-1'] }, 'vendor-id');
+    await menus.markSoldOut({ marketId: 'market-2', date: '2024-02-10', itemId: 'item-1' }, 'vendor-id');
+    await menus.close({ marketId: 'market-2', date: '2024-02-10', time: '11:00' }, 'vendor-id');
+
+    expect(await findDay('2024-02-10')).toMatchObject({
+      marketId: 'market-1',
+      items: [],
+      soldOutItemIds: [],
+      closed: false,
+    });
+  });
 });

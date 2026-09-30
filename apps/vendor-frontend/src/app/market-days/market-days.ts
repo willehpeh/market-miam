@@ -6,6 +6,10 @@ export type MarketDayPhase = 'future' | 'due' | 'trading' | 'over' | 'past';
 // only three the API accepts — an unknown word is a 400 at the edge.
 export type ItemOutcome = 'did_not_do_well' | 'did_well' | 'sold_out';
 
+export class MarketDay {
+  
+}
+
 // The day's menu is held as ids, not as the items the API joins on to it: the card counts
 // them and the editor ticks them, and both read names and prices from the catalogue store.
 export interface MarketDayView {

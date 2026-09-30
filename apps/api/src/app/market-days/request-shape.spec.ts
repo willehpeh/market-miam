@@ -42,6 +42,8 @@ describe('Request shape', () => {
     ['an absence without its range', 'post', '/market-schedules/schedule-1/absences', { from: '2026-07-01' }, 'to'],
     ['a storefront edit without a name', 'put', '/storefront', { description: 'Fresh bread' }, 'name'],
     ['a cover photo with a non-numeric version', 'put', '/storefront/cover-photo', { version: 'seven' }, 'version'],
+    ['a carte-price choice without visible', 'put', '/storefront/carte-prices', {}, 'visible'],
+    ['a carte-price choice whose visible is not a boolean', 'put', '/storefront/carte-prices', { visible: 'oui' }, 'visible'],
   ];
 
   it.each(cases)('rejects %s as a 400 naming the field', async (_description, method, url, body, field) => {

@@ -29,6 +29,12 @@ export class Variants {
     }
   }
 
+  // In order: the carte lists variants as the vendor listed them, so swapping two is a change.
+  equals(other: Variants): boolean {
+    return this._variants.length === other._variants.length
+      && this._variants.every((variant, index) => variant.equals(other._variants[index]));
+  }
+
   value(): { name: string; description: string; price: number }[] {
     return this._variants.map(variant => variant.value());
   }

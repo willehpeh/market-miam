@@ -93,9 +93,9 @@ any of the seven cards. What changed was five strings and one band:
 |---|---|---|
 | Eyebrow | *La phase pilote* | *La mise en route* — the page's own phrase, already in the first group's lede |
 | `h2` | *Nous accompagnons cinq à dix traiteurs, personnellement.* | *Nous installons votre vitrine avec vous.* |
-| Lede | *Vous n'êtes pas un numéro dans une file d'attente…* | Names what actually gets set up. The queue metaphor was scarcity by another route; *nous construisons la suite à partir de ce que vous nous dites* survives, because it is still true |
-| Terms 1, 3, 4 | — | **Unchanged.** Premier mois offert, aucune commission, vos clients restent vos clients |
-| Term 2 | *Le tarif ne bouge pas* | *Pas d'augmentation la première année* + three months' notice and a free exit — decision 6b's actual rule |
+| Lede | *Vous n'êtes pas un numéro dans une file d'attente…* | Names what actually gets set up. The queue metaphor was scarcity by another route. *Reworded again at the merge with the voice pass (below)*: it now ends on main's *vos remarques servent directement à améliorer Market Miam* |
+| Terms 1, 3, 4 | — | **Unchanged in substance.** Premier mois offert, aucune commission, vos clients restent vos clients — in the voice pass's wording since the merge |
+| Term 2 | *Le tarif ne bouge pas* | *Pas d'augmentation la première année* + three months' notice and a free exit — decision 6b's actual rule, restated without an em-dash at the merge |
 | `.pilot-actions` | — | `.offer-actions`; the class was named after a programme that no longer exists |
 
 **The band kept its job by changing what is scarce.** It sold a cohort of five to ten;
@@ -104,9 +104,10 @@ alternative — a flat pricing block — was rejected: it drops the page's only 
 right where it asks for trust.
 
 **`<title>` and the metas were not touched, deliberately.** `Base.astro`'s description is
-mission-first and never named the pilot, so `og:description` is unchanged and no already
-shared link needs a forced re-scrape (§1). This is the second time that metas-lead-on-mission
-choice has paid for itself.
+mission-first and never named the pilot, so removing the pilot changed nothing there.
+**The voice pass (below) has since rewritten the description anyway**, for voice rather than
+content — so a forced re-scrape is owed after deploy regardless, per that section. The pilot
+removal adds nothing to it.
 
 **The Tally form stays as the funnel.** Onboarding is manual, so a lead form is still the
 right mechanism — there is no buy button to build until self-serve exists. Only its title
@@ -224,6 +225,49 @@ Two presentation faults found by screenshotting the built page, not by reading i
 Card titles dropped `h3` → `h4` so the group headings could take `h3` and the outline stays
 honest.
 
+### Voice pass — the page read as machine-written
+
+The copy was accurate but its rhythm was a template: an em-dash in nearly every paragraph,
+lists of three everywhere, *pas X : Y* reveals (*Vous n'êtes pas un numéro…*), one-word
+closers (*Jamais.*), setup-and-punch headings (*Vous vendez sur les marchés. Tout le reste,
+vous le bricolez.*) and aphorisms (*un plat qui s'arrache ici peut rentrer avec vous
+d'ailleurs*). Each is fine once; together they are what a reader now recognises as AI copy,
+and that costs trust on a page whose whole pitch is a person onboarding you by hand.
+
+Rewritten to say the concrete thing in a plain sentence. Rules the page now follows:
+
+- **Em-dashes only in the slogan.** Commas, full stops, or a second sentence instead.
+- **No rhetorical questions, no fragments for effect, no *not X but Y*.**
+- **Name the real thing** — the pile labels in the app (*Toujours épuisé*, *Ça part bien*,
+  *Il en reste*), *un seul formulaire*, *ajouter un plat ou changer un horaire* — rather than
+  a benefit-shaped paraphrase.
+- **Don't overclaim.** *Ensuite vous n'y touchez plus* was false (vendors edit their carte);
+  it now says what they come back for.
+
+What moved: the `h1` is now *Vos habitués savent quand vous venez, et ce que vous servez.* —
+same premise as before (the local relationship, not Instagram, not cross-market discovery),
+stated as the two facts the vitrine delivers. The features heading is *Comment fonctionne
+Market Miam* (brand kept in a heading, per the decision below). The close clause and the price
+freeze were reworded with both of their meanings intact: both doors of decision 45 are still
+there unnamed, and future work is still included at no extra cost. Nothing about pricing,
+vocabulary, the CTAs or the slogan changed.
+
+**Merged 2026-09-30 with the pilot removal, and the band's substance went the other way.**
+This pass was written from a branch that predated `CGU-CGV-PLAN.md` decisions 6 and 13, so it
+carried the pilot band and the price freeze forward in new words — correctly, by its own
+no-substance-change rule. At the merge the owner chose decisions 6 and 13 in this pass's
+voice: no pilot, no freeze, *Pas d'augmentation la première année* in place of *le tarif ne
+bouge pas*, and the CTAs as *Ouvrons votre vitrine* / *Créer ma vitrine* (see *CTAs* and
+*Pilot framing removed* above). Everything else this pass wrote stands as written, and the
+band now follows its rules: no em-dash, no list of three.
+
+The default meta description followed in the same pass: *Traiteurs de marché : vos habitués
+savent quand vous venez et ce que vous servez, et vous voyez, marché par marché, quels plats
+partent et lesquels restent.* 156 chars. Still mission-first (serve the regulars, then prepare
+better) and still not vitrine-led, per the SEO notes above; it just says both halves as facts
+instead of as a slogan plus a list. **This restales `og:description` on every link already
+shared** (§1): a forced re-scrape after deploy, or let the caches expire.
+
 ## Remaining
 
 ### 1. Post-deploy verification (blocking, do first)
@@ -254,11 +298,14 @@ Above *Envoyer* — the short version, replacing the original three-sentence blo
 
 > Vos réponses servent uniquement à vous recontacter au sujet de la phase pilote. Ni revendues, ni transmises à des tiers. Conservation, vos droits et comment les exercer : https://marketmiam.fr/mentions-legales
 
-**Both quoted blocks still say *phase pilote*, which no longer exists (2026-08-29).** They
-need the purpose restated — recontacting you about Market Miam — and the same edit is owed
-on `/mentions-legales`, which describes the form's finalité in the same words. This is Art.
-13 information, so it is not cosmetic: the stated purpose has to match the actual one. The
-rest of both blocks is unaffected, and the notes below still hold.
+**Both quoted blocks are the pre-2026-09 wording and named the *phase pilote*.** The owner
+updated the form in September 2026 — title now *Ouvrons votre vitrine*, matching the in-page
+CTAs — and `/mentions-legales` was restated on 2026-08-29 as *vous recontacter au sujet de
+Market Miam*. The form's new copy has **not been checked against the rules below**: `tally.so`
+is unreachable from agent containers (§1), so it needs a human read or a paste into a
+session. What to confirm is that its stated purpose matches `/mentions-legales` — Art. 13
+information, so a mismatch is a defect rather than a style point — and that the notes below
+still hold.
 
 - **The URL must be absolute.** The form renders in Tally's overlay, so a relative
   `/mentions-legales` resolves against `tally.so`. Open it in a new tab — navigating away
@@ -310,17 +357,39 @@ stylesheet and both `preconnect`s are gone, so no visitor IP reaches Google befo
 consent (LG München 2022 went against exactly that). Provenance and refresh recipe in
 `apps/website/README.md`.
 
+**Moved 2026-09: the files and the `@font-face` now live in `packages/design-system`**,
+because the vendor and customer apps needed the same fix and ADR 0054 makes it a
+prerequisite for a storefront privacy section. The site imports `fonts.css` from
+`Base.astro`'s frontmatter and no longer keeps a `public/fonts/`; the recipe moved to
+`packages/design-system/README.md` with it. Nothing about the decision changed.
+
 ### 5. Vendor dashboard screenshots
 
 Two only: `/dashboard/catalogue` and `/dashboard/markets`, both populated (5–6 dishes **with photos**, 3–4 markets). Skip forms, onboarding, dashboard home — forms don't sell.
 
 Capture: same demo account as the storefront shot so names match; ~1200px wide; no browser chrome; check no real email is in frame. Login can't be automated (credentials), but an already-authenticated tab can be driven.
 
-**Decision: capture, then hold.** The hero storefront shot does the selling. Dashboard shots lengthen the page and go stale every time that UI changes. Ship them only if pilot conversations stall on *"is this a hassle to maintain?"*
+~~**Decision: capture, then hold.**~~ **Superseded 2026-09: two vendor-app screens are on the
+page**, each beside the group it illustrates. The live market screen (*En direct*, a dish
+under *Épuisés*, *Fermer le stand*) sits with *À chaque marché*, and the menu editor showing
+the sales labels under each dish sits with *Au fil des marchés*. The hold was right about
+forms and wrong about these: the page described what happens on market day in seven cards of
+text and showed none of it, and those two screens are the product doing the thing the cards
+claim. *Une fois pour toutes* gets no screen on purpose, since it is forms.
+
+Rules for replacing them: phone screenshots, no dish photos in frame (the demo account's look
+generated), full phone width with the app's own background kept, recipe in the app README.
+They wear the hero shot's border, radius and shadow plus a caption. **Not a dark phone
+bezel**: tried, and far too heavy for the page. **Not cropped to the white card either**:
+the vendor app shares the site's tokens and fonts, so a bare card reads as page content,
+and on a phone as buttons to press. The app's background around the card is what marks
+it as a screen.
+They carry a date (*Mardi 29 septembre*); that ages fine, but reshoot if the screens change.
 
 ### 6. The close clause — done
 
-Shipped as written, appended to the *Pendant le marché* card once slice 2 was deployed:
+Shipped as below, appended to the *Pendant le marché* card once slice 2 was deployed (since
+reworded in the voice pass, same two doors):
 
 > Et quand vous remballez — ou si vous ne pouvez pas venir — vous fermez le stand : votre
 > vitrine cesse d'annoncer un marché où vous n'êtes plus.

@@ -6,8 +6,8 @@ import { provideEffects } from '@ngrx/effects';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { MarketDays } from './market-days';
 import { HttpMarketDays } from './http.market-days';
-import { marketDayFeature } from './market-day.state';
-import { MarketDayEffects } from './market-day.effects';
+import { marketDayFeature } from './store/market-day.state';
+import { MarketDayEffects } from './store/market-day.effects';
 import { MarketDayFacade } from './market-day.facade';
 import { StoreMarketDayFacade } from './store.market-day.facade';
 import { MarketSchedules, MarketScheduleView, NewSchedule } from '../markets/market-schedules';
@@ -54,7 +54,7 @@ describe('MarketDays', () => {
         provideRouter([
           { path: 'dashboard', children: [] },
           { path: 'dashboard/markets', children: [] },
-          { path: 'dashboard/live/:marketId/:date', children: [] },
+          { path: 'dashboard/market/:marketId/:date/live', children: [] },
         ]),
         { provide: MarketDayFacade, useClass: StoreMarketDayFacade },
         { provide: MarketSchedules, useClass: HttpMarketSchedules },
@@ -586,7 +586,7 @@ describe('MarketDays', () => {
     facade.setMenu('market-1', '2026-08-15', ['item-1']);
     httpCtrl.expectOne('/api/market-days/market-1/2026-08-15/menu').flush(null);
 
-    await waitFor(() => expect(router.url).toBe('/dashboard/live/market-1/2026-08-15'));
+    await waitFor(() => expect(router.url).toBe('/dashboard/market/market-1/2026-08-15/live'));
   });
 
   it('stops loading and stays empty when the request fails', () => {

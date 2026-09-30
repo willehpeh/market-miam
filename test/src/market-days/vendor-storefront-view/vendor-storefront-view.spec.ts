@@ -44,7 +44,8 @@ describe('VendorStorefrontView', () => {
       description: '',
       phone: '',
       imageReference: '',
-      published: false
+      published: false,
+      cartePricesVisible: true
     });
   });
 
@@ -61,7 +62,8 @@ describe('VendorStorefrontView', () => {
       description: infoCommand.description,
       phone: infoCommand.phone,
       imageReference: photoCommand.imageReference,
-      published: false
+      published: false,
+      cartePricesVisible: true
     });
   });
 
@@ -78,8 +80,35 @@ describe('VendorStorefrontView', () => {
       description: '',
       phone: '',
       imageReference: '',
-      published: true
+      published: true,
+      cartePricesVisible: true
     });
+  });
+
+  // The opt-in, as the read model sees it: a storefront that has never touched the choice
+  // reads as showing prices, so the view says so without any event having said it.
+  it('reads a storefront that never chose as showing its carte prices', async () => {
+    await new OpenStorefrontHandler(storefronts).execute(TestOpenStorefront.valid());
+
+    await subscription.poll();
+
+    expect(await views.findByVendor('vendor-id')).toMatchObject({ cartePricesVisible: true });
+  });
+
+  it('hides the carte prices when the vendor hides them, and restores them', async () => {
+    store.seedWith('storefront-vendor-id', [
+      { type: 'StorefrontOpened', payload: { vendorId: 'vendor-id' }, version: 1 },
+      { type: 'CartePricesHidden', payload: {}, version: 1 },
+    ], { vendorId: 'vendor-id' });
+    await subscription.poll();
+    expect(await views.findByVendor('vendor-id')).toMatchObject({ cartePricesVisible: false });
+
+    store.seedWith('storefront-vendor-id', [
+      { type: 'CartePricesShown', payload: {}, version: 1 },
+    ], { vendorId: 'vendor-id' });
+    await subscription.poll();
+
+    expect(await views.findByVendor('vendor-id')).toMatchObject({ cartePricesVisible: true });
   });
 
   it('resets by clearing the read model so a replay rebuilds it from zero', async () => {

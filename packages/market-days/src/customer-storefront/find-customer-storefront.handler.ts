@@ -34,6 +34,7 @@ export class FindCustomerStorefrontHandler implements IQueryHandler<FindCustomer
       phone: view.phone,
       coverPhoto: view.imageReference || null,
       items: catalogue.items,
+      cartePricesVisible: view.cartePricesVisible,
       upcomingMarkets: await this.upcomingMarketsFor(vendorId),
     };
   }

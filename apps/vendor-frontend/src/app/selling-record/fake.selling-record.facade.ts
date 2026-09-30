@@ -1,12 +1,16 @@
-import { Injectable, signal } from '@angular/core';
+import { computed, Injectable, Signal, signal } from '@angular/core';
 import { SellingRecordFacade } from './selling-record.facade';
-import { MarketRecord } from './selling-record';
+import { Bilan } from './selling-record';
 
 @Injectable()
 export class FakeSellingRecordFacade implements SellingRecordFacade {
-  readonly markets = signal<MarketRecord[]>([]);
+  readonly bilans = signal<Record<string, Record<string, Bilan[]>>>({});
   readonly loading = signal(false);
   loaded = false;
+
+  bilansFor(marketId: string): Signal<Record<string, Bilan[]>> {
+    return computed(() => this.bilans()[marketId] ?? {});
+  }
 
   load(): void {
     this.loaded = true;

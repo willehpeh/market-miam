@@ -3,8 +3,8 @@ import { provideState } from '@ngrx/store';
 import { provideEffects } from '@ngrx/effects';
 import { Catalogue } from './catalogue';
 import { HttpCatalogue } from './http.catalogue';
-import { catalogueFeature } from './catalogue.state';
-import { CatalogueEffects } from './catalogue.effects';
+import { catalogueFeature } from './state/catalogue.state';
+import { CatalogueEffects } from './state/catalogue.effects';
 import { CatalogueFacade } from './catalogue.facade';
 import { StoreCatalogueFacade } from './store.catalogue.facade';
 // ponytail: item photos reuse the storefront's photo ports/adapters as-is. Extract these

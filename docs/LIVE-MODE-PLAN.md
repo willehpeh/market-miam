@@ -49,6 +49,23 @@ all. The French for the two
 judgments is a working answer, not settled vocabulary — *Bien vendu* and *Moins bien vendu*,
 to iterate on. The rating capture window is settled; decision 50 dissolved it.
 
+**Slice 3's occurrence assembly is done, taken out of the slice on its own.** It was the one
+piece of slice 3 with a defect record rather than a rationale, so it did not wait for the
+takeover it was scheduled behind. Two modules in the style `market-day-clock.ts` set:
+`scheduled-days.ts` expands a schedule over a range and says whether the vendor declared
+themselves away — three handlers each did that for themselves, one flagging the absence, one
+asking a private predicate, one filtering on it; and `day-menus.ts` reads menus, catalogue and
+prices once for a range and keys the result by market **and** date, which the window query and
+the point lookup had each been doing their own way. `menuFor` is the only thing that knows the
+key. **It closed a second shipped defect of decision 56's family** (below), and nothing about
+the write path, the query contracts or the rendered output moved. What remains of slice 3 is
+the split itself (`FindNextMarketDay`, a calendar-only `FindUpcomingMarketDays`), the editor
+narrowing, and the customer takeover — none of which the customer currently lacks anything
+concrete for: the featured card already carries the market, the *En cours* badge, the hours,
+the address and the menu with sold-out greyed in place. The real customer-side gaps are the
+freshness label (decision 8), `pitch` (already on the wire, dropped in `toMarketViewModel`),
+and the hero's prominence — and none of the three needs the split.
+
 ## Shape
 
 What gets built, in order. Why is in the decisions below.
@@ -147,7 +164,8 @@ item per market day that `MARKET_MIAM.md` calls post-market tracking.
 | Vendor | its own route (decision 70), a flat list of radio groups under *Bilan* with *Terminer le bilan* at the foot (decisions 64, 68); the live screen keeps its inert rows and links to it; the form pre-selects *épuisé* for a dish marked sold out during service, so a vendor who marked four judges only the other two and the submit carries all six (decisions 49, 72); the dashboard prompts for an unrated day within 7 days, unrated meaning some planned item still has no outcome (decisions 65, 72) |
 
 **Slice 3 — *en direct*.** The query split (`FindNextMarketDay` + a calendar-only
-`FindUpcomingMarketDays`), occurrence assembly given one home, the editor narrowed to the next day.
+`FindUpcomingMarketDays`), ~~occurrence assembly given one home~~ (shipped ahead of the slice —
+see above), the editor narrowed to the next day.
 Customer: the takeover hero — market, hours, street **and pitch** (plumbed through
 `storefront-view-model.ts` for the first time) — rows with availability, the freshness label, and
 *Marchés suivants* (already excludes the featured day — decision 33).
@@ -290,6 +308,14 @@ Accepted deliberately; none block a slice.
 - ~~**Two handlers stamp the same occurrence with different temporal guarantees.**~~ Closed by
   decision 56 — one `phase`, computed once. It was worse than recorded: the point lookup read
   every *past* day as in progress, not merely as ambiguous.
+- ~~**The point lookup answers with another market's day.**~~ Found and closed by the
+  occurrence-assembly extraction, and the second defect of the family above. `FindMarketDay`
+  read `menusFor(vendorId, date, date)` — keyed by vendor and range, not by market — and
+  destructured `[day]`, so it took whichever row came back first. A vendor at two markets on
+  one date, which decision 2 supports on purpose, read the *other* market's menu, sold-out
+  marks and closed state. Latent for the same reason as decision 56's: it needs a shape the
+  pilot vendor does not have. `menuFor(menus, marketId, date)` is now the only reader of that
+  map, and a spec covers the two-market date.
 
 - **The card offers the call-off for the first market of a day only.** `market-day-cards.ts`
   (`next-menu-card.ts` until decision 76) takes the first today occurrence, so a vendor with

@@ -59,4 +59,12 @@ describe('Dev auth interceptor', () => {
 
     expect(get()).toBe('Bearer dev:dev-vendor');
   });
+
+  it('leaves requests to other origins unsigned', () => {
+    TestBed.inject(HttpClient).post('https://api.cloudinary.com/v1_1/test-cloud/image/upload', new FormData()).subscribe();
+    const req = TestBed.inject(HttpTestingController).expectOne('https://api.cloudinary.com/v1_1/test-cloud/image/upload');
+    req.flush(null);
+
+    expect(req.request.headers.has('Authorization')).toBe(false);
+  });
 });

@@ -18,6 +18,12 @@ export class Item {
     return this._itemId.value() === itemId.value();
   }
 
+  isDescribedAs(name: ItemName, description: ItemDescription, pricing: Pricing): boolean {
+    return this._name.value() === name.value()
+      && this._description.value() === description.value()
+      && this._pricing.equals(pricing);
+  }
+
   revise(name: ItemName, description: ItemDescription, pricing: Pricing): void {
     this._name = name;
     this._description = description;

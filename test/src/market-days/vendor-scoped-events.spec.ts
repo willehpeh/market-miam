@@ -6,7 +6,7 @@ import { TODAY } from './set-market-day-menu/test-data';
 
 // The one door every aggregate save goes through: the five repositories hold a
 // VendorScopedEvents and nothing else in the package may call append (the
-// event-sourcing/no-direct-append lint rule). So the vendorId stamp — which
+// no-restricted-syntax append rule in the package eslint config). So the vendorId stamp — which
 // erasure and shredding key off — is asserted here once, not per use case.
 describe('VendorScopedEvents', () => {
   const vendorId = new VendorId('vendor-1');

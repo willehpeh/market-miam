@@ -8,7 +8,8 @@ import { sellingRecordFeature } from './selling-record.state';
 import { SellingRecordEffects } from './selling-record.effects';
 import { SellingRecordFacade } from './selling-record.facade';
 import { StoreSellingRecordFacade } from './store.selling-record.facade';
-import { RecordBilanSuccess } from '../market-days/market-day.state';
+
+import { RecordBilanSuccess } from '../market-days/store/market-day.actions';
 
 const markets: MarketRecord[] = [
   { marketId: 'market-1', items: [{ itemId: 'item-1', bilans: [{ date: '2026-07-04', outcome: 'sold_out' }] }] },
@@ -53,13 +54,26 @@ describe('SellingRecord', () => {
     expect(facade.loading()).toBe(true);
   });
 
-  it('exposes the whole set once loaded', () => {
+  it('hands over a market\'s bilans indexed by item once loaded', () => {
     facade.load();
 
     httpCtrl.expectOne('/api/selling-record').flush({ markets });
 
-    expect(facade.markets()).toEqual(markets);
+    expect(facade.bilansFor('market-1')()).toEqual({
+      'item-1': [{ date: '2026-07-04', outcome: 'sold_out' }],
+    });
     expect(facade.loading()).toBe(false);
+  });
+
+  // A market the vendor has never brought to is not an error — the caller reads each
+  // dish through pile(), and pile of no bilans is the same thing whether the market is
+  // missing from the record or present with no items.
+  it('reads a market with no record as one nothing has been brought to', () => {
+    facade.load();
+
+    httpCtrl.expectOne('/api/selling-record').flush({ markets });
+
+    expect(facade.bilansFor('market-9')()).toEqual({});
   });
 
   // The menu editor gates its spinner on this feed (decision 11), so a failure that left
@@ -70,7 +84,7 @@ describe('SellingRecord', () => {
 
     httpCtrl.expectOne('/api/selling-record').flush(null, { status: 500, statusText: 'Server Error' });
 
-    expect(facade.markets()).toEqual([]);
+    expect(facade.bilansFor('market-1')()).toEqual({});
     expect(facade.loading()).toBe(false);
   });
 

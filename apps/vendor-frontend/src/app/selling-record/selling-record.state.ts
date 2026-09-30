@@ -1,6 +1,7 @@
-import { createAction, createFeature, createReducer, on, props } from '@ngrx/store';
+import { createAction, createFeature, createReducer, createSelector, on, props } from '@ngrx/store';
 import { MarketRecord } from './selling-record';
-import { RecordBilanSuccess } from '../market-days/market-day.state';
+
+import { RecordBilanSuccess } from '../market-days/store/market-day.actions';
 
 export const LoadSellingRecord = createAction('[Selling Record] Load Selling Record');
 export const LoadSellingRecordSuccess = createAction(
@@ -30,3 +31,9 @@ export const sellingRecordFeature = createFeature({
     on(RecordBilanSuccess, (state): SellingRecordState => ({ ...state, fresh: false })),
   ),
 });
+
+export const selectBilansFor = (marketId: string) =>
+  createSelector(sellingRecordFeature.selectMarkets, (markets) => {
+    const items = markets.find((market) => market.marketId === marketId)?.items ?? [];
+    return Object.fromEntries(items.map((record) => [record.itemId, record.bilans]));
+  });

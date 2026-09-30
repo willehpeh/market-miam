@@ -35,6 +35,7 @@ describe('Viewing a storefront over HTTP', () => {
       phone: '',
       imageReference: '',
       published: false,
+      cartePricesVisible: true,
       subdomain: null,
     });
   });

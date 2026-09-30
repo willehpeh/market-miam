@@ -16,6 +16,27 @@ function shreddingStore() {
 }
 
 describe('vendorPiiFields', () => {
+  it('encrypts the email of VendorRegistered at rest', async () => {
+    const { store, inner } = shreddingStore();
+    const registered: DomainEvent = {
+      type: 'VendorRegistered',
+      payload: { vendorId: 'v1', registeredAt: '2026-07-06T00:00:00Z', email: 'marie@example.fr' },
+      version: 1,
+    };
+
+    await store.append('vendor-v1', [registered], 0, { vendorId: 'v1' });
+
+    const [atRest] = await inner.load('vendor-v1');
+    expect(atRest.payload['email']).toMatch(/^enc:v2:/);
+
+    const [loaded] = await store.load('vendor-v1');
+    expect(loaded.payload).toEqual({
+      vendorId: 'v1',
+      registeredAt: '2026-07-06T00:00:00Z',
+      email: 'marie@example.fr',
+    });
+  });
+
   it('encrypts name, description and phone of StorefrontInformationEdited at rest', async () => {
     const { store, inner } = shreddingStore();
     const edited: DomainEvent = {

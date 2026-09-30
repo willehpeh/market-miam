@@ -15,6 +15,7 @@ import { Market } from '../market';
 import { LocalDate } from '@market-miam/common';
 import { Occurrence, Recurrence, RecurrenceSnapshot } from './schedule/recurrence';
 import { MarketPrices } from './pricing/market-prices';
+import { MarketId } from '@market-miam/shared-kernel';
 
 type ScheduledMarket = { marketId: string; recurrence: RecurrenceSnapshot };
 
@@ -109,7 +110,7 @@ export class Calendar extends Aggregate {
     this.raise(event);
   }
 
-  setMarketPrices(marketId: string, prices: MarketPrices): void {
+  setMarketPrices(marketId: MarketId, prices: MarketPrices): void {
     if (!this.schedulesMarket(marketId)) {
       throw new UnscheduledMarketError(`No schedule at market ${ marketId }`);
     }
@@ -118,7 +119,7 @@ export class Calendar extends Aggregate {
     }
     const event: MarketPricesSet = {
       type: 'MarketPricesSet',
-      payload: { marketId, prices: prices.value() },
+      payload: { marketId: marketId.value(), prices: prices.value() },
       version: 1
     };
     this.raise(event);
@@ -131,22 +132,22 @@ export class Calendar extends Aggregate {
   // The hours a market day runs to, expanded from the recurrence for that one date. A day
   // no schedule covers has none — the write path stays as incurious about unreal days as
   // it has always been, and the caller falls back to the end of the calendar day.
-  hoursFor(marketId: string, date: LocalDate): Occurrence | undefined {
+  hoursFor(marketId: MarketId, date: LocalDate): Occurrence | undefined {
     return this.schedulesAt(marketId)
       .flatMap(schedule => Recurrence.fromSnapshot(schedule.recurrence).occurrencesWithin(date, date))
       .at(0);
   }
 
-  private schedulesAt(marketId: string): ScheduledMarket[] {
-    return [...this._schedules.values()].filter(schedule => schedule.marketId === marketId);
+  private schedulesAt(marketId: MarketId): ScheduledMarket[] {
+    return [...this._schedules.values()].filter(schedule => schedule.marketId === marketId.value());
   }
 
-  private schedulesMarket(marketId: string): boolean {
+  private schedulesMarket(marketId: MarketId): boolean {
     return this.schedulesAt(marketId).length > 0;
   }
 
-  private pricesAt(marketId: string): MarketPrices {
-    return this._prices.get(marketId) ?? new MarketPrices();
+  private pricesAt(marketId: MarketId): MarketPrices {
+    return this._prices.get(marketId.value()) ?? new MarketPrices();
   }
 
   private containsSchedule(scheduleId: ScheduleId): boolean {

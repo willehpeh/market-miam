@@ -16,54 +16,68 @@ const cta = {
 const groupes = [
   {
     titre: 'Une fois pour toutes',
-    lede: 'Vous l’installez une fois, avec nous, pendant la mise en route. Ensuite vous n’y touchez plus.',
+    lede: 'Tout ça se prépare avec nous, au démarrage. Ensuite, vous n’y revenez que pour ajouter un plat ou changer un horaire.',
     cartes: [
       {
         titre: 'Votre vitrine',
         texte:
-          'chez-vous.marketmiam.fr — votre photo, vos couleurs, votre présentation. Une adresse que vous donnez à vos clients et qui ne disparaît pas.',
+          'Votre photo, vos couleurs et quelques mots sur vous, à une adresse comme chez-vous.marketmiam.fr. Vous la donnez à vos clients, et elle ne change pas.',
       },
       {
         titre: 'Votre carte',
         texte:
-          'Tous vos plats, décrits une bonne fois pour toutes. Vous les ressortez d’un marché à l’autre au lieu de tout retaper à chaque fois.',
+          'Vous décrivez chacun de vos plats une seule fois. Ensuite, pour chaque marché, vous choisissez dans cette liste au lieu de tout retaper.',
       },
       {
         titre: 'Vos marchés',
         texte:
-          'Quels marchés, quels jours, quels horaires. Vos habitués savent quand vous êtes chez eux, et n’ont plus à demander si vous venez aussi le mercredi.',
+          'Les marchés où vous allez, avec les jours et les horaires. Vos clients voient quand vous passez chez eux, sans avoir à vous demander si vous venez aussi le mercredi.',
       },
     ],
   },
   {
     titre: 'À chaque marché',
-    lede: 'Le rythme de la semaine, depuis votre téléphone. Quelques touches à chaque fois.',
+    lede: 'Tout se fait depuis votre téléphone.',
+    capture: {
+      src: '/app-pendant-le-marche.webp',
+      legende: 'Dans l’application, pendant un marché',
+      alt: 'Écran de l’application pendant un marché : les plats du jour, un plat passé en épuisé et le bouton « Fermer le stand »',
+      width: 640,
+      height: 956,
+    },
     cartes: [
       {
         titre: 'Le menu du jour',
         texte:
-          'Ce que vous servez à chaque marché, publié la veille ou le matin même. Vos habitués savent ce qui les attend avant de sortir de chez eux.',
+          'La veille ou le matin même, vous indiquez les plats que vous aurez au marché. Vos clients les voient avant de partir de chez eux.',
       },
       {
         titre: 'Pendant le marché',
         texte:
-          'Un plat est parti ? Une touche, et il passe en épuisé sur votre vitrine. Vos clients en route le voient avant d’arriver. Et quand vous remballez — ou si vous ne pouvez pas venir — vous fermez le stand : votre vitrine cesse d’annoncer un marché où vous n’êtes plus.',
+          'Quand un plat est fini, vous le marquez épuisé, et les clients déjà en route le voient avant d’arriver. Quand vous remballez, ou si vous ne pouvez pas venir ce jour-là, vous fermez le stand et votre vitrine n’annonce plus ce marché.',
       },
       {
         titre: 'Après le marché',
         texte:
-          'De retour chez vous, vous dites en une fois comment chaque plat est parti — bien vendu, moins bien vendu, épuisé. Ceux que vous aviez marqués épuisés pendant le marché sont déjà cochés.',
+          'De retour chez vous, vous indiquez pour chaque plat s’il s’est bien vendu, moins bien, ou s’il a été épuisé. C’est un seul formulaire, et les plats marqués épuisés pendant le marché sont déjà cochés.',
       },
     ],
   },
   {
     titre: 'Au fil des marchés',
-    lede: 'Rien de plus à saisir : ce que vous avez déjà répondu revient vous aider à préparer.',
+    lede: 'Vous n’avez rien de plus à remplir. Vos réponses d’après-marché servent à préparer les suivants.',
+    capture: {
+      src: '/app-reperes.webp',
+      legende: 'Dans l’application, avant un marché',
+      alt: 'Préparation d’un menu dans l’application : sous chaque plat, comment il s’est vendu sur ce marché, par exemple « Ça part bien »',
+      width: 640,
+      height: 977,
+    },
     cartes: [
       {
-        titre: 'Ce qui part, et ce qui reste',
+        titre: 'Ce qui part, ce qui reste',
         texte:
-          'Quand vous préparez le menu d’un marché, chaque plat vous rappelle comment il y est parti les fois précédentes — toujours épuisé, ça part bien, il en reste. Marché par marché : un plat qui s’arrache ici peut rentrer avec vous d’ailleurs.',
+          'Quand vous préparez le menu d’un marché, chaque plat affiche comment il s’est vendu sur ce marché les fois précédentes, par exemple « Toujours épuisé » ou « Il en reste ». Chaque marché est compté à part, parce qu’un plat qui part vite à l’un peut très bien rester à l’autre.',
       },
     ],
   },
@@ -82,11 +96,11 @@ const groupes = [
     <section class="hero">
       <div>
         <p class="eyebrow">Pour les traiteurs de marché</p>
-        <h1>Le lien avec vos habitués ne s’arrête pas quand vous remballez.</h1>
+        <h1>Vos habitués savent quand vous venez, et ce que vous servez.</h1>
         <p class="lede">
-          Market Miam donne à chaque traiteur sa propre vitrine : votre carte, vos marchés,
-          et le menu du jour publié marché par marché. Une adresse à donner une fois, que vos
-          habitués gardent — et consultent entre deux marchés.
+          Market Miam vous donne une vitrine en ligne à votre nom, avec votre carte, vos jours
+          de marché et le menu du jour. Vous donnez l’adresse une fois à vos clients, et ils
+          peuvent la consulter quand ils veulent.
         </p>
         <div class="hero-actions">
           <button class="btn btn-solid" {...cta}>Ouvrons votre vitrine</button>
@@ -110,22 +124,22 @@ const groupes = [
 
     <section class="band">
       <div class="wrap">
-        <h2>Vous vendez sur les marchés. Tout le reste, vous le bricolez.</h2>
+        <h2>Là où ça coince</h2>
         <ul class="problems">
           <li>
-            <strong>Entre deux marchés, vous n’existez plus.</strong>
-            Un habitué qui veut savoir ce que vous servez cette semaine, montrer votre stand à
-            un ami, ou vérifier que vous serez bien là — n’a rien à consulter et personne à
-            qui demander.
+            <strong>Entre deux marchés, vos clients n’ont rien à consulter.</strong>
+            Pour savoir si vous venez samedi ou ce que vous servez cette semaine, ils doivent
+            vous appeler ou attendre de passer au stand.
           </li>
           <li>
-            <strong>Vous racontez vos plats au téléphone, dix fois par jour.</strong>
-            Ce qu’il y a dedans, comment c’est préparé, ce qu’il vous reste — les mêmes
-            réponses, client après client.
+            <strong>Vous répondez aux mêmes questions au téléphone.</strong>
+            Les clients vous demandent ce qu’il y a dans tel plat ou s’il en reste encore, et
+            vous répétez la même chose d’un appel à l’autre.
           </li>
           <li>
-            <strong>Vous préparez à l’aveugle.</strong>
-            Trop, et vous rentrez avec des invendus. Pas assez, et vous refusez des clients.
+            <strong>Vous ne savez pas toujours combien préparer.</strong>
+            Si vous en faites trop, vous rentrez avec des invendus. Si vous n’en faites pas
+            assez, vous devez refuser des clients.
           </li>
         </ul>
       </div>
@@ -136,20 +150,40 @@ const groupes = [
         seven cards answers it nowhere. The last group holds one card on purpose: the
         section ends on the thing that gives back rather than burying it seventh. */}
     <section class="wrap section">
-      <h2>Ce que Market Miam vous donne</h2>
+      <h2>Comment fonctionne Market&nbsp;Miam</h2>
       {
         groupes.map((groupe, index) => (
-          <div class:list={['groupe', index === groupes.length - 1 && 'groupe-final']}>
-            <h3>{groupe.titre}</h3>
-            <p class="lede lede-tight">{groupe.lede}</p>
-            <div class="cards">
-              {groupe.cartes.map((carte) => (
-                <article class="card">
-                  <h4>{carte.titre}</h4>
-                  <p>{carte.texte}</p>
-                </article>
-              ))}
+          <div
+            class:list={[
+              'groupe',
+              index === groupes.length - 1 && 'groupe-final',
+              groupe.capture && 'groupe-capture',
+            ]}
+          >
+            <div>
+              <h3>{groupe.titre}</h3>
+              <p class="lede lede-tight">{groupe.lede}</p>
+              <div class="cards">
+                {groupe.cartes.map((carte) => (
+                  <article class="card">
+                    <h4>{carte.titre}</h4>
+                    <p>{carte.texte}</p>
+                  </article>
+                ))}
+              </div>
             </div>
+            {groupe.capture && (
+              <figure class="capture">
+                <img
+                  src={groupe.capture.src}
+                  alt={groupe.capture.alt}
+                  width={groupe.capture.width}
+                  height={groupe.capture.height}
+                  loading="lazy"
+                />
+                <figcaption>{groupe.capture.legende}</figcaption>
+              </figure>
+            )}
           </div>
         ))
       }
@@ -160,25 +194,28 @@ const groupes = [
         <p class="eyebrow eyebrow-light">La mise en route</p>
         <h2>Nous installons votre vitrine avec vous.</h2>
         <p class="lede lede-light">
-          Vos plats, vos marchés, vos horaires : on les met en place ensemble, et votre
-          vitrine est en ligne. Ensuite elle est à vous — et nous construisons la suite à
-          partir de ce que vous nous dites.
+          On met en place votre carte et vos jours de marché ensemble, jusqu’à ce que la
+          vitrine soit en ligne. Ensuite, vos remarques servent directement à améliorer
+          Market Miam.
         </p>
         <ul class="terms">
           <li>
             <strong>Premier mois offert</strong>, puis <strong>{PRIX_MENSUEL} par mois</strong>
-            (18&nbsp;€&nbsp;TTC). Sans engagement — vous arrêtez quand vous voulez.
+            (18&nbsp;€&nbsp;TTC). Sans engagement, vous pouvez arrêter quand vous voulez.
           </li>
           <li>
-            <strong>Pas d’augmentation la première année.</strong> Et si le tarif évolue un
-            jour, vous êtes prévenu trois mois à l’avance — libre à vous de partir.
+            <strong>Pas d’augmentation la première année.</strong> Si le tarif change ensuite,
+            vous êtes prévenu trois mois à l’avance et vous pouvez partir sans frais.
           </li>
-          <li><strong>Aucune commission</strong> sur vos ventes. Jamais.</li>
-          <li><strong>Vos clients restent vos clients</strong> — pas ceux d’une plateforme.</li>
+          <li><strong>Aucune commission</strong> sur vos ventes.</li>
+          <li>
+            <strong>Vos clients restent les vôtres.</strong> Ils voient votre vitrine, pas une
+            liste de traiteurs.
+          </li>
         </ul>
         <div class="offer-actions">
           <button class="btn btn-solid" {...cta}>Ouvrons votre vitrine</button>
-          <p class="note note-light">Deux minutes, trois questions.</p>
+          <p class="note note-light">Le formulaire tient en trois questions.</p>
         </div>
       </div>
     </section>
@@ -462,6 +499,54 @@ const groupes = [
      closer than the ungrouped 2.25rem would put them. */
   .groupe .cards {
     margin-top: 1.25rem;
+  }
+
+  /* Only the groups a vendor does something in on market day carry a screen: that is the
+     part a traiteur cannot picture from the words. Setup is forms, and forms don't sell. On
+     a phone the screen follows the cards; wide, the cards stack beside it.
+     The vendor app shares this page's tokens and fonts, so a bare screenshot reads as more
+     page, and on a phone, where it sits in the same column as the cards, as a stack of
+     buttons to press. So the shot keeps the app's own canvas around its card, and wears the
+     hero shot's border, radius and shadow: the edge of a screen, not of a card. With the
+     caption and a width narrower than the cards, that is enough; a dark phone bezel was
+     tried and was far too heavy for the page. */
+  .groupe-capture {
+    display: grid;
+    gap: 2rem;
+  }
+
+  .capture {
+    width: 100%;
+    max-width: 16rem;
+    margin-inline: auto;
+  }
+
+  .capture img {
+    display: block;
+    width: 100%;
+    height: auto;
+    border: 1px solid var(--mm-line-strong);
+    border-radius: 16px;
+    box-shadow: 0 18px 40px -18px rgb(42 36 30 / 0.35);
+  }
+
+  .capture figcaption {
+    margin-top: 0.85rem;
+    font-size: 0.9rem;
+    color: var(--mm-muted);
+    text-align: center;
+  }
+
+  @media (min-width: 56rem) {
+    .groupe-capture {
+      grid-template-columns: 1fr 17rem;
+      align-items: start;
+      gap: 3rem;
+    }
+
+    .groupe-capture .cards {
+      grid-template-columns: 1fr;
+    }
   }
 
   .cards {

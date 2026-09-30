@@ -28,6 +28,7 @@ describe('StorefrontForm', () => {
       imageReference: '',
       subdomain: null,
       published: false,
+      cartePricesVisible: true,
     });
     view.detectChanges();
 
@@ -104,6 +105,7 @@ describe('StorefrontForm', () => {
       imageReference: '',
       subdomain: published ? 'margaux' : null,
       published,
+      cartePricesVisible: true,
     });
     view.detectChanges();
 
@@ -157,7 +159,7 @@ describe('StorefrontForm', () => {
 
   it('previews the stored cover photo', async () => {
     const { view, storefront } = await renderForm();
-    storefront.view.set({ name: '', description: '', phone: '', imageReference: 'storefronts/acme/cover-photo', subdomain: null, published: false });
+    storefront.view.set({ name: '', description: '', phone: '', imageReference: 'storefronts/acme/cover-photo', subdomain: null, published: false, cartePricesVisible: true });
     view.detectChanges();
 
     expect(screen.getByAltText(/photo de votre stand/i)).toHaveAttribute(
