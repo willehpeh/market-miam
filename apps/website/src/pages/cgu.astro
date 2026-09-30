@@ -1,0 +1,511 @@
+---
+import Base from '../layouts/Base.astro';
+
+// PROJET — non applicable tant que `VERSION.date` est `null`.
+//
+// Tant que la date est nulle la page porte un bandeau « projet », se met en
+// noindex, et n'est liée depuis aucun pied de page : un texte qui se lit comme
+// un contrat ne doit pas être atteignable avant relecture juridique. Mettre la
+// date en vigueur est le geste qui publie — et c'est à ce moment-là qu'il faut
+// ajouter le lien dans les pieds de page du site et de l'espace traiteur, et
+// retirer `/cgu` du filtre `sitemap()` dans astro.config.mjs. Les trois vont
+// ensemble ; la date seule ne publie rien.
+//
+// Les choix de fond sont tracés dans docs/CGU-CGV-PLAN.md §2 (décisions 1 à 14) ;
+// les points restant à valider par un juriste sont listés en §6.
+const VERSION = { numero: '1.0', date: null as string | null };
+
+const PRIX_HT = '15 €';
+const PRIX_TTC = '18 €';
+
+const EDITEUR = {
+  nom: 'William Alexander',
+  adresse: '95 avenue de Verdun, 93230 Romainville, France',
+  siren: '794 431 874',
+  tva: 'FR 08 794 431 874',
+  email: 'contact@marketmiam.fr',
+};
+
+const enVigueur = VERSION.date !== null;
+---
+
+<Base
+  title="Market Miam — Conditions générales d’utilisation et de vente"
+  description="Conditions générales d’utilisation et de vente du service Market Miam : ce que le service comprend, son prix, sa durée, et les engagements de chacun."
+  noindex={!enVigueur}
+>
+  <header class="bar">
+    <a class="wordmark" href="/">
+      <img src="/logo.webp" alt="Market Miam" width="160" height="25" />
+    </a>
+  </header>
+
+  <main class="wrap legal">
+    {
+      !enVigueur && (
+        <p class="projet">
+          <strong>Projet.</strong> Ces conditions ne sont pas encore en vigueur et
+          n’engagent personne en l’état. Elles sont publiées ici pour relecture.
+        </p>
+      )
+    }
+
+    <h1>Conditions générales d’utilisation et de vente</h1>
+    <p class="chapeau">
+      Version {VERSION.numero}{enVigueur && <> — en vigueur depuis le {VERSION.date}</>}. Elles
+      régissent le service Market Miam souscrit par les traiteurs. Elles ne portent pas sur le
+      code source du logiciel, qui est libre et relève de sa propre licence
+      (<a href="/mentions-legales#licence">mentions légales</a>).
+    </p>
+
+    <h2>1. Qui édite le service</h2>
+    <p>
+      Market Miam est édité par {EDITEUR.nom}, entrepreneur individuel sous le régime de la
+      micro-entreprise, {EDITEUR.adresse}. SIREN {EDITEUR.siren}, TVA intracommunautaire
+      {' '}{EDITEUR.tva}. Contact : <a href={`mailto:${EDITEUR.email}`}>{EDITEUR.email}</a>.
+      Il est désigné ci-après « Market Miam ».
+    </p>
+
+    <h2>2. Ce que le service comprend</h2>
+    <p>
+      Market Miam met à disposition du traiteur un espace personnel et une vitrine publique,
+      accessible à une adresse de la forme <code>votre-nom.marketmiam.fr</code>. Le traiteur y
+      décrit son activité, tient sa carte, déclare ses marchés et leurs horaires, publie le menu
+      du jour marché par marché, signale les plats épuisés pendant le service, ferme sa journée
+      et enregistre son bilan de fin de marché.
+    </p>
+    <p>
+      <strong>Aucune vente n’a lieu sur Market Miam.</strong> Le service ne prend ni commande,
+      ni réservation, ni paiement, et ne prélève aucune commission. Les commandes se traitent
+      directement entre le traiteur et ses clients, hors du service. Market Miam n’est partie à
+      aucune vente entre un traiteur et ses clients.
+    </p>
+    <p>
+      Le service évolue. De nouvelles fonctionnalités peuvent être ajoutées, modifiées ou
+      retirées ; celles qui feraient l’objet d’une offre distincte seraient proposées en option
+      et ne seraient jamais facturées sans accord préalable du traiteur.
+    </p>
+
+    <h2>3. Qui peut souscrire</h2>
+    <p>
+      Le service s’adresse exclusivement aux professionnels établis en France exerçant une
+      activité de restauration, de traiteur ou de commerce alimentaire, et agissant dans le cadre
+      de cette activité. En souscrivant, le traiteur déclare exercer une telle activité, être
+      immatriculé, et fournir un numéro SIREN exact.
+    </p>
+
+    <h2>4. Acceptation</h2>
+    <p>
+      Le traiteur accepte les présentes conditions lors de son inscription, par tout moyen
+      permettant d’en conserver la preuve. La version acceptée et sa date sont conservées.
+      Les versions antérieures restent consultables à leur adresse propre.
+    </p>
+    <p>
+      Le contrat étant conclu entre professionnels, les parties conviennent d’écarter les
+      dispositions de l’article 1127-1 du code civil relatives à la conclusion des contrats par
+      voie électronique, comme l’article 1127-3 du même code le permet.
+    </p>
+
+    <h2>5. Vérification du statut professionnel</h2>
+    <p>
+      Avant la mise en ligne d’une vitrine, Market Miam vérifie auprès du répertoire public des
+      entreprises que l’établissement déclaré existe, qu’il est en activité, et que son secteur
+      correspond à l’activité annoncée. Aucun document n’est demandé : la vérification porte sur
+      des informations déjà publiques.
+    </p>
+    <p>
+      Cette vérification conditionne la publication de la vitrine. <strong>Elle ne porte que sur
+      l’existence de l’entreprise.</strong> Elle ne constitue ni un contrôle des pratiques du
+      traiteur, ni un agrément, ni une garantie donnée à ses clients — et Market Miam ne présente
+      nulle part une vitrine comme vérifiée.
+    </p>
+
+    <h2>6. La vitrine et sa mise en ligne</h2>
+    <p>
+      Une vitrine est mise en ligne lorsqu’elle porte un nom, une photo de couverture, au moins un
+      plat, au moins un marché, et qu’une adresse lui a été attribuée. L’adresse est attribuée par
+      Market Miam ; elle reprend, dans la mesure du possible, le nom sous lequel le traiteur
+      exerce.
+    </p>
+    <p>
+      Le traiteur reste maître de sa vitrine : il en modifie le contenu quand il le souhaite, et
+      peut demander à tout moment qu’elle cesse d’être publique.
+    </p>
+
+    <h2>7. Ce que le traiteur publie</h2>
+    <p>
+      Le traiteur est seul responsable de ce qu’il publie : textes, photos, prix, horaires,
+      coordonnées. Il garantit disposer des droits nécessaires sur les photos qu’il met en ligne
+      et sur les noms qu’il utilise.
+    </p>
+    <p>
+      Le numéro de téléphone renseigné apparaît sur la vitrine publique : c’est ce qui permet aux
+      clients de joindre le stand. Le traiteur en est informé au moment où il le saisit.
+    </p>
+    <p>
+      Pour pouvoir afficher ces contenus, le traiteur autorise Market Miam à les héberger, les
+      reproduire, les redimensionner et les diffuser sur sa vitrine et dans les pages du service,
+      pour la durée de l’abonnement et pour ce seul usage. Cette autorisation prend fin avec le
+      contrat.
+    </p>
+
+    <h2>8. Contenus interdits et modération</h2>
+    <p>Ne peuvent être publiés sur le service :</p>
+    <ul>
+      <li>des contenus illicites, trompeurs, injurieux, haineux ou incitant à la violence ;</li>
+      <li>des contenus portant atteinte aux droits d’un tiers, notamment des photos dont le traiteur n’a pas les droits ;</li>
+      <li>des informations fausses sur l’activité, les produits, les prix ou les lieux de vente ;</li>
+      <li>des contenus sans rapport avec l’activité de traiteur de marché.</li>
+    </ul>
+    <p>
+      Toute personne peut signaler un contenu à <a href={`mailto:${EDITEUR.email}`}>{EDITEUR.email}</a>
+      en indiquant l’adresse concernée et le motif. Chaque signalement est examiné. Lorsqu’un
+      contenu est retiré ou une vitrine dépubliée, le traiteur en est informé par écrit, avec le
+      motif, et peut répondre.
+    </p>
+
+    <h2>9. Les obligations propres au traiteur</h2>
+    <p>
+      Market Miam fournit un outil de publication ; il ne se substitue à aucune des obligations du
+      traiteur envers ses clients et envers l’administration. Restent à la charge exclusive du
+      traiteur, notamment :
+    </p>
+    <ul>
+      <li>l’information sur les allergènes et la composition des plats ;</li>
+      <li>l’affichage des prix conforme à la réglementation, et l’exactitude des prix publiés ;</li>
+      <li>l’hygiène et la sécurité alimentaire, ainsi que les déclarations et agréments correspondants ;</li>
+      <li>les autorisations nécessaires pour exercer sur chaque marché ;</li>
+      <li>les mentions légales de sa propre vitrine et l’exactitude de ses coordonnées.</li>
+    </ul>
+
+    <h2>10. Rôle de Market Miam à l’égard des contenus</h2>
+    <p>
+      Market Miam édite les pages de <code>marketmiam.fr</code>. En revanche, il héberge les
+      contenus publiés par les traiteurs sur leurs vitrines sans les contrôler a priori, et n’en
+      répond que dans les conditions prévues par la loi, après signalement.
+    </p>
+
+    <h2>11. Disponibilité, assistance et sauvegardes</h2>
+    <p>
+      Market Miam s’engage à mettre en œuvre les moyens raisonnables pour assurer la disponibilité
+      du service. Il s’agit d’une obligation de moyens : aucun taux de disponibilité n’est garanti.
+      Les interruptions programmées sont annoncées à l’avance lorsque c’est possible.
+    </p>
+    <p>
+      L’assistance se fait par courrier électronique à
+      {' '}<a href={`mailto:${EDITEUR.email}`}>{EDITEUR.email}</a>, dans la mesure du possible et
+      sans délai de réponse garanti.
+    </p>
+    <p>
+      Des sauvegardes sont réalisées régulièrement. Elles visent à limiter les pertes en cas
+      d’incident, sans garantie de restauration intégrale.
+    </p>
+
+    <h2>12. La mise en route</h2>
+    <p>
+      La mise en place initiale de la vitrine — la présentation, la carte et les marchés — est
+      faite avec le traiteur, sans frais supplémentaires, dans les trente jours suivant
+      l’inscription. Market Miam y consacre les moyens raisonnables ; le contenu et son exactitude
+      restent ceux du traiteur.
+    </p>
+
+    <h2>13. Données personnelles</h2>
+    <p>
+      Les données personnelles traitées dans le cadre du service, leur finalité et les droits du
+      traiteur sont décrits dans la
+      {' '}<a href="/mentions-legales">politique de confidentialité</a>. Aucune donnée n’est
+      revendue.
+    </p>
+    <p>
+      <strong>La suppression d’un compte est définitive.</strong> Les informations personnelles du
+      traiteur deviennent définitivement illisibles, y compris dans les sauvegardes. Elles ne
+      peuvent être ni restaurées, ni reconstituées, y compris par Market Miam.
+    </p>
+    <p>
+      À ce jour, le service ne crée aucun compte client et ne recueille aucune donnée sur les
+      clients du traiteur. Si une fonctionnalité future conduisait Market Miam à traiter de telles
+      données pour le compte du traiteur, les conditions de ce traitement seraient ajoutées aux
+      présentes selon la procédure de l’article 21.
+    </p>
+
+    <h2>14. Propriété intellectuelle</h2>
+    <p>
+      Le nom « Market Miam », le logo et l’identité visuelle du service appartiennent à Market
+      Miam. L’abonnement ne confère aucun droit sur ces éléments.
+    </p>
+    <p>
+      Le code source du service est libre et publié sous licence GNU AGPL v3 ou ultérieure
+      (<a href="/mentions-legales#licence">voir les mentions légales</a>). Cette licence porte sur
+      le code, et non sur le service hébergé objet des présentes : la souscription d’un abonnement
+      et l’usage du code libre sont indépendants l’un de l’autre.
+    </p>
+
+    <h2>15. Références et communication</h2>
+    <p>
+      Market Miam ne cite aucun traiteur en référence, ne publie aucune capture de sa vitrine et
+      n’utilise aucun de ses contenus à des fins de communication sans son accord écrit préalable,
+      donné pour chaque usage. Cet accord peut être retiré à tout moment pour l’avenir.
+    </p>
+
+    <h2 class="part">16. Prix</h2>
+    <p>
+      L’abonnement est de <strong>{PRIX_HT} HT par mois</strong> ({PRIX_TTC} TTC), quel que soit le
+      nombre de marchés, de plats ou de visiteurs de la vitrine. Aucune commission n’est prélevée
+      sur les ventes du traiteur.
+    </p>
+    <p>
+      Le prix comprend l’ensemble des fonctionnalités décrites à l’article 2, l’hébergement de la
+      vitrine, son adresse, et la mise en route prévue à l’article 12.
+    </p>
+
+    <h2>17. Durée, début de l’abonnement et premier mois offert</h2>
+    <p>
+      Le contrat est conclu pour une durée indéterminée et se poursuit de mois en mois. Il n’y a
+      pas de durée d’engagement.
+    </p>
+    <p>
+      <strong>Le premier mois est offert</strong> et commence à la mise en ligne de la vitrine. La
+      facturation commence à l’issue de ce mois. Tant que la vitrine n’est pas en ligne, le compte
+      reste gratuit ; un compte resté sans vitrine publiée pendant quatre-vingt-dix jours peut être
+      fermé après information du traiteur.
+    </p>
+
+    <h2>18. Facturation et paiement</h2>
+    <p>
+      L’abonnement est facturé mensuellement, à la date anniversaire de la mise en ligne. Toute
+      période commencée est due : aucun prorata n’est appliqué et aucun remboursement n’est dû en
+      cas de résiliation en cours de mois.
+    </p>
+    <p>
+      Les factures sont adressées par courrier électronique et payables par virement bancaire dans
+      les <strong>trente jours</strong> suivant leur émission.
+    </p>
+    <p>
+      Conformément aux articles L441-9 et L441-10 du code de commerce, tout retard de paiement
+      entraîne de plein droit des pénalités de retard au taux de trois fois le taux d’intérêt légal,
+      ainsi qu’une indemnité forfaitaire pour frais de recouvrement de 40 €. Cette indemnité est due
+      sans qu’un rappel soit nécessaire, et sans préjudice d’une indemnisation complémentaire si les
+      frais réellement exposés sont supérieurs.
+    </p>
+
+    <h2>19. Défaut de paiement</h2>
+    <p>
+      À défaut de paiement à l’échéance, un rappel est adressé au bout de sept jours. Si la facture
+      demeure impayée, la vitrine cesse d’être publique quinze jours après ce rappel, après
+      information écrite du traiteur.
+    </p>
+    <p>
+      Le compte et son contenu sont conservés trois mois à compter de la dépublication. Le paiement
+      des sommes dues pendant ce délai rétablit la vitrine en l’état. Passé ce délai, le compte et
+      les données sont supprimés dans les conditions de l’article 13.
+    </p>
+
+    <h2>20. Évolution du prix</h2>
+    <p>
+      Le prix ne peut pas augmenter pendant les <strong>douze premiers mois</strong> de
+      l’abonnement d’un traiteur.
+    </p>
+    <p>
+      Passé ce délai, toute évolution du prix est notifiée par courrier électronique et ne prend
+      effet qu’au terme d’un préavis de <strong>trois mois</strong>. Le traiteur qui n’accepte pas
+      le nouveau prix peut résilier sans frais avant son entrée en vigueur.
+    </p>
+
+    <h2>21. Modification des présentes conditions</h2>
+    <p>
+      Les présentes conditions peuvent être modifiées. Toute modification est notifiée par courrier
+      électronique au moins <strong>trente jours</strong> avant son entrée en vigueur. La poursuite
+      de l’utilisation du service au-delà de cette date vaut acceptation.
+    </p>
+    <p>
+      Le traiteur qui refuse la nouvelle version peut résilier sans frais et sans préavis avant son
+      entrée en vigueur ; rien de plus ne lui est dû. Les versions antérieures restent consultables.
+    </p>
+
+    <h2>22. Droit de rétractation</h2>
+    <p>
+      Bien que le contrat soit conclu entre professionnels, Market Miam accorde au traiteur un droit
+      de rétractation de <strong>quatorze jours</strong> à compter de la souscription, exercé par
+      simple courrier électronique, sans motif et sans frais.
+    </p>
+
+    <h2>23. Résiliation par le traiteur</h2>
+    <p>
+      Le traiteur peut résilier à tout moment, sans préavis ni frais, par courrier électronique à
+      {' '}<a href={`mailto:${EDITEUR.email}`}>{EDITEUR.email}</a>. La résiliation prend effet au
+      terme du mois en cours, déjà facturé.
+    </p>
+
+    <h2>24. Résiliation et suspension par Market Miam</h2>
+    <p>Market Miam peut :</p>
+    <ul>
+      <li>
+        <strong>retirer immédiatement</strong> un contenu manifestement illicite ou dangereux, et
+        suspendre la vitrine qui le porte ;
+      </li>
+      <li>
+        <strong>résilier après un préavis de quinze jours</strong> en cas de manquement du traiteur
+        à ses obligations — notamment défaut de paiement, déclaration inexacte sur son activité, ou
+        usage détourné du service — si le manquement n’est pas corrigé dans ce délai ;
+      </li>
+      <li>
+        <strong>résilier sans motif après un préavis de trente jours</strong>, les sommes déjà
+        versées au titre de la période non courue étant alors remboursées.
+      </li>
+    </ul>
+    <p>
+      Dans tous les cas, la décision est motivée par écrit et le traiteur peut y répondre. Une
+      suspension levée rétablit la vitrine en l’état.
+    </p>
+
+    <h2>25. Ce qui advient des données et de l’adresse</h2>
+    <p>
+      À la fin du contrat, quelle qu’en soit la cause, la vitrine cesse d’être publique. Le traiteur
+      peut demander, avant la suppression, une copie de ses contenus ; elle lui est remise dans le
+      mois suivant sa demande.
+    </p>
+    <p>
+      L’adresse de la vitrine est conservée trente jours, pendant lesquels elle ne peut être
+      attribuée à personne d’autre — un traiteur qui revient la retrouve. Passé ce délai, elle
+      redevient disponible.
+    </p>
+    <p>
+      Les données sont supprimées trente jours après la fin du contrat, dans les conditions de
+      l’article 13, sauf demande de suppression immédiate. Les documents comptables sont conservés
+      pendant la durée imposée par la loi.
+    </p>
+
+    <h2>26. Responsabilité</h2>
+    <p>
+      Market Miam n’est pas responsable du contenu publié par le traiteur, des relations entre le
+      traiteur et ses clients, ni des conséquences d’informations inexactes publiées par le
+      traiteur.
+    </p>
+    <p>
+      La responsabilité de Market Miam au titre des présentes est limitée aux dommages directs et,
+      pour l’ensemble des réclamations sur une même année, au montant des sommes versées par le
+      traiteur au cours des douze mois précédant le fait générateur. Cette limitation ne s’applique
+      pas en cas de faute lourde ou dolosive.
+    </p>
+
+    <h2>27. Réclamations, droit applicable et juridiction</h2>
+    <p>
+      Toute réclamation est adressée à
+      {' '}<a href={`mailto:${EDITEUR.email}`}>{EDITEUR.email}</a>. Les parties s’efforcent de
+      trouver une solution amiable avant toute action.
+    </p>
+    <p>
+      Les présentes conditions sont régies par le droit français et rédigées en français. À défaut
+      d’accord amiable, tout litige relève de la compétence du tribunal judiciaire de Bobigny.
+    </p>
+  </main>
+
+  <footer class="foot">
+    <p><a href="/">← Retour à l’accueil</a></p>
+    <p><a href={`mailto:${EDITEUR.email}`}>{EDITEUR.email}</a></p>
+  </footer>
+</Base>
+
+<style>
+  .wrap {
+    max-width: 62rem;
+    margin-inline: auto;
+    padding-inline: 1.5rem;
+  }
+
+  .bar {
+    display: flex;
+    align-items: center;
+    max-width: 62rem;
+    margin-inline: auto;
+    padding: 1.25rem 1.5rem;
+  }
+
+  .wordmark {
+    display: block;
+    line-height: 0;
+  }
+
+  .legal {
+    padding-block: clamp(2rem, 6vw, 3.5rem);
+    max-width: 44rem;
+  }
+
+  .projet {
+    border: 1px solid var(--mm-line-strong);
+    border-left-width: 4px;
+    padding: 0.9rem 1.1rem;
+    margin-bottom: 2rem;
+    color: var(--mm-ink-soft);
+  }
+
+  .legal h1 {
+    font-size: clamp(1.8rem, 4.5vw, 2.4rem);
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+  }
+
+  .chapeau {
+    margin-top: 0.75rem;
+  }
+
+  .legal h2 {
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin-top: 2rem;
+    margin-bottom: 0.5rem;
+  }
+
+  /* The commercial half opens here; a rule marks the seam without a second <h1>,
+     so the outline stays one document rather than two stitched together. */
+  .legal h2.part {
+    margin-top: 3.5rem;
+    padding-top: 2.5rem;
+    border-top: 1px solid var(--mm-line);
+  }
+
+  .legal p,
+  .legal li {
+    color: var(--mm-ink-soft);
+    max-width: 58ch;
+  }
+
+  .legal p {
+    margin-bottom: 0.75rem;
+  }
+
+  .legal ul {
+    margin: 0 0 0.75rem;
+    padding-left: 1.2rem;
+  }
+
+  .legal li {
+    margin-bottom: 0.4rem;
+  }
+
+  .legal code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.9em;
+  }
+
+  .legal a {
+    color: var(--mm-brand-deep);
+  }
+
+  .foot {
+    max-width: 62rem;
+    margin-inline: auto;
+    padding: 2.5rem 1.5rem 3.5rem;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 0.5rem 1.5rem;
+    font-size: 0.9rem;
+    color: var(--mm-muted);
+  }
+
+  .foot a {
+    color: var(--mm-brand-deep);
+  }
+</style>
