@@ -118,5 +118,3 @@ is already published and the gate only bites at publication.
   tombstone refuses any PII write. A `VendorErased` event, PII-free and appended before the
   shred, would let the aggregate refuse with a domain error instead. That only matters until the
   Auth0 user is deleted by hand. Deferred.
-- `Storefront._information?` is optional state, the shape `Vendor` just left behind. A null
-  object, as for the legal identity, is a separate refactor.
