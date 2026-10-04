@@ -64,6 +64,33 @@ describe('Revise item', () => {
     ]);
   });
 
+  // Name and description kept, so only how the dish is priced differs: the kind of pricing
+  // alone has to count as a change.
+  it.each([
+    {
+      scenario: 'a flat item into a variant item',
+      added: TestAddItemToCatalogue.simple(),
+      pricing: { variants: [{ name: 'Small', description: '', price: 800 }, { name: 'Large', description: 'extra', price: 1200 }] },
+    },
+    {
+      scenario: 'a variant item into a flat item',
+      added: TestAddItemToCatalogue.withVariants([{ name: 'Small', description: '', price: 800 }, { name: 'Large', description: 'extra', price: 1200 }]),
+      pricing: { price: 800 },
+    },
+  ])('revises $scenario when nothing but the pricing changes', async ({ added, pricing }) => {
+    await new AddItemToCatalogueHandler(catalogues).execute(added);
+
+    await handler.execute(new ReviseItem({ itemId: added.itemId, vendorId: added.vendorId, name: added.name, description: added.description, ...pricing }));
+
+    expect(store.newEvents()).toEqual([
+      expect.objectContaining({ type: 'ItemAddedToCatalogue' }),
+      expect.objectContaining({
+        type: 'ItemRevised',
+        payload: { itemId: added.itemId, name: added.name, description: added.description, ...pricing },
+      }),
+    ]);
+  });
+
   // A re-statement, not a change: the stance setMenu, setCoverPhoto and setMarketPrices
   // already take. The edit form is saved whole, so saving it untouched must not put a
   // second copy of the dish in the log — that is the one growth of the catalogue stream
