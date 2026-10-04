@@ -64,3 +64,4 @@ detailed rationale in `docs/archive/DEFERRED.md`).
 | [0055](0055-vendor-qr-code-made-in-the-vendor-app.md)                   | The vendor's QR code is made in the vendor app                             | 2026-09-11 |
 | [0056](0056-legal-identity-outlives-erasure.md)                         | The vendor's legal identity outlives erasure, under its own key            | 2026-09-23 |
 | [0057](0057-shreddable-fields-held-as-recorded.md)                      | Shreddable fields are held as recorded, not re-validated                   | 2026-10-04 |
+| [0058](0058-erasure-is-an-event-carried-out-by-a-processor.md)          | Erasure is an event, carried out by a processor                            | 2026-10-05 |

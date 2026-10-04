@@ -12,7 +12,8 @@ identity provider (ADR 0021).
 | Data | Where it lives | Erasure route |
 |------|----------------|---------------|
 | Vendor email | Auth0; `VendorRegistered` payload (encrypted) | Key shred + Auth0 user delete |
-| Storefront `name`, `description`, `phone` | `StorefrontInformationEdited` payload (encrypted); `vendor_storefront_views` (plaintext) | Key shred + projection rebuild |
+| Storefront `name`, `description`, `phone` | `StorefrontInformationEdited` payload (encrypted); `vendor_storefront_views` (plaintext) | Key shred; row dropped on `VendorErased` (ADR 0058) |
+| Vendor legal identity (SIRET, dénomination, adresse, email, phone, TVA, médiateur, société) | `VendorLegalIdentityProvided` payload (encrypted under `{vendorId}:legal`); `vendor_legal_identity_views` (plaintext) | Row dropped on `VendorErased`; `:legal` key shredded 5 years after erasure (ADR 0056) |
 | Pilot leads (nom, mail, marchés) | Tally only — never enters the event store | Delete the Tally response |
 
 Registry of encrypted fields: `packages/market-days/src/vendor/vendor-pii-fields.ts`.

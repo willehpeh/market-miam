@@ -31,7 +31,7 @@ Each slice is reviewable and committable alone. Deploying is gated by the rollou
 | 1 | Decisions on paper: ADR 0056, amendments to 0054 and 0025, `PRIVACY-PLAN.md` | done |
 | 2 | Domain: `ProvideVendorLegalIdentity` → `VendorLegalIdentityProvided` | done |
 | 3 | Erasure keeps the `:legal` key and stamps its shred date; shredded keys leave tombstones | done |
-| 4 | Read model + HTTP: vendor read/write, éditeur block on the public storefront query | |
+| 4 | Read model + HTTP: vendor read/write, éditeur block on the public storefront query | done |
 | 5 | Vendor app: the legal-identity form, and links to policy A | |
 | 6 | Policy A page on the website | |
 | 7 | Storefront: the mentions-légales route, and price wording on the carte | |
@@ -60,24 +60,28 @@ Each slice is reviewable and committable alone. Deploying is gated by the rollou
   `shredded_at`. `getOrCreateKeyFor` throws on a tombstone; `findKeyFor` → `null` → `SHREDDED`.
   Null `key_version` defeats a racing lazy rewrap and keeps tombstones out of ADR 0040's
   retirement count. Both adapters, via the `DataKeys` contract.
-- **Scheduled shred** (migration 0021): `VendorErasure.erase()` calls
-  `scheduleShred('{vendorId}:legal', now + 5 years)` (injected `Clock`), stamping `shred_after`.
+- **Scheduled shred** (migration 0021): erasure calls `scheduleShred('{vendorId}:legal',
+  +5 years)`, stamping `shred_after`. Done by `ErasesVendors` from `erasedAt` since slice 4.
 - **Sweep built, not deferred** (ADR 0056 amendment): `ShredSweep` calls `shredDue(now)` on boot,
   then daily (in-process `timer`). A failed sweep logs; the next tick retries. Assumes the API
   never sleeps; Render Cron Job is the fallback.
-- Proof: `vendor-erasure.spec.ts` moves the clock to 5 years − 1 ms (readable) and 5 years
+- Proof: `erase-vendor.spec.ts` moves the clock to 5 years − 1 ms (readable) and 5 years
   (`SHREDDED`), driving the injected sweep ticks.
 
-### 4. Read model + HTTP
+### 4. Read model + HTTP — shipped (`d30f77b`, `465e5b9`, `8123e69`)
 
-- `GET`/`PUT` for the vendor, zod at the edge (ADR 0046). The `PUT` dispatches the existing
-  `ProvideVendorLegalIdentity`. `vatRegime` is an enum at the edge too.
-- `FindCustomerStorefront` carries the éditeur block. The hébergeur block is a constant (Market
-  Miam, then Render) and stays out of the payload.
-- A rebuild must not re-materialise an erased vendor's legal identity (ADR 0056): it still
-  decrypts until its shred date. Open: how the projection knows the vendor was erased —
-  removing the row at erasure doesn't survive the next rebuild; a `VendorErased` event would
-  (see "Not in this plan").
+- **Erasure is an event** (ADR 0058): `EraseVendor` → `VendorErased`; `ErasesVendors` shreds,
+  schedules `:legal`, frees the subdomain. Erased `Vendor` refuses `RegisterVendor` and
+  `ProvideVendorLegalIdentity` (`VendorErasedError`, 400). `VendorErasure` deleted.
+- **`vendor-legal-identity-view`** (migration 0022, jsonb snapshot): latest identity per vendor;
+  `VendorErased` deletes the row, so a rebuild never re-materialises it.
+- **`GET`/`PUT /legal-identity`**: `PUT` dispatches `ProvideVendorLegalIdentity`; `GET` returns
+  what the vendor typed (no SIREN/TVA), 404 until provided. zod checks shape only — `vatRegime`
+  is `z.string()`; the value object owns the rule (ADR 0046).
+- **Éditeur block** on `FindCustomerStorefront` (published only; `null` until provided), derived
+  in the API: `publicationDirector` (représentant légal, else the vendor), `company` (société
+  only, with SIREN), `mediator` (pair or null), `vatNumber` (null under franchise). Same payload
+  as the storefront feed, no extra endpoint. The hébergeur block stays a frontend constant.
 
 ### 5. Vendor app
 
@@ -117,9 +121,6 @@ is already published and the gate only bites at publication.
 - Stripe and the 10-year invoice rows in policy A come with Billing (ADR 0048).
 - Cloudinary's IP masking is a dashboard switch and can be flipped at any time.
 - Deleting the Auth0 user on erasure stays manual.
-- An erased vendor still rehydrates as registered, so `Vendor` accepts their commands. The
-  tombstone refuses PII writes under `{vendorId}` (a 500, not a domain error), but not under
-  `:legal`: a vendor erased before providing a legal identity who then provides one mints a
-  `:legal` key with no `shred_after`, kept forever. A `VendorErased` event, PII-free and appended
-  before the shred, would let the aggregate refuse both with a domain error. That only matters
-  until the Auth0 user is deleted by hand. Deferred.
+- A storefront edit by an erased vendor is refused by the tombstone as a 500, not a domain
+  error: `Storefront` doesn't know about `VendorErased` (ADR 0058). Only matters until the Auth0
+  user is deleted by hand.

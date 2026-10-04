@@ -1,6 +1,6 @@
 # 0056. The vendor's legal identity outlives erasure, under its own key
 
-Date: 2026-09-23 · Status: Accepted · Amended 2026-10-04 — the sweep is built, not deferred
+Date: 2026-09-23 · Status: Accepted · Amended 2026-10-04 — the sweep is built, not deferred · Amended 2026-10-05 by [0058](0058-erasure-is-an-event-carried-out-by-a-processor.md) — erasure is an event; `ErasesVendors`, not `VendorErasure`, schedules the `:legal` shred, and read models drop the identity on `VendorErased`
 
 Amends ADR 0054 (vendor legal identity) and ADR 0025 (crypto-shredding).
 
