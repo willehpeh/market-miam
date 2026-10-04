@@ -1,6 +1,6 @@
 # 0007. Value objects validated in constructors
 
-Date: 2026-05-02 · Status: Accepted
+Date: 2026-05-02 · Status: Accepted · Amended 2026-10-04 by [0057](0057-shreddable-fields-held-as-recorded.md) — fields that can be shredded are held as recorded, not re-validated
 
 ## Context
 

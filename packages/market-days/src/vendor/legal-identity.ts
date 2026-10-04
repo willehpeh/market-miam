@@ -24,7 +24,7 @@ export class LegalIdentity {
   }
 
   // Compared against the event as it was recorded, field by field: the snapshot is held raw
-  // because rehydration must never validate history (ADR 0039), and jsonb keeps no key order.
+  // because shreddable fields are not re-validated (ADR 0057), and jsonb keeps no key order.
   sameAs(recorded: VendorLegalIdentityRecorded['payload']): boolean {
     const mine = this.recordedFor(recorded.vendorId);
     return (Object.keys(mine) as (keyof typeof mine)[]).every((field) => mine[field] === recorded[field]);
