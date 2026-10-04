@@ -1,15 +1,19 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import { DataKeys, SHREDDED } from '@market-miam/event-sourcing';
+import { Subject } from 'rxjs';
+import { Clock, Instant, LocalDate } from '@market-miam/common';
+import { DataKeys, EventStore, SHREDDED } from '@market-miam/event-sourcing';
 import {
   InMemorySubdomainRegistry,
+  VendorLegalIdentityProvided,
   VendorStorefrontViews,
   VendorStorefrontViewStore,
 } from '@market-miam/market-days';
-import { bootApiTestApp } from '../testing/api-test-app';
+import { apiTestModule, bootApiTestApp, FIXED_NOW, startApp } from '../testing/api-test-app';
 import { Subscriptions } from '../event-sourcing/subscriptions';
 import { VendorErasure } from './vendor-erasure';
+import { SHRED_SWEEP_TICKS } from './shred-sweep';
 
 describe('Erasing a vendor', () => {
   let app: INestApplication;
@@ -119,5 +123,77 @@ describe('Erasing a vendor', () => {
     await app.get(VendorErasure).erase('acme-bakery');
 
     await request(app.getHttpServer()).get('/public/storefront/acme').expect(404);
+  });
+});
+
+describe("The erased vendor's legal identity", () => {
+  let app: INestApplication;
+  let now: string;
+  let sweepTicks: Subject<void>;
+
+  const clock: Clock = {
+    today: () => new LocalDate(now.slice(0, 10)),
+    now: () => new Instant(now),
+  };
+
+  const provided: VendorLegalIdentityProvided = {
+    type: 'VendorLegalIdentityProvided',
+    version: 1,
+    payload: {
+      vendorId: 'acme-bakery',
+      siret: '73282932000074',
+      siren: '732829320',
+      vatNumber: 'FR44732829320',
+      legalName: 'Marie Dupont',
+      address: '12 rue des Halles, 92330 Sceaux',
+      contactEmail: 'contact@chez-marie.fr',
+      phone: '06 12 34 56 78',
+      vatRegime: 'assujetti',
+      mediatorName: null,
+      mediatorUrl: null,
+      legalForm: null,
+      shareCapital: null,
+      registryCity: null,
+      legalRepresentative: null,
+    },
+  };
+
+  const legalName = async (): Promise<unknown> => {
+    const events = await app.get(EventStore).load('vendor-acme-bakery');
+    return events.find((event) => event.type === 'VendorLegalIdentityProvided')?.payload['legalName'];
+  };
+
+  // In memory, a sweep tick has shredded synchronously by the time next() returns.
+  const sweepAt = (instant: string) => {
+    now = instant;
+    sweepTicks.next();
+  };
+
+  beforeEach(async () => {
+    now = FIXED_NOW;
+    sweepTicks = new Subject<void>();
+    app = await startApp(apiTestModule({ clock }).overrideProvider(SHRED_SWEEP_TICKS).useValue(sweepTicks));
+    await request(app.getHttpServer())
+      .post('/vendors')
+      .set('Authorization', 'Bearer any-token')
+      .expect(201);
+    await app.get(EventStore).append('vendor-acme-bakery', [provided], 1, { vendorId: 'acme-bakery' });
+    await app.get(VendorErasure).erase('acme-bakery');
+  });
+
+  afterEach(async () => {
+    await app.close();
+  });
+
+  it('is kept for five years after the erasure', async () => {
+    sweepAt('2031-06-23T08:59:59.999Z');
+
+    expect(await legalName()).toBe('Marie Dupont');
+  });
+
+  it('is shredded once five years have passed', async () => {
+    sweepAt('2031-06-23T09:00:00.000Z');
+
+    expect(await legalName()).toBe(SHREDDED);
   });
 });

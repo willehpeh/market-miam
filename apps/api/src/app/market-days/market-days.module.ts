@@ -64,6 +64,7 @@ import { MarketPricesController } from './market-prices.controller';
 import { SellingRecordController } from './selling-record.controller';
 import { PublicStorefrontController } from './public-storefront.controller';
 import { VendorErasure } from './vendor-erasure';
+import { dailyShredSweep, ShredSweep } from './shred-sweep';
 
 const clock = [{ provide: Clock, useClass: DateClock }];
 
@@ -168,6 +169,8 @@ const queryHandlers = [FindCustomerStorefrontHandler, FindVendorStorefrontHandle
     ...commandHandlers,
     ...queryHandlers,
     VendorErasure,
+    dailyShredSweep,
+    ShredSweep,
   ],
 })
 export class MarketDaysModule {}

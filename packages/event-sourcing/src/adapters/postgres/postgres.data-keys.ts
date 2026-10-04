@@ -68,6 +68,20 @@ export class PostgresDataKeys extends DataKeys {
     );
   }
 
+  async scheduleShred(subjectId: string, at: Date): Promise<void> {
+    await this.pool.query(
+      'UPDATE data_keys SET shred_after = $2 WHERE subject_id = $1 AND shredded_at IS NULL',
+      [subjectId, at],
+    );
+  }
+
+  async shredDue(now: Date): Promise<void> {
+    await this.pool.query(
+      'UPDATE data_keys SET wrapped_key = NULL, key_version = NULL, shredded_at = now() WHERE shred_after <= $1 AND shredded_at IS NULL',
+      [now],
+    );
+  }
+
   // Lazy rotation: after a successful unwrap under an old version, re-wrap the
   // same data key under the current master key. The data key never changes, only
   // its wrapping. The key_version guard makes this a compare-and-set: a

@@ -4,6 +4,7 @@ import { DataKeys } from '../../ports/data-keys';
 // A shredded subject keeps its entry as a null tombstone, so it can never be minted again.
 export class InMemoryDataKeys extends DataKeys {
   private readonly keys = new Map<string, Buffer | null>();
+  private readonly shredAfter = new Map<string, Date>();
 
   getOrCreateKeyFor(subjectId: string): Promise<Buffer> {
     let key = this.keys.get(subjectId);
@@ -24,6 +25,23 @@ export class InMemoryDataKeys extends DataKeys {
   shred(subjectId: string): Promise<void> {
     if (this.keys.has(subjectId)) {
       this.keys.set(subjectId, null);
+    }
+    return Promise.resolve();
+  }
+
+  scheduleShred(subjectId: string, at: Date): Promise<void> {
+    if (this.keys.get(subjectId)) {
+      this.shredAfter.set(subjectId, at);
+    }
+    return Promise.resolve();
+  }
+
+  shredDue(now: Date): Promise<void> {
+    for (const [subjectId, at] of this.shredAfter) {
+      if (at <= now) {
+        this.keys.set(subjectId, null);
+        this.shredAfter.delete(subjectId);
+      }
     }
     return Promise.resolve();
   }

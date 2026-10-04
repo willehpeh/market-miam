@@ -48,6 +48,33 @@ export function dataKeysContract(name: string, create: () => DataKeys): void {
       expect(await keys.findKeyFor('vendor-1')).toBeNull();
     });
 
+    it('keeps a key scheduled for shredding until its date', async () => {
+      const minted = await keys.getOrCreateKeyFor('vendor-1:legal');
+      await keys.scheduleShred('vendor-1:legal', new Date('2031-06-23T09:00:00.000Z'));
+
+      await keys.shredDue(new Date('2031-06-23T08:59:59.999Z'));
+
+      expect((await keys.findKeyFor('vendor-1:legal'))?.equals(minted)).toBe(true);
+    });
+
+    it('shreds a scheduled key once its date has come', async () => {
+      await keys.getOrCreateKeyFor('vendor-1:legal');
+      await keys.scheduleShred('vendor-1:legal', new Date('2031-06-23T09:00:00.000Z'));
+
+      await keys.shredDue(new Date('2031-06-23T09:00:00.000Z'));
+
+      expect(await keys.findKeyFor('vendor-1:legal')).toBeNull();
+      await expect(keys.getOrCreateKeyFor('vendor-1:legal')).rejects.toThrow(/shredded/);
+    });
+
+    it('leaves unscheduled keys to the sweep untouched', async () => {
+      const minted = await keys.getOrCreateKeyFor('vendor-1');
+
+      await keys.shredDue(new Date('2099-01-01T00:00:00.000Z'));
+
+      expect((await keys.findKeyFor('vendor-1'))?.equals(minted)).toBe(true);
+    });
+
     it('shredding a subject with no key is a no-op', async () => {
       await expect(keys.shred('never-existed')).resolves.toBeUndefined();
     });
