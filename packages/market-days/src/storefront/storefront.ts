@@ -89,10 +89,6 @@ export class Storefront extends Aggregate {
     this.changeCartePriceVisibility(true);
   }
 
-  // Both directions, one guard: the pair drifted apart once already, when assertOpen went
-  // onto hiding and had to be added to showing by hand. The no-op rule is one statement
-  // here rather than two that must stay each other's negation — a re-statement of the
-  // current choice appends nothing, the same stance as setCoverPhoto and publish.
   private changeCartePriceVisibility(visible: boolean): void {
     this.assertOpen();
     if (this._cartePricesVisible === visible) {
