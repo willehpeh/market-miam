@@ -92,7 +92,14 @@ Each slice is reviewable and committable alone. Deploying is gated by the rollou
 - State that the phone is published, at the field. Prefill it from the storefront's `phone`
   (ADR 0056).
 - Link policy A from the footer (`core/layout.ts`) and from Auth0 Universal Login's privacy-policy
-  setting, so it is readable before sign-up.
+  setting, so it is readable before sign-up. The Auth0 setting is a manual dashboard step.
+- API (shipped in 4): `GET`/`PUT /legal-identity`, `apps/api/src/app/market-days/legal-identity.controller.ts`.
+  Body: 12 fields, the six optionals sent as `null`, never omitted. `GET` is 404 until provided.
+- **Open, decide before building:**
+  - How to keep evidence that the médiateur warning was shown. Nothing records it today.
+  - Policy A's link vs. its page: slice 6 makes it live, and the decisions table says policy A
+    goes live with the mentions légales, not before. Pushing 5 deploys it (see Rollout), so the
+    link would precede its page. Ship 5 without the link and add it in 6, or ship 6 first.
 
 ### 6. Policy A page
 
@@ -110,6 +117,10 @@ Each slice is reviewable and committable alone. Deploying is gated by the rollou
 
 Deploy 2–5 and ask the live client to fill in the form. Deploy 6 and 7 only once they have, so the route
 never renders an empty éditeur block. Then check their live page.
+
+`main` auto-deploys on green CI (`render.yaml`), so deploying is pushing: 2–4 were pushed on
+2026-10-05 and deploy once their CI run is green. Don't push 7 until the client's identity is in, or have the route render nothing
+while `editeur` is `null`.
 
 ### 9. Readiness gate
 
