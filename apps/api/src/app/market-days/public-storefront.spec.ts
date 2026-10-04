@@ -68,6 +68,88 @@ describe('Public storefront', () => {
       items: [],
       cartePricesVisible: true,
       upcomingMarkets: [],
+      editeur: null,
+    });
+  });
+
+  describe('the éditeur block of its mentions légales', () => {
+    const identity = {
+      vendorId: 'acme-bakery',
+      siret: '73282932000074',
+      siren: '732829320',
+      vatNumber: 'FR44732829320',
+      legalName: 'Marie Dupont',
+      address: '12 rue des Halles, 92330 Sceaux',
+      contactEmail: 'contact@chez-marie.fr',
+      phone: '06 12 34 56 78',
+      vatRegime: 'assujetti',
+      mediatorName: null,
+      mediatorUrl: null,
+      legalForm: null,
+      shareCapital: null,
+      registryCity: null,
+      legalRepresentative: null,
+    };
+
+    async function seedLegalIdentity(payload: Record<string, unknown>): Promise<void> {
+      await app.get(EventStore).append(
+        'vendor-acme-bakery',
+        [{ type: 'VendorLegalIdentityProvided', payload, version: 1 }],
+        0,
+        { vendorId: 'acme-bakery' },
+      );
+      await app.get(Subscriptions).drain();
+    }
+
+    it('names a sole trader as éditeur and as directeur de la publication', async () => {
+      await seedStorefront([opened, infoEdited, published]);
+      await seedLegalIdentity(identity);
+
+      const res = await request(app.getHttpServer()).get('/public/storefront/acme').expect(200);
+
+      expect(res.body.editeur).toEqual({
+        legalName: 'Marie Dupont',
+        address: '12 rue des Halles, 92330 Sceaux',
+        siret: '73282932000074',
+        contactEmail: 'contact@chez-marie.fr',
+        phone: '06 12 34 56 78',
+        publicationDirector: 'Marie Dupont',
+        vatRegime: 'assujetti',
+        vatNumber: 'FR44732829320',
+        company: null,
+        mediator: null,
+      });
+    });
+
+    it("names a société's legal representative as directeur, with its registration and médiateur", async () => {
+      await seedStorefront([opened, infoEdited, published]);
+      await seedLegalIdentity({
+        ...identity,
+        legalName: 'Chez Marie SARL',
+        vatRegime: 'franchise',
+        vatNumber: null,
+        mediatorName: 'CM2C',
+        mediatorUrl: 'https://www.cm2c.net',
+        legalForm: 'SARL',
+        shareCapital: '5000',
+        registryCity: 'Nanterre',
+        legalRepresentative: 'Marie Dupont',
+      });
+
+      const res = await request(app.getHttpServer()).get('/public/storefront/acme').expect(200);
+
+      expect(res.body.editeur).toEqual({
+        legalName: 'Chez Marie SARL',
+        address: '12 rue des Halles, 92330 Sceaux',
+        siret: '73282932000074',
+        contactEmail: 'contact@chez-marie.fr',
+        phone: '06 12 34 56 78',
+        publicationDirector: 'Marie Dupont',
+        vatRegime: 'franchise',
+        vatNumber: null,
+        company: { legalForm: 'SARL', shareCapital: '5000', registryCity: 'Nanterre', siren: '732829320' },
+        mediator: { name: 'CM2C', url: 'https://www.cm2c.net' },
+      });
     });
   });
 

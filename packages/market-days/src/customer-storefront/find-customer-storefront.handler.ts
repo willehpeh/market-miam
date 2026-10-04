@@ -1,9 +1,10 @@
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { FindCustomerStorefront } from './find-customer-storefront';
-import { CustomerStorefront, UpcomingMarket } from './customer-storefront';
+import { CustomerStorefront, Editeur, UpcomingMarket } from './customer-storefront';
 import { SubdomainRegistry } from '../subdomain-registry';
 import { VendorStorefrontViews } from '../vendor-storefront-view';
 import { CatalogueViews } from '../catalogue-view';
+import { VendorLegalIdentityView, VendorLegalIdentityViews } from '../vendor-legal-identity-view';
 import { FindUpcomingMarketDays, FindUpcomingMarketDaysHandler, MarketDayOccurrence } from '../market-schedule-view';
 
 const MAX_UPCOMING = 5;
@@ -15,6 +16,7 @@ export class FindCustomerStorefrontHandler implements IQueryHandler<FindCustomer
     private readonly storefronts: VendorStorefrontViews,
     private readonly catalogues: CatalogueViews,
     private readonly upcoming: FindUpcomingMarketDaysHandler,
+    private readonly legalIdentities: VendorLegalIdentityViews,
   ) {}
 
   async execute(query: FindCustomerStorefront): Promise<CustomerStorefront | undefined> {
@@ -36,6 +38,7 @@ export class FindCustomerStorefrontHandler implements IQueryHandler<FindCustomer
       items: catalogue.items,
       cartePricesVisible: view.cartePricesVisible,
       upcomingMarkets: await this.upcomingMarketsFor(vendorId),
+      editeur: editeurFrom(await this.legalIdentities.findByVendor(vendorId)),
     };
   }
 
@@ -71,4 +74,26 @@ export class FindCustomerStorefrontHandler implements IQueryHandler<FindCustomer
       soldOutItemIds: day.soldOutItemIds,
     };
   }
+}
+
+// CompanyDetails and Mediator are all-or-nothing in the domain, so one field stands for each.
+function editeurFrom(identity: VendorLegalIdentityView | undefined): Editeur | null {
+  if (!identity) {
+    return null;
+  }
+  const { legalForm, shareCapital, registryCity, legalRepresentative, mediatorName, mediatorUrl } = identity;
+  return {
+    legalName: identity.legalName,
+    address: identity.address,
+    siret: identity.siret,
+    contactEmail: identity.contactEmail,
+    phone: identity.phone,
+    publicationDirector: legalRepresentative ?? identity.legalName,
+    vatRegime: identity.vatRegime,
+    vatNumber: identity.vatNumber,
+    company: legalForm && shareCapital && registryCity
+      ? { legalForm, shareCapital, registryCity, siren: identity.siren }
+      : null,
+    mediator: mediatorName && mediatorUrl ? { name: mediatorName, url: mediatorUrl } : null,
+  };
 }

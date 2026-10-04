@@ -21,6 +21,24 @@ export type UpcomingMarket = {
   soldOutItemIds: string[];
 };
 
+// The vendor as éditeur of their storefront (LCEN art. 6-III-1 and 19, ADR 0054), with
+// what the page derives already applied: who directs publication, and which lines exist.
+export type Editeur = {
+  legalName: string;
+  address: string;
+  siret: string;
+  contactEmail: string;
+  phone: string;
+  // The représentant légal of a société; for a sole trader, the vendor themself.
+  publicationDirector: string;
+  vatRegime: string;
+  // Null under the franchise en base: the page says "TVA non applicable" instead.
+  vatNumber: string | null;
+  // Only a société has a capital and an RCS registration.
+  company: { legalForm: string; shareCapital: string; registryCity: string; siren: string } | null;
+  mediator: { name: string; url: string } | null;
+};
+
 export type CustomerStorefront =
   | {
       status: 'published';
@@ -34,6 +52,8 @@ export type CustomerStorefront =
       // card is not governed by it — that figure is the market's, not the carte's.
       cartePricesVisible: boolean;
       upcomingMarkets: UpcomingMarket[];
+      // Null until the vendor provides their legal identity.
+      editeur: Editeur | null;
     }
   | {
       status: 'coming-soon';
