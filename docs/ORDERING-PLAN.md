@@ -58,11 +58,11 @@ Vendor never knows the code: stops pickups off a customer-visible tablet, and a 
 
 ### Keys
 
-`getOrCreateKeyFor` silently mints a new key after a `DELETE`-based shred (`PostgresDataKeys.shred`), so a late PII write resurrects erased data. Two cases, two fixes:
+`getOrCreateKeyFor` silently minted a new key after a `DELETE`-based shred, so a late PII write resurrected erased data. Two cases, two fixes:
 
 | Key | Death date | Fix |
 |---|---|---|
-| Vendor (`${vendorId}`, `:legal`) | Arbitrary (erasure; legal key +5 years) | **Tombstone**: `shred` nulls the key material, keeps the row with `shredded_at`; `getOrCreateKeyFor` throws on it; `findKeyFor` → `null` → `SHREDDED` as now. Also gives slice 3 its shred date, and a dated proof of erasure (RGPD art. 5(2)). Lands with mentions légales slice 3 (`MENTIONS-LEGALES-PLAN.md`), independent of Ordering |
+| Vendor (`${vendorId}`, `:legal`) | Arbitrary (erasure; legal key +5 years) | **Tombstone**: `shred` nulls the key material, keeps the row with `shredded_at`; `getOrCreateKeyFor` throws on it; `findKeyFor` → `null` → `SHREDDED` as now. Also a dated proof of erasure (RGPD art. 5(2)). **Shipped** with mentions légales slice 3, with `shred_after` + a daily `shredDue` sweep (ADR 0056 amendment) |
 | Market day (Ordering) | Known at mint: day's `endTime` + grace (hours from ADR 0051) | **Expiry rule, no tombstone**: `shred_after` stored at mint; minting a key already past expiry throws; sweep `DELETE`s expired rows. `MarketDayEndedError` guard still blocks first; the mint rule turns a guard failure into a loud error, not silent retention |
 
 - Day keys live in **their own table** (e.g. `order_data_keys`): different lifecycle (bulk churn, ~78k rows/yr at 500 vendors) and different context (ADR 0048).

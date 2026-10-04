@@ -416,8 +416,8 @@ null, so read-model columns stay `NOT NULL`.
 versioned `MasterKeyring`; `data_keys.key_version` names the wrapping version.
 Wrapping uses the ring's current version; unwrapping selects by the row's; a row
 read under an old version is lazily re-wrapped (compare-and-set on
-`key_version`, so a racing shred's DELETE wins — an erased key is never
-resurrected). Rotation is config: add a key, flip `MASTER_KEY_CURRENT`, deploy;
+`key_version`; a shred's tombstone nulls `key_version`, so it wins — an erased
+key is never resurrected). Rotation is config: add a key, flip `MASTER_KEY_CURRENT`, deploy;
 retire a version once no row references it. Config shapes: `MASTER_KEY=<base64>`
 (single, version 1) or `MASTER_KEYS="1:<b64>;2:<b64>"` + `MASTER_KEY_CURRENT`.
 On Render they live in a Secret File read off disk, never `process.env`. The

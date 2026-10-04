@@ -1,6 +1,6 @@
 # 0056. The vendor's legal identity outlives erasure, under its own key
 
-Date: 2026-09-23 · Status: Accepted
+Date: 2026-09-23 · Status: Accepted · Amended 2026-10-04 — the sweep is built, not deferred
 
 Amends ADR 0054 (vendor legal identity) and ADR 0025 (crypto-shredding).
 
@@ -62,5 +62,19 @@ does not make that redundant.
 | Legal key without the phone | The phone is part of the civil identity the décret names |
 | Copy the identity to a plaintext retention table at erasure | PII leaves the crypto-shredding model; a second erasure path to get right |
 | One key, delay the whole shred 5 years | Keeps the login email and the storefront's name and description for no legal reason |
+
+## Amendment (2026-10-04): the sweep is built
+
+The deferral left the shred to someone remembering it in five years. It ships with the
+schedule instead:
+
+- `DataKeys.shredDue(now)` tombstones every key whose `shred_after` has come.
+- `ShredSweep` (`apps/api`) calls it on boot, then daily, from an in-process `timer`. A due key
+  dies within a day. A failed sweep logs; the next tick retries.
+- The timer assumes the API never sleeps (Render paid plans). If it does, a Render Cron Job
+  calls `shredDue` through an `apps/api` entry point, not raw SQL, so tombstone semantics stay
+  in the adapters.
+- A shred leaves a tombstone (`wrapped_key`, `key_version` null, `shredded_at` set), so a
+  shredded subject is never minted again.
 
 Builds on ADRs 0024, 0025, 0031, 0039, 0040, 0054.
