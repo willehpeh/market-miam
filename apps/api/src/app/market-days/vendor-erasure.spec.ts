@@ -70,6 +70,35 @@ describe('Erasing a vendor', () => {
     });
   });
 
+  it('refuses PII the erased vendor writes afterwards, rather than sealing it under a fresh key', async () => {
+    await request(app.getHttpServer())
+      .post('/vendors')
+      .set('Authorization', 'Bearer any-token')
+      .expect(201);
+    await app.get(Subscriptions).drain();
+    await request(app.getHttpServer())
+      .put('/storefront')
+      .set('Authorization', 'Bearer any-token')
+      .send({ name: 'Acme Bakery', description: 'Fresh bread daily', phone: '0102030405' })
+      .expect(200);
+    await app.get(Subscriptions).drain();
+
+    await app.get(VendorErasure).erase('acme-bakery');
+
+    await request(app.getHttpServer())
+      .put('/storefront')
+      .set('Authorization', 'Bearer any-token')
+      .send({ name: 'Acme Again', description: 'Back from the dead', phone: '0607080910' })
+      .expect(500);
+    await app.get(Subscriptions).drain();
+
+    const view = await request(app.getHttpServer())
+      .get('/storefront')
+      .set('Authorization', 'Bearer any-token')
+      .expect(200);
+    expect(view.body.name).toBe(SHREDDED);
+  });
+
   it("removes the vendor's public storefront", async () => {
     await request(app.getHttpServer())
       .post('/vendors')

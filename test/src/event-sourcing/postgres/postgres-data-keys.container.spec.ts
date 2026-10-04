@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { randomBytes } from 'node:crypto';
+import type { Pool } from 'pg';
 import { MasterKeyring, PostgresDataKeys } from '@market-miam/event-sourcing';
 import { dataKeysContract } from '../data-keys.contract';
 import { PostgresHarness, startPostgres } from './testcontainer';
@@ -115,6 +116,25 @@ describe('PostgresDataKeys master key rotation', () => {
       'SELECT wrapped_key FROM data_keys WHERE subject_id = $1', ['vendor-1'],
     )).rows[0].wrapped_key;
     expect(after.equals(before)).toBe(true);
+  });
+
+  it('does not resurrect a key shredded between the rewrap read and its write', async () => {
+    await preRotation().getOrCreateKeyFor('vendor-1');
+    const shredding = new PostgresDataKeys(pg.pool, MasterKeyring.single(OLD));
+    // The pool boundary is where the race lives: the shred commits after findKeyFor has
+    // unwrapped the old-version row, and before its rewrap writes the row back.
+    const racingPool = {
+      query: async (text: string, values?: unknown[]) => {
+        if (text.startsWith('UPDATE data_keys SET wrapped_key = $1')) {
+          await shredding.shred('vendor-1');
+        }
+        return pg.pool.query(text, values);
+      },
+    } as unknown as Pool;
+
+    await new PostgresDataKeys(racingPool, new MasterKeyring(new Map([[1, OLD], [2, NEW]]), 2)).findKeyFor('vendor-1');
+
+    expect(await rotated().findKeyFor('vendor-1')).toBeNull();
   });
 
   it('fails loudly naming the version when a row was wrapped under a retired key', async () => {

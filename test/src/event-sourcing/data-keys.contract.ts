@@ -40,6 +40,14 @@ export function dataKeysContract(name: string, create: () => DataKeys): void {
       expect(await keys.findKeyFor('vendor-1')).toBeNull();
     });
 
+    it('refuses to mint a fresh key for a shredded subject', async () => {
+      await keys.getOrCreateKeyFor('vendor-1');
+      await keys.shred('vendor-1');
+
+      await expect(keys.getOrCreateKeyFor('vendor-1')).rejects.toThrow(/shredded/);
+      expect(await keys.findKeyFor('vendor-1')).toBeNull();
+    });
+
     it('shredding a subject with no key is a no-op', async () => {
       await expect(keys.shred('never-existed')).resolves.toBeUndefined();
     });

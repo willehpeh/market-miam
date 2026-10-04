@@ -38,19 +38,19 @@ export class PostgresDataKeys extends DataKeys {
     // return the one key that actually persisted.
     const key = await this.findKeyFor(subjectId);
     if (key === null) {
-      // The row was deleted between INSERT and re-read: a shred() racing this mint.
-      // Fail loudly rather than resurrect an erased key or hand back null-as-Buffer.
-      throw new Error(`PostgresDataKeys: key for "${subjectId}" vanished mid-mint (concurrent shred?)`);
+      // The INSERT hit a tombstone, or a shred() raced this mint. Either way the subject
+      // is erased: fail loudly rather than seal PII under a key no one may hold.
+      throw new Error(`PostgresDataKeys: the key for "${subjectId}" was shredded`);
     }
     return key;
   }
 
   async findKeyFor(subjectId: string): Promise<Buffer | null> {
-    const { rows } = await this.pool.query<{ wrapped_key: Buffer; key_version: number }>(
+    const { rows } = await this.pool.query<{ wrapped_key: Buffer | null; key_version: number }>(
       'SELECT wrapped_key, key_version FROM data_keys WHERE subject_id = $1',
       [subjectId],
     );
-    if (rows.length === 0) {
+    if (rows.length === 0 || rows[0].wrapped_key === null) {
       return null;
     }
     const { wrapped_key, key_version } = rows[0];
@@ -62,14 +62,17 @@ export class PostgresDataKeys extends DataKeys {
   }
 
   async shred(subjectId: string): Promise<void> {
-    await this.pool.query('DELETE FROM data_keys WHERE subject_id = $1', [subjectId]);
+    await this.pool.query(
+      'UPDATE data_keys SET wrapped_key = NULL, key_version = NULL, shredded_at = now() WHERE subject_id = $1 AND shredded_at IS NULL',
+      [subjectId],
+    );
   }
 
   // Lazy rotation: after a successful unwrap under an old version, re-wrap the
   // same data key under the current master key. The data key never changes, only
   // its wrapping. The key_version guard makes this a compare-and-set: a
-  // concurrent re-wrap is a no-op, and a racing shred's DELETE wins — an erased
-  // key is never resurrected.
+  // concurrent re-wrap is a no-op, and a racing shred wins — the tombstone's null
+  // key_version matches no version, so an erased key is never resurrected.
   private async rewrap(subjectId: string, dataKey: Buffer, fromVersion: number): Promise<void> {
     await this.pool.query(
       'UPDATE data_keys SET wrapped_key = $1, key_version = $2 WHERE subject_id = $3 AND key_version = $4',
