@@ -131,7 +131,7 @@ Prerequisite: `MENTIONS-LEGALES-PLAN.md` slices 3–9 (vendor identity + médiat
 | No-show clause | Typed code proves collection; *remis sans code* is weaker; no entry does **not** prove the customer never came. Word clause accordingly |
 | P2B Reg. 2019/1150 | Vendor terms need specific clauses |
 | DSA | Marketplace duties (arts. 29–32) likely exempt for micro-enterprise — confirm |
-| DAC7 | Seller due diligence + annual DGFiP reporting; sellers <30 sales and <2 000 €/yr excluded from reporting. An *entrepreneur individuel* is likely an individual seller: date of birth + personal tax number (possibly the *numéro fiscal*, not SIRET) beyond `VendorLegalIdentityRecorded` v1. Add as a new event version when Ordering lands |
+| DAC7 | Seller due diligence + annual DGFiP reporting; sellers <30 sales and <2 000 €/yr excluded from reporting. An *entrepreneur individuel* is likely an individual seller: date of birth + personal tax number (possibly the *numéro fiscal*, not SIRET) beyond `VendorLegalIdentityProvided` v1. Add as a new event version when Ordering lands |
 | Customer CGU | Platform terms, separate from vendor CGV |
 | Insurance | RC pro for Market Miam as intermediary |
 | RGPD | New art. 30 entry for orders. Rewrite policy B: state exactly what survives shred and what Stripe, email provider, Honeycomb (IPs, 60 days) and backups keep. Not "all deleted at end of day" |

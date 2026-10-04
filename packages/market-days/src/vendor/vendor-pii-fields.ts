@@ -16,7 +16,7 @@ type PiiFieldsOf<E extends DomainEvent> = {
  */
 export const vendorPiiFields: PiiFieldsOf<MarketDaysEvent> = {
   VendorRegistered: ['email'],
-  VendorLegalIdentityRecorded: [
+  VendorLegalIdentityProvided: [
     'siret', 'siren', 'vatNumber', 'legalName', 'address', 'contactEmail', 'phone', 'vatRegime',
     'mediatorName', 'mediatorUrl', 'legalForm', 'shareCapital', 'registryCity', 'legalRepresentative',
   ],
@@ -48,5 +48,5 @@ export const vendorPiiFields: PiiFieldsOf<MarketDaysEvent> = {
  * vendor's erasure by five years, so erasure must not reach its key (ADR 0056).
  */
 export const vendorPiiKeyScopes: KeyScopes = {
-  VendorLegalIdentityRecorded: 'legal',
+  VendorLegalIdentityProvided: 'legal',
 };

@@ -1,26 +1,26 @@
 import { InMemoryEventStore } from '@market-miam/event-sourcing';
-import { IncompleteCompanyDetailsError, IncompleteMediatorError, InvalidSiretError, InvalidVatRegimeError, RecordVendorLegalIdentityHandler, VendorNotRegisteredError, VendorScopedEvents, Vendors } from '@market-miam/market-days';
+import { IncompleteCompanyDetailsError, IncompleteMediatorError, InvalidSiretError, InvalidVatRegimeError, ProvideVendorLegalIdentityHandler, VendorNotRegisteredError, VendorScopedEvents, Vendors } from '@market-miam/market-days';
 import { EmptyValueError, InvalidEmailError, InvalidUrlError } from '@market-miam/common';
-import { TestRecordVendorLegalIdentity } from './test-data';
+import { TestProvideVendorLegalIdentity } from './test-data';
 
-describe('Record Vendor Legal Identity', () => {
+describe('Provide Vendor Legal Identity', () => {
   let store: InMemoryEventStore;
-  let handler: RecordVendorLegalIdentityHandler;
+  let handler: ProvideVendorLegalIdentityHandler;
 
   beforeEach(() => {
     store = new InMemoryEventStore();
-    handler = new RecordVendorLegalIdentityHandler(new Vendors(new VendorScopedEvents(store)));
+    handler = new ProvideVendorLegalIdentityHandler(new Vendors(new VendorScopedEvents(store)));
   });
 
   it('records the legal identity of a registered vendor, deriving the SIREN and TVA number', async () => {
     registerVendor();
-    const command = TestRecordVendorLegalIdentity.valid();
+    const command = TestProvideVendorLegalIdentity.valid();
 
     await handler.execute(command);
 
     expect(store.newEvents()).toEqual([
       expect.objectContaining({
-        type: 'VendorLegalIdentityRecorded',
+        type: 'VendorLegalIdentityProvided',
         payload: {
           vendorId: 'vendor-id',
           siret: '73282932000074',
@@ -45,11 +45,11 @@ describe('Record Vendor Legal Identity', () => {
   it('records no TVA number for a vendor under the franchise en base', async () => {
     registerVendor();
 
-    await handler.execute(TestRecordVendorLegalIdentity.with({ vatRegime: 'franchise' }));
+    await handler.execute(TestProvideVendorLegalIdentity.with({ vatRegime: 'franchise' }));
 
     expect(store.newEvents()).toEqual([
       expect.objectContaining({
-        type: 'VendorLegalIdentityRecorded',
+        type: 'VendorLegalIdentityProvided',
         payload: expect.objectContaining({ vatRegime: 'franchise', vatNumber: null }),
       }),
     ]);
@@ -81,14 +81,14 @@ describe('Record Vendor Legal Identity', () => {
   ])('rejects $scenario, recording nothing', async ({ overrides, error }) => {
     registerVendor();
 
-    await expect(handler.execute(TestRecordVendorLegalIdentity.with(overrides))).rejects.toThrow(error);
+    await expect(handler.execute(TestProvideVendorLegalIdentity.with(overrides))).rejects.toThrow(error);
     expect(store.newEvents()).toEqual([]);
   });
 
   it('accepts a SIRET typed with spaces, recording it without them', async () => {
     registerVendor();
 
-    await handler.execute(TestRecordVendorLegalIdentity.with({ siret: '732 829 320 00074' }));
+    await handler.execute(TestProvideVendorLegalIdentity.with({ siret: '732 829 320 00074' }));
 
     expect(store.newEvents()).toEqual([
       expect.objectContaining({ payload: expect.objectContaining({ siret: '73282932000074', siren: '732829320' }) }),
@@ -97,25 +97,25 @@ describe('Record Vendor Legal Identity', () => {
 
   it('raises nothing when the legal identity is unchanged', async () => {
     registerVendor();
-    await handler.execute(TestRecordVendorLegalIdentity.valid());
+    await handler.execute(TestProvideVendorLegalIdentity.valid());
 
-    await handler.execute(TestRecordVendorLegalIdentity.valid());
+    await handler.execute(TestProvideVendorLegalIdentity.valid());
 
     expect(store.newEvents()).toEqual([
-      expect.objectContaining({ type: 'VendorLegalIdentityRecorded' }),
+      expect.objectContaining({ type: 'VendorLegalIdentityProvided' }),
     ]);
   });
 
   it('records the whole identity again when any of it changes', async () => {
     registerVendor();
-    await handler.execute(TestRecordVendorLegalIdentity.valid());
+    await handler.execute(TestProvideVendorLegalIdentity.valid());
 
-    await handler.execute(TestRecordVendorLegalIdentity.with({ address: '3 place du Marché, 92160 Antony' }));
+    await handler.execute(TestProvideVendorLegalIdentity.with({ address: '3 place du Marché, 92160 Antony' }));
 
     expect(store.newEvents()).toEqual([
-      expect.objectContaining({ type: 'VendorLegalIdentityRecorded' }),
+      expect.objectContaining({ type: 'VendorLegalIdentityProvided' }),
       expect.objectContaining({
-        type: 'VendorLegalIdentityRecorded',
+        type: 'VendorLegalIdentityProvided',
         payload: expect.objectContaining({ siret: '73282932000074', address: '3 place du Marché, 92160 Antony' }),
       }),
     ]);
@@ -123,7 +123,7 @@ describe('Record Vendor Legal Identity', () => {
 
   it('records the details a société owes: legal form, capital, greffe and representative', async () => {
     registerVendor();
-    const command = TestRecordVendorLegalIdentity.with({
+    const command = TestProvideVendorLegalIdentity.with({
       legalName: 'Chez Marie SARL',
       legalForm: 'SARL',
       shareCapital: '5000',
@@ -148,7 +148,7 @@ describe('Record Vendor Legal Identity', () => {
   it('records the médiateur de la consommation the vendor subscribes to', async () => {
     registerVendor();
 
-    await handler.execute(TestRecordVendorLegalIdentity.with({ mediatorName: 'CM2C', mediatorUrl: 'https://www.cm2c.net' }));
+    await handler.execute(TestProvideVendorLegalIdentity.with({ mediatorName: 'CM2C', mediatorUrl: 'https://www.cm2c.net' }));
 
     expect(store.newEvents()).toEqual([
       expect.objectContaining({
@@ -160,7 +160,7 @@ describe('Record Vendor Legal Identity', () => {
   it('trims the dénomination, address and phone', async () => {
     registerVendor();
 
-    await handler.execute(TestRecordVendorLegalIdentity.with({
+    await handler.execute(TestProvideVendorLegalIdentity.with({
       legalName: '  Marie Dupont ',
       address: ' 12 rue des Halles, 92330 Sceaux  ',
       phone: ' 06 12 34 56 78 ',
@@ -178,7 +178,7 @@ describe('Record Vendor Legal Identity', () => {
   });
 
   it('rejects the legal identity of a vendor who has not registered', async () => {
-    await expect(handler.execute(TestRecordVendorLegalIdentity.valid())).rejects.toThrow(VendorNotRegisteredError);
+    await expect(handler.execute(TestProvideVendorLegalIdentity.valid())).rejects.toThrow(VendorNotRegisteredError);
     expect(store.newEvents()).toEqual([]);
   });
 

@@ -44,5 +44,5 @@ design: `docs/archive/VENDOR_REGISTRATION_AND_PII.md`.
 - Subject resolution is vendorId-from-metadata for now; per-field subject
   mapping is a known extension point if customer PII ever lands in vendor
   streams.
-  *(2026-09-23: taken per event type by ADR 0056 — `VendorLegalIdentityRecorded`
+  *(2026-09-23: taken per event type by ADR 0056 — `VendorLegalIdentityProvided`
   encrypts under `{vendorId}:legal`.)*

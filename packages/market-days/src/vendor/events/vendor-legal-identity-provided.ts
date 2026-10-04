@@ -1,6 +1,6 @@
 import { DomainEvent } from '@market-miam/event-sourcing';
 
-export type VendorLegalIdentityRecorded = DomainEvent<'VendorLegalIdentityRecorded', {
+export type VendorLegalIdentityProvided = DomainEvent<'VendorLegalIdentityProvided', {
   vendorId: string;
   siret: string;
   siren: string;

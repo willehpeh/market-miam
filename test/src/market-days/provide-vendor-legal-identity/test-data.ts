@@ -1,8 +1,8 @@
-import { RecordVendorLegalIdentity } from '@market-miam/market-days';
+import { ProvideVendorLegalIdentity } from '@market-miam/market-days';
 
-export class TestRecordVendorLegalIdentity {
-  static valid(): RecordVendorLegalIdentity {
-    return new RecordVendorLegalIdentity(
+export class TestProvideVendorLegalIdentity {
+  static valid(): ProvideVendorLegalIdentity {
+    return new ProvideVendorLegalIdentity(
       'vendor-id',
       '73282932000074',
       'Marie Dupont',
@@ -19,9 +19,9 @@ export class TestRecordVendorLegalIdentity {
     );
   }
 
-  static with(overrides: Partial<RecordVendorLegalIdentity>): RecordVendorLegalIdentity {
+  static with(overrides: Partial<ProvideVendorLegalIdentity>): ProvideVendorLegalIdentity {
     const defaults = { ...this.valid(), ...overrides };
-    return new RecordVendorLegalIdentity(
+    return new ProvideVendorLegalIdentity(
       defaults.vendorId,
       defaults.siret,
       defaults.legalName,

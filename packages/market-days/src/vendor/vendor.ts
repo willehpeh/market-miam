@@ -1,10 +1,10 @@
 import { Aggregate } from '@market-miam/event-sourcing';
 import { VendorId } from '@market-miam/shared-kernel';
 import { Email, Instant } from '@market-miam/common';
-import { VendorEvent, VendorLegalIdentityRecorded, VendorRegistered } from './events';
+import { VendorEvent, VendorLegalIdentityProvided, VendorRegistered } from './events';
 import { VendorStatus } from './vendor-status';
 import { LegalIdentity } from './legal-identity';
-import { LegalIdentityOnRecord, NoLegalIdentity, RecordedLegalIdentity } from './legal-identity-on-record';
+import { LegalIdentityOnRecord, NoLegalIdentity, ProvidedLegalIdentity } from './legal-identity-on-record';
 import { VendorNotRegisteredError } from './vendor-not-registered.error';
 
 export class Vendor extends Aggregate {
@@ -32,16 +32,16 @@ export class Vendor extends Aggregate {
     this.raise(event);
   }
 
-  recordLegalIdentity(identity: LegalIdentity) {
+  provideLegalIdentity(identity: LegalIdentity) {
     if (!this.alreadyRegistered()) {
       throw new VendorNotRegisteredError();
     }
-    const payload = identity.recordedFor(this._id.value());
-    if (this._legalIdentity.equals(new RecordedLegalIdentity(payload))) {
+    const payload = identity.providedBy(this._id.value());
+    if (this._legalIdentity.equals(new ProvidedLegalIdentity(payload))) {
       return;
     }
-    const event: VendorLegalIdentityRecorded = {
-      type: 'VendorLegalIdentityRecorded',
+    const event: VendorLegalIdentityProvided = {
+      type: 'VendorLegalIdentityProvided',
       payload,
       version: 1
     };
@@ -57,8 +57,8 @@ export class Vendor extends Aggregate {
       case 'VendorRegistered':
         this._status = VendorStatus.registered();
         break;
-      case 'VendorLegalIdentityRecorded':
-        this._legalIdentity = new RecordedLegalIdentity(event.payload);
+      case 'VendorLegalIdentityProvided':
+        this._legalIdentity = new ProvidedLegalIdentity(event.payload);
         break;
     }
   }

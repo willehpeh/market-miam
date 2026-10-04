@@ -1,5 +1,5 @@
 import { Email } from '@market-miam/common';
-import { VendorLegalIdentityRecorded } from './events';
+import { VendorLegalIdentityProvided } from './events';
 import { Siret } from './siret';
 import { CompanyDetails } from './company-details';
 import { Mediator } from './mediator';
@@ -23,7 +23,7 @@ export class LegalIdentity {
   constructor(private readonly _details: Details) {
   }
 
-  recordedFor(vendorId: string): VendorLegalIdentityRecorded['payload'] {
+  providedBy(vendorId: string): VendorLegalIdentityProvided['payload'] {
     const { siret, legalName, address, contactEmail, phone, vatRegime, mediator, company } = this._details;
     return {
       vendorId,

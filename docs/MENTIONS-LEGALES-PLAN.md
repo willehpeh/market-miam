@@ -17,7 +17,7 @@ lawyer hasn't seen that change yet.
 | Decision | Where it lands |
 |---|---|
 | The legal identity outlives erasure by 5 years (décret 2021-1362, host duty), under its own key | ADR 0056 |
-| `VendorLegalIdentityRecorded` carries its own phone, prefilled from the storefront's | ADR 0056, amends 0054 |
+| `VendorLegalIdentityProvided` carries its own phone, prefilled from the storefront's | ADR 0056, amends 0054 |
 | Honeycomb keeps client IPs and discloses them, for vendors and storefront visitors alike | Both policies |
 | Everything ships together: policy A goes live with the mentions légales, not before | This plan |
 | US sub-processors rest on the EU-US DPF, all four checked Active on 2026-09-23 | `PRIVACY-PLAN.md` §3 |
@@ -29,7 +29,7 @@ Each slice is reviewable and committable alone. Deploying is gated by the rollou
 | # | Slice | Status |
 |---|---|---|
 | 1 | Decisions on paper: ADR 0056, amendments to 0054 and 0025, `PRIVACY-PLAN.md` | done |
-| 2 | Domain: `RecordVendorLegalIdentity` → `VendorLegalIdentityRecorded` | done |
+| 2 | Domain: `ProvideVendorLegalIdentity` → `VendorLegalIdentityProvided` | done |
 | 3 | Erasure keeps the `:legal` key and stamps its shred date; shredded keys leave tombstones | |
 | 4 | Read model + HTTP: vendor read/write, éditeur block on the public storefront query | |
 | 5 | Vendor app: the legal-identity form, and links to policy A | |
@@ -40,7 +40,7 @@ Each slice is reviewable and committable alone. Deploying is gated by the rollou
 
 ### 2. Domain — shipped (`2a13415`)
 
-- `RecordVendorLegalIdentity` → `VendorLegalIdentityRecorded`, full state, flat payload with
+- `ProvideVendorLegalIdentity` → `VendorLegalIdentityProvided`, full state, flat payload with
   `null` for absent optionals. Recording the same identity again raises nothing.
   An unregistered vendor is rejected.
 - Value objects: `Siret` (Luhn; derives SIREN and TVA), `VatRegime` (`assujetti` | `franchise`;
@@ -50,9 +50,9 @@ Each slice is reviewable and committable alone. Deploying is gated by the rollou
   `{vendorId}:legal`. It is passed to `ShreddingEventStore` and wired through
   `EventSourcingModule.forRoot` in production and the API test apps.
 - `Vendor` holds the identity as `LegalIdentityOnRecord`: `NoLegalIdentity` until one is
-  recorded, then `RecordedLegalIdentity`. The latter wraps the event's snapshot raw, without
+  recorded, then `ProvidedLegalIdentity`. The latter wraps the event's snapshot raw, without
   re-validating it (ADR 0057). The unchanged-identity no-op is `equals` between the held
-  state and a `RecordedLegalIdentity` built from the payload about to be appended.
+  state and a `ProvidedLegalIdentity` built from the payload about to be appended.
 
 ### 3. Erasure
 
@@ -72,7 +72,7 @@ Each slice is reviewable and committable alone. Deploying is gated by the rollou
 ### 4. Read model + HTTP
 
 - `GET`/`PUT` for the vendor, zod at the edge (ADR 0046). The `PUT` dispatches the existing
-  `RecordVendorLegalIdentity`. `vatRegime` is an enum at the edge too.
+  `ProvideVendorLegalIdentity`. `vatRegime` is an enum at the edge too.
 - `FindCustomerStorefront` carries the éditeur block. The hébergeur block is a constant (Market
   Miam, then Render) and stays out of the payload.
 

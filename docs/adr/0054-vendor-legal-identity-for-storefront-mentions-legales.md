@@ -39,8 +39,8 @@ professional's confirmation before it goes to pilot vendors.
 Billing will hold a duplicate billing identity, captured at Stripe Checkout. That
 duplication is correct; Billing reading `vendor-{vendorId}` to invoice is not.
 
-**It lives on `Vendor`, not `Storefront`.** `RecordVendorLegalIdentity` →
-`VendorLegalIdentityRecorded` on `vendor-{vendorId}`, full-state payload (ADR
+**It lives on `Vendor`, not `Storefront`.** `ProvideVendorLegalIdentity` →
+`VendorLegalIdentityProvided` on `vendor-{vendorId}`, full-state payload (ADR
 0024). It is the identity of the business, stable across whatever the shop window
 does; `Storefront` holds presentation. This *supersedes* an earlier working note
 placing it on `Storefront`.

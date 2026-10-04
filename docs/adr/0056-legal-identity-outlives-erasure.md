@@ -22,7 +22,7 @@ not contested.
 ## Decision
 
 **A second key per vendor, subject `{vendorId}:legal`.** The shredding event store resolves the
-subject per event type: `VendorLegalIdentityRecorded` encrypts under `{vendorId}:legal`, and
+subject per event type: `VendorLegalIdentityProvided` encrypts under `{vendorId}:legal`, and
 every other PII-bearing event under `{vendorId}` as now. This is the extension point ADR 0025
 named ("per-field subject mapping"), taken at the event level because one event holds one
 purpose.
@@ -37,7 +37,7 @@ held under `:legal`. This replaces ADR 0054's "reuse `phone`": the storefront ph
 erasure, but the one the décret asks for must not.
 
 **No projection may re-materialise it after erasure.** A rebuild replays
-`VendorLegalIdentityRecorded` and it still decrypts. Any read model holding it must drop a vendor
+`VendorLegalIdentityProvided` and it still decrypts. Any read model holding it must drop a vendor
 whose `{vendorId}` key is gone. The public 404 comes from the deleted subdomain (ADR 0031) and
 does not make that redundant.
 

@@ -1,6 +1,6 @@
 import { Command } from '@nestjs/cqrs';
 
-export class RecordVendorLegalIdentity extends Command<void> {
+export class ProvideVendorLegalIdentity extends Command<void> {
   constructor(
     readonly vendorId: string,
     readonly siret: string,

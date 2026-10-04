@@ -1,6 +1,6 @@
 import { VendorRegistered } from './vendor-registered';
-import { VendorLegalIdentityRecorded } from './vendor-legal-identity-recorded';
+import { VendorLegalIdentityProvided } from './vendor-legal-identity-provided';
 
 export type VendorEvent = |
   VendorRegistered |
-  VendorLegalIdentityRecorded;
+  VendorLegalIdentityProvided;

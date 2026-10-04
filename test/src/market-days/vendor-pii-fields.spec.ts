@@ -57,7 +57,7 @@ describe('vendorPiiFields', () => {
     expect(loaded.payload).toEqual({ name: 'Chez Marie', description: 'Pains et viennoiseries', phone: '0600000000' });
   });
 
-  it('encrypts every field of VendorLegalIdentityRecorded but the vendorId, under a key that outlives erasure', async () => {
+  it('encrypts every field of VendorLegalIdentityProvided but the vendorId, under a key that outlives erasure', async () => {
     const { store, inner, keys } = shreddingStore();
     const payload = {
       vendorId: 'v1',
@@ -77,7 +77,7 @@ describe('vendorPiiFields', () => {
       legalRepresentative: 'Marie Dupont',
     };
 
-    await store.append('vendor-v1', [{ type: 'VendorLegalIdentityRecorded', payload, version: 1 }], 0, { vendorId: 'v1' });
+    await store.append('vendor-v1', [{ type: 'VendorLegalIdentityProvided', payload, version: 1 }], 0, { vendorId: 'v1' });
 
     const [atRest] = await inner.load('vendor-v1');
     const { vendorId, ...personal } = atRest.payload;

@@ -1,3 +1,3 @@
 export * from './vendor-registered';
-export * from './vendor-legal-identity-recorded';
+export * from './vendor-legal-identity-provided';
 export * from './vendor-event';
