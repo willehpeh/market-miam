@@ -18,6 +18,7 @@ import {
   FindCustomerStorefrontHandler,
   HideCartePricesHandler,
   FindVendorCatalogueHandler,
+  FindVendorLegalIdentityHandler,
   FindVendorStorefrontHandler,
   FindMarketPricesHandler,
   FindVendorSchedulesHandler,
@@ -38,6 +39,7 @@ import {
   ReopenMarketDayHandler,
   MarketDays,
   OpenStorefrontHandler,
+  ProvideVendorLegalIdentityHandler,
   PublishStorefrontHandler,
   StorefrontPublication,
   SubdomainRegistry,
@@ -53,6 +55,8 @@ import {
   OpensStorefronts,
   Storefronts,
   Vendors,
+  VendorLegalIdentityViewProjection,
+  VendorLegalIdentityViewStore,
   VendorScopedEvents,
   VendorStorefrontViewProjection,
   VendorStorefrontViewStore,
@@ -60,6 +64,7 @@ import {
 import { SignedUploads, signedUploadsFor } from '../signed-uploads';
 import { VendorsController } from './vendors.controller';
 import { StorefrontController } from './storefront.controller';
+import { LegalIdentityController } from './legal-identity.controller';
 import { CatalogueController } from './catalogue.controller';
 import { MarketDayController } from './market-day.controller';
 import { MarketScheduleController } from './market-schedule.controller';
@@ -95,6 +100,11 @@ const projections = [
     provide: VendorStorefrontViewProjection,
     useFactory: (store: VendorStorefrontViewStore) => new VendorStorefrontViewProjection(store),
     inject: [VendorStorefrontViewStore],
+  },
+  {
+    provide: VendorLegalIdentityViewProjection,
+    useFactory: (store: VendorLegalIdentityViewStore) => new VendorLegalIdentityViewProjection(store),
+    inject: [VendorLegalIdentityViewStore],
   },
   {
     provide: CatalogueViewProjection,
@@ -133,6 +143,7 @@ const processors = [
 
 const commandHandlers = [
   RegisterVendorHandler,
+  ProvideVendorLegalIdentityHandler,
   EraseVendorHandler,
   AddItemToCatalogueHandler,
   ChangeItemPhotoHandler,
@@ -160,13 +171,13 @@ const commandHandlers = [
 
 const domainServices = [StorefrontPublication];
 
-const queryHandlers = [FindCustomerStorefrontHandler, FindVendorStorefrontHandler, FindVendorCatalogueHandler, FindVendorSchedulesHandler, FindUpcomingMarketDaysHandler, FindUnratedMarketDaysHandler, FindMarketDayHandler, FindMarketPricesHandler, FindSellingRecordHandler];
+const queryHandlers = [FindCustomerStorefrontHandler, FindVendorStorefrontHandler, FindVendorCatalogueHandler, FindVendorLegalIdentityHandler, FindVendorSchedulesHandler, FindUpcomingMarketDaysHandler, FindUnratedMarketDaysHandler, FindMarketDayHandler, FindMarketPricesHandler, FindSellingRecordHandler];
 
 // EventStore / CommandGateway / QueryGateway come from the global
 // EventSourcingModule; the view stores from the global persistence module the
 // composition root picked. Nothing here knows which profile is running.
 @Module({
-  controllers: [VendorsController, StorefrontController, CatalogueController, MarketScheduleController, MarketDayController, MarketPricesController, SellingRecordController, PublicStorefrontController],
+  controllers: [VendorsController, StorefrontController, LegalIdentityController, CatalogueController, MarketScheduleController, MarketDayController, MarketPricesController, SellingRecordController, PublicStorefrontController],
   providers: [
     ...clock,
     ...signedUploads,
