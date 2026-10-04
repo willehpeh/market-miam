@@ -23,13 +23,6 @@ export class LegalIdentity {
   constructor(private readonly _details: Details) {
   }
 
-  // Compared against the event as it was recorded, field by field: the snapshot is held raw
-  // because shreddable fields are not re-validated (ADR 0057), and jsonb keeps no key order.
-  sameAs(recorded: VendorLegalIdentityRecorded['payload']): boolean {
-    const mine = this.recordedFor(recorded.vendorId);
-    return (Object.keys(mine) as (keyof typeof mine)[]).every((field) => mine[field] === recorded[field]);
-  }
-
   recordedFor(vendorId: string): VendorLegalIdentityRecorded['payload'] {
     const { siret, legalName, address, contactEmail, phone, vatRegime, mediator, company } = this._details;
     return {
