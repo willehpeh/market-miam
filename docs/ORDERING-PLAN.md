@@ -43,7 +43,7 @@ Vendor never knows the code: stops pickups off a customer-visible tablet, and a 
 - Payment port + in-memory fake; Stripe adapter. Local webhooks via Stripe CLI.
 - Webhooks: verify signatures (`rawBody: true`); at-least-once → idempotency front gate (`docs/archive/DEFERRED.md` "Client-supplied idempotency") now required.
 - Order confirmed from webhook only, never from redirect.
-- Per-day key: make `scoped()` in `packages/event-sourcing/src/adapters/shredding.event-store.ts` dynamic, e.g. `${vendorId}:orders:${marketId}:${date}`.
+- Per-day key, e.g. `${vendorId}:orders:${marketId}:${date}`, in Ordering's own key store (see Keys below).
 
 | Sealed under day key | In clear |
 |---|---|
@@ -53,9 +53,21 @@ Vendor never knows the code: stops pickups off a customer-visible tablet, and a 
 - Code: checked server-side; never in vendor read model or API; unique among the day's open orders; failed attempts limited per vendor per day and recorded.
 - Only the email processor decrypts the email → no plaintext projection to clean.
 - Cash-register closings (daily per market day, monthly, annual) + publisher attestation, for VAT-registered vendors (see Legal → Cash register).
-- First scheduler in the API (interval or Render cron): confirmation timeout; shred at `endTime`.
+- First scheduler in the API (interval or Render cron): confirmation timeout; key sweep.
 - Shred at `endTime`, **not at close**: close is by hand (ADR 0049), vendor can reopen until `endTime` (decision 50).
-- `getOrCreateKeyFor` silently recreates a shredded key on a late PII write. `MarketDayEndedError` guard must keep blocking orders after `endTime`.
+
+### Keys
+
+`getOrCreateKeyFor` silently mints a new key after a `DELETE`-based shred (`PostgresDataKeys.shred`), so a late PII write resurrects erased data. Two cases, two fixes:
+
+| Key | Death date | Fix |
+|---|---|---|
+| Vendor (`${vendorId}`, `:legal`) | Arbitrary (erasure; legal key +5 years) | **Tombstone**: `shred` nulls the key material, keeps the row with `shredded_at`; `getOrCreateKeyFor` throws on it; `findKeyFor` → `null` → `SHREDDED` as now. Also gives slice 3 its shred date, and a dated proof of erasure (RGPD art. 5(2)). Lands with mentions légales slice 3, independent of Ordering |
+| Market day (Ordering) | Known at mint: day's `endTime` + grace (hours from ADR 0051) | **Expiry rule, no tombstone**: `expires_at` stored at mint; minting a key already past expiry throws; sweep `DELETE`s expired rows. `MarketDayEndedError` guard still blocks first; the mint rule turns a guard failure into a loud error, not silent retention |
+
+- Day keys live in **their own table** (e.g. `order_data_keys`): different lifecycle (bulk churn, ~78k rows/yr at 500 vendors) and different context (ADR 0048).
+- Wiring: **stack a second `ShreddingEventStore`** for Ordering's event types (disjoint from Market Days'), with its own PII registry, its own `DataKeys` over that table, and a resolver `event → { subject, expiresAt }`. Static `KeyScopes` (type → scope) stays for Market Days.
+- `DELETE` ≠ instant erasure: old row versions persist until VACUUM; PITR backups hold keys until the window rolls off. Policy B: "deleted at end of market day, gone from backups within N days".
 
 ### Live updates
 
@@ -153,8 +165,9 @@ Per `BOI-TVA-DECLA-30-10-30` (version of 2025-10-01), checked 2026-10-04:
 1. Lawyer + accountant: cash register (confirm scope + self-attestation route), DAC7, CGV + no-show clause, CGU, P2B, policy B.
 2. Stripe platform account; test Standard onboarding with live client.
 3. Finish mentions légales; add allergens.
-4. Ordering context: payment port, webhooks, idempotency gate, per-day key, code check, scheduler.
-5. Vendor app: onboarding, live order list, code input, *remis sans code*.
-6. Storefront: basket, Checkout, status page; email provider.
-7. Website rebuilt around ordering.
-8. Check signal at markets; pilot with real cards, small amounts.
+4. Key tombstones for vendor keys (with mentions légales slice 3).
+5. Ordering context: payment port, webhooks, idempotency gate, day-key store + expiry, code check, scheduler.
+6. Vendor app: onboarding, live order list, code input, *remis sans code*.
+7. Storefront: basket, Checkout, status page; email provider.
+8. Website rebuilt around ordering.
+9. Check signal at markets; pilot with real cards, small amounts.
