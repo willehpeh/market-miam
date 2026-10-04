@@ -30,7 +30,7 @@ Each slice is reviewable and committable alone. Deploying is gated by the rollou
 |---|---|---|
 | 1 | Decisions on paper: ADR 0056, amendments to 0054 and 0025, `PRIVACY-PLAN.md` | done |
 | 2 | Domain: `RecordVendorLegalIdentity` → `VendorLegalIdentityRecorded` | done |
-| 3 | Erasure keeps the `:legal` key and stamps its shred date | |
+| 3 | Erasure keeps the `:legal` key and stamps its shred date; shredded keys leave tombstones | |
 | 4 | Read model + HTTP: vendor read/write, éditeur block on the public storefront query | |
 | 5 | Vendor app: the legal-identity form, and links to policy A | |
 | 6 | Policy A page on the website | |
@@ -38,7 +38,7 @@ Each slice is reviewable and committable alone. Deploying is gated by the rollou
 | 8 | Rollout to the live client | |
 | 9 | Readiness gate: `hasCompleteLegalIdentity()` | |
 
-### 2. Domain — shipped (`a396ce6`)
+### 2. Domain — shipped (`2a13415`)
 
 - `RecordVendorLegalIdentity` → `VendorLegalIdentityRecorded`, full state, flat payload with
   `null` for absent optionals. Recording the same identity again raises nothing.
@@ -49,11 +49,21 @@ Each slice is reviewable and committable alone. Deploying is gated by the rollou
 - Every field except `vendorId` sits in `vendorPiiFields`. `vendorPiiKeyScopes` seals them under
   `{vendorId}:legal`. It is passed to `ShreddingEventStore` and wired through
   `EventSourcingModule.forRoot` in production and the API test apps.
+- `Vendor` holds the identity as `LegalIdentityOnRecord`: `NoLegalIdentity` until one is
+  recorded, then `RecordedLegalIdentity`. The latter wraps the event's snapshot raw, without
+  re-validating it (ADR 0057). The unchanged-identity no-op is `equals` between the held
+  state and a `RecordedLegalIdentity` built from the payload about to be appended.
 
 ### 3. Erasure
 
 - `VendorErasure.erase()` shreds `{vendorId}` as today, then calls
-  `scheduleShred('{vendorId}:legal', +5 years)`.
+  `scheduleShred('{vendorId}:legal', +5 years)`, which stamps `shred_after` on the key's row.
+- **Shred leaves a tombstone** (`ORDERING-PLAN.md` "Keys"). Today `PostgresDataKeys.shred` is a
+  `DELETE`, so the next `getOrCreateKeyFor` mints a fresh key and a late PII write brings erased
+  data back. Instead, `shred` nulls the key material and keeps the row with `shredded_at`.
+  `getOrCreateKeyFor` throws on a tombstoned subject, and `findKeyFor` returns `null`, so reads
+  still give `SHREDDED`. `MasterKeyring`'s lazy rewrap skips tombstones. Same in
+  `InMemoryDataKeys`.
 - The public projection must not re-materialise the legal identity of an erased vendor on
   rebuild (ADR 0056).
 - The sweep that acts on `shred_after` is **deferred**: the first date it could fire is five years
@@ -104,3 +114,9 @@ is already published and the gate only bites at publication.
 - Stripe and the 10-year invoice rows in policy A come with Billing (ADR 0048).
 - Cloudinary's IP masking is a dashboard switch and can be flipped at any time.
 - Deleting the Auth0 user on erasure stays manual.
+- An erased vendor still rehydrates as registered, so `Vendor` accepts their commands. The
+  tombstone refuses any PII write. A `VendorErased` event, PII-free and appended before the
+  shred, would let the aggregate refuse with a domain error instead. That only matters until the
+  Auth0 user is deleted by hand. Deferred.
+- `Storefront._information?` is optional state, the shape `Vendor` just left behind. A null
+  object, as for the legal identity, is a separate refactor.

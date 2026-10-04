@@ -62,8 +62,8 @@ Vendor never knows the code: stops pickups off a customer-visible tablet, and a 
 
 | Key | Death date | Fix |
 |---|---|---|
-| Vendor (`${vendorId}`, `:legal`) | Arbitrary (erasure; legal key +5 years) | **Tombstone**: `shred` nulls the key material, keeps the row with `shredded_at`; `getOrCreateKeyFor` throws on it; `findKeyFor` → `null` → `SHREDDED` as now. Also gives slice 3 its shred date, and a dated proof of erasure (RGPD art. 5(2)). Lands with mentions légales slice 3, independent of Ordering |
-| Market day (Ordering) | Known at mint: day's `endTime` + grace (hours from ADR 0051) | **Expiry rule, no tombstone**: `expires_at` stored at mint; minting a key already past expiry throws; sweep `DELETE`s expired rows. `MarketDayEndedError` guard still blocks first; the mint rule turns a guard failure into a loud error, not silent retention |
+| Vendor (`${vendorId}`, `:legal`) | Arbitrary (erasure; legal key +5 years) | **Tombstone**: `shred` nulls the key material, keeps the row with `shredded_at`; `getOrCreateKeyFor` throws on it; `findKeyFor` → `null` → `SHREDDED` as now. Also gives slice 3 its shred date, and a dated proof of erasure (RGPD art. 5(2)). Lands with mentions légales slice 3 (`MENTIONS-LEGALES-PLAN.md`), independent of Ordering |
+| Market day (Ordering) | Known at mint: day's `endTime` + grace (hours from ADR 0051) | **Expiry rule, no tombstone**: `shred_after` stored at mint; minting a key already past expiry throws; sweep `DELETE`s expired rows. `MarketDayEndedError` guard still blocks first; the mint rule turns a guard failure into a loud error, not silent retention |
 
 - Day keys live in **their own table** (e.g. `order_data_keys`): different lifecycle (bulk churn, ~78k rows/yr at 500 vendors) and different context (ADR 0048).
 - Wiring: **stack a second `ShreddingEventStore`** for Ordering's event types (disjoint from Market Days'), with its own PII registry, its own `DataKeys` over that table, and a resolver `event → { subject, expiresAt }`. Static `KeyScopes` (type → scope) stays for Market Days.
@@ -131,7 +131,7 @@ Prerequisite: `MENTIONS-LEGALES-PLAN.md` slices 3–9 (vendor identity + médiat
 | No-show clause | Typed code proves collection; *remis sans code* is weaker; no entry does **not** prove the customer never came. Word clause accordingly |
 | P2B Reg. 2019/1150 | Vendor terms need specific clauses |
 | DSA | Marketplace duties (arts. 29–32) likely exempt for micro-enterprise — confirm |
-| DAC7 | Seller due diligence + annual DGFiP reporting; sellers <30 sales and <2 000 €/yr excluded from reporting |
+| DAC7 | Seller due diligence + annual DGFiP reporting; sellers <30 sales and <2 000 €/yr excluded from reporting. An *entrepreneur individuel* is likely an individual seller: date of birth + personal tax number (possibly the *numéro fiscal*, not SIRET) beyond `VendorLegalIdentityRecorded` v1. Add as a new event version when Ordering lands |
 | Customer CGU | Platform terms, separate from vendor CGV |
 | Insurance | RC pro for Market Miam as intermediary |
 | RGPD | New art. 30 entry for orders. Rewrite policy B: state exactly what survives shred and what Stripe, email provider, Honeycomb (IPs, 60 days) and backups keep. Not "all deleted at end of day" |
