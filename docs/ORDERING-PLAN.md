@@ -57,12 +57,39 @@ Vendor never knows the code: stops pickups off a customer-visible tablet, and a 
 - Shred at `endTime`, **not at close**: close is by hand (ADR 0049), vendor can reopen until `endTime` (decision 50).
 - `getOrCreateKeyFor` silently recreates a shredded key on a late PII write. `MarketDayEndedError` guard must keep blocking orders after `endTime`.
 
+### Live updates
+
+Polling on both sides, web push for the vendor. No WebSockets: every client action (confirm, refuse, code) is a plain HTTP command.
+
+| Page | Mechanism |
+|---|---|
+| Vendor, foreground | Poll ~5 s. Screen Wake Lock in live mode |
+| Vendor, background / screen off | Web push on new order. Timers throttle and connections drop there, SSE included. iOS: installed PWA only, 16.4+ |
+| Customer, order pending | Poll ~3–5 s, stop once settled. Email is the fallback |
+
+Vendor latency is dominated by the vendor glancing at the screen, not by the poll interval.
+
+- "Something changed" is an observable port in the frontend; the adapter is a timer now. SSE later = adapter swap, refetch code unchanged.
+- Polls answer `304` when nothing changed: per vendor-day latest position held in memory, fed by each instance's LISTEN/NOTIFY (ADR 0030). No DB hit on most polls.
+
+**At 500 vendors** (Saturday-noon estimate: ~400 live vendors at 5 s ≈ 80 req/s; ~2.2 orders/s × 3 min pending ≈ 400 customers at 3 s ≈ 130 req/s; ~200 req/s total, cheap reads):
+
+| Pressure | Mitigation |
+|---|---|
+| Honeycomb volume: ~17M spans/day from polls vs a free tier of ~20M events/month (check plan) | Sample polls / don't trace `304`s. First thing to hurt |
+| Serialized appends (ADR 0028): ~10 appends/s of order events under one global lock | Load-test before scaling — the real ceiling |
+| Projection lag: one subscription catches up across all vendors | Measure in Honeycomb; stale list = lag |
+| Email: ~3 per order, ~8 000 orders/h peak | Provider tier |
+| Manual ops: refund queries, Stripe onboarding, DAC7, cash-register attestations | Not technical; plan for it |
+
+SSE trigger: Honeycomb volume or Render bill. Then poke-only + HTTP refetch, mirroring ADR 0030. `EventSource` can't send `Authorization` (Auth0 bearer) → fetch-based SSE client or cookie, not a token in the URL (leaks to logs). Heartbeat ~30 s.
+
 ### Vendor app
 
 - Stripe onboarding as a requirement to take orders (`StorefrontPublication` readiness pattern).
 - Live order list: number, dishes, status; confirm / refuse.
 - Code input; *remis sans code* per order.
-- New-order alerts: email first, web push optional.
+- New-order alerts: web push (see Live updates); email backup.
 
 ### Storefront (`customer-frontend`)
 
@@ -120,7 +147,6 @@ Per `BOI-TVA-DECLA-30-10-30` (version of 2025-10-01), checked 2026-10-04:
 
 - Confirmation timeout (minutes).
 - Code attempts before lockout; lockout length.
-- Status page updates: polling or SSE.
 
 ## Order of work
 
