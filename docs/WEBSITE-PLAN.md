@@ -2,6 +2,12 @@
 
 `apps/website` (Astro, static) at `marketmiam.fr` / `www.`. Purpose: convert vendors into the pilot — 5–10 hand-onboarded traiteurs, not self-serve signup. Sells what ships today; names what doesn't.
 
+## Holding page (2026-10-04)
+
+The live client and every prospect said Market Miam is unusable until customers can order and pay through it. The page now carries only the hero, with one line naming online ordering as coming (*Bientôt, la commande en ligne*), the Tally button and the footer. The problem band, the *Comment fonctionne Market Miam* groups with their two app screens, and the pilot terms are gone, and with them the price and the *ce qui sera ajouté plus tard est compris* freeze. The live client co-designed the pricing, so nothing public was owed. Everything below records the full page as it stood, and it stays as history until ordering ships and the page is rebuilt around it. `app-pendant-le-marche.webp` and `app-reperes.webp` stay in `public/` for that rebuild.
+
+Kept up on purpose rather than taken down: `/mentions-legales#licence` is the vendor app's AGPL source link (`apps/vendor-frontend/src/app/core/layout.ts`), policy A is due to land on this site (`MENTIONS-LEGALES-PLAN.md` slice 6), and the Tally form is the only way in for prospects.
+
 ## Shipped (`d1eef8c` … `64ab3a4`)
 
 Single page, French, plain CSS over `packages/design-system/tokens.css`.

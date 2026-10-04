@@ -1,9 +1,7 @@
 ---
 import Base from '../layouts/Base.astro';
 
-// ponytail: deux valeurs à changer avant mise en ligne.
 const TALLY_FORM_ID = 'aQX9NB';
-const PRIX_MENSUEL = '15 € HT';
 
 const cta = {
   'data-tally-open': TALLY_FORM_ID,
@@ -12,76 +10,6 @@ const cta = {
   'data-tally-emoji-text': '👋',
   'data-tally-emoji-animation': 'wave',
 };
-
-const groupes = [
-  {
-    titre: 'Une fois pour toutes',
-    lede: 'Tout ça se prépare avec nous, au démarrage. Ensuite, vous n’y revenez que pour ajouter un plat ou changer un horaire.',
-    cartes: [
-      {
-        titre: 'Votre vitrine',
-        texte:
-          'Votre photo, vos couleurs et quelques mots sur vous, à une adresse comme chez-vous.marketmiam.fr. Vous la donnez à vos clients, et elle ne change pas.',
-      },
-      {
-        titre: 'Votre carte',
-        texte:
-          'Vous décrivez chacun de vos plats une seule fois. Ensuite, pour chaque marché, vous choisissez dans cette liste au lieu de tout retaper.',
-      },
-      {
-        titre: 'Vos marchés',
-        texte:
-          'Les marchés où vous allez, avec les jours et les horaires. Vos clients voient quand vous passez chez eux, sans avoir à vous demander si vous venez aussi le mercredi.',
-      },
-    ],
-  },
-  {
-    titre: 'À chaque marché',
-    lede: 'Tout se fait depuis votre téléphone.',
-    capture: {
-      src: '/app-pendant-le-marche.webp',
-      legende: 'Dans l’application, pendant un marché',
-      alt: 'Écran de l’application pendant un marché : les plats du jour, un plat passé en épuisé et le bouton « Fermer le stand »',
-      width: 640,
-      height: 956,
-    },
-    cartes: [
-      {
-        titre: 'Le menu du jour',
-        texte:
-          'La veille ou le matin même, vous indiquez les plats que vous aurez au marché. Vos clients les voient avant de partir de chez eux.',
-      },
-      {
-        titre: 'Pendant le marché',
-        texte:
-          'Quand un plat est fini, vous le marquez épuisé, et les clients déjà en route le voient avant d’arriver. Quand vous remballez, ou si vous ne pouvez pas venir ce jour-là, vous fermez le stand et votre vitrine n’annonce plus ce marché.',
-      },
-      {
-        titre: 'Après le marché',
-        texte:
-          'De retour chez vous, vous indiquez pour chaque plat s’il s’est bien vendu, moins bien, ou s’il a été épuisé. C’est un seul formulaire, et les plats marqués épuisés pendant le marché sont déjà cochés.',
-      },
-    ],
-  },
-  {
-    titre: 'Au fil des marchés',
-    lede: 'Vous n’avez rien de plus à remplir. Vos réponses d’après-marché servent à préparer les suivants.',
-    capture: {
-      src: '/app-reperes.webp',
-      legende: 'Dans l’application, avant un marché',
-      alt: 'Préparation d’un menu dans l’application : sous chaque plat, comment il s’est vendu sur ce marché, par exemple « Ça part bien »',
-      width: 640,
-      height: 977,
-    },
-    cartes: [
-      {
-        titre: 'Ce qui part, ce qui reste',
-        texte:
-          'Quand vous préparez le menu d’un marché, chaque plat affiche comment il s’est vendu sur ce marché les fois précédentes, par exemple « Toujours épuisé » ou « Il en reste ». Chaque marché est compté à part, parce qu’un plat qui part vite à l’un peut très bien rester à l’autre.',
-      },
-    ],
-  },
-];
 ---
 
 <Base title="Market Miam — l’adresse de votre stand">
@@ -102,9 +30,13 @@ const groupes = [
           de marché et le menu du jour. Vous donnez l’adresse une fois à vos clients, et ils
           peuvent la consulter quand ils veulent.
         </p>
+        <p class="soon">
+          <strong>Bientôt, la commande en ligne.</strong> Pendant le marché, vos clients
+          pourront commander et payer sur votre vitrine, puis venir chercher leur commande au
+          stand.
+        </p>
         <div class="hero-actions">
           <button class="btn btn-solid" {...cta}>Rejoignez les premiers traiteurs</button>
-          <p class="note">Premier mois offert. Sans engagement.</p>
         </div>
       </div>
       <figure class="shot">
@@ -121,103 +53,6 @@ const groupes = [
         </figcaption>
       </figure>
     </section>
-
-    <section class="band">
-      <div class="wrap">
-        <h2>Là où ça coince</h2>
-        <ul class="problems">
-          <li>
-            <strong>Entre deux marchés, vos clients n’ont rien à consulter.</strong>
-            Pour savoir si vous venez samedi ou ce que vous servez cette semaine, ils doivent
-            vous appeler ou attendre de passer au stand.
-          </li>
-          <li>
-            <strong>Vous répondez aux mêmes questions au téléphone.</strong>
-            Les clients vous demandent ce qu’il y a dans tel plat ou s’il en reste encore, et
-            vous répétez la même chose d’un appel à l’autre.
-          </li>
-          <li>
-            <strong>Vous ne savez pas toujours combien préparer.</strong>
-            Si vous en faites trop, vous rentrez avec des invendus. Si vous n’en faites pas
-            assez, vous devez refuser des clients.
-          </li>
-        </ul>
-      </div>
-    </section>
-
-    {/* Grouped by what each thing costs the vendor — once, every market, or nothing —
-        because "combien de temps ça va me prendre ?" is the objection, and a flat list of
-        seven cards answers it nowhere. The last group holds one card on purpose: the
-        section ends on the thing that gives back rather than burying it seventh. */}
-    <section class="wrap section">
-      <h2>Comment fonctionne Market&nbsp;Miam</h2>
-      {
-        groupes.map((groupe, index) => (
-          <div
-            class:list={[
-              'groupe',
-              index === groupes.length - 1 && 'groupe-final',
-              groupe.capture && 'groupe-capture',
-            ]}
-          >
-            <div>
-              <h3>{groupe.titre}</h3>
-              <p class="lede lede-tight">{groupe.lede}</p>
-              <div class="cards">
-                {groupe.cartes.map((carte) => (
-                  <article class="card">
-                    <h4>{carte.titre}</h4>
-                    <p>{carte.texte}</p>
-                  </article>
-                ))}
-              </div>
-            </div>
-            {groupe.capture && (
-              <figure class="capture">
-                <img
-                  src={groupe.capture.src}
-                  alt={groupe.capture.alt}
-                  width={groupe.capture.width}
-                  height={groupe.capture.height}
-                  loading="lazy"
-                />
-                <figcaption>{groupe.capture.legende}</figcaption>
-              </figure>
-            )}
-          </div>
-        ))
-      }
-    </section>
-
-    <section class="band band-deep">
-      <div class="wrap">
-        <p class="eyebrow eyebrow-light">La phase pilote</p>
-        <h2>Pour commencer, cinq à dix traiteurs accompagnés un&nbsp;par&nbsp;un.</h2>
-        <p class="lede lede-light">
-          Nous installons votre vitrine avec vous, et vos remarques servent directement à
-          améliorer Market Miam.
-        </p>
-        <ul class="terms">
-          <li>
-            <strong>Premier mois offert</strong>, puis <strong>{PRIX_MENSUEL} par mois</strong>
-            (18&nbsp;€&nbsp;TTC). Sans engagement, vous pouvez arrêter quand vous voulez.
-          </li>
-          <li>
-            <strong>Le tarif ne bouge pas</strong>, et ce qui sera ajouté plus tard est compris
-            dedans.
-          </li>
-          <li><strong>Aucune commission</strong> sur vos ventes.</li>
-          <li>
-            <strong>Vos clients restent les vôtres.</strong> Ils voient votre vitrine, pas une
-            liste de traiteurs.
-          </li>
-        </ul>
-        <div class="pilot-actions">
-          <button class="btn btn-solid" {...cta}>Rejoignez les premiers traiteurs</button>
-          <p class="note note-light">Le formulaire tient en trois questions.</p>
-        </div>
-      </div>
-    </section>
   </main>
 
   <footer class="foot">
@@ -231,12 +66,6 @@ const groupes = [
 </Base>
 
 <style>
-  .wrap {
-    max-width: 62rem;
-    margin-inline: auto;
-    padding-inline: 1.5rem;
-  }
-
   /* ---- bar ---- */
   .bar {
     display: flex;
@@ -297,41 +126,12 @@ const groupes = [
     margin-bottom: 0.9rem;
   }
 
-  .eyebrow-light {
-    color: var(--mm-brand-soft);
-  }
-
   h1 {
     font-size: clamp(2.1rem, 6vw, 3.6rem);
     font-weight: 700;
     line-height: 1.08;
     letter-spacing: -0.03em;
     max-width: 18ch;
-  }
-
-  h2 {
-    font-size: clamp(1.5rem, 3.4vw, 2.1rem);
-    font-weight: 700;
-    line-height: 1.2;
-    letter-spacing: -0.02em;
-    max-width: 26ch;
-  }
-
-  /* Brand-deep and over a rule, because size alone did not separate a group heading from
-     a card title — both are bold and dark, and the three groups read as one long list.
-     The colour is the same structural-label language as .eyebrow. */
-  h3 {
-    font-size: clamp(1.15rem, 2.2vw, 1.4rem);
-    font-weight: 700;
-    line-height: 1.25;
-    letter-spacing: -0.01em;
-    color: var(--mm-brand-deep);
-  }
-
-  h4 {
-    font-size: 1.1rem;
-    font-weight: 700;
-    margin-bottom: 0.5rem;
   }
 
   .lede {
@@ -341,23 +141,17 @@ const groupes = [
     margin-top: 1.25rem;
   }
 
-  .lede-tight {
-    margin-top: 0.9rem;
-    font-size: 1.05rem;
+  .soon {
+    max-width: 52ch;
+    margin-top: 1.25rem;
+    padding-left: 1.1rem;
+    border-left: 3px solid var(--mm-brand);
+    color: var(--mm-ink-soft);
   }
 
-  .lede-light {
-    color: var(--mm-brand-soft);
-  }
-
-  .note {
-    font-size: 0.9rem;
-    color: var(--mm-muted);
-  }
-
-  .note-light {
-    color: var(--mm-sidebar-ink);
-    margin-top: 0.9rem;
+  .soon strong {
+    color: var(--mm-ink);
+    font-weight: 600;
   }
 
   /* ---- sections ---- */
@@ -412,8 +206,7 @@ const groupes = [
     padding: clamp(3rem, 9vw, 6rem) 1.5rem clamp(3.5rem, 9vw, 6rem);
   }
 
-  /* Each CTA and the reassurance line under it read as one unit. Centred while
-     the page is a single column, flush left once the hero splits in two. */
+  /* Centred while the page is a single column, flush left once the hero splits in two. */
   .hero-actions {
     margin-top: 2.25rem;
     display: flex;
@@ -424,161 +217,11 @@ const groupes = [
     gap: 0.85rem 1.25rem;
   }
 
-  .pilot-actions {
-    text-align: center;
-  }
-
   @media (min-width: 56rem) {
     .hero-actions {
       justify-content: flex-start;
       text-align: left;
     }
-
-    .pilot-actions {
-      text-align: left;
-    }
-  }
-
-  .section {
-    padding-block: clamp(3rem, 8vw, 5rem);
-  }
-
-  .band {
-    background: var(--mm-surface);
-    border-block: 1px solid var(--mm-line);
-    padding-block: clamp(3rem, 8vw, 5rem);
-  }
-
-  .band-deep {
-    background: var(--mm-sidebar);
-    color: var(--mm-brand-soft);
-    border-block: none;
-  }
-
-  .band-deep h2 {
-    color: #fff;
-  }
-
-  /* ---- lists ---- */
-  .problems {
-    list-style: none;
-    margin-top: 2rem;
-    display: grid;
-    gap: 1.1rem;
-    max-width: 58ch;
-  }
-
-  .problems li {
-    color: var(--mm-ink-soft);
-    padding-left: 1.1rem;
-    border-left: 3px solid var(--mm-brand-soft);
-  }
-
-  .problems strong {
-    display: block;
-    color: var(--mm-ink);
-    font-weight: 600;
-  }
-
-  .groupe {
-    margin-top: clamp(2.25rem, 5vw, 3.25rem);
-    padding-top: clamp(1.5rem, 3vw, 2rem);
-    border-top: 1px solid var(--mm-line-strong);
-  }
-
-  /* The last group holds one card, which the auto-fit grid stretches the full width. Left
-     plain it reads as a tile someone forgot to pair; tinted, it reads as the payoff the
-     section is built towards, which is what it is. */
-  .groupe-final .card {
-    background: var(--mm-brand-soft);
-    border-color: transparent;
-  }
-
-  /* Inside a group the cards follow their own lede, not a section heading, so they sit
-     closer than the ungrouped 2.25rem would put them. */
-  .groupe .cards {
-    margin-top: 1.25rem;
-  }
-
-  /* Only the groups a vendor does something in on market day carry a screen: that is the
-     part a traiteur cannot picture from the words. Setup is forms, and forms don't sell. On
-     a phone the screen follows the cards; wide, the cards stack beside it.
-     The vendor app shares this page's tokens and fonts, so a bare screenshot reads as more
-     page, and on a phone, where it sits in the same column as the cards, as a stack of
-     buttons to press. So the shot keeps the app's own canvas around its card, and wears the
-     hero shot's border, radius and shadow: the edge of a screen, not of a card. With the
-     caption and a width narrower than the cards, that is enough; a dark phone bezel was
-     tried and was far too heavy for the page. */
-  .groupe-capture {
-    display: grid;
-    gap: 2rem;
-  }
-
-  .capture {
-    width: 100%;
-    max-width: 16rem;
-    margin-inline: auto;
-  }
-
-  .capture img {
-    display: block;
-    width: 100%;
-    height: auto;
-    border: 1px solid var(--mm-line-strong);
-    border-radius: 16px;
-    box-shadow: 0 18px 40px -18px rgb(42 36 30 / 0.35);
-  }
-
-  .capture figcaption {
-    margin-top: 0.85rem;
-    font-size: 0.9rem;
-    color: var(--mm-muted);
-    text-align: center;
-  }
-
-  @media (min-width: 56rem) {
-    .groupe-capture {
-      grid-template-columns: 1fr 17rem;
-      align-items: start;
-      gap: 3rem;
-    }
-
-    .groupe-capture .cards {
-      grid-template-columns: 1fr;
-    }
-  }
-
-  .cards {
-    margin-top: 2.25rem;
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
-    gap: 1.25rem;
-  }
-
-  .card {
-    background: var(--mm-surface);
-    border: 1px solid var(--mm-line);
-    border-radius: 14px;
-    padding: 1.5rem;
-  }
-
-  .card p {
-    color: var(--mm-ink-soft);
-    font-size: 0.98rem;
-  }
-
-  .terms {
-    list-style: none;
-    margin: 2rem 0;
-    display: grid;
-    gap: 0.8rem;
-    max-width: 52ch;
-    color: var(--mm-sidebar-ink);
-  }
-
-  .terms strong {
-    color: #fff;
-    font-weight: 600;
   }
 
   /* ---- footer ---- */
