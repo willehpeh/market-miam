@@ -52,6 +52,7 @@ Vendor never knows the code: stops pickups off a customer-visible tablet, and a 
 
 - Code: checked server-side; never in vendor read model or API; unique among the day's open orders; failed attempts limited per vendor per day and recorded.
 - Only the email processor decrypts the email → no plaintext projection to clean.
+- Cash-register closings (daily per market day, monthly, annual) + publisher attestation, for VAT-registered vendors (see Legal → Cash register).
 - First scheduler in the API (interval or Render cron): confirmation timeout; shred at `endTime`.
 - Shred at `endTime`, **not at close**: close is by hand (ADR 0049), vendor can reopen until `endTime` (decision 50).
 - `getOrCreateKeyFor` silently recreates a shredded key on a late PII write. `MarketDayEndedError` guard must keep blocking orders after `endTime`.
@@ -95,9 +96,25 @@ Prerequisite: `MENTIONS-LEGALES-PLAN.md` slices 3–9 (vendor identity + médiat
 | Customer CGU | Platform terms, separate from vendor CGV |
 | Insurance | RC pro for Market Miam as intermediary |
 | RGPD | New art. 30 entry for orders. Rewrite policy B: state exactly what survives shred and what Stripe, email provider, Honeycomb (IPs, 60 days) and backups keep. Not "all deleted at end of day" |
-| Cash register (art. 286 I 3° bis CGI) | VAT-registered vendors may need certified software; franchise vendors exempt. **Could block VAT-registered vendors — resolve first** |
+| Cash register (art. 286 I 3° bis CGI) | See below |
 | E-reporting | Reaches micro-entreprises Sept 2027. Not urgent |
 | Pseudonymity | After shred, order records + Stripe IDs remain: pseudonymous, not anonymous |
+
+### Cash register
+
+Per `BOI-TVA-DECLA-30-10-30` (version of 2025-10-01), checked 2026-10-04:
+
+| § | Rule | Effect |
+|---|---|---|
+| 25 | Franchise-en-base vendors exempt | No obligation for them |
+| 30 | Payment providers (L521-1 CMF) excluded; online systems in scope | Stripe excluded, Market Miam likely in scope for VAT-registered vendors |
+| 35 | Exempt if *all* payments for *all* sales go via a credit institution | Unusable: vendors also take cash at the stall |
+| 290 | Publisher supplies proof; vendor holds it | Market Miam supplies it |
+
+- Publisher self-attestation restored from 2026-02-21 (loi 2026-103 art. 125; `ACTU-2026-00073`), after loi 2025-127 art. 43 removed it. Market Miam can issue attestations (template `BOI-LETTRE-000242`) — no NF525 needed.
+- For VAT-registered vendors: order/payment data must be inaltérable, sécurisé, conservé, archivé (ISCA), with daily, monthly and annual closings.
+- Fit: append-only event log covers inaltérabilité; a market day is the daily closing. Secured data (receipt no., timestamp, TTC total, item lines, payment data) excludes the customer email, so the shred design holds.
+- No *rescrit de portée générale* on caisse found via search (not exhaustive). Accountant to confirm.
 
 ## Open
 
@@ -107,7 +124,7 @@ Prerequisite: `MENTIONS-LEGALES-PLAN.md` slices 3–9 (vendor identity + médiat
 
 ## Order of work
 
-1. Lawyer + accountant: cash register, DAC7, CGV + no-show clause, CGU, P2B, policy B.
+1. Lawyer + accountant: cash register (confirm scope + self-attestation route), DAC7, CGV + no-show clause, CGU, P2B, policy B.
 2. Stripe platform account; test Standard onboarding with live client.
 3. Finish mentions légales; add allergens.
 4. Ordering context: payment port, webhooks, idempotency gate, per-day key, code check, scheduler.
