@@ -16,6 +16,7 @@ type PiiFieldsOf<E extends DomainEvent> = {
  */
 export const vendorPiiFields: PiiFieldsOf<MarketDaysEvent> = {
   VendorRegistered: ['email'],
+  VendorErased: [],
   VendorLegalIdentityProvided: [
     'siret', 'siren', 'vatNumber', 'legalName', 'address', 'contactEmail', 'phone', 'vatRegime',
     'mediatorName', 'mediatorUrl', 'legalForm', 'shareCapital', 'registryCity', 'legalRepresentative',

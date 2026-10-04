@@ -1,11 +1,12 @@
 import { Aggregate } from '@market-miam/event-sourcing';
 import { VendorId } from '@market-miam/shared-kernel';
 import { Email, Instant } from '@market-miam/common';
-import { VendorEvent, VendorLegalIdentityProvided, VendorRegistered } from './events';
+import { VendorErased, VendorEvent, VendorLegalIdentityProvided, VendorRegistered } from './events';
 import { VendorStatus } from './vendor-status';
 import { LegalIdentity } from './legal-identity';
 import { LegalIdentityOnRecord, NoLegalIdentity, ProvidedLegalIdentity } from './legal-identity-on-record';
 import { VendorNotRegisteredError } from './vendor-not-registered.error';
+import { VendorErasedError } from './vendor-erased.error';
 
 export class Vendor extends Aggregate {
 
@@ -17,6 +18,7 @@ export class Vendor extends Aggregate {
   }
 
   register(registeredAt: Instant, email: Email) {
+    this.assertNotErased();
     if (this.alreadyRegistered()) {
       return;
     }
@@ -33,6 +35,7 @@ export class Vendor extends Aggregate {
   }
 
   provideLegalIdentity(identity: LegalIdentity) {
+    this.assertNotErased();
     if (!this.alreadyRegistered()) {
       throw new VendorNotRegisteredError();
     }
@@ -48,6 +51,30 @@ export class Vendor extends Aggregate {
     this.raise(event);
   }
 
+  erase(erasedAt: Instant) {
+    if (this._status.isErased()) {
+      return;
+    }
+    if (!this.alreadyRegistered()) {
+      throw new VendorNotRegisteredError();
+    }
+    const event: VendorErased = {
+      type: 'VendorErased',
+      payload: {
+        vendorId: this._id.value(),
+        erasedAt: erasedAt.value()
+      },
+      version: 1
+    };
+    this.raise(event);
+  }
+
+  private assertNotErased() {
+    if (this._status.isErased()) {
+      throw new VendorErasedError();
+    }
+  }
+
   private alreadyRegistered() {
     return this._status.isRegistered();
   }
@@ -59,6 +86,9 @@ export class Vendor extends Aggregate {
         break;
       case 'VendorLegalIdentityProvided':
         this._legalIdentity = new ProvidedLegalIdentity(event.payload);
+        break;
+      case 'VendorErased':
+        this._status = VendorStatus.erased();
         break;
     }
   }

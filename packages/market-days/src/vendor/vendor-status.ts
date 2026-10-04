@@ -1,4 +1,4 @@
-type Status = 'registered' | 'unregistered';
+type Status = 'registered' | 'unregistered' | 'erased';
 
 export class VendorStatus {
 
@@ -13,7 +13,15 @@ export class VendorStatus {
     return new VendorStatus('unregistered');
   }
 
+  static erased(): VendorStatus {
+    return new VendorStatus('erased');
+  }
+
   isRegistered(): boolean {
     return this._status === 'registered';
+  }
+
+  isErased(): boolean {
+    return this._status === 'erased';
   }
 }

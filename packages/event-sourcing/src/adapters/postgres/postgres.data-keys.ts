@@ -14,8 +14,8 @@ import { MasterKeyring } from './master-keyring';
 //
 // Bound to the Pool, not the ambient Queryable/UnitOfWork, on purpose: a minted key
 // must be durable even if the surrounding append rolls back (it may already have
-// encrypted an event), and shred() is its own commit — sequenced before the
-// read-model rebuild in VendorErasure, deliberately not atomic with it.
+// encrypted an event), and shred() is its own commit, not atomic with the checkpoint
+// of the ErasesVendors processor that calls it — so a retried poll shreds again, harmlessly.
 export class PostgresDataKeys extends DataKeys {
   constructor(
     private readonly pool: Pool,

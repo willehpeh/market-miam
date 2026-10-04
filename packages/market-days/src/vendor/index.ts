@@ -9,4 +9,5 @@ export * from './legal-name';
 export * from './business-address';
 export * from './contact-phone';
 export * from './vendor-not-registered.error';
+export * from './vendor-erased.error';
 export * from './vat-regime';

@@ -111,6 +111,21 @@ describe('VendorStorefrontView', () => {
     expect(await views.findByVendor('vendor-id')).toMatchObject({ cartePricesVisible: true });
   });
 
+  // The erased vendor's PII is plaintext here (model A). A rebuild replays it as SHREDDED
+  // and then this event again, so the view stays gone.
+  it('drops the view of an erased vendor', async () => {
+    store.seedWith('storefront-vendor-id', [
+      { type: 'StorefrontOpened', payload: { vendorId: 'vendor-id' }, version: 1 },
+    ], { vendorId: 'vendor-id' });
+    store.seedWith('vendor-vendor-id', [
+      { type: 'VendorErased', payload: { vendorId: 'vendor-id', erasedAt: '2026-10-04T09:00:00.000Z' }, version: 1 },
+    ], { vendorId: 'vendor-id' });
+
+    await subscription.poll();
+
+    expect(await views.findByVendor('vendor-id')).toBeUndefined();
+  });
+
   it('resets by clearing the read model so a replay rebuilds it from zero', async () => {
     await new OpenStorefrontHandler(storefronts).execute(TestOpenStorefront.valid());
     await subscription.poll();

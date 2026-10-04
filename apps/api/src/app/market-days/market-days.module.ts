@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { CommandGateway, EventStore } from '@market-miam/event-sourcing';
+import { CommandGateway, DataKeys, EventStore } from '@market-miam/event-sourcing';
 import { Clock, DateClock } from '@market-miam/common';
 import {
   AddItemToCatalogueHandler,
@@ -13,6 +13,8 @@ import {
   CatalogueViewStore,
   ChangeItemPhotoHandler,
   EditStorefrontInformationHandler,
+  EraseVendorHandler,
+  ErasesVendors,
   FindCustomerStorefrontHandler,
   HideCartePricesHandler,
   FindVendorCatalogueHandler,
@@ -38,6 +40,7 @@ import {
   OpenStorefrontHandler,
   PublishStorefrontHandler,
   StorefrontPublication,
+  SubdomainRegistry,
   SetMarketDayMenuHandler,
   SetMarketPricesHandler,
   RegisterMarketScheduleHandler,
@@ -63,7 +66,6 @@ import { MarketScheduleController } from './market-schedule.controller';
 import { MarketPricesController } from './market-prices.controller';
 import { SellingRecordController } from './selling-record.controller';
 import { PublicStorefrontController } from './public-storefront.controller';
-import { VendorErasure } from './vendor-erasure';
 import { dailyShredSweep, ShredSweep } from './shred-sweep';
 
 const clock = [{ provide: Clock, useClass: DateClock }];
@@ -122,10 +124,16 @@ const processors = [
     useFactory: (gateway: CommandGateway) => new OpensStorefronts(gateway),
     inject: [CommandGateway],
   },
+  {
+    provide: ErasesVendors,
+    useFactory: (keys: DataKeys, subdomains: SubdomainRegistry) => new ErasesVendors(keys, subdomains),
+    inject: [DataKeys, SubdomainRegistry],
+  },
 ];
 
 const commandHandlers = [
   RegisterVendorHandler,
+  EraseVendorHandler,
   AddItemToCatalogueHandler,
   ChangeItemPhotoHandler,
   ReorderItemsHandler,
@@ -168,7 +176,6 @@ const queryHandlers = [FindCustomerStorefrontHandler, FindVendorStorefrontHandle
     ...domainServices,
     ...commandHandlers,
     ...queryHandlers,
-    VendorErasure,
     dailyShredSweep,
     ShredSweep,
   ],

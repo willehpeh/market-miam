@@ -102,6 +102,16 @@ export function vendorStorefrontViewsContract(name: string, create: () => Store)
       expect(await store.findByVendor('v1')).toEqual({ ...info, imageReference: 'img-1', published: true, cartePricesVisible: false });
     });
 
+    it("remove drops one vendor's view and leaves the others", async () => {
+      await store.editInformation('v1', info);
+      await store.editInformation('v2', info);
+
+      await store.remove('v1');
+
+      expect(await store.findByVendor('v1')).toBeUndefined();
+      expect(await store.findByVendor('v2')).toEqual({ ...info, imageReference: '', published: false, cartePricesVisible: true });
+    });
+
     it('clear empties the store', async () => {
       await store.editInformation('v1', info);
       await store.clear();
