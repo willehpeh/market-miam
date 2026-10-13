@@ -14,6 +14,11 @@ import { Card } from '../core/card';
     <mm-card back="/dashboard">
       <form (submit)="submit($event)">
         <h1 class="text-xl leading-tight">Vos mentions légales</h1>
+        <p class="mt-2 text-sm text-ink-soft">
+          Elles apparaissent sur votre vitrine, comme la loi le demande. Notre
+          <a href="https://marketmiam.fr/confidentialite-traiteurs" target="_blank" rel="noopener" class="underline">politique de confidentialité</a>
+          dit comment nous les conservons.
+        </p>
 
         <div class="mt-5 space-y-4">
           <div>

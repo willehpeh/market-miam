@@ -39,6 +39,16 @@ describe('Layout', () => {
     );
   });
 
+  // Readable before sign-up too, so the footer carries it whether or not anyone is signed in.
+  it('should offer the privacy policy, signed in or not', async () => {
+    await renderLayout();
+
+    expect(screen.getByRole('link', { name: 'Confidentialité' })).toHaveAttribute(
+      'href',
+      'https://marketmiam.fr/confidentialite-traiteurs',
+    );
+  });
+
   it('should display the logout button if the user is authenticated', async () => {
     const { view, auth } = await renderLayout();
     auth.setStatus('authenticated');

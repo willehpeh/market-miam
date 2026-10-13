@@ -233,6 +233,15 @@ describe('LegalIdentityForm', () => {
     expect(screen.getByRole('alert')).toHaveTextContent(/l'enregistrement a échoué/i);
   });
 
+  it('says how these details are handled', async () => {
+    await renderForm();
+
+    expect(screen.getByRole('link', { name: /politique de confidentialité/i })).toHaveAttribute(
+      'href',
+      'https://marketmiam.fr/confidentialite-traiteurs',
+    );
+  });
+
   it('says the phone is published', async () => {
     await renderForm();
 
