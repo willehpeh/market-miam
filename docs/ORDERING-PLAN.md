@@ -164,7 +164,7 @@ Per `BOI-TVA-DECLA-30-10-30` (version of 2025-10-01), checked 2026-10-04:
 
 1. Lawyer + accountant: cash register (confirm scope + self-attestation route), DAC7, CGV + no-show clause, CGU, P2B, policy B.
 2. Stripe platform account; test Standard onboarding with live client.
-3. Finish mentions légales; add allergens.
+3. Finish mentions légales (done 2026-10-13, `MENTIONS-LEGALES-PLAN.md`); add allergens (`ALLERGENS-PLAN.md`).
 4. Key tombstones for vendor keys (with mentions légales slice 3).
 5. Ordering context: payment port, webhooks, idempotency gate, day-key store + expiry, code check, scheduler.
 6. Vendor app: onboarding, live order list, code input, *remis sans code*.
