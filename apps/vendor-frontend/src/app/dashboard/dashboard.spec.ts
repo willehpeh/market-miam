@@ -64,6 +64,7 @@ async function renderReady(overrides: Partial<StorefrontView> = {}, copiedNotice
   ctx.storefront.view.set({ ...completeStorefront, subdomain: 'acme', ...overrides });
   ctx.catalogue.items.set([aItem]);
   ctx.markets.schedules.set([aSchedule]);
+  ctx.legalIdentity.identity.set(anIdentity);
   ctx.view.detectChanges();
   return ctx;
 }
@@ -117,16 +118,50 @@ describe('Dashboard', () => {
     expect(screen.getByRole('status', { name: /chargement/i })).toBeInTheDocument();
   });
 
-  // A vendor published before the mentions légales existed was never asked for them.
-  it.each([
-    { published: true, home: 'published home' },
-    { published: false, home: 'setup home' },
-  ])('asks for the mentions légales on the $home while none are provided', async ({ published }) => {
-    const { view, legalIdentity } = await renderReady({ published });
+  // A vendor published before the mentions légales existed never saw the setup steps that
+  // now ask for them.
+  it('asks for the mentions légales on the published home while none are provided', async () => {
+    const { view, legalIdentity } = await renderReady({ published: true });
     legalIdentity.identity.set(null);
     view.detectChanges();
 
     expect(screen.getByRole('link', { name: /complétez vos mentions légales/i })).toHaveAttribute('href', '/dashboard/legal-identity');
+  });
+
+  // The setup steps ask already; a card above them would say it twice.
+  it('leaves asking to the setup steps before publication', async () => {
+    const { view, legalIdentity } = await renderReady();
+    legalIdentity.identity.set(null);
+    view.detectChanges();
+
+    expect(screen.queryByRole('link', { name: /complétez vos mentions légales/i })).not.toBeInTheDocument();
+  });
+
+  it('leaves the mentions légales step to do until the vendor provides them', async () => {
+    const { view, legalIdentity } = await renderReady();
+    legalIdentity.identity.set(null);
+    view.detectChanges();
+
+    expect(screen.getByRole('link', { name: /vos mentions légales/i })).toHaveAttribute('href', '/dashboard/legal-identity');
+    expect(screen.getByText('Obligatoires pour publier votre vitrine.')).toBeInTheDocument();
+    expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '3');
+  });
+
+  // The API refuses to publish without them (slice 9 of the plan), so the button waits too.
+  it('holds Publier back until the mentions légales are provided', async () => {
+    const { view, legalIdentity } = await renderReady();
+    legalIdentity.identity.set(null);
+    view.detectChanges();
+
+    expect(screen.queryByRole('button', { name: /publier/i })).not.toBeInTheDocument();
+  });
+
+  it('marks the mentions légales step done once provided', async () => {
+    await renderReady();
+
+    expect(screen.getByText('Renseignées')).toBeInTheDocument();
+    expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '4');
+    expect(screen.getByRole('button', { name: /publier/i })).toBeInTheDocument();
   });
 
   it('stops asking once the mentions légales are provided', async () => {

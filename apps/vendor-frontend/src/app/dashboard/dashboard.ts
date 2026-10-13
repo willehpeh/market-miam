@@ -60,7 +60,8 @@ export class Dashboard {
       !this.legalIdentity.loading(),
   );
   // Null, not merely absent: an identity that failed to load says nothing about the vendor.
-  readonly legalIdentityMissing = computed(() => this.legalIdentity.identity() === null);
+  // Published homes only: before publication, the setup steps ask for it.
+  readonly legalIdentityMissing = computed(() => this.published() && this.legalIdentity.identity() === null);
   readonly published = computed(() => this.storefront.view()?.published === true);
   private readonly catalogue = inject(CatalogueFacade);
   private readonly markets = inject(MarketScheduleFacade);
