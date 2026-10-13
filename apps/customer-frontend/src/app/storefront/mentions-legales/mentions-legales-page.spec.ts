@@ -32,6 +32,7 @@ const COMPANY: Editeur = {
 const published = (editeur: Editeur | null): StorefrontViewModel => ({
   status: 'published',
   editeur,
+  vatExempt: false,
   name: 'Chez Marie',
   description: '',
   phone: '06 12 34 56 78',

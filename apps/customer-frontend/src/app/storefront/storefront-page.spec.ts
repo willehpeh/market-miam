@@ -9,6 +9,7 @@ import { StorefrontViewModel } from './storefront-view-model';
 const ACME: StorefrontViewModel = {
   status: 'published',
   editeur: null,
+  vatExempt: false,
   name: 'Acme Bakery',
   description: 'Fresh bread daily',
   phone: '0102030405',
@@ -214,6 +215,28 @@ describe('StorefrontPage', () => {
 
     const card = fixture.nativeElement.querySelector('app-market-card') as HTMLElement;
     expect(card.textContent).toContain('7,50 €');
+  });
+
+  it("says TVA does not apply beside the featured market's prices under the franchise en base", () => {
+    const fixture = TestBed.createComponent(StorefrontPage);
+    view.set({
+      ...ACME,
+      vatExempt: true,
+      upcomingMarkets: [
+        { ...ACME.upcomingMarkets[0], items: [{ ...ACME.items[1], priceLabel: '7,50 €' }] },
+      ],
+    });
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('TVA non applicable, art. 293 B du CGI');
+  });
+
+  it('says nothing about TVA where the featured market quotes no price', () => {
+    const fixture = TestBed.createComponent(StorefrontPage);
+    view.set({ ...ACME, vatExempt: true });
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).not.toContain('293 B');
   });
 
   // The card at the top and the first card of the list were the same market a screen apart —

@@ -50,6 +50,22 @@ describe('toViewModel', () => {
     expect(view).toMatchObject({ editeur: EDITEUR });
   });
 
+  // Art. 293 B du CGI: under the franchise en base, every price shown says TVA does not apply.
+  it('marks prices as exempt from TVA under the franchise en base', () => {
+    const view = toViewModel({ ...withMarkets([]), editeur: EDITEUR } as CustomerStorefront);
+
+    expect(view).toMatchObject({ vatExempt: true });
+  });
+
+  it.each([
+    { editeur: { ...EDITEUR, vatRegime: 'assujetti', vatNumber: 'FR44732829320' }, case: 'assujetti' },
+    { editeur: null, case: 'with no identity yet' },
+  ])('does not mark prices as exempt from TVA $case', ({ editeur }) => {
+    const view = toViewModel({ ...withMarkets([]), editeur } as CustomerStorefront);
+
+    expect(view).toMatchObject({ vatExempt: false });
+  });
+
   it('carries no éditeur block until the vendor provides one', () => {
     const view = toViewModel(withMarkets([]));
 

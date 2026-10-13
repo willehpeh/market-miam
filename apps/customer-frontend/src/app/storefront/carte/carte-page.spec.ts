@@ -5,9 +5,10 @@ import { CartePage } from './carte-page';
 import { StorefrontFeed } from '../storefront-feed';
 import { StorefrontViewModel } from '../storefront-view-model';
 
-const ACME: StorefrontViewModel = {
+const ACME: Extract<StorefrontViewModel, { status: 'published' }> = {
   status: 'published',
   editeur: null,
+  vatExempt: false,
   name: 'Acme Bakery',
   description: 'Fresh bread daily',
   phone: '0102030405',
@@ -277,5 +278,32 @@ describe('CartePage', () => {
 
   it('shows a not-found message when there is no storefront', () => {
     expect(render(null).nativeElement.textContent as string).toContain('introuvable');
+  });
+
+  // ADR 0054: a market can charge differently from the carte, so the carte's figure is
+  // only a guide, and saying so is a publication requirement, not a copy preference.
+  it("says its prices are indicative, the market's own governing", () => {
+    const text = render({ ...ACME, items: [{ ...ACME.items[0], priceLabel: '13,00 €' }] }).nativeElement.textContent as string;
+
+    expect(text).toContain('Prix indicatifs : seuls les prix affichés au marché font foi.');
+  });
+
+  it('says nothing about prices it does not show', () => {
+    const text = render(ACME).nativeElement.textContent as string;
+
+    expect(text).not.toContain('Prix indicatifs');
+  });
+
+  it('says TVA does not apply beside its prices under the franchise en base', () => {
+    const text = render({ ...ACME, vatExempt: true, items: [{ ...ACME.items[0], priceLabel: '13,00 €' }] })
+      .nativeElement.textContent as string;
+
+    expect(text).toContain('TVA non applicable, art. 293 B du CGI');
+  });
+
+  it('says nothing about TVA for a vendor who charges it', () => {
+    const text = render({ ...ACME, items: [{ ...ACME.items[0], priceLabel: '13,00 €' }] }).nativeElement.textContent as string;
+
+    expect(text).not.toContain('293 B');
   });
 });

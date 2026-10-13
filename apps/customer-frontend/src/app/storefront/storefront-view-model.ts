@@ -51,6 +51,8 @@ export type StorefrontViewModel =
       items: ItemViewModel[];
       upcomingMarkets: MarketViewModel[];
       editeur: Editeur | null;
+      // Under the franchise en base (art. 293 B du CGI), every price shown says TVA does not apply.
+      vatExempt: boolean;
     }
   | {
       status: 'coming-soon';
@@ -74,6 +76,7 @@ export function toViewModel(storefront: CustomerStorefront): StorefrontViewModel
     // which is exactly when a price is worth knowing.
     upcomingMarkets: storefront.upcomingMarkets.map((market, index) => toMarketViewModel(market, index === 0)),
     editeur: storefront.editeur,
+    vatExempt: storefront.editeur?.vatRegime === 'franchise',
   };
 }
 
