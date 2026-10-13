@@ -33,7 +33,7 @@ Each slice is reviewable and committable alone. Deploying is gated by the rollou
 | 3 | Erasure keeps the `:legal` key and stamps its shred date; shredded keys leave tombstones | done |
 | 4 | Read model + HTTP: vendor read/write, éditeur block on the public storefront query | done |
 | 5 | Vendor app: the legal-identity form | done |
-| 6 | Policy A page on the website, and links to it | |
+| 6 | Policy A page on the website, and links to it | done |
 | 7 | Storefront: the mentions-légales route, and price wording on the carte | |
 | 8 | Rollout to the live client | |
 | 9 | Readiness gate: `hasCompleteLegalIdentity()` | |
@@ -113,14 +113,23 @@ Each slice is reviewable and committable alone. Deploying is gated by the rollou
   a `nature_juridique` code and neither of the others.
 - Not verified in a running app: covered by the vendor-frontend suites (545 green) only.
 
-### 6. Policy A page
+### 6. Policy A page — shipped (`f10ba08`, `30646f7`)
 
-`marketmiam.fr/confidentialite-traiteurs` on the Astro site, reusing `mentions-legales.astro`'s
-`EDITEUR` constants. It lives on the public site because a vendor must be able to read it before having an account.
-
-Moved here from slice 5, to go live with the page:
-- Link policy A from the vendor app's footer (`core/layout.ts`), and from the legal-identity form.
-- Set it as Auth0 Universal Login's privacy-policy URL (manual dashboard step).
+- `marketmiam.fr/confidentialite-traiteurs` (`apps/website/src/pages/confidentialite-traiteurs.astro`),
+  on the public site so a vendor can read it before having an account. In the sitemap.
+- Wording copied from the approved doc. A build-output check confirmed every sentence is there
+  unchanged. One difference: the responsable line takes the address from `EDITEUR`, so it reads
+  "Romainville, France".
+- `EDITEUR` moved to `src/editeur.ts`, and the legal pages' header, footer and styles to
+  `layouts/Legal.astro`. `mentions-legales` renders the same text as before.
+- Linked from the vendor app's footer ("Confidentialité", signed in or not) and from the
+  legal-identity form.
+- **Not done, manual:** set `https://marketmiam.fr/confidentialite-traiteurs` as Auth0 Universal
+  Login's privacy-policy URL. The tenant is `willalexander.eu.auth0.com`.
+- **Pushing is gated like 7** (Rollout): policy A goes live with the mentions légales.
+- **Open:** "Ce qui est obligatoire" says a storefront without legal identity and phone can't be
+  published. That holds only once slice 9's gate ships, and the live client is already published.
+  Either ship 9 before pushing 6, or ask the lawyer about the sentence.
 
 ### 7. Storefront
 
@@ -131,7 +140,7 @@ Moved here from slice 5, to go live with the page:
 
 ### 8. Rollout
 
-Deploy 2–5 and ask the live client to fill in the form. Deploy 6 and 7 only once they have, so the route
+Deploy 2–5 and ask the live client to fill in the form. Deploy 6 and 7 together, only once they have, so the route
 never renders an empty éditeur block. Then check their live page.
 
 `main` auto-deploys on green CI (`render.yaml`), so deploying is pushing: 2–4 were pushed on
