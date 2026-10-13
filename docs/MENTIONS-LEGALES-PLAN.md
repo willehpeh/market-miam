@@ -32,8 +32,8 @@ Each slice is reviewable and committable alone. Deploying is gated by the rollou
 | 2 | Domain: `ProvideVendorLegalIdentity` → `VendorLegalIdentityProvided` | done |
 | 3 | Erasure keeps the `:legal` key and stamps its shred date; shredded keys leave tombstones | done |
 | 4 | Read model + HTTP: vendor read/write, éditeur block on the public storefront query | done |
-| 5 | Vendor app: the legal-identity form, and links to policy A | |
-| 6 | Policy A page on the website | |
+| 5 | Vendor app: the legal-identity form | done |
+| 6 | Policy A page on the website, and links to it | |
 | 7 | Storefront: the mentions-légales route, and price wording on the carte | |
 | 8 | Rollout to the live client | |
 | 9 | Readiness gate: `hasCompleteLegalIdentity()` | |
@@ -83,28 +83,44 @@ Each slice is reviewable and committable alone. Deploying is gated by the rollou
   only, with SIREN), `mediator` (pair or null), `vatNumber` (null under franchise). Same payload
   as the storefront feed, no extra endpoint. The hébergeur block stays a frontend constant.
 
-### 5. Vendor app
+### 5. Vendor app — shipped (`91b140e`, `1db1cd1`, `87f58de`, `db1bb44`)
 
-- A Signal Forms form. Typing a SIRET prefills it from `recherche-entreprises.api.gouv.fr` (open data, no key), with
-  manual entry as the fallback for Sirene non-diffusion.
-- The médiateur is **warned, not required** (ADR 0054). Name CM2C, Medicys and AME, and keep
-  evidence that the warning was shown.
-- State that the phone is published, at the field. Prefill it from the storefront's `phone`
-  (ADR 0056).
-- Link policy A from the footer (`core/layout.ts`) and from Auth0 Universal Login's privacy-policy
-  setting, so it is readable before sign-up. The Auth0 setting is a manual dashboard step.
-- API (shipped in 4): `GET`/`PUT /legal-identity`, `apps/api/src/app/market-days/legal-identity.controller.ts`.
-  Body: 12 fields, the six optionals sent as `null`, never omitted. `GET` is 404 until provided.
-- **Open, decide before building:**
-  - How to keep evidence that the médiateur warning was shown. Nothing records it today.
-  - Policy A's link vs. its page: slice 6 makes it live, and the decisions table says policy A
-    goes live with the mentions légales, not before. Pushing 5 deploys it (see Rollout), so the
-    link would precede its page. Ship 5 without the link and add it in 6, or ship 6 first.
+- **Form** at `/dashboard/legal-identity` (`apps/vendor-frontend/src/app/legal-identity/`), Signal Forms.
+  EI / société switch; the société's four fields are required together, and sent as `null` for an EI.
+- **Médiateur evidence:** an empty médiateur needs the vendor to tick an L616-1 acknowledgement
+  next to links to CM2C, Medicys and AME. The form cannot send a null médiateur without it, so
+  each `VendorLegalIdentityProvided` with `mediatorName: null` is the evidence, read alongside
+  the form's git history. No event field. The tick starts unticked on every edit (ADR 0054 amendment).
+- **SIRET:** Luhn-checked in the form (a copy of `Siret`'s rule; the API stays the authority)
+  before any lookup or save.
+- **Prefill:** the `CompanyRegistry` port. `RechercheEntreprisesCompanyRegistry` calls the API from
+  the browser (CORS open) and keeps a result only when an establishment carries the exact SIRET.
+  It fills dénomination (`nom_raison_sociale`, else `nom_complet`), the establishment's address,
+  and EI vs société. Nothing found, or the API down → "introuvable", manual entry. `FakeCompanyRegistry` in specs.
+- **Phone** prefilled from the storefront's until an identity is on record; the field says it is published.
+- **Contact email** is required and starts empty, unlike ADR 0054's "default it": the frontend
+  doesn't expose the login email, and a vendor's login is often not the address they publish.
+- **Entry point:** the live client was published before this existed, so setup steps never reach
+  them. The dashboard loads the identity with its other feeds and waits on it (load gate), then shows
+  "Complétez vos mentions légales" on both homes while `GET` is 404. The published home lists
+  "Mentions légales" permanently. A failed load (unknown) shows no card.
+- **Store:** 404 means none provided, not an error. Once known or saved, the identity is not
+  refetched, so the projection's lag cannot take a save back. A save goes home after
+  `SAVED_REDIRECT_DELAY`; a refused one says so under the button.
+- **Policy A link moved to slice 6**: a link pushed in 5 would 404 until 6, and policy A goes
+  live with the mentions légales.
+- Not built: forme juridique, capital and ville du greffe are not prefilled. The API gives only
+  a `nature_juridique` code and neither of the others.
+- Not verified in a running app: covered by the vendor-frontend suites (545 green) only.
 
 ### 6. Policy A page
 
 `marketmiam.fr/confidentialite-traiteurs` on the Astro site, reusing `mentions-legales.astro`'s
 `EDITEUR` constants. It lives on the public site because a vendor must be able to read it before having an account.
+
+Moved here from slice 5, to go live with the page:
+- Link policy A from the vendor app's footer (`core/layout.ts`), and from the legal-identity form.
+- Set it as Auth0 Universal Login's privacy-policy URL (manual dashboard step).
 
 ### 7. Storefront
 
@@ -119,7 +135,8 @@ Deploy 2–5 and ask the live client to fill in the form. Deploy 6 and 7 only on
 never renders an empty éditeur block. Then check their live page.
 
 `main` auto-deploys on green CI (`render.yaml`), so deploying is pushing: 2–4 were pushed on
-2026-10-05 and deploy once their CI run is green. Don't push 7 until the client's identity is in, or have the route render nothing
+2026-10-05 and deploy once their CI run is green. 5 was committed on 2026-10-13, not pushed: pushing it
+deploys the form, and is the cue to ask the client (the dashboard card asks them too). Don't push 7 until the client's identity is in, or have the route render nothing
 while `editeur` is `null`.
 
 ### 9. Readiness gate
