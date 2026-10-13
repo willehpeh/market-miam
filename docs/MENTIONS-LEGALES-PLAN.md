@@ -34,7 +34,7 @@ Each slice is reviewable and committable alone. Deploying is gated by the rollou
 | 4 | Read model + HTTP: vendor read/write, éditeur block on the public storefront query | done |
 | 5 | Vendor app: the legal-identity form | done |
 | 6 | Policy A page on the website, and links to it | done |
-| 7 | Storefront: the mentions-légales route, and price wording on the carte | |
+| 7 | Storefront: the mentions-légales route, and price wording on the carte | done |
 | 8 | Rollout to the live client | |
 | 9 | Readiness gate: `hasCompleteLegalIdentity()` | |
 
@@ -128,27 +128,44 @@ Each slice is reviewable and committable alone. Deploying is gated by the rollou
   Its workarounds are Page Templates, Forms for Actions or going back to Classic Login, and none is
   needed: every vendor reaches Auth0 from the app's landing page, whose footer already links
   policy A. That is how it is readable before sign-up.
-- **Pushing is gated like 7** (Rollout): policy A goes live with the mentions légales.
+- Pushed with 7 (Rollout), so policy A goes live with the mentions légales.
 - **Open:** "Ce qui est obligatoire" says a storefront without legal identity and phone can't be
   published. That holds only once slice 9's gate ships, and the live client is already published.
   Either ship 9 before pushing 6, or ask the lawyer about the sentence.
 
-### 7. Storefront
+### 7. Storefront — shipped (`93558b5`, `945206f`, `305ec06`)
 
-- An SSR route under the storefront parent, linked from `StorefrontFooter`. It carries the éditeur
-  block, the hébergeur constant, then policy B.
-- The carte is labelled as indicative, with the market's list governing (ADR 0054). Under
-  franchise, `TVA non applicable, art. 293 B du CGI` sits beside the prices.
+- **`/mentions-legales`** (`apps/customer-frontend/src/app/storefront/mentions-legales/`), a child of the
+  storefront parent, so it reads the same feed fetch. The éditeur block comes from the API's `editeur`:
+  legal name, a société's form, capital and RCS, address, SIRET, the TVA number or `TVA non applicable,
+  art. 293 B du CGI`, contact, directeur de la publication, and the médiateur when there is one. Then
+  the hébergeur: Market Miam, hosted by Render. Then policy B, checked word for word against the doc,
+  with the vendor's legal name for `{traiteur}`. Own canonical URL.
+- **While `editeur` is `null`** the route renders "Page introuvable", never an empty block.
+- **Footer link, stopgap:** `StorefrontFooter` links the page only when `editeur` is set
+  (`mentionsLegales` input, marked `ponytail:`). **Retire it once the live client has provided their
+  identity:** make the link unconditional. From then on every published storefront has one, and
+  slice 9's gate keeps it so.
+- **Prices:** a priced carte reads "Prix indicatifs : seuls les prix affichés au marché font foi."
+  Under franchise, the carte and the featured market's menu add `TVA non applicable, art. 293 B du CGI`.
+  `vatExempt` on the view model owns the rule.
+- **Open:**
+  - LCEN 6-III-1 asks the éditeur to give the hébergeur's phone. The Market Miam block has an
+    address and email but no phone. Add one, or confirm the email is enough.
+  - The éditeur block's layout, the hébergeur lines and the "Prix indicatifs" sentence are not
+    lawyer-reviewed text (policy B is).
 
 ### 8. Rollout
 
-Deploy 2–5 and ask the live client to fill in the form. Deploy 6 and 7 together, only once they have, so the route
-never renders an empty éditeur block. Then check their live page.
+Deploy 2–7. Neither the footer link nor the route shows anything while `editeur` is `null` (slice 7),
+so 6 and 7 no longer wait for the client's identity. Then ask the live client to fill in the form (the
+dashboard card asks them too), check their live page, and retire slice 7's footer stopgap.
 
 `main` auto-deploys on green CI (`render.yaml`), so deploying is pushing: 2–4 were pushed on
-2026-10-05 and deploy once their CI run is green. 5 was committed on 2026-10-13, not pushed: pushing it
-deploys the form, and is the cue to ask the client (the dashboard card asks them too). Don't push 7 until the client's identity is in, or have the route render nothing
-while `editeur` is `null`.
+2026-10-05. 5–7 were committed on 2026-10-13, not pushed.
+
+Before pushing 6, settle its open sentence ("Ce qui est obligatoire"): ship 9 first, or clear it with
+the lawyer.
 
 ### 9. Readiness gate
 
