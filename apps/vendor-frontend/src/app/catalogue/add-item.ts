@@ -8,6 +8,7 @@ import { DismissOnOutsidePress } from '../core/dismiss-on-outside-press';
 import { CatalogueFacade } from './catalogue.facade';
 import { CatalogueItemView } from './catalogue';
 import { centsToEuros, parseEurosToCents } from './money';
+import { ALLERGENS } from './allergens';
 
 const ITEM_PREVIEW_TRANSFORMATION = 'c_fill,w_600,h_400,q_auto,f_webp';
 
@@ -291,6 +292,30 @@ type ItemModel = { name: string; price: string; description: string; variants: F
           }
         </div>
 
+        <!-- One set for the whole dish, every format included (ALLERGENS-PLAN.md decision 1).
+             "Aucun" is a box of its own: an untouched list declares nothing. -->
+        <fieldset class="mt-6">
+          <legend class="field-label">Allergènes</legend>
+          <p class="mt-1 text-xs text-muted">Cochez ceux que contient ce plat, tous formats confondus.</p>
+          <div class="mt-2 grid grid-cols-1 gap-1.5 sm:grid-cols-2">
+            @for (allergen of allergenChoices; track allergen.code) {
+              <label class="flex items-start gap-2 text-sm text-ink">
+                <input
+                  type="checkbox"
+                  class="mt-0.5"
+                  [checked]="allergens()?.includes(allergen.code) ?? false"
+                  (change)="toggleAllergen(allergen.code)"
+                />
+                <span>{{ allergen.label }}</span>
+              </label>
+            }
+          </div>
+          <label class="mt-3 flex items-start gap-2 border-t border-line pt-3 text-sm font-bold text-ink">
+            <input type="checkbox" class="mt-0.5" [checked]="declaresNone()" (change)="toggleNone()" />
+            <span>Aucun de ces 14 allergènes</span>
+          </label>
+        </fieldset>
+
         <button
           type="submit"
           class="mt-6 flex w-full max-w-xs mx-auto justify-center"
@@ -421,8 +446,18 @@ export class AddItem {
     );
   });
 
+  protected readonly allergenChoices = ALLERGENS;
+  // Null until declared. Same identity guard as `model`: a store update for the same dish
+  // must not untick what the vendor ticked.
+  protected readonly allergens = linkedSignal<CatalogueItemView | undefined, string[] | null>({
+    source: () => this.editing(),
+    computation: (item, previous) =>
+      previous && previous.source?.itemId === item?.itemId ? previous.value : (item?.allergens ?? null),
+  });
+  protected readonly declaresNone = computed(() => this.allergens()?.length === 0);
+
   private readonly priceCents = computed(() => parseEurosToCents(this.fields().value().price));
-  protected readonly cannotSubmit = computed(() => this.uploading() || this.fields().invalid());
+  protected readonly cannotSubmit = computed(() => this.uploading() || this.fields().invalid() || this.allergens() === null);
 
   // A disabled button is not an explanation. These read the form's own state rather than
   // re-deriving the rules — the schema owns those — and are tied to the button by
@@ -434,6 +469,9 @@ export class AddItem {
     }
     if (this.fields.name().invalid()) {
       reasons.push('Indiquez le nom du plat.');
+    }
+    if (this.allergens() === null) {
+      reasons.push('Indiquez les allergènes du plat.');
     }
     if (this.mode() === 'single') {
       if (this.fields.price().invalid()) {
@@ -489,6 +527,18 @@ export class AddItem {
     });
   }
 
+  // Kept in the regulation's order whatever order they are ticked in. Unticking the last one
+  // leaves the dish undeclared rather than declaring it free of the 14.
+  protected toggleAllergen(code: string): void {
+    const ticked = this.allergens() ?? [];
+    const next = ticked.includes(code) ? ticked.filter((c) => c !== code) : [...ticked, code];
+    this.allergens.set(next.length ? ALLERGENS.map((a) => a.code).filter((c) => next.includes(c)) : null);
+  }
+
+  protected toggleNone(): void {
+    this.allergens.set(this.declaresNone() ? null : []);
+  }
+
   protected selectPhoto(event: Event): void {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
@@ -505,15 +555,19 @@ export class AddItem {
   protected submit(event: Event): void {
     event.preventDefault();
     const { name, description } = this.fields().value();
+    const allergens = this.allergens();
+    if (allergens === null) {
+      return;
+    }
     if (this.mode() === 'variants') {
       const variants = this.parseVariants();
       if (variants === null) {
         return;
       }
       if (this.isEditing) {
-        this.catalogue.reviseItem({ itemId: this.itemId(), name, description, variants });
+        this.catalogue.reviseItem({ itemId: this.itemId(), name, description, variants, allergens });
       } else {
-        this.catalogue.addItem({ itemId: this.itemId(), name, description, variants, imageReference: this.photoReference() || undefined });
+        this.catalogue.addItem({ itemId: this.itemId(), name, description, variants, imageReference: this.photoReference() || undefined, allergens });
       }
       return;
     }
@@ -522,7 +576,7 @@ export class AddItem {
       return;
     }
     if (this.isEditing) {
-      this.catalogue.reviseItem({ itemId: this.itemId(), name, description, price: cents });
+      this.catalogue.reviseItem({ itemId: this.itemId(), name, description, price: cents, allergens });
     } else {
       this.catalogue.addItem({
         itemId: this.itemId(),
@@ -530,6 +584,7 @@ export class AddItem {
         description,
         price: cents,
         imageReference: this.photoReference() || undefined,
+        allergens,
       });
     }
   }

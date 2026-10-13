@@ -17,7 +17,7 @@ import { FakePhotoDownscale } from '../storefront/fake.photo-downscale';
 import { SignedUpload } from '../storefront/signed-upload';
 
 const items: CatalogueItemView[] = [
-  { itemId: 'item-1', name: 'Bœuf bourguignon', description: 'Mijoté maison', price: 1300, imageReference: 'v1/items/acme/item-1' },
+  { itemId: 'item-1', name: 'Bœuf bourguignon', description: 'Mijoté maison', price: 1300, imageReference: 'v1/items/acme/item-1', allergens: ['gluten', 'milk'] },
 ];
 
 const serverError = { status: 500, statusText: 'Server Error' };
@@ -142,7 +142,7 @@ describe('Catalogue', () => {
   // The add screen is deep-linkable, so an append can land on a cold store; the appended
   // copy is newer than the projection, and a follow-up GET could only clobber it.
   it('does not refetch after an add lands on a cold store', () => {
-    facade.addItem({ itemId: 'coq', name: 'Coq au vin', description: '', price: 1500 });
+    facade.addItem({ itemId: 'coq', name: 'Coq au vin', description: '', price: 1500, allergens: [] });
     httpCtrl.expectOne('/api/catalogue').flush(null);
 
     facade.load();
@@ -249,6 +249,7 @@ describe('Catalogue', () => {
       description: 'Mijoté au vin rouge',
       price: 1500,
       imageReference: 'v1/vendors/acme/items/coq',
+      allergens: ['celery', 'sulphites'],
     });
 
     const req = httpCtrl.expectOne('/api/catalogue');
@@ -259,6 +260,7 @@ describe('Catalogue', () => {
       description: 'Mijoté au vin rouge',
       price: 1500,
       imageReference: 'v1/vendors/acme/items/coq',
+      allergens: ['celery', 'sulphites'],
     });
     req.flush(null);
 
@@ -266,17 +268,17 @@ describe('Catalogue', () => {
   });
 
   it('shows the added item optimistically on success', () => {
-    facade.addItem({ itemId: 'coq', name: 'Coq au vin', description: 'Mijoté', price: 1500, imageReference: 'v1/vendors/acme/items/coq' });
+    facade.addItem({ itemId: 'coq', name: 'Coq au vin', description: 'Mijoté', price: 1500, imageReference: 'v1/vendors/acme/items/coq', allergens: ['celery'] });
 
     httpCtrl.expectOne('/api/catalogue').flush(null);
 
     expect(facade.items()).toEqual([
-      { itemId: 'coq', name: 'Coq au vin', description: 'Mijoté', price: 1500, imageReference: 'v1/vendors/acme/items/coq' },
+      { itemId: 'coq', name: 'Coq au vin', description: 'Mijoté', price: 1500, imageReference: 'v1/vendors/acme/items/coq', allergens: ['celery'] },
     ]);
   });
 
   it('defaults the optimistic image reference to empty when there is no photo', () => {
-    facade.addItem({ itemId: 'coq', name: 'Coq au vin', description: '', price: 1500 });
+    facade.addItem({ itemId: 'coq', name: 'Coq au vin', description: '', price: 1500, allergens: [] });
 
     httpCtrl.expectOne('/api/catalogue').flush(null);
 
@@ -284,11 +286,11 @@ describe('Catalogue', () => {
   });
 
   it('revises an item, putting its new fields to its item id', () => {
-    facade.reviseItem({ itemId: 'item-1', name: 'Bœuf mode', description: 'Version express', price: 1400 });
+    facade.reviseItem({ itemId: 'item-1', name: 'Bœuf mode', description: 'Version express', price: 1400, allergens: ['eggs'] });
 
     const req = httpCtrl.expectOne('/api/catalogue/item-1');
     expect(req.request.method).toBe('PUT');
-    expect(req.request.body).toEqual({ name: 'Bœuf mode', description: 'Version express', price: 1400 });
+    expect(req.request.body).toEqual({ name: 'Bœuf mode', description: 'Version express', price: 1400, allergens: ['eggs'] });
     req.flush(null);
   });
 
@@ -296,11 +298,11 @@ describe('Catalogue', () => {
     facade.load();
     httpCtrl.expectOne('/api/catalogue').flush({ items });
 
-    facade.reviseItem({ itemId: 'item-1', name: 'Bœuf mode', description: 'Version express', price: 1400 });
+    facade.reviseItem({ itemId: 'item-1', name: 'Bœuf mode', description: 'Version express', price: 1400, allergens: ['eggs'] });
     httpCtrl.expectOne('/api/catalogue/item-1').flush(null);
 
     expect(facade.items()).toEqual([
-      { itemId: 'item-1', name: 'Bœuf mode', description: 'Version express', price: 1400, imageReference: 'v1/items/acme/item-1' },
+      { itemId: 'item-1', name: 'Bœuf mode', description: 'Version express', price: 1400, imageReference: 'v1/items/acme/item-1', allergens: ['eggs'] },
     ]);
   });
 
@@ -384,7 +386,7 @@ describe('Catalogue', () => {
     httpCtrl.expectOne('/api/catalogue/item-1/photo').flush(null);
 
     expect(facade.items()).toEqual([
-      { itemId: 'item-1', name: 'Bœuf bourguignon', description: 'Mijoté maison', price: 1300, imageReference: 'v3/items/acme/item-1' },
+      { itemId: 'item-1', name: 'Bœuf bourguignon', description: 'Mijoté maison', price: 1300, imageReference: 'v3/items/acme/item-1', allergens: ['gluten', 'milk'] },
     ]);
   });
 });

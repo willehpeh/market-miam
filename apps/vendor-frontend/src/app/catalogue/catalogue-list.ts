@@ -87,6 +87,12 @@ const ITEM_THUMBNAIL_TRANSFORMATION = 'c_fill,w_200,h_200,q_auto,f_webp';
                 @if (item.formats) {
                   <p class="font-mono text-xs uppercase tracking-label text-muted">{{ item.formats.length }} formats</p>
                 }
+                @if (item.allergensUndeclared) {
+                  <p class="mt-1 flex items-center gap-1.5 text-xs font-bold text-danger">
+                    <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+                    Allergènes à renseigner
+                  </p>
+                }
               </div>
               <p class="shrink-0 whitespace-pre text-right font-mono text-sm font-bold text-ink">{{ item.priceLabel }}</p>
             </div>
@@ -129,6 +135,7 @@ export class CatalogueList {
           // its own line and the price column stays as narrow as its widest price.
           priceLabel: `dès\n${formatEuros(Math.min(...item.variants.map((v) => v.price)))}`,
           formats: item.variants.map((v) => ({ name: v.name, priceLabel: formatEuros(v.price) })),
+          allergensUndeclared: item.allergens === null,
         }
       : {
           itemId: item.itemId,
@@ -136,6 +143,7 @@ export class CatalogueList {
           imageReference: item.imageReference,
           priceLabel: formatEuros(item.price ?? 0),
           formats: null as { name: string; priceLabel: string }[] | null,
+          allergensUndeclared: item.allergens === null,
         },
     ),
   );

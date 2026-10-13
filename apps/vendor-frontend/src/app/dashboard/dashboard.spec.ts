@@ -74,6 +74,7 @@ const aItem: CatalogueItemView = {
   name: 'Bœuf bourguignon',
   description: 'Mijoté maison',
   price: 1300,
+  allergens: ['gluten', 'milk'],
   imageReference: 'v1/items/acme/item-1',
 };
 

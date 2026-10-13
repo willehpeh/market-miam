@@ -8,6 +8,8 @@ export interface CatalogueItemView {
   price?: number;
   imageReference: string;
   variants?: { name: string; description: string; price: number }[];
+  // Codes of the 14. Null for a dish added before allergens existed: undeclared, not "none".
+  allergens: string[] | null;
 }
 
 export interface CatalogueView {
@@ -21,6 +23,7 @@ export interface NewItem {
   price?: number;
   imageReference?: string;
   variants?: { name: string; description: string; price: number }[];
+  allergens: string[];
 }
 
 export interface ItemRevision {
@@ -29,6 +32,7 @@ export interface ItemRevision {
   description: string;
   price?: number;
   variants?: { name: string; description: string; price: number }[];
+  allergens: string[];
 }
 
 export abstract class Catalogue {

@@ -38,9 +38,15 @@ async function renderThreeFormats() {
   return { view, catalogue };
 }
 
+// Declares none of the 14 as well: a dish cannot be saved until its allergens are declared.
 function fillForm(name: string, price: string) {
   fireEvent.input(screen.getByLabelText(/nom du plat/i), { target: { value: name } });
   fireEvent.input(screen.getByLabelText(/prix/i), { target: { value: price } });
+  declareNoAllergens();
+}
+
+function declareNoAllergens() {
+  fireEvent.click(screen.getByLabelText(/aucun de ces 14 allergènes/i));
 }
 
 describe('AddItem', () => {
@@ -152,6 +158,7 @@ describe('AddItem', () => {
     fireEvent.input(prices[0], { target: { value: '9,50' } });
     fireEvent.input(names[1], { target: { value: 'Grande' } });
     fireEvent.input(prices[1], { target: { value: '16,00' } });
+    declareNoAllergens();
     view.detectChanges();
 
     fireEvent.click(screen.getByRole('button', { name: /ajouter à ma carte/i }));
@@ -160,6 +167,7 @@ describe('AddItem', () => {
       itemId: expect.stringMatching(/.+/),
       name: 'Pizza',
       description: '',
+      allergens: [],
       variants: [
         { name: 'Petite', description: '', price: 950 },
         { name: 'Grande', description: '', price: 1600 },
@@ -311,6 +319,7 @@ describe('AddItem', () => {
       description: '',
       price: 1200,
       imageReference: undefined,
+      allergens: [],
     });
   });
 
@@ -341,6 +350,7 @@ describe('AddItem', () => {
       description: 'Confit effiloché',
       price: 1250,
       imageReference: 'v1/items/acme/coq',
+      allergens: [],
     });
   });
 
@@ -351,6 +361,7 @@ describe('AddItem', () => {
       description: 'Mijoté maison',
       price: 1300,
       imageReference: 'v1/items/acme/item-1',
+      allergens: ['gluten', 'milk'],
     };
 
     async function renderEdit() {
@@ -381,6 +392,7 @@ describe('AddItem', () => {
         name: 'Pizza',
         description: 'Wood-fired',
         imageReference: '',
+        allergens: ['gluten', 'milk'],
         variants: [
           { name: 'Margherita', description: 'tomato', price: 900 },
           { name: 'Pepperoni', description: 'spicy', price: 1200 },
@@ -414,7 +426,7 @@ describe('AddItem', () => {
 
       fireEvent.click(screen.getByRole('button', { name: /enregistrer/i }));
 
-      expect(catalogue.revisedItem).toEqual({ itemId: 'item-1', name: 'Bœuf mode', description: 'Mijoté maison', price: 1400 });
+      expect(catalogue.revisedItem).toEqual({ itemId: 'item-1', name: 'Bœuf mode', description: 'Mijoté maison', price: 1400, allergens: ['gluten', 'milk'] });
       expect(catalogue.addedItem).toBeUndefined();
     });
 
@@ -484,6 +496,148 @@ describe('AddItem', () => {
       fireEvent.click(screen.getByRole('button', { name: /confirmer/i }));
 
       expect(catalogue.revisedItem).toBeUndefined();
+    });
+  });
+
+  // INCO 1169/2011: a dish says which of the 14 it contains. "None" is a declaration the
+  // vendor makes, never what an untouched form means (ALLERGENS-PLAN.md decision 3).
+  describe('declaring allergens', () => {
+    const allergen = (label: RegExp) => screen.getByRole('checkbox', { name: label });
+    const addButton = () => screen.getByRole('button', { name: /ajouter à ma carte/i });
+
+    function fillNameAndPrice() {
+      fireEvent.input(screen.getByLabelText(/nom du plat/i), { target: { value: 'Parmentier de canard' } });
+      fireEvent.input(screen.getByLabelText(/prix/i), { target: { value: '12,00' } });
+    }
+
+    it('offers the 14 allergens of the regulation, and none of them', async () => {
+      await renderForm();
+
+      const group = screen.getByRole('group', { name: /allergènes/i });
+      expect(group.querySelectorAll('input[type="checkbox"]')).toHaveLength(15);
+      expect(allergen(/céréales contenant du gluten/i)).not.toBeChecked();
+      expect(allergen(/anhydride sulfureux et sulfites/i)).not.toBeChecked();
+    });
+
+    it("adds the dish with the allergens ticked, in the regulation's order", async () => {
+      const { view, catalogue } = await renderForm();
+      fillNameAndPrice();
+
+      fireEvent.click(allergen(/^lait$/i));
+      fireEvent.click(allergen(/céréales contenant du gluten/i));
+      view.detectChanges();
+      fireEvent.click(addButton());
+
+      expect(catalogue.addedItem?.allergens).toEqual(['gluten', 'milk']);
+    });
+
+    it('adds the dish as containing none of the 14 when the vendor says so', async () => {
+      const { view, catalogue } = await renderForm();
+      fillNameAndPrice();
+
+      declareNoAllergens();
+      view.detectChanges();
+      fireEvent.click(addButton());
+
+      expect(catalogue.addedItem?.allergens).toEqual([]);
+    });
+
+    it('will not add a dish whose allergens are not declared, and says so', async () => {
+      const { view } = await renderForm();
+      fillNameAndPrice();
+      view.detectChanges();
+
+      expect(addButton()).toBeDisabled();
+      expect(screen.getByText('Indiquez les allergènes du plat.')).toBeVisible();
+    });
+
+    it('clears the ticked allergens when the vendor ticks none', async () => {
+      const { view } = await renderForm();
+      fireEvent.click(allergen(/^œufs$/i));
+      view.detectChanges();
+
+      declareNoAllergens();
+      view.detectChanges();
+
+      expect(allergen(/^œufs$/i)).not.toBeChecked();
+      expect(allergen(/aucun de ces 14 allergènes/i)).toBeChecked();
+    });
+
+    it('stops saying none once the vendor ticks an allergen', async () => {
+      const { view } = await renderForm();
+      declareNoAllergens();
+      view.detectChanges();
+
+      fireEvent.click(allergen(/^moutarde$/i));
+      view.detectChanges();
+
+      expect(allergen(/aucun de ces 14 allergènes/i)).not.toBeChecked();
+      expect(allergen(/^moutarde$/i)).toBeChecked();
+    });
+
+    // Unticking the last box is not a claim that the dish is safe.
+    it('leaves the dish undeclared, not allergen-free, once its last allergen is unticked', async () => {
+      const { view } = await renderForm();
+      fillNameAndPrice();
+      fireEvent.click(allergen(/^soja$/i));
+      view.detectChanges();
+
+      fireEvent.click(allergen(/^soja$/i));
+      view.detectChanges();
+
+      expect(allergen(/aucun de ces 14 allergènes/i)).not.toBeChecked();
+      expect(addButton()).toBeDisabled();
+    });
+
+    describe('on a dish already on the carte', () => {
+      async function renderEditOf(item: CatalogueItemView) {
+        const catalogue = new FakeCatalogueFacade();
+        catalogue.items.set([item]);
+        const view = await render(AddItem, {
+          providers: [
+            provideRouter([]),
+            { provide: CatalogueFacade, useValue: catalogue },
+            { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ itemId: item.itemId }) } } },
+          ],
+        });
+        return { view, catalogue };
+      }
+
+      const dish: CatalogueItemView = {
+        itemId: 'item-1', name: 'Bœuf bourguignon', description: '', price: 1300, imageReference: '', allergens: ['celery', 'sulphites'],
+      };
+
+      it('ticks the allergens it declares', async () => {
+        await renderEditOf(dish);
+
+        expect(allergen(/^céleri$/i)).toBeChecked();
+        expect(allergen(/anhydride sulfureux et sulfites/i)).toBeChecked();
+        expect(allergen(/^lait$/i)).not.toBeChecked();
+      });
+
+      it('ticks none for a dish declared free of the 14', async () => {
+        await renderEditOf({ ...dish, allergens: [] });
+
+        expect(allergen(/aucun de ces 14 allergènes/i)).toBeChecked();
+      });
+
+      // Added before allergens existed: the vendor has to say, the form will not assume.
+      it('asks for the allergens of a dish that has never declared them', async () => {
+        await renderEditOf({ ...dish, allergens: null });
+
+        expect(screen.getByRole('button', { name: /enregistrer/i })).toBeDisabled();
+        expect(screen.getByText('Indiquez les allergènes du plat.')).toBeVisible();
+      });
+
+      it('revises the dish with the allergens as changed', async () => {
+        const { view, catalogue } = await renderEditOf(dish);
+
+        fireEvent.click(allergen(/^céleri$/i));
+        view.detectChanges();
+        fireEvent.click(screen.getByRole('button', { name: /enregistrer/i }));
+
+        expect(catalogue.revisedItem?.allergens).toEqual(['sulphites']);
+      });
     });
   });
 
@@ -578,6 +732,7 @@ describe('AddItem', () => {
       description: 'Mijoté maison',
       price: 1300,
       imageReference: 'v1/items/acme/item-1',
+      allergens: ['gluten', 'milk'],
     };
 
     async function renderCold() {
@@ -636,6 +791,7 @@ describe('AddItem', () => {
         name: 'Bœuf mode',
         description: 'Mijoté maison',
         price: 1300,
+        allergens: ['gluten', 'milk'],
       });
       expect(catalogue.addedItem).toBeUndefined();
     });
@@ -648,6 +804,7 @@ describe('AddItem', () => {
         name: 'Pizza',
         description: 'Wood-fired',
         imageReference: '',
+        allergens: ['gluten', 'milk'],
         variants: [
           { name: 'Margherita', description: 'tomato', price: 900 },
           { name: 'Pepperoni', description: 'spicy', price: 1200 },
