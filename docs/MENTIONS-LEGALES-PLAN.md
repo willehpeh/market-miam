@@ -36,7 +36,7 @@ Each slice is reviewable and committable alone. Deploying is gated by the rollou
 | 6 | Policy A page on the website, and links to it | done |
 | 7 | Storefront: the mentions-légales route, and price wording on the carte | done |
 | 8 | Rollout to the live client | |
-| 9 | Readiness gate: `hasCompleteLegalIdentity()` | |
+| 9 | Readiness gate: `hasCompleteLegalIdentity()` | done |
 
 ### 2. Domain — shipped (`2a13415`)
 
@@ -129,9 +129,8 @@ Each slice is reviewable and committable alone. Deploying is gated by the rollou
   needed: every vendor reaches Auth0 from the app's landing page, whose footer already links
   policy A. That is how it is readable before sign-up.
 - Pushed with 7 (Rollout), so policy A goes live with the mentions légales.
-- **Open:** "Ce qui est obligatoire" says a storefront without legal identity and phone can't be
-  published. That holds only once slice 9's gate ships, and the live client is already published.
-  Either ship 9 before pushing 6, or ask the lawyer about the sentence.
+- "Ce qui est obligatoire" says a storefront without legal identity and phone can't be published.
+  Slice 9 makes that true.
 
 ### 7. Storefront — shipped (`93558b5`, `945206f`, `305ec06`)
 
@@ -157,20 +156,28 @@ Each slice is reviewable and committable alone. Deploying is gated by the rollou
 
 ### 8. Rollout
 
-Deploy 2–7. Neither the footer link nor the route shows anything while `editeur` is `null` (slice 7),
+Deploy 2–9. Neither the footer link nor the route shows anything while `editeur` is `null` (slice 7),
 so 6 and 7 no longer wait for the client's identity. Then ask the live client to fill in the form (the
 dashboard card asks them too), check their live page, and retire slice 7's footer stopgap.
 
 `main` auto-deploys on green CI (`render.yaml`), so deploying is pushing: 2–4 were pushed on
-2026-10-05. 5–7 were committed on 2026-10-13, not pushed.
+2026-10-05. 5–9 were committed on 2026-10-13, not pushed.
 
-Before pushing 6, settle its open sentence ("Ce qui est obligatoire"): ship 9 first, or clear it with
-the lawyer.
+Push 9 with 6, since 9 is what makes policy A's "Ce qui est obligatoire" true.
 
-### 9. Readiness gate
+### 9. Readiness gate — shipped (`1050047`, `7883f7f`)
 
-A fourth contributor, reason `legal`, following ADR 0031's table. It comes last because the live client
-is already published and the gate only bites at publication.
+- `StorefrontPublication` asks `Vendor.hasCompleteLegalIdentity()`, reason `legal` (ADR 0054's row
+  of ADR 0031's table). An identity on record is complete: its value objects checked every field when
+  it was recorded. `PublishStorefrontHandler` loads the `Vendor`.
+- The live client is unaffected: they were published before the gate, and it only applies when publishing.
+- The dev seed registers the demo vendor and gives it a fictional identity (SIRET `12345678900015`,
+  Luhn-valid, unknown to Sirene), or the demo storefront would no longer publish.
+- **Vendor app:** a fourth setup step, "Vos mentions légales", leads to the form and holds back
+  "Publier" until it is done. The dashboard's prompt card from slice 5 now shows on the published
+  home only; before publication, the step asks.
+- This makes policy A's "Ce qui est obligatoire" true for every publication from here on. The live
+  client stays an exception until they fill in the form (Rollout).
 
 ## Not in this plan
 
