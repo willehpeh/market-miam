@@ -49,7 +49,7 @@ Every dish declares which of the 14 major allergens it contains, and the storefr
 | # | Slice | Status |
 |---|---|---|
 | 1 | Domain, read model + HTTP: `Allergens` on add and revise, through to both APIs | done (`4a743a5`) |
-| 2 | Vendor app: checklist in the item form, undeclared items flagged | |
+| 2 | Vendor app: checklist in the item form, undeclared items flagged | done (`ea5179b`) |
 | 3 | Storefront: allergens in the item sheet | |
 | 4 | Rollout: ask the live client to declare every dish | |
 
@@ -78,14 +78,15 @@ Read model + HTTP:
   owns the codes, ADR 0046). `GET /catalogue` returns it.
 - The public storefront's items and market-day menus carry it, since both come from the catalogue view.
 
-### 2. Vendor app
+### 2. Vendor app — shipped (`ea5179b`), not pushed
 
 - Add and revise forms: a checklist of the 14, plus an explicit "Aucun de ces 14 allergènes".
   Ticking it clears the others, and ticking any allergen clears it. Saving is blocked until one or
   the other is chosen, with a reason in the blockers list (as on the other forms).
 - Catalogue list: an undeclared item says "Allergènes à renseigner", so the live client's existing
   dishes are easy to find.
-- Labels live in the frontend, keyed by code.
+- Labels live in the frontend, keyed by code (`catalogue/allergens.ts`).
+- Unticking the last allergen goes back to undeclared, so "none" is only ever the explicit box.
 
 ### 3. Storefront
 
