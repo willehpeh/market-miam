@@ -6,7 +6,7 @@ import { Meta, Title } from '@angular/platform-browser';
 import { Observable, of } from 'rxjs';
 import { appRoutes } from './app.routes';
 import { StorefrontHost } from './core/storefront-host';
-import { CustomerStorefront } from './storefront/customer-storefront';
+import { CustomerStorefront, Editeur } from './storefront/customer-storefront';
 
 const ORIGIN = 'https://acme.marketmiam.fr';
 
@@ -25,6 +25,19 @@ const ACME: CustomerStorefront = {
   upcomingMarkets: [
     { date: '2026-06-18', weekday: 'THU', marketName: 'Marché Saint-Antoine', startTime: '08:00', endTime: '13:30', street: 'Quai Saint-Antoine', postalCode: '69002', town: 'Lyon', cancelled: false, inProgress: false, items: [], soldOutItemIds: [] },
   ],
+};
+
+const ACME_EDITEUR: Editeur = {
+  legalName: 'Acme SARL',
+  address: '1 quai Saint-Antoine, 69002 Lyon',
+  siret: '73282932000074',
+  contactEmail: 'contact@acme.fr',
+  phone: '0102030405',
+  publicationDirector: 'Marie Dupont',
+  vatRegime: 'assujetti',
+  vatNumber: 'FR44732829320',
+  company: null,
+  mediator: null,
 };
 
 // Answering from the backend rather than from HttpTestingController: the feed fetches on
@@ -83,26 +96,25 @@ describe('storefront routes', () => {
   });
 
   it('renders the mentions légales at /mentions-legales, at their own canonical address', async () => {
-    api.body = {
-      ...ACME,
-      editeur: {
-        legalName: 'Acme SARL',
-        address: '1 quai Saint-Antoine, 69002 Lyon',
-        siret: '73282932000074',
-        contactEmail: 'contact@acme.fr',
-        phone: '0102030405',
-        publicationDirector: 'Marie Dupont',
-        vatRegime: 'assujetti',
-        vatNumber: 'FR44732829320',
-        company: null,
-        mediator: null,
-      },
-    } as CustomerStorefront;
+    api.body = { ...ACME, editeur: ACME_EDITEUR };
     const page = await navigateTo('/mentions-legales');
 
     expect(page.textContent).toContain('Mentions légales');
     expect(page.textContent).toContain('Directeur de la publication');
     expect(canonical()).toBe(`${ORIGIN}/mentions-legales`);
+  });
+
+  it.each(['/', '/carte'])('links %s to the mentions légales once the vendor has provided them', async (url) => {
+    api.body = { ...ACME, editeur: ACME_EDITEUR };
+    const page = await navigateTo(url);
+
+    expect(page.querySelector('a[href="/mentions-legales"]')).not.toBeNull();
+  });
+
+  it.each(['/', '/carte'])('offers %s no link to mentions légales the vendor has not provided', async (url) => {
+    const page = await navigateTo(url);
+
+    expect(page.querySelector('a[href="/mentions-legales"]')).toBeNull();
   });
 
   it('renders the carte at /carte', async () => {

@@ -46,7 +46,7 @@ import { StorefrontFooter } from '../layout/storefront-footer';
 
             <app-item-sheet />
 
-            <app-storefront-footer [name]="storefront.name" [phone]="storefront.phone" />
+            <app-storefront-footer [name]="storefront.name" [phone]="storefront.phone" [mentionsLegales]="!!storefront.editeur" />
           </main>
         }
         @case ('coming-soon') {

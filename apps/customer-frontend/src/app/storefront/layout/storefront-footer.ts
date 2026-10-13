@@ -1,9 +1,11 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+import { RouterLink } from '@angular/router';
 
 @Component({
   selector: 'app-storefront-footer',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'contents' },
+  imports: [RouterLink],
   template: `
     <footer class="mt-4 border-t border-line px-5 py-8 lg:px-8">
       <p class="text-xl font-bold text-ink">{{ name() }}</p>
@@ -33,6 +35,13 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
         >
           Logiciel libre
         </a>
+        <!-- ponytail: hidden while the vendor has no legal identity, so the live client's page
+             never links an empty notice. Retire once they have provided theirs: from then on
+             every published storefront has one, and slice 9's gate keeps it so. -->
+        @if (mentionsLegales()) {
+          ·
+          <a class="text-brand" routerLink="/mentions-legales" queryParamsHandling="preserve">Mentions légales</a>
+        }
       </p>
     </footer>
   `,
@@ -40,4 +49,5 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 export class StorefrontFooter {
   readonly name = input.required<string>();
   readonly phone = input.required<string>();
+  readonly mentionsLegales = input.required<boolean>();
 }
