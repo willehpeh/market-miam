@@ -7,8 +7,10 @@ import {
   EditStorefrontInformation,
   InMemorySubdomainRegistry,
   OpenStorefront,
+  ProvideVendorLegalIdentity,
   PublishStorefront,
   RegisterMarketSchedule,
+  RegisterVendor,
   SetStorefrontCoverPhoto
 } from '@market-miam/market-days';
 import { DEV_FALLBACK_VENDOR_ID } from '@market-miam/auth';
@@ -25,8 +27,9 @@ const DEV_SUBDOMAIN = 'dev';
 // without this there is no in-app way to make the customer storefront return
 // anything on the memory profile. Dev-only — main.ts calls it under
 // NODE_ENV=development; production (postgres) never runs it.
-// Opens the storefront directly rather than registering a vendor, so the
-// OpensStorefronts processor never fires. The closing drain() is what projects the
+// Opens the storefront directly, then registers the vendor only to give it the legal
+// identity publication requires; the OpensStorefronts processor that registering
+// wakes finds the storefront already open. The closing drain() is what projects the
 // seed when there is no poller (the test harness disables polling); under dev's
 // live poller it contends per event and yields rather than failing the boot.
 export async function seedDev(app: INestApplication): Promise<void> {
@@ -59,6 +62,12 @@ export async function seedDev(app: INestApplication): Promise<void> {
   await commands.execute(new DeclareAbsence({ vendorId: DEMO_VENDOR, scheduleId: 'demo-schedule', from: absentSaturday, to: absentSaturday }));
   // Subdomain must exist before publishing — it's now a publication requirement (step 14).
   await registry.register(DEMO_SUBDOMAIN, DEMO_VENDOR);
+  // So is a legal identity (ADR 0054). Fictional, with a SIRET that passes Luhn but names no one.
+  await commands.execute(new RegisterVendor(DEMO_VENDOR, new Date().toISOString(), 'demo@marketmiam.fr'));
+  await commands.execute(new ProvideVendorLegalIdentity(
+    DEMO_VENDOR, '12345678900015', 'Démo Traiteur', '1 place du Marché, 69004 Lyon', 'demo@marketmiam.fr',
+    '04 00 00 00 00', 'franchise', null, null, null, null, null, null,
+  ));
   await commands.execute(new PublishStorefront(DEMO_VENDOR));
   await subscriptions.drain();
 }

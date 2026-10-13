@@ -69,6 +69,11 @@ export class Vendor extends Aggregate {
     this.raise(event);
   }
 
+  // Complete once provided: the value objects checked every field when it was recorded.
+  hasCompleteLegalIdentity(): boolean {
+    return this._legalIdentity.isProvided();
+  }
+
   private assertNotErased() {
     if (this._status.isErased()) {
       throw new VendorErasedError();
