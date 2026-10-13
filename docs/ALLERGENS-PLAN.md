@@ -48,12 +48,12 @@ Every dish declares which of the 14 major allergens it contains, and the storefr
 
 | # | Slice | Status |
 |---|---|---|
-| 1 | Domain, read model + HTTP: `Allergens` on add and revise, through to both APIs | |
+| 1 | Domain, read model + HTTP: `Allergens` on add and revise, through to both APIs | done (`4a743a5`) |
 | 2 | Vendor app: checklist in the item form, undeclared items flagged | |
 | 3 | Storefront: allergens in the item sheet | |
 | 4 | Rollout: ask the live client to declare every dish | |
 
-### 1. Domain, read model + HTTP
+### 1. Domain, read model + HTTP — shipped (`4a743a5`), not pushed
 
 Built as one slice, outside-in from the API spec: once the commands require `allergens`, the
 controller must require it in the body in the same change. Defaulting it to `[]` there would declare
@@ -95,7 +95,7 @@ Read model + HTTP:
 
 ### 4. Rollout
 
-Push 1–3 together: once slice 1 requires `allergens`, the vendor app cannot save a dish until slice 2. Ask the live
+Push 1–3 together. **Do not push slice 1 alone:** once slice 1 requires `allergens`, the vendor app cannot save a dish until slice 2. Ask the live
 client to declare every dish. The catalogue flags those left.
 
 ## Not in this plan
