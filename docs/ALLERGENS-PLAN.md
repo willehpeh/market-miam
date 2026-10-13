@@ -50,7 +50,7 @@ Every dish declares which of the 14 major allergens it contains, and the storefr
 |---|---|---|
 | 1 | Domain, read model + HTTP: `Allergens` on add and revise, through to both APIs | done (`4a743a5`) |
 | 2 | Vendor app: checklist in the item form, undeclared items flagged | done (`ea5179b`) |
-| 3 | Storefront: allergens in the item sheet | |
+| 3 | Storefront: allergens in the item sheet | done (`893d3f9`) |
 | 4 | Rollout: ask the live client to declare every dish | |
 
 ### 1. Domain, read model + HTTP — shipped (`4a743a5`), not pushed
@@ -88,10 +88,11 @@ Read model + HTTP:
 - Labels live in the frontend, keyed by code (`catalogue/allergens.ts`).
 - Unticking the last allergen goes back to undeclared, so "none" is only ever the explicit box.
 
-### 3. Storefront
+### 3. Storefront — shipped (`893d3f9`), not pushed
 
-- Item sheet: "Allergènes : Lait, Œufs" (labels in Annex II order), or "Aucun des 14 allergènes
-  majeurs", or, undeclared, "Allergènes : renseignez-vous auprès du traiteur".
+- Item sheet, under an "Allergènes" heading: the names in Annex II order ("céleri, lait"), or
+  "Aucun des 14 allergènes majeurs", or, undeclared, "Renseignez-vous auprès du traiteur". The view
+  model builds the line, so the carte and the market-day menu read one rule.
 - Cards stay as they are; the sheet is where a dish's detail lives.
 
 ### 4. Rollout
