@@ -5,6 +5,7 @@ import { provideNotifications } from './core/notifications/notifications.provide
 import { provideAuth } from './core/auth/auth.providers';
 import { provideVendor } from './vendor/vendor.providers';
 import { provideStorefront } from './storefront/storefront.providers';
+import { provideLegalIdentity } from './legal-identity/legal-identity.providers';
 import { provideCatalogue } from './catalogue/catalogue.providers';
 import { provideMarketSchedules } from './markets/market-schedule.providers';
 import { provideMarketDays } from './market-days/market-day.providers';
@@ -29,6 +30,7 @@ export const appConfig: ApplicationConfig = {
     provideAuth(),
     provideVendor(),
     provideStorefront(),
+    provideLegalIdentity(),
     provideCatalogue(),
     provideMarketSchedules(),
     provideMarketDays(),
