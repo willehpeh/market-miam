@@ -48,13 +48,18 @@ Every dish declares which of the 14 major allergens it contains, and the storefr
 
 | # | Slice | Status |
 |---|---|---|
-| 1 | Domain: `Allergens` on add and revise | |
-| 2 | Read model + HTTP: catalogue view, vendor API, public storefront | |
-| 3 | Vendor app: checklist in the item form, undeclared items flagged | |
-| 4 | Storefront: allergens in the item sheet | |
-| 5 | Rollout: ask the live client to declare every dish | |
+| 1 | Domain, read model + HTTP: `Allergens` on add and revise, through to both APIs | |
+| 2 | Vendor app: checklist in the item form, undeclared items flagged | |
+| 3 | Storefront: allergens in the item sheet | |
+| 4 | Rollout: ask the live client to declare every dish | |
 
-### 1. Domain
+### 1. Domain, read model + HTTP
+
+Built as one slice, outside-in from the API spec: once the commands require `allergens`, the
+controller must require it in the body in the same change. Defaulting it to `[]` there would declare
+"none of the 14" for every dish saved without a choice. The dev seed declares its demo dishes.
+
+Domain:
 
 - `Allergens` value object: a set of codes from the 14. Rejects an unknown code (`DomainError`),
   dedupes, keeps a stable order. Empty is valid.
@@ -64,7 +69,7 @@ Every dish declares which of the 14 major allergens it contains, and the storefr
   revision still appends nothing, and a revision that only declares allergens appends `ItemRevised`.
 - Item identifiers stay `Item` in code (dish in prose).
 
-### 2. Read model + HTTP
+Read model + HTTP:
 
 - Migration 0023: `catalogue_view_items.allergens jsonb`, `NULL` = undeclared. Existing rows are
   already correct, so no rebuild.
@@ -73,7 +78,7 @@ Every dish declares which of the 14 major allergens it contains, and the storefr
   owns the codes, ADR 0046). `GET /catalogue` returns it.
 - The public storefront's items and market-day menus carry it, since both come from the catalogue view.
 
-### 3. Vendor app
+### 2. Vendor app
 
 - Add and revise forms: a checklist of the 14, plus an explicit "Aucun de ces 14 allergènes".
   Ticking it clears the others, and ticking any allergen clears it. Saving is blocked until one or
@@ -82,15 +87,15 @@ Every dish declares which of the 14 major allergens it contains, and the storefr
   dishes are easy to find.
 - Labels live in the frontend, keyed by code.
 
-### 4. Storefront
+### 3. Storefront
 
 - Item sheet: "Allergènes : Lait, Œufs" (labels in Annex II order), or "Aucun des 14 allergènes
   majeurs", or, undeclared, "Allergènes : renseignez-vous auprès du traiteur".
 - Cards stay as they are; the sheet is where a dish's detail lives.
 
-### 5. Rollout
+### 4. Rollout
 
-Push 1–4 together, so no state shows the form without the storefront or the reverse. Ask the live
+Push 1–3 together: once slice 1 requires `allergens`, the vendor app cannot save a dish until slice 2. Ask the live
 client to declare every dish. The catalogue flags those left.
 
 ## Not in this plan
