@@ -139,6 +139,9 @@ import { DragToDismiss } from '../../core/drag-to-dismiss';
               }
             </ul>
           }
+          <!-- One line for the whole dish, every format included (ALLERGENS-PLAN.md decision 1). -->
+          <p class="field-label mt-5 border-t border-line pt-4">Allergènes</p>
+          <p class="mt-1 text-base text-ink-soft">{{ item.allergens }}</p>
         </div>
       }
     </dialog>

@@ -19,12 +19,13 @@ const ACME: Extract<StorefrontViewModel, { status: 'published' }> = {
       itemId: 'item-1',
       name: 'Bœuf bourguignon',
       description: 'Mijoté 7 heures',
+      allergens: '',
       photo: {
         src: 'https://cdn.test/photo/item-1',
         srcset: 'https://cdn.test/photo/item-1 800w, https://cdn.test/photo/item-1-big 1600w',
       },
     },
-    { itemId: 'item-2', name: 'Tarte tatin', description: 'Aux pommes', photo: null },
+    { itemId: 'item-2', name: 'Tarte tatin', description: 'Aux pommes', allergens: '', photo: null },
   ],
   upcomingMarkets: [],
 };
@@ -91,6 +92,18 @@ describe('CartePage', () => {
     expect(dialog.querySelector('.fa-utensils')).not.toBeNull();
   });
 
+  // INCO 1169/2011 art. 14: before anyone buys, the dish says what it contains.
+  it("says what the dish contains in its sheet, under Allergènes", () => {
+    const fixture = render({ ...ACME, items: [{ ...ACME.items[0], allergens: 'céleri, lait' }] });
+
+    (fixture.nativeElement.querySelector('[data-item="item-1"]') as HTMLElement).click();
+    fixture.detectChanges();
+
+    const dialog = fixture.nativeElement.querySelector('dialog') as HTMLDialogElement;
+    expect(dialog.textContent).toContain('Allergènes');
+    expect(dialog.textContent).toContain('céleri, lait');
+  });
+
   // Most visitors arrive from a search result with nothing to go back to, so the way home
   // is named after the vendor rather than being a "retour".
   it('leads back to the storefront under the vendor name', () => {
@@ -131,6 +144,7 @@ describe('CartePage', () => {
             { name: 'Margherita', description: 'tomato & basil' },
             { name: 'Pepperoni', description: 'spicy' },
           ],
+          allergens: '',
           photo: null,
         },
       ],
@@ -160,6 +174,7 @@ describe('CartePage', () => {
           name: 'Pizza',
           description: 'Pâte maturée 48 h.\n\nFour à bois.',
           variants: [{ name: 'Margherita', description: '250 g\npour une personne' }],
+          allergens: '',
           photo: null,
         },
       ],

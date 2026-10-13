@@ -20,6 +20,7 @@ const ACME: StorefrontViewModel = {
       itemId: 'item-1',
       name: 'Bœuf bourguignon',
       description: 'Mijoté 7 heures',
+      allergens: '',
       photo: {
         src: 'https://cdn.test/photo/item-1',
         srcset: 'https://cdn.test/photo/item-1 800w, https://cdn.test/photo/item-1-big 1600w',
@@ -29,6 +30,7 @@ const ACME: StorefrontViewModel = {
       itemId: 'item-2',
       name: 'Tarte tatin',
       description: 'Aux pommes',
+      allergens: '',
       photo: null,
     },
   ],

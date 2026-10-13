@@ -19,8 +19,8 @@ const ACME: CustomerStorefront = {
   coverPhoto: '',
   cartePricesVisible: true,
   items: [
-    { itemId: 'item-1', name: 'Bœuf bourguignon', description: 'Mijoté 7 heures', price: 1300, imageReference: '' },
-    { itemId: 'item-2', name: 'Tarte tatin', description: 'Aux pommes', price: 600, imageReference: '' },
+    { itemId: 'item-1', name: 'Bœuf bourguignon', description: 'Mijoté 7 heures', price: 1300, imageReference: '', allergens: null },
+    { itemId: 'item-2', name: 'Tarte tatin', description: 'Aux pommes', price: 600, imageReference: '', allergens: null },
   ],
   upcomingMarkets: [
     { date: '2026-06-18', weekday: 'THU', marketName: 'Marché Saint-Antoine', startTime: '08:00', endTime: '13:30', street: 'Quai Saint-Antoine', postalCode: '69002', town: 'Lyon', cancelled: false, inProgress: false, items: [], soldOutItemIds: [] },

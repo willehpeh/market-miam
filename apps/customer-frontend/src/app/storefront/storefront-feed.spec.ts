@@ -18,7 +18,7 @@ const day = (overrides: Partial<UpcomingMarket> = {}): UpcomingMarket => ({
   town: 'Lyon',
   cancelled: false,
   inProgress: true,
-  items: [{ itemId: 'item-1', name: 'Bœuf bourguignon', description: '', price: 1300, imageReference: '' }],
+  items: [{ itemId: 'item-1', name: 'Bœuf bourguignon', description: '', price: 1300, imageReference: '', allergens: null }],
   soldOutItemIds: [],
   ...overrides,
 });
