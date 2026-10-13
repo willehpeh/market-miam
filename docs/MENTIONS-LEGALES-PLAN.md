@@ -124,8 +124,10 @@ Each slice is reviewable and committable alone. Deploying is gated by the rollou
   `layouts/Legal.astro`. `mentions-legales` renders the same text as before.
 - Linked from the vendor app's footer ("Confidentialité", signed in or not) and from the
   legal-identity form.
-- **Not done, manual:** set `https://marketmiam.fr/confidentialite-traiteurs` as Auth0 Universal
-  Login's privacy-policy URL. The tenant is `willalexander.eu.auth0.com`.
+- **No Auth0 step.** New Universal Login, which passwordless uses, has no privacy-policy URL field.
+  Its workarounds are Page Templates, Forms for Actions or going back to Classic Login, and none is
+  needed: every vendor reaches Auth0 from the app's landing page, whose footer already links
+  policy A. That is how it is readable before sign-up.
 - **Pushing is gated like 7** (Rollout): policy A goes live with the mentions légales.
 - **Open:** "Ce qui est obligatoire" says a storefront without legal identity and phone can't be
   published. That holds only once slice 9's gate ships, and the live client is already published.
