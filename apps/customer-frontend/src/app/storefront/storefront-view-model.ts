@@ -1,5 +1,5 @@
 import { environment } from '../../environments/environment';
-import { CustomerStorefront } from './customer-storefront';
+import { CustomerStorefront, Editeur } from './customer-storefront';
 import { CatalogueItem } from './items/catalogue-item';
 import { UpcomingMarket } from './markets/upcoming-market';
 
@@ -50,6 +50,7 @@ export type StorefrontViewModel =
       socialImageUrl: string | null;
       items: ItemViewModel[];
       upcomingMarkets: MarketViewModel[];
+      editeur: Editeur | null;
     }
   | {
       status: 'coming-soon';
@@ -72,6 +73,7 @@ export function toViewModel(storefront: CustomerStorefront): StorefrontViewModel
     // read it. That card is where the trip gets decided — at home, before setting out,
     // which is exactly when a price is worth knowing.
     upcomingMarkets: storefront.upcomingMarkets.map((market, index) => toMarketViewModel(market, index === 0)),
+    editeur: storefront.editeur,
   };
 }
 

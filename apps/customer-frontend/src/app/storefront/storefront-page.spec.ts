@@ -8,6 +8,7 @@ import { StorefrontViewModel } from './storefront-view-model';
 
 const ACME: StorefrontViewModel = {
   status: 'published',
+  editeur: null,
   name: 'Acme Bakery',
   description: 'Fresh bread daily',
   phone: '0102030405',

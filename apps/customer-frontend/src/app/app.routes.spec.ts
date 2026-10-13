@@ -12,6 +12,7 @@ const ORIGIN = 'https://acme.marketmiam.fr';
 
 const ACME: CustomerStorefront = {
   status: 'published',
+  editeur: null,
   name: 'Acme Bakery',
   description: 'Fresh bread daily',
   phone: '0102030405',
@@ -30,10 +31,11 @@ const ACME: CustomerStorefront = {
 // its own schedule, so flushing it by hand means racing the resource.
 class FakeApi implements HttpBackend {
   readonly fetched: string[] = [];
+  body: CustomerStorefront = ACME;
 
   handle(request: HttpRequest<unknown>): Observable<HttpEvent<unknown>> {
     this.fetched.push(request.url);
-    return of(new HttpResponse({ body: ACME }));
+    return of(new HttpResponse({ body: this.body }));
   }
 }
 
@@ -53,6 +55,7 @@ describe('storefront routes', () => {
       ],
     });
     api.fetched.length = 0;
+    api.body = ACME;
     // One jsdom document serves the whole file, so a title set by an earlier test outlives it.
     TestBed.inject(Title).setTitle('');
     harness = await RouterTestingHarness.create();
@@ -77,6 +80,29 @@ describe('storefront routes', () => {
 
     expect(page.textContent).toContain('Acme Bakery');
     expect(page.textContent).toContain('Prochain marché');
+  });
+
+  it('renders the mentions légales at /mentions-legales, at their own canonical address', async () => {
+    api.body = {
+      ...ACME,
+      editeur: {
+        legalName: 'Acme SARL',
+        address: '1 quai Saint-Antoine, 69002 Lyon',
+        siret: '73282932000074',
+        contactEmail: 'contact@acme.fr',
+        phone: '0102030405',
+        publicationDirector: 'Marie Dupont',
+        vatRegime: 'assujetti',
+        vatNumber: 'FR44732829320',
+        company: null,
+        mediator: null,
+      },
+    } as CustomerStorefront;
+    const page = await navigateTo('/mentions-legales');
+
+    expect(page.textContent).toContain('Mentions légales');
+    expect(page.textContent).toContain('Directeur de la publication');
+    expect(canonical()).toBe(`${ORIGIN}/mentions-legales`);
   });
 
   it('renders the carte at /carte', async () => {

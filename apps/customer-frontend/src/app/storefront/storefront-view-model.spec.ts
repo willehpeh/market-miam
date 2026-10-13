@@ -20,6 +20,7 @@ const market = (date: string, marketName: string, items: Market['items']): Marke
 
 const withMarkets = (upcomingMarkets: Market[]): CustomerStorefront => ({
   status: 'published',
+  editeur: null,
   name: 'Chez Test',
   description: '',
   phone: '',
@@ -29,12 +30,38 @@ const withMarkets = (upcomingMarkets: Market[]): CustomerStorefront => ({
   upcomingMarkets,
 });
 
+const EDITEUR = {
+  legalName: 'Chez Marie SARL',
+  address: '12 rue des Halles, 92330 Sceaux',
+  siret: '73282932000074',
+  contactEmail: 'contact@chez-marie.fr',
+  phone: '06 12 34 56 78',
+  publicationDirector: 'Marie Dupont',
+  vatRegime: 'franchise',
+  vatNumber: null,
+  company: { legalForm: 'SARL', shareCapital: '5 000 €', registryCity: 'Nanterre', siren: '732829320' },
+  mediator: { name: 'CM2C', url: 'https://www.cm2c.net' },
+};
+
 describe('toViewModel', () => {
+  it("carries the vendor's éditeur block for the mentions légales", () => {
+    const view = toViewModel({ ...withMarkets([]), editeur: EDITEUR } as CustomerStorefront);
+
+    expect(view).toMatchObject({ editeur: EDITEUR });
+  });
+
+  it('carries no éditeur block until the vendor provides one', () => {
+    const view = toViewModel(withMarkets([]));
+
+    expect(view).toMatchObject({ editeur: null });
+  });
+
   // The vendor's choice, and they are opted in. A carte is tied to no market, so the figure
   // it names is the catalogue's — what a dish costs before any market's own list revises it.
   it('prices a carte item when the vendor shows carte prices', () => {
     const storefront: CustomerStorefront = {
       status: 'published',
+      editeur: null,
       name: 'Chez Test',
       description: '',
       phone: '',
@@ -52,6 +79,7 @@ describe('toViewModel', () => {
   it('gives a carte item no price when the vendor has hidden them', () => {
     const storefront: CustomerStorefront = {
       status: 'published',
+      editeur: null,
       name: 'Chez Test',
       description: '',
       phone: '',
@@ -72,6 +100,7 @@ describe('toViewModel', () => {
   it('builds a single srcset ladder per item photo, shared by the card and the sheet', () => {
     const storefront: CustomerStorefront = {
       status: 'published',
+      editeur: null,
       name: 'Chez Test',
       description: '',
       phone: '',
@@ -99,6 +128,7 @@ describe('toViewModel', () => {
   it('prices every variant of a carte item when prices are shown', () => {
     const storefront: CustomerStorefront = {
       status: 'published',
+      editeur: null,
       name: 'Chez Test',
       description: '',
       phone: '',
@@ -132,6 +162,7 @@ describe('toViewModel', () => {
   it('maps each variant of a carte item, pricing none of them when prices are hidden', () => {
     const storefront: CustomerStorefront = {
       status: 'published',
+      editeur: null,
       name: 'Chez Test',
       description: '',
       phone: '',
@@ -168,6 +199,7 @@ describe('toViewModel', () => {
   it('prices a market day\'s menu while the market is trading', () => {
     const storefront: CustomerStorefront = {
       status: 'published',
+      editeur: null,
       name: 'Chez Test',
       description: '',
       phone: '',

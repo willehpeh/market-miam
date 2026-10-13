@@ -25,6 +25,7 @@ const day = (overrides: Partial<UpcomingMarket> = {}): UpcomingMarket => ({
 
 const dto = (...upcomingMarkets: UpcomingMarket[]): PublishedCustomerStorefront => ({
   status: 'published',
+  editeur: null,
   name: 'Acme Bakery',
   description: '',
   phone: '',
