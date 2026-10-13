@@ -1,0 +1,144 @@
+---
+import Base from './Base.astro';
+import { EDITEUR } from '../editeur';
+
+interface Props {
+  title: string;
+  description: string;
+}
+
+const { title, description } = Astro.props;
+---
+
+<Base title={title} description={description}>
+  <header class="bar">
+    <a class="wordmark" href="/">
+      <img src="/logo.webp" alt="Market Miam" width="160" height="25" />
+    </a>
+  </header>
+
+  <main class="wrap legal">
+    <slot />
+  </main>
+
+  <footer class="foot">
+    <p><a href="/">← Retour à l’accueil</a></p>
+    <p><a href={`mailto:${EDITEUR.email}`}>{EDITEUR.email}</a></p>
+  </footer>
+</Base>
+
+<style>
+  .wrap {
+    max-width: 62rem;
+    margin-inline: auto;
+    padding-inline: 1.5rem;
+  }
+
+  .bar {
+    display: flex;
+    align-items: center;
+    max-width: 62rem;
+    margin-inline: auto;
+    padding: 1.25rem 1.5rem;
+  }
+
+  .wordmark {
+    display: block;
+    line-height: 0;
+  }
+
+  .legal {
+    padding-block: clamp(2rem, 6vw, 3.5rem);
+    max-width: 44rem;
+  }
+
+  .legal :global(h1) {
+    font-size: clamp(1.8rem, 4.5vw, 2.4rem);
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+  }
+
+  .legal :global(h1.second) {
+    margin-top: 3.5rem;
+    padding-top: 2.5rem;
+    border-top: 1px solid var(--mm-line);
+  }
+
+  .legal :global(h2) {
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin-top: 2rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .legal :global(p),
+  .legal :global(li) {
+    color: var(--mm-ink-soft);
+    max-width: 58ch;
+  }
+
+  .legal :global(p) {
+    margin-bottom: 0.75rem;
+  }
+
+  .legal :global(ul) {
+    padding-left: 1.25rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .legal :global(li) {
+    margin-bottom: 0.4rem;
+  }
+
+  /* A three-column table outgrows a phone: it scrolls inside its own box, never the page. */
+  .legal :global(.table) {
+    overflow-x: auto;
+    margin-bottom: 0.75rem;
+  }
+
+  .legal :global(table) {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+    color: var(--mm-ink-soft);
+  }
+
+  .legal :global(th),
+  .legal :global(td) {
+    text-align: left;
+    vertical-align: top;
+    padding: 0.5rem 0.75rem 0.5rem 0;
+    border-bottom: 1px solid var(--mm-line);
+  }
+
+  .legal :global(th) {
+    color: var(--mm-ink);
+    font-weight: 700;
+  }
+
+  .legal :global(code) {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.9em;
+  }
+
+  .legal :global(a) {
+    color: var(--mm-brand-deep);
+  }
+
+  .foot {
+    max-width: 62rem;
+    margin-inline: auto;
+    padding: 2.5rem 1.5rem 3.5rem;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 0.5rem 1.5rem;
+    font-size: 0.9rem;
+    color: var(--mm-muted);
+  }
+
+  .foot a {
+    color: var(--mm-brand-deep);
+  }
+</style>
