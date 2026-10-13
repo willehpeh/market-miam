@@ -4,6 +4,7 @@ export * from './item-description';
 export * from './price';
 export { InvalidPriceError } from '../errors/invalid-price.error';
 export { Item } from './item';
+export { Allergens } from './allergens';
 export { Pricing } from './pricing';
 export type { MarketPrice } from './pricing';
 export { Variant } from './variant';

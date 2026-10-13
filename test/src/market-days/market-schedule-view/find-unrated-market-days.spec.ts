@@ -33,9 +33,9 @@ describe('FindUnratedMarketDays', () => {
     menus = new InMemoryMarketDayViews();
     catalogues = new InMemoryCatalogueViews();
     await catalogues.addItemToCatalogue(
-      { itemId: 'item-1', name: 'Bourguignon', description: '', price: 1300, imageReference: '' }, 'vendor-id');
+      { itemId: 'item-1', name: 'Bourguignon', description: '', price: 1300, imageReference: '', allergens: null }, 'vendor-id');
     await catalogues.addItemToCatalogue(
-      { itemId: 'item-2', name: 'Tatin', description: '', price: 700, imageReference: '' }, 'vendor-id');
+      { itemId: 'item-2', name: 'Tatin', description: '', price: 700, imageReference: '', allergens: null }, 'vendor-id');
   });
 
   // The Saturday before: 2024-02-10 is a Saturday, so 2024-02-17 is the following one.

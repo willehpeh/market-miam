@@ -8,6 +8,7 @@ export class TestReviseItem {
       name: 'Revised Name',
       description: 'Revised Description',
       price: 750,
+      allergens: ['gluten', 'milk'],
     });
   }
 
@@ -19,6 +20,7 @@ export class TestReviseItem {
       name: overrides.name ?? defaults.name,
       description: overrides.description ?? defaults.description,
       price: overrides.price ?? defaults.price,
+      allergens: overrides.allergens ?? defaults.allergens,
     });
   }
 
@@ -28,6 +30,7 @@ export class TestReviseItem {
       vendorId: 'vendor-id',
       name: 'Revised Name',
       description: 'Revised Description',
+      allergens: ['gluten', 'milk'],
       variants,
     });
   }

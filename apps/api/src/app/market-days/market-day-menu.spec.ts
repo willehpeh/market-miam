@@ -15,6 +15,7 @@ const item = {
   description: 'Mijoté maison',
   price: 1300,
   imageReference: 'v1/dishes/acme-bakery/item-1',
+  allergens: [],
 };
 
 const schedule = {

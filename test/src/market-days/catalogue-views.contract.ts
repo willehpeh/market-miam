@@ -9,6 +9,7 @@ const item = (overrides: Partial<CatalogueViewItem> = {}): CatalogueViewItem => 
   description: 'Mijoté maison',
   price: 1300,
   imageReference: 'v1/dishes/item-1',
+  allergens: ['gluten', 'milk'],
   ...overrides,
 });
 
@@ -18,6 +19,21 @@ export function catalogueViewsContract(name: string, create: () => Store): void 
 
     beforeEach(() => {
       store = create();
+    });
+
+    // Null is undeclared, an item from before allergens existed; [] is a declared "none".
+    it.each([
+      { allergens: null, what: 'an undeclared item' },
+      { allergens: [], what: 'an item declared free of the 14' },
+    ])('round-trips $what', async ({ allergens }) => {
+      await store.addItemToCatalogue(item({ allergens }), 'v1');
+      expect(await store.forVendor('v1')).toEqual({ items: [item({ allergens })] });
+    });
+
+    it('revises the allergens an item declares', async () => {
+      await store.addItemToCatalogue(item({ allergens: null }), 'v1');
+      await store.reviseItem('item-1', { name: 'Bœuf bourguignon', description: 'Mijoté maison', price: 1300, allergens: ['celery'] }, 'v1');
+      expect(await store.forVendor('v1')).toEqual({ items: [item({ allergens: ['celery'] })] });
     });
 
     it('has an empty catalogue for an unknown vendor', async () => {
@@ -35,6 +51,7 @@ export function catalogueViewsContract(name: string, create: () => Store): void 
         name: 'Pizza',
         description: 'Wood-fired',
         imageReference: 'v1/dishes/pizza',
+        allergens: ['gluten'],
         variants: [
           { name: 'Margherita', description: '', price: 900 },
           { name: 'Pepperoni', description: 'spicy', price: 1200 },
@@ -100,7 +117,7 @@ export function catalogueViewsContract(name: string, create: () => Store): void 
 
     it('revises an item name, description and price, keeping its image', async () => {
       await store.addItemToCatalogue(item(), 'v1');
-      await store.reviseItem('item-1', { name: 'Poulet rôti', description: 'Fermier', price: 1600 }, 'v1');
+      await store.reviseItem('item-1', { allergens: ['gluten', 'milk'], name: 'Poulet rôti', description: 'Fermier', price: 1600 }, 'v1');
       expect(await store.forVendor('v1')).toEqual({
         items: [item({ name: 'Poulet rôti', description: 'Fermier', price: 1600 })],
       });
@@ -109,14 +126,14 @@ export function catalogueViewsContract(name: string, create: () => Store): void 
     it("leaves the catalogue's other items alone when one is revised", async () => {
       await store.addItemToCatalogue(item({ itemId: 'a' }), 'v1');
       await store.addItemToCatalogue(item({ itemId: 'b' }), 'v1');
-      await store.reviseItem('a', { name: 'Poulet rôti', description: 'Fermier', price: 1600 }, 'v1');
+      await store.reviseItem('a', { allergens: ['gluten', 'milk'], name: 'Poulet rôti', description: 'Fermier', price: 1600 }, 'v1');
       const { items } = await store.forVendor('v1');
       expect(items).toEqual([item({ itemId: 'a', name: 'Poulet rôti', description: 'Fermier', price: 1600 }), item({ itemId: 'b' })]);
     });
 
     it('revises a flat item into a variant item, clearing the price', async () => {
       await store.addItemToCatalogue(item(), 'v1');
-      await store.reviseItem('item-1', {
+      await store.reviseItem('item-1', { allergens: ['gluten', 'milk'],
         name: 'Pizza',
         description: 'Wood-fired',
         variants: [
@@ -130,6 +147,7 @@ export function catalogueViewsContract(name: string, create: () => Store): void 
           name: 'Pizza',
           description: 'Wood-fired',
           imageReference: 'v1/dishes/item-1',
+          allergens: ['gluten', 'milk'],
           variants: [
             { name: 'Margherita', description: '', price: 900 },
             { name: 'Pepperoni', description: 'spicy', price: 1200 },
@@ -144,12 +162,13 @@ export function catalogueViewsContract(name: string, create: () => Store): void 
         name: 'Pizza',
         description: 'Wood-fired',
         imageReference: 'v1/dishes/pizza',
+        allergens: ['gluten'],
         variants: [
           { name: 'Margherita', description: '', price: 900 },
           { name: 'Pepperoni', description: 'spicy', price: 1200 },
         ],
       }, 'v1');
-      await store.reviseItem('pizza', { name: 'Calzone', description: 'Folded', price: 1100 }, 'v1');
+      await store.reviseItem('pizza', { allergens: ['gluten', 'milk'], name: 'Calzone', description: 'Folded', price: 1100 }, 'v1');
       expect(await store.forVendor('v1')).toEqual({
         items: [{
           itemId: 'pizza',
@@ -157,6 +176,7 @@ export function catalogueViewsContract(name: string, create: () => Store): void 
           description: 'Folded',
           price: 1100,
           imageReference: 'v1/dishes/pizza',
+          allergens: ['gluten', 'milk'],
         }],
       });
     });

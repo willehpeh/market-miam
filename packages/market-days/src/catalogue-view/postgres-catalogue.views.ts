@@ -10,6 +10,7 @@ type Row = {
   price: number | null;
   image_reference: string;
   variants: { name: string; description: string; price: number }[] | null;
+  allergens: string[] | null;
 };
 
 export class PostgresCatalogueViews implements CatalogueViews, CatalogueViewStore {
@@ -17,31 +18,31 @@ export class PostgresCatalogueViews implements CatalogueViews, CatalogueViewStor
 
   async forVendor(vendorId: string): Promise<CatalogueView> {
     const { rows } = await this.db.query<Row>(
-      'SELECT item_id, name, description, price, image_reference, variants FROM catalogue_view_items WHERE vendor_id = $1 ORDER BY seq',
+      'SELECT item_id, name, description, price, image_reference, variants, allergens FROM catalogue_view_items WHERE vendor_id = $1 ORDER BY seq',
       [vendorId],
     );
     return {
       items: rows.map(row => row.variants
-        ? { itemId: row.item_id, name: row.name, description: row.description, variants: row.variants, imageReference: row.image_reference }
-        : { itemId: row.item_id, name: row.name, description: row.description, price: row.price ?? undefined, imageReference: row.image_reference }),
+        ? { itemId: row.item_id, name: row.name, description: row.description, variants: row.variants, imageReference: row.image_reference, allergens: row.allergens }
+        : { itemId: row.item_id, name: row.name, description: row.description, price: row.price ?? undefined, imageReference: row.image_reference, allergens: row.allergens }),
     };
   }
 
   async addItemToCatalogue(item: CatalogueViewItem, vendorId: string): Promise<void> {
     await this.db.query(
-      `INSERT INTO catalogue_view_items (vendor_id, item_id, name, description, price, image_reference, variants)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
+      `INSERT INTO catalogue_view_items (vendor_id, item_id, name, description, price, image_reference, variants, allergens)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
        ON CONFLICT (vendor_id, item_id) DO UPDATE SET
          name = EXCLUDED.name, description = EXCLUDED.description, price = EXCLUDED.price,
-         image_reference = EXCLUDED.image_reference, variants = EXCLUDED.variants`,
-      [vendorId, item.itemId, item.name, item.description, item.price ?? null, item.imageReference, item.variants ? JSON.stringify(item.variants) : null],
+         image_reference = EXCLUDED.image_reference, variants = EXCLUDED.variants, allergens = EXCLUDED.allergens`,
+      [vendorId, item.itemId, item.name, item.description, item.price ?? null, item.imageReference, item.variants ? JSON.stringify(item.variants) : null, jsonOrNull(item.allergens)],
     );
   }
 
-  async reviseItem(itemId: string, details: Pick<CatalogueViewItem, 'name' | 'description' | 'price' | 'variants'>, vendorId: string): Promise<void> {
+  async reviseItem(itemId: string, details: Pick<CatalogueViewItem, 'name' | 'description' | 'price' | 'variants' | 'allergens'>, vendorId: string): Promise<void> {
     await this.db.query(
-      'UPDATE catalogue_view_items SET name = $3, description = $4, price = $5, variants = $6 WHERE vendor_id = $1 AND item_id = $2',
-      [vendorId, itemId, details.name, details.description, details.price ?? null, details.variants ? JSON.stringify(details.variants) : null],
+      'UPDATE catalogue_view_items SET name = $3, description = $4, price = $5, variants = $6, allergens = $7 WHERE vendor_id = $1 AND item_id = $2',
+      [vendorId, itemId, details.name, details.description, details.price ?? null, details.variants ? JSON.stringify(details.variants) : null, jsonOrNull(details.allergens)],
     );
   }
 
@@ -82,4 +83,8 @@ export class PostgresCatalogueViews implements CatalogueViews, CatalogueViewStor
   async clear(): Promise<void> {
     await this.db.query('DELETE FROM catalogue_view_items');
   }
+}
+
+function jsonOrNull(allergens: string[] | null): string | null {
+  return allergens === null ? null : JSON.stringify(allergens);
 }

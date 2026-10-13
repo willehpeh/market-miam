@@ -306,17 +306,19 @@ describe('Public storefront', () => {
     ]);
   });
 
-  it('includes the catalogue items on a published storefront', async () => {
+  // Allergens travel with each dish (INCO 1169/2011): declared, or null for a dish added
+  // before they existed, which the page must not read as "none".
+  it('includes the catalogue items on a published storefront, with their allergens', async () => {
     await seedStorefront([opened, infoEdited, coverSet, published]);
     await seedCatalogue([
-      { type: 'ItemAddedToCatalogue', payload: { itemId: 'item-1', name: 'Bœuf bourguignon', description: 'Mijoté 7 heures', price: 1300, imageReference: 'v7/item-1' }, version: 1 },
+      { type: 'ItemAddedToCatalogue', payload: { itemId: 'item-1', name: 'Bœuf bourguignon', description: 'Mijoté 7 heures', price: 1300, imageReference: 'v7/item-1', allergens: ['celery', 'sulphites'] }, version: 1 },
       { type: 'ItemAddedToCatalogue', payload: { itemId: 'item-2', name: 'Tarte tatin', description: 'Aux pommes', price: 600 }, version: 1 },
     ]);
 
     const res = await request(app.getHttpServer()).get('/public/storefront/acme').expect(200);
     expect(res.body.items).toEqual([
-      { itemId: 'item-1', name: 'Bœuf bourguignon', description: 'Mijoté 7 heures', price: 1300, imageReference: 'v7/item-1' },
-      { itemId: 'item-2', name: 'Tarte tatin', description: 'Aux pommes', price: 600, imageReference: '' },
+      { itemId: 'item-1', name: 'Bœuf bourguignon', description: 'Mijoté 7 heures', price: 1300, imageReference: 'v7/item-1', allergens: ['celery', 'sulphites'] },
+      { itemId: 'item-2', name: 'Tarte tatin', description: 'Aux pommes', price: 600, imageReference: '', allergens: null },
     ]);
   });
 
@@ -341,7 +343,7 @@ describe('Public storefront', () => {
 
     expect(res.body.cartePricesVisible).toBe(false);
     expect(res.body.items).toEqual([
-      { itemId: 'item-1', name: 'Bœuf bourguignon', description: 'Mijoté', price: 1300, imageReference: '' },
+      { itemId: 'item-1', name: 'Bœuf bourguignon', description: 'Mijoté', price: 1300, imageReference: '', allergens: null },
     ]);
   });
 

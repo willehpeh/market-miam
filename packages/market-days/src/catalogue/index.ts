@@ -5,6 +5,7 @@ export * from './errors/invalid-item-pricing.error';
 export * from './errors/mismatched-pricing.error';
 export * from './errors/duplicate-variant-name.error';
 export * from './errors/incomplete-reorder.error';
+export * from './errors/unknown-allergen.error';
 export * from './catalogues';
 export * from './catalogue';
 export * from './item';

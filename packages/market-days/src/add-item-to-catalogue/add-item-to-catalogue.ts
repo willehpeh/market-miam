@@ -14,6 +14,7 @@ type AddItemToCatalogueParams = {
   price?: number;
   imageReference?: string;
   variants?: VariantInput[];
+  allergens: string[];
 };
 
 export class AddItemToCatalogue extends Command<void> {
@@ -24,6 +25,7 @@ export class AddItemToCatalogue extends Command<void> {
   readonly price?: number;
   readonly imageReference?: string;
   readonly variants?: VariantInput[];
+  readonly allergens: string[];
 
   constructor(params: AddItemToCatalogueParams) {
     super();
@@ -34,5 +36,6 @@ export class AddItemToCatalogue extends Command<void> {
     this.price = params.price;
     this.imageReference = params.imageReference;
     this.variants = params.variants;
+    this.allergens = params.allergens;
   }
 }

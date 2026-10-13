@@ -14,14 +14,14 @@ describe('FindVendorCatalogue', () => {
   });
 
   it('returns the queried vendor catalogue', async () => {
-    const item = { itemId: 'item-1', name: 'Bœuf bourguignon', description: 'Mijoté maison', price: 1300, imageReference: 'market-miam/items/item-photo' };
+    const item = { itemId: 'item-1', name: 'Bœuf bourguignon', description: 'Mijoté maison', price: 1300, imageReference: 'market-miam/items/item-photo', allergens: null };
     await views.addItemToCatalogue(item, 'vendor-id');
 
     expect(await handler.execute(new FindVendorCatalogue('vendor-id'))).toEqual({ items: [item] });
   });
 
   it('scopes the catalogue to the queried vendor', async () => {
-    await views.addItemToCatalogue({ itemId: 'item-1', name: 'A', description: '', price: 100, imageReference: 'ref' }, 'vendor-a');
+    await views.addItemToCatalogue({ itemId: 'item-1', name: 'A', description: '', price: 100, imageReference: 'ref', allergens: null }, 'vendor-a');
 
     expect(await handler.execute(new FindVendorCatalogue('vendor-b'))).toEqual({ items: [] });
   });

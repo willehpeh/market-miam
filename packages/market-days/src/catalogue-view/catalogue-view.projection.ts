@@ -31,6 +31,7 @@ export class CatalogueViewProjection extends ProjectionFor<CatalogueEvent> {
       name: payload.name,
       description: payload.description,
       imageReference: payload.imageReference ?? '',
+      allergens: payload.allergens ?? null,
       ...(payload.variants ? { variants: payload.variants } : { price: payload.price })
     }, vendorIdFrom(event));
   }
@@ -43,7 +44,7 @@ export class CatalogueViewProjection extends ProjectionFor<CatalogueEvent> {
     const payload = event.payload;
     return this.store.reviseItem(
       payload.itemId,
-      { name: payload.name, description: payload.description, price: payload.price, variants: payload.variants },
+      { name: payload.name, description: payload.description, price: payload.price, variants: payload.variants, allergens: payload.allergens ?? null },
       vendorIdFrom(event),
     );
   }

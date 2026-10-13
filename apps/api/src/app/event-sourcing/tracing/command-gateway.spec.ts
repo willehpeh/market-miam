@@ -67,7 +67,7 @@ describe('Command dispatch tracing', () => {
       await request(app.getHttpServer())
         .post('/catalogue')
         .set('Authorization', 'Bearer any-token')
-        .send({ itemId, name: `Item ${itemId}`, description: '', price: 500 })
+        .send({ itemId, name: `Item ${itemId}`, description: '', price: 500, allergens: [] })
         .expect(201);
     }
 

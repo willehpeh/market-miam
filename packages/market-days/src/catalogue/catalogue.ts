@@ -1,7 +1,7 @@
 import { ItemAddedToCatalogue, ItemRetired, ItemRevised, ItemPhotoChanged, ItemsReordered, CatalogueEvent } from './events';
 import { Aggregate } from '@market-miam/event-sourcing';
 import { ImageReference } from '@market-miam/common';
-import { Item, ItemDescription, ItemId, ItemName, MarketPrice, Pricing } from './item';
+import { Allergens, Item, ItemDescription, ItemId, ItemName, MarketPrice, Pricing } from './item';
 import { NoSuchItemError } from './errors/no-such-item.error';
 import { ItemAlreadyInCatalogueError } from './errors/item-already-in-catalogue.error';
 import { IncompleteReorderError } from './errors/incomplete-reorder.error';
@@ -10,7 +10,7 @@ export class Catalogue extends Aggregate {
 
   private _items: Item[] = [];
 
-  addItem(item: { id: ItemId, name: ItemName, description: ItemDescription, pricing: Pricing, imageReference?: ImageReference }) {
+  addItem(item: { id: ItemId, name: ItemName, description: ItemDescription, pricing: Pricing, allergens: Allergens, imageReference?: ImageReference }) {
     if (this.hasItem(item.id)) {
       throw new ItemAlreadyInCatalogueError(`Item already in catalogue with ID ${ item.id.value() }`);
     }
@@ -21,7 +21,8 @@ export class Catalogue extends Aggregate {
         name: item.name.value(),
         description: item.description.value(),
         ...item.pricing.value(),
-        imageReference: item.imageReference?.value()
+        imageReference: item.imageReference?.value(),
+        allergens: item.allergens.value()
       },
       version: 1
     };
@@ -36,6 +37,7 @@ export class Catalogue extends Aggregate {
           new ItemName(event.payload.name),
           new ItemDescription(event.payload.description),
           Pricing.from(event.payload),
+          allergensFrom(event.payload),
           event.payload.imageReference ? new ImageReference(event.payload.imageReference) : undefined
         ));
         break;
@@ -43,7 +45,8 @@ export class Catalogue extends Aggregate {
         this.itemWithId(new ItemId(event.payload.itemId)).revise(
           new ItemName(event.payload.name),
           new ItemDescription(event.payload.description),
-          Pricing.from(event.payload)
+          Pricing.from(event.payload),
+          allergensFrom(event.payload)
         );
         break;
       case 'ItemPhotoChanged':
@@ -71,8 +74,8 @@ export class Catalogue extends Aggregate {
 
   // A revision that changes nothing appends nothing — the same stance as setMenu and
   // setMarketPrices. The edit form is saved whole, so this is the common case, not a corner.
-  reviseItem(itemId: ItemId, name: ItemName, description: ItemDescription, pricing: Pricing) {
-    if (this.itemWithId(itemId).isDescribedAs(name, description, pricing)) {
+  reviseItem(itemId: ItemId, name: ItemName, description: ItemDescription, pricing: Pricing, allergens: Allergens) {
+    if (this.itemWithId(itemId).isDescribedAs(name, description, pricing, allergens)) {
       return;
     }
     const event: ItemRevised = {
@@ -81,7 +84,8 @@ export class Catalogue extends Aggregate {
         itemId: itemId.value(),
         name: name.value(),
         description: description.value(),
-        ...pricing.value()
+        ...pricing.value(),
+        allergens: allergens.value()
       },
       version: 1
     };
@@ -164,3 +168,6 @@ export class Catalogue extends Aggregate {
   }
 }
 
+function allergensFrom(payload: { allergens?: string[] }): Allergens | undefined {
+  return payload.allergens ? new Allergens(payload.allergens) : undefined;
+}

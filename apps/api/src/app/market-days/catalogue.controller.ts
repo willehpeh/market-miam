@@ -21,6 +21,8 @@ const ItemBody = z.object({
   price: z.number().optional(),
   imageReference: z.string().optional(),
   variants: z.array(VariantBody).optional(),
+  // Required, never defaulted: an empty list declares none of the 14, and silence must not.
+  allergens: z.array(z.string()),
 });
 const RevisionBody = ItemBody.omit({ itemId: true, imageReference: true });
 const ReorderBody = z.object({ itemIds: z.array(z.string()) });
@@ -68,6 +70,7 @@ export class CatalogueController {
         price: body.price,
         imageReference: body.imageReference,
         variants: body.variants,
+        allergens: body.allergens,
       }),
     );
   }
@@ -98,6 +101,7 @@ export class CatalogueController {
         description: body.description,
         price: body.price,
         variants: body.variants,
+        allergens: body.allergens,
       }),
     );
   }
