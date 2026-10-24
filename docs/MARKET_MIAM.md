@@ -178,7 +178,7 @@ The MVP is **vendor-facing first**: the catalogue and market day planning tool, 
 1. **Sold-out tracking** — ✅ shipped: per-dish marks during service on the vendor's live screen, greyed in place on the customer storefront — see `LIVE-MODE-PLAN.md` slice 1
 1. **Post-market review** — ✅ shipped: *le bilan* on its own route, the whole set in one submit, the *épuisé* prefill a recorded bilan outranks, and a dashboard prompt for an unjudged day — see `LIVE-MODE-PLAN.md` slice 2b. Reading it back across market days is ✅ shipped too: `GET /selling-record` folds six months of bilans into (dish × market) piles, surfaced as a line under each dish in the menu editor. The other two surfaces it was designed for are deferred (`BILAN-RETROSPECTIVE-PLAN.md`)
 
-Later phases, none scheduled: customer miams (deferred 2026-08), item requests, notifications, pre-ordering.
+**Next: same-day online ordering**, decided 2026-10-04 and part of the only package (`ORDERING-PLAN.md`; where it stands, `NEXT_BEHAVIOURS.md`). Later phases, none scheduled: customer miams (deferred 2026-08), item requests, notifications, ordering ahead of the market day.
 
 ## Business Model
 

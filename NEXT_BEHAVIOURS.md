@@ -4,6 +4,30 @@ The single backlog (ADR 0017). One line per item; rationale lives in the linked
 doc. Legal and website work track their own remaining sections:
 `docs/PRIVACY-PLAN.md` · `docs/WEBSITE-PLAN.md` · `docs/MENTIONS-LEGALES-PLAN.md` · `docs/CGU-CGV-PLAN.md`.
 
+## Where we stand
+
+As of 2026-10-24. The one place that says what is moving, what waits on whom, and what
+comes next; each line points at the doc that holds the detail. Update it when a line moves.
+
+**Now**
+
+* ordering, event-stormed on the ordering site (`docs/ordering-board/`, published as `ordering-board`). Big-picture timeline agreed; step 1, vendor onboarding, under the zoom. Four rules agreed (R1 nothing recorded before Stripe holds the card · R2 processors call Stripe, webhooks record the outcome · R3 Stripe onboarding prefilled from the mentions légales · R4 no publication without a Stripe account that can take payments); 14 questions open
+* price: one package at 50 € HT a month, ordering included, no commission (`docs/MARKET_MIAM.md`)
+
+**Waiting on someone else**
+
+* the live client — provide their legal identity, then the storefront footer's stopgap comes out (`docs/MENTIONS-LEGALES-PLAN.md` slice 8); declare every dish's allergens (`docs/ALLERGENS-PLAN.md` slice 4); later, connect Stripe after publication through a way in still to design (board R4)
+* the lawyer — brief ready to send: 15 questions with dated copies of the texts and the draft vendor terms (`docs/ordering-board/avocat.html`, `docs/CGU-CGV-PLAN.md`)
+* the accountant — brief ready to send: 5 questions on cash-register software and e-invoicing (`docs/ordering-board/expert-comptable.html`)
+* Stripe — the platform account and a test onboarding with the live client (`docs/ORDERING-PLAN.md` step 2); the facts still to read at the source, which cloud sessions can't reach (`docs/ordering-board/stripe.html`)
+* the owner, outside the repo — the Tally form's copy, a CTA and the demo link checked on the real domain (`docs/WEBSITE-PLAN.md` §1–2); the art. 30 register and the DPAs (`docs/PRIVACY-PLAN.md` §2–3); the trademark registration (`docs/MARKET_MIAM.md`)
+
+**Next**
+
+* the rest of step 1's questions, then event-storm steps 2 to 7 (`docs/ordering-board/event-storm.html`)
+* then build, in the plan's order: the ordering context, the vendor app, the storefront, the website rebuilt around ordering with its price, a pilot with real cards (`docs/ORDERING-PLAN.md` steps 5–9)
+* the append-lock baseline finding M6 asks for, before ordering adds writers (`docs/findings/m6-write-path-scaling-ceilings.md`)
+
 ## Product
 
 * ordering — same-day orders from a live market day's menu, paid online at order, collected with a code (`docs/ORDERING-PLAN.md`). Decided 2026-10-04: the live client and every prospect need it before Market Miam is usable. The plan's *Order of work* runs it: lawyer and accountant, Stripe platform account, then the `packages/ordering` context
