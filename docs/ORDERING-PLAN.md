@@ -105,7 +105,7 @@ SSE trigger: Honeycomb volume or Render bill. Then poke-only + HTTP refetch, mir
 
 ### Vendor app
 
-- Stripe onboarding as a requirement to take orders (`StorefrontPublication` readiness pattern).
+- Stripe onboarding as a requirement to publish (`StorefrontPublication` readiness, as for the legal identity): ordering is in the only package, so a published storefront always takes orders. The live client, published before it, connects Stripe afterwards (board R4).
 - Live order list: number, dishes, status; confirm / refuse.
 - Code input; *remis sans code* per order.
 - New-order alerts: web push (see Live updates); email backup.
