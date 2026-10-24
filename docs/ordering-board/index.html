@@ -150,6 +150,7 @@
   .qmeta { grid-column: 2; font-size: 12px; color: var(--ink-3); }
   .decide { --c: var(--actor); }
   .verify { --c: var(--stripe); }
+  .lawyer { --c: #6ea8ef; }
 
   footer { margin-top: 64px; padding-top: 20px; border-top: 1px solid var(--line); font-size: 13px; color: var(--ink-3); }
 </style>
@@ -164,7 +165,7 @@
       The big picture of ordering, worked through one step at a time, Stripe Connect first.
       The plan behind it is <a href="https://github.com/willehpeh/market-miam/blob/main/docs/ORDERING-PLAN.md"><code>docs/ORDERING-PLAN.md</code></a>.
     </p>
-    <p class="meta">Updated 24 October 2026 · 2 rules agreed · 10 questions open</p>
+    <p class="meta">Updated 24 October 2026 · 3 rules agreed · 14 questions open</p>
     <ul class="legend" aria-label="Legend">
       <li><span class="swatch" style="--c: var(--event)"></span>Something that happened</li>
       <li><span class="swatch" style="--c: var(--stripe)"></span>Stripe</li>
@@ -185,8 +186,9 @@
       <li class="step">
         <div class="step-head"><span class="num">1</span><span class="who">Vendor</span><span class="note">once per vendor</span></div>
         <p class="sticky event">The vendor's payment account is connected and can take payments</p>
+        <p class="note">Only after the mentions légales, and prefilled from them (<a href="#r3">R3</a>).</p>
         <p class="sticky stripe stripe-part">Account onboarding · account status updates</p>
-        <p class="refs"><a class="ref" href="#q1">Q1</a><a class="ref" href="#q2">Q2</a></p>
+        <p class="refs"><a class="ref r" href="#r3">R3</a><a class="ref" href="#q1">Q1</a><a class="ref" href="#q2">Q2</a><a class="ref" href="#q11">Q11</a><a class="ref" href="#q12">Q12</a><a class="ref" href="#q13">Q13</a><a class="ref" href="#q14">Q14</a></p>
       </li>
       <li class="step">
         <div class="step-head"><span class="num">2</span><span class="who">Customer</span></div>
@@ -272,6 +274,23 @@
         </ul>
         <p class="agreed">Agreed 24 October 2026</p>
       </article>
+      <article class="card rule-card" id="r3">
+        <span class="tag rule">R3</span>
+        <h3>Payment onboarding comes after the mentions légales, and is prefilled from them</h3>
+        <ul>
+          <li>We create the vendor's Stripe account already filled in: business type, legal name, address,
+            SIRET, TVA number, contacts and legal representative from the mentions légales; name and URL from
+            the storefront; the caterer activity code for everyone.</li>
+          <li>Stripe then asks only for what we don't hold: the IBAN, the representative's date of birth, home
+            address and ID document, and a société's owners. The vendor never types the same thing twice.</li>
+          <li><span class="label">Order:</span> every storefront published since the readiness gate has
+            mentions légales. The live client fills theirs in first.</li>
+          <li><span class="label">Limit:</span> prefilling is one-shot. Once the first onboarding link exists on
+            a Standard account, we can no longer read or write its verification details. Later changes reach
+            Stripe only through the vendor's own dashboard (<a href="#q11">Q11</a>).</li>
+        </ul>
+        <p class="agreed">Agreed 24 October 2026</p>
+      </article>
     </div>
   </section>
 
@@ -333,6 +352,7 @@
     <p class="intro">
       <span class="tag decide">Decide</span> is ours to settle.
       <span class="tag verify">Check</span> is a fact to confirm in Stripe's docs before deciding anything on it.
+      <span class="tag lawyer">Lawyer</span> goes in the batch for the lawyer.
     </p>
     <ol class="questions">
       <li id="q1"><span class="qid">Q1</span><span class="qtext">What of the vendor's Stripe account do we record ourselves, and what do we only read from Stripe?</span><span class="qmeta"><span class="tag decide">Decide</span> Steps 1, 6</span></li>
@@ -345,6 +365,10 @@
       <li id="q8"><span class="qid">Q8</span><span class="qtext">Code attempts before a lockout, and how long the lockout lasts.</span><span class="qmeta"><span class="tag decide">Decide</span> Step 4 · from the plan</span></li>
       <li id="q9"><span class="qid">Q9</span><span class="qtext">Refunds and disputes: handled in Stripe's dashboard, or in our app? The plan doesn't mention them.</span><span class="qmeta"><span class="tag decide">Decide</span> Step 7</span></li>
       <li id="q10"><span class="qid">Q10</span><span class="qtext">How long Stripe keeps an idempotency key. Believed to be 24 hours, which covers a same-day order.</span><span class="qmeta"><span class="tag verify">Check</span> R2</span></li>
+      <li id="q11"><span class="qid">Q11</span><span class="qtext">Our copy of the legal identity and Stripe's can drift: the vendor moves, the storefront shows the new address, Stripe keeps the old one. Does it matter, and do we prompt the vendor to update Stripe?</span><span class="qmeta"><span class="tag decide">Decide</span> Step 1, R3</span></li>
+      <li id="q12"><span class="qid">Q12</span><span class="qtext">Does Stripe ask the vendor to confirm prefilled details on a Standard account? Documented for Express only.</span><span class="qmeta"><span class="tag verify">Check</span> Step 1, R3</span></li>
+      <li id="q13"><span class="qid">Q13</span><span class="qtext">Can a vendor who already has a Stripe account link it, instead of onboarding a new one?</span><span class="qmeta"><span class="tag verify">Check</span> Step 1</span></li>
+      <li id="q14"><span class="qid">Q14</span><span class="qtext">DAC7: does Market Miam count as a platform, when each storefront is the vendor's own shop rather than a marketplace? If yes, an EI's date of birth and tax number are owed, and asking for them just before the Stripe account is created lets R3 prefill them.</span><span class="qmeta"><span class="tag lawyer">Lawyer</span> Step 1</span></li>
     </ol>
   </section>
 
