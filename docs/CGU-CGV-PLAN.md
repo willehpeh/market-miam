@@ -77,7 +77,8 @@ lawyer may push back on any of them, but none is now a guess.
    (60 € TTC), online ordering included; the 15 € price is dropped. Confirmed the same day
    and kept: no price freeze, a price change takes effect 3 months after written notice
    with a free right to leave, no increase in a vendor's first 12 months, and the first
-   month free (decision 2). Draft articles 16 and 20 carry it.
+   month free (decision 2). Also confirmed: Stripe's fees on a vendor's payments are the
+   vendor's. Draft articles 16 and 20 carry it.
 7. **Availability: obligation de moyens.** No uptime figure, no service credits. Planned
    maintenance announced in advance where possible. Support by email, best-effort, no
    response-time target. Backups described as taken regularly, with no guaranteed
@@ -322,10 +323,10 @@ by deferral rather than by decision.
 
 **Overtaken 2026-10-04 by the holding page**, which carries only the hero, a line naming
 online ordering as coming, the Tally button and the footer: no price, no pilot, no freeze.
-The table below is kept as history. What remains: `/mentions-legales` still names the
-*phase pilote* as the Tally form's purpose while the form itself was renamed in September
-(`WEBSITE-PLAN.md` §2), and the page states the 50 € HT price when it is rebuilt around
-ordering (`ORDERING-PLAN.md`, step 8).
+The table below is kept as history. `/mentions-legales` stopped naming the *phase
+pilote* as the Tally form's purpose on 2026-10-24 (`WEBSITE-PLAN.md` §3); the form's own
+consent copy is still unchecked (§2). What remains is the price: the page states 50 € HT
+when it is rebuilt around ordering (`ORDERING-PLAN.md`, step 8).
 
 Decisions 6 and 13 both contradict what is currently published. The CGV cannot go up
 while the landing page promises otherwise — a contract that disagrees with the sales
@@ -359,8 +360,7 @@ What remains, in the order it blocks publication:
    agreement to a version is provable, and article 4 promises it is. The register check of
    decision 14 is the other.
 4. **§3's confirmations** change what the text claims, not whether it stands.
-5. **The site:** the two *phase pilote* sentences on `/mentions-legales`, then the price
-   with the rebuild around ordering.
+5. **The site:** the price, with the rebuild around ordering.
 
 Publication restores the mechanism from `5d68d55` and is the three-part gesture in §7, not
 a date change alone.

@@ -248,11 +248,11 @@ Above *Envoyer* — the short version, replacing the original three-sentence blo
 > Vos réponses servent uniquement à vous recontacter au sujet de la phase pilote. Ni revendues, ni transmises à des tiers. Conservation, vos droits et comment les exercer : https://marketmiam.fr/mentions-legales
 
 **Both quoted blocks are the pre-2026-09 wording and name the *phase pilote*.** The owner
-renamed the form in September 2026: its title is now *Ouvrons votre vitrine*. **`/mentions-legales`
-still names the *phase pilote*** as the form's purpose, in two sentences, so the page and the form
-disagree. That is Art. 13 information, so the mismatch is a defect rather than a style point. The
-form's new copy has not been checked against the rules below either: `tally.so` is unreachable from
-agent containers (§1), so it needs a human read or a paste into a session.
+renamed the form in September 2026: its title is now *Ouvrons votre vitrine*.
+`/mentions-legales` stopped naming the pilot on 2026-10-24 (§3). The form's new copy has not
+been checked against the rules below: `tally.so` is unreachable from agent containers (§1), so it
+needs a human read or a paste into a session. What to confirm is that its stated purpose matches
+`/mentions-legales`, which is Art. 13 information.
 
 - **The URL must be absolute.** The form renders in Tally's overlay, so a relative
   `/mentions-legales` resolves against `tally.so`. Open it in a new tab — navigating away
