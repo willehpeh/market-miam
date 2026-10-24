@@ -36,8 +36,10 @@ envelope was not.
    the row is **re-wrapped under the current key in place** — the data key
    itself never changes, only its wrapping, so event ciphertexts are never
    touched. The UPDATE is guarded by `AND key_version = <old>`: a concurrent
-   re-wrap is a no-op and a racing `shred()` DELETE wins, so an erased key is
-   never resurrected.
+   re-wrap is a no-op and a racing `shred()` wins, so an erased key is
+   never resurrected. (Amended 2026-10-04: `shred()` now leaves a tombstone
+   with a null `key_version` rather than deleting the row — ADR 0056. The guard
+   still loses to it, and the retirement count below ignores tombstones.)
 4. Composition (`apps/api`): `masterKeyring(config)` accepts either the
    existing `MASTER_KEY` (→ single-key ring, version 1 — deployed systems
    need no config change) or `MASTER_KEYS="1:<base64>;2:<base64>"` +

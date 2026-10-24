@@ -6,13 +6,13 @@ import { CoverPhoto, NoCoverPhoto, SetCoverPhoto } from './cover-photo';
 import { StorefrontName } from './storefront-name';
 import { StorefrontDescription } from './storefront-description';
 import { StorefrontNotOpenError } from './storefront-not-open.error';
-import { StorefrontInformation } from './storefront-information';
+import { NoStorefrontInformation, ProvidedStorefrontInformation, StorefrontInformation } from './storefront-information';
 
 export class Storefront extends Aggregate {
 
   private _opened = false;
   private _coverPhoto: CoverPhoto = new NoCoverPhoto();
-  private _information?: StorefrontInformation;
+  private _information: StorefrontInformation = new NoStorefrontInformation();
   private _published = false;
   // Opted in: a vitrine that has never said otherwise quotes its prices.
   private _cartePricesVisible = true;
@@ -26,7 +26,7 @@ export class Storefront extends Aggregate {
         this._coverPhoto = new SetCoverPhoto(new ImageReference(event.payload.imageReference));
         break;
       case 'StorefrontInformationEdited':
-        this._information = new StorefrontInformation(event.payload);
+        this._information = new ProvidedStorefrontInformation(event.payload);
         break;
       case 'StorefrontPublished':
         this._published = true;
@@ -69,16 +69,13 @@ export class Storefront extends Aggregate {
   // carte-price toggles, and worth more here: this is the one storefront event carrying PII.
   editInformation(name: StorefrontName, description: StorefrontDescription, phone: PhoneNumber) {
     this.assertOpen();
-    if (this._information?.sameAs(name, description, phone)) {
+    const payload = { name: name.value(), description: description.value(), phone: phone.value() };
+    if (this._information.equals(new ProvidedStorefrontInformation(payload))) {
       return;
     }
     const event: StorefrontInformationEdited = {
       type: 'StorefrontInformationEdited',
-      payload: {
-        name: name.value(),
-        description: description.value(),
-        phone: phone.value()
-      },
+      payload,
       version: 1
     };
     this.raise(event);
@@ -92,10 +89,6 @@ export class Storefront extends Aggregate {
     this.changeCartePriceVisibility(true);
   }
 
-  // Both directions, one guard: the pair drifted apart once already, when assertOpen went
-  // onto hiding and had to be added to showing by hand. The no-op rule is one statement
-  // here rather than two that must stay each other's negation — a re-statement of the
-  // current choice appends nothing, the same stance as setCoverPhoto and publish.
   private changeCartePriceVisibility(visible: boolean): void {
     this.assertOpen();
     if (this._cartePricesVisible === visible) {
@@ -121,7 +114,7 @@ export class Storefront extends Aggregate {
 
   // A name is required to edit the information at all, so having any is having a title.
   hasTitle(): boolean {
-    return this._information !== undefined;
+    return this._information.isProvided();
   }
 
   hasCoverPhoto(): boolean {

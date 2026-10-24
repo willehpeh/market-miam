@@ -28,8 +28,8 @@ import { LogoutButton } from './auth/logout-button';
         }
         <router-outlet />
       </main>
-      <!-- AGPL §13 source offer for the vendor app: its users live here and never
-           pass through the marketing site. -->
+      <!-- AGPL §13 source offer and policy A for the vendor app: its users live here
+           and never pass through the marketing site. -->
       <footer class="border-t border-line px-6 py-4 text-center text-xs text-ink-soft bg-canvas">
         Market Miam ·
         <a
@@ -39,6 +39,15 @@ import { LogoutButton } from './auth/logout-button';
           rel="noopener"
         >
           Logiciel libre
+        </a>
+        ·
+        <a
+          class="underline underline-offset-2"
+          href="https://marketmiam.fr/confidentialite-traiteurs"
+          target="_blank"
+          rel="noopener"
+        >
+          Confidentialité
         </a>
       </footer>
     </div>

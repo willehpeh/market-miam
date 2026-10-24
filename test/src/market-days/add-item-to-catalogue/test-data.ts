@@ -9,6 +9,7 @@ export class TestAddItemToCatalogue {
       description: 'Item Description',
       price: 500,
       imageReference: 'market-miam/items/item-photo',
+      allergens: ['gluten', 'milk'],
     }) as AddItemToCatalogue & { price: number };
   }
 
@@ -21,6 +22,7 @@ export class TestAddItemToCatalogue {
       description: overrides.description ?? defaults.description,
       price: overrides.price ?? defaults.price,
       imageReference: overrides.imageReference ?? defaults.imageReference,
+      allergens: overrides.allergens ?? defaults.allergens,
     });
   }
 
@@ -31,6 +33,7 @@ export class TestAddItemToCatalogue {
       name: 'Item Name',
       description: 'Item Description',
       imageReference: 'market-miam/items/item-photo',
+      allergens: ['gluten', 'milk'],
       variants,
     });
   }

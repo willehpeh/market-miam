@@ -108,7 +108,7 @@ describe('FindMarketDay', () => {
   it('describes a day the vendor closed months ago', async () => {
     await views.recordSchedule(scheduleWith(), 'vendor-id');
     await catalogues.addItemToCatalogue(
-      { itemId: 'item-1', name: 'Bourguignon', description: '', price: 500, imageReference: '' },
+      { itemId: 'item-1', name: 'Bourguignon', description: '', price: 500, imageReference: '', allergens: null },
       'vendor-id',
     );
     await menus.setMenu({ marketId: 'market-1', date: '2024-01-13', itemIds: ['item-1'] }, 'vendor-id');
@@ -141,7 +141,7 @@ describe('FindMarketDay', () => {
   it('carries the bilan the vendor recorded', async () => {
     await views.recordSchedule(scheduleWith(), 'vendor-id');
     await catalogues.addItemToCatalogue(
-      { itemId: 'item-1', name: 'Bourguignon', description: '', price: 500, imageReference: '' },
+      { itemId: 'item-1', name: 'Bourguignon', description: '', price: 500, imageReference: '', allergens: null },
       'vendor-id',
     );
     await menus.setMenu({ marketId: 'market-1', date: '2024-02-10', itemIds: ['item-1'] }, 'vendor-id');
@@ -177,7 +177,7 @@ describe('FindMarketDay', () => {
       'vendor-id',
     );
     await catalogues.addItemToCatalogue(
-      { itemId: 'item-1', name: 'Bourguignon', description: '', price: 500, imageReference: '' },
+      { itemId: 'item-1', name: 'Bourguignon', description: '', price: 500, imageReference: '', allergens: null },
       'vendor-id',
     );
     await menus.setMenu({ marketId: 'market-1', date: '2024-02-10', itemIds: ['item-1'] }, 'vendor-id');
@@ -208,7 +208,7 @@ describe('FindMarketDay', () => {
     await views.recordSchedule(scheduleWith(), 'vendor-id');
     await views.recordSchedule(scheduleWith({ scheduleId: 'schedule-2', marketId: 'market-2' }), 'vendor-id');
     await catalogues.addItemToCatalogue(
-      { itemId: 'item-1', name: 'Bourguignon', description: '', price: 500, imageReference: '' },
+      { itemId: 'item-1', name: 'Bourguignon', description: '', price: 500, imageReference: '', allergens: null },
       'vendor-id',
     );
     await menus.setMenu({ marketId: 'market-2', date: '2024-02-10', itemIds: ['item-1'] }, 'vendor-id');

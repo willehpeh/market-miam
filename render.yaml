@@ -173,6 +173,19 @@ projects:
                 - packages/market-days/**
                 - test/**
                 - tools/event-model/**
+          # The ordering event storm (docs/ordering-board): one hand-written page, the
+          # working board for the ordering feature. Nothing to build, so it publishes the
+          # folder as it stands; bare onrender.com URL, like the other tool sites.
+          - type: web
+            name: ordering-board
+            runtime: static
+            repo: https://github.com/willehpeh/market-miam
+            buildCommand: echo "Hand-written page, nothing to build"
+            staticPublishPath: ./docs/ordering-board
+            autoDeployTrigger: checksPass
+            buildFilter:
+              paths:
+                - docs/ordering-board/**
         databases:
           - name: event-store
             databaseName: marketmiam

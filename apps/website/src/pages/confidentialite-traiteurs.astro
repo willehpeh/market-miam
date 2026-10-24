@@ -1,0 +1,144 @@
+---
+import Legal from '../layouts/Legal.astro';
+import { EDITEUR } from '../editeur';
+
+// Policy A, approved by a lawyer on 2026-09-23 (docs/MENTIONS-LEGALES-PLAN.md). The wording
+// is theirs: a change to it goes back to them first.
+---
+
+<Legal
+  title="Market Miam — Confidentialité de l’espace traiteur"
+  description="Politique de confidentialité de l’espace traiteur de Market Miam : quelles données sont traitées, pourquoi, combien de temps, par qui, et comment exercer vos droits."
+>
+  <h1>Politique de confidentialité — espace traiteur</h1>
+
+  <h2>Responsable du traitement</h2>
+  <p>
+    {EDITEUR.nom}, micro-entreprise, {EDITEUR.adresse}. SIREN {EDITEUR.siren}. Contact :
+    <a href={`mailto:${EDITEUR.email}`}>{EDITEUR.email}</a>.
+  </p>
+
+  <h2>Données que nous traitons</h2>
+  <div class="table">
+    <table>
+      <thead>
+        <tr><th>Données</th><th>D'où elles viennent</th><th>Publiées sur votre vitrine ?</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Adresse mail de connexion</td><td>Votre inscription</td><td>Non</td></tr>
+        <tr><td>Nom de la vitrine, présentation, téléphone</td><td>Vous, dans l'espace traiteur</td><td><strong>Oui</strong></td></tr>
+        <tr><td>Photos de couverture et des plats</td><td>Vous</td><td><strong>Oui</strong></td></tr>
+        <tr><td>Carte, prix, marchés, menus du jour, plats épuisés</td><td>Vous</td><td><strong>Oui</strong></td></tr>
+        <tr><td>Bilans de fin de marché (ce qui s'est vendu, ce qui reste)</td><td>Vous</td><td>Non</td></tr>
+        <tr>
+          <td>Identité légale : SIRET, dénomination, adresse professionnelle, mail de contact, régime de TVA, médiateur</td>
+          <td>Vous, en partie préremplie depuis l'annuaire public des entreprises</td>
+          <td><strong>Oui</strong>, dans les mentions légales de la vitrine</td>
+        </tr>
+        <tr>
+          <td>Données techniques : adresse IP, date et heure des connexions et des requêtes, identifiant technique de votre compte</td>
+          <td>Votre navigateur</td>
+          <td>Non</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <p>
+    Tout ce qui est publié sur votre vitrine est visible par tout le monde. Si vous êtes entrepreneur individuel, votre
+    téléphone et votre adresse professionnelle sont souvent vos coordonnées personnelles : choisissez-les en connaissance
+    de cause.
+  </p>
+
+  <h2>Pourquoi, et sur quelle base</h2>
+  <div class="table">
+    <table>
+      <thead>
+        <tr><th>Finalité</th><th>Base légale</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Créer et faire fonctionner votre compte et votre vitrine</td><td>Exécution du contrat</td></tr>
+        <tr><td>Publier les mentions légales de votre vitrine (LCEN, art. 6 et 19)</td><td>Obligation légale</td></tr>
+        <tr><td>Sécuriser le service, diagnostiquer les pannes et les lenteurs</td><td>Intérêt légitime</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Nous ne vendons aucune donnée, ne faisons pas de publicité et ne vous envoyons pas de newsletter.</p>
+
+  <h2>Ce qui est obligatoire</h2>
+  <p>
+    Votre adresse mail est nécessaire pour créer un compte. Votre identité légale et votre téléphone sont exigés par la loi
+    pour publier une vitrine : sans eux, elle ne peut pas être mise en ligne. Le reste dépend de ce que vous voulez montrer.
+    Aucune décision vous concernant n'est prise de manière entièrement automatisée.
+  </p>
+
+  <h2>Durée de conservation</h2>
+  <ul>
+    <li><strong>Compte, vitrine, carte, bilans</strong> : tant que votre compte existe.</li>
+    <li>
+      <strong>Identité légale</strong> : publiée tant que votre vitrine est en ligne, puis conservée 5 ans après la
+      fermeture de votre compte, sans être publiée, et accessible seulement pour répondre à une demande légale, comme
+      l'impose aux hébergeurs le décret n° 2021-1362. Elle devient ensuite définitivement illisible.
+    </li>
+    <li>
+      <strong>Traces techniques</strong> : 60 jours chez notre outil de supervision, 1 jour chez Auth0, 7 jours chez notre
+      hébergeur, et jusqu'à un an chez le service de photos (90 jours en ligne, puis en archive).
+    </li>
+  </ul>
+  <p>
+    Quand vous supprimez votre compte, votre vitrine disparaît et vos informations deviennent définitivement illisibles, y
+    compris dans les sauvegardes. La suppression est définitive. Seule exception : votre identité légale, gardée 5 ans
+    comme indiqué ci-dessus, puis effacée de la même façon.
+  </p>
+
+  <h2>Qui y a accès</h2>
+  <p>Seul l'éditeur de Market Miam. Ces prestataires traitent des données pour notre compte :</p>
+  <div class="table">
+    <table>
+      <thead>
+        <tr><th>Prestataire</th><th>Rôle</th><th>Où sont les données</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Render Services, Inc. (États-Unis)</td><td>Hébergement du service et de la base de données</td><td>Francfort (UE) ; société américaine</td></tr>
+        <tr><td>Auth0, LLC — groupe Okta (États-Unis)</td><td>Connexion et comptes</td><td>Région UE ; société américaine</td></tr>
+        <tr><td>Cloudinary Inc. (États-Unis)</td><td>Stockage et diffusion des photos</td><td>États-Unis</td></tr>
+        <tr>
+          <td>Hound Technology, Inc. — Honeycomb (États-Unis)</td>
+          <td>Supervision technique ; reçoit l'identifiant technique du compte, votre adresse IP et votre navigateur, jamais votre nom ni votre mail</td>
+          <td>États-Unis</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <p>
+    Les transferts hors de l'UE sont encadrés par le Data Privacy Framework UE–États-Unis, auquel chacun de ces
+    prestataires est certifié, et à défaut par les clauses contractuelles types de la Commission européenne.
+  </p>
+  <p>
+    Vous pouvez obtenir une copie de ces garanties en écrivant à
+    <a href={`mailto:${EDITEUR.email}`}>{EDITEUR.email}</a>.
+  </p>
+
+  <h2>Cookies et stockage local</h2>
+  <p>
+    L'espace traiteur ne dépose aucun cookie de mesure d'audience ni de publicité. Il conserve votre jeton de connexion dans
+    le stockage local du navigateur, et Auth0 un cookie de session : les deux sont indispensables pour rester connecté et ne
+    demandent pas de consentement.
+  </p>
+
+  <h2>Vos droits</h2>
+  <p>
+    Vous pouvez accéder à vos données, les rectifier, les effacer, en demander une copie réutilisable, vous opposer à leur
+    traitement ou le limiter. La plupart se corrigent directement dans l'espace traiteur. Pour le reste, écrivez à
+    <a href={`mailto:${EDITEUR.email}`}>{EDITEUR.email}</a> : la réponse arrive sous un mois. Les mentions légales de votre
+    vitrine ne peuvent pas être effacées tant qu'elle est en ligne, ni votre identité légale pendant les 5 ans qui suivent la
+    fermeture du compte, car la loi l'exige. Vous pouvez aussi saisir la CNIL
+    (<a href="https://www.cnil.fr" rel="noopener">cnil.fr</a>).
+  </p>
+
+  <h2>Code source</h2>
+  <p>
+    Le code qui traite vos données est public
+    (<a href="https://github.com/willehpeh/market-miam" rel="noopener">github.com/willehpeh/market-miam</a>) : chacune de
+    ces affirmations peut être vérifiée.
+  </p>
+</Legal>

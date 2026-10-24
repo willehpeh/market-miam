@@ -44,6 +44,9 @@ import { StorefrontFooter } from './layout/storefront-footer';
                     <div class="mt-5">
                       <app-market-card [market]="market" [featured]="true" (chosen)="openItem($event)" />
                     </div>
+                    @if (storefront.vatExempt && featuredPriced()) {
+                      <p class="mt-3 text-sm text-ink-soft">TVA non applicable, art. 293 B du CGI.</p>
+                    }
                   </section>
                 }
 
@@ -80,7 +83,7 @@ import { StorefrontFooter } from './layout/storefront-footer';
 
             <app-item-sheet />
 
-            <app-storefront-footer [name]="storefront.name" [phone]="storefront.phone" />
+            <app-storefront-footer [name]="storefront.name" [phone]="storefront.phone" [mentionsLegales]="!!storefront.editeur" />
           </main>
         }
         @case ('coming-soon') {
@@ -112,6 +115,7 @@ export class StorefrontPage {
     const storefront = this.storefront();
     return storefront?.status === 'published' ? storefront.upcomingMarkets.slice(1) : [];
   });
+  protected readonly featuredPriced = computed(() => !!this.nextMarket()?.items.some((item) => item.priceLabel));
   private readonly sheet = viewChild.required(ItemSheet);
 
   constructor() {

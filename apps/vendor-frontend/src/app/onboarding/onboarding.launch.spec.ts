@@ -49,6 +49,7 @@ import { onboardingFeature } from './onboarding.state';
 import { OnboardingEffects, SAVED_REDIRECT_DELAY } from './onboarding.effects';
 import { OnboardingFacade } from './onboarding.facade';
 import { StoreOnboardingFacade } from './store.onboarding.facade';
+import { provideLegalIdentity } from '../legal-identity/legal-identity.providers';
 import { provideNotifications } from '../core/notifications/notifications.providers';
 import { Share } from '../core/share';
 import { FakeShare } from '../core/fake.share';
@@ -90,6 +91,7 @@ describe('Onboarding launch', () => {
         { provide: MarketDayFacade, useClass: StoreMarketDayFacade },
         { provide: OnboardingFacade, useClass: StoreOnboardingFacade },
         provideNotifications(),
+        provideLegalIdentity(),
         provideHttpClientTesting(),
         { provide: STOREFRONT_RETRY, useValue: { delayMs: 0, maxAttempts: 1 } },
         { provide: SAVED_REDIRECT_DELAY, useValue: 0 },
@@ -130,6 +132,7 @@ describe('Onboarding launch', () => {
     httpCtrl.expectOne('/api/market-schedules').flush({ schedules: [] });
     httpCtrl.expectOne('/api/market-days/upcoming').flush({ marketDays: [] });
     httpCtrl.expectOne('/api/market-days/unrated').flush({ marketDays: [] });
+    httpCtrl.expectOne('/api/legal-identity').flush(null, { status: 404, statusText: 'Not Found' });
   });
 
   // The steps card names what is still missing; a half-filled form does not.
@@ -146,6 +149,7 @@ describe('Onboarding launch', () => {
     httpCtrl.expectOne('/api/market-schedules').flush({ schedules: [] });
     httpCtrl.expectOne('/api/market-days/upcoming').flush({ marketDays: [] });
     httpCtrl.expectOne('/api/market-days/unrated').flush({ marketDays: [] });
+    httpCtrl.expectOne('/api/legal-identity').flush(null, { status: 404, statusText: 'Not Found' });
   });
 
   it('sends the vendor to the dashboard once they confirm their storefront', async () => {
@@ -164,6 +168,7 @@ describe('Onboarding launch', () => {
     httpCtrl.expectOne('/api/market-schedules').flush({ schedules: [] });
     httpCtrl.expectOne('/api/market-days/upcoming').flush({ marketDays: [] });
     httpCtrl.expectOne('/api/market-days/unrated').flush({ marketDays: [] });
+    httpCtrl.expectOne('/api/legal-identity').flush(null, { status: 404, statusText: 'Not Found' });
     await view.fixture.whenStable();
 
     fireEvent.click(screen.getByRole('link', { name: /informations de la vitrine/i }));
@@ -180,6 +185,7 @@ describe('Onboarding launch', () => {
     httpCtrl.expectNone('/api/catalogue');
     httpCtrl.expectNone('/api/market-schedules');
     httpCtrl.expectNone('/api/market-days/upcoming');
+    httpCtrl.expectNone('/api/legal-identity');
     // The one exception, by design: the prompt asks again on every arrival. A market that
     // ended while the app sat open, or a bilan recorded on another phone, both change the
     // answer without any action here to patch the store with.

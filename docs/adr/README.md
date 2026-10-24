@@ -62,3 +62,6 @@ detailed rationale in `docs/archive/DEFERRED.md`).
 | [0053](0053-carte-prices-are-the-vendors-choice.md)                     | The carte's prices are the vendor's choice, shown by default               | 2026-08-28 |
 | [0054](0054-vendor-legal-identity-for-storefront-mentions-legales.md)   | Vendor legal identity: the storefront's mentions légales                   | 2026-09-03 |
 | [0055](0055-vendor-qr-code-made-in-the-vendor-app.md)                   | The vendor's QR code is made in the vendor app                             | 2026-09-11 |
+| [0056](0056-legal-identity-outlives-erasure.md)                         | The vendor's legal identity outlives erasure, under its own key            | 2026-09-23 |
+| [0057](0057-shreddable-fields-held-as-recorded.md)                      | Shreddable fields are held as recorded, not re-validated                   | 2026-10-04 |
+| [0058](0058-erasure-is-an-event-carried-out-by-a-processor.md)          | Erasure is an event, carried out by a processor                            | 2026-10-05 |

@@ -7,6 +7,8 @@ const ORIGIN = 'https://acme.marketmiam.fr';
 
 const PUBLISHED: StorefrontViewModel = {
   status: 'published',
+  editeur: null,
+  vatExempt: false,
   name: 'Acme Bakery',
   description: 'Fresh bread daily',
   phone: '0102030405',

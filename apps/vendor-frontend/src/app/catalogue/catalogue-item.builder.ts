@@ -10,6 +10,7 @@ export const catalogueItem = (overrides: Partial<CatalogueItemView> = {}): Catal
     description: 'Mijoté maison',
     price: 1300,
     imageReference: `v1/items/acme/${itemId}`,
+    allergens: ['gluten', 'milk'],
     ...overrides,
   };
 };

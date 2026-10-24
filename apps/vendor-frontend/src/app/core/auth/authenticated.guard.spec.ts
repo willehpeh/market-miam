@@ -16,6 +16,8 @@ import { MarketDayFacade } from '../../market-days/market-day.facade';
 import { FakeMarketDayFacade } from '../../market-days/fake.market-day.facade';
 import { OnboardingFacade } from '../../onboarding/onboarding.facade';
 import { FakeOnboardingFacade } from '../../onboarding/fake.onboarding.facade';
+import { LegalIdentityFacade } from '../../legal-identity/legal-identity.facade';
+import { FakeLegalIdentityFacade } from '../../legal-identity/fake.legal-identity.facade';
 import { Share } from '../share';
 import { FakeShare } from '../fake.share';
 
@@ -36,6 +38,7 @@ describe('authenticated guard', () => {
         { provide: MarketScheduleFacade, useClass: FakeMarketScheduleFacade },
         { provide: MarketDayFacade, useClass: FakeMarketDayFacade },
         { provide: OnboardingFacade, useClass: FakeOnboardingFacade },
+        { provide: LegalIdentityFacade, useClass: FakeLegalIdentityFacade },
         { provide: Share, useClass: FakeShare },
       ],
     });

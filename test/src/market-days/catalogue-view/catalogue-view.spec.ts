@@ -47,8 +47,8 @@ describe('CatalogueView', () => {
     const view = await views.forVendor(vendorId);
     expect(view).toEqual({
       items: [
-        { itemId: first.itemId, name: first.name, description: first.description, price: first.price, imageReference: first.imageReference },
-        { itemId: second.itemId, name: second.name, description: second.description, price: second.price, imageReference: second.imageReference },
+        { itemId: first.itemId, name: first.name, description: first.description, price: first.price, imageReference: first.imageReference, allergens: ['gluten', 'milk'] },
+        { itemId: second.itemId, name: second.name, description: second.description, price: second.price, imageReference: second.imageReference, allergens: ['gluten', 'milk'] },
       ],
     });
   });
@@ -74,6 +74,7 @@ describe('CatalogueView', () => {
             { name: 'Large', description: 'extra hungry', price: 1200 },
           ],
           imageReference: command.imageReference,
+          allergens: ['gluten', 'milk'],
         },
       ],
     });
@@ -82,13 +83,13 @@ describe('CatalogueView', () => {
   it('should revise the item name, description and price, keeping its image', async () => {
     const newItemCommand = TestAddItemToCatalogue.simple();
     await new AddItemToCatalogueHandler(catalogues).execute(newItemCommand);
-    await new ReviseItemHandler(catalogues).execute(new ReviseItem({ itemId: newItemCommand.itemId, vendorId: newItemCommand.vendorId, name: 'Revised Name', description: 'Revised Description', price: 999 }));
+    await new ReviseItemHandler(catalogues).execute(new ReviseItem({ itemId: newItemCommand.itemId, vendorId: newItemCommand.vendorId, name: 'Revised Name', description: 'Revised Description', price: 999, allergens: ['gluten', 'milk'] }));
 
     await subscription.poll();
     const view = await views.forVendor(newItemCommand.vendorId);
     expect(view).toEqual({
       items: [
-        { itemId: newItemCommand.itemId, name: 'Revised Name', description: 'Revised Description', price: 999, imageReference: newItemCommand.imageReference },
+        { itemId: newItemCommand.itemId, name: 'Revised Name', description: 'Revised Description', price: 999, imageReference: newItemCommand.imageReference, allergens: ['gluten', 'milk'] },
       ],
     });
   });
@@ -96,7 +97,7 @@ describe('CatalogueView', () => {
   it('should revise a flat item into a variant item', async () => {
     const added = TestAddItemToCatalogue.simple();
     await new AddItemToCatalogueHandler(catalogues).execute(added);
-    await new ReviseItemHandler(catalogues).execute(new ReviseItem({ itemId: added.itemId, vendorId: added.vendorId, name: 'Pizza', description: 'Wood-fired', variants: [
+    await new ReviseItemHandler(catalogues).execute(new ReviseItem({ itemId: added.itemId, vendorId: added.vendorId, name: 'Pizza', description: 'Wood-fired', allergens: ['gluten', 'milk'], variants: [
       { name: 'Small', description: '', price: 800 },
       { name: 'Large', description: 'extra hungry', price: 1200 },
     ] }));
@@ -114,6 +115,7 @@ describe('CatalogueView', () => {
             { name: 'Large', description: 'extra hungry', price: 1200 },
           ],
           imageReference: added.imageReference,
+          allergens: ['gluten', 'milk'],
         },
       ],
     });
@@ -125,15 +127,38 @@ describe('CatalogueView', () => {
       { name: 'Large', description: 'extra hungry', price: 1200 },
     ]);
     await new AddItemToCatalogueHandler(catalogues).execute(added);
-    await new ReviseItemHandler(catalogues).execute(new ReviseItem({ itemId: added.itemId, vendorId: added.vendorId, name: 'Soup', description: 'Daily', price: 500 }));
+    await new ReviseItemHandler(catalogues).execute(new ReviseItem({ itemId: added.itemId, vendorId: added.vendorId, name: 'Soup', description: 'Daily', price: 500, allergens: ['gluten', 'milk'] }));
 
     await subscription.poll();
     const view = await views.forVendor(added.vendorId);
     expect(view).toEqual({
       items: [
-        { itemId: added.itemId, name: 'Soup', description: 'Daily', price: 500, imageReference: added.imageReference },
+        { itemId: added.itemId, name: 'Soup', description: 'Daily', price: 500, imageReference: added.imageReference, allergens: ['gluten', 'milk'] },
       ],
     });
+  });
+
+  it('projects the allergens an item declares, and their revision', async () => {
+    const added = TestAddItemToCatalogue.with({ allergens: ['milk'] });
+    await new AddItemToCatalogueHandler(catalogues).execute(added);
+    await subscription.poll();
+    expect((await views.forVendor(added.vendorId)).items[0].allergens).toEqual(['milk']);
+
+    await new ReviseItemHandler(catalogues).execute(new ReviseItem({ itemId: added.itemId, vendorId: added.vendorId, name: added.name, description: added.description, price: added.price, allergens: [] }));
+    await subscription.poll();
+
+    expect((await views.forVendor(added.vendorId)).items[0].allergens).toEqual([]);
+  });
+
+  // Undeclared, not "none": an event from before allergens existed says nothing about them.
+  it('projects an item added before allergens existed as undeclared', async () => {
+    store.seedWith('catalogue-vendor-id', [
+      { type: 'ItemAddedToCatalogue', payload: { itemId: 'old', name: 'Tarte tatin', description: 'Aux pommes', price: 600 }, version: 1 },
+    ], { vendorId: 'vendor-id' });
+
+    await subscription.poll();
+
+    expect((await views.forVendor('vendor-id')).items[0].allergens).toBeNull();
   });
 
   it('should change the item photo, keeping its other fields', async () => {
@@ -145,7 +170,7 @@ describe('CatalogueView', () => {
     const view = await views.forVendor(newItemCommand.vendorId);
     expect(view).toEqual({
       items: [
-        { itemId: newItemCommand.itemId, name: newItemCommand.name, description: newItemCommand.description, price: newItemCommand.price, imageReference: 'v9/dishes/vendor-id/item-id' },
+        { itemId: newItemCommand.itemId, name: newItemCommand.name, description: newItemCommand.description, price: newItemCommand.price, imageReference: 'v9/dishes/vendor-id/item-id', allergens: ['gluten', 'milk'] },
       ],
     });
   });
@@ -158,7 +183,7 @@ describe('CatalogueView', () => {
     const view = await views.forVendor(vendorId);
     expect(view).toEqual({
       items: [
-        { itemId: second.itemId, name: second.name, description: second.description, price: second.price, imageReference: second.imageReference }
+        { itemId: second.itemId, name: second.name, description: second.description, price: second.price, imageReference: second.imageReference, allergens: ['gluten', 'milk'] }
       ],
     })
   });

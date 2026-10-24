@@ -7,6 +7,7 @@ type ReviseItemParams = {
   description: string;
   price?: number;
   variants?: { name: string; description: string; price: number }[];
+  allergens: string[];
 };
 
 export class ReviseItem extends Command<void> {
@@ -16,6 +17,7 @@ export class ReviseItem extends Command<void> {
   readonly description: string;
   readonly price?: number;
   readonly variants?: { name: string; description: string; price: number }[];
+  readonly allergens: string[];
 
   constructor(params: ReviseItemParams) {
     super();
@@ -25,5 +27,6 @@ export class ReviseItem extends Command<void> {
     this.description = params.description;
     this.price = params.price;
     this.variants = params.variants;
+    this.allergens = params.allergens;
   }
 }

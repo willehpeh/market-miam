@@ -32,6 +32,10 @@ export abstract class Pricing {
 
   abstract confirmMatchedBy(price: MarketPrice): void;
 
+  abstract isFlat(): this is FlatPricing;
+
+  abstract isSoldByVariant(): this is VariantPricing;
+
   abstract equals(other: Pricing): boolean;
 
   abstract value(): PricingSnapshot;
@@ -48,8 +52,16 @@ class FlatPricing extends Pricing {
     }
   }
 
+  isFlat(): this is FlatPricing {
+    return true;
+  }
+
+  isSoldByVariant(): this is VariantPricing {
+    return false;
+  }
+
   equals(other: Pricing): boolean {
-    return other instanceof FlatPricing && this._price.equals(other._price);
+    return other.isFlat() && this._price.equals(other._price);
   }
 
   value(): PricingSnapshot {
@@ -69,8 +81,16 @@ class VariantPricing extends Pricing {
     this._variants.confirmNamed(Object.keys(price));
   }
 
+  isFlat(): this is FlatPricing {
+    return false;
+  }
+
+  isSoldByVariant(): this is VariantPricing {
+    return true;
+  }
+
   equals(other: Pricing): boolean {
-    return other instanceof VariantPricing && this._variants.equals(other._variants);
+    return other.isSoldByVariant() && this._variants.equals(other._variants);
   }
 
   value(): PricingSnapshot {

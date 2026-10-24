@@ -12,6 +12,7 @@ import {
   PostgresVendorStorefrontViews,
   SubdomainRegistry,
   vendorPiiFields,
+  vendorPiiKeyScopes,
   VendorStorefrontViews,
 } from '@market-miam/market-days';
 import { StaticTokenVerifier } from '@market-miam/auth';
@@ -50,7 +51,7 @@ describe('PostgresPersistenceModule', () => {
         }),
         AuthModule.forRootAsync({ useFactory: () => new StaticTokenVerifier(testVendor) }),
         PostgresPersistenceModule,
-        EventSourcingModule.forRoot(vendorPiiFields),
+        EventSourcingModule.forRoot(vendorPiiFields, vendorPiiKeyScopes),
         MarketDaysModule,
       ],
     }).compile();

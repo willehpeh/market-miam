@@ -100,6 +100,45 @@ describe('ShreddingEventStore', () => {
     });
   });
 
+  describe('with an event type scoped to its own key (ADR 0056)', () => {
+    const recorded: DomainEvent = { type: 'IdentityRecorded', payload: { siret: '73282932000074' }, version: 1 };
+
+    function scopedStore() {
+      const inner = new InMemoryEventStore();
+      const keys = new InMemoryDataKeys();
+      const store = new ShreddingEventStore(
+        inner, keys, { ...vendorPii, IdentityRecorded: ['siret'] }, 'vendorId', { IdentityRecorded: 'legal' },
+      );
+      return { store, keys };
+    }
+
+    it('survives the shredding of the subject key', async () => {
+      const { store, keys } = scopedStore();
+      await store.append('vendor-v1', [registered('vendor@example.com'), recorded], 0, v1);
+
+      await keys.shred('v1');
+
+      const loaded = await store.load('vendor-v1');
+      expect(loaded.map((event) => event.payload)).toEqual([
+        { vendorId: 'v1', registeredAt: '2026-07-06T00:00:00Z', email: SHREDDED },
+        { siret: '73282932000074' },
+      ]);
+    });
+
+    it('is shredded with its own scoped key', async () => {
+      const { store, keys } = scopedStore();
+      await store.append('vendor-v1', [registered('vendor@example.com'), recorded], 0, v1);
+
+      await keys.shred('v1:legal');
+
+      const loaded = await store.load('vendor-v1');
+      expect(loaded.map((event) => event.payload)).toEqual([
+        { vendorId: 'v1', registeredAt: '2026-07-06T00:00:00Z', email: 'vendor@example.com' },
+        { siret: SHREDDED },
+      ]);
+    });
+  });
+
   it('passes plaintext PII through on read without decrypting', async () => {
     const { store, inner } = shreddingOver();
     await inner.append('vendor-v1', [registered('plain@example.com')], 0, v1);

@@ -32,7 +32,7 @@ function scheduleWith(overrides: Partial<MarketScheduleView>): MarketScheduleVie
 }
 
 function item(itemId: string, name: string): CatalogueViewItem {
-  return { itemId, name, description: '', price: 500, imageReference: '' };
+  return { itemId, name, description: '', price: 500, imageReference: '', allergens: null };
 }
 
 describe('FindUpcomingMarketDays', () => {
@@ -201,11 +201,11 @@ describe('FindUpcomingMarketDays', () => {
     await catalogues.addItemToCatalogue(item('item-1', 'Bourguignon'), 'vendor-id');
     await menus.setMenu({ marketId: 'market-1', date: '2024-02-10', itemIds: ['item-1'] }, 'vendor-id');
 
-    await catalogues.reviseItem('item-1', { name: 'Bœuf bourguignon', description: 'Mijoté', price: 1300, variants: undefined }, 'vendor-id');
+    await catalogues.reviseItem('item-1', { name: 'Bœuf bourguignon', description: 'Mijoté', price: 1300, variants: undefined, allergens: ['celery'] }, 'vendor-id');
 
     const { marketDays } = await upcoming('vendor-id');
     expect(marketDays[0].items).toEqual([
-      { itemId: 'item-1', name: 'Bœuf bourguignon', description: 'Mijoté', price: 1300, imageReference: '', variants: undefined },
+      { itemId: 'item-1', name: 'Bœuf bourguignon', description: 'Mijoté', price: 1300, imageReference: '', variants: undefined, allergens: ['celery'] },
     ]);
   });
 
@@ -304,7 +304,7 @@ describe('FindUpcomingMarketDays', () => {
   it('carries the bilan on a day closed while its market was still running', async () => {
     await views.recordSchedule(scheduleWith({ startDate: '2024-02-05' }), 'vendor-id');
     await catalogues.addItemToCatalogue(
-      { itemId: 'item-1', name: 'Bourguignon', description: '', price: 500, imageReference: '' },
+      { itemId: 'item-1', name: 'Bourguignon', description: '', price: 500, imageReference: '', allergens: null },
       'vendor-id',
     );
     await menus.setMenu({ marketId: 'market-1', date: '2024-02-10', itemIds: ['item-1'] }, 'vendor-id');
@@ -427,6 +427,7 @@ describe('FindUpcomingMarketDays', () => {
       name: 'Pizza',
       description: '',
       imageReference: '',
+      allergens: null,
       variants: [
         { name: 'Margherita', description: '', price: 900 },
         { name: 'Pepperoni', description: 'piquante', price: 1200 },

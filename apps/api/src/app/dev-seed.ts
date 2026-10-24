@@ -7,8 +7,10 @@ import {
   EditStorefrontInformation,
   InMemorySubdomainRegistry,
   OpenStorefront,
+  ProvideVendorLegalIdentity,
   PublishStorefront,
   RegisterMarketSchedule,
+  RegisterVendor,
   SetStorefrontCoverPhoto
 } from '@market-miam/market-days';
 import { DEV_FALLBACK_VENDOR_ID } from '@market-miam/auth';
@@ -25,8 +27,9 @@ const DEV_SUBDOMAIN = 'dev';
 // without this there is no in-app way to make the customer storefront return
 // anything on the memory profile. Dev-only — main.ts calls it under
 // NODE_ENV=development; production (postgres) never runs it.
-// Opens the storefront directly rather than registering a vendor, so the
-// OpensStorefronts processor never fires. The closing drain() is what projects the
+// Opens the storefront directly, then registers the vendor only to give it the legal
+// identity publication requires; the OpensStorefronts processor that registering
+// wakes finds the storefront already open. The closing drain() is what projects the
 // seed when there is no poller (the test harness disables polling); under dev's
 // live poller it contends per event and yields rather than failing the boot.
 export async function seedDev(app: INestApplication): Promise<void> {
@@ -44,9 +47,9 @@ export async function seedDev(app: INestApplication): Promise<void> {
     new EditStorefrontInformation(DEMO_VENDOR, 'Jean-Pierre et Yvette - Bouchers de la Drôme', `C'est si bon que même ta grand-mère en réclame`, '0102030405'),
   );
   await commands.execute(new SetStorefrontCoverPhoto(DEMO_VENDOR, DEMO_COVER));
-  await commands.execute(new AddItemToCatalogue({ itemId: 'demo-item-1', vendorId: DEMO_VENDOR, name: 'Bœuf bourguignon aux pommes de terre sautées', description: 'Mijoté 7 heures au vin rouge', price: 1300, imageReference: 'v1784320097/demo-dish1_p1veiv' }));
-  await commands.execute(new AddItemToCatalogue({ itemId: 'demo-item-2', vendorId: DEMO_VENDOR, name: 'Tarte tatin', description: 'Notre version du hachis parmentier classique, entièrement pensée autour du canard. Nous confisons les cuisses entières dans leur propre graisse pendant presque une journée — à feu doux et patient — jusqu\'à ce que la chair cède sous la fourchette et se détache toute seule de l\'os.ée à la main, jamais à la machine, puis mêlée à un jus sombre et brillant, déglacé d\'un trait d\'Armagnac et adouci par des oignons fondus jusqu\'à devenir presque     confits. Par-dessus, une généreuse couche de  lait chaud, au beurre en abondance et à unepointe de muscade, façonnée à la fourchette puis enfournée jusqu\'à ce que les crêtes dorent et croustillent tandis quele cœur reste d\'une douceur incroyable. Le toe assez longtemps pour que les bordscaramélisent là où la purée rencontre le plat. Nous terminons par quelques cristaux de fleur de sel et un peu de thym frais. Riche, profondément savoureux et récon plat que l\'on commande quand le temps se gâteet que l\'on a envie d\'être choyé. Servi dans sa cocotte en fonte, accompagné d\'une poignée de frisée vivement assaisonnée pour trancher avec la richesse delle faim à lui seul, ou se partage à deux si le cœur vous en dit.', price: 600, imageReference: 'v1784320098/demo-dish2_pmotbl' }));
-  await commands.execute(new AddItemToCatalogue({ itemId: 'demo-item-3', vendorId: DEMO_VENDOR, name: 'Soupe du jour', description: 'Selon le marché', price: 500 }));
+  await commands.execute(new AddItemToCatalogue({ itemId: 'demo-item-1', vendorId: DEMO_VENDOR, name: 'Bœuf bourguignon aux pommes de terre sautées', description: 'Mijoté 7 heures au vin rouge', price: 1300, imageReference: 'v1784320097/demo-dish1_p1veiv', allergens: ['gluten', 'milk', 'celery', 'sulphites'] }));
+  await commands.execute(new AddItemToCatalogue({ itemId: 'demo-item-2', vendorId: DEMO_VENDOR, name: 'Tarte tatin', description: 'Notre version du hachis parmentier classique, entièrement pensée autour du canard. Nous confisons les cuisses entières dans leur propre graisse pendant presque une journée — à feu doux et patient — jusqu\'à ce que la chair cède sous la fourchette et se détache toute seule de l\'os.ée à la main, jamais à la machine, puis mêlée à un jus sombre et brillant, déglacé d\'un trait d\'Armagnac et adouci par des oignons fondus jusqu\'à devenir presque     confits. Par-dessus, une généreuse couche de  lait chaud, au beurre en abondance et à unepointe de muscade, façonnée à la fourchette puis enfournée jusqu\'à ce que les crêtes dorent et croustillent tandis quele cœur reste d\'une douceur incroyable. Le toe assez longtemps pour que les bordscaramélisent là où la purée rencontre le plat. Nous terminons par quelques cristaux de fleur de sel et un peu de thym frais. Riche, profondément savoureux et récon plat que l\'on commande quand le temps se gâteet que l\'on a envie d\'être choyé. Servi dans sa cocotte en fonte, accompagné d\'une poignée de frisée vivement assaisonnée pour trancher avec la richesse delle faim à lui seul, ou se partage à deux si le cœur vous en dit.', price: 600, imageReference: 'v1784320098/demo-dish2_pmotbl', allergens: ['gluten', 'eggs', 'milk'] }));
+  await commands.execute(new AddItemToCatalogue({ itemId: 'demo-item-3', vendorId: DEMO_VENDOR, name: 'Soupe du jour', description: 'Selon le marché', price: 500, allergens: ['celery'] }));
   await commands.execute(new RegisterMarketSchedule({
     vendorId: DEMO_VENDOR,
     scheduleId: 'demo-schedule',
@@ -59,6 +62,12 @@ export async function seedDev(app: INestApplication): Promise<void> {
   await commands.execute(new DeclareAbsence({ vendorId: DEMO_VENDOR, scheduleId: 'demo-schedule', from: absentSaturday, to: absentSaturday }));
   // Subdomain must exist before publishing — it's now a publication requirement (step 14).
   await registry.register(DEMO_SUBDOMAIN, DEMO_VENDOR);
+  // So is a legal identity (ADR 0054). Fictional, with a SIRET that passes Luhn but names no one.
+  await commands.execute(new RegisterVendor(DEMO_VENDOR, new Date().toISOString(), 'demo@marketmiam.fr'));
+  await commands.execute(new ProvideVendorLegalIdentity(
+    DEMO_VENDOR, '12345678900015', 'Démo Traiteur', '1 place du Marché, 69004 Lyon', 'demo@marketmiam.fr',
+    '04 00 00 00 00', 'franchise', null, null, null, null, null, null,
+  ));
   await commands.execute(new PublishStorefront(DEMO_VENDOR));
   await subscriptions.drain();
 }

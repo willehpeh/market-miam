@@ -5,8 +5,10 @@ import { CartePage } from './carte-page';
 import { StorefrontFeed } from '../storefront-feed';
 import { StorefrontViewModel } from '../storefront-view-model';
 
-const ACME: StorefrontViewModel = {
+const ACME: Extract<StorefrontViewModel, { status: 'published' }> = {
   status: 'published',
+  editeur: null,
+  vatExempt: false,
   name: 'Acme Bakery',
   description: 'Fresh bread daily',
   phone: '0102030405',
@@ -17,12 +19,13 @@ const ACME: StorefrontViewModel = {
       itemId: 'item-1',
       name: 'Bœuf bourguignon',
       description: 'Mijoté 7 heures',
+      allergens: '',
       photo: {
         src: 'https://cdn.test/photo/item-1',
         srcset: 'https://cdn.test/photo/item-1 800w, https://cdn.test/photo/item-1-big 1600w',
       },
     },
-    { itemId: 'item-2', name: 'Tarte tatin', description: 'Aux pommes', photo: null },
+    { itemId: 'item-2', name: 'Tarte tatin', description: 'Aux pommes', allergens: '', photo: null },
   ],
   upcomingMarkets: [],
 };
@@ -89,6 +92,18 @@ describe('CartePage', () => {
     expect(dialog.querySelector('.fa-utensils')).not.toBeNull();
   });
 
+  // INCO 1169/2011 art. 14: before anyone buys, the dish says what it contains.
+  it("says what the dish contains in its sheet, under Allergènes", () => {
+    const fixture = render({ ...ACME, items: [{ ...ACME.items[0], allergens: 'céleri, lait' }] });
+
+    (fixture.nativeElement.querySelector('[data-item="item-1"]') as HTMLElement).click();
+    fixture.detectChanges();
+
+    const dialog = fixture.nativeElement.querySelector('dialog') as HTMLDialogElement;
+    expect(dialog.textContent).toContain('Allergènes');
+    expect(dialog.textContent).toContain('céleri, lait');
+  });
+
   // Most visitors arrive from a search result with nothing to go back to, so the way home
   // is named after the vendor rather than being a "retour".
   it('leads back to the storefront under the vendor name', () => {
@@ -129,6 +144,7 @@ describe('CartePage', () => {
             { name: 'Margherita', description: 'tomato & basil' },
             { name: 'Pepperoni', description: 'spicy' },
           ],
+          allergens: '',
           photo: null,
         },
       ],
@@ -158,6 +174,7 @@ describe('CartePage', () => {
           name: 'Pizza',
           description: 'Pâte maturée 48 h.\n\nFour à bois.',
           variants: [{ name: 'Margherita', description: '250 g\npour une personne' }],
+          allergens: '',
           photo: null,
         },
       ],
@@ -276,5 +293,32 @@ describe('CartePage', () => {
 
   it('shows a not-found message when there is no storefront', () => {
     expect(render(null).nativeElement.textContent as string).toContain('introuvable');
+  });
+
+  // ADR 0054: a market can charge differently from the carte, so the carte's figure is
+  // only a guide, and saying so is a publication requirement, not a copy preference.
+  it("says its prices are indicative, the market's own governing", () => {
+    const text = render({ ...ACME, items: [{ ...ACME.items[0], priceLabel: '13,00 €' }] }).nativeElement.textContent as string;
+
+    expect(text).toContain('Prix indicatifs : seuls les prix affichés au marché font foi.');
+  });
+
+  it('says nothing about prices it does not show', () => {
+    const text = render(ACME).nativeElement.textContent as string;
+
+    expect(text).not.toContain('Prix indicatifs');
+  });
+
+  it('says TVA does not apply beside its prices under the franchise en base', () => {
+    const text = render({ ...ACME, vatExempt: true, items: [{ ...ACME.items[0], priceLabel: '13,00 €' }] })
+      .nativeElement.textContent as string;
+
+    expect(text).toContain('TVA non applicable, art. 293 B du CGI');
+  });
+
+  it('says nothing about TVA for a vendor who charges it', () => {
+    const text = render({ ...ACME, items: [{ ...ACME.items[0], priceLabel: '13,00 €' }] }).nativeElement.textContent as string;
+
+    expect(text).not.toContain('293 B');
   });
 });

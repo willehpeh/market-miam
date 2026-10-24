@@ -7,6 +7,7 @@ import {
   DataKeys,
   Events,
   EventStore,
+  KeyScopes,
   Lineage,
   PiiFields,
   QueryGateway,
@@ -28,7 +29,7 @@ export const PERSISTED_EVENTS = Symbol('PERSISTED_EVENTS');
 // app/persistence/{in-memory,postgres}-persistence.module.ts.
 @Module({})
 export class EventSourcingModule {
-  static forRoot(piiFields: PiiFields = {}): DynamicModule {
+  static forRoot(piiFields: PiiFields = {}, keyScopes: KeyScopes = {}): DynamicModule {
     return {
       module: EventSourcingModule,
       global: true,
@@ -40,7 +41,7 @@ export class EventSourcingModule {
           // policy, decided here, not in the package.
           provide: EventStore,
           useFactory: (inner: EventStore & Events, keys: DataKeys, lineage: Lineage) =>
-            new ApplicationEventStore(new ShreddingEventStore(inner, keys, piiFields, 'vendorId'), lineage),
+            new ApplicationEventStore(new ShreddingEventStore(inner, keys, piiFields, 'vendorId', keyScopes), lineage),
           inject: [PERSISTED_EVENTS, DataKeys, Lineage],
         },
         { provide: Events, useExisting: EventStore },

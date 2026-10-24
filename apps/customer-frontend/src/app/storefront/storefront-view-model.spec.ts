@@ -4,7 +4,7 @@ import { CustomerStorefront } from './customer-storefront';
 type PublishedStorefront = Extract<CustomerStorefront, { status: 'published' }>;
 type Market = PublishedStorefront['upcomingMarkets'][number];
 
-const dish = { itemId: 'boeuf', name: 'Bourguignon', description: '', price: 1300, imageReference: '' };
+const dish = { itemId: 'boeuf', name: 'Bourguignon', description: '', price: 1300, imageReference: '', allergens: ['gluten', 'milk'] };
 
 const market = (date: string, marketName: string, items: Market['items']): Market => ({
   date,
@@ -20,6 +20,7 @@ const market = (date: string, marketName: string, items: Market['items']): Marke
 
 const withMarkets = (upcomingMarkets: Market[]): CustomerStorefront => ({
   status: 'published',
+  editeur: null,
   name: 'Chez Test',
   description: '',
   phone: '',
@@ -29,12 +30,82 @@ const withMarkets = (upcomingMarkets: Market[]): CustomerStorefront => ({
   upcomingMarkets,
 });
 
+const EDITEUR = {
+  legalName: 'Chez Marie SARL',
+  address: '12 rue des Halles, 92330 Sceaux',
+  siret: '73282932000074',
+  contactEmail: 'contact@chez-marie.fr',
+  phone: '06 12 34 56 78',
+  publicationDirector: 'Marie Dupont',
+  vatRegime: 'franchise',
+  vatNumber: null,
+  company: { legalForm: 'SARL', shareCapital: '5 000 €', registryCity: 'Nanterre', siren: '732829320' },
+  mediator: { name: 'CM2C', url: 'https://www.cm2c.net' },
+};
+
 describe('toViewModel', () => {
+  // INCO 1169/2011: what a dish contains, before anyone buys it. Undeclared is not "none".
+  describe('allergens', () => {
+    const allergensOf = (allergens: string[] | null) => {
+      const view = toViewModel({ ...withMarkets([]), items: [{ ...dish, allergens }] } as CustomerStorefront) as Extract<StorefrontViewModel, { status: 'published' }>;
+      return view.items[0].allergens;
+    };
+
+    it('names the allergens a dish declares, as the regulation names them', () => {
+      expect(allergensOf(['gluten', 'milk', 'sulphites'])).toBe(
+        'céréales contenant du gluten, lait, anhydride sulfureux et sulfites (plus de 10 mg/kg)',
+      );
+    });
+
+    it('says a dish declared free of the 14 contains none of them', () => {
+      expect(allergensOf([])).toBe('Aucun des 14 allergènes majeurs');
+    });
+
+    it('sends the customer to the traiteur for a dish never declared', () => {
+      expect(allergensOf(null)).toBe('Renseignez-vous auprès du traiteur');
+    });
+
+    it("names them on a market day's menu too", () => {
+      const view = toViewModel(withMarkets([market('2026-06-18', 'Saint-Antoine', [{ ...dish, allergens: ['eggs'] }])])) as Extract<StorefrontViewModel, { status: 'published' }>;
+
+      expect(view.upcomingMarkets[0].items[0].allergens).toBe('œufs');
+    });
+  });
+
+  it("carries the vendor's éditeur block for the mentions légales", () => {
+    const view = toViewModel({ ...withMarkets([]), editeur: EDITEUR } as CustomerStorefront);
+
+    expect(view).toMatchObject({ editeur: EDITEUR });
+  });
+
+  // Art. 293 B du CGI: under the franchise en base, every price shown says TVA does not apply.
+  it('marks prices as exempt from TVA under the franchise en base', () => {
+    const view = toViewModel({ ...withMarkets([]), editeur: EDITEUR } as CustomerStorefront);
+
+    expect(view).toMatchObject({ vatExempt: true });
+  });
+
+  it.each([
+    { editeur: { ...EDITEUR, vatRegime: 'assujetti', vatNumber: 'FR44732829320' }, case: 'assujetti' },
+    { editeur: null, case: 'with no identity yet' },
+  ])('does not mark prices as exempt from TVA $case', ({ editeur }) => {
+    const view = toViewModel({ ...withMarkets([]), editeur } as CustomerStorefront);
+
+    expect(view).toMatchObject({ vatExempt: false });
+  });
+
+  it('carries no éditeur block until the vendor provides one', () => {
+    const view = toViewModel(withMarkets([]));
+
+    expect(view).toMatchObject({ editeur: null });
+  });
+
   // The vendor's choice, and they are opted in. A carte is tied to no market, so the figure
   // it names is the catalogue's — what a dish costs before any market's own list revises it.
   it('prices a carte item when the vendor shows carte prices', () => {
     const storefront: CustomerStorefront = {
       status: 'published',
+      editeur: null,
       name: 'Chez Test',
       description: '',
       phone: '',
@@ -52,13 +123,14 @@ describe('toViewModel', () => {
   it('gives a carte item no price when the vendor has hidden them', () => {
     const storefront: CustomerStorefront = {
       status: 'published',
+      editeur: null,
       name: 'Chez Test',
       description: '',
       phone: '',
       coverPhoto: null,
       cartePricesVisible: false,
       upcomingMarkets: [],
-      items: [{ itemId: 'boeuf', name: 'Bourguignon', description: '', price: 1300, imageReference: '' }],
+      items: [{ itemId: 'boeuf', name: 'Bourguignon', description: '', price: 1300, imageReference: '', allergens: null }],
     };
 
     const view = toViewModel(storefront) as Extract<StorefrontViewModel, { status: 'published' }>;
@@ -72,13 +144,14 @@ describe('toViewModel', () => {
   it('builds a single srcset ladder per item photo, shared by the card and the sheet', () => {
     const storefront: CustomerStorefront = {
       status: 'published',
+      editeur: null,
       name: 'Chez Test',
       description: '',
       phone: '',
       coverPhoto: null,
       cartePricesVisible: true,
       upcomingMarkets: [],
-      items: [{ itemId: 'boeuf', name: 'Bourguignon', description: '', price: 1300, imageReference: 'v1/boeuf' }],
+      items: [{ itemId: 'boeuf', name: 'Bourguignon', description: '', price: 1300, imageReference: 'v1/boeuf', allergens: null }],
     };
 
     const view = toViewModel(storefront) as Extract<StorefrontViewModel, { status: 'published' }>;
@@ -99,6 +172,7 @@ describe('toViewModel', () => {
   it('prices every variant of a carte item when prices are shown', () => {
     const storefront: CustomerStorefront = {
       status: 'published',
+      editeur: null,
       name: 'Chez Test',
       description: '',
       phone: '',
@@ -111,6 +185,7 @@ describe('toViewModel', () => {
           name: 'Pizza',
           description: 'Wood-fired',
           imageReference: '',
+          allergens: null,
           variants: [
             { name: 'Margherita', description: '', price: 900 },
             { name: 'Pepperoni', description: 'spicy', price: 1200 },
@@ -132,6 +207,7 @@ describe('toViewModel', () => {
   it('maps each variant of a carte item, pricing none of them when prices are hidden', () => {
     const storefront: CustomerStorefront = {
       status: 'published',
+      editeur: null,
       name: 'Chez Test',
       description: '',
       phone: '',
@@ -144,6 +220,7 @@ describe('toViewModel', () => {
           name: 'Pizza',
           description: 'Wood-fired',
           imageReference: '',
+          allergens: null,
           variants: [
             { name: 'Margherita', description: '', price: 900 },
             { name: 'Pepperoni', description: 'spicy', price: 1200 },
@@ -168,6 +245,7 @@ describe('toViewModel', () => {
   it('prices a market day\'s menu while the market is trading', () => {
     const storefront: CustomerStorefront = {
       status: 'published',
+      editeur: null,
       name: 'Chez Test',
       description: '',
       phone: '',
@@ -184,12 +262,13 @@ describe('toViewModel', () => {
           cancelled: false,
           inProgress: true,
           items: [
-            { itemId: 'boeuf', name: 'Bourguignon', description: '', price: 1300, imageReference: '' },
+            { itemId: 'boeuf', name: 'Bourguignon', description: '', price: 1300, imageReference: '', allergens: null },
             {
               itemId: 'pizza',
               name: 'Pizza',
               description: '',
               imageReference: '',
+              allergens: null,
               variants: [{ name: 'Margherita', description: '', price: 900 }],
             },
           ],
@@ -201,13 +280,14 @@ describe('toViewModel', () => {
     const view = toViewModel(storefront) as Extract<StorefrontViewModel, { status: 'published' }>;
 
     expect(view.upcomingMarkets[0].items).toEqual([
-      { itemId: 'boeuf', name: 'Bourguignon', description: '', priceLabel: '13,00 €', photo: null, soldOut: false },
+      { itemId: 'boeuf', name: 'Bourguignon', description: '', priceLabel: '13,00 €', photo: null, allergens: 'Renseignez-vous auprès du traiteur', soldOut: false },
       {
         itemId: 'pizza',
         name: 'Pizza',
         description: '',
         priceLabel: 'dès 9,00 €',
         photo: null,
+        allergens: 'Renseignez-vous auprès du traiteur',
         variants: [{ name: 'Margherita', description: '', priceLabel: '9,00 €' }],
         // A variant dish greys whole (decision 9): sold-out is per item until a pilot
         // vendor puts a variant dish on a live menu.

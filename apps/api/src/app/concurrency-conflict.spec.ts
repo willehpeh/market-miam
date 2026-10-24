@@ -35,7 +35,7 @@ describe('A command that loses its append', () => {
     await request(app.getHttpServer())
       .post('/catalogue')
       .set('Authorization', 'Bearer any-token')
-      .send({ itemId: 'item-1', name: 'Bœuf bourguignon', description: 'Mijoté maison', price: 1300 })
+      .send({ itemId: 'item-1', name: 'Bœuf bourguignon', description: 'Mijoté maison', price: 1300, allergens: [] })
       .expect(409);
   });
 });

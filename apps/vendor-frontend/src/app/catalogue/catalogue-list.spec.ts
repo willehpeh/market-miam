@@ -58,6 +58,7 @@ describe('CatalogueList', () => {
       name: 'Pizza',
       description: 'Wood-fired',
       imageReference: '',
+      allergens: ['gluten', 'milk'],
       variants: [
         { name: 'Petite', description: '', price: 950 },
         { name: 'Grande', description: '', price: 1600 },
@@ -70,6 +71,26 @@ describe('CatalogueList', () => {
     expect(screen.getByText('9,50 €')).toBeInTheDocument();
     expect(screen.getByText('Grande')).toBeInTheDocument();
     expect(screen.getByText('16,00 €')).toBeInTheDocument();
+  });
+
+  // The live client's dishes predate allergens; this is how they find the ones left to declare.
+  it('flags a dish whose allergens are not declared yet', async () => {
+    const { view, catalogue } = await renderList();
+    catalogue.items.set([item({ itemId: 'old', name: 'Tarte tatin', allergens: null }), item({ itemId: 'new', name: 'Parmentier' })]);
+    view.detectChanges();
+
+    const flagged = screen.getAllByText('Allergènes à renseigner');
+    expect(flagged).toHaveLength(1);
+    expect(flagged[0].closest('a')?.textContent).toContain('Tarte tatin');
+  });
+
+  // Declared "none" is a declaration, not a gap.
+  it('flags nothing on a dish declared free of the 14', async () => {
+    const { view, catalogue } = await renderList();
+    catalogue.items.set([item({ allergens: [] })]);
+    view.detectChanges();
+
+    expect(screen.queryByText('Allergènes à renseigner')).not.toBeInTheDocument();
   });
 
   it('lists the items in catalogue order, as the storefront shows them', async () => {

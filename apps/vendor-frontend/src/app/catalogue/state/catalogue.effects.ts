@@ -94,9 +94,9 @@ export class CatalogueEffects {
   addItem$ = createEffect(() =>
     this.actions$.pipe(
       ofType(AddItem),
-      switchMap(({ itemId, name, description, price, imageReference, variants }) =>
-        this.catalogue.add({ itemId, name, description, price, imageReference, variants }).pipe(
-          map(() => AddItemSuccess({ item: { itemId, name, description, price, imageReference: imageReference ?? '', variants } })),
+      switchMap(({ itemId, name, description, price, imageReference, variants, allergens }) =>
+        this.catalogue.add({ itemId, name, description, price, imageReference, variants, allergens }).pipe(
+          map(() => AddItemSuccess({ item: { itemId, name, description, price, imageReference: imageReference ?? '', variants, allergens } })),
           catchError(() => of(AddItemFailure())),
         ),
       ),
@@ -106,8 +106,8 @@ export class CatalogueEffects {
   reviseItem$ = createEffect(() =>
     this.actions$.pipe(
       ofType(ReviseItem),
-      switchMap(({ itemId, name, description, price, variants }) => {
-        const revision = { itemId, name, description, price, variants };
+      switchMap(({ itemId, name, description, price, variants, allergens }) => {
+        const revision = { itemId, name, description, price, variants, allergens };
         return this.catalogue.revise(revision).pipe(
           map(() => ReviseItemSuccess(revision)),
           catchError(() => of(ReviseItemFailure())),

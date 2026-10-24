@@ -24,8 +24,27 @@ CI runs the same suite on Linux and is green.
 
 So: never "fix" an API spec because it failed once, and never conclude a change broke the
 API suite from a single red run. Re-run it, and check a recent run on `main` before
-believing it. The social suite (`npx nx test test`) binds no ports and is unaffected — use
-it as the reliable local signal.
+believing it. The social suite (`npx nx test test`) is mostly port-free and the more
+reliable local signal, but not immune: `test/src/auth/auth.integration.spec.ts` drives
+supertest too and flakes the same way. Re-run before believing it.
+
+## Container specs need a Docker socket testcontainers can find
+
+`npx nx run test:test:container` (CI runs it) fails locally with *Could not find a working
+container runtime strategy* when Docker runs under OrbStack or Colima: testcontainers ignores
+the docker CLI's context. Start the runtime, then point it at the socket:
+
+```sh
+DOCKER_HOST=unix://$HOME/.orbstack/run/docker.sock \
+TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE=/var/run/docker.sock \
+npx nx run test:test:container
+```
+
+## Pushing to `main` deploys
+
+`render.yaml` sets `autoDeployTrigger: checksPass` on every service: a push to `main` that
+passes CI goes to production. A plan that gates deploys (e.g. `MENTIONS-LEGALES-PLAN.md`
+slice 8) gates *pushes*.
 
 ## Node in Claude Code web and mobile sessions
 

@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthModule } from '@market-miam/auth-nestjs';
-import { vendorPiiFields } from '@market-miam/market-days';
+import { vendorPiiFields, vendorPiiKeyScopes } from '@market-miam/market-days';
 import { MarketDaysModule } from './market-days/market-days.module';
 import { EventSourcingModule } from './event-sourcing/event-sourcing.module';
 import { InMemoryPersistenceModule } from './persistence/in-memory-persistence.module';
@@ -25,7 +25,7 @@ import { tokenVerifierFor } from './token-verifier.factory';
       // every other environment (and the production build) uses it.
       ? InMemoryPersistenceModule
       : PostgresPersistenceModule,
-    EventSourcingModule.forRoot(vendorPiiFields),
+    EventSourcingModule.forRoot(vendorPiiFields, vendorPiiKeyScopes),
     MarketDaysModule,
   ],
   providers: [...globalFilters],

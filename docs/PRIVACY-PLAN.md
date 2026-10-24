@@ -12,7 +12,8 @@ identity provider (ADR 0021).
 | Data | Where it lives | Erasure route |
 |------|----------------|---------------|
 | Vendor email | Auth0; `VendorRegistered` payload (encrypted) | Key shred + Auth0 user delete |
-| Storefront `name`, `description`, `phone` | `StorefrontInformationEdited` payload (encrypted); `vendor_storefront_views` (plaintext) | Key shred + projection rebuild |
+| Storefront `name`, `description`, `phone` | `StorefrontInformationEdited` payload (encrypted); `vendor_storefront_views` (plaintext) | Key shred; row dropped on `VendorErased` (ADR 0058) |
+| Vendor legal identity (SIRET, dénomination, adresse, email, phone, TVA, médiateur, société) | `VendorLegalIdentityProvided` payload (encrypted under `{vendorId}:legal`); `vendor_legal_identity_views` (plaintext) | Row dropped on `VendorErased`; `:legal` key shredded 5 years after erasure (ADR 0056) |
 | Pilot leads (nom, mail, marchés) | Tally only — never enters the event store | Delete the Tally response |
 
 Registry of encrypted fields: `packages/market-days/src/vendor/vendor-pii-fields.ts`.
@@ -21,6 +22,11 @@ No customer accounts exist — `customer-storefront/` is a read-side query, not 
 ## Remaining
 
 ### 1. Vendor-facing privacy policy — needed before the first vendor registers
+
+**Drafted and approved by a lawyer on 2026-09-23. It ships with the storefront mentions légales**
+(`docs/MENTIONS-LEGALES-PLAN.md`), along with a second policy for storefront visitors. The final
+sub-processors are Render, Auth0, Cloudinary and Honeycomb. Tally is out, because only the pilot form
+uses it and the website's policy already covers that form.
 
 Not a copy of the website one. What actually differs:
 
@@ -43,7 +49,8 @@ claim would go stale (customer PII landing in vendor streams).
 Required. The under-250-employees carve-out in art. 30(5) doesn't apply: it lifts only
 for processing that is *occasional*, and running vendor accounts is continuous. One
 CNIL-style table, kept as a file, not published. Entries: pilot prospection, vendor
-accounts, storefront publication. Each needs finalité, base légale, catégories de
+accounts, storefront publication, and the vendor legal identity. The legal identity has *obligation
+légale* as its basis and is kept for the page's life plus 5 years (ADR 0056). Each needs finalité, base légale, catégories de
 personnes et de données, destinataires, transferts hors UE, durée de conservation, and
 the art. 32 security measures — which is where crypto-shredding gets written down.
 
@@ -52,6 +59,13 @@ the art. 32 security measures — which is where crypto-shredding gets written d
 Auth0 (Okta, US), Render (US), Tally (Belgium). Two of three are outside the EU, so each
 needs its transfer basis recorded — the same gap `/mentions-legales` now discloses in
 prose for Render.
+
+**Transfer bases checked on 2026-09-23.** The vendor product's four US sub-processors are all
+**Active** on the DPF register (EU-US, plus the UK and Swiss extensions): Render, Auth0, LLC
+(covered under Okta), Cloudinary Inc. and Hound Technology Inc. (Honeycomb). The SCCs in each DPA
+are the fallback if the DPF falls. Log retention: Render 7 days (Hobby), Auth0 1 day (Free),
+Honeycomb 60 days, Cloudinary up to 1 year (90 days online). The DPAs themselves are still
+to be filed.
 
 ## Open questions
 

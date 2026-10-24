@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, effect, inject, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, viewChild } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { StorefrontHost } from '../../core/storefront-host';
 import { ItemViewModel } from '../storefront-view-model';
@@ -37,6 +37,16 @@ import { StorefrontFooter } from '../layout/storefront-footer';
 
             <div class="px-5 py-6 lg:px-8 lg:py-10">
               <h1 class="text-3xl font-bold tracking-tight text-ink lg:text-4xl">Notre carte</h1>
+              @if (priced()) {
+                <!-- ADR 0054: a market can charge differently from the carte, so its figure is
+                     a guide and the market's list governs. Required wording, not decoration. -->
+                <p class="mt-2 text-sm text-ink-soft">
+                  Prix indicatifs : seuls les prix affichés au marché font foi.
+                  @if (storefront.vatExempt) {
+                    TVA non applicable, art. 293 B du CGI.
+                  }
+                </p>
+              }
               <ul class="mt-6 grid gap-4 lg:grid-cols-3">
                 @for (item of storefront.items; track item.itemId) {
                   <li><app-item-card [item]="item" (chosen)="openItem($event)" /></li>
@@ -46,7 +56,7 @@ import { StorefrontFooter } from '../layout/storefront-footer';
 
             <app-item-sheet />
 
-            <app-storefront-footer [name]="storefront.name" [phone]="storefront.phone" />
+            <app-storefront-footer [name]="storefront.name" [phone]="storefront.phone" [mentionsLegales]="!!storefront.editeur" />
           </main>
         }
         @case ('coming-soon') {
@@ -62,6 +72,10 @@ import { StorefrontFooter } from '../layout/storefront-footer';
 })
 export class CartePage {
   protected readonly storefront = inject(StorefrontFeed).view;
+  protected readonly priced = computed(() => {
+    const storefront = this.storefront();
+    return storefront?.status === 'published' && storefront.items.some((item) => item.priceLabel);
+  });
 
   private readonly sheet = viewChild.required(ItemSheet);
 

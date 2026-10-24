@@ -1,6 +1,6 @@
 # 0054. Vendor legal identity: the storefront's mentions légales
 
-Date: 2026-09-03 · Status: Accepted
+Date: 2026-09-03 · Status: Accepted · Amended 2026-09-23 by [0056](0056-legal-identity-outlives-erasure.md) — the legal identity outlives erasure by 5 years under its own key, and carries its own phone · Amended 2026-10-13 — evidence of the médiateur warning, and what the form prefills
 
 ## Context
 
@@ -39,8 +39,8 @@ professional's confirmation before it goes to pilot vendors.
 Billing will hold a duplicate billing identity, captured at Stripe Checkout. That
 duplication is correct; Billing reading `vendor-{vendorId}` to invoice is not.
 
-**It lives on `Vendor`, not `Storefront`.** `RecordVendorLegalIdentity` →
-`VendorLegalIdentityRecorded` on `vendor-{vendorId}`, full-state payload (ADR
+**It lives on `Vendor`, not `Storefront`.** `ProvideVendorLegalIdentity` →
+`VendorLegalIdentityProvided` on `vendor-{vendorId}`, full-state payload (ADR
 0024). It is the identity of the business, stable across whatever the shop window
 does; `Storefront` holds presentation. This *supersedes* an earlier working note
 placing it on `Storefront`.
@@ -60,7 +60,7 @@ the way Catalogue and Calendar already are — no new mechanism:
 | Dénomination légale | LCEN 6-III-1 | the person, not the enseigne |
 | Adresse professionnelle | LCEN 6-III-1 | |
 | Email de contact public | LCEN art. 19 | **not** the Auth0 one; default it, don't reuse it |
-| Téléphone | LCEN art. 19 | reuse `phone` |
+| Téléphone | LCEN art. 19 | ~~reuse `phone`~~ its own copy, prefilled from `phone` (ADR 0056) |
 | Régime TVA (assujetti / franchise) | | drives the TVA line |
 | Médiateur : nom + site | C. conso. L616-1 | optional — see below |
 
@@ -117,6 +117,8 @@ duty and move onto the page only if a sale is ever concluded there.
 - The hébergeur block is a constant: Market Miam, then Render — as
   `mentions-legales.astro` already reads.
 - Art. 6-II is satisfied as a side effect: we hold what a request would ask for.
+  *(2026-09-23: only while the account lives — décret 2021-1362 extends it 5 years
+  past closure; ADR 0056.)*
 
 ## Rejected
 
@@ -127,5 +129,18 @@ duty and move onto the page only if a sale is ever concluded there.
 | The fields in Billing | Inverts ADR 0048's seam; a Stripe-less deployment still owes LCEN |
 | The fields on `Storefront` | It holds presentation; the legal identity outlives the shop window and is what Billing would later duplicate |
 | Requiring the médiateur | Enforcing the vendor's own L616-1 duty at the cost of onboarding; the notice is complete without it |
+
+## Amendment (2026-10-13): the form (plan slice 5)
+
+- **Evidence of the médiateur warning is the form's gate.** An empty médiateur can only be sent
+  once the vendor ticks an acknowledgement of their L616-1 duty and the fine, next to links to
+  CM2C, Medicys and AME. So every `VendorLegalIdentityProvided` with `mediatorName: null` is
+  dated evidence the warning was shown, read with the form's git history. The tick starts
+  unticked on each edit. Rejected: a field on the event (schema change to a live event), a
+  separate acknowledgement event (a second command for one checkbox).
+- **Prefill covers dénomination, adresse and EI vs société.** recherche-entreprises gives the
+  forme juridique only as a code, and neither capital nor ville du greffe; the vendor types them.
+- **The contact email is not defaulted.** The vendor app doesn't hold the login email, and a
+  vendor's login is often not the address they publish. Required, empty, with a hint.
 
 Builds on ADRs 0009, 0024, 0025, 0031, 0045, 0046, 0048, 0052, 0053.

@@ -194,7 +194,7 @@ Three things look like projections and aren't:
 - **`customer-storefront`** — `FindCustomerStorefrontHandler` composes registry,
   views and the upcoming-market-days handler per request; the composition is the view.
 - **`SubdomainRegistry`** — written by command handlers, **not derivable from the
-  log**, never rebuildable — which is why `VendorErasure` deletes from it explicitly.
+  log**, never rebuildable — which is why `ErasesVendors` deletes from it explicitly (ADR 0058).
 
 ---
 
@@ -416,8 +416,8 @@ null, so read-model columns stay `NOT NULL`.
 versioned `MasterKeyring`; `data_keys.key_version` names the wrapping version.
 Wrapping uses the ring's current version; unwrapping selects by the row's; a row
 read under an old version is lazily re-wrapped (compare-and-set on
-`key_version`, so a racing shred's DELETE wins — an erased key is never
-resurrected). Rotation is config: add a key, flip `MASTER_KEY_CURRENT`, deploy;
+`key_version`; a shred's tombstone nulls `key_version`, so it wins — an erased
+key is never resurrected). Rotation is config: add a key, flip `MASTER_KEY_CURRENT`, deploy;
 retire a version once no row references it. Config shapes: `MASTER_KEY=<base64>`
 (single, version 1) or `MASTER_KEYS="1:<b64>;2:<b64>"` + `MASTER_KEY_CURRENT`.
 On Render they live in a Secret File read off disk, never `process.env`. The
@@ -498,8 +498,8 @@ drains, so after would always gauge zero; a gauge failure sets
    operations are opaque. Deliberate (§10.4's trade), but real.
 4. **`Subscriptions.rebuild()` emits no span** — the most impactful operation
    (and the GDPR-erasure path) leaves no trace of what/how long/how many events.
-5. **`VendorErasure.erase()` emits no span** tying shred → rebuild → subdomain
-   removal together on a compliance-critical path.
+5. **Erasure emits no span of its own** tying shred → schedule → subdomain removal
+   together (`ErasesVendors`, ADR 0058) on a compliance-critical path.
 6. **`exception.slug` values are unenforced convention** — string literals at
    call sites; a typo'd seventh slug would silently escape Honeycomb queries.
 7. **No metrics pipeline** — traces only; every SLO is a query over span

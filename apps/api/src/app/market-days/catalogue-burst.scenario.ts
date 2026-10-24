@@ -31,6 +31,7 @@ describe('A burst of catalogue commands across two instances', () => {
         description: 'Mijoté maison',
         price: 1000 + index,
         imageReference: `v1/dishes/acme-bakery/item-${index}`,
+        allergens: [],
       });
   }
 

@@ -20,6 +20,10 @@ export const appRoutes: Route[] = [
         loadComponent: () => import('./storefront/storefront-form').then(m => m.StorefrontForm),
       },
       {
+        path: 'legal-identity',
+        loadComponent: () => import('./legal-identity/legal-identity-form').then(m => m.LegalIdentityForm),
+      },
+      {
         path: 'qr-code',
         loadComponent: () => import('./qr-code/qr-code-screen').then(m => m.QrCodeScreen),
       },

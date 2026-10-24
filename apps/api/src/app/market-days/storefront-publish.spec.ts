@@ -38,15 +38,55 @@ describe('Publishing a storefront over HTTP', () => {
     expect(response.body.message).toContain('url');
   });
 
+  it('rejects publishing a storefront whose vendor has not provided a legal identity', async () => {
+    await readyStorefrontFor(app, 'acme-bakery');
+    await app.get(InMemorySubdomainRegistry).register('acme', 'acme-bakery');
+
+    const response = await request(app.getHttpServer())
+      .post('/storefront/publish')
+      .set('Authorization', 'Bearer any-token')
+      .expect(400);
+
+    expect(response.body.message).toContain('legal');
+  });
+
   it('publishes a storefront that meets every requirement', async () => {
     await readyStorefrontFor(app, 'acme-bakery');
     await app.get(InMemorySubdomainRegistry).register('acme', 'acme-bakery');
+    await provideLegalIdentityFor(app, 'acme-bakery');
 
     await request(app.getHttpServer())
       .post('/storefront/publish')
       .set('Authorization', 'Bearer any-token')
       .expect(204);
   });
+
+  async function provideLegalIdentityFor(app: INestApplication, vendorId: string): Promise<void> {
+    await app.get(EventStore).append(`vendor-${vendorId}`, [
+      { type: 'VendorRegistered', payload: { vendorId, registeredAt: '2026-09-01T08:00:00.000Z', email: 'demo@example.fr' }, version: 1 },
+      {
+        type: 'VendorLegalIdentityProvided',
+        payload: {
+          vendorId,
+          siret: '73282932000074',
+          siren: '732829320',
+          vatNumber: null,
+          legalName: 'Marie Dupont',
+          address: '12 rue des Halles, 92330 Sceaux',
+          contactEmail: 'contact@chez-demo.fr',
+          phone: '0102030405',
+          vatRegime: 'franchise',
+          mediatorName: null,
+          mediatorUrl: null,
+          legalForm: null,
+          shareCapital: null,
+          registryCity: null,
+          legalRepresentative: null,
+        },
+        version: 1,
+      },
+    ], 0, { vendorId });
+  }
 
   async function readyStorefrontFor(app: INestApplication, vendorId: string): Promise<void> {
     const store = app.get(EventStore);

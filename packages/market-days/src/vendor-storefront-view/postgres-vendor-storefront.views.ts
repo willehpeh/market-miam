@@ -65,6 +65,10 @@ export class PostgresVendorStorefrontViews implements VendorStorefrontViews, Ven
     );
   }
 
+  async remove(vendorId: string): Promise<void> {
+    await this.db.query('DELETE FROM vendor_storefront_views WHERE vendor_id = $1', [vendorId]);
+  }
+
   async clear(): Promise<void> {
     await this.db.query('DELETE FROM vendor_storefront_views');
   }

@@ -1,12 +1,15 @@
 import { TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { StorefrontFooter } from './storefront-footer';
 
 const LICENCE_URL = 'https://marketmiam.fr/mentions-legales#licence';
 
-function renderFooter() {
+function renderFooter(mentionsLegales = true) {
+  TestBed.configureTestingModule({ providers: [provideRouter([])] });
   const fixture = TestBed.createComponent(StorefrontFooter);
   fixture.componentRef.setInput('name', 'Chez Mohamed');
   fixture.componentRef.setInput('phone', '0102030405');
+  fixture.componentRef.setInput('mentionsLegales', mentionsLegales);
   fixture.detectChanges();
   return fixture;
 }
@@ -28,5 +31,19 @@ describe('StorefrontFooter', () => {
     const link = footer.querySelector<HTMLAnchorElement>(`a[href="${LICENCE_URL}"]`);
 
     expect(link?.textContent?.trim()).toBe('Logiciel libre');
+  });
+
+  it('links the mentions légales', () => {
+    const footer: HTMLElement = renderFooter().nativeElement;
+
+    const link = footer.querySelector<HTMLAnchorElement>('a[href="/mentions-legales"]');
+
+    expect(link?.textContent?.trim()).toBe('Mentions légales');
+  });
+
+  it('offers no link to mentions légales the vendor has not provided yet', () => {
+    const footer: HTMLElement = renderFooter(false).nativeElement;
+
+    expect(footer.querySelector('a[href="/mentions-legales"]')).toBeNull();
   });
 });

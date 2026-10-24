@@ -1,7 +1,7 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { VendorId } from '@market-miam/shared-kernel';
 import { ReviseItem } from './revise-item';
-import { Catalogues, ItemDescription, ItemId, ItemName, Pricing } from '../catalogue';
+import { Allergens, Catalogues, ItemDescription, ItemId, ItemName, Pricing } from '../catalogue';
 
 @CommandHandler(ReviseItem)
 export class ReviseItemHandler implements ICommandHandler<ReviseItem> {
@@ -16,6 +16,7 @@ export class ReviseItemHandler implements ICommandHandler<ReviseItem> {
       new ItemName(command.name),
       new ItemDescription(command.description),
       Pricing.from({ price: command.price, variants: command.variants }),
+      new Allergens(command.allergens),
     );
     await this.catalogues.save(catalogue, vendorId);
   }

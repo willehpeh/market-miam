@@ -30,6 +30,10 @@ export class InMemoryVendorStorefrontViews implements VendorStorefrontViews, Ven
     this._storefronts.set(vendorId, { ...this.viewFor(vendorId), cartePricesVisible: visible });
   }
 
+  async remove(vendorId: string): Promise<void> {
+    this._storefronts.delete(vendorId);
+  }
+
   async clear(): Promise<void> {
     this._storefronts.clear();
   }

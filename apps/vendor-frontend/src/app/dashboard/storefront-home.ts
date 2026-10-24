@@ -63,7 +63,8 @@ export class StorefrontHome {
     title: string, link: string, icon: string
   }[] = [
     { title: 'Votre catalogue', link: '/dashboard/catalogue', icon: 'fa-utensils' },
-    { title: 'Vos marchés', link: '/dashboard/markets', icon: 'fa-calendar-days' }
+    { title: 'Vos marchés', link: '/dashboard/markets', icon: 'fa-calendar-days' },
+    { title: 'Mentions légales', link: '/dashboard/legal-identity', icon: 'fa-scale-balanced' }
   ];
   private readonly storefront = inject(StorefrontFacade);
   readonly storefrontUrl = computed(() => storefrontUrl(this.storefront.view()?.subdomain));

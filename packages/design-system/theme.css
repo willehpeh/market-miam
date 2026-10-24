@@ -101,12 +101,20 @@
 
   input[type="text"],
   input[type="tel"],
+  input[type="email"],
+  input[type="url"],
   textarea {
     /* text-base (16px) keeps iOS Safari from auto-zooming the field on focus */
     @apply w-full rounded-field border border-line bg-surface px-3.5 py-2.5 text-base text-ink;
     @apply placeholder:text-placeholder;
     @apply focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-brand;
     @apply disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  /* the brand, not the platform's blue, on every tick and dot */
+  input[type="radio"],
+  input[type="checkbox"] {
+    accent-color: var(--color-brand);
   }
 }
 
@@ -154,6 +162,16 @@
     @apply inline-flex items-center justify-center gap-2 rounded-field border border-line-strong bg-transparent px-4 py-3 text-base font-bold text-ink-soft shadow-none transition-colors;
     @apply hover:bg-surface-sunk active:bg-surface-sunk active:scale-[0.98];
     @apply focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand;
+  }
+  /* one option of a radio group, on a line of its own: a <label> wrapping its input, the
+     whole row the tap target, the chosen one tinted. Stack them with space-y-2 */
+  .choice {
+    @apply flex cursor-pointer items-center gap-3 rounded-field border border-line bg-surface p-3 text-base text-ink transition-colors;
+    @apply has-checked:border-brand has-checked:bg-brand-soft;
+    @apply has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-brand;
+  }
+  .choice > input {
+    @apply size-5 shrink-0 outline-none;
   }
   /* quiet square icon button — row controls that must not shout like a submit */
   .icon-btn {

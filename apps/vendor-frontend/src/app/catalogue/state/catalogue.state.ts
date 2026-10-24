@@ -63,9 +63,9 @@ export const catalogueFeature = createFeature({
     on(AddItemSuccess, (state, { item }): CatalogueState => ({ ...state, fresh: true, items: [...state.items, item], newPhotoReference: '' })),
     // ponytail: ReviseItemFailure is emitted but unreduced — same no-error-UX stance as AddItemFailure.
     // Optimistic: merge the revised fields by id on success, preserving the item's other fields (image).
-    on(ReviseItemSuccess, (state, { itemId, name, description, price, variants }): CatalogueState => ({
+    on(ReviseItemSuccess, (state, { itemId, name, description, price, variants, allergens }): CatalogueState => ({
       ...state,
-      items: state.items.map(item => item.itemId === itemId ? { ...item, name, description, price, variants } : item),
+      items: state.items.map(item => item.itemId === itemId ? { ...item, name, description, price, variants, allergens } : item),
     })),
     // ponytail: ReorderItemsFailure unreduced — the reorder screen keeps the vendor's
     // order on its own until it saves, so a failure leaves the stored order untouched

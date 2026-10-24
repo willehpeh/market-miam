@@ -1,6 +1,6 @@
 import { InMemoryEventStore } from '@market-miam/event-sourcing';
 import { VendorScopedEvents } from '@market-miam/market-days';
-import { Calendars, Catalogues, InMemorySubdomainRegistry, PublishStorefrontHandler, StorefrontNotReadyToPublish, StorefrontPublication, Storefronts } from '@market-miam/market-days';
+import { Calendars, Catalogues, InMemorySubdomainRegistry, PublishStorefrontHandler, StorefrontNotReadyToPublish, StorefrontPublication, Storefronts, Vendors } from '@market-miam/market-days';
 import { TestPublishStorefront } from './test-data';
 
 describe('Publish Storefront', () => {
@@ -12,7 +12,7 @@ describe('Publish Storefront', () => {
     store = new InMemoryEventStore();
     registry = new InMemorySubdomainRegistry();
     const events = new VendorScopedEvents(store);
-    handler = new PublishStorefrontHandler(new Storefronts(events), new Catalogues(events), new Calendars(events), registry, new StorefrontPublication());
+    handler = new PublishStorefrontHandler(new Storefronts(events), new Catalogues(events), new Calendars(events), new Vendors(events), registry, new StorefrontPublication());
   });
 
   it('rejects publishing a storefront that is not ready', async () => {
@@ -77,11 +77,26 @@ describe('Publish Storefront', () => {
     expect((failure as StorefrontNotReadyToPublish).missing).not.toContain('schedule');
   });
 
+  // ADR 0054: the mentions légales are part of the page, so no page goes live without them.
+  it('rejects publishing a storefront whose vendor has not provided a legal identity', async () => {
+    openStorefrontWithCover();
+    addItem();
+    addSchedule();
+    await assignSubdomain();
+    registerVendor();
+
+    const failure = await handler.execute(TestPublishStorefront.valid()).catch((e: unknown) => e);
+
+    expect(failure).toBeInstanceOf(StorefrontNotReadyToPublish);
+    expect((failure as StorefrontNotReadyToPublish).missing).toEqual(['legal']);
+  });
+
   it('publishes a storefront that meets every requirement', async () => {
     openStorefrontWithCover();
     addItem();
     addSchedule();
     await assignSubdomain();
+    provideLegalIdentity();
 
     await handler.execute(TestPublishStorefront.valid());
 
@@ -95,6 +110,7 @@ describe('Publish Storefront', () => {
     addItem();
     addSchedule();
     await assignSubdomain();
+    provideLegalIdentity();
 
     await handler.execute(TestPublishStorefront.valid());
 
@@ -108,11 +124,45 @@ describe('Publish Storefront', () => {
     addItem();
     addSchedule();
     await assignSubdomain();
+    provideLegalIdentity();
 
     await handler.execute(TestPublishStorefront.valid());
 
     expect(store.newEvents()).toEqual([]);
   });
+
+  function registerVendor() {
+    store.seedWith('vendor-vendor-id', [
+      { type: 'VendorRegistered', payload: { vendorId: 'vendor-id', registeredAt: '2026-09-01T08:00:00.000Z', email: 'demo@example.fr' }, version: 1 },
+    ], { vendorId: 'vendor-id' });
+  }
+
+  function provideLegalIdentity() {
+    registerVendor();
+    store.seedWith('vendor-vendor-id', [
+      {
+        type: 'VendorLegalIdentityProvided',
+        payload: {
+          vendorId: 'vendor-id',
+          siret: '73282932000074',
+          legalName: 'Marie Dupont',
+          address: '12 rue des Halles, 92330 Sceaux',
+          contactEmail: 'contact@chez-demo.fr',
+          phone: '0102030405',
+          vatRegime: 'franchise',
+          siren: '732829320',
+          vatNumber: null,
+          mediatorName: null,
+          mediatorUrl: null,
+          legalForm: null,
+          shareCapital: null,
+          registryCity: null,
+          legalRepresentative: null,
+        },
+        version: 1,
+      },
+    ], { vendorId: 'vendor-id' });
+  }
 
   function assignSubdomain() {
     return registry.register('chez-demo', 'vendor-id');
@@ -151,7 +201,7 @@ describe('Publish Storefront', () => {
     const failure = await handler.execute(TestPublishStorefront.valid()).catch((e: unknown) => e);
 
     expect(failure).toBeInstanceOf(StorefrontNotReadyToPublish);
-    expect((failure as StorefrontNotReadyToPublish).missing).toEqual(['title', 'cover', 'catalogue', 'schedule', 'url']);
+    expect((failure as StorefrontNotReadyToPublish).missing).toEqual(['title', 'cover', 'catalogue', 'schedule', 'url', 'legal']);
   });
 
   function openStorefront() {

@@ -1,7 +1,8 @@
 import { environment } from '../../environments/environment';
-import { CustomerStorefront } from './customer-storefront';
+import { CustomerStorefront, Editeur } from './customer-storefront';
 import { CatalogueItem } from './items/catalogue-item';
 import { UpcomingMarket } from './markets/upcoming-market';
+import { allergensLine } from './items/allergens';
 
 export type ItemViewModel = {
   itemId: string;
@@ -14,6 +15,8 @@ export type ItemViewModel = {
   priceLabel?: string;
   variants?: { name: string; description: string; priceLabel?: string }[];
   photo: { src: string; srcset: string } | null;
+  // What the sheet says under "Allergènes": their names, none of the 14, or ask the traiteur.
+  allergens: string;
   // Only ever set on a market day's items — the carte has no availability to speak of.
   // A variant dish greys whole (decision 9).
   soldOut?: boolean;
@@ -50,6 +53,9 @@ export type StorefrontViewModel =
       socialImageUrl: string | null;
       items: ItemViewModel[];
       upcomingMarkets: MarketViewModel[];
+      editeur: Editeur | null;
+      // Under the franchise en base (art. 293 B du CGI), every price shown says TVA does not apply.
+      vatExempt: boolean;
     }
   | {
       status: 'coming-soon';
@@ -72,6 +78,8 @@ export function toViewModel(storefront: CustomerStorefront): StorefrontViewModel
     // read it. That card is where the trip gets decided — at home, before setting out,
     // which is exactly when a price is worth knowing.
     upcomingMarkets: storefront.upcomingMarkets.map((market, index) => toMarketViewModel(market, index === 0)),
+    editeur: storefront.editeur,
+    vatExempt: storefront.editeur?.vatRegime === 'franchise',
   };
 }
 
@@ -101,7 +109,7 @@ function formatEuros(cents: number): string {
 // beyond whether a market is charging for it there.
 function toItemViewModel(item: CatalogueItem, priced: boolean): ItemViewModel {
   const photo = item.imageReference ? itemPhoto(item.imageReference) : null;
-  const base = { itemId: item.itemId, name: item.name, description: item.description, photo };
+  const base = { itemId: item.itemId, name: item.name, description: item.description, photo, allergens: allergensLine(item.allergens) };
   return item.variants
     ? {
         ...base,

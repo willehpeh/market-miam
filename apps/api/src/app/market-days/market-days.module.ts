@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { CommandGateway, EventStore } from '@market-miam/event-sourcing';
+import { CommandGateway, DataKeys, EventStore } from '@market-miam/event-sourcing';
 import { Clock, DateClock } from '@market-miam/common';
 import {
   AddItemToCatalogueHandler,
@@ -13,9 +13,12 @@ import {
   CatalogueViewStore,
   ChangeItemPhotoHandler,
   EditStorefrontInformationHandler,
+  EraseVendorHandler,
+  ErasesVendors,
   FindCustomerStorefrontHandler,
   HideCartePricesHandler,
   FindVendorCatalogueHandler,
+  FindVendorLegalIdentityHandler,
   FindVendorStorefrontHandler,
   FindMarketPricesHandler,
   FindVendorSchedulesHandler,
@@ -36,8 +39,10 @@ import {
   ReopenMarketDayHandler,
   MarketDays,
   OpenStorefrontHandler,
+  ProvideVendorLegalIdentityHandler,
   PublishStorefrontHandler,
   StorefrontPublication,
+  SubdomainRegistry,
   SetMarketDayMenuHandler,
   SetMarketPricesHandler,
   RegisterMarketScheduleHandler,
@@ -50,6 +55,8 @@ import {
   OpensStorefronts,
   Storefronts,
   Vendors,
+  VendorLegalIdentityViewProjection,
+  VendorLegalIdentityViewStore,
   VendorScopedEvents,
   VendorStorefrontViewProjection,
   VendorStorefrontViewStore,
@@ -57,13 +64,14 @@ import {
 import { SignedUploads, signedUploadsFor } from '../signed-uploads';
 import { VendorsController } from './vendors.controller';
 import { StorefrontController } from './storefront.controller';
+import { LegalIdentityController } from './legal-identity.controller';
 import { CatalogueController } from './catalogue.controller';
 import { MarketDayController } from './market-day.controller';
 import { MarketScheduleController } from './market-schedule.controller';
 import { MarketPricesController } from './market-prices.controller';
 import { SellingRecordController } from './selling-record.controller';
 import { PublicStorefrontController } from './public-storefront.controller';
-import { VendorErasure } from './vendor-erasure';
+import { dailyShredSweep, ShredSweep } from './shred-sweep';
 
 const clock = [{ provide: Clock, useClass: DateClock }];
 
@@ -94,6 +102,11 @@ const projections = [
     inject: [VendorStorefrontViewStore],
   },
   {
+    provide: VendorLegalIdentityViewProjection,
+    useFactory: (store: VendorLegalIdentityViewStore) => new VendorLegalIdentityViewProjection(store),
+    inject: [VendorLegalIdentityViewStore],
+  },
+  {
     provide: CatalogueViewProjection,
     useFactory: (store: CatalogueViewStore) => new CatalogueViewProjection(store),
     inject: [CatalogueViewStore],
@@ -121,10 +134,17 @@ const processors = [
     useFactory: (gateway: CommandGateway) => new OpensStorefronts(gateway),
     inject: [CommandGateway],
   },
+  {
+    provide: ErasesVendors,
+    useFactory: (keys: DataKeys, subdomains: SubdomainRegistry) => new ErasesVendors(keys, subdomains),
+    inject: [DataKeys, SubdomainRegistry],
+  },
 ];
 
 const commandHandlers = [
   RegisterVendorHandler,
+  ProvideVendorLegalIdentityHandler,
+  EraseVendorHandler,
   AddItemToCatalogueHandler,
   ChangeItemPhotoHandler,
   ReorderItemsHandler,
@@ -151,13 +171,13 @@ const commandHandlers = [
 
 const domainServices = [StorefrontPublication];
 
-const queryHandlers = [FindCustomerStorefrontHandler, FindVendorStorefrontHandler, FindVendorCatalogueHandler, FindVendorSchedulesHandler, FindUpcomingMarketDaysHandler, FindUnratedMarketDaysHandler, FindMarketDayHandler, FindMarketPricesHandler, FindSellingRecordHandler];
+const queryHandlers = [FindCustomerStorefrontHandler, FindVendorStorefrontHandler, FindVendorCatalogueHandler, FindVendorLegalIdentityHandler, FindVendorSchedulesHandler, FindUpcomingMarketDaysHandler, FindUnratedMarketDaysHandler, FindMarketDayHandler, FindMarketPricesHandler, FindSellingRecordHandler];
 
 // EventStore / CommandGateway / QueryGateway come from the global
 // EventSourcingModule; the view stores from the global persistence module the
 // composition root picked. Nothing here knows which profile is running.
 @Module({
-  controllers: [VendorsController, StorefrontController, CatalogueController, MarketScheduleController, MarketDayController, MarketPricesController, SellingRecordController, PublicStorefrontController],
+  controllers: [VendorsController, StorefrontController, LegalIdentityController, CatalogueController, MarketScheduleController, MarketDayController, MarketPricesController, SellingRecordController, PublicStorefrontController],
   providers: [
     ...clock,
     ...signedUploads,
@@ -167,7 +187,8 @@ const queryHandlers = [FindCustomerStorefrontHandler, FindVendorStorefrontHandle
     ...domainServices,
     ...commandHandlers,
     ...queryHandlers,
-    VendorErasure,
+    dailyShredSweep,
+    ShredSweep,
   ],
 })
 export class MarketDaysModule {}

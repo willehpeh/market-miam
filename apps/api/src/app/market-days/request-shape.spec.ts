@@ -44,6 +44,8 @@ describe('Request shape', () => {
     ['a cover photo with a non-numeric version', 'put', '/storefront/cover-photo', { version: 'seven' }, 'version'],
     ['a carte-price choice without visible', 'put', '/storefront/carte-prices', {}, 'visible'],
     ['a carte-price choice whose visible is not a boolean', 'put', '/storefront/carte-prices', { visible: 'oui' }, 'visible'],
+    ['a legal identity without a SIRET', 'put', '/legal-identity', { ...legalIdentityBody(), siret: undefined }, 'siret'],
+    ['a legal identity leaving out its médiateur rather than sending null', 'put', '/legal-identity', { ...legalIdentityBody(), mediatorName: undefined }, 'mediatorName'],
   ];
 
   it.each(cases)('rejects %s as a 400 naming the field', async (_description, method, url, body, field) => {
@@ -60,4 +62,21 @@ describe('Request shape', () => {
 
 function marketBody() {
   return { id: 'market-1', name: 'Marché de Belleville', codePostal: '75011', town: 'Paris' };
+}
+
+function legalIdentityBody() {
+  return {
+    siret: '73282932000074',
+    legalName: 'Marie Dupont',
+    address: '12 rue des Halles, 92330 Sceaux',
+    contactEmail: 'contact@chez-marie.fr',
+    phone: '06 12 34 56 78',
+    vatRegime: 'assujetti',
+    mediatorName: null,
+    mediatorUrl: null,
+    legalForm: null,
+    shareCapital: null,
+    registryCity: null,
+    legalRepresentative: null,
+  };
 }

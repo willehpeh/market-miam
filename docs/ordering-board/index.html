@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ordering</title>
+<meta name="description" content="The reference for Market Miam's ordering work in progress: the event storm, the questions for the lawyer and the accountant, and the Stripe facts to check.">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<main class="page">
+  <nav class="site-nav" aria-label="Pages"><a href="index.html" aria-current="page">Overview</a><a href="event-storm.html">Event storm</a><a href="avocat.html">Avocat</a><a href="expert-comptable.html">Expert-comptable</a><a href="stripe.html">Stripe</a></nav>
+
+  <header>
+    <p class="kicker">Market Miam · Ordering</p>
+    <h1>Ordering</h1>
+    <p class="lead">
+      Customers order and pay online from a live market day's menu, and collect at the stall with a code. This site is
+      the reference for the work in progress. The plan behind it is
+      <a href="https://github.com/willehpeh/market-miam/blob/main/docs/ORDERING-PLAN.md"><code>docs/ORDERING-PLAN.md</code></a>;
+      where the two disagree, this site is newer.
+    </p>
+    <p class="meta">Updated 24 October 2026</p>
+  </header>
+
+  <section aria-labelledby="now">
+    <h2 id="now">Where we are</h2>
+    <p class="intro">
+      Event-storming the big picture, Stripe Connect first. The timeline holds as a first pass, and step 1, vendor
+      onboarding, is the one under the zoom: R3 and R4 agreed.
+    </p>
+    <div class="grid">
+      <a class="card" href="event-storm.html">
+        <span class="tag rule">4 rules</span><span class="tag question">14 open</span>
+        <h3>Event storm</h3>
+        <p>The timeline from a vendor connecting Stripe to a refund, the rules agreed so far, and every open question.</p>
+        <p class="go">Open the board →</p>
+      </a>
+      <a class="card" href="avocat.html">
+        <span class="tag lawyer">15 questions</span><span class="tag lawyer">French</span>
+        <h3>Avocat</h3>
+        <p>Every question for the lawyer, with dated copies of the texts to review. Written to be sent as is, and to
+          print cleanly.</p>
+        <p class="go">Open the brief →</p>
+      </a>
+      <a class="card" href="expert-comptable.html">
+        <span class="tag lawyer">5 questions</span><span class="tag lawyer">French</span>
+        <h3>Expert-comptable</h3>
+        <p>Cash-register software for VAT-registered vendors, the publisher's attestation, and e-invoicing.</p>
+        <p class="go">Open the brief →</p>
+      </a>
+      <a class="card" href="stripe.html">
+        <span class="tag done">2 answered</span><span class="tag verify">4 partly</span><span class="tag question">1 open</span>
+        <h3>Stripe</h3>
+        <p>The Stripe facts the design leans on: what was found, what is still to check, and the page to read.</p>
+        <p class="go">Open the checks →</p>
+      </a>
+    </div>
+  </section>
+
+  <section aria-labelledby="decisions">
+    <h2 id="decisions">Business decisions</h2>
+    <div class="grid">
+      <article class="card rule-card">
+        <span class="tag rule">Price</span>
+        <h3>One package, 50 € HT a month, ordering included</h3>
+        <p>60 € TTC. The 15 € tier is dropped, so there is no tier split and nothing to gate. Still no commission on
+          orders.</p>
+        <p class="agreed">Decided 24 October 2026 · Raised <a href="event-storm.html#q15">Q15</a>, settled as <a href="event-storm.html#r4">R4</a>: a storefront needs a Stripe account able to take payments before it is published</p>
+      </article>
+    </div>
+  </section>
+
+  <section aria-labelledby="order">
+    <h2 id="order">Order of work</h2>
+    <p class="intro">From the plan, with where each step stands.</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>#</th><th>Step</th><th>Where it stands</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>Lawyer and accountant</td><td>Questions gathered on the <a href="avocat.html">avocat</a> and <a href="expert-comptable.html">expert-comptable</a> pages</td></tr>
+          <tr><td>2</td><td>Stripe platform account; test onboarding with the live client</td><td>Nothing recorded yet</td></tr>
+          <tr><td>3</td><td>Mentions légales and allergens</td><td>Deployed; both rollouts wait on the live client</td></tr>
+          <tr><td>4</td><td>Tombstones for vendor keys</td><td>Done</td></tr>
+          <tr><td>5</td><td>Ordering context: payment port, webhooks, idempotency gate, day keys, code check, scheduler</td><td>Being event-stormed</td></tr>
+          <tr><td>6</td><td>Vendor app: Stripe onboarding, live order list, code input, <em>remis sans code</em></td><td>Not started</td></tr>
+          <tr><td>7</td><td>Storefront: basket, Checkout, status page; email provider</td><td>Not started</td></tr>
+          <tr><td>8</td><td>Website rebuilt around ordering</td><td>Not started</td></tr>
+          <tr><td>9</td><td>Check signal at markets; pilot with real cards, small amounts</td><td>Not started</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer>
+    Source: <a href="https://github.com/willehpeh/market-miam/tree/main/docs/ordering-board"><code>docs/ordering-board/</code></a>.
+    Edit it there; the site rebuilds on push.
+  </footer>
+</main>
+</body>
+</html>

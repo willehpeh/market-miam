@@ -5,6 +5,7 @@ import { StorefrontFacade } from '../storefront/storefront.facade';
 import { storefrontUrl } from '../storefront/storefront-url';
 import { CatalogueFacade } from '../catalogue/catalogue.facade';
 import { MarketScheduleFacade } from '../markets/market-schedule.facade';
+import { LegalIdentityFacade } from '../legal-identity/legal-identity.facade';
 
 @Component({
   selector: 'mm-setup-steps',
@@ -101,6 +102,7 @@ export class SetupSteps {
   private readonly storefront = inject(StorefrontFacade);
   private readonly catalogue = inject(CatalogueFacade);
   private readonly markets = inject(MarketScheduleFacade);
+  private readonly legalIdentity = inject(LegalIdentityFacade);
   readonly publishing = this.storefront.publishing;
   readonly publishError = this.storefront.publishError;
   readonly storefrontUrl = computed(() => storefrontUrl(this.storefront.view()?.subdomain));
@@ -117,6 +119,7 @@ export class SetupSteps {
     const optional = fields.filter((field) => !field.set && !field.required).map((field) => field.label);
     const itemCount = this.catalogue.items().length;
     const scheduleCount = this.markets.schedules().length;
+    const legalIdentityProvided = !!this.legalIdentity.identity();
     const steps = [
       {
         number: 1,
@@ -138,6 +141,14 @@ export class SetupSteps {
         detail: scheduleCount ? marketsAdded(scheduleCount) : 'Où et quand vous vendez.',
         done: scheduleCount > 0,
         link: '/dashboard/markets'
+      },
+      // The API refuses to publish without them (ADR 0054), so they are a step like the others.
+      {
+        number: 4,
+        title: 'Vos mentions légales',
+        detail: legalIdentityProvided ? 'Renseignées' : 'Obligatoires pour publier votre vitrine.',
+        done: legalIdentityProvided,
+        link: '/dashboard/legal-identity'
       }
     ];
     const nextIndex = steps.findIndex((step) => !step.done);

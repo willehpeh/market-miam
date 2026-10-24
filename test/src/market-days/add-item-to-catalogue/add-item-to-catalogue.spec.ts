@@ -7,6 +7,7 @@ import {
   ItemAddedToCatalogue,
   ItemAlreadyInCatalogueError,
   TooFewVariantsError,
+  UnknownAllergenError,
   VariantInput,
   Catalogues,
   VendorScopedEvents
@@ -39,6 +40,7 @@ describe('AddItemToCatalogue', () => {
         description: command.description,
         price: command.price,
         imageReference: command.imageReference,
+        allergens: ['gluten', 'milk'],
       },
       version: 1,
     };
@@ -66,9 +68,37 @@ describe('AddItemToCatalogue', () => {
             { name: 'Large', description: 'extra hungry', price: 1200 },
           ],
           imageReference: command.imageReference,
+          allergens: ['gluten', 'milk'],
         },
       }),
     ]);
+  });
+
+  describe('allergens (INCO 1169/2011)', () => {
+    it('records an empty declaration as none of the 14', async () => {
+      await handler.execute(TestAddItemToCatalogue.with({ allergens: [] }));
+
+      expect(store.newEvents()).toEqual([
+        expect.objectContaining({ type: 'ItemAddedToCatalogue', payload: expect.objectContaining({ allergens: [] }) }),
+      ]);
+    });
+
+    // Stable whatever order the boxes were ticked in, so a re-save that ticks the same ones
+    // in another order is not a revision.
+    it("records each allergen once, in the regulation's order", async () => {
+      await handler.execute(TestAddItemToCatalogue.with({ allergens: ['sulphites', 'milk', 'gluten', 'milk'] }));
+
+      expect(store.newEvents()).toEqual([
+        expect.objectContaining({ payload: expect.objectContaining({ allergens: ['gluten', 'milk', 'sulphites'] }) }),
+      ]);
+    });
+
+    it('rejects an allergen outside the 14 of the regulation', async () => {
+      await expect(handler.execute(TestAddItemToCatalogue.with({ allergens: ['gluten', 'avocado'] })))
+        .rejects.toThrow(UnknownAllergenError);
+
+      expect(store.newEvents()).toEqual([]);
+    });
   });
 
   it.each([
@@ -104,6 +134,7 @@ describe('AddItemToCatalogue', () => {
           { name: 'Small', description: '', price: 800 },
           { name: 'Large', description: '', price: 1200 },
         ],
+        allergens: [],
       });
 
       await expect(handler.execute(command)).rejects.toThrow(InvalidItemPricingError);
@@ -116,6 +147,7 @@ describe('AddItemToCatalogue', () => {
         vendorId: 'vendor-id',
         name: 'Item Name',
         description: '',
+        allergens: [],
       });
 
       await expect(handler.execute(command)).rejects.toThrow(InvalidItemPricingError);

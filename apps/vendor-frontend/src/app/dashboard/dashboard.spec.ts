@@ -15,6 +15,9 @@ import { MarketDayFacade } from '../market-days/market-day.facade';
 import { FakeMarketDayFacade } from '../market-days/fake.market-day.facade';
 import { testMarketDayView } from '../market-days/test-market-day-view.builder';
 import { COPIED_NOTICE_DELAY, Share } from '../core/share';
+import { LegalIdentityFacade } from '../legal-identity/legal-identity.facade';
+import { FakeLegalIdentityFacade } from '../legal-identity/fake.legal-identity.facade';
+import { LegalIdentityView } from '../legal-identity/legal-identity';
 import { FakeShare } from '../core/fake.share';
 
 async function renderDashboard(copiedNoticeDelay = 0) {
@@ -26,6 +29,7 @@ async function renderDashboard(copiedNoticeDelay = 0) {
       { provide: MarketScheduleFacade, useClass: FakeMarketScheduleFacade },
       { provide: MarketDayFacade, useClass: FakeMarketDayFacade },
       { provide: Share, useClass: FakeShare },
+      { provide: LegalIdentityFacade, useClass: FakeLegalIdentityFacade },
       { provide: COPIED_NOTICE_DELAY, useValue: copiedNoticeDelay },
     ],
   });
@@ -34,7 +38,8 @@ async function renderDashboard(copiedNoticeDelay = 0) {
   const markets = TestBed.inject(MarketScheduleFacade) as FakeMarketScheduleFacade;
   const marketDays = TestBed.inject(MarketDayFacade) as FakeMarketDayFacade;
   const sharing = TestBed.inject(Share) as FakeShare;
-  return { view, storefront, catalogue, markets, marketDays, sharing };
+  const legalIdentity = TestBed.inject(LegalIdentityFacade) as FakeLegalIdentityFacade;
+  return { view, storefront, catalogue, markets, marketDays, sharing, legalIdentity };
 }
 
 const completeStorefront: StorefrontView = {
@@ -59,6 +64,7 @@ async function renderReady(overrides: Partial<StorefrontView> = {}, copiedNotice
   ctx.storefront.view.set({ ...completeStorefront, subdomain: 'acme', ...overrides });
   ctx.catalogue.items.set([aItem]);
   ctx.markets.schedules.set([aSchedule]);
+  ctx.legalIdentity.identity.set(anIdentity);
   ctx.view.detectChanges();
   return ctx;
 }
@@ -68,6 +74,7 @@ const aItem: CatalogueItemView = {
   name: 'Bœuf bourguignon',
   description: 'Mijoté maison',
   price: 1300,
+  allergens: ['gluten', 'milk'],
   imageReference: 'v1/items/acme/item-1',
 };
 
@@ -80,7 +87,105 @@ const aSchedule: MarketScheduleView = {
   frequency: { weeks: 1 },
 };
 
+const anIdentity: LegalIdentityView = {
+  siret: '73282932000074',
+  legalName: 'Acme SARL',
+  address: '1 rue du Pain, 69004 Lyon',
+  contactEmail: 'contact@acme.fr',
+  phone: '04 78 00 00 00',
+  vatRegime: 'assujetti',
+  mediatorName: null,
+  mediatorUrl: null,
+  legalForm: null,
+  shareCapital: null,
+  registryCity: null,
+  legalRepresentative: null,
+};
+
 describe('Dashboard', () => {
+  it('asks for the legal identity on arrival', async () => {
+    const { legalIdentity } = await renderDashboard();
+
+    expect(legalIdentity.loadCalled).toBe(true);
+  });
+
+  // The prompt is a card that would otherwise pop in above everything a moment late.
+  it('waits for the legal identity before showing anything', async () => {
+    const { view, storefront, legalIdentity } = await renderDashboard();
+    legalIdentity.loading.set(true);
+    storefront.view.set({ ...completeStorefront, subdomain: 'acme', published: true });
+    view.detectChanges();
+
+    expect(screen.getByRole('status', { name: /chargement/i })).toBeInTheDocument();
+  });
+
+  // A vendor published before the mentions légales existed never saw the setup steps that
+  // now ask for them.
+  it('asks for the mentions légales on the published home while none are provided', async () => {
+    const { view, legalIdentity } = await renderReady({ published: true });
+    legalIdentity.identity.set(null);
+    view.detectChanges();
+
+    expect(screen.getByRole('link', { name: /complétez vos mentions légales/i })).toHaveAttribute('href', '/dashboard/legal-identity');
+  });
+
+  // The setup steps ask already; a card above them would say it twice.
+  it('leaves asking to the setup steps before publication', async () => {
+    const { view, legalIdentity } = await renderReady();
+    legalIdentity.identity.set(null);
+    view.detectChanges();
+
+    expect(screen.queryByRole('link', { name: /complétez vos mentions légales/i })).not.toBeInTheDocument();
+  });
+
+  it('leaves the mentions légales step to do until the vendor provides them', async () => {
+    const { view, legalIdentity } = await renderReady();
+    legalIdentity.identity.set(null);
+    view.detectChanges();
+
+    expect(screen.getByRole('link', { name: /vos mentions légales/i })).toHaveAttribute('href', '/dashboard/legal-identity');
+    expect(screen.getByText('Obligatoires pour publier votre vitrine.')).toBeInTheDocument();
+    expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '3');
+  });
+
+  // The API refuses to publish without them (slice 9 of the plan), so the button waits too.
+  it('holds Publier back until the mentions légales are provided', async () => {
+    const { view, legalIdentity } = await renderReady();
+    legalIdentity.identity.set(null);
+    view.detectChanges();
+
+    expect(screen.queryByRole('button', { name: /publier/i })).not.toBeInTheDocument();
+  });
+
+  it('marks the mentions légales step done once provided', async () => {
+    await renderReady();
+
+    expect(screen.getByText('Renseignées')).toBeInTheDocument();
+    expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '4');
+    expect(screen.getByRole('button', { name: /publier/i })).toBeInTheDocument();
+  });
+
+  it('stops asking once the mentions légales are provided', async () => {
+    const { view, legalIdentity } = await renderReady({ published: true });
+    legalIdentity.identity.set(anIdentity);
+    view.detectChanges();
+
+    expect(screen.queryByRole('link', { name: /complétez vos mentions légales/i })).not.toBeInTheDocument();
+  });
+
+  // Unknown is not missing: a failed load says nothing about the vendor.
+  it('does not ask while the legal identity is unknown', async () => {
+    await renderReady({ published: true });
+
+    expect(screen.queryByRole('link', { name: /complétez vos mentions légales/i })).not.toBeInTheDocument();
+  });
+
+  it('opens the mentions légales from the published home', async () => {
+    await renderReady({ published: true });
+
+    expect(screen.getByRole('link', { name: 'Mentions légales' })).toHaveAttribute('href', '/dashboard/legal-identity');
+  });
+
   it('waits for the storefront to arrive before showing steps or the published home', async () => {
     await renderDashboard();
 

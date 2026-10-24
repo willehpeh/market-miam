@@ -13,6 +13,7 @@ const item = {
   description: 'Mijoté maison',
   price: 1300,
   imageReference: 'v1/dishes/acme-bakery/item-1',
+  allergens: [],
 };
 
 const schedule = {
@@ -70,6 +71,7 @@ describe('Pricing a market over HTTP', () => {
         { name: 'Pepperoni', description: 'piquante', price: 1200 },
       ],
       imageReference: 'v1/dishes/acme-bakery/pizza',
+      allergens: [],
     }).expect(201);
     await authed('post', '/market-schedules').send(schedule).expect(201);
 

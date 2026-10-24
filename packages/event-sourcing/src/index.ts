@@ -25,7 +25,7 @@ export { DataKeys } from './ports/data-keys';
 export { InMemoryDataKeys } from './adapters/in-memory/in-memory.data-keys';
 export { PostgresDataKeys } from './adapters/postgres/postgres.data-keys';
 export { MasterKeyring } from './adapters/postgres/master-keyring';
-export { ShreddingEventStore, PiiFields, SHREDDED } from './adapters/shredding.event-store';
+export { ShreddingEventStore, PiiFields, KeyScopes, SHREDDED } from './adapters/shredding.event-store';
 export { PostgresEventStore } from './adapters/postgres/postgres.event-store';
 export { PostgresCheckpoint } from './adapters/postgres/postgres.checkpoint';
 export { PostgresNotifications, ListenState, ListenStatus } from './adapters/postgres/postgres.notifications';

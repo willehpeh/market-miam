@@ -1,0 +1,221 @@
+/* The ordering hub: one stylesheet for every page. Dark on screen, light on paper, since
+   the avocat and expert-comptable pages are made to be printed or saved as PDF. */
+:root {
+  color-scheme: dark;
+  --plane: #0e0e0d;
+  --surface: #181816;
+  --raised: #21211e;
+  --ink: #f4f3ee;
+  --ink-2: #c3c2b7;
+  --ink-3: #8f8d86;
+  --line: #2c2c29;
+  --event: #e0703c;    /* something that happened */
+  --stripe: #e2508f;   /* Stripe, the external system */
+  --policy: #a385e6;   /* whenever X, then Y */
+  --actor: #e3b341;    /* who acts */
+  --question: #e5534b; /* open question */
+  --rule: #3fb68b;     /* agreed rule */
+  --lawyer: #6ea8ef;   /* for the lawyer */
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--plane);
+  color: var(--ink);
+  font: 15px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: inherit; text-decoration-color: var(--ink-3); text-underline-offset: 2px; }
+a:hover { text-decoration-color: var(--ink); }
+code { font: 0.9em var(--mono); color: var(--ink-2); }
+
+.page { max-width: 1120px; margin: 0 auto; padding: 24px 16px 64px; }
+@media (min-width: 720px) { .page { padding: 32px 32px 80px; } }
+.page.narrow { max-width: 860px; }
+
+/* ---- navigation ---- */
+.site-nav {
+  display: flex; gap: 4px; overflow-x: auto; margin: 0 0 32px; padding-bottom: 12px;
+  border-bottom: 1px solid var(--line); font-size: 14px; white-space: nowrap;
+}
+.site-nav a { padding: 6px 10px; border-radius: 8px; color: var(--ink-2); text-decoration: none; }
+.site-nav a:hover { color: var(--ink); background: var(--surface); }
+.site-nav a[aria-current="page"] { color: var(--ink); background: var(--raised); font-weight: 600; }
+
+/* ---- header ---- */
+.kicker {
+  margin: 0;
+  font: 700 11px/1 var(--mono);
+  letter-spacing: 0.14em; text-transform: uppercase; color: var(--event);
+}
+h1 { margin: 10px 0 0; font-size: 34px; line-height: 1.1; letter-spacing: -0.02em; }
+.lead { margin: 14px 0 0; max-width: 64ch; color: var(--ink-2); font-size: 16px; }
+.meta { margin: 14px 0 0; color: var(--ink-3); font-size: 13px; }
+
+.legend { display: flex; flex-wrap: wrap; gap: 8px 16px; margin: 24px 0 0; padding: 0; list-style: none; font-size: 13px; color: var(--ink-2); }
+.legend li { display: flex; align-items: center; gap: 8px; }
+.swatch { width: 12px; height: 12px; border-radius: 3px; background: var(--c); }
+
+/* ---- sections ---- */
+section { margin-top: 56px; }
+h2 { margin: 0; font-size: 20px; letter-spacing: -0.01em; }
+h3 { margin: 0; font-size: 17px; line-height: 1.3; }
+.intro { margin: 6px 0 0; max-width: 70ch; color: var(--ink-2); }
+.prose { max-width: 70ch; color: var(--ink-2); }
+.prose p { margin: 10px 0 0; }
+.prose ul, .prose ol { margin: 10px 0 0; padding-left: 20px; }
+.prose li + li { margin-top: 6px; }
+.prose strong { color: var(--ink); }
+
+/* ---- stickies and tags ---- */
+.sticky {
+  margin: 0; padding: 8px 10px;
+  border-left: 3px solid var(--c);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--c) 13%, var(--surface));
+  font-size: 14px; line-height: 1.4;
+}
+.event { --c: var(--event); }
+.stripe { --c: var(--stripe); }
+.policy { --c: var(--policy); }
+.actor { --c: var(--actor); }
+.question { --c: var(--question); }
+.rule { --c: var(--rule); }
+.decide { --c: var(--actor); }
+.verify { --c: var(--stripe); }
+.lawyer { --c: var(--lawyer); }
+.done { --c: var(--rule); }
+.tag {
+  display: inline-block; margin-left: 6px; padding: 1px 6px;
+  border-radius: 100px; vertical-align: 1px; white-space: nowrap;
+  font: 700 10px/1.5 var(--mono);
+  letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--c); background: color-mix(in srgb, var(--c) 18%, transparent);
+}
+.tag:first-child { margin-left: 0; }
+
+/* ---- cards ---- */
+.grid { display: grid; gap: 12px; margin-top: 20px; }
+@media (min-width: 900px) { .grid { grid-template-columns: 1fr 1fr; } }
+.card { padding: 18px; border: 1px solid var(--line); border-radius: 11px; background: var(--surface); }
+.card.rule-card { border-top: 3px solid var(--rule); }
+.card h3 { margin-top: 6px; }
+.card p, .card li { color: var(--ink-2); }
+.card p { margin: 8px 0 0; }
+.card ul { margin: 10px 0 0; padding-left: 18px; }
+.card li + li { margin-top: 6px; }
+.card .label { color: var(--ink); font-weight: 600; }
+.agreed { margin: 12px 0 0; font-size: 12px; color: var(--ink-3); }
+
+a.card { display: block; text-decoration: none; transition: border-color 0.15s; }
+a.card:hover { border-color: var(--ink-3); }
+.card .go { margin-top: 12px; font-size: 13px; color: var(--ink); font-weight: 600; }
+
+/* ---- timeline ---- */
+.timeline { display: grid; gap: 12px; margin: 20px 0 0; padding: 0; list-style: none; }
+@media (min-width: 720px) { .timeline { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 1040px) { .timeline { grid-template-columns: repeat(4, 1fr); } }
+.step {
+  display: flex; flex-direction: column; gap: 8px;
+  padding: 14px; border: 1px solid var(--line); border-radius: 11px; background: var(--surface);
+}
+.step-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.num {
+  display: grid; place-items: center; min-width: 28px; height: 28px; padding: 0 6px;
+  border-radius: 100px; background: var(--raised);
+  font: 700 13px/1 var(--mono);
+}
+.who { font-size: 13px; color: var(--actor); font-weight: 600; }
+.note { margin: 0; font-size: 12px; color: var(--ink-3); }
+.stripe-part { margin-top: auto; }
+.refs { display: flex; gap: 6px; flex-wrap: wrap; margin: 0; }
+.ref {
+  padding: 1px 7px; border-radius: 100px; text-decoration: none;
+  font: 700 11px/1.6 var(--mono);
+  color: var(--question); background: color-mix(in srgb, var(--question) 16%, transparent);
+}
+.ref.r { color: var(--rule); background: color-mix(in srgb, var(--rule) 16%, transparent); }
+
+/* ---- flow ---- */
+.flow { display: grid; gap: 8px; margin: 20px 0 0; padding: 0; list-style: none; }
+@media (min-width: 900px) {
+  .flow { grid-template-columns: repeat(5, 1fr); gap: 0; align-items: stretch; }
+  .flow li { display: flex; }
+  .flow li + li::before { content: "→"; align-self: center; padding: 0 8px; color: var(--ink-3); }
+  .flow .sticky { flex: 1; }
+}
+.flow .writes { display: block; margin-top: 6px; font-size: 12px; color: var(--ink-3); }
+
+/* ---- tables ---- */
+.table-wrap { margin-top: 20px; overflow-x: auto; border: 1px solid var(--line); border-radius: 11px; }
+table { width: 100%; border-collapse: collapse; background: var(--surface); font-size: 14px; }
+th, td { padding: 12px 14px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--line); }
+tr:last-child td { border-bottom: 0; }
+th { font-size: 12px; font-weight: 600; color: var(--ink-3); background: var(--raised); }
+td { color: var(--ink-2); }
+td:first-child { color: var(--ink); font-weight: 600; min-width: 130px; }
+td ul { margin: 0; padding-left: 16px; }
+.aside { margin: 12px 0 0; font-size: 14px; color: var(--ink-2); }
+
+/* ---- question lists ---- */
+.questions { margin: 20px 0 0; padding: 0; list-style: none; border: 1px solid var(--line); border-radius: 11px; background: var(--surface); }
+.questions > li { display: grid; grid-template-columns: 44px 1fr; gap: 4px 12px; padding: 12px 14px; border-bottom: 1px solid var(--line); }
+.questions > li:last-child { border-bottom: 0; }
+.questions > li:target { background: color-mix(in srgb, var(--question) 10%, var(--surface)); }
+.qid { font: 700 13px/1.5 var(--mono); color: var(--question); }
+.qtext { color: var(--ink); }
+.qmeta { grid-column: 2; font-size: 12px; color: var(--ink-3); }
+.answered .qid { color: var(--rule); }
+.answered .qtext { color: var(--ink-2); }
+
+/* ---- briefs: one question each, for the avocat and the expert-comptable ---- */
+.brief { margin-top: 16px; padding: 18px; border: 1px solid var(--line); border-radius: 11px; background: var(--surface); }
+.brief:target { border-color: var(--lawyer); }
+.brief-head { display: flex; gap: 12px; align-items: baseline; }
+.brief-id { font: 700 13px/1.5 var(--mono); color: var(--lawyer); flex-shrink: 0; }
+.brief h3 { font-size: 16px; }
+.brief p, .brief li { color: var(--ink-2); }
+.brief p { margin: 10px 0 0; }
+.brief ul { margin: 10px 0 0; padding-left: 18px; }
+.brief li + li { margin-top: 4px; }
+.brief .ask { color: var(--ink); }
+.brief .see { margin-top: 12px; font-size: 13px; color: var(--ink-3); }
+.brief .see a { color: var(--ink-2); }
+.brief.check .brief-id { color: var(--stripe); }
+.brief.check:target { border-color: var(--stripe); }
+.brief .found { color: var(--ink); font-weight: 600; }
+
+/* ---- dated copies of our own wording ---- */
+details.copy { margin-top: 16px; border: 1px solid var(--line); border-radius: 11px; background: var(--surface); }
+details.copy > summary { cursor: pointer; padding: 14px 18px; font-weight: 600; list-style-position: inside; }
+details.copy[open] > summary { border-bottom: 1px solid var(--line); }
+.copy-meta { margin: 0; padding: 10px 18px; font-size: 12px; color: var(--ink-3); border-bottom: 1px solid var(--line); }
+.copy-body { padding: 4px 18px 18px; color: var(--ink-2); }
+.copy-body h4 { margin: 18px 0 0; font-size: 15px; color: var(--ink); }
+.copy-body h5 { margin: 14px 0 0; font-size: 14px; color: var(--ink); }
+.copy-body p { margin: 8px 0 0; }
+.copy-body ul { margin: 8px 0 0; padding-left: 18px; }
+.copy-body table { margin-top: 10px; background: transparent; }
+.copy-body th { background: transparent; }
+.placeholder { color: var(--lawyer); font-style: italic; }
+.highlight { background: color-mix(in srgb, var(--actor) 22%, transparent); color: var(--ink); border-radius: 3px; padding: 0 2px; }
+
+footer { margin-top: 64px; padding-top: 20px; border-top: 1px solid var(--line); font-size: 13px; color: var(--ink-3); }
+
+/* ---- paper ---- */
+@media print {
+  :root {
+    color-scheme: light;
+    --plane: #ffffff; --surface: #ffffff; --raised: #f3f2ee;
+    --ink: #111111; --ink-2: #333333; --ink-3: #666666; --line: #d8d6cf;
+    --lawyer: #1d5fb8;
+  }
+  body { font-size: 11pt; }
+  .site-nav, .no-print { display: none; }
+  .page { padding: 0; max-width: none; }
+  section { margin-top: 28px; }
+  .brief, details.copy { break-inside: avoid-page; }
+  a { text-decoration: none; }
+}
