@@ -2,6 +2,10 @@
 
 Live client and every prospect: Market Miam unusable until customers can order. Decided 2026-10-04.
 
+The workflows are being event-stormed on [`ordering-board/index.html`](ordering-board/index.html), published
+as the `ordering-board` static site (`render.yaml`). The board holds the agreed rules and open questions;
+where it and this plan disagree, the board is newer.
+
 ## Scope
 
 | In | Out |

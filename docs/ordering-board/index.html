@@ -1,0 +1,375 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ordering Event Storm</title>
+<meta name="description" content="The working board for Market Miam's ordering feature: the big-picture timeline, the rules agreed so far, and the questions still open.">
+<style>
+  :root {
+    color-scheme: dark;
+    --plane: #0e0e0d;
+    --surface: #181816;
+    --raised: #21211e;
+    --ink: #f4f3ee;
+    --ink-2: #c3c2b7;
+    --ink-3: #8f8d86;
+    --line: #2c2c29;
+    --event: #e0703c;    /* something that happened */
+    --stripe: #e2508f;   /* Stripe, the external system */
+    --policy: #a385e6;   /* whenever X, then Y */
+    --actor: #e3b341;    /* who acts */
+    --question: #e5534b; /* open question */
+    --rule: #3fb68b;     /* agreed rule */
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--plane);
+    color: var(--ink);
+    font: 15px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  a { color: inherit; text-decoration-color: var(--ink-3); text-underline-offset: 2px; }
+  a:hover { text-decoration-color: var(--ink); }
+  code { font: 0.9em ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color: var(--ink-2); }
+
+  .page { max-width: 1120px; margin: 0 auto; padding: 32px 16px 64px; }
+  @media (min-width: 720px) { .page { padding: 48px 32px 80px; } }
+
+  /* ---- header ---- */
+  .kicker {
+    font: 700 11px/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    letter-spacing: 0.14em; text-transform: uppercase; color: var(--event);
+  }
+  h1 { margin: 10px 0 0; font-size: 34px; line-height: 1.1; letter-spacing: -0.02em; }
+  .lead { margin: 14px 0 0; max-width: 62ch; color: var(--ink-2); font-size: 16px; }
+  .meta { margin: 14px 0 0; color: var(--ink-3); font-size: 13px; }
+
+  .legend { display: flex; flex-wrap: wrap; gap: 8px 16px; margin: 24px 0 0; padding: 0; list-style: none; font-size: 13px; color: var(--ink-2); }
+  .legend li { display: flex; align-items: center; gap: 8px; }
+  .swatch { width: 12px; height: 12px; border-radius: 3px; background: var(--c); }
+
+  /* ---- sections ---- */
+  section { margin-top: 56px; }
+  h2 { margin: 0; font-size: 20px; letter-spacing: -0.01em; }
+  .intro { margin: 6px 0 0; max-width: 70ch; color: var(--ink-2); }
+
+  /* ---- stickies ---- */
+  .sticky {
+    margin: 0; padding: 8px 10px;
+    border-left: 3px solid var(--c);
+    border-radius: 6px;
+    background: color-mix(in srgb, var(--c) 13%, var(--surface));
+    font-size: 14px; line-height: 1.4;
+  }
+  .event { --c: var(--event); }
+  .stripe { --c: var(--stripe); }
+  .policy { --c: var(--policy); }
+  .actor { --c: var(--actor); }
+  .question { --c: var(--question); }
+  .rule { --c: var(--rule); }
+  .tag {
+    display: inline-block; margin-left: 6px; padding: 1px 6px;
+    border-radius: 100px; vertical-align: 1px;
+    font: 700 10px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--c); background: color-mix(in srgb, var(--c) 18%, transparent);
+  }
+  .tag:first-child { margin-left: 0; }
+
+  /* ---- timeline ---- */
+  .timeline { display: grid; gap: 12px; margin: 20px 0 0; padding: 0; list-style: none; }
+  @media (min-width: 720px) { .timeline { grid-template-columns: repeat(2, 1fr); } }
+  @media (min-width: 1040px) { .timeline { grid-template-columns: repeat(4, 1fr); } }
+  .step {
+    display: flex; flex-direction: column; gap: 8px;
+    padding: 14px; border: 1px solid var(--line); border-radius: 11px; background: var(--surface);
+  }
+  .step-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .num {
+    display: grid; place-items: center; min-width: 28px; height: 28px; padding: 0 6px;
+    border-radius: 100px; background: var(--raised);
+    font: 700 13px/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  .who { font-size: 13px; color: var(--actor); font-weight: 600; }
+  .note { font-size: 12px; color: var(--ink-3); }
+  .stripe-part { margin-top: auto; }
+  .refs { display: flex; gap: 6px; flex-wrap: wrap; margin: 0; }
+  .ref {
+    padding: 1px 7px; border-radius: 100px; text-decoration: none;
+    font: 700 11px/1.6 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    color: var(--question); background: color-mix(in srgb, var(--question) 16%, transparent);
+  }
+  .ref.r { color: var(--rule); background: color-mix(in srgb, var(--rule) 16%, transparent); }
+
+  /* ---- rules ---- */
+  .rules { display: grid; gap: 12px; margin-top: 20px; }
+  @media (min-width: 900px) { .rules { grid-template-columns: 1fr 1fr; } }
+  .card {
+    padding: 18px; border: 1px solid var(--line); border-radius: 11px; background: var(--surface);
+  }
+  .card.rule-card { border-top: 3px solid var(--rule); }
+  .card h3 { margin: 6px 0 0; font-size: 17px; line-height: 1.3; }
+  .card p, .card li { color: var(--ink-2); }
+  .card ul { margin: 10px 0 0; padding-left: 18px; }
+  .card li + li { margin-top: 6px; }
+  .card .label { color: var(--ink); font-weight: 600; }
+  .agreed { margin: 12px 0 0; font-size: 12px; color: var(--ink-3); }
+
+  /* ---- flow ---- */
+  .flow { display: grid; gap: 8px; margin: 20px 0 0; padding: 0; list-style: none; }
+  @media (min-width: 900px) {
+    .flow { grid-template-columns: repeat(5, 1fr); gap: 0; align-items: stretch; }
+    .flow li { display: flex; }
+    .flow li + li::before { content: "→"; align-self: center; padding: 0 8px; color: var(--ink-3); }
+    .flow .sticky { flex: 1; }
+  }
+  .flow .writes { display: block; margin-top: 6px; font-size: 12px; color: var(--ink-3); }
+
+  /* ---- tables ---- */
+  .table-wrap { margin-top: 20px; overflow-x: auto; border: 1px solid var(--line); border-radius: 11px; }
+  table { width: 100%; border-collapse: collapse; background: var(--surface); font-size: 14px; }
+  th, td { padding: 12px 14px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--line); }
+  tr:last-child td { border-bottom: 0; }
+  th { font-size: 12px; font-weight: 600; color: var(--ink-3); background: var(--raised); }
+  td { color: var(--ink-2); }
+  td:first-child { color: var(--ink); font-weight: 600; min-width: 130px; }
+  td ul { margin: 0; padding-left: 16px; }
+  .aside { margin: 12px 0 0; font-size: 14px; color: var(--ink-2); }
+
+  /* ---- questions ---- */
+  .questions { margin: 20px 0 0; padding: 0; list-style: none; border: 1px solid var(--line); border-radius: 11px; background: var(--surface); }
+  .questions li { display: grid; grid-template-columns: 44px 1fr; gap: 4px 12px; padding: 12px 14px; border-bottom: 1px solid var(--line); }
+  .questions li:last-child { border-bottom: 0; }
+  .questions li:target { background: color-mix(in srgb, var(--question) 10%, var(--surface)); }
+  .qid { font: 700 13px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color: var(--question); }
+  .qtext { color: var(--ink); }
+  .qmeta { grid-column: 2; font-size: 12px; color: var(--ink-3); }
+  .decide { --c: var(--actor); }
+  .verify { --c: var(--stripe); }
+
+  footer { margin-top: 64px; padding-top: 20px; border-top: 1px solid var(--line); font-size: 13px; color: var(--ink-3); }
+</style>
+</head>
+<body>
+<main class="page">
+
+  <header>
+    <p class="kicker">Market Miam · Ordering</p>
+    <h1>Event storm</h1>
+    <p class="lead">
+      The big picture of ordering, worked through one step at a time, Stripe Connect first.
+      The plan behind it is <a href="https://github.com/willehpeh/market-miam/blob/main/docs/ORDERING-PLAN.md"><code>docs/ORDERING-PLAN.md</code></a>.
+    </p>
+    <p class="meta">Updated 24 October 2026 · 2 rules agreed · 10 questions open</p>
+    <ul class="legend" aria-label="Legend">
+      <li><span class="swatch" style="--c: var(--event)"></span>Something that happened</li>
+      <li><span class="swatch" style="--c: var(--stripe)"></span>Stripe</li>
+      <li><span class="swatch" style="--c: var(--policy)"></span>Whenever X, then Y</li>
+      <li><span class="swatch" style="--c: var(--actor)"></span>Who acts</li>
+      <li><span class="swatch" style="--c: var(--rule)"></span>Agreed rule</li>
+      <li><span class="swatch" style="--c: var(--question)"></span>Open question</li>
+    </ul>
+  </header>
+
+  <section aria-labelledby="timeline">
+    <h2 id="timeline">Timeline</h2>
+    <p class="intro">
+      Agreed as a first pass. Steps are in plain words for now; they get event names once the
+      timeline holds still. <em>Via webhook</em> marks what Stripe reports back (<a href="#r2">R2</a>).
+    </p>
+    <ol class="timeline">
+      <li class="step">
+        <div class="step-head"><span class="num">1</span><span class="who">Vendor</span><span class="note">once per vendor</span></div>
+        <p class="sticky event">The vendor's payment account is connected and can take payments</p>
+        <p class="sticky stripe stripe-part">Account onboarding · account status updates</p>
+        <p class="refs"><a class="ref" href="#q1">Q1</a><a class="ref" href="#q2">Q2</a></p>
+      </li>
+      <li class="step">
+        <div class="step-head"><span class="num">2</span><span class="who">Customer</span></div>
+        <p class="sticky event">Order placed: the card is held, not charged<span class="tag stripe">via webhook</span></p>
+        <p class="note">The first fact we record. Nothing before it (<a href="#r1">R1</a>).</p>
+        <p class="sticky stripe stripe-part">Checkout</p>
+        <p class="refs"><a class="ref r" href="#r1">R1</a><a class="ref" href="#q3">Q3</a><a class="ref" href="#q4">Q4</a></p>
+      </li>
+      <li class="step">
+        <div class="step-head"><span class="num">3a</span><span class="who">Vendor</span></div>
+        <p class="sticky event">Order accepted</p>
+        <p class="sticky event">Payment taken<span class="tag stripe">via webhook</span></p>
+        <p class="sticky policy">Whenever the payment is taken, send the customer their code</p>
+        <p class="sticky stripe stripe-part">Capture the held payment</p>
+        <p class="refs"><a class="ref r" href="#r2">R2</a><a class="ref" href="#q5">Q5</a><a class="ref" href="#q6">Q6</a></p>
+      </li>
+      <li class="step">
+        <div class="step-head"><span class="num">3b</span><span class="who">Vendor · clock</span></div>
+        <p class="sticky event">Order refused, or no answer in time</p>
+        <p class="sticky event">Hold released<span class="tag stripe">via webhook</span></p>
+        <p class="sticky stripe stripe-part">Cancel the hold</p>
+        <p class="refs"><a class="ref r" href="#r2">R2</a><a class="ref" href="#q7">Q7</a></p>
+      </li>
+      <li class="step">
+        <div class="step-head"><span class="num">4</span><span class="who">Vendor</span></div>
+        <p class="sticky event">Order handed over, with the code</p>
+        <p class="sticky event">Order handed over without the code</p>
+        <p class="sticky stripe stripe-part">None</p>
+        <p class="refs"><a class="ref" href="#q8">Q8</a></p>
+      </li>
+      <li class="step">
+        <div class="step-head"><span class="num">5</span><span class="who">Clock</span><span class="note">at the day's end time</span></div>
+        <p class="sticky event">Market day ended</p>
+        <p class="sticky event">Remaining holds released<span class="tag stripe">via webhook</span></p>
+        <p class="sticky event">No-show: paid, never collected</p>
+        <p class="sticky event">The day's customer details erased</p>
+        <p class="sticky stripe stripe-part">Cancel the remaining holds</p>
+        <p class="refs"><a class="ref r" href="#r2">R2</a><a class="ref" href="#q3">Q3</a></p>
+      </li>
+      <li class="step">
+        <div class="step-head"><span class="num">6</span><span class="who">Stripe</span></div>
+        <p class="sticky event">The vendor gets the money</p>
+        <p class="sticky stripe stripe-part">Payouts, entirely Stripe's job</p>
+        <p class="refs"><a class="ref" href="#q1">Q1</a></p>
+      </li>
+      <li class="step">
+        <div class="step-head"><span class="num">7</span><span class="who">Customer · vendor</span><span class="note">afterwards</span></div>
+        <p class="sticky event">Refund, or chargeback</p>
+        <p class="sticky stripe stripe-part">Refunds · disputes</p>
+        <p class="refs"><a class="ref" href="#q9">Q9</a></p>
+      </li>
+    </ol>
+  </section>
+
+  <section aria-labelledby="rules">
+    <h2 id="rules">Agreed rules</h2>
+    <div class="rules">
+      <article class="card rule-card" id="r1">
+        <span class="tag rule">R1</span>
+        <h3>Nothing is recorded before Stripe holds the card</h3>
+        <ul>
+          <li>Placing an order only asks Stripe for a Checkout page. The first fact on our side is
+            <em>order placed: card held</em>, recorded from Stripe's webhook.</li>
+          <li><span class="label">Why:</span> an anonymous customer can't put anything in front of a vendor,
+            or into the event log, without a real card held. Every write takes the global append lock
+            (ADR 0028), so a flood of writes would slow every vendor down.</li>
+          <li><span class="label">Cost:</span> an abandoned checkout leaves no trace on our side, only in
+            Stripe's dashboard.</li>
+        </ul>
+        <p class="agreed">Agreed 24 October 2026</p>
+      </article>
+      <article class="card rule-card" id="r2">
+        <span class="tag rule">R2</span>
+        <h3>Processors call Stripe; webhooks record the outcome</h3>
+        <ul>
+          <li>A processor reacts to one of our events, calls Stripe, and stops. It writes nothing, so it
+            never holds the append lock while waiting on Stripe.</li>
+          <li>Stripe's outcomes enter our log only through webhooks: checkout, capture, cancellation, refunds.
+            The plan already said it for checkout; this extends it to every Stripe interaction.</li>
+          <li><span class="label">Needs:</span> one Stripe idempotency key per request, the order ID, so a
+            retry can't act twice (<a href="#q10">Q10</a>), and a path for a call refused for good
+            (<a href="#q5">Q5</a>).</li>
+        </ul>
+        <p class="agreed">Agreed 24 October 2026</p>
+      </article>
+    </div>
+  </section>
+
+  <section aria-labelledby="pattern">
+    <h2 id="pattern">R2 on one example: capture</h2>
+    <p class="intro">Each direction goes one way. Only the two outer steps write to our log, and neither waits on Stripe.</p>
+    <ol class="flow">
+      <li><p class="sticky event">Order accepted<span class="writes">Vendor's tap. Short write</span></p></li>
+      <li><p class="sticky policy">Whenever an order is accepted, capture its payment<span class="writes">Processor. Writes nothing</span></p></li>
+      <li><p class="sticky stripe">Stripe captures the held payment<span class="writes">Outside our system</span></p></li>
+      <li><p class="sticky event">Payment taken<span class="writes">Webhook. Short write</span></p></li>
+      <li><p class="sticky policy">Whenever the payment is taken, send the customer their code<span class="writes">Processor</span></p></li>
+    </ol>
+  </section>
+
+  <section aria-labelledby="anonymous">
+    <h2 id="anonymous">Calls with no login behind them</h2>
+    <p class="intro">
+      All three land on <code>apps/api</code>, next to the public storefront route the customer
+      frontend already calls. The vendor's calls stay behind the existing login.
+    </p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Call</th><th>From</th><th>Protection</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>Place an order</td>
+            <td>Customer's browser</td>
+            <td>
+              <ul>
+                <li>The browser sends dish IDs and quantities only. The server prices them from the day's menu and holds the 119,99 € cap</li>
+                <li>Checks that the day is live and open, the dishes are on its menu and not sold out, and the vendor can take payments</li>
+                <li>A rate limit per IP, read from Render's forwarded header</li>
+              </ul>
+            </td>
+          </tr>
+          <tr>
+            <td>Order status</td>
+            <td>Customer's browser</td>
+            <td>A long random token in the link, never the order number, plus a rate limit</td>
+          </tr>
+          <tr>
+            <td>Webhooks</td>
+            <td>Stripe</td>
+            <td>Stripe's signature check, plus the idempotency gate against replays</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="aside">
+      <span class="tag decide">Deferred</span> A captcha of our own (Turnstile, hCaptcha…): a third party and a
+      privacy-policy line, with Checkout already a strong gate. Trigger: the first real abuse.
+      A double tap needs nothing: the second Checkout page is never finished, and expires.
+    </p>
+  </section>
+
+  <section aria-labelledby="questions">
+    <h2 id="questions">Open questions</h2>
+    <p class="intro">
+      <span class="tag decide">Decide</span> is ours to settle.
+      <span class="tag verify">Check</span> is a fact to confirm in Stripe's docs before deciding anything on it.
+    </p>
+    <ol class="questions">
+      <li id="q1"><span class="qid">Q1</span><span class="qtext">What of the vendor's Stripe account do we record ourselves, and what do we only read from Stripe?</span><span class="qmeta"><span class="tag decide">Decide</span> Steps 1, 6</span></li>
+      <li id="q2"><span class="qid">Q2</span><span class="qtext">Stripe has been reworking how Connect accounts are configured since the plan chose "Standard accounts". What is current?</span><span class="qmeta"><span class="tag verify">Check</span> Step 1</span></li>
+      <li id="q3"><span class="qid">Q3</span><span class="qtext">How long a card hold lasts, against the confirmation timeout and the market day's end time. The three must agree.</span><span class="qmeta"><span class="tag verify">Check</span> <span class="tag decide">Decide</span> Steps 2, 3, 5</span></li>
+      <li id="q4"><span class="qid">Q4</span><span class="qtext">What Checkout does on its own against card testing, when the account belongs to the vendor.</span><span class="qmeta"><span class="tag verify">Check</span> Step 2</span></li>
+      <li id="q5"><span class="qid">Q5</span><span class="qtext">When a capture is refused for good (the hold expired, say), does Stripe send a webhook, or only return the error to the call?</span><span class="qmeta"><span class="tag verify">Check</span> Step 3a, R2</span></li>
+      <li id="q6"><span class="qid">Q6</span><span class="qtext">What the vendor's screen shows in the seconds between <em>order accepted</em> and <em>payment taken</em>.</span><span class="qmeta"><span class="tag decide">Decide</span> Step 3a</span></li>
+      <li id="q7"><span class="qid">Q7</span><span class="qtext">The confirmation timeout, in minutes.</span><span class="qmeta"><span class="tag decide">Decide</span> Step 3b · from the plan</span></li>
+      <li id="q8"><span class="qid">Q8</span><span class="qtext">Code attempts before a lockout, and how long the lockout lasts.</span><span class="qmeta"><span class="tag decide">Decide</span> Step 4 · from the plan</span></li>
+      <li id="q9"><span class="qid">Q9</span><span class="qtext">Refunds and disputes: handled in Stripe's dashboard, or in our app? The plan doesn't mention them.</span><span class="qmeta"><span class="tag decide">Decide</span> Step 7</span></li>
+      <li id="q10"><span class="qid">Q10</span><span class="qtext">How long Stripe keeps an idempotency key. Believed to be 24 hours, which covers a same-day order.</span><span class="qmeta"><span class="tag verify">Check</span> R2</span></li>
+    </ol>
+  </section>
+
+  <section aria-labelledby="notes">
+    <h2 id="notes">Notes</h2>
+    <div class="rules">
+      <article class="card">
+        <h3>The append lock</h3>
+        <ul>
+          <li>Ordering's Saturday-noon estimate is about 10 writes a second, against a ceiling of roughly
+            300 to 1 000 (ADR 0028).</li>
+          <li>R1 keeps anonymous traffic away from the lock. R2 keeps Stripe calls out of it, so no ordering
+            write waits on an outside service.</li>
+          <li><span class="label">Next:</span> the baseline measurement finding M6 asked for, so the ceiling is
+            a number rather than an estimate.</li>
+        </ul>
+      </article>
+    </div>
+  </section>
+
+  <footer>
+    Source: <a href="https://github.com/willehpeh/market-miam/blob/main/docs/ordering-board/index.html"><code>docs/ordering-board/index.html</code></a>.
+    Edit it there; the site rebuilds on push.
+  </footer>
+
+</main>
+</body>
+</html>
