@@ -1,0 +1,463 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Questions pour l'avocat</title>
+<meta name="description" content="Market Miam prépare la commande en ligne : les questions juridiques ouvertes, avec les textes à relire.">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<main class="page narrow">
+  <nav class="site-nav" aria-label="Pages"><a href="index.html">Overview</a><a href="event-storm.html">Event storm</a><a href="avocat.html" aria-current="page">Avocat</a><a href="expert-comptable.html">Expert-comptable</a><a href="stripe.html">Stripe</a></nav>
+
+  <header>
+    <p class="kicker">Market Miam · Commande en ligne</p>
+    <h1>Questions pour l'avocat</h1>
+    <p class="lead">
+      Market Miam prépare la commande en ligne sur les vitrines des traiteurs. Ce document rassemble les questions
+      juridiques ouvertes, chacune avec les textes à relire. Les textes rédigés par Market Miam sont copiés tels qu'ils
+      sont en ligne à la date indiquée, avec un lien vers la version en ligne.
+    </p>
+    <p class="meta">Mis à jour le 24 octobre 2026 · 15 questions · William Alexander, <a href="mailto:contact@marketmiam.fr">contact@marketmiam.fr</a></p>
+  </header>
+
+  <section aria-labelledby="sommaire">
+    <h2 id="sommaire">Sommaire</h2>
+    <ol class="prose">
+      <li><a href="#service">Le service en bref</a></li>
+      <li><a href="#a">Vente à distance : les conditions de vente</a> (A1 à A4)</li>
+      <li><a href="#b">Market Miam face aux traiteurs</a> (B1 à B4)</li>
+      <li><a href="#c">Données personnelles</a> (C1 à C3)</li>
+      <li><a href="#d">Les vitrines : mentions et affichage</a> (D1 à D4)</li>
+      <li><a href="#annexes">Annexes : les textes à relire</a></li>
+    </ol>
+    <p class="aside">
+      Les questions de logiciel de caisse et de facturation sont posées à part, à
+      <a href="expert-comptable.html">l'expert-comptable</a>.
+    </p>
+  </section>
+
+  <section aria-labelledby="service">
+    <h2 id="service">Le service en bref</h2>
+    <div class="prose">
+      <h3 style="margin-top: 16px">Aujourd'hui</h3>
+      <ul>
+        <li>Market Miam est un service en ligne pour les traiteurs qui vendent sur les marchés. Chaque traiteur a une
+          vitrine à sa propre adresse (<span class="placeholder">nom</span>.marketmiam.fr) : sa carte, ses marchés, le
+          menu du jour.</li>
+        <li>Le traiteur est l'éditeur de sa vitrine ; Market Miam l'héberge. Market Miam est édité par William
+          Alexander, micro-entreprise (SIREN 794 431 874).</li>
+        <li>Le traiteur paie un abonnement mensuel. Market Miam ne prend aucune commission.</li>
+        <li>Aucune vente ne passe par Market Miam : les clients achètent au stand, ou appellent le traiteur.</li>
+      </ul>
+
+      <h3 style="margin-top: 20px">Ce qui se prépare : la commande en ligne</h3>
+      <ol>
+        <li>Le jour du marché, le client choisit des plats sur la vitrine et paie sur une page de paiement Stripe. Sa
+          carte est <strong>autorisée, pas débitée</strong>.</li>
+        <li>Le traiteur <strong>accepte</strong> la commande : le paiement est débité, et le client reçoit un code de
+          retrait à 6 chiffres. S'il la <strong>refuse</strong>, ou ne répond pas à temps, l'autorisation est annulée et
+          rien n'est débité.</li>
+        <li>Au stand, le client donne son code, que le traiteur saisit. Si le client l'a perdu, le traiteur peut
+          remettre la commande <strong>« sans code »</strong> ; le client en est aussitôt averti par mail.</li>
+        <li>À l'heure de fin du marché, une commande payée et non retirée est une <strong>non-présentation</strong> :
+          le traiteur garde le paiement. L'adresse mail des clients du jour est rendue définitivement illisible.</li>
+      </ol>
+      <ul>
+        <li><strong>Paiement :</strong> Stripe Connect. Chaque traiteur a son propre compte Stripe ; il est le vendeur,
+          et le client paie sur son compte. Market Miam ne détient jamais les fonds.</li>
+        <li><strong>Données du client :</strong> son adresse mail, saisie sur la page de paiement Stripe. Ni nom, ni
+          téléphone, ni compte client.</li>
+        <li><strong>Limites :</strong> 119,99 € au plus par commande ; retrait au stand uniquement, sans livraison ;
+          commande le jour même, sans réservation à l'avance.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section aria-labelledby="a">
+    <h2 id="a">A. Vente à distance : les conditions de vente</h2>
+
+    <article class="brief" id="a1">
+      <div class="brief-head"><span class="brief-id">A1</span><h3>Des conditions générales de vente types pour les traiteurs</h3></div>
+      <p>Le traiteur est le vendeur, et la commande est un contrat à distance (C. conso., art. L221-1). Market Miam
+        envisage de fournir un modèle de CGV que chaque traiteur adopte, prévoyant notamment :</p>
+      <ul>
+        <li>le débit du paiement au moment où le traiteur accepte la commande ;</li>
+        <li>l'absence de droit de rétractation, s'agissant de denrées susceptibles de se détériorer rapidement
+          (art. L221-28, 4°) ;</li>
+        <li>le mail de confirmation de commande comme support durable (art. L221-13).</li>
+      </ul>
+      <p class="ask">Ce modèle est-il la bonne approche, et que doit-il contenir ? Quelle responsabilité Market Miam
+        prend-il en le fournissant ? Comment le client les accepte-t-il avant de payer ?</p>
+      <p class="see">Aucun projet pour l'instant : la rédaction suivra votre avis.</p>
+    </article>
+
+    <article class="brief" id="a2">
+      <div class="brief-head"><span class="brief-id">A2</span><h3>La clause de non-présentation</h3></div>
+      <p>Quand le client ne vient pas, le traiteur garde le paiement. Or le système ne prouve pas tout de la même
+        façon :</p>
+      <ul>
+        <li>la saisie du code au stand prouve le retrait ;</li>
+        <li>la remise « sans code » le prouve moins bien ;</li>
+        <li>l'absence de saisie ne prouve pas que le client n'est pas venu.</li>
+      </ul>
+      <p class="ask">Comment rédiger la clause pour que le traiteur puisse garder le paiement, compte tenu de ce que le
+        système prouve et ne prouve pas ?</p>
+    </article>
+
+    <article class="brief" id="a3">
+      <div class="brief-head"><span class="brief-id">A3</span><h3>Le plafond de 119,99 € par commande</h3></div>
+      <p>Notre lecture des art. L213-1 et D213-1 C. conso. : un contrat conclu par voie électronique d'un montant d'au
+        moins 120 € doit être conservé dix ans, ce qui contredit l'effacement des données du client en fin de journée.
+        D'où un plafond de 119,99 € par commande.</p>
+      <p class="ask">Cette lecture est-elle juste ? Le seuil s'apprécie-t-il bien commande par commande, ou plusieurs
+        commandes d'un même client le même jour risquent-elles d'être vues comme un seul contrat ?</p>
+    </article>
+
+    <article class="brief" id="a4">
+      <div class="brief-head"><span class="brief-id">A4</span><h3>Des conditions d'utilisation pour les clients</h3></div>
+      <p>En plus des CGV du traiteur, le client utilise le service de Market Miam : la vitrine, la page de commande, le
+        suivi de sa commande, les mails.</p>
+      <p class="ask">Des conditions générales d'utilisation de Market Miam sont-elles nécessaires pour les clients, et
+        que doivent-elles couvrir ?</p>
+    </article>
+  </section>
+
+  <section aria-labelledby="b">
+    <h2 id="b">B. Market Miam face aux traiteurs</h2>
+
+    <article class="brief" id="b1">
+      <div class="brief-head"><span class="brief-id">B1</span><h3>Le règlement P2B</h3></div>
+      <p>Avec la commande en ligne, Market Miam facilite des ventes entre les traiteurs et les consommateurs. Market
+        Miam est une micro-entreprise. Un projet de conditions générales pour les traiteurs (l'abonnement) a été
+        rédigé ; il n'est pas joint, car il précède la commande en ligne et doit être mis à jour.</p>
+      <p class="ask">Le règlement s'applique-t-il ? Si oui, quelles clauses doivent figurer dans les conditions des
+        traiteurs : préavis de modification, motifs de suspension, autres ?</p>
+      <p class="see">Règlement (UE) <a href="https://eur-lex.europa.eu/eli/reg/2019/1150/oj">2019/1150</a>.</p>
+    </article>
+
+    <article class="brief" id="b2">
+      <div class="brief-head"><span class="brief-id">B2</span><h3>Le règlement sur les services numériques (DSA)</h3></div>
+      <p>Market Miam héberge les vitrines, et permettra aux consommateurs de conclure des contrats à distance avec les
+        traiteurs. Notre lecture :</p>
+      <ul>
+        <li>les obligations des plateformes en ligne (section 3) et celles des places de marché (art. 30 à 32) ne
+          s'appliquent pas aux micro et petites entreprises (art. 19 et 29) ;</li>
+        <li>l'art. 14, lui, s'applique à tous : les conditions générales doivent décrire les restrictions de contenu et
+          la modération.</li>
+      </ul>
+      <p class="ask">Confirmez-vous cette lecture ? Que doivent dire les conditions de Market Miam sur la modération des
+        vitrines ?</p>
+      <p class="see">Règlement (UE) <a href="https://eur-lex.europa.eu/eli/reg/2022/2065/oj">2022/2065</a>.</p>
+    </article>
+
+    <article class="brief" id="b3">
+      <div class="brief-head"><span class="brief-id">B3</span><h3>DAC7 : Market Miam est-il une plateforme ?</h3></div>
+      <p>DAC7 oblige les plateformes par lesquelles des ventes sont payées à collecter des informations sur leurs
+        vendeurs et à déclarer chaque année à la DGFiP ce qu'ils ont perçu. Mais chaque vitrine est la boutique d'un
+        seul traiteur, à sa propre adresse : ce n'est pas une place de marché où le client compare plusieurs vendeurs.</p>
+      <p class="ask">Market Miam devient-il un « opérateur de plateforme » au sens de DAC7 avec la commande en ligne ?
+        Si oui, que faut-il collecter auprès d'un traiteur entrepreneur individuel (date de naissance, numéro fiscal ?),
+        et à quel moment ?</p>
+      <p class="see">Directive (UE) <a href="https://eur-lex.europa.eu/eli/dir/2021/514/oj">2021/514</a>.</p>
+    </article>
+
+    <article class="brief" id="b4">
+      <div class="brief-head"><span class="brief-id">B4</span><h3>L'assurance</h3></div>
+      <p class="ask">Market Miam doit-il souscrire une responsabilité civile professionnelle en tant qu'intermédiaire,
+        et pour quels risques ?</p>
+    </article>
+  </section>
+
+  <section aria-labelledby="c">
+    <h2 id="c">C. Données personnelles</h2>
+
+    <article class="brief" id="c1">
+      <div class="brief-head"><span class="brief-id">C1</span><h3>La politique de confidentialité des vitrines, à réécrire pour les commandes</h3></div>
+      <p>La politique des vitrines, que vous avez validée le 23 septembre 2026, dit aujourd'hui : « Rien de ce que vous
+        tapez, puisque la vitrine ne contient ni compte, ni formulaire, ni commande en ligne. » Avec la commande en
+        ligne s'ajoutent :</p>
+      <ul>
+        <li>l'adresse mail du client, le contenu et le montant de sa commande, son code de retrait ;</li>
+        <li>deux destinataires : Stripe pour le paiement, et un prestataire d'envoi de mails ;</li>
+        <li>une conservation en deux temps : le mail et le code sont rendus illisibles à la fin du marché, mais
+          subsistent dans les sauvegardes jusqu'à leur expiration ; la commande et les identifiants Stripe restent, sous
+          une forme pseudonyme et non anonyme.</li>
+      </ul>
+      <p class="ask">Qui est responsable du traitement des données de commande : le traiteur, Market Miam, ou les deux ?
+        Si Market Miam agit pour le compte du traiteur, faut-il un contrat de sous-traitance (art. 28 RGPD) annexé aux
+        conditions des traiteurs ? Quel est le rôle de Stripe ? Comment décrire la conservation sans promettre plus que
+        ce que font les sauvegardes et les prestataires ?</p>
+      <p class="see">À relire : <a href="#annexe-1">annexe 1</a>, la politique actuelle.</p>
+    </article>
+
+    <article class="brief" id="c2">
+      <div class="brief-head"><span class="brief-id">C2</span><h3>La politique de l'espace traiteur, quand Market Miam transmet des données à Stripe</h3></div>
+      <p>Pour ouvrir le compte Stripe d'un traiteur, Market Miam le préremplira avec l'identité légale que le traiteur a
+        déjà fournie (dénomination, adresse, SIRET, TVA, contacts) et avec le nom et l'adresse de sa vitrine. Stripe
+        demande ensuite le reste directement au traiteur : IBAN, pièce d'identité, etc.</p>
+      <p class="ask">Comment l'ajouter à la politique de l'espace traiteur : Stripe comme destinataire, la finalité, la
+        base légale ?</p>
+      <p class="see">À relire : <a href="#annexe-3">annexe 3</a>, sections « Pourquoi, et sur quelle base » et « Qui y a accès ».</p>
+    </article>
+
+    <article class="brief" id="c3">
+      <div class="brief-head"><span class="brief-id">C3</span><h3>Une phrase de la politique de l'espace traiteur, modifiée après votre validation</h3></div>
+      <p>Le 23 septembre 2026, dans « Durée de conservation », la phrase sur l'identité légale a perdu « reste
+        chiffrée » au profit de « accessible seulement pour répondre à une demande légale ». Vous n'avez pas vu ce
+        changement.</p>
+      <p class="ask">La phrase telle qu'elle est en ligne vous convient-elle ?</p>
+      <p class="see">À relire : <a href="#annexe-3">annexe 3</a>, passage surligné.</p>
+    </article>
+  </section>
+
+  <section aria-labelledby="d">
+    <h2 id="d">D. Les vitrines : mentions et affichage</h2>
+
+    <article class="brief" id="d1">
+      <div class="brief-head"><span class="brief-id">D1</span><h3>Le téléphone de l'hébergeur</h3></div>
+      <p>La LCEN (art. 6-III) demande à l'éditeur d'indiquer le nom, l'adresse et le téléphone de son hébergeur. Sur
+        les vitrines, l'hébergeur est Market Miam : son bloc donne une adresse et un mail, sans téléphone. Celui de
+        Render, qui héberge Market Miam, y figure.</p>
+      <p class="ask">Faut-il ajouter un numéro, ou le mail suffit-il ?</p>
+      <p class="see">À relire : <a href="#annexe-2">annexe 2</a>.</p>
+    </article>
+
+    <article class="brief" id="d2">
+      <div class="brief-head"><span class="brief-id">D2</span><h3>Les blocs « Éditeur » et « Hébergeur » des vitrines</h3></div>
+      <p>Ces blocs sont construits à partir de l'identité légale saisie par le traiteur. Vous avez validé la politique
+        de confidentialité qui les suit, mais pas leur présentation.</p>
+      <p class="ask">Sont-ils complets et corrects, pour un entrepreneur individuel comme pour une société ?</p>
+      <p class="see">À relire : <a href="#annexe-2">annexe 2</a>.</p>
+    </article>
+
+    <article class="brief" id="d3">
+      <div class="brief-head"><span class="brief-id">D3</span><h3>Les prix affichés</h3></div>
+      <p>La carte d'une vitrine dit aujourd'hui « Prix indicatifs : seuls les prix affichés au marché font foi », car un
+        traiteur peut pratiquer des prix différents selon le marché. Avec la commande en ligne, le prix payé en ligne
+        pour un marché donné engagera le traiteur.</p>
+      <p class="ask">Comment formuler l'affichage des prix une fois la commande ouverte ? La mention « TVA non
+        applicable, art. 293 B du CGI » suffit-elle pour un traiteur en franchise en base ?</p>
+      <p class="see">À relire : <a href="#annexe-4">annexe 4</a>.</p>
+    </article>
+
+    <article class="brief" id="d4">
+      <div class="brief-head"><span class="brief-id">D4</span><h3>Les allergènes</h3></div>
+      <p>Chaque plat déclare lesquels des 14 allergènes de l'annexe II du règlement INCO il contient, et la fiche du plat
+        les affiche. Un plat créé avant cette fonction n'est pas renseigné, et affiche « Renseignez-vous auprès du
+        traiteur ». La commande en ligne refusera les plats non renseignés, puisque l'information est due avant la
+        conclusion de l'achat (art. 14).</p>
+      <p class="ask">Les formulations conviennent-elles, en particulier celle d'un plat non renseigné tant que la
+        commande n'est pas ouverte ? Pour une vente à distance de denrées non préemballées, d'autres mentions que les
+        allergènes sont-elles obligatoires (art. 44 du règlement, décret n° 2015-447) ? Notre lecture : non.</p>
+      <p class="see">À relire : <a href="#annexe-5">annexe 5</a>. Règlement (UE)
+        <a href="https://eur-lex.europa.eu/eli/reg/2011/1169/oj">1169/2011</a>.</p>
+    </article>
+  </section>
+
+  <section aria-labelledby="annexes">
+    <h2 id="annexes">Annexes : les textes à relire</h2>
+    <p class="intro">Copies datées des textes en ligne. Les passages entre crochets sont remplacés, sur chaque vitrine,
+      par les informations du traiteur.</p>
+
+    <details class="copy" id="annexe-1">
+      <summary>Annexe 1 · Politique de confidentialité des vitrines</summary>
+      <p class="copy-meta">Copie du 24 octobre 2026 · Validée le 23 septembre 2026 · En ligne sur chaque vitrine, page
+        <code>/mentions-legales</code>, sous les mentions légales</p>
+      <div class="copy-body">
+        <h4>Confidentialité</h4>
+        <h5>Qui fait quoi</h5>
+        <p>Cette vitrine est éditée par <span class="placeholder">[dénomination du traiteur]</span>, qui en rédige le
+          contenu. Elle fonctionne sur Market Miam, qui l'héberge et traite les quelques données techniques décrites
+          ci-dessous. Responsable de ce traitement : William Alexander (Market Miam), 95 avenue de Verdun, 93230
+          Romainville, contact@marketmiam.fr.</p>
+        <h5>Ce que nous collectons</h5>
+        <p><span class="highlight">Rien de ce que vous tapez, puisque la vitrine ne contient ni compte, ni formulaire, ni
+          commande en ligne.</span> Afficher la page suffit cependant à transmettre votre adresse IP et les informations
+          habituelles de votre navigateur :</p>
+        <table>
+          <thead><tr><th>Prestataire</th><th>Pourquoi</th><th>Où</th></tr></thead>
+          <tbody>
+            <tr><td>Render Services, Inc. (États-Unis)</td><td>Afficher la page</td><td>Serveurs à Francfort (UE) ; société américaine</td></tr>
+            <tr><td>Cloudinary Inc. (États-Unis)</td><td>Afficher les photos</td><td>États-Unis</td></tr>
+            <tr><td>Hound Technology, Inc. — Honeycomb (États-Unis)</td><td>Diagnostiquer les pannes, quand la page s'actualise d'elle-même pendant un marché</td><td>États-Unis</td></tr>
+          </tbody>
+        </table>
+        <p>Ces données servent uniquement à vous envoyer la page, à la protéger contre les abus et à diagnostiquer les
+          pannes. Base légale : intérêt légitime. Elles sont conservées 7 jours chez Render, 60 jours chez Honeycomb, et
+          jusqu'à un an chez Cloudinary (90 jours en ligne, puis en archive), et leur transfert hors de l'UE est encadré
+          par le Data Privacy Framework UE–États-Unis, et à défaut par les clauses contractuelles types de la Commission
+          européenne.</p>
+        <p>Une copie de ces garanties est disponible sur demande à contact@marketmiam.fr.</p>
+        <p>Les polices de caractères et les icônes sont servies par le site lui-même : aucun autre service tiers n'est
+          contacté.</p>
+        <h5>Cookies</h5>
+        <p>Aucun. Il n'y a pas de mesure d'audience, pas de publicité, et donc pas de bandeau de consentement.</p>
+        <h5>Si vous appelez le traiteur</h5>
+        <p>Le numéro affiché est celui de <span class="placeholder">[dénomination du traiteur]</span>. Ce que vous
+          échangez par téléphone, commande comprise, relève de <span class="placeholder">[dénomination du traiteur]</span>
+          et non de Market Miam.</p>
+        <h5>Vos droits</h5>
+        <p>Accès, rectification, effacement, limitation, opposition : écrivez à contact@marketmiam.fr, réponse sous un
+          mois. Comme nous ne connaissons de vous qu'une adresse IP, nous aurons sans doute besoin de la date et de
+          l'heure de votre visite pour vous retrouver. Réclamation possible auprès de la CNIL (cnil.fr).</p>
+      </div>
+    </details>
+
+    <details class="copy" id="annexe-2">
+      <summary>Annexe 2 · Mentions légales d'une vitrine : éditeur et hébergeur</summary>
+      <p class="copy-meta">Copie du 24 octobre 2026 · En ligne sur chaque vitrine, page <code>/mentions-legales</code></p>
+      <div class="copy-body">
+        <h4>Mentions légales</h4>
+        <h5>Éditeur</h5>
+        <p>Pour une société :<br>
+          <span class="placeholder">[dénomination]</span>, <span class="placeholder">[forme juridique]</span> au capital
+          de <span class="placeholder">[capital]</span><br>
+          RCS <span class="placeholder">[ville du greffe]</span> <span class="placeholder">[SIREN]</span></p>
+        <p>Pour un entrepreneur individuel :<br><span class="placeholder">[dénomination]</span></p>
+        <p>Puis, dans les deux cas :<br>
+          <span class="placeholder">[adresse professionnelle]</span><br>
+          SIRET <span class="placeholder">[SIRET]</span><br>
+          N° de TVA intracommunautaire : <span class="placeholder">[numéro]</span>, ou, en franchise en base :
+          TVA non applicable, art. 293 B du CGI<br>
+          Contact : <span class="placeholder">[mail]</span> · <span class="placeholder">[téléphone]</span></p>
+        <p>Directeur de la publication : <span class="placeholder">[représentant légal de la société, ou le traiteur
+          lui-même]</span></p>
+        <p>Médiateur de la consommation : <span class="placeholder">[nom]</span> · <span class="placeholder">[site]</span>
+          (seulement si le traiteur en a désigné un ; sinon la ligne n'apparaît pas)</p>
+        <h5>Hébergeur</h5>
+        <p>Market Miam — William Alexander, entrepreneur individuel<br>
+          95 avenue de Verdun, 93230 Romainville, France<br>
+          contact@marketmiam.fr</p>
+        <p>Market Miam est lui-même hébergé par Render Services, Inc., 525 Brannan Street, Suite 300, San Francisco,
+          CA 94107, États-Unis, +1 415 319 8186.</p>
+      </div>
+    </details>
+
+    <details class="copy" id="annexe-3">
+      <summary>Annexe 3 · Politique de confidentialité de l'espace traiteur</summary>
+      <p class="copy-meta">Copie du 24 octobre 2026 · Validée le 23 septembre 2026, sauf le passage surligné · En ligne :
+        <a href="https://marketmiam.fr/confidentialite-traiteurs">marketmiam.fr/confidentialite-traiteurs</a></p>
+      <div class="copy-body">
+        <h4>Politique de confidentialité — espace traiteur</h4>
+        <h5>Responsable du traitement</h5>
+        <p>William Alexander, micro-entreprise, 95 avenue de Verdun, 93230 Romainville, France. SIREN 794 431 874.
+          Contact : contact@marketmiam.fr.</p>
+        <h5>Données que nous traitons</h5>
+        <table>
+          <thead><tr><th>Données</th><th>D'où elles viennent</th><th>Publiées sur votre vitrine ?</th></tr></thead>
+          <tbody>
+            <tr><td>Adresse mail de connexion</td><td>Votre inscription</td><td>Non</td></tr>
+            <tr><td>Nom de la vitrine, présentation, téléphone</td><td>Vous, dans l'espace traiteur</td><td>Oui</td></tr>
+            <tr><td>Photos de couverture et des plats</td><td>Vous</td><td>Oui</td></tr>
+            <tr><td>Carte, prix, marchés, menus du jour, plats épuisés</td><td>Vous</td><td>Oui</td></tr>
+            <tr><td>Bilans de fin de marché (ce qui s'est vendu, ce qui reste)</td><td>Vous</td><td>Non</td></tr>
+            <tr><td>Identité légale : SIRET, dénomination, adresse professionnelle, mail de contact, régime de TVA, médiateur</td><td>Vous, en partie préremplie depuis l'annuaire public des entreprises</td><td>Oui, dans les mentions légales de la vitrine</td></tr>
+            <tr><td>Données techniques : adresse IP, date et heure des connexions et des requêtes, identifiant technique de votre compte</td><td>Votre navigateur</td><td>Non</td></tr>
+          </tbody>
+        </table>
+        <p>Tout ce qui est publié sur votre vitrine est visible par tout le monde. Si vous êtes entrepreneur individuel,
+          votre téléphone et votre adresse professionnelle sont souvent vos coordonnées personnelles : choisissez-les en
+          connaissance de cause.</p>
+        <h5>Pourquoi, et sur quelle base</h5>
+        <table>
+          <thead><tr><th>Finalité</th><th>Base légale</th></tr></thead>
+          <tbody>
+            <tr><td>Créer et faire fonctionner votre compte et votre vitrine</td><td>Exécution du contrat</td></tr>
+            <tr><td>Publier les mentions légales de votre vitrine (LCEN, art. 6 et 19)</td><td>Obligation légale</td></tr>
+            <tr><td>Sécuriser le service, diagnostiquer les pannes et les lenteurs</td><td>Intérêt légitime</td></tr>
+          </tbody>
+        </table>
+        <p>Nous ne vendons aucune donnée, ne faisons pas de publicité et ne vous envoyons pas de newsletter.</p>
+        <h5>Ce qui est obligatoire</h5>
+        <p>Votre adresse mail est nécessaire pour créer un compte. Votre identité légale et votre téléphone sont exigés
+          par la loi pour publier une vitrine : sans eux, elle ne peut pas être mise en ligne. Le reste dépend de ce que
+          vous voulez montrer. Aucune décision vous concernant n'est prise de manière entièrement automatisée.</p>
+        <h5>Durée de conservation</h5>
+        <ul>
+          <li><strong>Compte, vitrine, carte, bilans</strong> : tant que votre compte existe.</li>
+          <li><strong>Identité légale</strong> : publiée tant que votre vitrine est en ligne, puis conservée 5 ans après
+            la fermeture de votre compte, sans être publiée, et <span class="highlight">accessible seulement pour
+            répondre à une demande légale</span>, comme l'impose aux hébergeurs le décret n° 2021-1362. Elle devient
+            ensuite définitivement illisible.</li>
+          <li><strong>Traces techniques</strong> : 60 jours chez notre outil de supervision, 1 jour chez Auth0, 7 jours
+            chez notre hébergeur, et jusqu'à un an chez le service de photos (90 jours en ligne, puis en archive).</li>
+        </ul>
+        <p>Quand vous supprimez votre compte, votre vitrine disparaît et vos informations deviennent définitivement
+          illisibles, y compris dans les sauvegardes. La suppression est définitive. Seule exception : votre identité
+          légale, gardée 5 ans comme indiqué ci-dessus, puis effacée de la même façon.</p>
+        <h5>Qui y a accès</h5>
+        <p>Seul l'éditeur de Market Miam. Ces prestataires traitent des données pour notre compte :</p>
+        <table>
+          <thead><tr><th>Prestataire</th><th>Rôle</th><th>Où sont les données</th></tr></thead>
+          <tbody>
+            <tr><td>Render Services, Inc. (États-Unis)</td><td>Hébergement du service et de la base de données</td><td>Francfort (UE) ; société américaine</td></tr>
+            <tr><td>Auth0, LLC — groupe Okta (États-Unis)</td><td>Connexion et comptes</td><td>Région UE ; société américaine</td></tr>
+            <tr><td>Cloudinary Inc. (États-Unis)</td><td>Stockage et diffusion des photos</td><td>États-Unis</td></tr>
+            <tr><td>Hound Technology, Inc. — Honeycomb (États-Unis)</td><td>Supervision technique ; reçoit l'identifiant technique du compte, votre adresse IP et votre navigateur, jamais votre nom ni votre mail</td><td>États-Unis</td></tr>
+          </tbody>
+        </table>
+        <p>Les transferts hors de l'UE sont encadrés par le Data Privacy Framework UE–États-Unis, auquel chacun de ces
+          prestataires est certifié, et à défaut par les clauses contractuelles types de la Commission européenne.</p>
+        <p>Vous pouvez obtenir une copie de ces garanties en écrivant à contact@marketmiam.fr.</p>
+        <h5>Cookies et stockage local</h5>
+        <p>L'espace traiteur ne dépose aucun cookie de mesure d'audience ni de publicité. Il conserve votre jeton de
+          connexion dans le stockage local du navigateur, et Auth0 un cookie de session : les deux sont indispensables
+          pour rester connecté et ne demandent pas de consentement.</p>
+        <h5>Vos droits</h5>
+        <p>Vous pouvez accéder à vos données, les rectifier, les effacer, en demander une copie réutilisable, vous
+          opposer à leur traitement ou le limiter. La plupart se corrigent directement dans l'espace traiteur. Pour le
+          reste, écrivez à contact@marketmiam.fr : la réponse arrive sous un mois. Les mentions légales de votre vitrine
+          ne peuvent pas être effacées tant qu'elle est en ligne, ni votre identité légale pendant les 5 ans qui suivent
+          la fermeture du compte, car la loi l'exige. Vous pouvez aussi saisir la CNIL (cnil.fr).</p>
+        <h5>Code source</h5>
+        <p>Le code qui traite vos données est public (github.com/willehpeh/market-miam) : chacune de ces affirmations
+          peut être vérifiée.</p>
+      </div>
+    </details>
+
+    <details class="copy" id="annexe-4">
+      <summary>Annexe 4 · Mentions de prix sur une vitrine</summary>
+      <p class="copy-meta">Copie du 24 octobre 2026 · En ligne sur chaque vitrine dont la carte affiche des prix</p>
+      <div class="copy-body">
+        <h5>Sous le titre de la carte (page <code>/carte</code>)</h5>
+        <p>Prix indicatifs : seuls les prix affichés au marché font foi.</p>
+        <p>Pour un traiteur en franchise en base, la même ligne ajoute : TVA non applicable, art. 293 B du CGI.</p>
+        <h5>Sous le menu du prochain marché (page d'accueil de la vitrine)</h5>
+        <p>Pour un traiteur en franchise en base seulement : TVA non applicable, art. 293 B du CGI.</p>
+      </div>
+    </details>
+
+    <details class="copy" id="annexe-5">
+      <summary>Annexe 5 · Allergènes dans la fiche d'un plat</summary>
+      <p class="copy-meta">Copie du 24 octobre 2026 · En ligne sur chaque vitrine, dans la fiche qui s'ouvre au choix d'un plat</p>
+      <div class="copy-body">
+        <p>Sous le titre « Allergènes », une seule ligne, selon ce que le traiteur a déclaré :</p>
+        <table>
+          <thead><tr><th>Déclaration du traiteur</th><th>Ligne affichée</th></tr></thead>
+          <tbody>
+            <tr><td>Un ou plusieurs allergènes</td><td>Leurs noms, dans l'ordre de l'annexe II, par exemple : « céleri, lait »</td></tr>
+            <tr><td>Aucun des 14</td><td>Aucun des 14 allergènes majeurs</td></tr>
+            <tr><td>Rien (plat créé avant la fonction)</td><td>Renseignez-vous auprès du traiteur</td></tr>
+          </tbody>
+        </table>
+        <p>Les noms affichés : céréales contenant du gluten, crustacés, œufs, poissons, arachides, soja, lait, fruits à
+          coque, céleri, moutarde, graines de sésame, anhydride sulfureux et sulfites (plus de 10 mg/kg), lupin,
+          mollusques.</p>
+        <p>La ligne vaut pour le plat entier, tous formats confondus (par exemple une petite et une grande part).</p>
+      </div>
+    </details>
+  </section>
+
+  <footer>
+    Market Miam — William Alexander · <a href="mailto:contact@marketmiam.fr">contact@marketmiam.fr</a> · Document de
+    travail, mis à jour au fil des décisions.
+  </footer>
+</main>
+<script>
+  // A closed annexe prints as its title alone: open them all for paper.
+  window.addEventListener('beforeprint', () => document.querySelectorAll('details').forEach((d) => { d.open = true; }));
+</script>
+</body>
+</html>

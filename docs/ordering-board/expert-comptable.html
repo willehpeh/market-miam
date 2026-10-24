@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Questions pour l'expert-comptable</title>
+<meta name="description" content="Market Miam prépare la commande en ligne : les questions de logiciel de caisse et de facturation, avec notre lecture des textes.">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<main class="page narrow">
+  <nav class="site-nav" aria-label="Pages"><a href="index.html">Overview</a><a href="event-storm.html">Event storm</a><a href="avocat.html">Avocat</a><a href="expert-comptable.html" aria-current="page">Expert-comptable</a><a href="stripe.html">Stripe</a></nav>
+
+  <header>
+    <p class="kicker">Market Miam · Commande en ligne</p>
+    <h1>Questions pour l'expert-comptable</h1>
+    <p class="lead">
+      Market Miam prépare la commande en ligne sur les vitrines des traiteurs. Ces questions portent sur les obligations
+      de logiciel de caisse et de facturation qu'elle pourrait entraîner. Chacune donne notre lecture des textes, à
+      confirmer ou à corriger.
+    </p>
+    <p class="meta">Mis à jour le 24 octobre 2026 · 5 questions · William Alexander, <a href="mailto:contact@marketmiam.fr">contact@marketmiam.fr</a></p>
+  </header>
+
+  <section aria-labelledby="service">
+    <h2 id="service">Le service en bref</h2>
+    <div class="prose">
+      <ul>
+        <li>Market Miam est un service en ligne pour les traiteurs qui vendent sur les marchés : chaque traiteur a une
+          vitrine en ligne, et paie un abonnement mensuel. Market Miam ne prend aucune commission. Il est édité par
+          William Alexander, micro-entreprise (SIREN 794 431 874), assujettie à la TVA.</li>
+        <li>Avec la commande en ligne, le client commande sur la vitrine le jour du marché et paie par carte, sur le
+          compte Stripe du traiteur. <strong>Le traiteur est le vendeur</strong> ; Market Miam ne détient jamais les
+          fonds.</li>
+        <li>Le traiteur accepte ou refuse chaque commande ; le client la retire au stand avec un code. Une commande
+          payée et non retirée reste acquise au traiteur.</li>
+        <li>Chaque commande est enregistrée dans un journal où rien ne se modifie ni ne s'efface : on ne fait
+          qu'ajouter. Y figurent le numéro de commande, l'horodatage, les plats, les montants TTC, et les références du
+          paiement chez Stripe. L'adresse mail du client est rendue illisible à la fin du marché.</li>
+        <li>Les traiteurs encaissent aussi au stand, en espèces ou par carte : ces ventes-là ne passent pas par Market
+          Miam.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section aria-labelledby="questions">
+    <h2 id="questions">Questions</h2>
+    <p class="intro">Notre lecture s'appuie sur le BOI-TVA-DECLA-30-10-30, dans sa version du 1<sup>er</sup> octobre 2025,
+      consulté le 4 octobre 2026.</p>
+
+    <article class="brief" id="k1">
+      <div class="brief-head"><span class="brief-id">K1</span><h3>Market Miam est-il un logiciel de caisse pour ses traiteurs ?</h3></div>
+      <p>Notre lecture de l'art. 286, I, 3° bis du CGI et du BOFiP :</p>
+      <ul>
+        <li>§ 25 : un traiteur en franchise en base n'est pas concerné ;</li>
+        <li>§ 30 : les prestataires de services de paiement sont exclus, mais pas les systèmes de commande en ligne.
+          Stripe serait donc hors champ, et Market Miam dans le champ pour les traiteurs assujettis ;</li>
+        <li>§ 35 : la dispense quand tous les paiements de toutes les ventes passent par un établissement de crédit ne
+          joue pas, puisque les traiteurs encaissent aussi au stand.</li>
+      </ul>
+      <p class="ask">Confirmez-vous que Market Miam entre dans le champ pour ses traiteurs assujettis à la TVA, et pour
+        eux seulement ?</p>
+    </article>
+
+    <article class="brief" id="k2">
+      <div class="brief-head"><span class="brief-id">K2</span><h3>L'attestation de l'éditeur</h3></div>
+      <p>Selon le § 290, l'éditeur fournit la preuve de conformité et le traiteur la conserve. L'attestation
+        individuelle de l'éditeur, supprimée par la loi n° 2025-127 (art. 43), a été rétablie à compter du 21 février
+        2026 par la loi n° 2026-103 (art. 125 ; actualité BOFiP ACTU-2026-00073). Market Miam pourrait donc délivrer
+        lui-même l'attestation, sur le modèle BOI-LETTRE-000242, sans certification NF525.</p>
+      <p class="ask">Cette voie est-elle ouverte à Market Miam, micro-entreprise ? Qu'engage-t-elle pour lui ?</p>
+    </article>
+
+    <article class="brief" id="k3">
+      <div class="brief-head"><span class="brief-id">K3</span><h3>Inaltérabilité, sécurisation, conservation, archivage, et les clôtures</h3></div>
+      <p>Notre conception :</p>
+      <ul>
+        <li>le journal, où l'on ne fait qu'ajouter, assure l'inaltérabilité ;</li>
+        <li>chaque jour de marché fait une clôture journalière, complétée par des clôtures mensuelles et annuelles ;</li>
+        <li>les données sécurisées sont le numéro de commande, l'horodatage, le total TTC, le détail des plats et les
+          données de paiement. L'adresse mail du client n'en fait pas partie, ce qui permet de l'effacer en fin de
+          journée.</li>
+      </ul>
+      <p class="ask">Cette conception remplit-elle les quatre conditions ? Combien de temps faut-il conserver ces données,
+        et sous quelle forme le traiteur doit-il pouvoir les présenter en cas de contrôle ?</p>
+    </article>
+
+    <article class="brief" id="k4">
+      <div class="brief-head"><span class="brief-id">K4</span><h3>Un rescrit ?</h3></div>
+      <p>Nous n'avons trouvé aucun rescrit de portée générale sur ce cas ; la recherche n'était pas exhaustive.</p>
+      <p class="ask">Vaut-il la peine d'en demander un avant d'ouvrir la commande en ligne ?</p>
+    </article>
+
+    <article class="brief" id="k5">
+      <div class="brief-head"><span class="brief-id">K5</span><h3>Facturation électronique et e-reporting</h3></div>
+      <p>Deux sujets distincts :</p>
+      <ul>
+        <li>les ventes des traiteurs aux particuliers, passées par la commande en ligne : notre lecture est que
+          l'e-reporting n'atteint les micro-entreprises qu'en septembre 2027 ;</li>
+        <li>les factures de Market Miam à ses traiteurs (l'abonnement), aujourd'hui établies à la main : à quelle date
+          Market Miam devra-t-il recevoir, puis émettre, des factures électroniques ?</li>
+      </ul>
+      <p class="ask">Ce calendrier est-il le bon, et Market Miam devra-t-il fournir aux traiteurs les données de leurs
+        ventes en ligne pour leur e-reporting ?</p>
+    </article>
+
+    <p class="aside">La question de savoir si Market Miam doit déclarer les revenus de ses traiteurs à la DGFiP au titre
+      de DAC7 est posée à <a href="avocat.html#b3">l'avocat</a>.</p>
+  </section>
+
+  <footer>
+    Market Miam — William Alexander · <a href="mailto:contact@marketmiam.fr">contact@marketmiam.fr</a> · Document de
+    travail, mis à jour au fil des décisions.
+  </footer>
+</main>
+</body>
+</html>
