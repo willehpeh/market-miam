@@ -51,9 +51,9 @@ Every dish declares which of the 14 major allergens it contains, and the storefr
 | 1 | Domain, read model + HTTP: `Allergens` on add and revise, through to both APIs | done (`4a743a5`) |
 | 2 | Vendor app: checklist in the item form, undeclared items flagged | done (`ea5179b`) |
 | 3 | Storefront: allergens in the item sheet | done (`893d3f9`) |
-| 4 | Rollout: ask the live client to declare every dish | |
+| 4 | Rollout: ask the live client to declare every dish | 1–3 deployed; the client's part is open |
 
-### 1. Domain, read model + HTTP — shipped (`4a743a5`), not pushed
+### 1. Domain, read model + HTTP — shipped (`4a743a5`)
 
 Built as one slice, outside-in from the API spec: once the commands require `allergens`, the
 controller must require it in the body in the same change. Defaulting it to `[]` there would declare
@@ -78,7 +78,7 @@ Read model + HTTP:
   owns the codes, ADR 0046). `GET /catalogue` returns it.
 - The public storefront's items and market-day menus carry it, since both come from the catalogue view.
 
-### 2. Vendor app — shipped (`ea5179b`), not pushed
+### 2. Vendor app — shipped (`ea5179b`)
 
 - Add and revise forms: a checklist of the 14, plus an explicit "Aucun de ces 14 allergènes".
   Ticking it clears the others, and ticking any allergen clears it. Saving is blocked until one or
@@ -88,7 +88,7 @@ Read model + HTTP:
 - Labels live in the frontend, keyed by code (`catalogue/allergens.ts`).
 - Unticking the last allergen goes back to undeclared, so "none" is only ever the explicit box.
 
-### 3. Storefront — shipped (`893d3f9`), not pushed
+### 3. Storefront — shipped (`893d3f9`)
 
 - Item sheet, under an "Allergènes" heading: the names in Annex II order ("céleri, lait"), or
   "Aucun des 14 allergènes majeurs", or, undeclared, "Renseignez-vous auprès du traiteur". The view
@@ -97,8 +97,11 @@ Read model + HTTP:
 
 ### 4. Rollout
 
-Push 1–3 together. **Do not push slice 1 alone:** once slice 1 requires `allergens`, the vendor app cannot save a dish until slice 2. Ask the live
-client to declare every dish. The catalogue flags those left.
+1–3 were pushed together on 2026-10-13 (`ca48559`, CI green, so deployed per `render.yaml`).
+Slice 1 could not go alone: once it requires `allergens`, the vendor app cannot save a dish until
+slice 2.
+
+What remains: ask the live client to declare every dish. The catalogue flags those left.
 
 ## Not in this plan
 

@@ -321,9 +321,10 @@ changed. Left as-is: archive files are point-in-time records.
   `app.listen(0)` and `keepAlive:false` were both tried and **neither changed the rate**.
   Next: log the 301's `Location`/remote port; try single-threaded; hoist boot to `beforeAll`.
   Unrelated to this feature.
-- **`markItemAsSoldOut` has no past-day guard** while `setMenu` does — you can mark a dish sold out
+- ~~**`markItemAsSoldOut` has no past-day guard** while `setMenu` does — you can mark a dish sold out
   on next Saturday's menu. Decide when live mode lands (sold-out probably requires the day to be
-  *today*, not merely not-past).
+  *today*, not merely not-past).~~ Closed by live mode: both availability commands require the day
+  to be *today* (`LIVE-MODE-PLAN.md` decision 16, `MarketDayNotTodayError`).
 
 ## Commands
 

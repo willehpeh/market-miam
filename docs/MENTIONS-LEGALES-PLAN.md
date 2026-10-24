@@ -35,7 +35,7 @@ Each slice is reviewable and committable alone. Deploying is gated by the rollou
 | 5 | Vendor app: the legal-identity form | done |
 | 6 | Policy A page on the website, and links to it | done |
 | 7 | Storefront: the mentions-légales route, and price wording on the carte | done |
-| 8 | Rollout to the live client | |
+| 8 | Rollout to the live client | 2–9 deployed; the client's part is open |
 | 9 | Readiness gate: `hasCompleteLegalIdentity()` | done |
 
 ### 2. Domain — shipped (`2a13415`)
@@ -128,7 +128,7 @@ Each slice is reviewable and committable alone. Deploying is gated by the rollou
   Its workarounds are Page Templates, Forms for Actions or going back to Classic Login, and none is
   needed: every vendor reaches Auth0 from the app's landing page, whose footer already links
   policy A. That is how it is readable before sign-up.
-- Pushed with 7 (Rollout), so policy A goes live with the mentions légales.
+- Pushed with 7 on 2026-10-13, so policy A went live with the mentions légales.
 - "Ce qui est obligatoire" says a storefront without legal identity and phone can't be published.
   Slice 9 makes that true.
 
@@ -156,14 +156,15 @@ Each slice is reviewable and committable alone. Deploying is gated by the rollou
 
 ### 8. Rollout
 
-Deploy 2–9. Neither the footer link nor the route shows anything while `editeur` is `null` (slice 7),
-so 6 and 7 no longer wait for the client's identity. Then ask the live client to fill in the form (the
-dashboard card asks them too), check their live page, and retire slice 7's footer stopgap.
+Neither the footer link nor the route shows anything while `editeur` is `null` (slice 7), so 6 and 7
+did not wait for the client's identity.
 
 `main` auto-deploys on green CI (`render.yaml`), so deploying is pushing: 2–4 were pushed on
-2026-10-05. 5–9 were committed on 2026-10-13, not pushed.
+2026-10-05, and 5–9 together on 2026-10-13 (`c4d1ea1`, CI green). 9 went with 6, since 9 is what
+makes policy A's "Ce qui est obligatoire" true.
 
-Push 9 with 6, since 9 is what makes policy A's "Ce qui est obligatoire" true.
+What remains: ask the live client to fill in the form (the dashboard card asks them too), check
+their live page, and retire slice 7's footer stopgap.
 
 ### 9. Readiness gate — shipped (`1050047`, `7883f7f`)
 
