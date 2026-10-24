@@ -290,6 +290,13 @@ visitor's IP to Tally on load, form or no form.
 Render's coordinates came from a Google AI summary, not Render's own legal page — worth
 one confirmation against render.com before this matters.
 
+**Restated 2026-10-24: the pilot is gone from the privacy section.** It called the Tally
+form *le formulaire de candidature à la phase pilote* and its purpose *vous recontacter au
+sujet de la phase pilote*, while the owner had renamed the form *Ouvrons votre vitrine* in
+September. It now says *le formulaire de contact* and *vous recontacter au sujet de Market
+Miam*: the generic name survives the form's next rename. The form's own consent copy is
+still unchecked (§2).
+
 ### 4. Self-host the two fonts — done
 
 `public/fonts/`, six `woff2` files, `@font-face` in `Base.astro`; the Google Fonts
