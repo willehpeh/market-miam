@@ -32,11 +32,13 @@ const baseExamples = [
     code: '<button type="button">Publier la carte</button>\n<button type="button" disabled>Publier la carte</button>',
   },
   {
-    title: '<input type="text"> · <input type="tel"> · <textarea>',
+    title: '<input> of type text, tel, email or url · <textarea>',
     note: 'Full width, 16px text so iOS Safari does not zoom the field on focus.',
     code: [
       '<label class="block w-72 space-y-1.5"><span class="field-label">Nom du plat</span>',
       '  <input type="text" placeholder="Tajine d’agneau aux pruneaux"></label>',
+      '<label class="block w-72 space-y-1.5"><span class="field-label">Email de contact</span>',
+      '  <input type="email" placeholder="bonjour@traiteur.fr"></label>',
       '<label class="block w-72 space-y-1.5"><span class="field-label">Téléphone</span>',
       '  <input type="tel" placeholder="06 12 34 56 78" disabled></label>',
       '<label class="block w-full space-y-1.5"><span class="field-label">Description</span>',
@@ -54,6 +56,16 @@ const componentExamples = [
     code: '<a class="btn-soft" href="#components">Annuler</a>\n<button type="button" class="btn-soft">Plus tard</button>',
   },
   { className: 'quiet', code: '<button type="button" class="quiet">Retirer du marché</button>' },
+  {
+    className: 'choice',
+    code: [
+      '<fieldset class="w-72"><legend class="field-label">Régime de TVA</legend>',
+      '  <div class="mt-1 space-y-2">',
+      '    <label class="choice"><input type="radio" name="vat-regime" checked> Assujetti à la TVA</label>',
+      '    <label class="choice"><input type="radio" name="vat-regime"> Franchise en base</label>',
+      '  </div></fieldset>',
+    ].join('\n'),
+  },
   {
     className: 'icon-btn',
     code: [

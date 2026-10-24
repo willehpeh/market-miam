@@ -59,8 +59,10 @@ import { Card } from '../core/card';
           </div>
           <fieldset>
             <legend class="field-label">Statut</legend>
-            <label><input type="radio" value="individual" [formField]="fields.structure" /> Entrepreneur individuel</label>
-            <label><input type="radio" value="company" [formField]="fields.structure" /> Société (SARL, SAS…)</label>
+            <div class="mt-1 space-y-2">
+              <label class="choice"><input type="radio" value="individual" [formField]="fields.structure" /> Entrepreneur individuel</label>
+              <label class="choice"><input type="radio" value="company" [formField]="fields.structure" /> Société (SARL, SAS…)</label>
+            </div>
           </fieldset>
           @if (fields.structure().value() === 'company') {
             <div>
@@ -82,8 +84,10 @@ import { Card } from '../core/card';
           }
           <fieldset>
             <legend class="field-label">Régime de TVA</legend>
-            <label><input type="radio" value="assujetti" [formField]="fields.vatRegime" /> Assujetti à la TVA</label>
-            <label><input type="radio" value="franchise" [formField]="fields.vatRegime" /> Franchise en base</label>
+            <div class="mt-1 space-y-2">
+              <label class="choice"><input type="radio" value="assujetti" [formField]="fields.vatRegime" /> Assujetti à la TVA</label>
+              <label class="choice"><input type="radio" value="franchise" [formField]="fields.vatRegime" /> Franchise en base</label>
+            </div>
           </fieldset>
           <div>
             <label for="mediatorName" class="field-label">Nom du médiateur</label>
