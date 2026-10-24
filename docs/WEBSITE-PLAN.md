@@ -1,6 +1,6 @@
 # Website — Status & Remaining Work
 
-`apps/website` (Astro, static) at `marketmiam.fr` / `www.`. Purpose: convert vendors into the pilot — 5–10 hand-onboarded traiteurs, not self-serve signup. Sells what ships today; names what doesn't.
+`apps/website` (Astro, static) at `marketmiam.fr` / `www.`. Purpose: convert traiteurs into paying vendors, onboarded by hand — not self-serve signup. Sells what ships today; names what doesn't. *(Was: convert into the pilot, a cohort of 5–10. The pilot is gone: `CGU-CGV-PLAN.md` decision 13.)*
 
 ## Holding page (2026-10-04)
 
@@ -224,7 +224,7 @@ shared** (§1): a forced re-scrape after deploy, or let the caches expire.
 | Check | Status |
 |-------|--------|
 | Load on a phone | Layout has now been checked at 390px in headless Chromium (Playwright against the built `dist/`), so the old *"Chrome refused to resize"* blocker is gone. A real device is still worth one look — a screenshot can't catch tap targets, iOS font fallback, or the Tally overlay on a small screen. |
-| Click a CTA on the real domain | **Still unverified.** Tally popup has only ever been confirmed against `localhost`. |
+| Click a CTA on the real domain | **Still unverified, and unverifiable from here.** Tally popup has only ever been confirmed against `localhost`, and `tally.so` is denied by the agent egress proxy (403 to CONNECT) from both curl and WebFetch — same wall as `demo.marketmiam.fr` below. **Checking the form's title, fields and consent copy is a human step**, not something an agent session can do; paste the text into the session if it needs reviewing against the rules in §2. |
 | Click the demo link on the real domain | **Still unverified.** `demo.marketmiam.fr` has never been loaded from a dev container — the agent proxy 403s that host. |
 | Paste URL into WhatsApp | First moment `/og.jpg` is reachable; confirms the card renders |
 
@@ -246,6 +246,13 @@ legally and costs leads.
 Above *Envoyer* — the short version, replacing the original three-sentence block:
 
 > Vos réponses servent uniquement à vous recontacter au sujet de la phase pilote. Ni revendues, ni transmises à des tiers. Conservation, vos droits et comment les exercer : https://marketmiam.fr/mentions-legales
+
+**Both quoted blocks are the pre-2026-09 wording and name the *phase pilote*.** The owner
+renamed the form in September 2026: its title is now *Ouvrons votre vitrine*. **`/mentions-legales`
+still names the *phase pilote*** as the form's purpose, in two sentences, so the page and the form
+disagree. That is Art. 13 information, so the mismatch is a defect rather than a style point. The
+form's new copy has not been checked against the rules below either: `tally.so` is unreachable from
+agent containers (§1), so it needs a human read or a paste into a session.
 
 - **The URL must be absolute.** The form renders in Tally's overlay, so a relative
   `/mentions-legales` resolves against `tally.so`. Open it in a new tab — navigating away
@@ -365,7 +372,7 @@ the same shot so it regenerates too — which means a forced re-scrape, per §1.
 | ~~Pilot price freeze~~ | **Shipped 2026-08**, alongside the price itself — see the decisions above for why it stopped being optional at that moment. |
 | ~~A 50 € tier (préco + réservation)~~ | **Superseded 2026-10-24: there are no tiers.** One package at 50 € HT/month, online ordering included, and the 15 € price is dropped. The page names it when it is rebuilt around ordering. The reasoning below is kept as history. **Deliberately not on the page**, and not just "later". It turns the reassurance block into a pricing table, and a vendor reads *the good stuff costs 50, 15 buys the brochure* — at the exact moment you're asking for trust. Feature gating is still an Open Item in `MARKET_MIAM.md`, so publishing a split would commit in public to something undecided. And preordering is unscoped: no aggregate, no events, and it drags in payments, no-shows and customer PII the product currently avoids by design. |
 | Analytics | Real traffic worth measuring. Needs a cookie banner if it sets cookies. |
-| Client testimonial + real storefront shots | First *vendor* is actually live — the demo doesn't count. |
+| Client testimonial + real storefront shots | First *vendor* is actually live — the demo doesn't count. **And each asset needs that vendor's written permission**: marketing use is opt-in per use, not a term of the contract (`CGU-CGV-PLAN.md` decision 9). Same for the §5 dashboard shots. |
 | Second page | One page stops being enough |
 | Build-time image optimisation | Several images. `astro:assets` currently fails: optimised output lands in `dist/apps/website/_astro/` but is read from `apps/website/.astro/_astro/` — the out-of-tree `outDir` in `astro.config.mjs`. Fixing `cacheDir` would pay for itself at that point. |
 

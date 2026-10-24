@@ -202,6 +202,14 @@ details.copy[open] > summary { border-bottom: 1px solid var(--line); }
 .placeholder { color: var(--lawyer); font-style: italic; }
 .highlight { background: color-mix(in srgb, var(--actor) 22%, transparent); color: var(--ink); border-radius: 3px; padding: 0 2px; }
 
+/* ---- the draft terms ---- */
+.projet { margin: 16px 0 0; padding: 12px 14px; border: 1px solid var(--line); border-left: 3px solid var(--lawyer); border-radius: 8px; background: var(--surface); color: var(--ink-2); max-width: 70ch; }
+.maj { background: color-mix(in srgb, var(--actor) 22%, transparent); color: var(--ink); border-radius: 3px; padding: 0 2px; }
+.redaction { padding: 10px 12px; border-left: 3px solid var(--lawyer); border-radius: 6px; background: color-mix(in srgb, var(--lawyer) 12%, var(--surface)); color: var(--ink); font-size: 14px; }
+.terms { margin-top: 32px; }
+.terms h3 { margin-top: 28px; }
+.terms + .terms { padding-top: 8px; border-top: 1px solid var(--line); }
+
 footer { margin-top: 64px; padding-top: 20px; border-top: 1px solid var(--line); font-size: 13px; color: var(--ink-3); }
 
 /* ---- paper ---- */

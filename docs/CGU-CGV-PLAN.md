@@ -14,20 +14,27 @@ Personal-data work tracks separately in `PRIVACY-PLAN.md`; the two meet at one s
 plan docs, for a French lawyer to price and review. Everything in §6 in particular is
 a question to put to counsel, not an answer.
 
+**Refreshed 2026-10-24.** Three things moved under this plan since August: ordering was
+decided (`ORDERING-PLAN.md`) and is now part of the only package, at 50 € HT a month; the
+4 October holding page replaced the homepage §8 was editing; and the vendor's legal
+identity shipped (`MENTIONS-LEGALES-PLAN.md`). The draft itself left the website for the
+ordering site, as annexe 6 of the lawyer brief (§7). Notes below marked *2026-10-24* say
+what changed; the rest stands as written.
+
 ## 1. Already settled — do not re-ask
 
 | Fact | Source |
 |---|---|
 | Éditeur: William Alexander, micro-entreprise, 95 av. de Verdun 93230 Romainville, SIREN 794 431 874, TVA FR 08 794 431 874, `contact@marketmiam.fr` | `apps/website/src/pages/mentions-legales.astro` |
 | No published phone — deliberate, risk accepted | `WEBSITE-PLAN.md` §3 |
-| Price: 15 € HT / mois (18 € TTC), first month free, no engagement, no commission | `apps/website/src/pages/index.astro:6,168` |
-| ~~Price freeze: *le tarif ne bouge pas*~~ — **withdrawn, decision 6.** Still published; must come off the site before the CGV ships (§8) | `index.astro:172` |
-| Pilot = 5–10 hand-onboarded traiteurs; ends when the cohort fills, no date promised | `WEBSITE-PLAN.md` |
+| ~~Price: 15 € HT / mois (18 € TTC)~~ → **50 € HT / mois (60 € TTC), one package, ordering included** (2026-10-24); first month free, no engagement, no commission | `MARKET_MIAM.md`, `ORDERING-PLAN.md` |
+| ~~Price freeze: *le tarif ne bouge pas*~~ — **withdrawn, decision 6.** Off the site since the 4 October holding page, which names no price at all | `WEBSITE-PLAN.md` |
+| ~~Pilot = 5–10 hand-onboarded traiteurs~~ — **removed, decision 13** | `WEBSITE-PLAN.md` |
 | No billing system — invoiced by hand, non-payment handled by unpublishing by hand | `WEBSITE-PLAN.md` decisions; ADR 0048 |
 | Hosting Render (US), identity Auth0 (Okta, US), photos Cloudinary, forms Tally (BE) | `MARKET_MIAM.md`, `PRIVACY-PLAN.md` |
 | Erasure is irreversible by design; state the consequence, never the algorithm | ADR 0025, `PRIVACY-PLAN.md` |
 | Storefront lives at a subdomain; assignment is a publication requirement | ADRs 0031/0032 |
-| No ordering, no payment, no delivery on-platform — customers phone the vendor | `storefront-footer.ts` (*Réservations & commandes : <tel>*) |
+| ~~No ordering, no payment on-platform~~ → **ordering decided 2026-10-04**, paid online through each vendor's Stripe account, in the only package. Still no delivery | `ORDERING-PLAN.md`, `docs/ordering-board/` |
 | Scope of what actually ships: vitrine, carte, calendrier, menu du jour, épuisé, bilan, repères | `MARKET_MIAM.md` MVP status |
 | Trademark: INPI check clear, registration requested 2026-08, **confirmation pending** | `MARKET_MIAM.md` |
 
@@ -65,6 +72,12 @@ lawyer may push back on any of them, but none is now a guess.
    first 12 months. This supersedes the published freeze and partly resolves *pricing
    tiers and feature gating*, an Open Item in `MARKET_MIAM.md` — see §8 for what has to
    change on the site first.
+
+   **Superseded in part 2026-10-24: there are no tiers.** One package at 50 € HT a month
+   (60 € TTC), online ordering included; the 15 € price is dropped. Confirmed the same day
+   and kept: no price freeze, a price change takes effect 3 months after written notice
+   with a free right to leave, no increase in a vendor's first 12 months, and the first
+   month free (decision 2). Draft articles 16 and 20 carry it.
 7. **Availability: obligation de moyens.** No uptime figure, no service credits. Planned
    maintenance announced in advance where possible. Support by email, best-effort, no
    response-time target. Backups described as taken regularly, with no guaranteed
@@ -151,6 +164,11 @@ lawyer may push back on any of them, but none is now a guess.
       Expect a distinct `VendorProfessionalStatusVerified` event rather than a
       `VendorRegistered` v2: verification happens after registration and can be re-run
       (ADR 0009).
+    - **Status 2026-10-24.** The SIRET is collected, checked against its checksum, and the
+      legal identity prefilled from *recherche d'entreprises* (`MENTIONS-LEGALES-PLAN.md`
+      slice 5); a complete legal identity is a publication requirement (slice 9). The
+      register check itself, active establishment and plausible NAF code, is not built, so
+      draft article 5 still promises more than ships.
     - **It reverses a recorded privacy decision.** `PRIVACY-PLAN.md` records that the
       address field was dropped and that the art. 30 register must not claim one. A
       register lookup returns the establishment address, and §4's vitrine mentions
@@ -158,7 +176,8 @@ lawyer may push back on any of them, but none is now a guess.
       is the minimal version but does not serve the mentions-légales half. Either way:
       a new row in the privacy table, a new entry in
       `packages/market-days/src/vendor/vendor-pii-fields.ts`, and ADR 0025 shredding
-      applying to whatever is kept.
+      applying to whatever is kept. *2026-10-24:* settled by ADR 0054, which brought the
+      address back inside the legal identity, under its own key (ADR 0056).
 
 ## 3. Facts to confirm outside the repo
 
@@ -192,8 +211,8 @@ is a small piece of work, not a wording choice.
 |---|---|---|
 | **No acceptance is captured anywhere.** Registration goes Auth0 → `VendorRegistered`; no checkbox, no stored version, no timestamp. There is no proof any vendor agreed to anything | Acceptance recorded with the version accepted and when | A checkbox in the registration flow + either `VendorRegistered` v2 or a `TermsAccepted` event (ADR 0014 for payload shape; not PII, so no encryption) |
 | **No version history.** A CGU that changes needs its past versions retrievable to prove what a given vendor accepted | Versioned, dated, archived pages | `apps/website` route per version, or a `/cgu/2026-09` scheme |
-| **No vendor mentions légales on the vitrine.** Each storefront is a public commercial page; LCEN art. 6-III wants the vendor identified — name, address, SIREN, contact. The storefront holds name, description, phone and nothing else; **no SIREN field exists in the domain at all** | Either the vitrine carries the vendor's legal identity, or the CGU makes the vendor responsible for it and gives them somewhere to put it | New storefront fields + `StorefrontInformationEdited` v2; PII register in `vendor-pii-fields.ts` must follow. **Shares a field with decision 14** — verification collects the SIREN anyway, so build the two together |
-| **No professional-status verification** (decision 14). Nothing checks that a vendor is a real, active, food-trade business | The CGU asserts B2B-only eligibility and makes verification a condition of publication | Register lookup at signup, a `VendorProfessionalStatusVerified` event, one more clause in `StorefrontPublication` |
+| ~~**No vendor mentions légales on the vitrine.**~~ **Done** (`MENTIONS-LEGALES-PLAN.md`, ADR 0054): every published storefront has its page.  Each storefront is a public commercial page; LCEN art. 6-III wants the vendor identified — name, address, SIREN, contact. The storefront holds name, description, phone and nothing else; **no SIREN field exists in the domain at all** | Either the vitrine carries the vendor's legal identity, or the CGU makes the vendor responsible for it and gives them somewhere to put it | New storefront fields + `StorefrontInformationEdited` v2; PII register in `vendor-pii-fields.ts` must follow. **Shares a field with decision 14** — verification collects the SIREN anyway, so build the two together |
+| **No professional-status verification** (decision 14). **Partly built**: see decision 14's status. Nothing checks that a vendor is a real, active, food-trade business | The CGU asserts B2B-only eligibility and makes verification a condition of publication | Register lookup at signup, a `VendorProfessionalStatusVerified` event, one more clause in `StorefrontPublication` |
 | **No export.** RGPD portability and §2.5's exit clause both assume one; there is no export endpoint, and the ops transport for `erase`/`rebuild` is still deferred (`NEXT_BEHAVIOURS.md`) | A stated route and a deadline (one month) | Manual for the pilot, stated as such |
 | **No takedown or notice mechanism.** DSA art. 16 wants a notice-and-action route; art. 17 wants a statement of reasons when content is removed | A contact point and a described procedure | An email route is enough at this size, but it has to exist and be named |
 | **No suspension mechanic.** Non-payment and abuse both end in *unpublish by hand* with nothing recorded | Grounds, notice, effect on data | Manual for now; ADR 0048's entitlement seam is the eventual home |
@@ -211,7 +230,8 @@ belong to this document rather than that one:
   accounts. **This flips the day `ItemMiamed` or `ItemRequested` ships**: customer
   signals would make Market Miam a processor acting for the vendor, which needs an
   art. 28 DPA annexed to the CGU. Decide now whether to annex a dormant one or to
-  gate it on that feature.
+  gate it on that feature. *2026-10-24:* **ordering flips it first** (customer emails and
+  orders); the roles go to the lawyer as question C1 of the brief.
 - **Retention conflict, already named.** ADR 0048 flags it: invoices carry a ~10-year
   retention obligation while ADR 0025 erases by key deletion. The CGU's retention
   clause and Billing's design have to give the same answer, and the CGU will be written
@@ -237,7 +257,8 @@ belong to this document rather than that one:
   15-day floor and every suspension carries reasons and a right of reply. Counsel still
   needs to answer it for the record, because the answer flips outright when the 50 €
   ordering tier ships (decision 6): at that point transactions run through the platform
-  and P2B applies on any reading.
+  and P2B applies on any reading. *2026-10-24:* ordering is now in the only package, so
+  that flip is coming for every vendor; question B1 of the brief.
 - **Contrat conclu par voie électronique** (art. 1127-1 et s. C. civ.) — the double-clic
   and the steps/languages/archiving statements. Derogable between professionals; say so
   explicitly rather than relying on it.
@@ -269,6 +290,17 @@ and it is linked from no footer. Setting the date is the gesture that publishes 
 travels with two other edits, named in the file's header comment: add the footer links
 (site and vendor app), and drop `/cgu` from the sitemap filter.
 
+**Moved 2026-10-24 off the website**, to `docs/ordering-board/conditions-traiteurs.html`,
+annexe 6 of the lawyer brief. A page on `marketmiam.fr`, even unlinked and `noindex`, reads
+as Market Miam's terms, and the draft predates ordering. The ordering site is public too,
+as is this repository, but neither is the product's own domain. The page keeps the text,
+updates articles 6, 13, 16 and 20 for the price and the publication requirements, and marks
+what ordering makes false (articles 2 and 13, and a missing article on ordering) as *À
+réécrire* for the lawyer. The publication mechanism built with the draft (the `/cgu` route
+and its `VERSION.date` gesture, `Base.astro`'s `noindex` prop, the sitemap filter for
+archived versions) is in commit `5d68d55`, to restore when the terms are published. The two
+mechanics below are why it is built that way.
+
 Two mechanics worth knowing, both found by building rather than reading:
 
 - **`<meta slot="head">` in a page is silently dropped.** `Base.astro` has only a default
@@ -287,6 +319,13 @@ to a later amendment rather than annexing a dormant DPA, which is the §5 questi
 by deferral rather than by decision.
 
 ## 8. Site copy that must change before the CGV ships
+
+**Overtaken 2026-10-04 by the holding page**, which carries only the hero, a line naming
+online ordering as coming, the Tally button and the footer: no price, no pilot, no freeze.
+The table below is kept as history. What remains: `/mentions-legales` still names the
+*phase pilote* as the Tally form's purpose while the form itself was renamed in September
+(`WEBSITE-PLAN.md` §2), and the page states the 50 € HT price when it is rebuilt around
+ordering (`ORDERING-PLAN.md`, step 8).
 
 Decisions 6 and 13 both contradict what is currently published. The CGV cannot go up
 while the landing page promises otherwise — a contract that disagrees with the sales
@@ -309,18 +348,19 @@ signup"*), so removing it touches the CTAs, the closing band and the form it ope
 
 ## Where this stands
 
-**The draft is written** (§7). What remains, in the order it blocks publication:
+*Refreshed 2026-10-24.* **The draft is written and attached to the lawyer brief** (§7).
+What remains, in the order it blocks publication:
 
-1. **Legal review.** The text is built from §2's fourteen decisions and §6's regulatory
-   reading; neither has been seen by a lawyer. The two clauses flagged in §7 are the ones
-   to point at first.
-2. **§8's site copy** — the pilot removal shipped 2026-08-29, along with the price-freeze
-   line and the two pilot references in `/mentions-legales`. What is left is outside the
-   repo: the Tally form's title and its consent copy both still name the pilot, and the
-   consent copy is Art. 13 information rather than marketing text.
-3. **§4's code.** Acceptance capture is the one that matters — until it exists, no
-   vendor's agreement to a version is provable, and the text at article 4 promises it is.
-   The SIREN field now has two callers (§4, decision 14), so it gets built once.
+1. **Legal review**, through the brief on the ordering site: B1 for these terms, A1 to A4
+   and C1 for the ordering clauses that articles 2 and 13 and a new article wait on, and
+   article 26's liability cap.
+2. **The ordering clauses**, drafted from the lawyer's answers.
+3. **§4's code.** Acceptance capture is the one that matters: until it exists, no vendor's
+   agreement to a version is provable, and article 4 promises it is. The register check of
+   decision 14 is the other.
 4. **§3's confirmations** change what the text claims, not whether it stands.
+5. **The site:** the two *phase pilote* sentences on `/mentions-legales`, then the price
+   with the rebuild around ordering.
 
-Publication is the three-part gesture in §7, not a date change alone.
+Publication restores the mechanism from `5d68d55` and is the three-part gesture in §7, not
+a date change alone.
