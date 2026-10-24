@@ -363,7 +363,7 @@ the same shot so it regenerates too — which means a forced re-scrape, per §1.
 | Item | Add when |
 |------|----------|
 | ~~Pilot price freeze~~ | **Shipped 2026-08**, alongside the price itself — see the decisions above for why it stopped being optional at that moment. |
-| A 50 € tier (préco + réservation) | **Deliberately not on the page**, and not just "later". It turns the reassurance block into a pricing table, and a vendor reads *the good stuff costs 50, 15 buys the brochure* — at the exact moment you're asking for trust. Feature gating is still an Open Item in `MARKET_MIAM.md`, so publishing a split would commit in public to something undecided. And preordering is unscoped: no aggregate, no events, and it drags in payments, no-shows and customer PII the product currently avoids by design. |
+| ~~A 50 € tier (préco + réservation)~~ | **Superseded 2026-10-24: there are no tiers.** One package at 50 € HT/month, online ordering included, and the 15 € price is dropped. The page names it when it is rebuilt around ordering. The reasoning below is kept as history. **Deliberately not on the page**, and not just "later". It turns the reassurance block into a pricing table, and a vendor reads *the good stuff costs 50, 15 buys the brochure* — at the exact moment you're asking for trust. Feature gating is still an Open Item in `MARKET_MIAM.md`, so publishing a split would commit in public to something undecided. And preordering is unscoped: no aggregate, no events, and it drags in payments, no-shows and customer PII the product currently avoids by design. |
 | Analytics | Real traffic worth measuring. Needs a cookie banner if it sets cookies. |
 | Client testimonial + real storefront shots | First *vendor* is actually live — the demo doesn't count. |
 | Second page | One page stops being enough |
@@ -408,6 +408,8 @@ the same shot so it regenerates too — which means a forced re-scrape, per §1.
 - **HT and TTC are both shown** — *15 € HT par mois (18 € TTC)*. HT alone is the correct B2B
   convention and stays the headline, but a traiteur en franchise de TVA cannot reclaim the
   20 %, so HT-only would be a surprise at the first invoice. One parenthesis, no surprise.
+  The figures change with the 2026-10-24 price: *50 € HT par mois (60 € TTC)* when the page
+  is rebuilt around ordering.
 - **Storefront shot in the hero, not the dashboard** — it's what a vendor is buying.
 - **"Market Miam" appears in one on-page heading** — *Ce que Market Miam vous donne* (was *dès l'inscription*, then *…vous donne aujourd'hui*; *aujourd'hui* was contrast against a *Ce qui arrive ensuite* section that no longer exists, so it went with it. The brand stays in the heading through every rewording, which is the part that matters). Before that, the name was in `<title>`, metas, alt text and body copy but in no `h1`–`h6` on the whole site — a weak signal for brand queries. The hero h1 stays a brand-free hook; that section is the natural home because it's literally what Market Miam gives you.
 - **`public/` holds generated assets, not originals.** Regeneration recipe in the app README.
@@ -434,5 +436,5 @@ will hit them again.)*
 
 *(2026-08-02: `MARKET_MIAM.md` was refreshed — the superseded brought/left post-market model is corrected there.)*
 
-- `docs/MARKET_MIAM.md` lists *pricing tiers and feature gating* as an Open Item. It blocks the 50 € tier above, and it's the reason that tier stays off the page.
+- ~~`docs/MARKET_MIAM.md` lists *pricing tiers and feature gating* as an Open Item.~~ Settled 2026-10-24: one package, no tiers.
 - Trademark: INPI check clear, registration requested 2026-08, confirmation pending (`docs/MARKET_MIAM.md`).

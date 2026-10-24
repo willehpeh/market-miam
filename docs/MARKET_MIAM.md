@@ -182,7 +182,7 @@ Later phases, none scheduled: customer miams (deferred 2026-08), item requests, 
 
 ## Business Model
 
-Subscription-based (monthly fee) rather than transaction-based (commission per order). Aligns incentives with vendor success rather than extracting from their margins. Named on the website: free during the pilot, then 15 € HT/month. Pricing tiers and feature gating remain undecided (Open Items) — which is why no tier split appears publicly.
+Subscription-based (monthly fee) rather than transaction-based (commission per order). Aligns incentives with vendor success rather than extracting from their margins. **One package, 50 € HT/month (60 € TTC), online ordering included** (decided 2026-10-24). The 15 € HT tier the website used to name is dropped, and with it any tier split: there is nothing to gate. Still no commission on orders (`ORDERING-PLAN.md`).
 
 ## Trademark Note
 
@@ -192,7 +192,7 @@ The original name “Market Monster” carried a minor risk from Monster Beverag
 
 - Customer-facing bounded context design (when customer signals land)
 - Notification mechanics (for item requests, sold-out alerts)
-- Pricing tiers and feature gating — blocks any public tier split (`WEBSITE-PLAN.md`)
+- ~~Pricing tiers and feature gating~~ — settled 2026-10-24: one package at 50 € HT/month, ordering included
 - Trademark registration confirmation (requested 2026-08; INPI check came back clear)
 
 *(Resolved since the vision draft: aggregate boundaries and invariants — see the
