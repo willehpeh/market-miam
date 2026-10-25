@@ -187,7 +187,7 @@ const projections = {};   // slice dir name -> { consumes, file }
 for (const f of walk(DOMAIN_DIR)) {
   if (!f.endsWith('.projection.ts')) continue;
   const src = read(f);
-  const body = /handlers\(\)[^{]*\{([\s\S]*?)\n  \}/.exec(src);
+  const body = /handlers\(\)[^{]*\{([\s\S]*?)\n {2}\}/.exec(src);
   const consumes = body ? [...body[1].matchAll(/^\s*(\w+):/gm)].map(m => m[1]).filter(e => eventAggregate[e]) : [];
   if (!consumes.length) { warn(`no handler-map events found in ${rel(f)}`); continue; }
   projections[basename(dirname(f))] = { consumes, file: rel(f) };
