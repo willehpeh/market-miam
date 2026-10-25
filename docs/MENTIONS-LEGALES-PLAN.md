@@ -1,8 +1,8 @@
 # Mentions légales & privacy policies — plan
 
 Every storefront owes a mentions-légales page naming its vendor as éditeur (ADR 0054), and
-registered vendors are owed a privacy policy (`PRIVACY-PLAN.md` §1). Neither exists today, and
-one client is already live. The two policies' wording was drafted, checked and approved by a
+registered vendors are owed a privacy policy (`PRIVACY-PLAN.md` §1). Both are shipped (slices 1–7
+and 9); slice 8's rollout waits on the live client. The two policies' wording was drafted, checked and approved by a
 lawyer on 2026-09-23; this plan is what it takes to ship them with the vendor's legal identity.
 
 The approved wording lives in the doc *Market Miam — politiques de confidentialité
@@ -153,6 +153,7 @@ Each slice is reviewable and committable alone. Deploying is gated by the rollou
     address and email but no phone. Add one, or confirm the email is enough.
   - The éditeur block's layout, the hébergeur lines and the "Prix indicatifs" sentence are not
     lawyer-reviewed text (policy B is).
+  - Both are in the lawyer brief: `ordering-board/avocat.html` D1 (the phone) and D2 (the blocks).
 
 ### 8. Rollout
 

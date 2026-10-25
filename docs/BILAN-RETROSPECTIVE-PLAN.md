@@ -106,7 +106,7 @@ navigation, no new screen, and it lands at the exact moment the data exists to i
 **A — the menu editor row. Shipped.** `/dashboard/menus/:marketId/:date` already knows the market, so
 the line needs no market label. This is the whole feature at its cheapest: the recall
 arrives inside the decision instead of waiting behind a link the vendor will not open at 6h.
-Vertical, so it does not squeeze the dish name the way an inline cue did (`MARKET-PRICING-PLAN.md`
+Vertical, so it does not squeeze the dish name the way an inline cue did (`archive/MARKET-PRICING-PLAN.md`
 decision 6's neighbour). It sits **below the whole row and inside the same card**, indented to
 the dish name rather than nested inside the name column — the name column is 105 px wide at
 320 px and the row's full width is 168 px, and that difference is the whole margin the line
@@ -114,7 +114,7 @@ has to live in. Silent
 for a dish never brought here — a screen of *aucun bilan* is a nag, not a hint.
 
 **B — `Ce qui se vend à <marché>`. Deferred.** A second link on the market card in *Vos marchés*, under
-*Tarifs* — the card is already a container with two destinations (`MARKET-PRICING-PLAN.md`
+*Tarifs* — the card is already a container with two destinations (`archive/MARKET-PRICING-PLAN.md`
 decision 2), so this is a precedent, not a new pattern. The page is the five piles, each a
 short list of dishes with their streaks, and each dish's price **at that market** beside it,
 stated and not interpreted: a dish that stays at one market and empties at another where it
@@ -142,7 +142,7 @@ need when it fires, and it cost nothing to keep true.
 ## Slices
 
 **Slice 1 — the read, and the editor line. Shipped.** `FindSellingRecord(vendorId)` returning the
-vendor's whole set (`MARKET-PRICING-PLAN.md` decision 3's shape), `GET /selling-record` as its own resource — prices took
+vendor's whole set (`archive/MARKET-PRICING-PLAN.md` decision 3's shape), `GET /selling-record` as its own resource — prices took
 `/market-prices` rather than hanging off `/market-schedules`, and a cross-day aggregate is no
 more a market day than a price list is a schedule — the pile rule as a pure frontend function
 in the same shape `live-status.ts` set, and primitive 3 on the menu
@@ -328,7 +328,7 @@ Settled by grilling. Do not re-litigate without a reason.
 |---|---|---|
 | 1 | **Piles, never scores.** No percentage, no average, no rank, no chart | At n=3 to n=8 with three unordered-ish categories, every derived number is more confident than the data. A pile is a claim the streak beneath it can be checked against in one glance |
 | 2 | **(dish × market), never dish alone** | The clientele is the market's, and the product already accepts this everywhere it matters — prices vary by market (ADR 0052). A carte-wide average over four markets is the one aggregate guaranteed to describe no morning the vendor will actually have |
-| 3 | **One query returns the whole set; three surfaces slice it** | `MARKET-PRICING-PLAN.md` decision 3, same reasoning: a pilot vendor is ~20 dishes × ~4 markets × ≤8 bilans — **33 kB of JSON, 3.0 kB gzipped**, measured with real UUID ids — and the alternative is three narrow read-model methods for three views of one fold. A compact shape (`outcomes[]` plus one `since` instead of `{date,outcome}` objects) halves the raw bytes and saves only 13 % on the wire, because the UUIDs are the incompressible part: not worth the shape. If a vendor ever makes the whole set expensive, narrowing slice A to `?market=` is the lever, not re-encoding |
+| 3 | **One query returns the whole set; three surfaces slice it** | `archive/MARKET-PRICING-PLAN.md` decision 3, same reasoning: a pilot vendor is ~20 dishes × ~4 markets × ≤8 bilans — **33 kB of JSON, 3.0 kB gzipped**, measured with real UUID ids — and the alternative is three narrow read-model methods for three views of one fold. A compact shape (`outcomes[]` plus one `since` instead of `{date,outcome}` objects) halves the raw bytes and saves only 13 % on the wire, because the UUIDs are the incompressible part: not worth the shape. If a vendor ever makes the whole set expensive, narrowing slice A to `?market=` is the lever, not re-encoding |
 | 4 | **The pile rule lives in the frontend, the window in the handler** | The thresholds are a UX rule the pilot will move (`FindUnratedMarketDaysHandler.WINDOW_DAYS`'s own argument), and moving them must cost no migration and no rebuild. The window is what bounds the scan, so it belongs where the scan is |
 | 5 | **No new read model in slice 1** | Decision 14a named the seam but the fold is a bounded prefix scan on the key migration `0013_market_day_views_key_order` already reordered for exactly this window read. Building the projection first shapes a table around a query whose shape the pilot has not yet moved. **Trigger: the fold shows up in a trace, or the window has to span years** |
 | 6 | **The streak reads oldest → newest** | It is the only element here that can show direction, and direction is what a mean cannot. Reversed, an improving dish reads as a declining one |
@@ -339,7 +339,7 @@ Settled by grilling. Do not re-litigate without a reason.
 | 11 | **The editor line gates the spinner with the other three feeds** | The menu editor already waits on days, catalogue and prices so no row paints a wrong price for a frame. A fourth feed landing late would reflow every row under the vendor's thumb, which is the same failure the dashboard's `loaded()` gate exists to stop |
 | 12 | **The pile goes in the editor, the streak stays on the record page** | Forced by the 105 px name column, but right on its own terms: the editor is a decision taken in seconds and wants the conclusion, and a vendor who doubts the conclusion is exactly the vendor who will open the page holding the evidence |
 | 13 | **Streak tokens are *Épuisé* · *Bien* · *Reste*, not the form's full labels** | A third register for three facts, bought deliberately: the pile heading above supplies the full phrase so the mapping is learnable at a glance, and full labels wrap a five-bilan streak to three lines inside a 224 px card |
-| 14 | **The editor line is inert text; colour never carries meaning alone** | The row is a `<label>` around a checkbox, so a link inside it is a nested interactive and a misfire that ticks the dish. And every pile and token carries its word — WCAG 1.4.1, which the price editor already holds itself to (`MARKET-PRICING-PLAN.md` decision 7), and which a screen read in market sun does not forgive |
+| 14 | **The editor line is inert text; colour never carries meaning alone** | The row is a `<label>` around a checkbox, so a link inside it is a nested interactive and a misfire that ticks the dish. And every pile and token carries its word — WCAG 1.4.1, which the price editor already holds itself to (`archive/MARKET-PRICING-PLAN.md` decision 7), and which a screen read in market sun does not forgive |
 | 15 | **The handler takes `MarketDayViews` and a `Clock`, nothing else** | Settled by what the first test forced rather than up front. `FindUnratedMarketDays` reads schedules and the catalogue only to decide whether a day is *finished*; a day carries `outcomes` only where the aggregate already accepted a bilan, so that question is already answered. Retired dishes drop on the frontend's own catalogue join, which every surface makes anyway for names |
 | 16 | **The fold is a private method; the tests stay on the handler** | ADR 0006 — public surfaces, not internals. A spec on the fold would pin the shape the slice still needs free, and keeping the tests on the handler is exactly what let the refactor commit move the fold without touching one |
 | 17 | **Only `bilans` has a meaningful order** | Oldest first, decision 6, and `menusFor` gives it for free. The order of markets and of dishes within them is incidental — every surface joins the catalogue for names and renders in that order — so no test should assert it, and a test that does will break on a harmless change to the fold |

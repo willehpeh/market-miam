@@ -1,5 +1,7 @@
 # Prix par marché — plan
 
+> **Archived 2026-10-25** — shipped end to end (ADRs 0052, 0053). The two *Open* ideas below, collapsing variant dishes in the editor and a per-day price override, are dropped rather than moved to the backlog: nothing has asked for them.
+
 A vendor does not charge the same price for the same dish at every market. Shipped end to
 end: the price list is set whole per market, validated against the catalogue, projected,
 joined onto every day a customer sees, edited on its own screen and quoted by the menu

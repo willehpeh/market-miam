@@ -32,20 +32,21 @@ comes next; each line points at the doc that holds the detail. Update it when a 
 
 * ordering — same-day orders from a live market day's menu, paid online at order, collected with a code (`docs/ORDERING-PLAN.md`). Decided 2026-10-04: the live client and every prospect need it before Market Miam is usable. The plan's *Order of work* runs it: lawyer and accountant, Stripe platform account, then the `packages/ordering` context
 * allergens per dish — the 14 declared in the dish form and shown in the storefront's dish sheet, ahead of ordering (`docs/ALLERGENS-PLAN.md`). Slices 1–3 deployed; the rollout asks the live client to declare every dish
-* live mode — the storefront leads with the market the vendor is standing in; sold-out per dish, closing the day, and the end-of-day bilan (`docs/LIVE-MODE-PLAN.md`). Slices 1, 2 and 2b are shipped, which subsumes *mark as sold out* and *item rated for market day*. No *open market day*: the start follows from the schedule
+* live mode — the storefront leads with the market the vendor is standing in; sold-out per dish, closing the day, and the end-of-day bilan (`docs/LIVE-MODE-PLAN.md`). Slices 1, 2 and 2b are shipped, which subsumes *mark as sold out* and *item rated for market day*. No *open market day*: the start follows from the schedule. Slice 3 remains: the query split and the full-page *en direct* takeover, which the storefront lacks nothing concrete for
 * what the bilan says over time — the recorded outcomes read back as (dish × market) piles: a line in the menu editor, a *Ce qui se vend* page per market, and the transpose on a catalogue dish (`docs/BILAN-RETROSPECTIVE-PLAN.md`). Decision 14a of the live-mode plan, come due. **Slice 1 shipped, back and front** — `FindSellingRecord` over a six-month fold of `menusFor`, `GET /selling-record`, no new event and no new read model; on the vendor side a `selling-record/` facade set and the pile line under each dish in the menu editor. Slices 2 and 3 — the per-market page and the transpose on a catalogue dish — are **deferred as unnecessary for now**; they consume the same payload and need no new backend, so they cost nothing to leave. Trigger, and the gap it closes, in the plan's *Deferred* section
 * remove item photo · clear storefront cover photo
 * retiring an item doesn't check if it's been planned
 * category + tags for dishes (`ItemAddedToCatalogue` v2, form + list cards)
 * schedule cadence picker: every-N-weeks + one-off (domain/API/read model support both; the UI pins weekly)
-* prepared-state overlay — design pass done: menus join onto occurrences (`docs/MENU-DU-JOUR-PLAN.md`, decisions 4–5). Attended state waits on open/close market day
+* prepared-state overlay — design pass done: menus join onto occurrences (`docs/archive/MENU-DU-JOUR-PLAN.md`, decisions 4–5). Closing shipped and *open* was rejected (ADR 0049), so nothing blocks the attended state now
 
 ## Polish
 
 * dish eager rendition (`ponytail:` in `catalogue.controller.ts` — still warms the cover-photo size)
-* add/revise error banners (`AddDishFailure`/`ReviseDishFailure` emitted but unreduced)
+* add/revise error banners (`AddItemFailure`/`ReviseItemFailure` emitted but unreduced)
 * variant follow-ups: per-variant photos · per-variant sold-out · incremental variant commands · drag-drop reorder (`docs/archive/DISH-VARIANTS-PLAN.md`)
 * nine small OO refactors (#2–4, #7–12 — per-item fixes in `docs/archive/OO-SMELL-AUDIT.md`)
+* F1, the api suite's *socket hang up* flake: run `nx test api` 24 times on Linux; if it never reproduces, close it as a macOS-only annoyance (`docs/findings/f1-api-suite-socket-hang-up-flake.md`)
 * act on the frontend test-audit findings — vacuous tests, untested seams, customer-frontend coverage config (`docs/archive/VENDOR-FRONTEND-TEST-AUDIT.md` · `docs/archive/CUSTOMER-FRONTEND-TEST-AUDIT.md`)
 
 ## Deferred — trigger-gated (rationale: `docs/archive/DEFERRED.md`)

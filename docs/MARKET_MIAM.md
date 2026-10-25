@@ -1,8 +1,8 @@
 # Market Miam — Product Design Summary
 
-Originally the founding vision note (2026-06). Refreshed 2026-08-02 against the
-code: the vision sections stand as written; the implementation sections now
-describe what is actually built. Architecture detail lives in
+Originally the founding vision note (2026-06). Refreshed against the code on
+2026-08-02 and 2026-10-25: the vision sections stand as written; the implementation
+sections describe what is actually built. Architecture detail lives in
 `EVENT-SOURCING-ARCHITECTURE.md` and `adr/`; the public pitch is
 [marketmiam.fr](https://marketmiam.fr) (`apps/website`, see `WEBSITE-PLAN.md`).
 
@@ -45,13 +45,13 @@ The vendor's public page — name, description, phone, cover photo, and whether 
 carte quotes its prices (ADR 0053; opted in, so the absence of a
 `CartePricesHidden` means shown). Opened
 automatically on registration (the `OpensStorefronts` processor); published only
-when ready: title, cover photo, at least one dish, at least one schedule, and an
-assigned subdomain (ADRs 0031/0032; description no longer gates publication,
-ADR 0043).
+when ready: title, cover photo, at least one dish, at least one schedule, an
+assigned subdomain, and the vendor's legal identity for the page's mentions
+légales (ADRs 0031/0032/0054; description no longer gates publication, ADR 0043).
 
 ### Catalogue (carte)
 
-The vendor’s living catalog of everything they know how to make. Long-lived, market-independent, accumulates history over time. This is the core differentiator — structured knowledge about the vendor’s business that Instagram can never provide. A dish is flat-priced **or** offered in variants/formats, never both (ADR 0033).
+The vendor’s living catalog of everything they know how to make. Long-lived, market-independent, accumulates history over time. This is the core differentiator — structured knowledge about the vendor’s business that Instagram can never provide. A dish is flat-priced **or** offered in variants/formats, never both (ADR 0033), and declares which of the 14 INCO allergens it contains (`ALLERGENS-PLAN.md`).
 
 ### Calendar
 
@@ -77,8 +77,8 @@ storefront leads with the market it is standing in and each dish carries its
 availability. Distinct from **en cours**, which is the calendar's word for *this
 market is running by the clock*: a vendor at a market who planned no menu is en
 cours but not en direct. The vendor does not announce the start (it follows from
-the schedule) but does announce the end, by **closing** the day. Not yet built —
-`LIVE-MODE-PLAN.md`.
+the schedule) but does announce the end, by **closing** the day. Built through
+slice 2b of `LIVE-MODE-PLAN.md`; the full-page *en direct* takeover (slice 3) is not.
 
 ### Miam
 
@@ -105,8 +105,8 @@ a trader packing up a stand will do.)*
 **Trend data per item per market** — the goal that survived that supersession — is
 now being built on top of it: the bilans read back as *(dish × market)* piles
 rather than scores, since three broad categories over a handful of market days are
-useless as a measurement and useful as sorting bins. Backend done, frontend not
-started. See `BILAN-RETROSPECTIVE-PLAN.md`.
+useless as a measurement and useful as sorting bins. Shipped, back and front: a
+pile line under each dish in the menu editor. See `BILAN-RETROSPECTIVE-PLAN.md`.
 
 ## Tech Stack (as built)
 
@@ -133,6 +133,8 @@ further Ordering context, not an extension of Billing (ADR 0048).
 |Event                      |Aggregate |Phase          |
 |---------------------------|----------|---------------|
 |VendorRegistered           |Vendor    |Setup          |
+|VendorLegalIdentityProvided|Vendor    |Setup          |
+|VendorErased               |Vendor    |Lifecycle      |
 |StorefrontOpened           |Storefront|Setup (automatic)|
 |StorefrontInformationEdited|Storefront|Setup          |
 |StorefrontCoverPhotoSet    |Storefront|Setup          |
@@ -173,7 +175,7 @@ outcome event that hangs off closing.
 The MVP is **vendor-facing first**: the catalogue and market day planning tool, with the customer-facing published page as the visible output.
 
 1. **Build the catalogue** — ✅ shipped end-to-end (add, revise, re-photo, retire, reorder, variants)
-1. **Plan market days** — ✅ shipped end-to-end (`SetMarketDayMenu` → `MarketDayMenuSet`, the whole day's menu in one command; read model, `PUT /market-days/:marketId/:date/menu`, the menu joined onto upcoming days, a *Prochain marché* card and menu editor in the vendor app, and the day's menu leading the storefront) — see `MENU-DU-JOUR-PLAN.md`
+1. **Plan market days** — ✅ shipped end-to-end (`SetMarketDayMenu` → `MarketDayMenuSet`, the whole day's menu in one command; read model, `PUT /market-days/:marketId/:date/menu`, the menu joined onto upcoming days, a *Prochain marché* card and menu editor in the vendor app, and the day's menu leading the storefront) — see `archive/MENU-DU-JOUR-PLAN.md`
 1. **Publish** — ✅ shipped: publication readiness + public storefront (next market, upcoming markets, absences) at the vendor's subdomain, with the carte on its own `/carte` page — see `LIVE-MODE-PLAN.md` slice 0
 1. **Sold-out tracking** — ✅ shipped: per-dish marks during service on the vendor's live screen, greyed in place on the customer storefront — see `LIVE-MODE-PLAN.md` slice 1
 1. **Post-market review** — ✅ shipped: *le bilan* on its own route, the whole set in one submit, the *épuisé* prefill a recorded bilan outranks, and a dashboard prompt for an unjudged day — see `LIVE-MODE-PLAN.md` slice 2b. Reading it back across market days is ✅ shipped too: `GET /selling-record` folds six months of bilans into (dish × market) piles, surfaced as a line under each dish in the menu editor. The other two surfaces it was designed for are deferred (`BILAN-RETROSPECTIVE-PLAN.md`)

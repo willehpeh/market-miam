@@ -5,7 +5,7 @@
 | Severity | High |
 | Area | Read path / operations |
 | Files | `packages/event-sourcing/src/adapters/postgres/postgres.checkpoint.ts:19-27`, `apps/api/src/app/event-sourcing/subscriptions.ts:95-108` |
-| Status | **Fixed** — CAS checkpoints, [ADR 0036](../adr/0036-checkpoint-advances-are-compare-and-set.md) (pending merge) |
+| Status | **Fixed** — CAS checkpoints, [ADR 0036](../adr/0036-checkpoint-advances-are-compare-and-set.md) |
 | Found | 2026-07-31 evaluation @ `eec797b` |
 | Analysed | 2026-08-01 @ `028b6f7` — confirmed with corrections ([below](#analysis--2026-08-01-challenge)) |
 

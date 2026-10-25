@@ -1,6 +1,6 @@
 # 0018. Separate frontend apps per audience
 
-Date: 2026-06-07 · Status: Accepted
+Date: 2026-06-07 · Status: Accepted · Amended 2026-10-25 — `packages/design-system` (tokens, fonts, component classes; CSS only) is the shared UI package this ADR anticipated
 
 ## Context
 

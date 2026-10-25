@@ -1,6 +1,6 @@
 # 0023. Tailwind CSS for frontend styling
 
-Date: 2026-06-10 · Status: Accepted
+Date: 2026-06-10 · Status: Accepted · Amended 2026-10-25 — the tokens and element styles live in `packages/design-system`, and the fonts are Hanken Grotesk and Space Mono, self-hosted
 
 ## Context
 

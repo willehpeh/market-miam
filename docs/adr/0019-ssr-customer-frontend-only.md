@@ -1,6 +1,6 @@
 # 0019. SSR for the customer frontend only
 
-Date: 2026-06-08 · Status: Accepted
+Date: 2026-06-08 · Status: Accepted · Amended 2026-10-25 — every customer route is server-rendered on request (`RenderMode.Server`), not prerendered; the SSR-for-the-customer-frontend-only split stands
 
 ## Context
 

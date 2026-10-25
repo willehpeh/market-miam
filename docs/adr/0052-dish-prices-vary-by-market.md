@@ -188,7 +188,7 @@ to the catalogue price leaves nothing in the field to highlight — and it is ho
 a vendor forty rows down knows there is unsaved work.
 
 **Menu editor.** The picker reads the catalogue store directly
-(`docs/MENU-DU-JOUR-PLAN.md:204`) and would quote list prices while planning a
+(`docs/archive/MENU-DU-JOUR-PLAN.md:204`) and would quote list prices while planning a
 market, which is the number the customer will not be charged. It shows the
 market price, carrying the same *Tarif marché* cue.
 
@@ -218,4 +218,4 @@ screens read it, so it does not belong to the schedule slice.
 
 Builds on ADRs 0007, 0008, 0009, 0033, 0039, 0045, 0046, 0047, 0051.
 
-Shape and slicing: `docs/MARKET-PRICING-PLAN.md` (frontend decisions 1–11).
+Shape and slicing: `docs/archive/MARKET-PRICING-PLAN.md` (frontend decisions 1–11).

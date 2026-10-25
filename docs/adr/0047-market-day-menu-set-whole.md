@@ -2,7 +2,7 @@
 
 Date: 2026-08-10 · Status: Accepted
 
-Records decision 2 of `MENU-DU-JOUR-PLAN.md`, settled by grilling before
+Records decision 2 of `archive/MENU-DU-JOUR-PLAN.md`, settled by grilling before
 slice 1 and implemented in commits `8ad0f2a`–`d273bcc`.
 
 ## Context

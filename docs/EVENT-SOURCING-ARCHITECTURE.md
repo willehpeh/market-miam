@@ -423,10 +423,12 @@ retire a version once no row references it. Config shapes: `MASTER_KEY=<base64>`
 On Render they live in a Secret File read off disk, never `process.env`. The
 ring validates at boot.
 
-**Erasure** = `DataKeys.shred(vendorId)` → `rebuild('vendor-storefront-view')`
-(decrypt-on-load means projections cache plaintext, so the rebuild — replaying
-into `SHREDDED` — *is* the erasure) → `SubdomainRegistry.removeFor(vendorId)`
-(not event-derived, deleted explicitly).
+**Erasure is an event** (ADR 0058). The operator dispatches `EraseVendor`, which raises
+`VendorErased`; the `ErasesVendors` processor carries it out: `DataKeys.shred(vendorId)`,
+a shred of the `{vendorId}:legal` key scheduled five years on (ADR 0056), and
+`SubdomainRegistry.removeFor(vendorId)` (not event-derived, deleted explicitly). Read
+models drop the vendor's row on `VendorErased` instead of a rebuild. Deleting the Auth0
+user stays a manual step.
 
 ---
 
@@ -508,7 +510,8 @@ drains, so after would always gauge zero; a gauge failure sets
    volume; a cost cliff later.
 
 Tracked separately in [`O11Y-PLAN.md`](O11Y-PLAN.md): payload attribute
-extractors, stuck-subscription alerting, Collector/tail-sampling.
+extractors and Collector/tail-sampling. Stuck-subscription alerting shipped with
+live-mode slice 1 (`GET /api/health`).
 
 ### 10.6 Testing spans
 
@@ -569,4 +572,5 @@ verified commit) · 0035 (appends join the ambient unit of work) · 0036
 (compare-and-set checkpoints) · 0037 (nested transactions join) · 0038
 (in-memory single log) · 0039 (shredding reads degrade, writes strict) · 0040
 (master keyring, lazy re-wrap) · 0041 (AAD v2 binds stream position) · 0042
-(LISTEN lifecycle)
+(LISTEN lifecycle) · 0044 (OTel in the package seams) · 0056 (legal identity
+outlives erasure) · 0058 (erasure is an event)

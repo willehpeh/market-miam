@@ -48,7 +48,7 @@ name, and 0052's reasoning survives intact as the reason the *market's* list
 stays with the market.
 
 **The carte only.** The featured *Prochain marché* card is untouched: that price
-is the market's own (`MARKET-PRICING-PLAN.md` decision 11), and this choice
+is the market's own (`archive/MARKET-PRICING-PLAN.md` decision 11), and this choice
 speaks for the carte. A vendor who hides carte prices is told so on the spot,
 because it is the one surprise the switch can cause.
 
@@ -89,4 +89,4 @@ is that day, and nothing had to be added to the query to make it work.
 
 Builds on ADRs 0008, 0009, 0039, 0045, 0046, 0052.
 
-Shape and slicing: `docs/MARKET-PRICING-PLAN.md` (decision 12, slice 10).
+Shape and slicing: `docs/archive/MARKET-PRICING-PLAN.md` (decision 12, slice 10).

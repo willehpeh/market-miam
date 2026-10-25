@@ -1,10 +1,11 @@
 # Menu du jour — plan
 
+> **Archived 2026-10-25** — all seven slices shipped. Two ideas left open here are dropped rather than moved to the backlog, since nothing has asked for them: prefilling an unplanned day from the last menu at that market (decision 8) and planning further ahead than the next market (decision 7).
+
 Vendors compose each market day's offering from their catalogue; customers see it on the
-storefront. Slices 1–4 (domain, read model, query, HTTP) shipped, plus follow-ups in 3a; the
-**All seven slices shipped.** A vendor plans a day's menu from their dashboard and a customer sees
-it on the storefront above the carte. What is deliberately *not* built: sold-out (domain only),
-past-day editing, and planning further ahead than the next market.
+storefront. **All seven slices shipped.** A vendor plans a day's menu from their dashboard and a
+customer sees it on the storefront above the carte. Not built here: sold-out and closing (shipped
+since, `LIVE-MODE-PLAN.md`), past-day editing, and planning further ahead than the next market.
 
 ## Decisions
 

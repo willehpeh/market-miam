@@ -6,7 +6,7 @@
 
 The live client and every prospect said Market Miam is unusable until customers can order and pay through it. The page now carries only the hero, with one line naming online ordering as coming (*Bientôt, la commande en ligne*), the Tally button and the footer. The problem band, the *Comment fonctionne Market Miam* groups with their two app screens, and the pilot terms are gone, and with them the price and the *ce qui sera ajouté plus tard est compris* freeze. The live client co-designed the pricing, so nothing public was owed. Everything below records the full page as it stood, and it stays as history until ordering ships and the page is rebuilt around it. `app-pendant-le-marche.webp` and `app-reperes.webp` stay in `public/` for that rebuild.
 
-Kept up on purpose rather than taken down: `/mentions-legales#licence` is the vendor app's AGPL source link (`apps/vendor-frontend/src/app/core/layout.ts`), policy A is due to land on this site (`MENTIONS-LEGALES-PLAN.md` slice 6), and the Tally form is the only way in for prospects.
+Kept up on purpose rather than taken down: `/mentions-legales#licence` is the vendor app's AGPL source link (`apps/vendor-frontend/src/app/core/layout.ts`), policy A lives on this site at `/confidentialite-traiteurs` (`MENTIONS-LEGALES-PLAN.md` slice 6), and the Tally form is the only way in for prospects.
 
 ## Shipped (`d1eef8c` … `64ab3a4`)
 
@@ -68,8 +68,10 @@ when the menu du jour moved into *Disponible aujourd'hui* (152 chars, still miss
 
 ### CTAs (`55073a6`, `d233015`)
 
-Both in-page CTAs read *Rejoignez les premiers traiteurs*, matching the title of the Tally
-form they open. The header CTA keeps *Rejoindre le pilote* — it's navigation, not the ask.
+~~Both in-page CTAs read *Rejoignez les premiers traiteurs*, matching the title of the Tally
+form they open. The header CTA keeps *Rejoindre le pilote* — it's navigation, not the ask.~~
+**Superseded 2026-10-25:** every CTA, header included, reads *Ouvrons votre vitrine*, the
+form's title since September 2026. The pilot is gone, so the header had nothing to navigate to.
 *La phase pilote* stays as the programme's name in the eyebrow and the note under the hero
 button.
 
@@ -393,7 +395,7 @@ the same shot so it regenerates too — which means a forced re-scrape, per §1.
 - **`--mm-brand` for decoration, `--mm-brand-deep` for brand-as-text on light.** Measured on the since-deleted roadmap list: `--mm-brand` was 3.90:1 against that section's background at 16px, under the 4.5:1 AA floor; `--mm-brand-deep` is 7.75:1. Followed by `.eyebrow`, `.foot a`, `.legal a`, and now by the feature-group `h3`s, which is why those are brand-deep rather than brand.
 - **Tally over Formspree** — unlimited responses free, and Belgium-based, so French vendors' data stays in the EU. Free tier shows Tally branding; Pro (€20/mo) removes it, not needed yet.
 - **Popup, not inline iframe** — page stays on-brand, branding is less visible in an overlay.
-- **Price named before it's charged** — stating it avoids a cold ask at conversion and filters people who were never customers. Now literal: it *is* charged.
+- **Price named before it's charged** — stating it avoids a cold ask at conversion and filters people who were never customers. ~~Now literal: it *is* charged.~~ The holding page names no price, and the one live client is not yet invoiced (2026-10-25).
 - ~~**The pilot ends when the roadmap features ship — the two *gratuit* statements are one
   period, two angles.**~~ **Superseded 2026-08: the price is 15 € HT/mois as of now, with the
   first month offered.** The feature gate was a good promise while most of the roadmap was
@@ -414,11 +416,12 @@ the same shot so it regenerates too — which means a forced re-scrape, per §1.
   what it says, that future work is included. Deliberately not reworded: it costs nothing,
   and *ce qui arrive ensuite* needs no antecedent to parse.
 - **No billing system, deliberately** — ADR 0048 settles Billing's architecture but
-  `packages/billing` does not exist. Five to ten vendors are invoiced by hand from the
-  micro-entreprise; non-payment is handled by unpublishing a storefront by hand.
-  `NEXT_BEHAVIOURS.md`'s *subscription as a publication requirement* triggers on the first
-  paid plan — that trigger has now fired, and staying manual is the standing answer until
-  the cohort outgrows it, not an oversight.
+  `packages/billing` does not exist. ~~Five to ten vendors are invoiced by hand from the
+  micro-entreprise~~ — the one live client is not yet invoiced (2026-10-25); when invoicing
+  starts it is by hand from the micro-entreprise, and non-payment is handled by unpublishing
+  a storefront by hand. `NEXT_BEHAVIOURS.md`'s *subscription as a publication requirement*
+  triggers on the first paid plan, which has not happened; staying manual until then is the
+  standing answer, not an oversight.
 - **HT and TTC are both shown** — *15 € HT par mois (18 € TTC)*. HT alone is the correct B2B
   convention and stays the headline, but a traiteur en franchise de TVA cannot reclaim the
   20 %, so HT-only would be a surprise at the first invoice. One parenthesis, no surprise.

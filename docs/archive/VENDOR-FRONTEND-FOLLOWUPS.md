@@ -1,5 +1,7 @@
 # Vendor frontend — deferred refactors
 
+> **Archived 2026-10-25** — §1 and §2 are done. §3 is dropped from the backlog: it arms only with an editor-to-editor link, and the *plan later in time* list that would have added one is dropped too (`MENU-DU-JOUR-PLAN.md`). The fix stays written out below for whoever adds such a link.
+
 §1–2 settled while designing slice 5 of `MENU-DU-JOUR-PLAN.md`: both apply to shipped features and
 are deliberately **not** part of that slice — the menu screens are greenfield and prove the pattern
 for free, converting the others is its own change. §3 came out of the post-slice design review and
