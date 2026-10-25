@@ -6,7 +6,7 @@ import { AddItemToCatalogueHandler, Catalogues, InvalidItemPricingError, NoSuchI
 import { TestAddItemToCatalogue } from '../add-item-to-catalogue/test-data';
 import { TestReviseItem } from './test-data';
 
-describe('Revise item', () => {
+describe('Revise Item', () => {
   let store: InMemoryEventStore;
   let catalogues: Catalogues;
   let handler: ReviseItemHandler;

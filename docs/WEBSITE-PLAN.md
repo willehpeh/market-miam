@@ -1,12 +1,14 @@
 # Website — Status & Remaining Work
 
-`apps/website` (Astro, static) at `marketmiam.fr` / `www.`. Purpose: convert traiteurs into paying vendors, onboarded by hand — not self-serve signup. Sells what ships today; names what doesn't. *(Was: convert into the pilot, a cohort of 5–10. The pilot is gone: `CGU-CGV-PLAN.md` decision 13.)*
+`apps/website` (Astro, static) at `marketmiam.fr` / `www.`. Purpose: convert traiteurs into paying vendors, onboarded by hand, not self-serve signup. Sells what ships today and names what doesn't. *(Was: convert vendors into the pilot, 5–10 hand-onboarded traiteurs. The pilot is gone: `CGU-CGV-PLAN.md` decision 13.)*
 
 ## Holding page (2026-10-04)
 
-The live client and every prospect said Market Miam is unusable until customers can order and pay through it. The page now carries only the hero, with one line naming online ordering as coming (*Bientôt, la commande en ligne*), the Tally button and the footer. The problem band, the *Comment fonctionne Market Miam* groups with their two app screens, and the pilot terms are gone, and with them the price and the *ce qui sera ajouté plus tard est compris* freeze. The live client co-designed the pricing, so nothing public was owed. Everything below records the full page as it stood, and it stays as history until ordering ships and the page is rebuilt around it. `app-pendant-le-marche.webp` and `app-reperes.webp` stay in `public/` for that rebuild.
+The live client and every prospect said Market Miam is unusable until customers can order and pay through it. The page now carries only the hero, one line naming online ordering as coming (*Bientôt, la commande en ligne*), the Tally button and the footer. Gone: the problem band, the *Comment fonctionne Market Miam* groups with their two app screens, the pilot terms, the price and the *ce qui sera ajouté plus tard est compris* freeze. The live client co-designed the pricing, so nothing public was owed. Rebuilt around ordering once it ships. `app-pendant-le-marche.webp` and `app-reperes.webp` stay in `public/` for that rebuild.
 
-Kept up on purpose rather than taken down: `/mentions-legales#licence` is the vendor app's AGPL source link (`apps/vendor-frontend/src/app/core/layout.ts`), policy A lives on this site at `/confidentialite-traiteurs` (`MENTIONS-LEGALES-PLAN.md` slice 6), and the Tally form is the only way in for prospects.
+Kept up: `/mentions-legales#licence` is the vendor app's AGPL source link (`apps/vendor-frontend/src/app/core/layout.ts`), policy A lives at `/confidentialite-traiteurs` (`MENTIONS-LEGALES-PLAN.md` slice 6), and the Tally form is the only way in for prospects.
+
+Since 2026-10-25 every CTA, header included, reads *Ouvrons votre vitrine*. The one live client is not yet invoiced, and the first-paid-plan trigger has not fired.
 
 ## Shipped (`d1eef8c` … `64ab3a4`)
 
@@ -15,443 +17,134 @@ Single page, French, plain CSS over `packages/design-system/tokens.css`.
 - Hero → problem → *Ce que Market Miam vous donne*, in three groups by what each thing costs the vendor (**Une fois pour toutes**: vitrine, carte, marchés · **À chaque marché**: menu du jour, pendant, après · **Au fil des marchés**: ce qui part et ce qui reste) → pilot terms → footer
 - Tally popup lead capture, form `aQX9NB` (nom / adresse mail / marchés où vous exercez)
 - `og:*` + `twitter:*` + canonical in `Base.astro`; `og.jpg` 1200×630
-- Hero shot links to the live demo storefront
-- Assets in `public/` are generated — provenance and regeneration recipe in `apps/website/README.md`
+- SEO plumbing: `site` in `astro.config.mjs` holds the origin, `Base.astro` builds URLs from `Astro.site`; `@astrojs/sitemap` + `public/robots.txt`; JSON-LD `Organization` + `WebSite`. Keyword coverage is content pages' job, still open
+- Demo storefront link (`d7afdff`): `demo.marketmiam.fr` is a **real published storefront in production**, unrelated to `apps/api/src/app/dev-seed.ts` (`NODE_ENV=development` only). `<figcaption>` link, new tab + `rel="noopener"`
+- CTAs (`55073a6`, `d233015`): in-page CTAs *Rejoignez les premiers traiteurs* (the form's title), header *Rejoindre le pilote* (navigation). **Superseded 2026-10-25:** every CTA reads *Ouvrons votre vitrine*, and the page no longer names the pilot anywhere
+- Roadmap section (`f32ace5`, `a49c622`, `64ab3a4`): deleted when the MVP completed (repères shipped, `BILAN-RETROSPECTIVE-PLAN.md` slice 1; miam deferred with no date). Not a plan to restore
+- Hero premise corrected: neither Instagram stories nor cross-market discovery; *Vos marchés* now sells which days you are at **their** local market
+- Features grouped by what they cost the vendor; group headings `--mm-brand-deep` over a `--mm-line-strong` rule, lone last card tinted `--mm-brand-soft` (`--mm-ink-soft` on it: 6.05:1)
+- Voice pass: em-dashes only in the slogan; no rhetorical questions, fragments or *not X but Y*; name the real thing (the app's pile labels); don't overclaim. `h1`: *Vos habitués savent quand vous venez, et ce que vous servez.*; features heading: *Comment fonctionne Market Miam*
+- Meta description: *Traiteurs de marché : vos habitués savent quand vous venez et ce que vous servez, et vous voyez, marché par marché, quels plats partent et lesquels restent.* (156 chars). Changes restale `og:description` on shared links (§1)
 
 ### Vocabulary pass (`55073a6`)
 
-The page spoke web and back-office; the product speaks traiteur. Now aligned with the
-vendor app and the customer storefront.
+The page spoke web and back-office; the product speaks traiteur.
 
 | Was | Now | Why |
 |---|---|---|
-| catalogue | **carte** | `catalogue` is the aggregate name in `packages/market-days` and had leaked outward. The storefront already lists dishes under *Notre carte*. |
-| une page | **vitrine** | The vendor app says *Ma vitrine* / *Créer ma vitrine*; the storefront footer signs off *Vitrine mijotée par Market Miam*. Never appeared on the site before. |
-| page vendeur (alt text) | vitrine | *vendeur* is the `Vendor` aggregate — internal. Public-facing it's *traiteur*. |
-| vous jetez | invendus | The trade word, and *jeter* is unfair to what they actually do. |
-| quoi apporter | quoi préparer la veille | Names the moment the decision is actually made. |
-| place de marché | plateforme | Correct French for *marketplace*, but it collides head-on with the **place du marché** these vendors work on. |
+| catalogue | **carte** | `catalogue` is the `packages/market-days` aggregate name; the storefront says *Notre carte*. |
+| une page | **vitrine** | The vendor app says *Ma vitrine* / *Créer ma vitrine*; the storefront footer signs *Vitrine mijotée par Market Miam*. |
+| page vendeur (alt text) | vitrine | *vendeur* is the `Vendor` aggregate; public-facing it's *traiteur*. |
+| vous jetez | invendus | The trade word. |
+| quoi apporter | quoi préparer la veille | Names when the decision is made. |
+| place de marché | plateforme | Collides with the **place du marché** vendors work on. |
 
-**carte vs menu is a deliberate split.** *Carte* is the standing list (the catalogue),
-*menu* is the day's offering (the market day). So *Le menu du jour* is right and *carte
-du jour* is not — the hero alt text says *sa carte* because what's in the screenshot is
-the standing carte.
-
-**The hero shot is now stale, and the alt text with it.** Live-mode slice 0 moved the carte
-to its own `/carte` page, so a storefront home is *Prochain marché* (carrying the day's menu)
-plus a *Notre carte* row — not the standing carte the screenshot shows. Reshoot before
-touching that alt text; the two have to move together, and the copy is correct for the image
-currently in `public/`. Tracked in Remaining §6.
-
-Also swapped in `Base.astro`'s meta description, which is what Google shows — refreshed again
-when the menu du jour moved into *Disponible aujourd'hui* (152 chars, still mission-first).
-
-### SEO plumbing
-
-- `site` in `astro.config.mjs` is the one place the origin lives; `Base.astro` builds
-  canonical/og/JSON-LD URLs from `Astro.site` instead of a hard-coded string.
-- `@astrojs/sitemap` generates `sitemap-index.xml` + `sitemap-0.xml` at build;
-  `public/robots.txt` allows everything and points at the index.
-- JSON-LD in `Base.astro`: `Organization` (name, logo, email) + `WebSite`, linked by
-  `@id` — the brand-panel signals, nothing page-specific.
-- Default meta description is mission-first: *mieux servir vos habitués, mieux préparer
-  chaque marché*, then the vitrine as what exists today. 153 chars. Deliberately NOT
-  vitrine-led (reads as if that's all it is) and NOT roadmap-teasing (no *bientôt*, no
-  *ça commence par* — feature names and step-one framing both date). The mission parallel
-  is why-it-exists wording that stays true as features ship; *chaque marché* avoids
-  saying *marchés* twice. The slogan isn't repeated there — it's already in the
-  `<title>` right above it in a search result.
-- A keyword-bearing `<title>` (*vitrine en ligne pour traiteurs de marché*) was
-  considered and rejected: the roadmap makes Market Miam more than a vitrine, so a
-  feature-keyword title would undersell it and date at every launch. The slogan title
-  stays (decision below); keyword coverage is content pages' job, still open.
-
-### CTAs (`55073a6`, `d233015`)
-
-~~Both in-page CTAs read *Rejoignez les premiers traiteurs*, matching the title of the Tally
-form they open. The header CTA keeps *Rejoindre le pilote* — it's navigation, not the ask.~~
-**Superseded 2026-10-25:** every CTA, header included, reads *Ouvrons votre vitrine*, the
-form's title since September 2026. The pilot is gone, so the header had nothing to navigate to.
-*La phase pilote* stays as the programme's name in the eyebrow and the note under the hero
-button.
-
-Centred below `56rem`, flush left above it — the same breakpoint where the hero splits into
-two columns, so the CTA realigns with the text it belongs to rather than at a width of its
-own.
-
-### Demo storefront link (`d7afdff`)
-
-`demo.marketmiam.fr` is a **real published storefront in production**. It has nothing to do
-with `apps/api/src/app/dev-seed.ts`, which is `NODE_ENV=development` only — do not reason
-from that seed to conclude there is no demo. That inference has been made once and it was
-wrong. `apps/website/README.md:19` is accurate: `storefront-demo.webp` really is a shot of
-that page.
-
-The hero shot links to it from a `<figcaption>`. A text link, not a second button: the page
-has one job and a second button competes with it. New tab + `rel="noopener"` so the detour
-doesn't cost the landing page.
-
-### Roadmap section — removed (`f32ace5`, `a49c622`, `64ab3a4`, then deleted)
-
-The lede ends *"Nous le construisons dans cet ordre."* — order beats disclaimer. The section
-already says once that none of it is online; repeating that across a longer list reads as
-vapour, whereas a stated sequence reads as a queue someone is working through.
-
-**Cut to three bullets once live-mode slice 1 shipped.** The menu-du-jour-and-*il n'y en a
-plus* bullet described work that is now live end to end, so it moved into *Disponible
-aujourd'hui* as two cards (below), and the **miam** moved to last — the owner's order is
-close → waste-watch → miam. What's behind what remains:
-
-| Bullet | Reality |
-|---|---|
-| ~~post-market feedback per dish~~ | **Shipped** — slice 2b of `LIVE-MODE-PLAN.md`, now the *Après le marché* card (below) |
-| repères over time | Waste-watch. Not built, and the last thing before the miam |
-| le miam | **Nothing built.** No aggregate, no event, no handler; `NEXT_BEHAVIOURS.md` had *item rated for market day*, since folded into live mode. Furthest-out thing on the page — have an answer ready for *"when?"* |
-
-**Deleted entirely once the MVP completed.** Its two remaining bullets resolved in opposite
-directions on the same day: the repères shipped (`BILAN-RETROSPECTIVE-PLAN.md` slice 1) and
-the miam was deferred with no trigger date. A section headed *Ce qui arrive ensuite* holding
-one item nobody has committed to is worse than no section — the whole point of the
-now-versus-later split was that *later* was short and moving. With the MVP complete there is
-no later to separate from, so the split went too, and the repères became the third group's
-single card. Everything below is kept as the record of why the section existed and what its
-wording got wrong; **it is history, not a plan to restore.**
-
-**Cut to two bullets once slice 2b shipped.** The bilan is live, so it left the roadmap for
-*Disponible aujourd'hui* — and the repères bullet directly under it stopped promising to build
-on something that did not exist. *Vos réponses* now names a real screen. Six shipped cards
-against two coming, which is the widest the ratio has been; the cap is a ceiling on the
-promised side, and that headroom does not license adding any back.
-
-**Why the miam earns its line despite being unbuilt:** it's the namesake, and it's the only
-roadmap item where the *customer* does something rather than the vendor doing admin — which
-is what makes a product read as alive. *"sans commander, sans payer"* is load-bearing: it's
-the honest description (a private demand signal, not an order — `MARKET_MIAM.md:42`) and it
-heads off the reading that this is becoming a delivery marketplace.
-
-Roadmap length is capped on purpose. Three shipped things against four coming was already the
-edge; more future items and the shipped-to-promised ratio tips the page into reading like a
-pre-launch teaser, which is the opposite of the intent. The cap is a ceiling on the *promised*
-side — the ratio moving to five-against-three as features ship does not license adding any back.
-
-### Hero premise corrected — the Instagram framing was wrong
-
-The `h1` was *Plus besoin de poster votre menu en story à 6 h du matin*, and the lede paid it
-off with *elle ne s'efface pas au bout de 24 heures*. **Not many vendors post menus to
-Instagram**, so both relieved a chore the reader does not have. The problem band's first
-bullet carried the same premise (*Une story, un post, un message dans un groupe*).
-
-Replaced with the relationship the address actually serves:
-
-> Le lien avec vos habitués ne s'arrête pas quand vous remballez.
-
-*Remballez* is the site's own word — it is already in the *Pendant le marché* card — so the
-hero and the product speak the same trade French.
-
-**Cross-market discovery was the second wrong premise, and it had shipped.** The obvious
-replacement hero was *find you at your other markets*; it is also wrong, because **customers
-mostly care about their local market only**. That killed a card that had been live for a
-while — *Vos marchés* promised *vos clients d'un marché découvrent qu'ils peuvent aussi vous
-retrouver ailleurs dans la semaine*, a benefit aimed at nobody. It now sells the local fact:
-which days you are at **their** market.
-
-The page's own `<head>` had been right all along — the meta description leads on *mieux
-servir vos habitués* and the slogan is *l'adresse de votre stand*. The `h1` was the outlier,
-so this made the page consistent rather than pointing it somewhere new. Metas deliberately
-untouched: they already agree, and changing `og:description` restales every link shared so
-far (§1).
-
-### Features grouped by what they cost the vendor
-
-Seven flat cards was a wall, and it answered nowhere the objection a traiteur actually has —
-*combien de temps ça va me prendre ?* Three groups do: **une fois pour toutes** (three cards),
-**à chaque marché** (three), **au fil des marchés** (one). Each group heading is itself a
-selling line, and the group lede under *Une fois pour toutes* is the only place the page says
-the setup is done **with** the vendor, which is a pilot argument the feature list previously
-made nowhere.
-
-The last group holds one card on purpose: the section now **ends** on the thing that gives
-back rather than burying it seventh, and it puts the repères directly under *Après le marché*,
-where the one obviously follows from the other.
-
-Two presentation faults found by screenshotting the built page, not by reading it:
-
-- **Group headings did not out-rank card titles.** Both bold and dark, a size step alone was
-  invisible; they now take `--mm-brand-deep` and sit over a `--mm-line-strong` rule.
-- **The lone card stretched the full grid width** and read as a tile someone forgot to pair.
-  Tinted `--mm-brand-soft`, it reads as the payoff. Contrast checked: `--mm-ink-soft` on
-  `--mm-brand-soft` is 6.05:1.
-
-Card titles dropped `h3` → `h4` so the group headings could take `h3` and the outline stays
-honest.
-
-### Voice pass — the page read as machine-written
-
-The copy was accurate but its rhythm was a template: an em-dash in nearly every paragraph,
-lists of three everywhere, *pas X : Y* reveals (*Vous n'êtes pas un numéro…*), one-word
-closers (*Jamais.*), setup-and-punch headings (*Vous vendez sur les marchés. Tout le reste,
-vous le bricolez.*) and aphorisms (*un plat qui s'arrache ici peut rentrer avec vous
-d'ailleurs*). Each is fine once; together they are what a reader now recognises as AI copy,
-and that costs trust on a page whose whole pitch is a person onboarding you by hand.
-
-Rewritten to say the concrete thing in a plain sentence. Rules the page now follows:
-
-- **Em-dashes only in the slogan.** Commas, full stops, or a second sentence instead.
-- **No rhetorical questions, no fragments for effect, no *not X but Y*.**
-- **Name the real thing** — the pile labels in the app (*Toujours épuisé*, *Ça part bien*,
-  *Il en reste*), *un seul formulaire*, *ajouter un plat ou changer un horaire* — rather than
-  a benefit-shaped paraphrase.
-- **Don't overclaim.** *Ensuite vous n'y touchez plus* was false (vendors edit their carte);
-  it now says what they come back for.
-
-What moved: the `h1` is now *Vos habitués savent quand vous venez, et ce que vous servez.* —
-same premise as before (the local relationship, not Instagram, not cross-market discovery),
-stated as the two facts the vitrine delivers. The features heading is *Comment fonctionne
-Market Miam* (brand kept in a heading, per the decision below). The close clause and the price
-freeze were reworded with both of their meanings intact: both doors of decision 45 are still
-there unnamed, and future work is still included at no extra cost. Nothing about pricing,
-vocabulary, the CTAs or the slogan changed.
-
-The default meta description followed in the same pass: *Traiteurs de marché : vos habitués
-savent quand vous venez et ce que vous servez, et vous voyez, marché par marché, quels plats
-partent et lesquels restent.* 156 chars. Still mission-first (serve the regulars, then prepare
-better) and still not vitrine-led, per the SEO notes above; it just says both halves as facts
-instead of as a slogan plus a list. **This restales `og:description` on every link already
-shared** (§1): a forced re-scrape after deploy, or let the caches expire.
+**carte vs menu.** *Carte* is the standing list (the catalogue), *menu* is the day's offering (the market day): *Le menu du jour*, never *carte du jour*. The hero alt text says *sa carte* because the screenshot shows the standing carte, stale since live-mode slice 0 moved the carte to `/carte` (§7). Reshoot before touching the alt text.
 
 ## Remaining
 
 ### 1. Post-deploy verification (blocking, do first)
 
-| Check | Status |
-|-------|--------|
-| Load on a phone | Layout has now been checked at 390px in headless Chromium (Playwright against the built `dist/`), so the old *"Chrome refused to resize"* blocker is gone. A real device is still worth one look — a screenshot can't catch tap targets, iOS font fallback, or the Tally overlay on a small screen. |
-| Click a CTA on the real domain | **Still unverified, and unverifiable from here.** Tally popup has only ever been confirmed against `localhost`, and `tally.so` is denied by the agent egress proxy (403 to CONNECT) from both curl and WebFetch — same wall as `demo.marketmiam.fr` below. **Checking the form's title, fields and consent copy is a human step**, not something an agent session can do; paste the text into the session if it needs reviewing against the rules in §2. |
-| Click the demo link on the real domain | **Still unverified.** `demo.marketmiam.fr` has never been loaded from a dev container — the agent proxy 403s that host. |
-| Paste URL into WhatsApp | First moment `/og.jpg` is reachable; confirms the card renders |
+- Load on a phone: checked at 390px in headless Chromium against `dist/`; a real device is still worth one look (tap targets, iOS font fallback, Tally overlay).
+- Click a CTA on the real domain: **still unverified**; only confirmed against `localhost`, and the agent proxy denies `tally.so` (403 to CONNECT). **Checking the form's title, fields and consent copy is a human step**; paste the text into a session to review against §2.
+- Click the demo link on the real domain: **still unverified.** The agent proxy 403s `demo.marketmiam.fr`.
+- Paste the URL into WhatsApp: confirms `/og.jpg` is reachable and the card renders.
 
-Scraper caches are sticky. `og.jpg` itself is unchanged, but **`og:description` changed** in
-the vocabulary pass — any link already shared keeps showing *catalogue* until a forced
-re-scrape. Regenerating `og.jpg` later needs a forced re-scrape or a new filename.
+Scraper caches are sticky: shared links keep showing *catalogue* until a forced re-scrape, and regenerating `og.jpg` later needs a forced re-scrape or a new filename.
 
-### 2. Tally consent text
+### 2. Tally consent text (open)
 
-Now a **layered notice** (CNIL *information à deux niveaux*): the form carries a short first
-layer, `/mentions-legales` carries the rest. Only possible because §3 shipped.
+A **layered notice** (CNIL *information à deux niveaux*): first layer on the form, the rest on `/mentions-legales` (§3).
 
-Under *Adresse mail* — **keep as-is.** This is conversion copy, not compliance copy: it
-answers the hesitation at the exact field where people hesitate. Cutting it saves nothing
-legally and costs leads.
+Under *Adresse mail*, keep as-is:
 
 > Votre adresse ne servira qu'à vous recontacter au sujet de la phase pilote. Pas de newsletter, pas de partage avec des tiers.
 
-Above *Envoyer* — the short version, replacing the original three-sentence block:
+Above *Envoyer*:
 
 > Vos réponses servent uniquement à vous recontacter au sujet de la phase pilote. Ni revendues, ni transmises à des tiers. Conservation, vos droits et comment les exercer : https://marketmiam.fr/mentions-legales
 
-**Both quoted blocks are the pre-2026-09 wording and name the *phase pilote*.** The owner
-renamed the form in September 2026: its title is now *Ouvrons votre vitrine*.
-`/mentions-legales` stopped naming the pilot on 2026-10-24 (§3). The form's new copy has not
-been checked against the rules below: `tally.so` is unreachable from agent containers (§1), so it
-needs a human read or a paste into a session. What to confirm is that its stated purpose matches
-`/mentions-legales`, which is Art. 13 information.
+**Both blocks are the pre-2026-09 wording and name the *phase pilote*.** The owner renamed the form *Ouvrons votre vitrine* in September 2026, and `/mentions-legales` stopped naming the pilot on 2026-10-24 (§3). **Left to do:** read the form's current copy (§1) and confirm its stated purpose matches `/mentions-legales` (Art. 13 information). Rules:
 
-- **The URL must be absolute.** The form renders in Tally's overlay, so a relative
-  `/mentions-legales` resolves against `tally.so`. Open it in a new tab — navigating away
-  loses a half-filled form. If someone later "tidies" this to a relative path, it breaks
-  silently.
-- **Don't reduce it to nothing.** Art. 13 information is owed *at the point of collection*;
-  a policy elsewhere on the site doesn't discharge it, and while the popup is open the
-  footer link isn't even reachable. Same principle as `PRIVACY-PLAN.md`'s note on the
-  storefront phone: say it where they type it.
-- Retention (3 ans), the enumerated rights and the contact address now live on the page —
-  don't restore them to the form.
-- **No consent checkbox**, unchanged. Submitting a form headed *"Rejoignez les premiers
-  traiteurs"* is unambiguous, and B2B prospecting needs no prior opt-in in France. A
-  newsletter would be a new purpose needing its own opt-in.
-
-3 ans = CNIL retention for prospection, counted from last contact.
+- **The URL must be absolute**: the form renders in Tally's overlay, so a relative path resolves against `tally.so`. Open in a new tab.
+- **Don't reduce it to nothing**: Art. 13 information is owed at the point of collection; the footer link is unreachable while the popup is open.
+- Retention (3 ans, CNIL prospection, from last contact), rights and contact address live on the page, not the form.
+- **No consent checkbox**: B2B prospecting needs no prior opt-in in France. A newsletter would.
 
 ### 3. Mentions légales + politique de confidentialité — done
 
-`/mentions-legales`, two headings, linked from the footer.
+`/mentions-legales`, linked from the footer: mentions légales (LCEN 2004-575 art. 6-III, every French site) and politique de confidentialité (RGPD art. 13, triggered by the Tally form).
 
-| | Law | Trigger |
-|---|---|---|
-| Mentions légales | LCEN 2004-575 art. 6-III | Every French site, data or not |
-| Politique de confidentialité | RGPD art. 13 | Already triggered by the Tally form |
+Éditeur: William Alexander, micro-entreprise, 95 avenue de Verdun 93230 Romainville, SIREN 794 431 874, no RCS, TVA FR 08 794 431 874. Hébergeur: Render Services, Inc., 525 Brannan Street Suite 300, San Francisco CA 94107.
 
-Éditeur: William Alexander, micro-entreprise, 95 avenue de Verdun 93230 Romainville,
-SIREN 794 431 874, no RCS, TVA FR 08 794 431 874. Hébergeur: Render Services, Inc.,
-525 Brannan Street Suite 300, San Francisco CA 94107.
+- **Téléphone omitted.** The owner chose email only and accepts the risk. Don't "fix" it.
+- **VAT-registered**, so `15 € HT` in `index.astro` was correct as written.
+- **Render is a US company**: connection data (IP) is processed outside the EU; only form responses stay in the EU (Tally, Belgium). Don't restore the blanket "aucune donnée ne quitte l'UE" line.
+- The Tally embed script sends the visitor's IP to Tally on load, form or no form; disclosed.
+- Render's coordinates came from a Google AI summary; confirm against render.com.
 
-- **Téléphone deliberately omitted.** LCEN expects a contact phone number; the owner
-  chose to publish only the email and accept the risk. Not an oversight — don't "fix" it.
-- **VAT-registered**, so `15 € HT` in `index.astro` is correct as written.
-- **Render is a US company**, so the privacy section says plainly that connection data
-  (IP) is processed outside the EU for page delivery. Only the *form responses* are
-  claimed to stay in the EU — that's Tally, Belgium. Don't restore the blanket
-  "aucune donnée ne quitte l'UE" line; it was wrong once the host was named.
-
-Privacy section also discloses that the Tally embed script on the home page sends the
-visitor's IP to Tally on load, form or no form.
-
-Render's coordinates came from a Google AI summary, not Render's own legal page — worth
-one confirmation against render.com before this matters.
-
-**Restated 2026-10-24: the pilot is gone from the privacy section.** It called the Tally
-form *le formulaire de candidature à la phase pilote* and its purpose *vous recontacter au
-sujet de la phase pilote*, while the owner had renamed the form *Ouvrons votre vitrine* in
-September. It now says *le formulaire de contact* and *vous recontacter au sujet de Market
-Miam*: the generic name survives the form's next rename. The form's own consent copy is
-still unchecked (§2).
+**Restated 2026-10-24: the pilot is gone from the privacy section.** *le formulaire de candidature à la phase pilote* and *vous recontacter au sujet de la phase pilote* became *le formulaire de contact* and *vous recontacter au sujet de Market Miam*. The form's own consent copy is still unchecked (§2).
 
 ### 4. Self-host the two fonts — done
 
-`public/fonts/`, six `woff2` files, `@font-face` in `Base.astro`; the Google Fonts
-stylesheet and both `preconnect`s are gone, so no visitor IP reaches Google before
-consent (LG München 2022 went against exactly that). Provenance and refresh recipe in
-`apps/website/README.md`.
+Six `woff2` files with `@font-face`; the Google Fonts stylesheet and both `preconnect`s are gone, so no visitor IP reaches Google before consent (LG München 2022). **Moved 2026-09 into `packages/design-system`** (ADR 0054). The site imports `fonts.css` from `Base.astro`'s frontmatter and keeps no `public/fonts/`; recipe in `packages/design-system/README.md`.
 
-**Moved 2026-09: the files and the `@font-face` now live in `packages/design-system`**,
-because the vendor and customer apps needed the same fix and ADR 0054 makes it a
-prerequisite for a storefront privacy section. The site imports `fonts.css` from
-`Base.astro`'s frontmatter and no longer keeps a `public/fonts/`; the recipe moved to
-`packages/design-system/README.md` with it. Nothing about the decision changed.
+### 5. Vendor dashboard screenshots — done
 
-### 5. Vendor dashboard screenshots
+**Superseded 2026-09: two vendor-app screens are on the page**: the live market screen (*En direct*, a dish under *Épuisés*, *Fermer le stand*) beside *À chaque marché*, the menu editor with its sales labels beside *Au fil des marchés*. *Une fois pour toutes* gets no screen (forms).
 
-Two only: `/dashboard/catalogue` and `/dashboard/markets`, both populated (5–6 dishes **with photos**, 3–4 markets). Skip forms, onboarding, dashboard home — forms don't sell.
-
-Capture: same demo account as the storefront shot so names match; ~1200px wide; no browser chrome; check no real email is in frame. Login can't be automated (credentials), but an already-authenticated tab can be driven.
-
-~~**Decision: capture, then hold.**~~ **Superseded 2026-09: two vendor-app screens are on the
-page**, each beside the group it illustrates. The live market screen (*En direct*, a dish
-under *Épuisés*, *Fermer le stand*) sits with *À chaque marché*, and the menu editor showing
-the sales labels under each dish sits with *Au fil des marchés*. The hold was right about
-forms and wrong about these: the page described what happens on market day in seven cards of
-text and showed none of it, and those two screens are the product doing the thing the cards
-claim. *Une fois pour toutes* gets no screen on purpose, since it is forms.
-
-Rules for replacing them: phone screenshots, no dish photos in frame (the demo account's look
-generated), full phone width with the app's own background kept, recipe in the app README.
-They wear the hero shot's border, radius and shadow plus a caption. **Not a dark phone
-bezel**: tried, and far too heavy for the page. **Not cropped to the white card either**:
-the vendor app shares the site's tokens and fonts, so a bare card reads as page content,
-and on a phone as buttons to press. The app's background around the card is what marks
-it as a screen.
-They carry a date (*Mardi 29 septembre*); that ages fine, but reshoot if the screens change.
+Replacement rules: phone screenshots from the demo account, no dish photos or real email in frame, full phone width with the app's own background (no dark bezel, not cropped to the white card), hero-shot border, radius, shadow and a caption; recipe in the app README. They carry a date (*Mardi 29 septembre*); reshoot if the screens change.
 
 ### 6. The close clause — done
 
-Shipped as below, appended to the *Pendant le marché* card once slice 2 was deployed (since
-reworded in the voice pass, same two doors):
+On the *Pendant le marché* card since slice 2 (reworded in the voice pass, same two doors):
 
 > Et quand vous remballez — ou si vous ne pouvez pas venir — vous fermez le stand : votre
 > vitrine cesse d'annoncer un marché où vous n'êtes plus.
 
-It carries both doors of decision 45 (*Fermer le stand*, *Je ne peux pas venir aujourd'hui*)
-without naming either label, so vendor-app copy can move without dragging the site with it.
-The customer-side promise is the one worth selling: nobody walks over for nothing.
+It carries both doors of decision 45 (*Fermer le stand*, *Je ne peux pas venir aujourd'hui*) without naming either label. Slice 2b landed with it as the *Après le marché* card: the bilan is **one form submitted whole**, not *un geste par plat* (live-mode decision 72), and dishes marked épuisé **arrive already ticked** (decision 49).
 
-Slice 2b landed with it, as the *Après le marché* card — the end-of-day bilan. Two things the
-roadmap's old wording got wrong and the card does not: the bilan is **one form submitted
-whole**, not *un geste par plat* (live-mode decision 72), and the dishes marked épuisé during
-service **arrive already ticked** (decision 49), which is the whole reason it is not a chore.
-Deliberately factual rather than benefit-shaped: the payoff is the repères, and the bullet
-immediately below it is where that gets promised.
+**Prix par marché is shipped and not on the page.** Add to *Votre carte* if a conversation turns on it.
 
-**Prix par marché is shipped and deliberately not on the page.** A dish can cost different
-amounts at different markets, and a customer sees that market's price while it is trading —
-but it is vendor-side admin that does not sell a pilot, and the page was already at five
-cards. Add it to *Votre carte* as one sentence if a pilot conversation ever turns on it.
+### 7. Reshoot the hero storefront (`storefront-demo.webp`) — open
 
-### 7. Reshoot the hero storefront (`storefront-demo.webp`)
-
-Stale since slice 0 — see the carte-vs-menu note above. Shoot on a live market morning so the
-frame carries *Prochain marché* with the day's menu, at least one **Épuisé** row and the
-*Notre carte* entry; that single image then shows everything the two new cards claim. Alt text
-becomes *…photo de stand, nom du traiteur et le menu du jour*, and `og.jpg` is composed from
-the same shot so it regenerates too — which means a forced re-scrape, per §1.
+Stale since slice 0. Shoot on a live market morning so the frame carries *Prochain marché* with the day's menu, at least one **Épuisé** row and the *Notre carte* entry. Alt text becomes *…photo de stand, nom du traiteur et le menu du jour*; `og.jpg` is composed from the same shot, so it regenerates too, hence a forced re-scrape (§1).
 
 ## Deferred
 
-| Item | Add when |
-|------|----------|
-| ~~Pilot price freeze~~ | **Shipped 2026-08**, alongside the price itself — see the decisions above for why it stopped being optional at that moment. |
-| ~~A 50 € tier (préco + réservation)~~ | **Superseded 2026-10-24: there are no tiers.** One package at 50 € HT/month, online ordering included, and the 15 € price is dropped. The page names it when it is rebuilt around ordering. The reasoning below is kept as history. **Deliberately not on the page**, and not just "later". It turns the reassurance block into a pricing table, and a vendor reads *the good stuff costs 50, 15 buys the brochure* — at the exact moment you're asking for trust. Feature gating is still an Open Item in `MARKET_MIAM.md`, so publishing a split would commit in public to something undecided. And preordering is unscoped: no aggregate, no events, and it drags in payments, no-shows and customer PII the product currently avoids by design. |
-| Analytics | Real traffic worth measuring. Needs a cookie banner if it sets cookies. |
-| Client testimonial + real storefront shots | First *vendor* is actually live — the demo doesn't count. **And each asset needs that vendor's written permission**: marketing use is opt-in per use, not a term of the contract (`CGU-CGV-PLAN.md` decision 9). Same for the §5 dashboard shots. |
-| Second page | One page stops being enough |
-| Build-time image optimisation | Several images. `astro:assets` currently fails: optimised output lands in `dist/apps/website/_astro/` but is read from `apps/website/.astro/_astro/` — the out-of-tree `outDir` in `astro.config.mjs`. Fixing `cacheDir` would pay for itself at that point. |
+- ~~Pilot price freeze~~: **shipped 2026-08**, alongside the price.
+- ~~A 50 € tier (préco + réservation)~~: **superseded 2026-10-24, there are no tiers.** One package at 50 € HT/month, ordering included; the 15 € price is dropped. Named when the page is rebuilt around ordering.
+- Analytics: real traffic worth measuring. Needs a cookie banner if it sets cookies.
+- Client testimonial + real storefront shots: when the first *vendor* is live (the demo doesn't count). **Each asset needs that vendor's written permission** (`CGU-CGV-PLAN.md` decision 9), the §5 shots too.
+- Second page: when one stops being enough.
+- Build-time image optimisation: several images. `astro:assets` fails: output lands in `dist/apps/website/_astro/` but is read from `apps/website/.astro/_astro/` (out-of-tree `outDir`); fix `cacheDir` then.
 
 ## Decisions (don't re-litigate)
 
-- **Slogan is "l'adresse de votre stand"** — `<title>` + footer. Old *"votre étal, en ligne"* implied e-commerce, which is what this deliberately isn't (no marketplace, no commission). *Étal* also reads as butcher/fishmonger display; *stand* is what the demo storefront already says.
-- **Vocabulary is the product's, not the web's** — vitrine, carte, plats, traiteur. *Carte* = the standing list, *menu* = the day's. Matches the vendor app and the customer storefront, so a vendor meets the same words before and after signing up.
-- **In-page CTAs match the Tally form title**; the header one doesn't, because it's navigation rather than the ask.
-- **Demo link is a text link under the shot, not a second button** — the page converts to the pilot, and a second button competes.
-- ~~**The miam is on the roadmap although nothing is built**~~ — **superseded 2026-08: the miam is off the page entirely**, along with the roadmap that held it. It was the right call while *later* was a short, moving list; with the MVP complete and the miam deferred without a date, keeping it would have been a one-item *coming soon* section, which reads as a teaser rather than a queue. The cost is real and accepted: the site no longer explains its own name. Restore a line only if a pilot conversation actually stumbles on *why Miam?* — and put it in the pilot block, not in a revived roadmap.
-- **`--mm-brand` for decoration, `--mm-brand-deep` for brand-as-text on light.** Measured on the since-deleted roadmap list: `--mm-brand` was 3.90:1 against that section's background at 16px, under the 4.5:1 AA floor; `--mm-brand-deep` is 7.75:1. Followed by `.eyebrow`, `.foot a`, `.legal a`, and now by the feature-group `h3`s, which is why those are brand-deep rather than brand.
-- **Tally over Formspree** — unlimited responses free, and Belgium-based, so French vendors' data stays in the EU. Free tier shows Tally branding; Pro (€20/mo) removes it, not needed yet.
-- **Popup, not inline iframe** — page stays on-brand, branding is less visible in an overlay.
-- **Price named before it's charged** — stating it avoids a cold ask at conversion and filters people who were never customers. ~~Now literal: it *is* charged.~~ The holding page names no price, and the one live client is not yet invoiced (2026-10-25).
-- ~~**The pilot ends when the roadmap features ship — the two *gratuit* statements are one
-  period, two angles.**~~ **Superseded 2026-08: the price is 15 € HT/mois as of now, with the
-  first month offered.** The feature gate was a good promise while most of the roadmap was
-  unbuilt; against two remaining items it reads as a countdown to an invoice, which is worse
-  than a plain price. Nobody had signed up under the old terms, so nothing was owed. The two
-  statements are no longer coupled — the hero note (*Premier mois offert. Sans engagement.*)
-  and the pilot terms both name a calendar month, not a feature gate, and neither can drift
-  from the other. **The pilot is no longer defined by being free**: it is the hand-onboarded
-  cohort of five to ten, it ends when that fills, and the page deliberately promises nothing
-  about when — because with a flat price, the end of the pilot costs a vendor nothing.
-- **The price freeze ships with the price** — *Le tarif ne bouge pas — ce qui arrive ensuite
-  est compris, sans supplément.* Load-bearing when written, for a reason that has since
-  expired: without *gratuit*, the roadmap section flipped valence from "you're not paying for
-  the unbuilt part" to "you're paying 15 € for a product whose own page says three things are
-  missing", and the freeze turned that back into a reason to join now. **The roadmap is gone,
-  so the page no longer says anything is missing** and the line is no longer repairing
-  anything. Kept anyway, and the wording still stands on its own — it now reads as plainly
-  what it says, that future work is included. Deliberately not reworded: it costs nothing,
-  and *ce qui arrive ensuite* needs no antecedent to parse.
-- **No billing system, deliberately** — ADR 0048 settles Billing's architecture but
-  `packages/billing` does not exist. ~~Five to ten vendors are invoiced by hand from the
-  micro-entreprise~~ — the one live client is not yet invoiced (2026-10-25); when invoicing
-  starts it is by hand from the micro-entreprise, and non-payment is handled by unpublishing
-  a storefront by hand. `NEXT_BEHAVIOURS.md`'s *subscription as a publication requirement*
-  triggers on the first paid plan, which has not happened; staying manual until then is the
-  standing answer, not an oversight.
-- **HT and TTC are both shown** — *15 € HT par mois (18 € TTC)*. HT alone is the correct B2B
-  convention and stays the headline, but a traiteur en franchise de TVA cannot reclaim the
-  20 %, so HT-only would be a surprise at the first invoice. One parenthesis, no surprise.
-  The figures change with the 2026-10-24 price: *50 € HT par mois (60 € TTC)* when the page
-  is rebuilt around ordering.
-- **Storefront shot in the hero, not the dashboard** — it's what a vendor is buying.
-- **"Market Miam" appears in one on-page heading** — *Ce que Market Miam vous donne* (was *dès l'inscription*, then *…vous donne aujourd'hui*; *aujourd'hui* was contrast against a *Ce qui arrive ensuite* section that no longer exists, so it went with it. The brand stays in the heading through every rewording, which is the part that matters). Before that, the name was in `<title>`, metas, alt text and body copy but in no `h1`–`h6` on the whole site — a weak signal for brand queries. The hero h1 stays a brand-free hook; that section is the natural home because it's literally what Market Miam gives you.
-- **`public/` holds generated assets, not originals.** Regeneration recipe in the app README.
+- **Slogan is "l'adresse de votre stand"**, in `<title>` + footer. *"votre étal, en ligne"* implied e-commerce.
+- **Vocabulary is the product's**: vitrine, carte, plats, traiteur. *Carte* = the standing list, *menu* = the day's.
+- **In-page CTAs match the Tally form title.** Since 2026-10-25 the header matches too.
+- **Demo link is a text link under the shot, not a second button.**
+- ~~**The miam is on the roadmap although nothing is built**~~ — superseded 2026-08: off the page with the roadmap. The site no longer explains its own name.
+- **`--mm-brand` for decoration, `--mm-brand-deep` for brand-as-text on light.** `--mm-brand` measured 3.90:1 at 16px, under the 4.5:1 AA floor; `--mm-brand-deep` is 7.75:1.
+- **Tally over Formspree.** Free, unlimited, Belgium-based; Pro (€20/mo) removes the branding, not needed yet.
+- **Popup, not inline iframe.**
+- **Price named before it's charged.** The holding page names no price (2026-10-25).
+- ~~**The pilot ends when the roadmap features ship.**~~ Superseded 2026-08 by 15 € HT/mois, first month offered (*Premier mois offert. Sans engagement.*); removed with the pilot (`CGU-CGV-PLAN.md` decision 13).
+- **The price freeze ships with the price**: *Le tarif ne bouge pas — ce qui arrive ensuite est compris, sans supplément.* Withdrawn (`CGU-CGV-PLAN.md` decision 6); off the site since the 2026-10-04 holding page.
+- **No billing system.** ADR 0048 settles the architecture; `packages/billing` does not exist. The one live client is not yet invoiced (2026-10-25); invoicing will be by hand from the micro-entreprise, non-payment handled by unpublishing by hand. `NEXT_BEHAVIOURS.md`'s *subscription as a publication requirement* triggers on the first paid plan, not yet fired.
+- **HT and TTC are both shown**: *15 € HT par mois (18 € TTC)*; a traiteur en franchise de TVA cannot reclaim the 20 %. Becomes *50 € HT par mois (60 € TTC)* when rebuilt around ordering (price of 2026-10-24).
+- **Storefront shot in the hero, not the dashboard.**
+- **"Market Miam" appears in one on-page heading**: *Ce que Market Miam vous donne*, since reworded to *Comment fonctionne Market Miam*.
+- **`public/` holds generated assets, not originals.** Recipe in the app README.
 
-## Astro traps hit here (save the next person the debugging)
+## Astro traps hit here
 
-*(The `.next` list these were learned on was deleted with the roadmap section. Kept because
-the traps are Astro's, not that list's, and the next `set:html` or flex `<li>` on this site
-will hit them again.)*
-
-- **`set:html` content escapes scoped CSS.** Astro compiles a scoped `.next strong` to
-  `strong[data-astro-cid-…]`, and an element injected via `set:html` never carries that
-  attribute — so the rule silently doesn't match. Worse, `<strong>` still *looks* right
-  because the UA stylesheet makes it bold, so a colour that never applied reads as working.
-  Use `.next :global(strong)`; the ancestor keeps the scope, so it stays contained.
-- **Inline markup inside a flex `<li>` needs a wrapper.** `.next li` is `display: flex` with
-  `gap: 0.7rem` for the `→`. A bare `<strong>` in the text becomes its own flex item and
-  opens that gap mid-sentence. Wrap the entry in a `<span>` so it stays one item.
-- **French guillemets need a literal U+00A0**, not `&nbsp;`. The roadmap entries are JS
-  strings interpolated as text, so an HTML entity renders verbatim. (`6&nbsp;h` elsewhere is
-  fine because that one really is markup.)
+- **`set:html` content escapes scoped CSS.** Scoped `.next strong` compiles to `strong[data-astro-cid-…]`; injected elements lack it, so the rule silently fails while `<strong>` still looks bold. Use `.next :global(strong)`.
+- **Inline markup inside a flex `<li>` needs a wrapper.** A bare `<strong>` becomes its own flex item and opens the `gap` mid-sentence. Wrap the entry in a `<span>`.
+- **French guillemets need a literal U+00A0**, not `&nbsp;`, in JS strings interpolated as text.
+- Assets in `public/` are generated; provenance and the regeneration recipe are in `apps/website/README.md`.
 
 ## Doc drift to fix elsewhere
 
-*(2026-08-02: `MARKET_MIAM.md` was refreshed — the superseded brought/left post-market model is corrected there.)*
-
-- ~~`docs/MARKET_MIAM.md` lists *pricing tiers and feature gating* as an Open Item.~~ Settled 2026-10-24: one package, no tiers.
 - Trademark: INPI check clear, registration requested 2026-08, confirmation pending (`docs/MARKET_MIAM.md`).

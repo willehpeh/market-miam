@@ -16,7 +16,7 @@ import { EmptyValueError } from '@market-miam/common';
 import { InMemoryEventStore } from '@market-miam/event-sourcing';
 import { TestAddItemToCatalogue } from './test-data';
 
-describe('AddItemToCatalogue', () => {
+describe('Add Item To Catalogue', () => {
   let store: InMemoryEventStore;
   let handler: AddItemToCatalogueHandler;
   let catalogues: Catalogues;

@@ -5,7 +5,7 @@ import { AddItemToCatalogueHandler, Catalogues, ChangeItemPhoto, ChangeItemPhoto
 import { TestAddItemToCatalogue } from '../add-item-to-catalogue/test-data';
 import { TestChangeItemPhoto } from './test-data';
 
-describe('Change item photo', () => {
+describe('Change Item Photo', () => {
   let store: InMemoryEventStore;
   let catalogues: Catalogues;
   let handler: ChangeItemPhotoHandler;

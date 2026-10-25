@@ -285,8 +285,8 @@
   </header>
   <p class="subtitle">The system's behaviour as an event model: vertical slices of
     <b>commands</b>, <b>events</b>, <b>read models</b> and <b>automations</b> on a timeline,
-    derived from the packages test suite and the domain package's declared seams.
-    Click any card for the slice's specifications — its Given/When/Then lines are the
+    derived from the packages test suite and the domain package's event, projection and
+    processor declarations. Click any card for the slice's specifications — its Given/When/Then lines are the
     <span class="mono">it</span> titles of its spec file.</p>
 
   <div class="controls">
@@ -318,12 +318,10 @@
       every slice whose events appear in its Givens. Events sit on the stream (aggregate) lane they
       are appended to. Solid arrows carry events — from the command that appends one to the read
       models and automations that consume it; dashed arrows are commands dispatched by automations.</p>
-    <p>Nothing here is hand-maintained. Slices and their specifications come from
-      <span class="mono">test/src/market-days</span>; event-to-stream lanes from the event
-      declarations in <span class="mono">packages/market-days</span>; read-model and automation
-      wiring from each projection's handler map and each processor's
-      <span class="mono">eventTypes()</span>; actors from the API controllers. Regenerate with
-      <span class="mono">npm run event:model</span>.</p>
+    <p>To change a card, change its source: slices and specifications in
+      <span class="mono">test/src/market-days</span>, lanes and wiring in
+      <span class="mono">packages/market-days</span>, actors in the API controllers.
+      Regenerate with <span class="mono">npm run event:model</span>.</p>
     <p id="skipnote"></p>
     <p>Snapshot generated from source on __GENERATED__.</p>
   </footer>
@@ -656,7 +654,7 @@ function openPanel(s) {
   let html = '';
   if (s.kind === 'command') {
     if (s.given.length || s.givenCommands.length) {
-      html += `<h3 class="sect-h">Given — context the specs set up</h3>`;
+      html += `<h3 class="sect-h">Given</h3>`;
       if (s.given.length) html += pills(s.given, 'ev');
       if (s.givenCommands.length) html += `<div class="pills" style="margin-top:6px">${s.givenCommands.map(c => `<span class="pill plain">via ${esc(c)}</span>`).join('')}</div>`;
     }

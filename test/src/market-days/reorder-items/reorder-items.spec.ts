@@ -14,7 +14,7 @@ import {
 import { TestAddItemToCatalogue } from '../add-item-to-catalogue/test-data';
 import { VendorId } from '@market-miam/shared-kernel';
 
-describe('Reorder items', () => {
+describe('Reorder Items', () => {
   let store: InMemoryEventStore;
   let catalogues: Catalogues;
   let handler: ReorderItemsHandler;

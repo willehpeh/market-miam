@@ -5,7 +5,7 @@ import { AddItemToCatalogueHandler, Catalogues, RetireItem, RetireItemHandler } 
 import { TestAddItemToCatalogue } from '../add-item-to-catalogue/test-data';
 import { TestRetireItem } from './test-data';
 
-describe('Retire item', () => {
+describe('Retire Item', () => {
   let store: InMemoryEventStore;
   let catalogues: Catalogues;
   let handler: RetireItemHandler;
