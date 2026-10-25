@@ -1,8 +1,7 @@
-import { InMemoryEventStore } from '@market-miam/event-sourcing';
+import { DomainEvent, InMemoryEventStore } from '@market-miam/event-sourcing';
 import {
   Calendars,
   Catalogues,
-  MarketScheduleRegistered,
   MismatchedPricingError,
   NoSuchItemError,
   UnscheduledMarketError,
@@ -12,24 +11,18 @@ import {
 import { InvalidPriceError } from '@market-miam/market-days';
 import { EmptyValueError } from '@market-miam/common';
 import { seedCatalogue } from '../../seed-catalogue';
+import { calendarStream, marketPricesSet, scheduleRegistered } from '../calendar-events';
 import { TestSetMarketPrices } from './test-data';
 
 // market-1 is a market this vendor actually stands at: pricing is refused for one they
 // do not schedule, so every arrangement here starts from a real schedule. Seeded rather
 // than registered through the handler, so `newEvents()` carries only what the spec caused.
 function seedSchedule(store: InMemoryEventStore) {
-  const registered: MarketScheduleRegistered = {
-    type: 'MarketScheduleRegistered',
-    payload: {
-      market: { id: 'market-1', name: 'Marché', codePostal: '75011', town: 'Paris' },
-      scheduleId: 'schedule-1',
-      startDate: '2026-06-01',
-      days: [{ day: 'SAT', startTime: '08:00', endTime: '14:00' }],
-      frequency: { weeks: 1 },
-    },
-    version: 1,
-  };
-  store.seedWith('calendar-vendor-1', [registered], { vendorId: 'vendor-1' });
+  store.seedWith(calendarStream('vendor-1'), [scheduleRegistered({
+    market: { id: 'market-1', name: 'Marché', codePostal: '75011', town: 'Paris' },
+    scheduleId: 'schedule-1',
+    startDate: '2026-06-01',
+  })], { vendorId: 'vendor-1' });
 }
 
 describe('Set Market Prices', () => {
@@ -49,6 +42,10 @@ describe('Set Market Prices', () => {
     seedSchedule(store);
     handler = new SetMarketPricesHandler(new Calendars(events), new Catalogues(events));
   });
+
+  // Prices already set at market-1, as the calendar remembers them.
+  const given = (...history: DomainEvent[]): void =>
+    store.seedWith(calendarStream('vendor-1'), history, { vendorId: 'vendor-1' });
 
   it('sets a price for a dish at a market', async () => {
     await handler.execute(TestSetMarketPrices.valid());
@@ -75,65 +72,41 @@ describe('Set Market Prices', () => {
   });
 
   it('raises nothing when the prices are unchanged', async () => {
-    await handler.execute(TestSetMarketPrices.valid());
+    given(marketPricesSet({ 'item-1': 1200 }, 'market-1'));
 
     await handler.execute(TestSetMarketPrices.valid());
 
-    expect(store.newEvents()).toEqual([
-      expect.objectContaining({
-        type: 'MarketPricesSet',
-        payload: { marketId: 'market-1', prices: { 'item-1': 1200 } },
-      }),
-    ]);
+    expect(store.newEvents()).toEqual([]);
   });
 
   // A fresh command with equal content, not the same object twice: what must not raise is
   // a repriced-to-the-same-thing submission, whatever object carried it.
   it('raises nothing when the variant prices are unchanged', async () => {
     const prices = () => ({ pizza: { Margherita: 1100, Pepperoni: 1400 } });
-    await handler.execute(TestSetMarketPrices.with({ prices: prices() }));
+    given(marketPricesSet(prices(), 'market-1'));
 
     await handler.execute(TestSetMarketPrices.with({ prices: prices() }));
 
-    expect(store.newEvents()).toEqual([
-      expect.objectContaining({
-        type: 'MarketPricesSet',
-        payload: { marketId: 'market-1', prices: { pizza: { Margherita: 1100, Pepperoni: 1400 } } },
-      }),
-    ]);
+    expect(store.newEvents()).toEqual([]);
   });
 
   // The write-side proof that a market's prices are replaced, not merged: if the second
   // list had merged into the first, the third submission would differ from what the day
   // holds and would raise.
   it('compares against the list that replaced the last one, not a merge of both', async () => {
-    await handler.execute(TestSetMarketPrices.valid());
-    await handler.execute(TestSetMarketPrices.with({ prices: { 'item-2': 900 } }));
+    given(marketPricesSet({ 'item-1': 1200 }, 'market-1'), marketPricesSet({ 'item-2': 900 }, 'market-1'));
 
     await handler.execute(TestSetMarketPrices.with({ prices: { 'item-2': 900 } }));
 
-    expect(store.newEvents()).toEqual([
-      expect.objectContaining({
-        type: 'MarketPricesSet',
-        payload: { marketId: 'market-1', prices: { 'item-1': 1200 } },
-      }),
-      expect.objectContaining({
-        type: 'MarketPricesSet',
-        payload: { marketId: 'market-1', prices: { 'item-2': 900 } },
-      }),
-    ]);
+    expect(store.newEvents()).toEqual([]);
   });
 
   it('clears the market with an empty list', async () => {
-    await handler.execute(TestSetMarketPrices.valid());
+    given(marketPricesSet({ 'item-1': 1200 }, 'market-1'));
 
     await handler.execute(TestSetMarketPrices.with({ prices: {} }));
 
     expect(store.newEvents()).toEqual([
-      expect.objectContaining({
-        type: 'MarketPricesSet',
-        payload: { marketId: 'market-1', prices: { 'item-1': 1200 } },
-      }),
       expect.objectContaining({
         type: 'MarketPricesSet',
         payload: { marketId: 'market-1', prices: {} },

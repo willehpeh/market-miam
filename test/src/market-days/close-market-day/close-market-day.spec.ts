@@ -1,14 +1,16 @@
-import { InMemoryEventStore } from '@market-miam/event-sourcing';
+import { DomainEvent, InMemoryEventStore } from '@market-miam/event-sourcing';
 import { MarketDayNotTodayError } from '@market-miam/market-days';
 import { marketDayHarness } from '../market-day-harness';
+import { closed } from '../market-day-events';
 import { LAST_SATURDAY, SATURDAY, TODAY } from '../set-market-day-menu/test-data';
 
 describe('Close Market Day', () => {
   let store: InMemoryEventStore;
+  let given: (date: string, ...history: DomainEvent[]) => void;
   let close: (date: string) => Promise<void>;
 
   beforeEach(() => {
-    ({ store, close } = marketDayHarness());
+    ({ store, given, close } = marketDayHarness());
   });
 
   // No menu: a vendor whose van broke down closes a day they never planned — the
@@ -27,13 +29,11 @@ describe('Close Market Day', () => {
   // A vendor packing up on market signal retries; the idempotent route (decision 44)
   // has no way to surface a redundant tap as a failure, so the domain absorbs it.
   it('takes a second close as a no-op, appending nothing', async () => {
-    await close(TODAY);
+    given(TODAY, closed(TODAY));
 
     await close(TODAY);
 
-    expect(store.newEvents()).toEqual([
-      expect.objectContaining({ type: 'MarketDayClosed' }),
-    ]);
+    expect(store.newEvents()).toEqual([]);
   });
 
   it.each([

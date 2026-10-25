@@ -1,64 +1,50 @@
-import { InMemoryEventStore } from '@market-miam/event-sourcing';
+import { DomainEvent, InMemoryEventStore } from '@market-miam/event-sourcing';
 import {
   Calendars,
   CancelMarketSchedule,
   CancelMarketScheduleHandler,
   NoSuchScheduleError,
-  RegisterMarketScheduleHandler,
   VendorScopedEvents
 } from '@market-miam/market-days';
-import { TestRegisterMarketSchedule } from '../register-market-schedule/test-data';
+import { calendarStream, scheduleCancelled, scheduleRegistered } from '../calendar-events';
 
 describe('Cancel Market Schedule', () => {
   let store: InMemoryEventStore;
-  let calendars: Calendars;
   let handler: CancelMarketScheduleHandler;
 
   beforeEach(() => {
     store = new InMemoryEventStore();
-    calendars = new Calendars(new VendorScopedEvents(store));
-    handler = new CancelMarketScheduleHandler(calendars);
+    handler = new CancelMarketScheduleHandler(new Calendars(new VendorScopedEvents(store)));
   });
 
-  it('cancels a registered schedule', async () => {
-    const registered = TestRegisterMarketSchedule.simple();
-    await new RegisterMarketScheduleHandler(calendars).execute(registered);
+  const given = (...history: DomainEvent[]): void =>
+    store.seedWith(calendarStream('vendor-id'), history, { vendorId: 'vendor-id' });
 
-    await handler.execute(new CancelMarketSchedule({
-      vendorId: registered.vendorId,
-      scheduleId: registered.scheduleId,
-    }));
+  const cancel = (scheduleId = 'schedule-id'): CancelMarketSchedule =>
+    new CancelMarketSchedule({ vendorId: 'vendor-id', scheduleId });
+
+  it('cancels a registered schedule', async () => {
+    given(scheduleRegistered());
+
+    await handler.execute(cancel());
 
     expect(store.newEvents()).toEqual([
-      expect.objectContaining({ type: 'MarketScheduleRegistered' }),
       expect.objectContaining({
         type: 'MarketScheduleCancelled',
-        payload: { scheduleId: registered.scheduleId },
+        payload: { scheduleId: 'schedule-id' },
       }),
     ]);
   });
 
   it('rejects cancelling a schedule that was never registered', async () => {
-    const registered = TestRegisterMarketSchedule.simple();
-    await new RegisterMarketScheduleHandler(calendars).execute(registered);
+    given(scheduleRegistered());
 
-    await expect(handler.execute(new CancelMarketSchedule({
-      vendorId: registered.vendorId,
-      scheduleId: 'never-registered',
-    }))).rejects.toThrow(NoSuchScheduleError);
+    await expect(handler.execute(cancel('never-registered'))).rejects.toThrow(NoSuchScheduleError);
   });
 
   it('rejects cancelling a schedule that is already cancelled', async () => {
-    const registered = TestRegisterMarketSchedule.simple();
-    await new RegisterMarketScheduleHandler(calendars).execute(registered);
-    await handler.execute(new CancelMarketSchedule({
-      vendorId: registered.vendorId,
-      scheduleId: registered.scheduleId,
-    }));
+    given(scheduleRegistered(), scheduleCancelled());
 
-    await expect(handler.execute(new CancelMarketSchedule({
-      vendorId: registered.vendorId,
-      scheduleId: registered.scheduleId,
-    }))).rejects.toThrow(NoSuchScheduleError);
+    await expect(handler.execute(cancel())).rejects.toThrow(NoSuchScheduleError);
   });
 });

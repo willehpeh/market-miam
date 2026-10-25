@@ -1,30 +1,28 @@
 import { describe } from 'vitest';
 import { VendorScopedEvents } from '@market-miam/market-days';
-import { InMemoryEventStore } from '@market-miam/event-sourcing';
-import { AddItemToCatalogueHandler, Catalogues, ChangeItemPhoto, ChangeItemPhotoHandler, NoSuchItemError } from '@market-miam/market-days';
-import { TestAddItemToCatalogue } from '../add-item-to-catalogue/test-data';
+import { DomainEvent, InMemoryEventStore } from '@market-miam/event-sourcing';
+import { Catalogues, ChangeItemPhoto, ChangeItemPhotoHandler, NoSuchItemError } from '@market-miam/market-days';
+import { catalogueStream, itemAdded } from '../catalogue-events';
 import { TestChangeItemPhoto } from './test-data';
 
 describe('Change Item Photo', () => {
   let store: InMemoryEventStore;
-  let catalogues: Catalogues;
+  let given: (...history: DomainEvent[]) => void;
   let handler: ChangeItemPhotoHandler;
 
   beforeEach(() => {
     store = new InMemoryEventStore();
-    catalogues = new Catalogues(new VendorScopedEvents(store));
-    handler = new ChangeItemPhotoHandler(catalogues);
+    given = (...history) => store.seedWith(catalogueStream(), history, { vendorId: 'vendor-id' });
+    handler = new ChangeItemPhotoHandler(new Catalogues(new VendorScopedEvents(store)));
   });
 
   it('should change the photo of an existing item', async () => {
-    const newItemCommand = TestAddItemToCatalogue.simple();
-    await new AddItemToCatalogueHandler(catalogues).execute(newItemCommand);
+    given(itemAdded());
 
-    const command = new ChangeItemPhoto(newItemCommand.itemId, newItemCommand.vendorId, 'v9/dishes/vendor-id/item-id');
+    const command = new ChangeItemPhoto('item-id', 'vendor-id', 'v9/dishes/vendor-id/item-id');
     await handler.execute(command);
 
     expect(store.newEvents()).toEqual([
-      expect.objectContaining({ type: 'ItemAddedToCatalogue' }),
       expect.objectContaining({
         type: 'ItemPhotoChanged',
         payload: {

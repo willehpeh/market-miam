@@ -21,18 +21,35 @@ import {
   SetMarketDayMenuHandler,
   VendorScopedEvents
 } from '@market-miam/market-days';
-import type { ItemOutcome } from '@market-miam/market-days';
+import type { ItemOutcome, MarketScheduleAmended, MarketScheduleRegistered } from '@market-miam/market-days';
 import { clockAt } from '../clock-at';
 import { seedCatalogue } from '../seed-catalogue';
+import { calendarStream, scheduleAmended, scheduleRegistered } from './calendar-events';
 import { TestSetMarketDayMenu, TODAY } from './set-market-day-menu/test-data';
 
-const scheduleFor = (day: { day: string; startTime?: string; endTime?: string }) => ({
+type MarketDayHours = { day: string; startTime?: string; endTime?: string };
+
+const scheduleFor = (day: MarketDayHours) => ({
   vendorId: 'vendor-1',
   scheduleId: 'schedule-1',
   startDate: '2026-06-01',
   market: { id: 'market-1', name: 'Marché', codePostal: '75011', town: 'Paris' },
   days: [day],
 });
+
+// The hours the aggregate decides with, as the calendar events a spec seeds with
+// `givenCalendar`: market-1 registered (or amended) weekly from a start date early enough
+// that every weekday in the specs' window recurs. Same schedule as `schedule` and
+// `amendSchedule` below register through the commands.
+export const scheduledOn = (day: MarketDayHours): MarketScheduleRegistered => {
+  const { vendorId: _vendorId, ...schedule } = scheduleFor(day);
+  return scheduleRegistered({ ...schedule, frequency: { weeks: 1 } });
+};
+
+export const rescheduledTo = (day: MarketDayHours): MarketScheduleAmended => {
+  const { vendorId: _vendorId, ...schedule } = scheduleFor(day);
+  return scheduleAmended({ ...schedule, frequency: { weeks: 1 } });
+};
 
 // The rig every market-day write-side spec builds: vendor-1 with two catalogue items and
 // the clock fixed on TODAY — clockAt's 09:00 UTC, so events stamp 11:00 on the Paris wall
@@ -62,6 +79,8 @@ export function marketDayHarness() {
     menus,
     given: (date: string, ...history: DomainEvent[]): void =>
       store.seedWith(`market-day/vendor-1/market-1/${date}`, history, { vendorId: 'vendor-1' }),
+    givenCalendar: (...history: DomainEvent[]): void =>
+      store.seedWith(calendarStream('vendor-1'), history, { vendorId: 'vendor-1' }),
     setMenu: (date: string, ...itemIds: string[]): Promise<void> =>
       menus.execute(TestSetMarketDayMenu.with({ date, itemIds })),
     markSoldOut: (date: string, itemId = 'item-1'): Promise<void> =>
@@ -76,9 +95,9 @@ export function marketDayHarness() {
       bilans.execute(new RecordBilan('vendor-1', 'market-1', date, outcomes)),
     // The hours the aggregate decides with: registered for market-1, from a start date
     // early enough that every weekday in the specs' window recurs.
-    schedule: (day: { day: string; startTime?: string; endTime?: string }): Promise<void> =>
+    schedule: (day: MarketDayHours): Promise<void> =>
       schedules.execute(new RegisterMarketSchedule({ ...scheduleFor(day) })),
-    amendSchedule: (day: { day: string; startTime?: string; endTime?: string }): Promise<void> =>
+    amendSchedule: (day: MarketDayHours): Promise<void> =>
       amendments.execute(new AmendMarketSchedule({ ...scheduleFor(day) })),
   };
 }

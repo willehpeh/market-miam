@@ -1,28 +1,27 @@
-import { InMemoryEventStore } from '@market-miam/event-sourcing';
+import { DomainEvent, InMemoryEventStore } from '@market-miam/event-sourcing';
 import { MarketDayEndedError, MarketDayNotTodayError } from '@market-miam/market-days';
-import { marketDayHarness } from '../market-day-harness';
+import { marketDayHarness, rescheduledTo, scheduledOn } from '../market-day-harness';
+import { closed, menuSet, reopened, soldOut } from '../market-day-events';
 import { LAST_SATURDAY, SATURDAY, TODAY } from '../set-market-day-menu/test-data';
 
 describe('Reopen Market Day', () => {
   let store: InMemoryEventStore;
-  let setMenu: (date: string, ...itemIds: string[]) => Promise<void>;
+  let given: (date: string, ...history: DomainEvent[]) => void;
+  let givenCalendar: (...history: DomainEvent[]) => void;
   let markSoldOut: (date: string, itemId?: string) => Promise<void>;
   let close: (date: string) => Promise<void>;
   let reopen: (date: string) => Promise<void>;
-  let schedule: (day: { day: string; startTime?: string; endTime?: string }) => Promise<void>;
-  let amendSchedule: (day: { day: string; startTime?: string; endTime?: string }) => Promise<void>;
 
   beforeEach(() => {
-    ({ store, setMenu, markSoldOut, close, reopen, schedule, amendSchedule } = marketDayHarness());
+    ({ store, given, givenCalendar, markSoldOut, close, reopen } = marketDayHarness());
   });
 
   it('reopens a closed market day', async () => {
-    await close(TODAY);
+    given(TODAY, closed(TODAY));
 
     await reopen(TODAY);
 
     expect(store.newEvents()).toEqual([
-      expect.objectContaining({ type: 'MarketDayClosed' }),
       expect.objectContaining({
         type: 'MarketDayReopened',
         payload: { marketId: 'market-1', date: TODAY, time: '11:00' },
@@ -37,14 +36,11 @@ describe('Reopen Market Day', () => {
   });
 
   it('closes again after a reopen', async () => {
-    await close(TODAY);
-    await reopen(TODAY);
+    given(TODAY, closed(TODAY), reopened(TODAY));
 
     await close(TODAY);
 
     expect(store.newEvents()).toEqual([
-      expect.objectContaining({ type: 'MarketDayClosed' }),
-      expect.objectContaining({ type: 'MarketDayReopened' }),
       expect.objectContaining({ type: 'MarketDayClosed' }),
     ]);
   });
@@ -52,44 +48,31 @@ describe('Reopen Market Day', () => {
   // Closing says the stand packed up, not that the bourguignon came back: a second
   // mark stays the no-op it was, so nothing is appended (decision 31).
   it('leaves sold-out items sold out across a close and reopen', async () => {
-    await setMenu(TODAY, 'item-1');
-    await markSoldOut(TODAY);
-    await close(TODAY);
-    await reopen(TODAY);
+    given(TODAY, menuSet(TODAY, 'item-1'), soldOut(TODAY, 'item-1'), closed(TODAY), reopened(TODAY));
 
     await markSoldOut(TODAY);
 
-    expect(store.newEvents()).toEqual([
-      expect.objectContaining({ type: 'MarketDayMenuSet' }),
-      expect.objectContaining({ type: 'ItemMarkedAsSoldOut' }),
-      expect.objectContaining({ type: 'MarketDayClosed' }),
-      expect.objectContaining({ type: 'MarketDayReopened' }),
-    ]);
+    expect(store.newEvents()).toEqual([]);
   });
 
   // The stand can be reopened while the market is still running. Afterwards the day is
   // gone from every customer's view, so reopening it would claim a market that has packed
   // up — the aggregate holds the day's hours and refuses for itself.
   it('rejects reopening a day whose market has ended', async () => {
-    await schedule({ day: 'FRI', startTime: '07:00', endTime: '10:00' });
-    await close(TODAY);
+    givenCalendar(scheduledOn({ day: 'FRI', startTime: '07:00', endTime: '10:00' }));
+    given(TODAY, closed(TODAY));
 
     await expect(() => reopen(TODAY)).rejects.toThrow(MarketDayEndedError);
-    expect(store.newEvents()).toEqual([
-      expect.objectContaining({ type: 'MarketScheduleRegistered' }),
-      expect.objectContaining({ type: 'MarketDayClosed' }),
-    ]);
+    expect(store.newEvents()).toEqual([]);
   });
 
   it('reopens a day whose market is still running', async () => {
-    await schedule({ day: 'FRI', startTime: '07:00', endTime: '14:00' });
-    await close(TODAY);
+    givenCalendar(scheduledOn({ day: 'FRI', startTime: '07:00', endTime: '14:00' }));
+    given(TODAY, closed(TODAY));
 
     await reopen(TODAY);
 
     expect(store.newEvents()).toEqual([
-      expect.objectContaining({ type: 'MarketScheduleRegistered' }),
-      expect.objectContaining({ type: 'MarketDayClosed' }),
       expect.objectContaining({ type: 'MarketDayReopened' }),
     ]);
   });
@@ -97,16 +80,15 @@ describe('Reopen Market Day', () => {
   // The vendor moved their closing time later this morning; the day they are standing at
   // runs to the amended hours, not the ones it was registered with.
   it('reopens against amended hours', async () => {
-    await schedule({ day: 'FRI', startTime: '07:00', endTime: '10:00' });
-    await amendSchedule({ day: 'FRI', startTime: '07:00', endTime: '14:00' });
-    await close(TODAY);
+    givenCalendar(
+      scheduledOn({ day: 'FRI', startTime: '07:00', endTime: '10:00' }),
+      rescheduledTo({ day: 'FRI', startTime: '07:00', endTime: '14:00' }),
+    );
+    given(TODAY, closed(TODAY));
 
     await reopen(TODAY);
 
     expect(store.newEvents()).toEqual([
-      expect.objectContaining({ type: 'MarketScheduleRegistered' }),
-      expect.objectContaining({ type: 'MarketScheduleAmended' }),
-      expect.objectContaining({ type: 'MarketDayClosed' }),
       expect.objectContaining({ type: 'MarketDayReopened' }),
     ]);
   });

@@ -1,26 +1,25 @@
-import { InMemoryEventStore } from '@market-miam/event-sourcing';
+import { DomainEvent, InMemoryEventStore } from '@market-miam/event-sourcing';
 import { EmptyValueError } from '@market-miam/common';
 import {
-  Catalogues,
   MarketDayClosedError,
   MarketDayInThePastError,
   NoSuchItemError,
-  RetireItem,
-  RetireItemHandler,
   SetMarketDayMenuHandler
 } from '@market-miam/market-days';
 import { LAST_SATURDAY, SATURDAY, TestSetMarketDayMenu, TODAY } from './test-data';
-import { marketDayHarness } from '../market-day-harness';
+import { marketDayHarness, scheduledOn } from '../market-day-harness';
+import { closed, menuSet } from '../market-day-events';
+import { catalogueStream, itemRetired } from '../catalogue-events';
 
 describe('Set Market Day Menu', () => {
   let store: InMemoryEventStore;
-  let catalogues: Catalogues;
   let handler: SetMarketDayMenuHandler;
+  let given: (date: string, ...history: DomainEvent[]) => void;
+  let givenCalendar: (...history: DomainEvent[]) => void;
   let setMenu: (date: string, ...itemIds: string[]) => Promise<void>;
-  let close: (date: string) => Promise<void>;
 
   beforeEach(() => {
-    ({ store, catalogues, menus: handler, setMenu, close } = marketDayHarness());
+    ({ store, menus: handler, given, givenCalendar, setMenu } = marketDayHarness());
   });
 
   it('sets the menu for a market day', async () => {
@@ -35,16 +34,11 @@ describe('Set Market Day Menu', () => {
   });
 
   it('raises nothing when the menu is unchanged', async () => {
-    await handler.execute(TestSetMarketDayMenu.valid());
+    given(SATURDAY, menuSet(SATURDAY, 'item-1', 'item-2'));
 
     await handler.execute(TestSetMarketDayMenu.valid());
 
-    expect(store.newEvents()).toEqual([
-      expect.objectContaining({
-        type: 'MarketDayMenuSet',
-        payload: { itemIds: ['item-1', 'item-2'], marketId: 'market-1', date: SATURDAY },
-      }),
-    ]);
+    expect(store.newEvents()).toEqual([]);
   });
 
   it('rejects an item that is not in the catalogue', async () => {
@@ -55,12 +49,12 @@ describe('Set Market Day Menu', () => {
   });
 
   it('rejects an item that has been retired', async () => {
-    await new RetireItemHandler(catalogues).execute(new RetireItem('vendor-1', 'item-2'));
+    store.seedWith(catalogueStream('vendor-1'), [itemRetired('item-2')], { vendorId: 'vendor-1' });
 
     const command = TestSetMarketDayMenu.with({ itemIds: ['item-1', 'item-2'] });
 
     await expect(() => handler.execute(command)).rejects.toThrow(NoSuchItemError);
-    expect(store.newEvents()).toEqual([expect.objectContaining({ type: 'ItemRetired' })]);
+    expect(store.newEvents()).toEqual([]);
   });
 
   it('rejects a menu for a market day in the past', async () => {
@@ -81,17 +75,25 @@ describe('Set Market Day Menu', () => {
     ]);
   });
 
+  // An ended day is never closed by the clock (decision 54), so a vendor who packed up
+  // without tapping close can still correct the menu the bilan will be read against.
+  it("sets the menu for today once the market's hours have ended, as long as the day is not closed", async () => {
+    givenCalendar(scheduledOn({ day: 'FRI', startTime: '07:00', endTime: '10:00' }));
+
+    await setMenu(TODAY, 'item-1');
+
+    expect(store.newEvents()).toEqual([
+      expect.objectContaining({ type: 'MarketDayMenuSet', payload: { itemIds: ['item-1'], marketId: 'market-1', date: TODAY } }),
+    ]);
+  });
+
   // Editing a closed day would clear its sold-out items, wiping the service-phase
   // record the day's outcomes are about to be read from (decision 29).
   it('rejects editing the menu once the day is closed', async () => {
-    await setMenu(TODAY, 'item-1');
-    await close(TODAY);
+    given(TODAY, menuSet(TODAY, 'item-1'), closed(TODAY));
 
     await expect(() => setMenu(TODAY, 'item-2')).rejects.toThrow(MarketDayClosedError);
-    expect(store.newEvents()).toEqual([
-      expect.objectContaining({ type: 'MarketDayMenuSet' }),
-      expect.objectContaining({ type: 'MarketDayClosed' }),
-    ]);
+    expect(store.newEvents()).toEqual([]);
   });
 
   it.each([
@@ -105,15 +107,11 @@ describe('Set Market Day Menu', () => {
   });
 
   it('clears the menu', async () => {
-    await handler.execute(TestSetMarketDayMenu.valid());
+    given(SATURDAY, menuSet(SATURDAY, 'item-1', 'item-2'));
 
     await handler.execute(TestSetMarketDayMenu.with({ itemIds: [] }));
 
     expect(store.newEvents()).toEqual([
-      expect.objectContaining({
-        type: 'MarketDayMenuSet',
-        payload: { itemIds: ['item-1', 'item-2'], marketId: 'market-1', date: SATURDAY },
-      }),
       expect.objectContaining({
         type: 'MarketDayMenuSet',
         payload: { itemIds: [], marketId: 'market-1', date: SATURDAY },
@@ -122,16 +120,11 @@ describe('Set Market Day Menu', () => {
   });
 
   it('raises nothing when the menu is reordered', async () => {
-    await handler.execute(TestSetMarketDayMenu.with({ itemIds: ['item-1', 'item-2'] }));
+    given(SATURDAY, menuSet(SATURDAY, 'item-1', 'item-2'));
 
     await handler.execute(TestSetMarketDayMenu.with({ itemIds: ['item-2', 'item-1'] }));
 
-    expect(store.newEvents()).toEqual([
-      expect.objectContaining({
-        type: 'MarketDayMenuSet',
-        payload: { itemIds: ['item-1', 'item-2'], marketId: 'market-1', date: SATURDAY },
-      }),
-    ]);
+    expect(store.newEvents()).toEqual([]);
   });
 
   // A persisted address, not an implementation detail: once vendors have set menus, an
