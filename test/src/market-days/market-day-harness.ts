@@ -1,4 +1,4 @@
-import { InMemoryEventStore } from '@market-miam/event-sourcing';
+import { DomainEvent, InMemoryEventStore } from '@market-miam/event-sourcing';
 import {
   Calendars,
   Catalogues,
@@ -36,7 +36,10 @@ const scheduleFor = (day: { day: string; startTime?: string; endTime?: string })
 
 // The rig every market-day write-side spec builds: vendor-1 with two catalogue items and
 // the clock fixed on TODAY — clockAt's 09:00 UTC, so events stamp 11:00 on the Paris wall
-// clock. Drive through the helpers (or the handlers directly); assert on store.newEvents().
+// clock. State a spec's Given with `given` and the builders in market-day-events.ts, so
+// the slice presupposes events rather than other commands and store.newEvents() holds
+// only what the command under test appended; the command helpers remain for the specs
+// not yet written that way. Assert on store.newEvents().
 export function marketDayHarness() {
   const store = new InMemoryEventStore();
   const events = new VendorScopedEvents(store);
@@ -57,6 +60,8 @@ export function marketDayHarness() {
     store,
     catalogues,
     menus,
+    given: (date: string, ...history: DomainEvent[]): void =>
+      store.seedWith(`market-day/vendor-1/market-1/${date}`, history, { vendorId: 'vendor-1' }),
     setMenu: (date: string, ...itemIds: string[]): Promise<void> =>
       menus.execute(TestSetMarketDayMenu.with({ date, itemIds })),
     markSoldOut: (date: string, itemId = 'item-1'): Promise<void> =>

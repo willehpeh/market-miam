@@ -240,6 +240,17 @@ const helperCommand = {}; // helper name -> command class
   }
 }
 
+/* ---------- the event builders: which helper seeds which event as a Given ---------- */
+// Any exported const at the suite's root whose body names an event type, e.g.
+// `export const menuSet = (...): MarketDayMenuSet => ({ type: 'MarketDayMenuSet', ... })`.
+const helperEvent = {};   // builder name -> event type
+for (const f of readdirSync(SLICES_DIR)) {
+  if (!f.endsWith('.ts') || f.endsWith('.spec.ts') || f.endsWith('.contract.ts')) continue;
+  for (const m of read(join(SLICES_DIR, f)).matchAll(/export const (\w+) = [^;]*?type: '(\w+)'/g)) {
+    if (eventAggregate[m[2]]) helperEvent[m[1]] = m[2];
+  }
+}
+
 /* ---------- slices, from the packages suite ---------- */
 const slices = [];
 const skipped = [];
@@ -255,7 +266,12 @@ for (const dir of readdirSync(SLICES_DIR).sort()) {
     mods: t.mods,
     kind: /rejects\.|toThrow\(|toBeInstanceOf\(\s*[A-Z]/.test(t.body) ? 'rejection' : 'happy',
   }));
-  const mentioned = [...new Set(EVENT_TYPES.filter(e => src.includes(`'${e}'`) || src.includes(`type: '${e}'`) || new RegExp(`\\b${e}\\b`).test(src)))];
+  const mentioned = [...new Set([
+    ...EVENT_TYPES.filter(e => src.includes(`'${e}'`) || src.includes(`type: '${e}'`) || new RegExp(`\\b${e}\\b`).test(src)),
+    ...Object.keys(helperEvent).filter(h => new RegExp(`(?<![.\\w])${h}\\(`).test(src)).map(h => helperEvent[h]),
+    // seedCatalogue seeds the two catalogue items as events; the harness calls it.
+    ...(src.includes('marketDayHarness(') || src.includes('seedCatalogue(') ? ['ItemAddedToCatalogue'] : []),
+  ])];
   const errors = [...new Set(
     [...src.matchAll(/(?:toThrow|toBeInstanceOf)\(\s*([A-Z]\w+)/g)].map(m => m[1]).filter(e => e !== 'Error'),
   )];
@@ -298,7 +314,6 @@ for (const dir of readdirSync(SLICES_DIR).sort()) {
       ...helpers.map(h => helperCommand[h]),
       ...[...src.matchAll(/\bnew (\w+)Handler\(/g)].map(m => m[1]),
       ...[...src.matchAll(/\bTest([A-Z]\w+)\.(?:valid|with)\b/g)].map(m => m[1]),
-      ...(src.includes('marketDayHarness(') || src.includes('seedCatalogue(') ? ['AddItemToCatalogue'] : []),
     ])].filter(c => c !== command);
     slices.push({ ...base, kind: 'command', command, actor: actorOf[command] ?? null, emits: [], given: [], givenCommands, stream, src, asserted, mentioned });
     if (!actorOf[command]) warn(`command ${command}: no actor found in controllers or processors`);

@@ -1,25 +1,24 @@
-import { InMemoryEventStore } from '@market-miam/event-sourcing';
+import { DomainEvent, InMemoryEventStore } from '@market-miam/event-sourcing';
 import { ItemNotPlannedError, MarketDayClosedError, MarketDayNotTodayError } from '@market-miam/market-days';
 import { marketDayHarness } from '../market-day-harness';
+import { closed, menuSet, soldOut } from '../market-day-events';
 import { LAST_SATURDAY, SATURDAY, TODAY } from '../set-market-day-menu/test-data';
 
 describe('Mark Item As Sold Out', () => {
   let store: InMemoryEventStore;
-  let setMenu: (date: string, ...itemIds: string[]) => Promise<void>;
+  let given: (date: string, ...history: DomainEvent[]) => void;
   let markSoldOut: (date: string, itemId?: string) => Promise<void>;
-  let close: (date: string) => Promise<void>;
 
   beforeEach(() => {
-    ({ store, setMenu, markSoldOut, close } = marketDayHarness());
+    ({ store, given, markSoldOut } = marketDayHarness());
   });
 
   it("marks an item on today's menu as sold out", async () => {
-    await setMenu(TODAY, 'item-1');
+    given(TODAY, menuSet(TODAY, 'item-1'));
 
     await markSoldOut(TODAY);
 
     expect(store.newEvents()).toEqual([
-      expect.objectContaining({ type: 'MarketDayMenuSet' }),
       expect.objectContaining({
         type: 'ItemMarkedAsSoldOut',
         payload: { itemId: 'item-1', marketId: 'market-1', date: TODAY, time: '11:00' },
@@ -31,15 +30,11 @@ describe('Mark Item As Sold Out', () => {
   // already true appends nothing — a duplicate event would corrupt the availability
   // timeline. Same stance as setMenu unchanged and retiring twice.
   it('takes a second sold-out mark as a no-op, appending nothing', async () => {
-    await setMenu(TODAY, 'item-1');
-    await markSoldOut(TODAY);
+    given(TODAY, menuSet(TODAY, 'item-1'), soldOut(TODAY, 'item-1'));
 
     await markSoldOut(TODAY);
 
-    expect(store.newEvents()).toEqual([
-      expect.objectContaining({ type: 'MarketDayMenuSet' }),
-      expect.objectContaining({ type: 'ItemMarkedAsSoldOut' }),
-    ]);
+    expect(store.newEvents()).toEqual([]);
   });
 
   it("rejects an item that is not on today's menu", async () => {
@@ -48,40 +43,30 @@ describe('Mark Item As Sold Out', () => {
   });
 
   it('rejects an item that has been taken off the menu', async () => {
-    await setMenu(TODAY, 'item-1');
-    await setMenu(TODAY, 'item-2');
+    given(TODAY, menuSet(TODAY, 'item-1'), menuSet(TODAY, 'item-2'));
 
     await expect(() => markSoldOut(TODAY)).rejects.toThrow(ItemNotPlannedError);
   });
 
   it('marks an item sold out again once it returns to the menu', async () => {
-    await setMenu(TODAY, 'item-1');
-    await markSoldOut(TODAY);
-    await setMenu(TODAY, 'item-2');
-
-    await setMenu(TODAY, 'item-1');
+    given(TODAY, menuSet(TODAY, 'item-1'), soldOut(TODAY, 'item-1'), menuSet(TODAY, 'item-2'), menuSet(TODAY, 'item-1'));
 
     await markSoldOut(TODAY);
-    expect(store.newEvents()).toEqual([
-      expect.objectContaining({ type: 'MarketDayMenuSet' }),
-      expect.objectContaining({ type: 'ItemMarkedAsSoldOut' }),
-      expect.objectContaining({ type: 'MarketDayMenuSet' }),
-      expect.objectContaining({ type: 'MarketDayMenuSet' }),
-      expect.objectContaining({ type: 'ItemMarkedAsSoldOut' }),
-    ]);
+
+    expect(store.newEvents()).toEqual([expect.objectContaining({ type: 'ItemMarkedAsSoldOut' })]);
   });
 
   it("rejects an item that is on another day's menu", async () => {
-    await setMenu(SATURDAY, 'item-1');
+    given(SATURDAY, menuSet(SATURDAY, 'item-1'));
 
     await expect(() => markSoldOut(TODAY)).rejects.toThrow(ItemNotPlannedError);
   });
 
   it('rejects marking a future day sold out, even one with the item on its menu', async () => {
-    await setMenu(SATURDAY, 'item-1');
+    given(SATURDAY, menuSet(SATURDAY, 'item-1'));
 
     await expect(() => markSoldOut(SATURDAY)).rejects.toThrow(MarketDayNotTodayError);
-    expect(store.newEvents()).toEqual([expect.objectContaining({ type: 'MarketDayMenuSet' })]);
+    expect(store.newEvents()).toEqual([]);
   });
 
   it('rejects marking a past day sold out', async () => {
@@ -92,13 +77,9 @@ describe('Mark Item As Sold Out', () => {
   // Once the stand is shut, *it's gone right now* is no longer a claim the day can
   // carry — what sold out that day becomes an outcome, recorded separately (decision 29).
   it('rejects marking an item sold out once the day is closed', async () => {
-    await setMenu(TODAY, 'item-1');
-    await close(TODAY);
+    given(TODAY, menuSet(TODAY, 'item-1'), closed(TODAY));
 
     await expect(() => markSoldOut(TODAY)).rejects.toThrow(MarketDayClosedError);
-    expect(store.newEvents()).toEqual([
-      expect.objectContaining({ type: 'MarketDayMenuSet' }),
-      expect.objectContaining({ type: 'MarketDayClosed' }),
-    ]);
+    expect(store.newEvents()).toEqual([]);
   });
 });
