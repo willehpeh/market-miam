@@ -1,22 +1,18 @@
-import { InMemoryCheckpoint, PollingSubscription } from '@market-miam/event-sourcing';
-import { InMemoryMarketDayViews, ItemOutcome, MarketDayView, MarketDayViewProjection } from '@market-miam/market-days';
+import { DomainEvent, InMemoryCheckpoint, PollingSubscription } from '@market-miam/event-sourcing';
+import { InMemoryMarketDayViews, MarketDayView, MarketDayViewProjection } from '@market-miam/market-days';
 import { SATURDAY, TODAY } from '../set-market-day-menu/test-data';
 import { marketDayHarness } from '../market-day-harness';
+import { available, bilanRecorded, closed, menuSet, reopened, soldOut } from '../market-day-events';
 
 describe('MarketDayView', () => {
   let views: InMemoryMarketDayViews;
   let projection: MarketDayViewProjection;
   let subscription: PollingSubscription;
-  let setMenu: (date: string, ...itemIds: string[]) => Promise<void>;
-  let markSoldOut: (date: string, itemId?: string) => Promise<void>;
-  let markAvailable: (date: string, itemId?: string) => Promise<void>;
-  let close: (date: string) => Promise<void>;
-  let reopen: (date: string) => Promise<void>;
-  let recordBilan: (date: string, outcomes: Record<string, ItemOutcome>) => Promise<void>;
+  let given: (date: string, ...history: DomainEvent[]) => void;
 
   beforeEach(() => {
     const harness = marketDayHarness();
-    ({ setMenu, markSoldOut, markAvailable, close, reopen, recordBilan } = harness);
+    ({ given } = harness);
     views = new InMemoryMarketDayViews();
     projection = new MarketDayViewProjection(views);
     subscription = new PollingSubscription(harness.store, projection, new InMemoryCheckpoint('market-day-view'));
@@ -29,7 +25,7 @@ describe('MarketDayView', () => {
     ({ marketId: 'market-1', date: TODAY, itemIds: [], soldOutItemIds: [], outcomes: {}, closed: false, ...overrides });
 
   it('should project the menu a vendor set for a market day', async () => {
-    await setMenu(SATURDAY, 'item-1', 'item-2');
+    given(SATURDAY, menuSet(SATURDAY, 'item-1', 'item-2'));
 
     await subscription.poll();
 
@@ -39,8 +35,7 @@ describe('MarketDayView', () => {
   });
 
   it('should project the latest menu when the day is set again', async () => {
-    await setMenu(SATURDAY, 'item-1', 'item-2');
-    await setMenu(SATURDAY, 'item-2');
+    given(SATURDAY, menuSet(SATURDAY, 'item-1', 'item-2'), menuSet(SATURDAY, 'item-2'));
 
     await subscription.poll();
 
@@ -52,8 +47,7 @@ describe('MarketDayView', () => {
   const menuToday = () => views.menusFor('vendor-1', TODAY, TODAY);
 
   it('projects a sold-out mark onto the day it was made', async () => {
-    await setMenu(TODAY, 'item-1', 'item-2');
-    await markSoldOut(TODAY);
+    given(TODAY, menuSet(TODAY, 'item-1', 'item-2'), soldOut(TODAY));
 
     await subscription.poll();
 
@@ -64,9 +58,7 @@ describe('MarketDayView', () => {
 
   // Slice 2b: the bilan lands on the same row as the availability it is judged against.
   it('projects what the vendor said about a dish', async () => {
-    await setMenu(TODAY, 'item-1', 'item-2');
-    await close(TODAY);
-    await recordBilan(TODAY, { 'item-1': 'did_well' });
+    given(TODAY, menuSet(TODAY, 'item-1', 'item-2'), closed(TODAY), bilanRecorded(TODAY, { 'item-1': 'did_well' }));
 
     await subscription.poll();
 
@@ -78,10 +70,7 @@ describe('MarketDayView', () => {
   // Decision 30: reopening means the day kept going, so every judgment about it is stale —
   // the read model forgets them exactly as the aggregate does.
   it('empties the bilan when the day reopens', async () => {
-    await setMenu(TODAY, 'item-1');
-    await close(TODAY);
-    await recordBilan(TODAY, { 'item-1': 'did_well' });
-    await reopen(TODAY);
+    given(TODAY, menuSet(TODAY, 'item-1'), closed(TODAY), bilanRecorded(TODAY, { 'item-1': 'did_well' }), reopened(TODAY));
 
     await subscription.poll();
 
@@ -89,9 +78,7 @@ describe('MarketDayView', () => {
   });
 
   it('projects an item coming back as available', async () => {
-    await setMenu(TODAY, 'item-1', 'item-2');
-    await markSoldOut(TODAY);
-    await markAvailable(TODAY);
+    given(TODAY, menuSet(TODAY, 'item-1', 'item-2'), soldOut(TODAY), available(TODAY));
 
     await subscription.poll();
 
@@ -101,8 +88,7 @@ describe('MarketDayView', () => {
   });
 
   it('projects a day the vendor closed as closed', async () => {
-    await setMenu(TODAY, 'item-1');
-    await close(TODAY);
+    given(TODAY, menuSet(TODAY, 'item-1'), closed(TODAY));
 
     await subscription.poll();
 
@@ -112,9 +98,7 @@ describe('MarketDayView', () => {
   });
 
   it('projects a reopened day as open again', async () => {
-    await setMenu(TODAY, 'item-1');
-    await close(TODAY);
-    await reopen(TODAY);
+    given(TODAY, menuSet(TODAY, 'item-1'), closed(TODAY), reopened(TODAY));
 
     await subscription.poll();
 
@@ -126,7 +110,7 @@ describe('MarketDayView', () => {
   // The no-show door: a vendor whose van broke down closes a day they never planned, so
   // the close is the first thing the day's stream ever carried (decisions 40, 45).
   it('projects a day closed with no menu at all', async () => {
-    await close(TODAY);
+    given(TODAY, closed(TODAY));
 
     await subscription.poll();
 
@@ -136,7 +120,7 @@ describe('MarketDayView', () => {
   });
 
   it('resets by clearing the read model so a replay rebuilds it from zero', async () => {
-    await setMenu(SATURDAY, 'item-1', 'item-2');
+    given(SATURDAY, menuSet(SATURDAY, 'item-1', 'item-2'));
     await subscription.poll();
 
     await projection.reset();

@@ -1,27 +1,17 @@
-import { VendorScopedEvents } from '@market-miam/market-days';
+import { CatalogueViewProjection, InMemoryCatalogueViews } from '@market-miam/market-days';
 import {
-  AddItemToCatalogueHandler,
-  Catalogues,
-  CatalogueViewProjection,
-  ChangeItemPhoto,
-  ChangeItemPhotoHandler,
-  InMemoryCatalogueViews,
-  ReviseItem,
-  ReviseItemHandler,
-  RetireItemHandler
-} from '@market-miam/market-days';
-import {
+  DomainEvent,
   InMemoryCheckpoint,
   InMemoryEventStore,
   PollingSubscription,
 } from '@market-miam/event-sourcing';
 import { TestAddItemToCatalogue } from '../add-item-to-catalogue/test-data';
+import { catalogueStream, itemAdded, itemPhotoChanged, itemRetired, itemRevised } from '../catalogue-events';
 
 
 describe('CatalogueView', () => {
   let store: InMemoryEventStore;
   let views: InMemoryCatalogueViews;
-  let catalogues: Catalogues;
   let projection: CatalogueViewProjection;
   let subscription: PollingSubscription;
 
@@ -30,8 +20,11 @@ describe('CatalogueView', () => {
     views = new InMemoryCatalogueViews();
     projection = new CatalogueViewProjection(views);
     subscription = new PollingSubscription(store, projection, new InMemoryCheckpoint('catalogue-view'));
-    catalogues = new Catalogues(new VendorScopedEvents(store));
   });
+
+  // What vendor-id's catalogue already holds.
+  const given = (...history: DomainEvent[]): void =>
+    store.seedWith(catalogueStream('vendor-id'), history, { vendorId: 'vendor-id' });
 
   it('should return an empty catalogue when none are added', async () => {
     await subscription.poll();
@@ -40,7 +33,7 @@ describe('CatalogueView', () => {
   });
 
   it('should project items added to the catalogue', async () => {
-    const { first, second, vendorId } = await addTwoItems(catalogues);
+    const { first, second, vendorId } = givenTwoItems(given);
 
     await subscription.poll();
 
@@ -58,7 +51,10 @@ describe('CatalogueView', () => {
       { name: 'Small', description: '', price: 800 },
       { name: 'Large', description: 'extra hungry', price: 1200 },
     ]);
-    await new AddItemToCatalogueHandler(catalogues).execute(command);
+    given(itemAdded('item-id', { price: undefined, variants: [
+      { name: 'Small', description: '', price: 800 },
+      { name: 'Large', description: 'extra hungry', price: 1200 },
+    ] }));
 
     await subscription.poll();
 
@@ -82,8 +78,7 @@ describe('CatalogueView', () => {
 
   it('should revise the item name, description and price, keeping its image', async () => {
     const newItemCommand = TestAddItemToCatalogue.simple();
-    await new AddItemToCatalogueHandler(catalogues).execute(newItemCommand);
-    await new ReviseItemHandler(catalogues).execute(new ReviseItem({ itemId: newItemCommand.itemId, vendorId: newItemCommand.vendorId, name: 'Revised Name', description: 'Revised Description', price: 999, allergens: ['gluten', 'milk'] }));
+    given(itemAdded(), itemRevised('item-id', { name: 'Revised Name', description: 'Revised Description', price: 999, allergens: ['gluten', 'milk'] }));
 
     await subscription.poll();
     const view = await views.forVendor(newItemCommand.vendorId);
@@ -96,8 +91,7 @@ describe('CatalogueView', () => {
 
   it('should revise a flat item into a variant item', async () => {
     const added = TestAddItemToCatalogue.simple();
-    await new AddItemToCatalogueHandler(catalogues).execute(added);
-    await new ReviseItemHandler(catalogues).execute(new ReviseItem({ itemId: added.itemId, vendorId: added.vendorId, name: 'Pizza', description: 'Wood-fired', allergens: ['gluten', 'milk'], variants: [
+    given(itemAdded(), itemRevised('item-id', { name: 'Pizza', description: 'Wood-fired', price: undefined, allergens: ['gluten', 'milk'], variants: [
       { name: 'Small', description: '', price: 800 },
       { name: 'Large', description: 'extra hungry', price: 1200 },
     ] }));
@@ -126,8 +120,13 @@ describe('CatalogueView', () => {
       { name: 'Small', description: '', price: 800 },
       { name: 'Large', description: 'extra hungry', price: 1200 },
     ]);
-    await new AddItemToCatalogueHandler(catalogues).execute(added);
-    await new ReviseItemHandler(catalogues).execute(new ReviseItem({ itemId: added.itemId, vendorId: added.vendorId, name: 'Soup', description: 'Daily', price: 500, allergens: ['gluten', 'milk'] }));
+    given(
+      itemAdded('item-id', { price: undefined, variants: [
+        { name: 'Small', description: '', price: 800 },
+        { name: 'Large', description: 'extra hungry', price: 1200 },
+      ] }),
+      itemRevised('item-id', { name: 'Soup', description: 'Daily', price: 500, allergens: ['gluten', 'milk'] }),
+    );
 
     await subscription.poll();
     const view = await views.forVendor(added.vendorId);
@@ -140,11 +139,11 @@ describe('CatalogueView', () => {
 
   it('projects the allergens an item declares, and their revision', async () => {
     const added = TestAddItemToCatalogue.with({ allergens: ['milk'] });
-    await new AddItemToCatalogueHandler(catalogues).execute(added);
+    given(itemAdded('item-id', { allergens: ['milk'] }));
     await subscription.poll();
     expect((await views.forVendor(added.vendorId)).items[0].allergens).toEqual(['milk']);
 
-    await new ReviseItemHandler(catalogues).execute(new ReviseItem({ itemId: added.itemId, vendorId: added.vendorId, name: added.name, description: added.description, price: added.price, allergens: [] }));
+    given(itemRevised('item-id', { allergens: [] }));
     await subscription.poll();
 
     expect((await views.forVendor(added.vendorId)).items[0].allergens).toEqual([]);
@@ -163,8 +162,7 @@ describe('CatalogueView', () => {
 
   it('should change the item photo, keeping its other fields', async () => {
     const newItemCommand = TestAddItemToCatalogue.simple();
-    await new AddItemToCatalogueHandler(catalogues).execute(newItemCommand);
-    await new ChangeItemPhotoHandler(catalogues).execute(new ChangeItemPhoto(newItemCommand.itemId, newItemCommand.vendorId, 'v9/dishes/vendor-id/item-id'));
+    given(itemAdded(), itemPhotoChanged('item-id', 'v9/dishes/vendor-id/item-id'));
 
     await subscription.poll();
     const view = await views.forVendor(newItemCommand.vendorId);
@@ -176,8 +174,8 @@ describe('CatalogueView', () => {
   });
 
   it('should retire the item', async () => {
-    const { first, second, vendorId } = await addTwoItems(catalogues);
-    await new RetireItemHandler(catalogues).execute(first);
+    const { first, second, vendorId } = givenTwoItems(given);
+    given(itemRetired(first.itemId));
 
     await subscription.poll();
     const view = await views.forVendor(vendorId);
@@ -189,7 +187,7 @@ describe('CatalogueView', () => {
   });
 
   it('resets by clearing the read model so a replay rebuilds it from zero', async () => {
-    const { vendorId } = await addTwoItems(catalogues);
+    const { vendorId } = givenTwoItems(given);
     await subscription.poll();
     expect((await views.forVendor(vendorId)).items).toHaveLength(2);
 
@@ -199,12 +197,10 @@ describe('CatalogueView', () => {
   });
 });
 
-async function addTwoItems(catalogues: Catalogues) {
+function givenTwoItems(given: (...history: DomainEvent[]) => void) {
   const first = TestAddItemToCatalogue.simple();
   const second = TestAddItemToCatalogue.with({ itemId: 'second-item', name: 'Second Item' });
   const vendorId = first.vendorId;
-  const addItemHandler = new AddItemToCatalogueHandler(catalogues);
-  await addItemHandler.execute(first);
-  await addItemHandler.execute(second);
+  given(itemAdded(first.itemId), itemAdded(second.itemId, { name: second.name }));
   return { first, second, vendorId };
 }

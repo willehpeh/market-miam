@@ -1,35 +1,39 @@
-import { VendorScopedEvents } from '@market-miam/market-days';
 import {
+  DomainEvent,
   InMemoryCheckpoint,
   InMemoryEventStore,
   PollingSubscription,
 } from '@market-miam/event-sourcing';
-import {
-  EditStorefrontInformationHandler,
-  InMemoryVendorStorefrontViews,
-  OpenStorefrontHandler,
-  SetStorefrontCoverPhotoHandler,
-  Storefronts,
-  VendorStorefrontViewProjection
-} from '@market-miam/market-days';
-import { TestOpenStorefront } from '../open-storefront/test-data';
+import { InMemoryVendorStorefrontViews, VendorStorefrontViewProjection } from '@market-miam/market-days';
 import { TestEditStorefrontInformation } from '../edit-storefront-information/test-data';
 import { TestSetStorefrontCoverPhoto } from '../set-storefront-cover-photo/test-data';
+import {
+  cartePricesHidden,
+  cartePricesShown,
+  storefrontCoverPhotoSet,
+  storefrontInformationEdited,
+  storefrontOpened,
+  storefrontPublished,
+  storefrontStream,
+} from '../storefront-events';
+import { vendorErased, vendorStream } from '../vendor-events';
 
 describe('VendorStorefrontView', () => {
   let store: InMemoryEventStore;
   let views: InMemoryVendorStorefrontViews;
-  let storefronts: Storefronts;
   let projection: VendorStorefrontViewProjection;
   let subscription: PollingSubscription;
 
   beforeEach(() => {
     store = new InMemoryEventStore();
     views = new InMemoryVendorStorefrontViews();
-    storefronts = new Storefronts(new VendorScopedEvents(store));
     projection = new VendorStorefrontViewProjection(views);
     subscription = new PollingSubscription(store, projection, new InMemoryCheckpoint('vendor-storefront-view'));
   });
+
+  // What vendor-id's storefront already holds.
+  const given = (...history: DomainEvent[]): void =>
+    store.seedWith(storefrontStream('vendor-id'), history, { vendorId: 'vendor-id' });
 
   it('has no view for a vendor whose storefront has not opened', async () => {
     await subscription.poll();
@@ -37,7 +41,7 @@ describe('VendorStorefrontView', () => {
   });
 
   it('creates an empty view when the storefront opens', async () => {
-    await new OpenStorefrontHandler(storefronts).execute(TestOpenStorefront.valid());
+    given(storefrontOpened());
     await subscription.poll();
     expect(await views.findByVendor('vendor-id')).toEqual({
       name: '',
@@ -53,9 +57,7 @@ describe('VendorStorefrontView', () => {
     const vendorId = 'vendor-id';
     const infoCommand = TestEditStorefrontInformation.with({ vendorId });
     const photoCommand = TestSetStorefrontCoverPhoto.with({ vendorId });
-    await new OpenStorefrontHandler(storefronts).execute(TestOpenStorefront.valid());
-    await new EditStorefrontInformationHandler(storefronts).execute(infoCommand);
-    await new SetStorefrontCoverPhotoHandler(storefronts).execute(photoCommand);
+    given(storefrontOpened(), storefrontInformationEdited(), storefrontCoverPhotoSet());
     await subscription.poll();
     expect(await views.findByVendor(vendorId)).toEqual({
       name: infoCommand.name,
@@ -68,10 +70,7 @@ describe('VendorStorefrontView', () => {
   });
 
   it('marks the view published when the storefront is published', async () => {
-    store.seedWith('storefront-vendor-id', [
-      { type: 'StorefrontOpened', payload: { vendorId: 'vendor-id' }, version: 1 },
-      { type: 'StorefrontPublished', payload: {}, version: 1 },
-    ], { vendorId: 'vendor-id' });
+    given(storefrontOpened(), storefrontPublished());
 
     await subscription.poll();
 
@@ -88,7 +87,7 @@ describe('VendorStorefrontView', () => {
   // The opt-in, as the read model sees it: a storefront that has never touched the choice
   // reads as showing prices, so the view says so without any event having said it.
   it('reads a storefront that never chose as showing its carte prices', async () => {
-    await new OpenStorefrontHandler(storefronts).execute(TestOpenStorefront.valid());
+    given(storefrontOpened());
 
     await subscription.poll();
 
@@ -96,16 +95,11 @@ describe('VendorStorefrontView', () => {
   });
 
   it('hides the carte prices when the vendor hides them, and restores them', async () => {
-    store.seedWith('storefront-vendor-id', [
-      { type: 'StorefrontOpened', payload: { vendorId: 'vendor-id' }, version: 1 },
-      { type: 'CartePricesHidden', payload: {}, version: 1 },
-    ], { vendorId: 'vendor-id' });
+    given(storefrontOpened(), cartePricesHidden());
     await subscription.poll();
     expect(await views.findByVendor('vendor-id')).toMatchObject({ cartePricesVisible: false });
 
-    store.seedWith('storefront-vendor-id', [
-      { type: 'CartePricesShown', payload: {}, version: 1 },
-    ], { vendorId: 'vendor-id' });
+    given(cartePricesShown());
     await subscription.poll();
 
     expect(await views.findByVendor('vendor-id')).toMatchObject({ cartePricesVisible: true });
@@ -114,12 +108,8 @@ describe('VendorStorefrontView', () => {
   // The erased vendor's PII is plaintext here (model A). A rebuild replays it as SHREDDED
   // and then this event again, so the view stays gone.
   it('drops the view of an erased vendor', async () => {
-    store.seedWith('storefront-vendor-id', [
-      { type: 'StorefrontOpened', payload: { vendorId: 'vendor-id' }, version: 1 },
-    ], { vendorId: 'vendor-id' });
-    store.seedWith('vendor-vendor-id', [
-      { type: 'VendorErased', payload: { vendorId: 'vendor-id', erasedAt: '2026-10-04T09:00:00.000Z' }, version: 1 },
-    ], { vendorId: 'vendor-id' });
+    given(storefrontOpened());
+    store.seedWith(vendorStream('vendor-id'), [vendorErased('vendor-id')], { vendorId: 'vendor-id' });
 
     await subscription.poll();
 
@@ -127,7 +117,7 @@ describe('VendorStorefrontView', () => {
   });
 
   it('resets by clearing the read model so a replay rebuilds it from zero', async () => {
-    await new OpenStorefrontHandler(storefronts).execute(TestOpenStorefront.valid());
+    given(storefrontOpened());
     await subscription.poll();
     expect(await views.findByVendor('vendor-id')).toBeDefined();
 
