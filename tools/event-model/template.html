@@ -151,6 +151,7 @@
   #arrows path.consume { stroke: var(--evt); }
   #arrows path.emit { stroke: var(--evt); }
   #arrows path.dispatch { stroke: var(--cmd); stroke-dasharray: 5 4; }
+  #arrows path.derive { stroke: var(--view); stroke-dasharray: 2 4; }
   #arrows.focused path { opacity: 0.06; }
   #arrows.focused path.lit { opacity: 0.9; stroke-width: 2.2; }
 
@@ -317,7 +318,8 @@
     <p>Slices run left to right in the order the system's own tests presuppose: a slice sits after
       every slice whose events appear in its Givens. Events sit on the stream (aggregate) lane they
       are appended to. Solid arrows carry events — from the command that appends one to the read
-      models and automations that consume it; dashed arrows are commands dispatched by automations.</p>
+      models and automations that consume it; dashed arrows are commands dispatched by automations;
+      dotted arrows are read models computed at query time from another.</p>
     <p>To change a card, change its source: slices and specifications in
       <span class="mono">test/src/market-days</span>, lanes and wiring in
       <span class="mono">packages/market-days</span>, actors in the API controllers.
@@ -392,9 +394,11 @@ chapEl.addEventListener('click', e => {
   if (card) scroller.scrollTo({ left: Math.max(0, (card.offsetLeft - 140) * zoomLevel), behavior: 'smooth' });
 });
 
-if (DATA.skipped.length) {
-  document.getElementById('skipnote').innerHTML =
-    'Off the model (infrastructure, not behaviour): ' + DATA.skipped.map(s => `<span class="mono">${esc(s)}</span>`).join('; ') + '.';
+{
+  const notes = [];
+  if (DATA.skipped.length) notes.push('Off the model (infrastructure, not behaviour): ' + DATA.skipped.map(s => `<span class="mono">${esc(s)}</span>`).join('; ') + '.');
+  if (DATA.unproduced?.length) notes.push('Declared but produced by no slice on the model: ' + DATA.unproduced.map(e => `<span class="mono">${esc(e)}</span>`).join(', ') + '.');
+  document.getElementById('skipnote').innerHTML = notes.join(' ');
 }
 
 /* ---------- board ---------- */
@@ -439,8 +443,10 @@ function buildBoard() {
     } else if (s.kind === 'view') {
       const readers = (s.readBy ?? []).map(r =>
         `<span>${ACTOR[r.actor]?.icon ?? ''} ${esc(r.query)}</span>`).join('');
+      const from = (s.derivedFrom ?? []).map(v => SLICES.find(x => x.id === v)?.title ?? v);
       html += `<button class="card k-view" style="grid-row:${ROW.slice};${col}" data-slice="${esc(s.id)}" data-col="${i}">
         <span class="c-kind">Read model</span><span class="c-name">${esc(s.title)}</span>
+        ${from.length ? `<span class="c-sub">from ${from.map(esc).join(', ')}</span>` : ''}
         <span class="c-meta">${readers}</span><span class="c-meta">${meta}</span></button>`;
     } else {
       html += `<button class="card k-automation" style="grid-row:${ROW.slice};${col}" data-slice="${esc(s.id)}" data-col="${i}">
@@ -489,6 +495,8 @@ function buildEdges() {
     const me = `[data-slice="${s.id}"][data-col]:not([data-event])`;
     if (s.kind === 'command') {
       for (const e of s.emits) edges.push({ from: me, to: `[data-event="${e}"]`, cls: 'emit', slices: [s.id] });
+    } else if (s.derivedFrom?.length) {
+      for (const v of s.derivedFrom) edges.push({ from: `[data-slice="${v}"]:not([data-event])`, to: me, cls: 'derive', slices: [s.id, v] });
     } else {
       for (const e of (s.consumes ?? [])) {
         if (producerCol[e] === undefined) continue;
@@ -556,7 +564,7 @@ function focusSlice(id) {
   const svg = board.querySelector('#arrows');
   if (svg) {
     svg.classList.add('focused');
-    for (const p of svg.querySelectorAll('path'))
+    for (const p of svg.querySelectorAll('path[data-slices]'))
       p.classList.toggle('lit', p.dataset.slices.split(' ').includes(id));
   }
   for (const c of board.querySelectorAll('.card'))
@@ -664,7 +672,10 @@ function openPanel(s) {
     if (s.stream) html += `<h3 class="sect-h">Stream</h3><pre class="codeblock">${esc(s.stream)}</pre>`;
     if (s.errors.length) html += `<h3 class="sect-h">Rejects with</h3>` + pills(s.errors, 'er');
   } else if (s.kind === 'view') {
-    html += `<h3 class="sect-h">Projected from</h3>` + pills(s.consumes, 'ev');
+    if (s.derivedFrom?.length) {
+      html += `<h3 class="sect-h">Computed at query time from</h3>` + pills(s.derivedFrom.map(v => SLICES.find(x => x.id === v)?.title ?? v), 'vw');
+      html += `<h3 class="sect-h">Events behind it</h3>` + pills(s.consumes, 'ev');
+    } else html += `<h3 class="sect-h">Projected from</h3>` + pills(s.consumes, 'ev');
     if ((s.readBy ?? []).length) {
       html += `<h3 class="sect-h">Read by</h3><div class="pills">` +
         s.readBy.map(r => `<span class="pill vw">${esc(r.query)}</span><span class="pill plain">${ACTOR[r.actor]?.icon ?? ''} ${esc(ACTOR[r.actor]?.label ?? r.actor)}</span>`).join('') + '</div>';
@@ -682,7 +693,7 @@ function openPanel(s) {
     return `<li${t.kind === 'rejection' ? ' class="rejection"' : ''}>${markName(t.name)}${flags.map(f => `<span class="flag">${f}</span>`).join('')}</li>`;
   }).join('') + '</ul>';
 
-  html += `<h3 class="sect-h">Derived from</h3><ul class="filelist mono">` +
+  html += `<h3 class="sect-h">Sources</h3><ul class="filelist mono">` +
     [...s.files, ...(s.sources ?? [])].map(f => `<li>${esc(f)}</li>`).join('') + '</ul>';
 
   document.getElementById('panelBody').innerHTML = html;

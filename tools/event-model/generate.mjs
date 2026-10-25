@@ -6,8 +6,12 @@
 //
 //   test/src/market-days/<slice>/          one directory per slice; the specs give
 //                                          each slice its title, Given/When/Then
-//                                          lines, asserted events with example
-//                                          payloads, rejected errors, stream ids
+//                                          lines, the event the command emits (the
+//                                          type asserted on store.newEvents()),
+//                                          example payloads, rejected errors,
+//                                          stream ids. A directory with only
+//                                          find-*.spec.ts is a read model computed
+//                                          at query time from the views it reads
 //   packages/market-days/src/*/events/     which aggregate each event belongs to
 //   packages/market-days/src/*.projection  which events feed each read model
 //   packages/market-days/src (processors)  eventTypes() consumed / commands dispatched
@@ -17,10 +21,16 @@
 // Output: tmp/event-model/index.html — self-contained, bare Node, no npm ci —
 // same contract as tools/test-map. The spec tokenizer is a copy of test-map's
 // (each tool stays self-contained so its Render build filter covers it).
+//
+// Chapters are the aggregates, laid out in STORY order below: dependencies
+// between slices always win, the declared order only breaks ties between
+// chapters the tests leave independent (publishing a storefront precedes
+// trading a market day in the vendor's story, but no spec presupposes it).
 import { readFileSync, writeFileSync, mkdirSync, readdirSync, statSync } from 'node:fs';
 import { dirname, resolve, join, basename } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+const STORY = ['vendor', 'storefront', 'catalogue', 'calendar', 'market-day'];
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(HERE, '../..');
 const SLICES_DIR = resolve(ROOT, 'test/src/market-days');
@@ -207,7 +217,7 @@ for (const f of walk(DOMAIN_DIR)) {
   const cls = /class (Find\w+)Handler/.exec(src);
   if (!cls) continue;
   const reads = [...new Set([...src.matchAll(/:\s*(\w+)Views\b/g)].map(m => viewSliceOfInterface(m[1] + 'Views')))];
-  queries.push({ query: cls[1], reads, file: rel(f) });
+  queries.push({ query: cls[1], reads, file: rel(f), dir: basename(dirname(f)) });
 }
 
 /* ---------- actors, from the API controllers ---------- */
@@ -236,7 +246,7 @@ const skipped = [];
 for (const dir of readdirSync(SLICES_DIR).sort()) {
   const path = join(SLICES_DIR, dir);
   if (!statSync(path).isDirectory()) continue;
-  const specFiles = readdirSync(path).filter(f => f.endsWith('.spec.ts') && !f.includes('contract'));
+  const specFiles = readdirSync(path).filter(f => f.endsWith('.spec.ts') && !f.includes('contract') && !f.endsWith('.container.spec.ts'));
   if (!specFiles.length) { skipped.push(`${dir} (contract/infrastructure specs only)`); continue; }
   const src = specFiles.map(f => read(join(path, f))).join('\n');
   const { tests, describeTitle } = testsWithBodies(src);
@@ -273,22 +283,16 @@ for (const dir of readdirSync(SLICES_DIR).sort()) {
   }
   if (/store\.newEvents\(\)/.test(src)) {
     const command = pascal(dir);
-    const emits = commandEmits(command, EVENT_TYPES);
-    if (emits.length !== 1) warn(`command ${command}: expected exactly one matching event, got [${emits}]`);
-    const own = emits[0] ?? null;
-    // Example payload: the first asserted payload of the slice's own event.
-    let payload = null, stream = null;
-    if (own) {
-      const at = src.indexOf(`type: '${own}'`);
-      if (at >= 0) {
-        const after = src.slice(at, at + 2000);
-        const pm = /payload:\s*(?:expect\.objectContaining\()?\s*\{/.exec(after);
-        if (pm) payload = balancedBraces(after, pm.index + pm[0].length - 1);
-      }
+    // What the specs assert the command appended: every event type named inside an
+    // expectation on store.newEvents(). Setup done through other commands lands
+    // there too, so the slice's own event is resolved below, once every command
+    // slice has declared what it asserts.
+    const asserted = new Set();
+    for (const m of src.matchAll(/newEvents\(\)\)([\s\S]*?);/g)) {
+      for (const t of m[1].matchAll(/type:\s*'(\w+)'/g)) if (eventAggregate[t[1]]) asserted.add(t[1]);
     }
     const sm = /streamId[\s\S]{0,200}?[`'"]([\w-]+\/[^`'"]+)[`'"]/.exec(src);
-    if (sm) stream = sm[1].replace(/\$\{[^}]+\}/g, '<' + '…>');
-    const given = mentioned.filter(e => e !== own);
+    const stream = sm ? sm[1].replace(/\$\{[^}]+\}/g, '<' + '…>') : null;
     const helpers = Object.keys(helperCommand).filter(h => new RegExp(`(?<![.\\w])${h}\\(`).test(src));
     const givenCommands = [...new Set([
       ...helpers.map(h => helperCommand[h]),
@@ -296,10 +300,56 @@ for (const dir of readdirSync(SLICES_DIR).sort()) {
       ...[...src.matchAll(/\bTest([A-Z]\w+)\.(?:valid|with)\b/g)].map(m => m[1]),
       ...(src.includes('marketDayHarness(') || src.includes('seedCatalogue(') ? ['AddItemToCatalogue'] : []),
     ])].filter(c => c !== command);
-    slices.push({ ...base, kind: 'command', command, actor: actorOf[command] ?? null, emits: own ? [own] : [], given, givenCommands, payload, stream });
+    slices.push({ ...base, kind: 'command', command, actor: actorOf[command] ?? null, emits: [], given: [], givenCommands, stream, src, asserted, mentioned });
     if (!actorOf[command]) warn(`command ${command}: no actor found in controllers or processors`);
-  } else {
-    skipped.push(`${dir} (unclassified — not a command, view or automation spec)`);
+    continue;
+  }
+  const own = queries.filter(q => q.dir === dir);
+  if (own.length && specFiles.every(f => f.startsWith('find-'))) {
+    // A read computed at query time from other views: no projection of its own, so
+    // its Given is whatever feeds the views it reads.
+    const derivedFrom = [...new Set(own.flatMap(q => q.reads))].filter(v => projections[v]);
+    const consumes = [...new Set(derivedFrom.flatMap(v => projections[v].consumes))];
+    const title = dir.split('-').map(w => w[0].toUpperCase() + w.slice(1)).join(' ');
+    slices.push({ ...base, title, kind: 'view', derivedFrom, consumes,
+      readBy: own.map(q => ({ query: q.query, actor: actorOf[q.query] ?? 'vendor' })), sources: own.map(q => q.file) });
+    continue;
+  }
+  skipped.push(`${dir} (unclassified — not a command, view or automation spec)`);
+}
+
+// The event each command emits. The name pairing settles most of them; the rest are
+// the one asserted type no other command claims, resolved until nothing moves.
+{
+  const commands = slices.filter(s => s.kind === 'command');
+  const claimed = new Set();
+  for (const s of commands) {
+    const stemmed = commandEmits(s.command, EVENT_TYPES);
+    if (stemmed.length === 1 && (!s.asserted.size || s.asserted.has(stemmed[0]))) { s.emits = [stemmed[0]]; claimed.add(stemmed[0]); }
+  }
+  for (let moved = true; moved;) {
+    moved = false;
+    for (const s of commands) {
+      if (s.emits.length) continue;
+      const left = [...s.asserted].filter(e => !claimed.has(e));
+      if (left.length === 1) { s.emits = left; claimed.add(left[0]); moved = true; }
+    }
+  }
+  for (const s of commands) {
+    const own = s.emits[0] ?? null;
+    if (!own) warn(`command ${s.command}: cannot tell which event it emits (asserted [${[...s.asserted]}])`);
+    // Example payload: the first asserted payload of the slice's own event.
+    s.payload = null;
+    if (own) {
+      const at = s.src.indexOf(`type: '${own}'`);
+      if (at >= 0) {
+        const after = s.src.slice(at, at + 2000);
+        const pm = /payload:\s*(?:expect\.objectContaining\()?\s*\{/.exec(after);
+        if (pm) s.payload = balancedBraces(after, pm.index + pm[0].length - 1);
+      }
+    }
+    s.given = s.mentioned.filter(e => e !== own);
+    delete s.src; delete s.asserted; delete s.mentioned;
   }
 }
 
@@ -316,6 +366,7 @@ for (const s of slices) {
     for (const c of s.givenCommands) if (commandSlice[c]) deps.add(commandSlice[c]);
   } else {
     for (const e of s.consumes) if (producerOf[e]) deps.add(producerOf[e]);
+    for (const v of s.derivedFrom ?? []) deps.add(v);
   }
   if (s.kind === 'automation') {
     // the automation precedes the commands it dispatches
@@ -337,9 +388,10 @@ for (const s of slices) if (s.kind === 'automation') {
 // before it on the timeline.
 const byId = new Map(slices.map(s => [s.id, s]));
 for (const s of slices) {
+  const dispatched = s.kind === 'automation' ? s.dispatches.map(c => byId.get(commandSlice[c])?.emits?.[0]).filter(Boolean) : [];
   const evs = s.kind === 'command' ? s.emits
     : s.kind === 'view' ? s.consumes
-    : s.dispatches.map(c => byId.get(commandSlice[c])?.emits?.[0]).filter(Boolean);
+    : dispatched.length ? dispatched : s.consumes;
   const tally = {};
   for (const e of evs) tally[eventAggregate[e]] = (tally[eventAggregate[e]] ?? 0) + 1;
   s.chapter = Object.entries(tally).sort((a, b) => b[1] - a[1])[0]?.[0] ?? 'other';
@@ -362,8 +414,8 @@ const chapters = [...new Set(slices.map(s => s.chapter))];
 const chapterDeps = (c) => [...new Set(
   slices.filter(s => s.chapter === c).flatMap(s => s.deps.map(d => byId.get(d).chapter)).filter(x => x !== c),
 )];
-const chapterOrder = topo(chapters, chapterDeps,
-  (a, b) => (slices.filter(s => s.chapter === a).length - slices.filter(s => s.chapter === b).length) || a.localeCompare(b));
+const storyRank = (c) => { const i = STORY.indexOf(c); return i < 0 ? STORY.length : i; };
+const chapterOrder = topo(chapters, chapterDeps, (a, b) => (storyRank(a) - storyRank(b)) || a.localeCompare(b));
 const sliceOrder = chapterOrder.flatMap(c => topo(
   slices.filter(s => s.chapter === c).map(s => s.id),
   (id) => byId.get(id).deps,
@@ -385,7 +437,7 @@ for (const s of slices) for (const e of [...(s.emits ?? []), ...(s.consumes ?? [
 const counts = {
   slices: slices.length,
   commands: slices.filter(s => s.kind === 'command').length,
-  events: EVENT_TYPES.filter(e => slices.some(s => (s.emits ?? []).includes(e))).length,
+  events: EVENT_TYPES.length,
   views: slices.filter(s => s.kind === 'view').length,
   automations: slices.filter(s => s.kind === 'automation').length,
   specs: slices.reduce((n, s) => n + s.specs.length, 0),
@@ -393,7 +445,7 @@ const counts = {
 const orphans = EVENT_TYPES.filter(e => !slices.some(s => (s.emits ?? []).includes(e)));
 if (orphans.length) warn(`events with no producing slice on the model: ${orphans}`);
 
-const data = { slices, lanes, eventAggregate, counts, skipped };
+const data = { slices, lanes, eventAggregate, counts, skipped, unproduced: orphans };
 const generated = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
 const html = read(resolve(HERE, 'template.html'))
   .replace('__DATA__', () => JSON.stringify(data))
