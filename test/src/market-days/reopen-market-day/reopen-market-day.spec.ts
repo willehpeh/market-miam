@@ -1,19 +1,17 @@
 import { DomainEvent, InMemoryEventStore } from '@market-miam/event-sourcing';
 import { MarketDayEndedError, MarketDayNotTodayError } from '@market-miam/market-days';
 import { marketDayHarness, rescheduledTo, scheduledOn } from '../market-day-harness';
-import { closed, menuSet, reopened, soldOut } from '../market-day-events';
+import { closed } from '../market-day-events';
 import { LAST_SATURDAY, SATURDAY, TODAY } from '../set-market-day-menu/test-data';
 
 describe('Reopen Market Day', () => {
   let store: InMemoryEventStore;
   let given: (date: string, ...history: DomainEvent[]) => void;
   let givenCalendar: (...history: DomainEvent[]) => void;
-  let markSoldOut: (date: string, itemId?: string) => Promise<void>;
-  let close: (date: string) => Promise<void>;
   let reopen: (date: string) => Promise<void>;
 
   beforeEach(() => {
-    ({ store, given, givenCalendar, markSoldOut, close, reopen } = marketDayHarness());
+    ({ store, given, givenCalendar, reopen } = marketDayHarness());
   });
 
   it('reopens a closed market day', async () => {
@@ -31,26 +29,6 @@ describe('Reopen Market Day', () => {
 
   it('takes a reopen of a day that was never closed as a no-op, appending nothing', async () => {
     await reopen(TODAY);
-
-    expect(store.newEvents()).toEqual([]);
-  });
-
-  it('closes again after a reopen', async () => {
-    given(TODAY, closed(TODAY), reopened(TODAY));
-
-    await close(TODAY);
-
-    expect(store.newEvents()).toEqual([
-      expect.objectContaining({ type: 'MarketDayClosed' }),
-    ]);
-  });
-
-  // Closing says the stand packed up, not that the bourguignon came back: a second
-  // mark stays the no-op it was, so nothing is appended (decision 31).
-  it('leaves sold-out items sold out across a close and reopen', async () => {
-    given(TODAY, menuSet(TODAY, 'item-1'), soldOut(TODAY, 'item-1'), closed(TODAY), reopened(TODAY));
-
-    await markSoldOut(TODAY);
 
     expect(store.newEvents()).toEqual([]);
   });

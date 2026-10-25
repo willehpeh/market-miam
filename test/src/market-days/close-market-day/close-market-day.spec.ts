@@ -1,7 +1,7 @@
 import { DomainEvent, InMemoryEventStore } from '@market-miam/event-sourcing';
 import { MarketDayNotTodayError } from '@market-miam/market-days';
 import { marketDayHarness } from '../market-day-harness';
-import { closed } from '../market-day-events';
+import { closed, reopened } from '../market-day-events';
 import { LAST_SATURDAY, SATURDAY, TODAY } from '../set-market-day-menu/test-data';
 
 describe('Close Market Day', () => {
@@ -34,6 +34,16 @@ describe('Close Market Day', () => {
     await close(TODAY);
 
     expect(store.newEvents()).toEqual([]);
+  });
+
+  it('closes again after a reopen', async () => {
+    given(TODAY, closed(TODAY), reopened(TODAY));
+
+    await close(TODAY);
+
+    expect(store.newEvents()).toEqual([
+      expect.objectContaining({ type: 'MarketDayClosed' }),
+    ]);
   });
 
   it.each([

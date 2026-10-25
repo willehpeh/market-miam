@@ -1,6 +1,7 @@
 import { InMemoryEventStore } from '@market-miam/event-sourcing';
 import { VendorScopedEvents } from '@market-miam/market-days';
-import { RegisterVendor, RegisterVendorHandler, VendorRegistered, Vendors } from '@market-miam/market-days';
+import { RegisterVendor, RegisterVendorHandler, VendorErasedError, VendorRegistered, Vendors } from '@market-miam/market-days';
+import { vendorErased, vendorRegistered, vendorStream } from '../vendor-events';
 import { TestRegisterVendor } from './test-data';
 
 describe('Register Vendor', () => {
@@ -45,6 +46,17 @@ describe('Register Vendor', () => {
       expect.objectContaining({ type: 'VendorRegistered', payload: expect.objectContaining({ vendorId: first.vendorId }) }),
       expect.objectContaining({ type: 'VendorRegistered', payload: expect.objectContaining({ vendorId: second.vendorId }) }),
     ]);
+  });
+
+  // Erasure is final: the vendor id is not freed for a fresh registration (ADR 0058).
+  it('refuses to register an erased vendor again', async () => {
+    store.seedWith(vendorStream(), [
+      vendorRegistered('vendor-id', { registeredAt: '2026-09-01T08:00:00.000Z', email: 'marie@example.fr' }),
+      vendorErased('vendor-id', '2026-10-04T09:00:00.000Z'),
+    ], { vendorId: 'vendor-id' });
+
+    await expect(handler.execute(TestRegisterVendor.valid())).rejects.toThrow(VendorErasedError);
+    expect(store.newEvents()).toEqual([]);
   });
 
   function expectSingleEventFrom(command: RegisterVendor) {

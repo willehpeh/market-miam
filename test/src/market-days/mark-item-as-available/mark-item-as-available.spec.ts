@@ -1,17 +1,16 @@
 import { DomainEvent, InMemoryEventStore } from '@market-miam/event-sourcing';
 import { ItemNotPlannedError, MarketDayClosedError, MarketDayNotTodayError } from '@market-miam/market-days';
 import { marketDayHarness } from '../market-day-harness';
-import { available, closed, menuSet, soldOut } from '../market-day-events';
+import { closed, menuSet, soldOut } from '../market-day-events';
 import { LAST_SATURDAY, SATURDAY, TODAY } from '../set-market-day-menu/test-data';
 
 describe('Mark Item As Available', () => {
   let store: InMemoryEventStore;
   let given: (date: string, ...history: DomainEvent[]) => void;
-  let markSoldOut: (date: string, itemId?: string) => Promise<void>;
   let markAvailable: (date: string, itemId?: string) => Promise<void>;
 
   beforeEach(() => {
-    ({ store, given, markSoldOut, markAvailable } = marketDayHarness());
+    ({ store, given, markAvailable } = marketDayHarness());
   });
 
   it('marks a sold-out item as available again', async () => {
@@ -24,16 +23,6 @@ describe('Mark Item As Available', () => {
         type: 'ItemMarkedAsAvailable',
         payload: { itemId: 'item-1', marketId: 'market-1', date: TODAY, time: '11:00' },
       }),
-    ]);
-  });
-
-  it('lets an item sell out again after coming back', async () => {
-    given(TODAY, menuSet(TODAY, 'item-1'), soldOut(TODAY, 'item-1'), available(TODAY, 'item-1'));
-
-    await markSoldOut(TODAY);
-
-    expect(store.newEvents()).toEqual([
-      expect.objectContaining({ type: 'ItemMarkedAsSoldOut' }),
     ]);
   });
 

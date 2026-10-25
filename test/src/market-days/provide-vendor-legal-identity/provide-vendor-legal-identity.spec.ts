@@ -1,6 +1,7 @@
 import { InMemoryEventStore } from '@market-miam/event-sourcing';
-import { IncompleteCompanyDetailsError, IncompleteMediatorError, InvalidSiretError, InvalidVatRegimeError, ProvideVendorLegalIdentityHandler, VendorNotRegisteredError, VendorScopedEvents, Vendors } from '@market-miam/market-days';
+import { IncompleteCompanyDetailsError, IncompleteMediatorError, InvalidSiretError, InvalidVatRegimeError, ProvideVendorLegalIdentityHandler, VendorErasedError, VendorNotRegisteredError, VendorScopedEvents, Vendors } from '@market-miam/market-days';
 import { EmptyValueError, InvalidEmailError, InvalidUrlError } from '@market-miam/common';
+import { vendorErased } from '../vendor-events';
 import { TestProvideVendorLegalIdentity } from './test-data';
 
 describe('Provide Vendor Legal Identity', () => {
@@ -179,6 +180,14 @@ describe('Provide Vendor Legal Identity', () => {
 
   it('rejects the legal identity of a vendor who has not registered', async () => {
     await expect(handler.execute(TestProvideVendorLegalIdentity.valid())).rejects.toThrow(VendorNotRegisteredError);
+    expect(store.newEvents()).toEqual([]);
+  });
+
+  it('refuses a legal identity from an erased vendor', async () => {
+    registerVendor();
+    store.seedWith('vendor-vendor-id', [vendorErased('vendor-id', '2026-10-04T09:00:00.000Z')], { vendorId: 'vendor-id' });
+
+    await expect(handler.execute(TestProvideVendorLegalIdentity.valid())).rejects.toThrow(VendorErasedError);
     expect(store.newEvents()).toEqual([]);
   });
 

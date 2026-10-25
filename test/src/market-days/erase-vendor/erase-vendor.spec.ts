@@ -2,16 +2,11 @@ import { DomainEvent, InMemoryEventStore } from '@market-miam/event-sourcing';
 import {
   EraseVendor,
   EraseVendorHandler,
-  ProvideVendorLegalIdentityHandler,
-  RegisterVendorHandler,
-  VendorErasedError,
   VendorNotRegisteredError,
   VendorScopedEvents,
   Vendors,
 } from '@market-miam/market-days';
 import { vendorErased, vendorRegistered, vendorStream } from '../vendor-events';
-import { TestRegisterVendor } from '../register-vendor/test-data';
-import { TestProvideVendorLegalIdentity } from '../provide-vendor-legal-identity/test-data';
 
 describe('Erase Vendor', () => {
   let store: InMemoryEventStore;
@@ -58,21 +53,4 @@ describe('Erase Vendor', () => {
     expect(store.newEvents()).toEqual([]);
   });
 
-  it('refuses a legal identity from an erased vendor', async () => {
-    given(registered(), vendorErased('vendor-id', '2026-10-04T09:00:00.000Z'));
-
-    await expect(
-      new ProvideVendorLegalIdentityHandler(vendors).execute(TestProvideVendorLegalIdentity.valid()),
-    ).rejects.toThrow(VendorErasedError);
-    expect(store.newEvents()).toEqual([]);
-  });
-
-  it('refuses to register an erased vendor again', async () => {
-    given(registered(), vendorErased('vendor-id', '2026-10-04T09:00:00.000Z'));
-
-    await expect(new RegisterVendorHandler(vendors).execute(TestRegisterVendor.valid())).rejects.toThrow(
-      VendorErasedError,
-    );
-    expect(store.newEvents()).toEqual([]);
-  });
 });

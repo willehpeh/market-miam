@@ -1,7 +1,7 @@
 import { DomainEvent, InMemoryEventStore } from '@market-miam/event-sourcing';
 import { ItemNotPlannedError, MarketDayClosedError, MarketDayNotTodayError } from '@market-miam/market-days';
 import { marketDayHarness } from '../market-day-harness';
-import { closed, menuSet, soldOut } from '../market-day-events';
+import { available, closed, menuSet, reopened, soldOut } from '../market-day-events';
 import { LAST_SATURDAY, SATURDAY, TODAY } from '../set-market-day-menu/test-data';
 
 describe('Mark Item As Sold Out', () => {
@@ -54,6 +54,26 @@ describe('Mark Item As Sold Out', () => {
     await markSoldOut(TODAY);
 
     expect(store.newEvents()).toEqual([expect.objectContaining({ type: 'ItemMarkedAsSoldOut' })]);
+  });
+
+  it('lets an item sell out again after coming back', async () => {
+    given(TODAY, menuSet(TODAY, 'item-1'), soldOut(TODAY, 'item-1'), available(TODAY, 'item-1'));
+
+    await markSoldOut(TODAY);
+
+    expect(store.newEvents()).toEqual([
+      expect.objectContaining({ type: 'ItemMarkedAsSoldOut' }),
+    ]);
+  });
+
+  // Closing says the stand packed up, not that the bourguignon came back: a second
+  // mark stays the no-op it was, so nothing is appended (decision 31).
+  it('leaves sold-out items sold out across a close and reopen', async () => {
+    given(TODAY, menuSet(TODAY, 'item-1'), soldOut(TODAY, 'item-1'), closed(TODAY), reopened(TODAY));
+
+    await markSoldOut(TODAY);
+
+    expect(store.newEvents()).toEqual([]);
   });
 
   it("rejects an item that is on another day's menu", async () => {
