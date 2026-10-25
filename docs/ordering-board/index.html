@@ -4,97 +4,230 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Ordering</title>
-<meta name="description" content="The reference for Market Miam's ordering work in progress: the event storm, the questions for the lawyer and the accountant, and the Stripe facts to check.">
+<meta name="description" content="The board for Market Miam's ordering feature: timeline, agreed rules, open questions.">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 <main class="page">
-  <nav class="site-nav" aria-label="Pages"><a href="index.html" aria-current="page">Overview</a><a href="event-storm.html">Event storm</a><a href="avocat.html">Avocat</a><a href="expert-comptable.html">Expert-comptable</a><a href="stripe.html">Stripe</a></nav>
+  <nav class="site-nav" aria-label="Pages"><a href="index.html" aria-current="page">Board</a><a href="avocat.html">Avocat</a><a href="expert-comptable.html">Expert-comptable</a></nav>
 
   <header>
     <p class="kicker">Market Miam · Ordering</p>
     <h1>Ordering</h1>
     <p class="lead">
-      Customers order and pay online from a live market day's menu, and collect at the stall with a code. This site is
-      the reference for the work in progress. The plan behind it is
-      <a href="https://github.com/willehpeh/market-miam/blob/main/docs/ORDERING-PLAN.md"><code>docs/ORDERING-PLAN.md</code></a>;
-      where the two disagree, this site is newer.
+      Customers order and pay online from a live market day's menu and collect at the stall with a code.
+      Ordering is in the only package, 50 € HT a month, with no commission; Stripe's fees on a vendor's payments
+      are the vendor's. The plan is
+      <a href="https://github.com/willehpeh/market-miam/blob/main/docs/ORDERING-PLAN.md"><code>docs/ORDERING-PLAN.md</code></a>.
+      The briefs for the <a href="avocat.html">lawyer</a> and the <a href="expert-comptable.html">accountant</a> are in French.
     </p>
-    <p class="meta">Updated 24 October 2026</p>
+    <p class="meta">Updated 25 October 2026</p>
   </header>
 
   <section aria-labelledby="now">
     <h2 id="now">Where we are</h2>
     <p class="intro">
-      Event-storming the big picture, Stripe Connect first. The timeline holds as a first pass, and step 1, vendor
-      onboarding, is the one under the zoom: R3 and R4 agreed.
+      Event-storming, Stripe Connect first. The timeline is a first pass. Step 1, vendor onboarding, is being
+      worked in detail: R3 and R4 came out of it.
     </p>
-    <div class="grid">
-      <a class="card" href="event-storm.html">
-        <span class="tag rule">4 rules</span><span class="tag question">14 open</span>
-        <h3>Event storm</h3>
-        <p>The timeline from a vendor connecting Stripe to a refund, the rules agreed so far, and every open question.</p>
-        <p class="go">Open the board →</p>
-      </a>
-      <a class="card" href="avocat.html">
-        <span class="tag lawyer">15 questions</span><span class="tag lawyer">French</span>
-        <h3>Avocat</h3>
-        <p>Every question for the lawyer, with dated copies of the texts to review and the draft vendor terms. Written to
-          be sent as is, and to print cleanly.</p>
-        <p class="go">Open the brief →</p>
-      </a>
-      <a class="card" href="expert-comptable.html">
-        <span class="tag lawyer">5 questions</span><span class="tag lawyer">French</span>
-        <h3>Expert-comptable</h3>
-        <p>Cash-register software for VAT-registered vendors, the publisher's attestation, and e-invoicing.</p>
-        <p class="go">Open the brief →</p>
-      </a>
-      <a class="card" href="stripe.html">
-        <span class="tag done">2 answered</span><span class="tag verify">4 partly</span><span class="tag question">1 open</span>
-        <h3>Stripe</h3>
-        <p>The Stripe facts the design leans on: what was found, what is still to check, and the page to read.</p>
-        <p class="go">Open the checks →</p>
-      </a>
-    </div>
-  </section>
-
-  <section aria-labelledby="decisions">
-    <h2 id="decisions">Business decisions</h2>
-    <div class="grid">
-      <article class="card rule-card">
-        <span class="tag rule">Price</span>
-        <h3>One package, 50 € HT a month, ordering included</h3>
-        <p>60 € TTC. The 15 € tier is dropped, so there is no tier split and nothing to gate. Still no commission on
-          orders, and Stripe's fees on a vendor's payments are the vendor's.</p>
-        <p class="agreed">Decided 24 October 2026 · Raised <a href="event-storm.html#q15">Q15</a>, settled as <a href="event-storm.html#r4">R4</a>: a storefront needs a Stripe account able to take payments before it is published</p>
-      </article>
-    </div>
-  </section>
-
-  <section aria-labelledby="order">
-    <h2 id="order">Order of work</h2>
-    <p class="intro">From the plan, with where each step stands.</p>
     <div class="table-wrap">
       <table>
-        <thead><tr><th>#</th><th>Step</th><th>Where it stands</th></tr></thead>
+        <thead><tr><th>Status</th><th>Plan steps</th></tr></thead>
         <tbody>
-          <tr><td>1</td><td>Lawyer and accountant</td><td>Questions gathered on the <a href="avocat.html">avocat</a> and <a href="expert-comptable.html">expert-comptable</a> pages</td></tr>
-          <tr><td>2</td><td>Stripe platform account; test onboarding with the live client</td><td>Nothing recorded yet</td></tr>
-          <tr><td>3</td><td>Mentions légales and allergens</td><td>Deployed; both rollouts wait on the live client</td></tr>
-          <tr><td>4</td><td>Tombstones for vendor keys</td><td>Done</td></tr>
-          <tr><td>5</td><td>Ordering context: payment port, webhooks, idempotency gate, day keys, code check, scheduler</td><td>Being event-stormed</td></tr>
-          <tr><td>6</td><td>Vendor app: Stripe onboarding, live order list, code input, <em>remis sans code</em></td><td>Not started</td></tr>
-          <tr><td>7</td><td>Storefront: basket, Checkout, status page; email provider</td><td>Not started</td></tr>
-          <tr><td>8</td><td>Website rebuilt around ordering</td><td>Not started</td></tr>
-          <tr><td>9</td><td>Check signal at markets; pilot with real cards, small amounts</td><td>Not started</td></tr>
+          <tr><td>Done</td><td>4 · tombstones for vendor keys</td></tr>
+          <tr><td>Waiting on the live client</td><td>3 · mentions légales and allergens, deployed</td></tr>
+          <tr><td>Ready to send</td><td>1 · the lawyer and accountant briefs</td></tr>
+          <tr><td>In progress</td><td>5 · the ordering context, on this board</td></tr>
+          <tr><td>Not started</td><td>2 · Stripe platform account and a test onboarding · 6 · vendor app · 7 · storefront and email provider · 8 · website rebuilt around ordering · 9 · pilot with real cards</td></tr>
         </tbody>
       </table>
     </div>
   </section>
 
+  <section aria-labelledby="timeline">
+    <h2 id="timeline">Timeline</h2>
+    <ul class="legend" aria-label="Legend">
+      <li><span class="swatch" style="--c: var(--event)"></span>Event</li>
+      <li><span class="swatch" style="--c: var(--stripe)"></span>Stripe</li>
+      <li><span class="swatch" style="--c: var(--policy)"></span>Whenever X, then Y</li>
+    </ul>
+    <ol class="timeline">
+      <li class="step">
+        <div class="step-head"><span class="num">1</span><span class="who">Vendor</span><span class="note">once</span></div>
+        <p class="sticky event">Stripe account connected and able to take payments</p>
+        <p class="sticky stripe stripe-part">Account onboarding · account status updates</p>
+        <p class="refs"><a class="ref r" href="#r3">R3</a><a class="ref r" href="#r4">R4</a><a class="ref" href="#q1">Q1</a><a class="ref" href="#q2">Q2</a><a class="ref" href="#q9">Q9</a><a class="ref" href="#q10">Q10</a><a class="ref" href="#q11">Q11</a></p>
+      </li>
+      <li class="step">
+        <div class="step-head"><span class="num">2</span><span class="who">Customer</span></div>
+        <p class="sticky event">Order placed: card held, not charged<span class="tag stripe">via webhook</span></p>
+        <p class="sticky stripe stripe-part">Checkout</p>
+        <p class="refs"><a class="ref r" href="#r1">R1</a><a class="ref" href="#q3">Q3</a><a class="ref" href="#q4">Q4</a></p>
+      </li>
+      <li class="step">
+        <div class="step-head"><span class="num">3a</span><span class="who">Vendor</span></div>
+        <p class="sticky event">Order accepted</p>
+        <p class="sticky event">Payment taken<span class="tag stripe">via webhook</span></p>
+        <p class="sticky policy">Whenever the payment is taken, send the customer their code</p>
+        <p class="sticky stripe stripe-part">Capture the hold</p>
+        <p class="refs"><a class="ref r" href="#r2">R2</a><a class="ref" href="#q5">Q5</a><a class="ref" href="#q6">Q6</a></p>
+      </li>
+      <li class="step">
+        <div class="step-head"><span class="num">3b</span><span class="who">Vendor · clock</span></div>
+        <p class="sticky event">Order refused, or no answer in time</p>
+        <p class="sticky event">Hold released<span class="tag stripe">via webhook</span></p>
+        <p class="sticky stripe stripe-part">Cancel the hold</p>
+        <p class="refs"><a class="ref r" href="#r2">R2</a><a class="ref" href="#q3">Q3</a></p>
+      </li>
+      <li class="step">
+        <div class="step-head"><span class="num">4</span><span class="who">Vendor</span></div>
+        <p class="sticky event">Order handed over, with the code</p>
+        <p class="sticky event">Order handed over without the code</p>
+        <p class="refs"><a class="ref" href="#q7">Q7</a></p>
+      </li>
+      <li class="step">
+        <div class="step-head"><span class="num">5</span><span class="who">Clock</span><span class="note">day's end time</span></div>
+        <p class="sticky event">Market day ended</p>
+        <p class="sticky event">Remaining holds released<span class="tag stripe">via webhook</span></p>
+        <p class="sticky event">No-show: paid, never collected</p>
+        <p class="sticky event">The day's customer details erased</p>
+        <p class="sticky stripe stripe-part">Cancel the remaining holds</p>
+        <p class="refs"><a class="ref r" href="#r2">R2</a><a class="ref" href="#q3">Q3</a></p>
+      </li>
+      <li class="step">
+        <div class="step-head"><span class="num">6</span><span class="who">Stripe</span></div>
+        <p class="sticky event">Vendor paid out</p>
+        <p class="sticky stripe stripe-part">Payouts</p>
+        <p class="refs"><a class="ref" href="#q1">Q1</a><a class="ref" href="#q13">Q13</a></p>
+      </li>
+      <li class="step">
+        <div class="step-head"><span class="num">7</span><span class="who">Customer · vendor</span><span class="note">afterwards</span></div>
+        <p class="sticky event">Refund, or chargeback</p>
+        <p class="sticky stripe stripe-part">Refunds · disputes</p>
+        <p class="refs"><a class="ref" href="#q8">Q8</a></p>
+      </li>
+    </ol>
+  </section>
+
+  <section aria-labelledby="rules">
+    <h2 id="rules">Agreed rules</h2>
+    <p class="intro">All four agreed on 24 October 2026.</p>
+    <div class="grid">
+      <article class="card rule-card" id="r1">
+        <span class="tag rule">R1</span>
+        <h3>Nothing is recorded before Stripe holds the card</h3>
+        <p>Placing an order only opens a Checkout page. Our first event is the webhook saying the card is held.
+          Anonymous traffic never touches the append lock (ADR 0028). An abandoned checkout exists only in
+          Stripe's dashboard.</p>
+        <p>Saturday noon is about 10 writes a second against a ceiling of 300 to 1 000. The baseline measurement
+          finding M6 asks for is still owed.</p>
+      </article>
+      <article class="card rule-card" id="r2">
+        <span class="tag rule">R2</span>
+        <h3>Processors call Stripe; webhooks record the outcome</h3>
+        <p>A processor reacts to one of our events, calls Stripe, and writes nothing. Stripe's outcomes enter our
+          log only through webhooks: checkout, capture, cancellation, refund. No write ever waits on Stripe.</p>
+        <p>Each request uses the order ID as its idempotency key, so a retry cannot act twice. Stripe keeps keys
+          for at least 24 hours. A call refused for good still needs a path (<a href="#q5">Q5</a>).</p>
+      </article>
+      <article class="card rule-card" id="r3">
+        <span class="tag rule">R3</span>
+        <h3>Stripe onboarding is prefilled from the mentions légales</h3>
+        <p>We create the vendor's Stripe account with what we already hold: business type, legal name, address,
+          SIRET, TVA number, contacts and legal representative from the mentions légales, name and URL from the
+          storefront, the caterer activity code. Stripe asks only for the rest: IBAN, the representative's date
+          of birth, home address and ID, a société's owners.</p>
+        <p>Prefilling is one shot. Once the first onboarding link exists, we can no longer read or write the
+          account's verification details; later changes go through the vendor's Stripe dashboard
+          (<a href="#q9">Q9</a>). The live client fills in their mentions légales first.</p>
+      </article>
+      <article class="card rule-card" id="r4">
+        <span class="tag rule">R4</span>
+        <h3>A storefront is published only once its Stripe account can take payments</h3>
+        <p>Every published storefront takes orders, so a Stripe account able to take payments is a publication
+          requirement, after the legal identity it is prefilled from. Setup order: mentions légales, Stripe,
+          publish.</p>
+        <p>Like the legal-identity gate, this applies at publication and never takes down a live storefront.
+          The live client is already published and will connect Stripe later, by a route not yet designed.
+          An ADR amending 0031's requirements table comes with the build.</p>
+      </article>
+    </div>
+  </section>
+
+  <section aria-labelledby="pattern">
+    <h2 id="pattern">R2 on capture</h2>
+    <ol class="flow">
+      <li><p class="sticky event">Order accepted<span class="writes">Vendor's tap · write</span></p></li>
+      <li><p class="sticky policy">Whenever an order is accepted, capture its payment<span class="writes">Processor · no write</span></p></li>
+      <li><p class="sticky stripe">Stripe captures the hold<span class="writes">Outside our system</span></p></li>
+      <li><p class="sticky event">Payment taken<span class="writes">Webhook · write</span></p></li>
+      <li><p class="sticky policy">Whenever the payment is taken, send the customer their code<span class="writes">Processor</span></p></li>
+    </ol>
+  </section>
+
+  <section aria-labelledby="anonymous">
+    <h2 id="anonymous">Calls with no login</h2>
+    <p class="intro">All three land on <code>apps/api</code>, next to the public storefront route.</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Call</th><th>From</th><th>Protection</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>Place an order</td>
+            <td>Customer's browser</td>
+            <td>
+              <ul>
+                <li>The browser sends dish IDs and quantities. The server prices them from the day's menu and applies the 119,99 € cap</li>
+                <li>The day must be live and open, the dishes on its menu and not sold out, the vendor able to take payments</li>
+                <li>Rate limit per IP, from Render's forwarded header</li>
+              </ul>
+            </td>
+          </tr>
+          <tr>
+            <td>Order status</td>
+            <td>Customer's browser</td>
+            <td>A long random token in the link, never the order number, plus a rate limit</td>
+          </tr>
+          <tr>
+            <td>Webhooks</td>
+            <td>Stripe</td>
+            <td>Stripe's signature, plus the idempotency gate against replays</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="aside">
+      No captcha of our own until the first real abuse: Checkout already has one, and ours would add a third
+      party and a privacy-policy line. A double tap needs nothing: the second Checkout page expires unfinished.
+    </p>
+  </section>
+
+  <section aria-labelledby="questions">
+    <h2 id="questions">Open questions</h2>
+    <p class="intro">
+      <span class="tag decide">Decide</span> ours.
+      <span class="tag verify">Check</span> in Stripe's docs, at the source, before building on it.
+      <span class="tag lawyer">Lawyer</span> in the brief.
+    </p>
+    <ol class="questions">
+      <li id="q1"><span class="qid">Q1</span><span class="qtext">Which facts about the vendor's Stripe account do we store, and which do we read from Stripe each time?</span><span class="qmeta"><span class="tag decide">Decide</span> Steps 1, 6</span></li>
+      <li id="q2"><span class="qid">Q2</span><span class="qtext">Which Connect setup does a new platform use today? Stripe marks Standard accounts, which the plan chose, as legacy. Under the current model, recheck that we can prefill the account, that verification details lock after the first onboarding link, whether the vendor confirms prefilled details (documented for Express only), and whether a vendor can link a Stripe account they already have (OAuth can, but Stripe discourages it for new platforms).</span><span class="qmeta"><span class="tag verify">Check</span> Step 1, R3 · Read <a href="https://docs.stripe.com/connect/accounts">Connect account types</a>, <a href="https://docs.stripe.com/connect/standard-accounts">Standard accounts</a>, <a href="https://docs.stripe.com/connect/express-accounts">Express accounts</a>, <a href="https://docs.stripe.com/connect/oauth-standard-accounts">OAuth with Standard accounts</a></span></li>
+      <li id="q3"><span class="qid">Q3</span><span class="qtext">The confirmation timeout, in minutes, and how it fits the day's end time. Both sit well inside the 7-day card hold.</span><span class="qmeta"><span class="tag decide">Decide</span> Steps 2, 3b, 5 · Read <a href="https://docs.stripe.com/payments/place-a-hold-on-a-payment-method">Place a hold</a></span></li>
+      <li id="q4"><span class="qid">Q4</span><span class="qtext">Card testing on Checkout when the charge is on the vendor's account: whose Radar runs, and who sees what was blocked? Checkout applies Stripe's rate limits, fraud models and CAPTCHA on its own.</span><span class="qmeta"><span class="tag verify">Check</span> Step 2 · Read <a href="https://docs.stripe.com/card-testing">Card testing</a>, <a href="https://support.stripe.com/questions/how-do-i-prevent-card-testing-attacks">Preventing card testing</a></span></li>
+      <li id="q5"><span class="qid">Q5</span><span class="qtext">When a capture is refused for good, which webhook reports it, if any? An expired hold turns the payment to <code>canceled</code>; we expect <code>payment_intent.canceled</code>. If a refused capture call sends no event, the processor has to record the failure itself.</span><span class="qmeta"><span class="tag verify">Check</span> Step 3a, R2 · Read <a href="https://docs.stripe.com/payments/place-a-hold-on-a-payment-method">Place a hold</a>, <a href="https://docs.stripe.com/api">API reference</a></span></li>
+      <li id="q6"><span class="qid">Q6</span><span class="qtext">What the vendor's screen shows between <em>order accepted</em> and <em>payment taken</em>.</span><span class="qmeta"><span class="tag decide">Decide</span> Step 3a</span></li>
+      <li id="q7"><span class="qid">Q7</span><span class="qtext">Code attempts before a lockout, and how long the lockout lasts.</span><span class="qmeta"><span class="tag decide">Decide</span> Step 4</span></li>
+      <li id="q8"><span class="qid">Q8</span><span class="qtext">Refunds and disputes: in Stripe's dashboard, or in our app?</span><span class="qmeta"><span class="tag decide">Decide</span> Step 7</span></li>
+      <li id="q9"><span class="qid">Q9</span><span class="qtext">Our copy of the legal identity and Stripe's can drift once the vendor moves. Does it matter, and do we prompt the vendor to update Stripe?</span><span class="qmeta"><span class="tag decide">Decide</span> Step 1, R3</span></li>
+      <li id="q10"><span class="qid">Q10</span><span class="qtext">DAC7: is Market Miam a platform when each storefront is one vendor's own shop? If yes, an EI's date of birth and tax number are owed, and asking for them before the Stripe account is created lets R3 prefill them.</span><span class="qmeta"><span class="tag lawyer">Lawyer</span> Step 1 · <a href="avocat.html#b3">B3</a></span></li>
+      <li id="q11"><span class="qid">Q11</span><span class="qtext">A published vendor's Stripe account can later lose the ability to take payments. Does the storefront stay up with ordering paused, or is it unpublished?</span><span class="qmeta"><span class="tag decide">Decide</span> Step 1, R4</span></li>
+      <li id="q12"><span class="qid">Q12</span><span class="qtext">Stripe's fees: about 1.5 % + 0.25 € per EEA card, paid by the vendor on their own account.</span><span class="qmeta"><span class="tag verify">Check</span> From the plan · Read <a href="https://stripe.com/fr/pricing">Pricing</a></span></li>
+      <li id="q13"><span class="qid">Q13</span><span class="qtext">The vendor's first payout: about 7 days after the first payment, then on Stripe's regular schedule. Worth telling vendors before their first market with ordering.</span><span class="qmeta"><span class="tag verify">Check</span> Step 6 · From the plan</span></li>
+    </ol>
+  </section>
+
   <footer>
-    Source: <a href="https://github.com/willehpeh/market-miam/tree/main/docs/ordering-board"><code>docs/ordering-board/</code></a>.
-    Edit it there; the site rebuilds on push.
+    Source: <a href="https://github.com/willehpeh/market-miam/tree/main/docs/ordering-board"><code>docs/ordering-board/</code></a>
   </footer>
 </main>
 </body>

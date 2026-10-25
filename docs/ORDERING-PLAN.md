@@ -5,9 +5,8 @@ Live client and every prospect: Market Miam unusable until customers can order. 
 **Price:** ordering is part of the only package, 50 € HT/month (60 € TTC). The 15 € tier is dropped. No commission on orders. Decided 2026-10-24.
 
 Work in progress lives on [`ordering-board/`](ordering-board/index.html), published as the `ordering-board`
-static site (`render.yaml`): the event storm with its agreed rules and open questions, the briefs for the
-lawyer and the accountant (in French, to be sent as is), and the Stripe facts to check. Where the site and
-this plan disagree, the site is newer.
+static site (`render.yaml`): the board with its timeline, agreed rules and open questions, and the briefs
+for the lawyer and the accountant, in French. The board is newer than this plan where they disagree.
 
 ## Scope
 
