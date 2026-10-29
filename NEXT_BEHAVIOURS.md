@@ -11,7 +11,7 @@ comes next; each line points at the doc that holds the detail. Update it when a 
 
 **Now**
 
-* ordering, event-stormed on the ordering board (`docs/ordering-board/`, published as `ordering-board`). Timeline agreed as a first pass; step 1, vendor onboarding, being worked in detail. Four rules agreed (R1 nothing recorded before Stripe holds the card · R2 processors call Stripe, webhooks record the outcome · R3 Stripe onboarding prefilled from the mentions légales · R4 no publication without a Stripe account that can take payments); Connect setup read in Stripe's docs: Accounts v2, direct charges, Stripe collecting its fees from the vendor and covering losses; 14 questions open
+* ordering, event-stormed on the ordering board (`docs/ordering-board/`, published as `ordering-board`). Timeline agreed as a first pass; step 1, vendor onboarding, being worked in detail. Four rules agreed (R1 nothing recorded before Stripe holds the card · R2 processors call Stripe, webhooks record the outcome · R3 Stripe onboarding prefilled from the mentions légales · R4 no publication without a Stripe account that can take payments); Connect setup read in Stripe's docs: Accounts v2, direct charges, Stripe collecting its fees from the vendor and covering losses; 11 questions open
 * price: one package at 50 € HT a month, ordering included, no commission (`docs/MARKET_MIAM.md`)
 
 **Waiting on someone else**
@@ -19,7 +19,7 @@ comes next; each line points at the doc that holds the detail. Update it when a 
 * the live client — provide their legal identity, then the storefront footer's stopgap comes out (`docs/MENTIONS-LEGALES-PLAN.md` slice 8); declare every dish's allergens (`docs/ALLERGENS-PLAN.md` slice 4); a test Stripe onboarding, seeing both dashboards (board Q2); later, connect Stripe after publication through a way in still to design (board R4)
 * the lawyer — brief ready to send: 15 questions with dated copies of the texts and the draft vendor terms (`docs/ordering-board/avocat.html`, `docs/CGU-CGV-PLAN.md`)
 * the accountant — brief ready to send: 5 questions on cash-register software and e-invoicing (`docs/ordering-board/expert-comptable.html`)
-* Stripe — the Check questions on the board, to read in Stripe's docs (`docs/ordering-board/index.html`)
+* Stripe — two sandbox tests on the board: a refused capture (Q5), a French Accounts v2 account (Q14)
 * the owner, outside the repo — the Tally form's copy, a CTA and the demo link checked on the real domain (`docs/WEBSITE-PLAN.md` §1–2); the art. 30 register and the DPAs (`docs/PRIVACY-PLAN.md` §2–3); the trademark registration (`docs/MARKET_MIAM.md`)
 
 **Next**

@@ -38,7 +38,7 @@ Vendor never knows the code: stops pickups off a customer-visible tablet, and a 
 
 - Stripe Connect, **Accounts v2, direct charges**; Stripe collects its fees from the vendor and covers negative balances (board, *Connect setup*). Vendor = merchant of record; Stripe does KYC, payouts, disputes. Market Miam never holds funds → no DSP2 licence.
 - Hosted Stripe Checkout, `capture_method: 'manual'`. 3DS, Apple/Google Pay, PCI SAQ A.
-- Fees ~1.5% + 0.25 € per EEA card, vendor pays (check current). First payout ~7 days.
+- Fees 1.5% + 0.25 € per standard EEA card, 2.8% + 0.25 € premium, 20 € per dispute; vendor pays, Market Miam pays no Connect fees. First payout 7–14 days after the first payment, then 3 business days.
 - **Order cap 119,99 €.** ≥120 € online contracts must be archived 10 years (L213-1, D213-1), breaking one-day retention.
 
 ## Engineering
