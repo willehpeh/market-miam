@@ -2,7 +2,7 @@
 
 > **Archived 2026-08-02** — the deferred-decisions register (ADR 0017) merged into the root `NEXT_BEHAVIOURS.md`, which is now the single backlog. This file is kept for the detailed rationale behind each entry; the one-line triggers live in `NEXT_BEHAVIOURS.md`.
 
-Genuinely-open decisions, not yet implemented and not tracked elsewhere. Resolved/built decisions live in their ADRs, `EVENT-SOURCING-ARCHITECTURE.md`, and the code. The database build plan is complete and archived (`POSTGRES-PLAN.md`, this folder); its three deferred items live here (orphan-checkpoint detection, dead-lettering, composite cursor).
+Genuinely-open decisions, not yet implemented and not tracked elsewhere. Resolved/built decisions live in their ADRs, `EVENT-SOURCING-ARCHITECTURE.md`, and the code. The database build plan is complete and archived (`POSTGRES-PLAN.md`, this folder); its three deferred items live here (orphan-checkpoint detection, dead-lettering, and the composite cursor, since replaced by *Lock-free appends*).
 
 ## vendorIdFrom error handling
 
@@ -38,8 +38,25 @@ A renamed `@Checkpointed('<name>')` silently orphans the old checkpoint and repl
 
 A throwing event never advances the checkpoint → replays forever (backoff only slows it). Resolution when needed: retry K times, then record the event to a durable dead-letter table (`global_position` + attempt count + error, next free migration number) and advance past it. **Kind-aware:** skip-and-advance is safe for a *projection* (stale reads, recoverable via `rebuild`), wrong for a *processor* (silently drops a business command with no replay recovery — the rebuild guard refuses processors); processors want freeze-and-alert, not skip. The DLQ needs monitoring — silent DLQ = silent data loss. Near-term value is the alert, not the table: detection already works (`logger.error` + Honeycomb error span; 1:1 event-type→consumer mapping identifies the stuck consumer), and the push-alert design is specced in `O11Y-PLAN.md` "Stuck-subscription alert". Deferred until there's evidence of a real poison event.
 
-## `pg_snapshot_xmin` composite cursor
+## Lock-free appends
 
-*(from `POSTGRES-PLAN.md` item 6 — only if throughput bottlenecks)*
+*(from `POSTGRES-PLAN.md` item 6, the `pg_snapshot_xmin` composite cursor — rewritten 2026-10-29 after M6's baseline; only if append throughput bottlenecks)*
 
-The advisory-lock serialisation ceilings at ~300–1000 appends/s (ADR 0028). If ever exceeded: batch events per append, partition the lock per stream-category, or move to a `(transactionId, position)` composite cursor (widens the `Checkpoint`/`Events` ports). Conditional — no action until measured.
+**Trigger.** Appends sustained above ~50/s, or p99 append latency climbing in Honeycomb. Under ADR 0028's advisory lock the measured ceiling is ~155–165 appends/s at a 1.7 ms round trip and ~480 direct, set by the ~2.5 round trips an append makes inside the lock, not by fsync (M6, *Baseline*). Ordering's Saturday-noon estimate is ~10/s.
+
+**First, two small levers inside the lock** (~1.4× at 1.7 ms, TypeScript only):
+- Check the stream before taking the lock, with `MAX(stream_position)`. The `(stream_id, stream_position)` unique index catches a writer that slips in between; `SerializedAppend` maps that violation to `ConcurrencyError`. The lock is held ~1.5 round trips instead of ~2.5.
+- In `PollingSubscription`, advance the checkpoint before handling, so a processor's append is the last statement before `COMMIT`.
+
+**Then: a capped high-water mark, with no NOTIFY.** Drop the advisory lock and migration 0002's NOTIFY trigger; NOTIFY serialises the commits of notifying transactions on a database-wide lock held through the WAL flush. Measured without both: ~1,300–1,400 appends/s at 1.7 ms, bound by the pool, and ~2,700–3,100 direct (M6, *Without the global lock*).
+- Appends take no global lock; the unique index alone guards streams.
+- One agent per API instance computes the high-water mark H every ~100 ms: the highest `global_position` below which no gap is open. Subscriptions read `global_position > checkpoint AND global_position <= H`, and the agent pokes them whenever H advances. It watches H, not `max(global_position)`: a gap filling below the head doesn't move the max. The agent replaces ADR 0030's LISTEN/NOTIFY: no trigger, no dedicated LISTEN connection, no reconnect logic.
+- A gap open longer than 3 s is skipped (Marten's async daemon uses the same default). The skip is safe because `transaction_timeout = '2s'` (Postgres 17+) is set on the app's database role, so a gap's owner is dead before its gap is skipped. Migrations lift the cap in their own session.
+- The cap can't interrupt a commit already flushing: a disk stall longer than the 1 s margin could still land a row below H. The agent remembers the positions it skipped and looks them up for some minutes afterwards; a hit alerts, and the affected projections are rebuilt.
+- Cost: each rollback gap — a race on the unique index, a processor transaction aborting after its append — freezes every subscription for ~3 s. It needs an ADR replacing 0028 and 0030, and container tests for gaps, rollbacks, the timeout and the late-arrival alarm; `InMemoryEventStore` has no gaps to test.
+
+**Considered and set aside:**
+- The `(transactionId, position)` composite cursor, ADR 0028's first rejection: it widens every port; the `pg_snapshot_xmin` cut-off is database-wide, so any long transaction stalls every consumer; and a transaction's id comes from its first write, so a stream can be read out of order.
+- Exact gap resolution — note the in-flight transactions when a gap is first seen, skip it once all have ended: no freeze, but it needs a transaction id forced before every append, and its race windows are microseconds wide.
+- A sequencer — appends insert unnumbered rows, one writer numbers committed rows into an insert-only `event_positions` table: exact by construction, no freezes, at the cost of a component and a table. The choice if the freezes ever matter.
+- NOTIFY moved after commit and debounced in the app: millisecond pokes across instances, but it needs an after-commit hook in `PostgresUnitOfWork`. Only if 100 ms of poke latency ever matters.

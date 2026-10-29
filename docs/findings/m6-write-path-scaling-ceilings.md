@@ -183,3 +183,5 @@ Across a network the pool becomes the limit: ten connections, each finishing an 
 every ~8 ms. Direct, the NOTIFY trigger (migration 0002) caps it: Postgres serializes the
 commits of transactions that NOTIFY on a database-wide lock held through the WAL flush. One
 writer's append is one round trip faster without the lock (10.2 → 7.8 ms at 1.7 ms).
+If the trigger ever fires, the design to reach for is *Lock-free appends* in
+[`docs/archive/DEFERRED.md`](../archive/DEFERRED.md#lock-free-appends).

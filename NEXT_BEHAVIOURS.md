@@ -56,7 +56,7 @@ comes next; each line points at the doc that holds the detail. Update it when a 
 * scoped projection reset — when full-log replay gets slow or erasure volume gets user-visible
 * orphan-checkpoint detection — if a checkpoint is ever renamed
 * per-event dead-lettering — on the first real poison event (alert design ready: `docs/O11Y-PLAN.md`)
-* composite cursor — only if append throughput bottlenecks (~300–1000/s, ADR 0028)
+* lock-free appends — when appends stay above ~50/s or p99 append latency climbs; measured ceiling ~155/s at a 1.7 ms round trip (M6); design ready: a capped high-water mark
 * per-type span attributes — evidence-gated, design ready (`docs/O11Y-PLAN.md`; the stuck-subscription alert shipped with live-mode slice 1)
 * OTel collector + tail-based sampling — until volume warrants
 * ops transport for `erase`/`rebuild` + automated Auth0 user delete on erasure — when an ops surface exists

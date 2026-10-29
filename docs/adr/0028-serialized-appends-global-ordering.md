@@ -50,3 +50,7 @@ The ceiling above was estimated from fsync. Measured (M6, *Baseline*), it is set
 round trips an append makes while holding the lock: about 480 appends/s with the database
 on the same machine, about 165/s at a 1.7 ms round trip, with fsync at 0.3 ms in both. The
 conclusion stands: ordering's Saturday-noon estimate is about 10 appends a second.
+
+The deferred alternative is no longer the `pg_snapshot_xmin` composite cursor but a capped
+high-water mark, which keeps the single-`bigint` cursor: *Lock-free appends* in
+`docs/archive/DEFERRED.md`.
