@@ -21,24 +21,24 @@
       <a href="https://github.com/willehpeh/market-miam/blob/main/docs/ORDERING-PLAN.md"><code>docs/ORDERING-PLAN.md</code></a>.
       The briefs for the <a href="avocat.html">lawyer</a> and the <a href="expert-comptable.html">accountant</a> are in French.
     </p>
-    <p class="meta">Updated 25 October 2026</p>
+    <p class="meta">Updated 29 October 2026</p>
   </header>
 
   <section aria-labelledby="now">
     <h2 id="now">Where we are</h2>
     <p class="intro">
       Event-storming, Stripe Connect first. The timeline is a first pass. Step 1, vendor onboarding, is being
-      worked in detail: R3 and R4 came out of it.
+      worked in detail: R3, R4 and the <a href="#setup">Connect setup</a> came out of it.
     </p>
     <div class="table-wrap">
       <table>
         <thead><tr><th>Status</th><th>Plan steps</th></tr></thead>
         <tbody>
           <tr><td>Done</td><td>4 · tombstones for vendor keys</td></tr>
-          <tr><td>Waiting on the live client</td><td>3 · mentions légales and allergens, deployed</td></tr>
+          <tr><td>Waiting on the live client</td><td>2 · a test onboarding; the platform account is open · 3 · mentions légales and allergens, deployed</td></tr>
           <tr><td>Ready to send</td><td>1 · the lawyer and accountant briefs</td></tr>
           <tr><td>In progress</td><td>5 · the ordering context, on this board</td></tr>
-          <tr><td>Not started</td><td>2 · Stripe platform account and a test onboarding · 6 · vendor app · 7 · storefront and email provider · 8 · website rebuilt around ordering · 9 · pilot with real cards</td></tr>
+          <tr><td>Not started</td><td>6 · vendor app · 7 · storefront and email provider · 8 · website rebuilt around ordering · 9 · pilot with real cards</td></tr>
         </tbody>
       </table>
     </div>
@@ -56,7 +56,7 @@
         <div class="step-head"><span class="num">1</span><span class="who">Vendor</span><span class="note">once</span></div>
         <p class="sticky event">Stripe account connected and able to take payments</p>
         <p class="sticky stripe stripe-part">Account onboarding · account status updates</p>
-        <p class="refs"><a class="ref r" href="#r3">R3</a><a class="ref r" href="#r4">R4</a><a class="ref" href="#q1">Q1</a><a class="ref" href="#q2">Q2</a><a class="ref" href="#q9">Q9</a><a class="ref" href="#q10">Q10</a><a class="ref" href="#q11">Q11</a></p>
+        <p class="refs"><a class="ref r" href="#r3">R3</a><a class="ref r" href="#r4">R4</a><a class="ref" href="#q1">Q1</a><a class="ref" href="#q2">Q2</a><a class="ref" href="#q9">Q9</a><a class="ref" href="#q10">Q10</a><a class="ref" href="#q11">Q11</a><a class="ref" href="#q14">Q14</a></p>
       </li>
       <li class="step">
         <div class="step-head"><span class="num">2</span><span class="who">Customer</span></div>
@@ -136,7 +136,9 @@
         <p>We create the vendor's Stripe account with what we already hold: business type, legal name, address,
           SIRET, TVA number, contacts and legal representative from the mentions légales, name and URL from the
           storefront, the caterer activity code. Stripe asks only for the rest: IBAN, the representative's date
-          of birth, home address and ID, a société's owners.</p>
+          of birth, home address and ID, a société's owners. The vendor confirms what we prefilled and can edit
+          it before accepting Stripe's terms. A vendor who already has a Stripe account can reuse its verified
+          details instead (networked onboarding), and those override ours.</p>
         <p>Prefilling is one shot. Once the first onboarding link exists, we can no longer read or write the
           account's verification details; later changes go through the vendor's Stripe dashboard
           (<a href="#q9">Q9</a>). The live client fills in their mentions légales first.</p>
@@ -152,6 +154,34 @@
           An ADR amending 0031's requirements table comes with the build.</p>
       </article>
     </div>
+  </section>
+
+  <section aria-labelledby="setup">
+    <h2 id="setup">Connect setup</h2>
+    <p class="intro">
+      Read in Stripe's docs on 29 October 2026. Standard, Express and Custom accounts are legacy; a new
+      platform creating v1 accounts gets an error unless it turns v1 support on.
+    </p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Setting</th><th>Effect</th></tr></thead>
+        <tbody>
+          <tr><td>Accounts v2, merchant</td><td>Stripe's path for new platforms since December 2025</td></tr>
+          <tr><td>Direct charges</td><td>The vendor is merchant of record. Stripe's August 2026 block on direct charges covers legacy Express and Custom accounts only</td></tr>
+          <tr><td>Stripe collects fees</td><td>The vendor pays every Stripe fee on their payments: card, dispute, Radar, 3D Secure</td></tr>
+          <tr><td>Stripe covers losses</td><td>Market Miam carries no loss. We can't pause a vendor's payments or payouts, or debit them</td></tr>
+          <tr><td>Dashboard</td><td>Full or Express, <a href="#q2">Q2</a></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="aside">
+      Fees and losses are set when the account is created and can't change. A vendor's existing Stripe account
+      can't be linked: OAuth needs Accounts v1, and Stripe advises new platforms against it.
+      Read <a href="https://docs.stripe.com/connect/accounts-v2">Accounts v2</a>,
+      <a href="https://docs.stripe.com/connect/accounts-v2/connected-account-configuration">Account configuration</a>,
+      <a href="https://docs.stripe.com/connect/risk-management">Risk and liability</a>,
+      <a href="https://docs.stripe.com/connect/direct-charges-fee-payer-behavior">Fee behaviour</a>.
+    </p>
   </section>
 
   <section aria-labelledby="pattern">
@@ -211,18 +241,19 @@
     </p>
     <ol class="questions">
       <li id="q1"><span class="qid">Q1</span><span class="qtext">Which facts about the vendor's Stripe account do we store, and which do we read from Stripe each time?</span><span class="qmeta"><span class="tag decide">Decide</span> Steps 1, 6</span></li>
-      <li id="q2"><span class="qid">Q2</span><span class="qtext">Which Connect setup does a new platform use today? Stripe marks Standard accounts, which the plan chose, as legacy. Under the current model, recheck that we can prefill the account, that verification details lock after the first onboarding link, whether the vendor confirms prefilled details (documented for Express only), and whether a vendor can link a Stripe account they already have (OAuth can, but Stripe discourages it for new platforms).</span><span class="qmeta"><span class="tag verify">Check</span> Step 1, R3 · Read <a href="https://docs.stripe.com/connect/accounts">Connect account types</a>, <a href="https://docs.stripe.com/connect/standard-accounts">Standard accounts</a>, <a href="https://docs.stripe.com/connect/express-accounts">Express accounts</a>, <a href="https://docs.stripe.com/connect/oauth-standard-accounts">OAuth with Standard accounts</a></span></li>
+      <li id="q2"><span class="qid">Q2</span><span class="qtext">Full or Express dashboard for vendors? Full: generally available, nothing to build, the vendor logs in at dashboard.stripe.com and can set Radar rules. Express: our branding and a simpler screen, but with Stripe covering losses it is in public preview (account creation needs <code>2026-09-30.preview</code>), and we build login links. Show the live client both at the test onboarding, before the first real account.</span><span class="qmeta"><span class="tag decide">Decide</span> Step 1 · Read <a href="https://docs.stripe.com/connect/saas/tasks/dashboard">Dashboard access</a>, <a href="https://docs.stripe.com/connect/express-dashboard">Express Dashboard</a>, <a href="https://docs.stripe.com/connect/risk-management">Risk and liability</a></span></li>
       <li id="q3"><span class="qid">Q3</span><span class="qtext">The confirmation timeout, in minutes, and how it fits the day's end time. Both sit well inside the 7-day card hold.</span><span class="qmeta"><span class="tag decide">Decide</span> Steps 2, 3b, 5 · Read <a href="https://docs.stripe.com/payments/place-a-hold-on-a-payment-method">Place a hold</a></span></li>
-      <li id="q4"><span class="qid">Q4</span><span class="qtext">Card testing on Checkout when the charge is on the vendor's account: whose Radar runs, and who sees what was blocked? Checkout applies Stripe's rate limits, fraud models and CAPTCHA on its own.</span><span class="qmeta"><span class="tag verify">Check</span> Step 2 · Read <a href="https://docs.stripe.com/card-testing">Card testing</a>, <a href="https://support.stripe.com/questions/how-do-i-prevent-card-testing-attacks">Preventing card testing</a></span></li>
+      <li id="q4"><span class="qid">Q4</span><span class="qtext">Card testing on Checkout, charged on the vendor's account: who sees what was blocked? Radar runs on the vendor's account and our platform rules don't apply to it. On the full dashboard the vendor can set rules; on Express only we can (<a href="#q2">Q2</a>). Checkout applies Stripe's rate limits, fraud models and CAPTCHA on its own.</span><span class="qmeta"><span class="tag verify">Check</span> Step 2 · Read <a href="https://docs.stripe.com/card-testing">Card testing</a>, <a href="https://support.stripe.com/questions/how-do-i-prevent-card-testing-attacks">Preventing card testing</a>, <a href="https://docs.stripe.com/connect/integration-recommendations">Recommended integrations</a></span></li>
       <li id="q5"><span class="qid">Q5</span><span class="qtext">When a capture is refused for good, which webhook reports it, if any? An expired hold turns the payment to <code>canceled</code>; we expect <code>payment_intent.canceled</code>. If a refused capture call sends no event, the processor has to record the failure itself.</span><span class="qmeta"><span class="tag verify">Check</span> Step 3a, R2 · Read <a href="https://docs.stripe.com/payments/place-a-hold-on-a-payment-method">Place a hold</a>, <a href="https://docs.stripe.com/api">API reference</a></span></li>
       <li id="q6"><span class="qid">Q6</span><span class="qtext">What the vendor's screen shows between <em>order accepted</em> and <em>payment taken</em>.</span><span class="qmeta"><span class="tag decide">Decide</span> Step 3a</span></li>
       <li id="q7"><span class="qid">Q7</span><span class="qtext">Code attempts before a lockout, and how long the lockout lasts.</span><span class="qmeta"><span class="tag decide">Decide</span> Step 4</span></li>
-      <li id="q8"><span class="qid">Q8</span><span class="qtext">Refunds and disputes: in Stripe's dashboard, or in our app?</span><span class="qmeta"><span class="tag decide">Decide</span> Step 7</span></li>
-      <li id="q9"><span class="qid">Q9</span><span class="qtext">Our copy of the legal identity and Stripe's can drift once the vendor moves. Does it matter, and do we prompt the vendor to update Stripe?</span><span class="qmeta"><span class="tag decide">Decide</span> Step 1, R3</span></li>
+      <li id="q8"><span class="qid">Q8</span><span class="qtext">Refunds and disputes: in Stripe's dashboard, or in our app too? Either dashboard lets the vendor refund and answer disputes.</span><span class="qmeta"><span class="tag decide">Decide</span> Step 7</span></li>
+      <li id="q9"><span class="qid">Q9</span><span class="qtext">Our copy of the legal identity and Stripe's can differ from the start, if the vendor edits our prefill or reuses another account (R3), and drift when the vendor moves. Does it matter, and do we prompt the vendor to update Stripe?</span><span class="qmeta"><span class="tag decide">Decide</span> Step 1, R3</span></li>
       <li id="q10"><span class="qid">Q10</span><span class="qtext">DAC7: is Market Miam a platform when each storefront is one vendor's own shop? If yes, an EI's date of birth and tax number are owed, and asking for them before the Stripe account is created lets R3 prefill them.</span><span class="qmeta"><span class="tag lawyer">Lawyer</span> Step 1 · <a href="avocat.html#b3">B3</a></span></li>
       <li id="q11"><span class="qid">Q11</span><span class="qtext">A published vendor's Stripe account can later lose the ability to take payments. Does the storefront stay up with ordering paused, or is it unpublished?</span><span class="qmeta"><span class="tag decide">Decide</span> Step 1, R4</span></li>
-      <li id="q12"><span class="qid">Q12</span><span class="qtext">Stripe's fees: about 1.5 % + 0.25 € per EEA card, paid by the vendor on their own account.</span><span class="qmeta"><span class="tag verify">Check</span> From the plan · Read <a href="https://stripe.com/fr/pricing">Pricing</a></span></li>
+      <li id="q12"><span class="qid">Q12</span><span class="qtext">Stripe's fees: about 1.5 % + 0.25 € per EEA card, paid by the vendor on their own account. Also confirm Market Miam pays no Connect fees when Stripe collects the fees.</span><span class="qmeta"><span class="tag verify">Check</span> From the plan · Read <a href="https://stripe.com/fr/pricing">Pricing</a>, <a href="https://stripe.com/connect/pricing">Connect pricing</a></span></li>
       <li id="q13"><span class="qid">Q13</span><span class="qtext">The vendor's first payout: about 7 days after the first payment, then on Stripe's regular schedule. Worth telling vendors before their first market with ordering.</span><span class="qmeta"><span class="tag verify">Check</span> Step 6 · From the plan</span></li>
+      <li id="q14"><span class="qid">Q14</span><span class="qtext">Does Accounts v2 take French accounts? No page says. Create one in the sandbox.</span><span class="qmeta"><span class="tag verify">Check</span> Step 1 · Read <a href="https://docs.stripe.com/connect/accounts-v2">Accounts v2</a></span></li>
     </ol>
   </section>
 

@@ -36,7 +36,7 @@ Vendor never knows the code: stops pickups off a customer-visible tablet, and a 
 
 ## Payment
 
-- Stripe Connect, **Standard accounts, direct charges**. Vendor = merchant of record; Stripe does KYC, payouts, disputes. Market Miam never holds funds → no DSP2 licence.
+- Stripe Connect, **Accounts v2, direct charges**; Stripe collects its fees from the vendor and covers negative balances (board, *Connect setup*). Vendor = merchant of record; Stripe does KYC, payouts, disputes. Market Miam never holds funds → no DSP2 licence.
 - Hosted Stripe Checkout, `capture_method: 'manual'`. 3DS, Apple/Google Pay, PCI SAQ A.
 - Fees ~1.5% + 0.25 € per EEA card, vendor pays (check current). First payout ~7 days.
 - **Order cap 119,99 €.** ≥120 € online contracts must be archived 10 years (L213-1, D213-1), breaking one-day retention.
@@ -169,7 +169,7 @@ Per `BOI-TVA-DECLA-30-10-30` (version of 2025-10-01), checked 2026-10-04:
 ## Order of work
 
 1. Lawyer + accountant: cash register (confirm scope + self-attestation route), DAC7, CGV + no-show clause, CGU, P2B, policy B.
-2. Stripe platform account; test Standard onboarding with live client.
+2. Stripe platform account (open); test onboarding with live client.
 3. Finish mentions légales and add allergens: both deployed 2026-10-13. Each rollout still waits on the live client (`MENTIONS-LEGALES-PLAN.md` slice 8, `ALLERGENS-PLAN.md` slice 4).
 4. Key tombstones for vendor keys: done with mentions légales slice 3 (`21a993e`).
 5. Ordering context: payment port, webhooks, idempotency gate, day-key store + expiry, code check, scheduler.
