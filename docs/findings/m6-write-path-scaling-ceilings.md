@@ -5,7 +5,7 @@
 | Severity | Low (deliberate tradeoffs, ADR 0028 — revisit at scale) |
 | Area | Write path / performance |
 | Files | `packages/event-sourcing/src/adapters/postgres/append-transaction.ts:12,20,43-46`, `packages/event-sourcing/src/adapters/postgres/postgres.event-store.ts:32-38` |
-| Status | Open (accepted for current scale) |
+| Status | Open (accepted for current scale; measured 2026-10-29) |
 | Found | 2026-07-31 evaluation @ `eec797b` |
 
 ## Issue
@@ -101,3 +101,64 @@ this is the first number to look at if append latency ever climbs. The
 order and names the burned-identity-values caveat (the class is now
 `SerializedAppend` in `serialized-append.ts`; this finding's
 `append-transaction.ts` line references are anchored to the evaluated commit).
+
+## Baseline (2026-10-29)
+
+`npm run baseline:write-path` ([`tools/write-path-baseline/`](../../tools/write-path-baseline/run.ts))
+drives the real Postgres adapters against a throwaway database. Run at `c7d8a65` on
+Postgres 16 in a 4-CPU cloud container, pool max 10, fsync 0.3 ms (`pg_test_fsync`).
+Production talks to Postgres 18 over a network, so the script also ran through
+`delay-proxy.mjs`: `SELECT 1` took 0.13 ms direct and 1.7 ms through the proxy (`RTT_MS=1`;
+the proxy overshoots).
+A second direct run matched within 20 % on throughput and the W2 rows; loads varied more
+(plain, 10,000 events: 41 ms against 67).
+
+**Ceiling 1, the global lock.** Throughput stops rising at two writers; more writers only queue.
+
+| Writers | Direct: appends/s · p50 ms | 1.7 ms round trip: appends/s · p50 ms |
+| --- | --- | --- |
+| 1 | 415 · 2.2 | 102 · 9.6 |
+| 2 | 455 · 4.3 | 165 · 12 |
+| 4 | 502 · 7.8 | 161 · 24 |
+| 8 | 479 · 16 | 167 · 47 |
+| 16 | 464 · 34 | 168 · 95 |
+
+The ceiling is round trips, not fsync: an append holds the lock for about 2 ms direct and
+6 ms at 1.7 ms, some 2.5 round trips each. ADR 0028's "≈ 1 / commit-fsync, ~300–1,000/s"
+overstates it for a database across a network. Ordering's Saturday-noon estimate is about
+10 appends a second, 16 times under the slower ceiling.
+
+**Ceilings 2 and 3, stream length.** p50, direct. At a 1.7 ms round trip appends cost
+about 7 ms more and PII loads about 15 % more.
+
+| Stream | Events | `load()` ms | `append()` ms |
+| --- | --- | --- | --- |
+| Plain | 100 | 1.2 | 2.1 |
+| Plain | 1,000 | 5.7 | 1.8 |
+| Plain | 10,000 | 67 | 5.2 |
+| PII | 100 | 15 | 2.5 |
+| PII | 1,000 | 143 | 3.4 |
+| PII | 10,000 | 1,693 | 5.1 |
+
+- The count costs 3 ms more at 10,000 events than at 100, all of it inside the lock.
+- A load costs about 7 ms per 1,000 plain events.
+- A PII load costs about 25 times as much: `ShreddingEventStore.readKeyFor` queries
+  `data_keys` once per PII event, with no reuse within one `load()` or `loadFrom()`. With
+  `InMemoryDataKeys` a 10,000-event PII load drops from 1.5 s to 0.49 s; the rest is GCM.
+
+**W2, the lock held through a processor's transaction.** Four writers append while one
+processor appends inside a transaction, then works before committing.
+
+| Work after the append | Direct: writers' appends/s · p99 ms | 1.7 ms round trip: writers' appends/s · p99 ms |
+| --- | --- | --- |
+| 0 ms | 330 · 18 | 136 · 36 |
+| 5 ms | 247 · 23 | 112 · 49 |
+| 20 ms | 127 · 41 | 77 · 70 |
+
+Every millisecond a processor spends after its append is lock time for every other writer.
+Ordering's R2 already keeps Stripe calls out: a processor that calls Stripe appends nothing.
+
+**Verdict.** Still accepted: nothing in ordering's expected load needs a fix. Two items
+join the menu above: reuse one data key per subject within a `load()` or `loadFrom()`,
+before a PII stream or a catch-up over PII events grows long (ordering's day keys are the
+first candidate); and keep slow work out of a processor transaction that appends.

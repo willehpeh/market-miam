@@ -5,7 +5,8 @@
   "scripts": {
     "event:model": "node tools/event-model/generate.mjs",
     "test:all": "node tools/test-all.mjs",
-    "test:map": "node tools/test-map/generate.mjs"
+    "test:map": "node tools/test-map/generate.mjs",
+    "baseline:write-path": "SWC_NODE_PROJECT=tools/write-path-baseline/tsconfig.json node -r @swc-node/register tools/write-path-baseline/run.ts"
   },
   "private": true,
   "dependencies": {

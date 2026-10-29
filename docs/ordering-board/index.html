@@ -119,8 +119,8 @@
         <p>Placing an order only opens a Checkout page. Our first event is the webhook saying the card is held.
           Anonymous traffic never touches the append lock (ADR 0028). An abandoned checkout exists only in
           Stripe's dashboard.</p>
-        <p>Saturday noon is about 10 writes a second against a ceiling of 300 to 1 000. The baseline measurement
-          finding M6 asks for is still owed.</p>
+        <p>Saturday noon is about 10 writes a second. The measured ceiling is about 165 a second at a
+          1.7 ms round trip to the database (finding M6).</p>
       </article>
       <article class="card rule-card" id="r2">
         <span class="tag rule">R2</span>

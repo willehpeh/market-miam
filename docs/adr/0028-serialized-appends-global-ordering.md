@@ -1,6 +1,6 @@
 # 0028. Gap-free global ordering via serialized appends
 
-Date: 2026-07-03 · Status: Accepted
+Date: 2026-07-03 · Status: Accepted · Amended 2026-10-29 — the ceiling is measured, and set by round trips
 
 ## Context
 
@@ -43,3 +43,10 @@ Rejected:
 - If append throughput ever bottlenecks: batch events per append, partition the
   lock per stream-category, or move to the `pg_snapshot_xmin` composite-cursor
   scheme (widens the port). Deferred.
+
+## Amendment (2026-10-29): the measured ceiling
+
+The ceiling above was estimated from fsync. Measured (M6, *Baseline*), it is set by the
+round trips an append makes while holding the lock: about 480 appends/s with the database
+on the same machine, about 165/s at a 1.7 ms round trip, with fsync at 0.3 ms in both. The
+conclusion stands: ordering's Saturday-noon estimate is about 10 appends a second.

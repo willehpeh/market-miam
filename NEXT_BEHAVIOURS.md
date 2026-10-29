@@ -26,7 +26,6 @@ comes next; each line points at the doc that holds the detail. Update it when a 
 
 * the rest of step 1's questions, then event-storm steps 2 to 7 (`docs/ordering-board/index.html`)
 * then build, in the plan's order: the ordering context, the vendor app, the storefront, the website rebuilt around ordering with its price, a pilot with real cards (`docs/ORDERING-PLAN.md` steps 5–9)
-* the append-lock baseline finding M6 asks for, before ordering adds writers (`docs/findings/m6-write-path-scaling-ceilings.md`)
 
 ## Product
 

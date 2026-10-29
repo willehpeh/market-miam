@@ -95,7 +95,7 @@ Vendor latency is dominated by the vendor glancing at the screen, not by the pol
 | Pressure | Mitigation |
 |---|---|
 | Honeycomb volume: ~17M spans/day from polls vs a free tier of ~20M events/month (check plan) | Sample polls / don't trace `304`s. First thing to hurt |
-| Serialized appends (ADR 0028): ~10 appends/s of order events under one global lock | Load-test before scaling — the real ceiling |
+| Serialized appends (ADR 0028): ~10 appends/s of order events under one global lock | Measured ceiling ~165/s at a 1.7 ms round trip (M6 baseline). Keep slow work out of processor transactions that append |
 | Projection lag: one subscription catches up across all vendors | Measure in Honeycomb; stale list = lag |
 | Email: ~3 per order, ~8 000 orders/h peak | Provider tier |
 | Manual ops: refund queries, Stripe onboarding, DAC7, cash-register attestations | Not technical; plan for it |
