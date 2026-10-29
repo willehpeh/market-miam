@@ -117,7 +117,7 @@ SSE trigger: Honeycomb volume or Render bill. Then poke-only + HTTP refetch, mir
 
 ### Infrastructure
 
-- Stripe platform account.
+- Stripe platform account: open.
 - Transactional email provider (e.g. Brevo: French, EU-hosted) + DPA.
 - Render Postgres backups + PITR: losing the DB = money taken with no order.
 - Payment-failure alert — both Honeycomb triggers already used.
