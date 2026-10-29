@@ -156,7 +156,10 @@ processor appends inside a transaction, then works before committing.
 | 20 ms | 127 · 41 | 77 · 70 |
 
 Every millisecond a processor spends after its append is lock time for every other writer.
-Ordering's R2 already keeps Stripe calls out: a processor that calls Stripe appends nothing.
+The 5 and 20 ms rows are hypothetical: today's one appending processor, `OpensStorefronts`,
+saves through its command like any handler, and only its checkpoint write follows the
+append, so the 0 ms row is the real case. Ordering's R2 already keeps Stripe calls out: a
+processor that calls Stripe appends nothing.
 
 **Verdict.** Still accepted: nothing in ordering's expected load needs a fix. One item
 joins the menu above: keep slow work out of a processor transaction that appends.
@@ -165,3 +168,18 @@ joins the menu above: keep slow work out of a processor transaction that appends
 decrypts through a `DecryptingRead` of its own, which fetches each subject's key once and
 is dropped when the call returns. PII loads, rerun direct: 100 events 15 → 6 ms,
 1,000 events 143 → 41 ms, 10,000 events 1,693 → 521 ms.
+
+**Without the global lock (2026-10-29, experiment).** The statements `SerializedAppend` sends,
+run from a scratch script with and without the advisory lock, pool max 10, appends/s at the
+most productive writer count:
+
+| | Direct | 1.7 ms round trip |
+| --- | --- | --- |
+| Global lock, as today | ~470 | ~155 |
+| No lock, NOTIFY trigger on | ~1,700–1,900 | ~1,200–1,290 |
+| No lock, no NOTIFY trigger | ~2,700–3,100 | ~1,300–1,400 |
+
+Across a network the pool becomes the limit: ten connections, each finishing an append
+every ~8 ms. Direct, the NOTIFY trigger (migration 0002) caps it: Postgres serializes the
+commits of transactions that NOTIFY on a database-wide lock held through the WAL flush. One
+writer's append is one round trip faster without the lock (10.2 → 7.8 ms at 1.7 ms).
