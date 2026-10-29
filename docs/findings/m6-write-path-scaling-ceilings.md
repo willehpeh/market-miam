@@ -158,7 +158,10 @@ processor appends inside a transaction, then works before committing.
 Every millisecond a processor spends after its append is lock time for every other writer.
 Ordering's R2 already keeps Stripe calls out: a processor that calls Stripe appends nothing.
 
-**Verdict.** Still accepted: nothing in ordering's expected load needs a fix. Two items
-join the menu above: reuse one data key per subject within a `load()` or `loadFrom()`,
-before a PII stream or a catch-up over PII events grows long (ordering's day keys are the
-first candidate); and keep slow work out of a processor transaction that appends.
+**Verdict.** Still accepted: nothing in ordering's expected load needs a fix. One item
+joins the menu above: keep slow work out of a processor transaction that appends.
+
+**Key reuse (2026-10-29).** Each `load()` or `loadFrom()` of `ShreddingEventStore` now
+decrypts through a `DecryptingRead` of its own, which fetches each subject's key once and
+is dropped when the call returns. PII loads, rerun direct: 100 events 15 → 6 ms,
+1,000 events 143 → 41 ms, 10,000 events 1,693 → 521 ms.

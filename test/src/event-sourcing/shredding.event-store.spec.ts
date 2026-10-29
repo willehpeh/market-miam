@@ -208,7 +208,9 @@ describe('ShreddingEventStore', () => {
     ]);
   });
 
-  it('resolves the data key once per event, not once per field', async () => {
+  describe('resolving data keys', () => {
+    // Each lookup is a data_keys query in production: a 10,000-event PII stream
+    // paid 10,000 of them per load (M6, baseline 2026-10-29).
     class CountingKeys extends InMemoryDataKeys {
       finds = 0;
       override findKeyFor(subjectId: string): Promise<Buffer | null> {
@@ -216,14 +218,72 @@ describe('ShreddingEventStore', () => {
         return super.findKeyFor(subjectId);
       }
     }
-    const keys = new CountingKeys();
-    const store = new ShreddingEventStore(new InMemoryEventStore(), keys, { Edited: ['name', 'phone'] }, 'vendorId');
-    await store.append('vendor-v1', [{ type: 'Edited', payload: { name: 'N', phone: 'P' }, version: 1 }], 0, v1);
+    const edited = (name: string): DomainEvent => ({ type: 'Edited', payload: { name, phone: 'P' }, version: 1 });
 
-    keys.finds = 0;
-    await store.load('vendor-v1');
+    function countingStore() {
+      const keys = new CountingKeys();
+      const store = new ShreddingEventStore(new InMemoryEventStore(), keys, { Edited: ['name', 'phone'] }, 'vendorId');
+      return { store, keys };
+    }
 
-    expect(keys.finds).toBe(1);
+    it('resolves the data key once per event, not once per field', async () => {
+      const { store, keys } = countingStore();
+      await store.append('vendor-v1', [edited('N')], 0, v1);
+
+      keys.finds = 0;
+      await store.load('vendor-v1');
+
+      expect(keys.finds).toBe(1);
+    });
+
+    it("resolves a subject's data key once per load, however many of its events carry PII", async () => {
+      const { store, keys } = countingStore();
+      await store.append('vendor-v1', [edited('A'), edited('B'), edited('C')], 0, v1);
+
+      keys.finds = 0;
+      const loaded = await store.load('vendor-v1');
+
+      expect(keys.finds).toBe(1);
+      expect(loaded.map((event) => event.payload['name'])).toEqual(['A', 'B', 'C']);
+    });
+
+    it('resolves each subject once per loadFrom, across streams', async () => {
+      const { store, keys } = countingStore();
+      await store.append('vendor-v1', [edited('A'), edited('B')], 0, v1);
+      await store.append('vendor-v2', [edited('C'), edited('D')], 0, { vendorId: 'v2' });
+
+      keys.finds = 0;
+      const loaded = await store.loadFrom(0, 10);
+
+      expect(keys.finds).toBe(2);
+      expect(loaded.map((event) => event.payload['name'])).toEqual(['A', 'B', 'C', 'D']);
+    });
+
+    // The reuse is per read, never across reads: a key shredded after one read is
+    // gone from the next, as erasure requires.
+    it('forgets keys between loads, so a shred lands on the next read', async () => {
+      const { store, keys } = countingStore();
+      await store.append('vendor-v1', [edited('A')], 0, v1);
+      await store.load('vendor-v1');
+
+      await keys.shred('v1');
+
+      const [loaded] = await store.load('vendor-v1');
+      expect(loaded.payload['name']).toBe(SHREDDED);
+    });
+
+    // A subscription calls loadFrom in a loop, the likeliest place to hoist one read
+    // out of it for speed — and keep serving a shredded key to every later batch.
+    it('forgets keys between loadFrom calls, so a shred lands on the next batch', async () => {
+      const { store, keys } = countingStore();
+      await store.append('vendor-v1', [edited('A')], 0, v1);
+      await store.loadFrom(0, 10);
+
+      await keys.shred('v1');
+
+      const [loaded] = await store.loadFrom(0, 10);
+      expect(loaded.payload['name']).toBe(SHREDDED);
+    });
   });
 
   it('returns the stored event instance untouched when nothing needed decrypting', async () => {

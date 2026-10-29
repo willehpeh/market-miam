@@ -47,11 +47,13 @@ export class ShreddingEventStore implements EventStore, Events {
   }
 
   async load(streamId: string): Promise<StoredEvent[]> {
-    return Promise.all((await this.inner.load(streamId)).map((event) => this.decrypt(event)));
+    const read = this.decryptingRead();
+    return Promise.all((await this.inner.load(streamId)).map((event) => read.decrypt(event)));
   }
 
   async loadFrom(globalPosition: number, limit: number): Promise<StoredEvent[]> {
-    return Promise.all((await this.inner.loadFrom(globalPosition, limit)).map((event) => this.decrypt(event)));
+    const read = this.decryptingRead();
+    return Promise.all((await this.inner.loadFrom(globalPosition, limit)).map((event) => read.decrypt(event)));
   }
 
   head(): Promise<number> {
@@ -65,7 +67,7 @@ export class ShreddingEventStore implements EventStore, Events {
     if (fields.length === 0) {
       return event;
     }
-    const key = await this.keys.getOrCreateKeyFor(this.scoped(this.subjectOf(metadata), event.type));
+    const key = await this.keys.getOrCreateKeyFor(scoped(this.keyScopes, this.subjectOf(metadata), event.type));
     const payload = { ...event.payload };
     for (const field of fields) {
       const value = payload[field];
@@ -77,9 +79,38 @@ export class ShreddingEventStore implements EventStore, Events {
     return { ...event, payload };
   }
 
-  private async decrypt(event: StoredEvent): Promise<StoredEvent> {
+  // A new read per load() or loadFrom(), never kept on the store: see DecryptingRead.
+  private decryptingRead(): DecryptingRead {
+    return new DecryptingRead(this.keys, this.pii, this.subjectKey, this.keyScopes);
+  }
+
+  private subjectOf(metadata?: Record<string, unknown>): string {
+    const subjectId = metadata?.[this.subjectKey];
+    if (typeof subjectId !== 'string' || subjectId.length === 0) {
+      throw new Error(`ShreddingEventStore: no ${this.subjectKey} in metadata for a PII-bearing event`);
+    }
+    return subjectId;
+  }
+}
+
+// One load() or loadFrom(): decrypts the batch it is handed, fetching each subject's
+// data key once for the whole batch. Every fetch is a data_keys query in production, and
+// a 10,000-event PII stream used to pay one per event (M6, baseline 2026-10-29). Made per
+// call and dropped when it returns, never kept on the store, so a key shredded between
+// two reads is gone from the next. It keeps the pending lookup, not the key, so the
+// concurrent decrypts of one Promise.all share it instead of each starting their own.
+class DecryptingRead {
+  private readonly keys = new Map<string, Promise<Buffer | null>>();
+
+  constructor(
+    private readonly dataKeys: DataKeys,
+    private readonly pii: PiiFields,
+    private readonly subjectKey: string,
+    private readonly keyScopes: KeyScopes,
+  ) {}
+
+  async decrypt(event: StoredEvent): Promise<StoredEvent> {
     const fields = this.pii[event.type] ?? [];
-    let key: Buffer | null | undefined;
     const payload = { ...event.payload };
     let changed = false;
     for (const field of fields) {
@@ -87,9 +118,7 @@ export class ShreddingEventStore implements EventStore, Events {
       if (typeof value !== 'string' || !isEnvelope(value)) {
         continue;
       }
-      if (key === undefined) {
-        key = await this.readKeyFor(event);
-      }
+      const key = await this.keyFor(event);
       payload[field] = key === null ? SHREDDED : this.decryptField(value, key, event, field);
       changed = true;
     }
@@ -118,26 +147,26 @@ export class ShreddingEventStore implements EventStore, Events {
   // recoverable key, so its PII reads back as SHREDDED instead of throwing —
   // the log is append-only, so a throw here would brick the stream forever.
   // Write-path strictness is unchanged: encrypt still throws via subjectOf.
-  private readKeyFor(event: StoredEvent): Promise<Buffer | null> {
+  // Keyed by the scoped id, so a subject's `:legal` key stays apart from its main one.
+  private keyFor(event: StoredEvent): Promise<Buffer | null> {
     const subjectId = event.metadata?.[this.subjectKey];
     if (typeof subjectId !== 'string' || subjectId.length === 0) {
       return Promise.resolve(null);
     }
-    return this.keys.findKeyFor(this.scoped(subjectId, event.type));
-  }
-
-  private scoped(subjectId: string, eventType: string): string {
-    const scope = this.keyScopes[eventType];
-    return scope ? `${subjectId}:${scope}` : subjectId;
-  }
-
-  private subjectOf(metadata?: Record<string, unknown>): string {
-    const subjectId = metadata?.[this.subjectKey];
-    if (typeof subjectId !== 'string' || subjectId.length === 0) {
-      throw new Error(`ShreddingEventStore: no ${this.subjectKey} in metadata for a PII-bearing event`);
+    const scopedId = scoped(this.keyScopes, subjectId, event.type);
+    let key = this.keys.get(scopedId);
+    if (!key) {
+      key = this.dataKeys.findKeyFor(scopedId);
+      this.keys.set(scopedId, key);
     }
-    return subjectId;
+    return key;
   }
+}
+
+// `{subject}:{scope}` for an event type sealed under a key of its own (ADR 0056).
+function scoped(keyScopes: KeyScopes, subjectId: string, eventType: string): string {
+  const scope = keyScopes[eventType];
+  return scope ? `${subjectId}:${scope}` : subjectId;
 }
 
 function isEnvelope(value: string): boolean {
