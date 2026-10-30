@@ -36,7 +36,7 @@ Vendor never knows the code: stops pickups off a customer-visible tablet, and a 
 
 ## Payment
 
-- Stripe Connect, **Accounts v2, direct charges**; Stripe collects its fees from the vendor and covers negative balances (board, *Connect setup*). Vendor = merchant of record; Stripe does KYC, payouts, disputes. Market Miam never holds funds → no DSP2 licence.
+- Stripe Connect, **Accounts v2, direct charges, Express Dashboard**; Stripe collects its fees from the vendor and covers negative balances (board, *Connect setup*). Vendor = merchant of record; Stripe does KYC, payouts, disputes. Market Miam never holds funds → no DSP2 licence.
 - Hosted Stripe Checkout, `capture_method: 'manual'`. 3DS, Apple/Google Pay, PCI SAQ A.
 - Fees 1.5% + 0.25 € per standard EEA card, 2.8% + 0.25 € premium, 20 € per dispute; vendor pays, Market Miam pays no Connect fees. First payout 7–14 days after the first payment, then 3 business days.
 - **Order cap 119,99 €.** ≥120 € online contracts must be archived 10 years (L213-1, D213-1), breaking one-day retention.
@@ -107,6 +107,7 @@ SSE trigger: Honeycomb volume or Render bill. Then poke-only + HTTP refetch, mir
 - Stripe onboarding as a requirement to publish (`StorefrontPublication` readiness, as for the legal identity): ordering is in the only package, so a published storefront always takes orders. The live client, published before it, connects Stripe afterwards (board R4).
 - Live order list: number, dishes, status; confirm / refuse.
 - Code input; *remis sans code* per order.
+- *Open my Stripe*: a single-use Express Dashboard login link, made per visit (board, *Connect setup*).
 - New-order alerts: web push (see Live updates); email backup.
 
 ### Storefront (`customer-frontend`)
