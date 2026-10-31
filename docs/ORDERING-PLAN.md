@@ -27,7 +27,7 @@ for the lawyer and the accountant, in French. The board is newer than this plan 
 3. Vendor confirms → capture → code to customer only (status page + email).
 4. Vendor refuses, or timeout → hold cancelled, nothing charged, customer emailed.
 5. At stall: customer gives code, vendor types it → server matches day's open orders → *remis* → screen shows that order's dishes.
-6. Lost code: vendor picks order → *remis sans code*. Own event. Customer emailed immediately, so a false hand-over is visible to the real customer.
+6. Lost code: vendor picks a paid order → *remis sans code*. Own event. Customer emailed immediately, so a false hand-over is visible to the real customer.
 7. At day's `endTime`: unconfirmed holds cancelled; paid + uncollected = no-show, vendor keeps money; day's PII key shredded.
 
 Authorise-before-confirm, not confirm-then-pay: avoids customer returning to pay (no-show in small), blocks fake orders (bad card fails before vendor sees it).
@@ -110,6 +110,7 @@ SSE trigger: Honeycomb volume or Render bill. Then poke-only + HTTP refetch, mir
 - Code input; *remis sans code* per order.
 - *Open my Stripe*: a single-use Express Dashboard login link, made per visit (board, *Connect setup*).
 - New-order alerts: web push (see Live updates); email backup.
+- Payment account disabled: a banner on the live screen, and a push where the app is installed (board, *Step 1*).
 
 ### Storefront (`customer-frontend`)
 
