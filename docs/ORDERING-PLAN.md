@@ -47,6 +47,7 @@ Vendor never knows the code: stops pickups off a customer-visible tablet, and a 
 
 - New context `packages/ordering` on shared event log (ADR 0048). Orders attach only to live days, whose stream exists (menu set) → no MarketDay materialisation (LIVE-MODE decision 50 trigger not fired).
 - Payment port + in-memory fake; Stripe adapter. Local webhooks via Stripe CLI.
+- Payment account: its events, the webhook notices and the processor that reads them (board, *Step 1: the payment account*).
 - Webhooks: verify signatures (`rawBody: true`); at-least-once → idempotency front gate (`docs/archive/DEFERRED.md` "Client-supplied idempotency") now required.
 - Order confirmed from webhook only, never from redirect.
 - Per-day key, e.g. `${vendorId}:orders:${marketId}:${date}`, in Ordering's own key store (see Keys below).
@@ -104,7 +105,7 @@ SSE trigger: Honeycomb volume or Render bill. Then poke-only + HTTP refetch, mir
 
 ### Vendor app
 
-- Stripe onboarding as a requirement to publish (`StorefrontPublication` readiness, as for the legal identity): ordering is in the only package, so a published storefront always takes orders. The live client, published before it, connects Stripe afterwards (board R4).
+- Stripe onboarding as a requirement to publish (`StorefrontPublication` readiness, as for the legal identity): ordering is in the only package, so a published storefront always takes orders. The live client, published before it, connects Stripe afterwards (board R4). The prefill leaves the vendor's browser as a Stripe account token (board R3).
 - Live order list: number, dishes, status; confirm / refuse.
 - Code input; *remis sans code* per order.
 - *Open my Stripe*: a single-use Express Dashboard login link, made per visit (board, *Connect setup*).

@@ -21,14 +21,15 @@
       <a href="https://github.com/willehpeh/market-miam/blob/main/docs/ORDERING-PLAN.md"><code>docs/ORDERING-PLAN.md</code></a>.
       The briefs for the <a href="avocat.html">lawyer</a> and the <a href="expert-comptable.html">accountant</a> are in French.
     </p>
-    <p class="meta">Updated 30 October 2026</p>
+    <p class="meta">Updated 31 October 2026</p>
   </header>
 
   <section aria-labelledby="now">
     <h2 id="now">Where we are</h2>
     <p class="intro">
       Event-storming, Stripe Connect first. The timeline is a first pass. Step 1, vendor onboarding, is being
-      worked in detail: R3, R4 and the <a href="#setup">Connect setup</a> came out of it.
+      worked in detail: R3, R4, the <a href="#setup">Connect setup</a> and the
+      <a href="#account">payment account</a> came out of it.
     </p>
     <div class="table-wrap">
       <table>
@@ -56,7 +57,7 @@
         <div class="step-head"><span class="num">1</span><span class="who">Vendor</span><span class="note">once</span></div>
         <p class="sticky event">Stripe account connected and able to take payments</p>
         <p class="sticky stripe stripe-part">Account onboarding · account status updates</p>
-        <p class="refs"><a class="ref r" href="#r3">R3</a><a class="ref r" href="#r4">R4</a><a class="ref" href="#q1">Q1</a><a class="ref" href="#q9">Q9</a><a class="ref" href="#q10">Q10</a><a class="ref" href="#q11">Q11</a><a class="ref" href="#q14">Q14</a></p>
+        <p class="refs"><a class="ref r" href="#r3">R3</a><a class="ref r" href="#r4">R4</a><a class="ref" href="#q9">Q9</a><a class="ref" href="#q10">Q10</a><a class="ref" href="#q11">Q11</a><a class="ref" href="#q14">Q14</a></p>
       </li>
       <li class="step">
         <div class="step-head"><span class="num">2</span><span class="who">Customer</span></div>
@@ -111,7 +112,7 @@
 
   <section aria-labelledby="rules">
     <h2 id="rules">Agreed rules</h2>
-    <p class="intro">All four agreed on 24 October 2026.</p>
+    <p class="intro">All four agreed on 24 October 2026; R2, R3 and R4 amended on 31 October.</p>
     <div class="grid">
       <article class="card rule-card" id="r1">
         <span class="tag rule">R1</span>
@@ -126,9 +127,14 @@
         <span class="tag rule">R2</span>
         <h3>Processors call Stripe; webhooks record the outcome</h3>
         <p>A processor reacts to one of our events, calls Stripe, and writes nothing. Stripe's outcomes enter our
-          log only through webhooks: checkout, capture, cancellation, refund. No write ever waits on Stripe.</p>
-        <p>Each request uses the order ID as its idempotency key, so a retry cannot act twice. Stripe keeps keys
-          for at least 24 hours. A call refused for good still needs a path (<a href="#q5">Q5</a>).</p>
+          log only through webhooks: checkout, capture, cancellation, refund. The append lock never waits on
+          Stripe.</p>
+        <p>Each request uses the order or registration ID as its idempotency key, so a retry cannot act twice.
+          Stripe keeps keys for at least 24 hours. A refused account creation is recorded through a command
+          (<a href="#account">step 1</a>); a refused capture still needs a path (<a href="#q5">Q5</a>).</p>
+        <p>Account webhooks carry no state. Each records a notice, and a processor fetches the account before
+          dispatching a command: that command's write waits on Stripe, the append lock does not
+          (<a href="#account">step 1</a>).</p>
       </article>
       <article class="card rule-card" id="r3">
         <span class="tag rule">R3</span>
@@ -142,6 +148,11 @@
         <p>Prefilling is one shot. Once the first onboarding link exists, we can no longer read or write the
           account's verification details; later changes go through the vendor's Express Dashboard
           (<a href="#q9">Q9</a>). The live client fills in their mentions légales first.</p>
+        <p>French platforms must use account tokens. The vendor app sends the prefill from the vendor's browser
+          to Stripe with Stripe.js, loaded only from <code>js.stripe.com</code>, and only the single-use token
+          reaches our API; the account is created from it. Stripe.js also collects fraud signals from the
+          vendor's device, a line for the vendor-space privacy policy (<a href="avocat.html#c2">C2</a>). Read
+          <a href="https://docs.stripe.com/connect/account-tokens">Account tokens</a>.</p>
       </article>
       <article class="card rule-card" id="r4">
         <span class="tag rule">R4</span>
@@ -149,9 +160,11 @@
         <p>Every published storefront takes orders, so a Stripe account able to take payments is a publication
           requirement, after the legal identity it is prefilled from. Setup order: mentions légales, Stripe,
           publish.</p>
-        <p>Like the legal-identity gate, this applies at publication and never takes down a live storefront.
-          The live client is already published and will connect Stripe later, by a route not yet designed.
-          An ADR amending 0031's requirements table comes with the build.</p>
+        <p>Like the legal-identity gate, this never takes down a live storefront. The same check gates every
+          order: only <code>active</code> card payments pass, so while an account can't take payments the
+          storefront stays up and ordering pauses (<a href="#q11">Q11</a>). The live client is already
+          published and will connect Stripe later, by a route not yet designed. An ADR amending 0031's
+          requirements table comes with the build.</p>
       </article>
     </div>
   </section>
@@ -185,6 +198,56 @@
       <a href="https://stripe.com/fr/pricing">Pricing</a>,
       <a href="https://stripe.com/fr/connect/pricing">Connect pricing</a>,
       <a href="https://docs.stripe.com/payouts">Payouts</a>.
+    </p>
+  </section>
+
+  <section aria-labelledby="account">
+    <h2 id="account">Step 1: the payment account</h2>
+    <p class="intro">
+      Q1, decided 31 October 2026. We store what our rules decide on and read nothing else from Stripe: the
+      vendor sees Stripe's details on Stripe's own screens, through the onboarding link or the Express
+      Dashboard login link. When Stripe is down, only those links fail.
+    </p>
+    <ol class="flow">
+      <li><p class="sticky event">Registration started, carrying an account token<span class="writes">Vendor's tap · write</span></p></li>
+      <li><p class="sticky policy">Whenever a registration starts, create the Stripe account from its token<span class="writes">Processor · no write</span></p></li>
+      <li><p class="sticky stripe">Stripe creates the account, or refuses it<span class="writes">Outside our system</span></p></li>
+      <li><p class="sticky event">Stripe's notice received<span class="writes">Webhook · write</span></p></li>
+      <li><p class="sticky policy">Whenever a notice arrives, fetch the account and record what changed<span class="writes">Processor · command</span></p></li>
+    </ol>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Event</th><th>Carries</th><th>When</th></tr></thead>
+        <tbody>
+          <tr><td><code>Payment<wbr>Account<wbr>Registration<wbr>Started</code></td><td>Registration ID, account token</td><td>The vendor taps <em>Connect Stripe</em>. Refused while a registration is open or an account exists, so a double tap makes one account</td></tr>
+          <tr><td><code>Payment<wbr>Account<wbr>Registration<wbr>Failed</code></td><td>Registration ID, our code</td><td>Stripe refuses the creation. Any error not known to be passing counts as a refusal; the vendor can try again</td></tr>
+          <tr><td>Name to choose</td><td>Stripe's event ID, account ID</td><td>Every account webhook, before anything else happens. Internal to Ordering</td></tr>
+          <tr><td>Name to choose</td><td>Stripe account ID</td><td>A notice confirms the account, which ends the registration</td></tr>
+          <tr><td><code>Payment<wbr>Account<wbr>Enabled</code></td><td>Nothing more</td><td>Card payments become <code>active</code>, the only status that passes, at publication and for every order (R4)</td></tr>
+          <tr><td><code>Payment<wbr>Account<wbr>Disabled</code></td><td>Our code</td><td>Card payments stop being <code>active</code></td></tr>
+          <tr><td><code>Payment<wbr>Account<wbr>Issue<wbr>Detected</code></td><td>Our code, Stripe's deadline</td><td>Stripe wants something before it restricts the account: information due, payouts paused. One open at a time</td></tr>
+          <tr><td><code>Payment<wbr>Account<wbr>Issue<wbr>Resolved</code></td><td>Nothing more</td><td>The account is back in order</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="aside">
+      Codes go in the events, messages in the vendor app. The webhook adapter translates Stripe's statuses into
+      our codes, so the domain never sees Stripe's words. Accounts v2 sends thin events, so every account
+      webhook means the same thing: something changed. The processor fetches the account, naming the merchant
+      configuration and the requirements in <code>include</code>, and dispatches a command; a repeated
+      webhook records nothing. It reads notices in log order, and ADR 0036 lets one instance commit each, so a
+      stale fetch never lands after a fresher one.
+    </p>
+    <p class="aside">
+      The create call uses the registration ID as its idempotency key and puts the vendor ID in the account's
+      metadata, so the confirming notice finds the vendor. The registration screen says to get in touch if
+      nothing happens within 10 minutes; we then check Stripe's dashboard and resend the notice, possible for
+      15 days. A stalled processor trips the stuck-subscription alert first. Payouts (step 6) and
+      the account on erasure wait for those steps. Read
+      <a href="https://docs.stripe.com/api/v2/core/accounts/event-types">Account event types</a>,
+      <a href="https://docs.stripe.com/event-destinations">How events work</a>,
+      <a href="https://docs.stripe.com/connect/handling-api-verification">Handle verification</a>,
+      <a href="https://docs.stripe.com/connect/handle-verification-updates">Verification updates</a>.
     </p>
   </section>
 
@@ -244,7 +307,6 @@
       <span class="tag lawyer">Lawyer</span> in the brief.
     </p>
     <ol class="questions">
-      <li id="q1"><span class="qid">Q1</span><span class="qtext">Which facts about the vendor's Stripe account do we store, and which do we read from Stripe each time?</span><span class="qmeta"><span class="tag decide">Decide</span> Steps 1, 6</span></li>
       <li id="q3"><span class="qid">Q3</span><span class="qtext">The confirmation timeout, in minutes, and how it fits the day's end time. Both sit well inside the 7-day card hold.</span><span class="qmeta"><span class="tag decide">Decide</span> Steps 2, 3b, 5 · Read <a href="https://docs.stripe.com/payments/place-a-hold-on-a-payment-method">Place a hold</a></span></li>
       <li id="q5"><span class="qid">Q5</span><span class="qtext">When a capture is refused for good, which webhook reports it, if any? An expired hold sends <code>charge.expired</code> and <code>payment_intent.canceled</code>. No page names an event for a capture call Stripe refuses: the call returns an error. If a sandbox test confirms that, the processor records the failure itself, an exception to R2.</span><span class="qmeta"><span class="tag verify">Check</span> Step 3a, R2 · Read <a href="https://docs.stripe.com/payments/place-a-hold-on-a-payment-method">Place a hold</a>, <a href="https://docs.stripe.com/api/events/types">Event types</a></span></li>
       <li id="q6"><span class="qid">Q6</span><span class="qtext">What the vendor's screen shows between <em>order accepted</em> and <em>payment taken</em>.</span><span class="qmeta"><span class="tag decide">Decide</span> Step 3a</span></li>
@@ -252,8 +314,8 @@
       <li id="q8"><span class="qid">Q8</span><span class="qtext">Refunds and disputes: in the Express Dashboard, or in our app too? The Express Dashboard lets the vendor refund and answer disputes, and Stripe keeps both switched on while it covers losses.</span><span class="qmeta"><span class="tag decide">Decide</span> Step 7</span></li>
       <li id="q9"><span class="qid">Q9</span><span class="qtext">Our copy of the legal identity and Stripe's can differ from the start, if the vendor edits our prefill or reuses another account (R3), and drift when the vendor moves. Does it matter, and do we prompt the vendor to update Stripe?</span><span class="qmeta"><span class="tag decide">Decide</span> Step 1, R3</span></li>
       <li id="q10"><span class="qid">Q10</span><span class="qtext">DAC7: is Market Miam a platform when each storefront is one vendor's own shop? If yes, an EI's date of birth and tax number are owed, and asking for them before the Stripe account is created lets R3 prefill them.</span><span class="qmeta"><span class="tag lawyer">Lawyer</span> Step 1 · <a href="avocat.html#b3">B3</a></span></li>
-      <li id="q11"><span class="qid">Q11</span><span class="qtext">A published vendor's Stripe account can later lose the ability to take payments. Does the storefront stay up with ordering paused, or is it unpublished?</span><span class="qmeta"><span class="tag decide">Decide</span> Step 1, R4</span></li>
-      <li id="q14"><span class="qid">Q14</span><span class="qtext">Does Accounts v2 take a French account on the Express Dashboard with Stripe covering losses? That combination is the preview one, so the likeliest to fail, and no page says. Create one in the sandbox.</span><span class="qmeta"><span class="tag verify">Check</span> Step 1 · Read <a href="https://docs.stripe.com/connect/accounts-v2">Accounts v2</a>, <a href="https://docs.stripe.com/connect/risk-management">Risk and liability</a></span></li>
+      <li id="q11"><span class="qid">Q11</span><span class="qtext">Half decided on 31 October: when a published vendor's account stops taking payments, the storefront stays up and ordering pauses (R4). Still open: what happens to the day's held and accepted orders, and how the vendor hears of it at the stall.</span><span class="qmeta"><span class="tag decide">Decide</span> Step 1, R4, <a href="#q5">Q5</a></span></li>
+      <li id="q14"><span class="qid">Q14</span><span class="qtext">Does Accounts v2 take a French account on the Express Dashboard with Stripe covering losses? That combination is the preview one, so the likeliest to fail, and no page says. Create one in the sandbox, from an account token (R3), and note the preview version it needs: Stripe's Accounts v2 page now shows <code>2026-10-28.preview</code>. A sandbox may let an account act before its capability is active, so our own fake tests the gate.</span><span class="qmeta"><span class="tag verify">Check</span> Step 1 · Read <a href="https://docs.stripe.com/connect/accounts-v2">Accounts v2</a>, <a href="https://docs.stripe.com/connect/risk-management">Risk and liability</a>, <a href="https://docs.stripe.com/connect/account-capabilities?accounts-namespace=v2">Capabilities</a></span></li>
     </ol>
   </section>
 

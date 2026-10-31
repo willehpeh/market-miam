@@ -19,7 +19,7 @@
       juridiques ouvertes, chacune avec les textes à relire. Les textes rédigés par Market Miam sont copiés tels qu'ils
       sont en ligne à la date indiquée, avec un lien vers la version en ligne.
     </p>
-    <p class="meta">Mis à jour le 24 octobre 2026 · 15 questions · William Alexander, <a href="mailto:contact@marketmiam.fr">contact@marketmiam.fr</a></p>
+    <p class="meta">Mis à jour le 31 octobre 2026 · 15 questions · William Alexander, <a href="mailto:contact@marketmiam.fr">contact@marketmiam.fr</a></p>
   </header>
 
   <section aria-labelledby="sommaire">
@@ -196,8 +196,12 @@
       <p>Pour ouvrir le compte Stripe d'un traiteur, Market Miam le préremplira avec l'identité légale que le traiteur a
         déjà fournie (dénomination, adresse, SIRET, TVA, contacts) et avec le nom et l'adresse de sa vitrine. Stripe
         demande ensuite le reste directement au traiteur : IBAN, pièce d'identité, etc.</p>
+      <p>Ces données partent du navigateur du traiteur : l'espace traiteur les envoie à Stripe par le script de Stripe
+        (Stripe.js), qui renvoie un jeton à usage unique, et seul ce jeton passe par les serveurs de Market Miam. Stripe
+        l'impose aux plateformes françaises. Stripe.js recueille aussi des signaux de l'appareil du traiteur pour
+        prévenir la fraude.</p>
       <p class="ask">Comment l'ajouter à la politique de l'espace traiteur : Stripe comme destinataire, la finalité, la
-        base légale ?</p>
+        base légale, et ce que recueille Stripe.js ?</p>
       <p class="see">À relire : <a href="#annexe-3">annexe 3</a>, sections « Pourquoi, et sur quelle base » et « Qui y a accès ».</p>
     </article>
 

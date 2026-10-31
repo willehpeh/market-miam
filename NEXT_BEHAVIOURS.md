@@ -6,12 +6,12 @@ doc. Legal and website work track their own remaining sections:
 
 ## Where we stand
 
-As of 2026-10-29. The one place that says what is moving, what waits on whom, and what
+As of 2026-10-31. The one place that says what is moving, what waits on whom, and what
 comes next; each line points at the doc that holds the detail. Update it when a line moves.
 
 **Now**
 
-* ordering, event-stormed on the ordering board (`docs/ordering-board/`, published as `ordering-board`). Timeline agreed as a first pass; step 1, vendor onboarding, being worked in detail. Four rules agreed (R1 nothing recorded before Stripe holds the card · R2 processors call Stripe, webhooks record the outcome · R3 Stripe onboarding prefilled from the mentions légales · R4 no publication without a Stripe account that can take payments); Connect setup: Accounts v2, direct charges, the Express Dashboard, Stripe collecting its fees from the vendor and covering losses; 10 questions open
+* ordering, event-stormed on the ordering board (`docs/ordering-board/`, published as `ordering-board`). Timeline agreed as a first pass; step 1, vendor onboarding, being worked in detail. Four rules agreed (R1 nothing recorded before Stripe holds the card · R2 processors call Stripe, webhooks record the outcome · R3 Stripe onboarding prefilled from the mentions légales · R4 no publication without a Stripe account that can take payments); Connect setup: Accounts v2, direct charges, the Express Dashboard, Stripe collecting its fees from the vendor and covering losses; the payment account (Q1): its events, webhooks read in order by a processor, the prefill sent to Stripe as an account token from the vendor's browser; 9 questions open
 * price: one package at 50 € HT a month, ordering included, no commission (`docs/MARKET_MIAM.md`)
 
 **Waiting on someone else**
