@@ -119,6 +119,8 @@ Phone-first, as today: many vendors have no tablet, and the phone lives in a poc
 - Pushes (see Live updates): a new order, a customer's cancel, a refused capture (also marked on the order), a disabled payment account (also a banner on the live screen). Email backup for new orders (board, *Steps 2 to 6, decided*).
 - Pause ordering during a rush: for a set time, with a default, or until resumed.
 
+Draft wireframes, lo-fi, 2026-10-31, not yet agreed: [`design/vendor-app-wireframes.html`](design/vendor-app-wireframes.html) (font inlined), rendered as [`1-commandes`](design/vendor-app-wireframes-1-commandes.png) · [`2-plats`](design/vendor-app-wireframes-2-plats.png) · [`3-code`](design/vendor-app-wireframes-3-code.png) · [`4-pause`](design/vendor-app-wireframes-4-pause.png) · [`5-bandeaux`](design/vendor-app-wireframes-5-bandeaux.png) · [`6-phase-1`](design/vendor-app-wireframes-6-phase-1.png) · [`7-phase-2`](design/vendor-app-wireframes-7-phase-2.png). Choices they make that nothing above decides: *Saisir un code* at the foot of both tabs; one keypad for every order, with 4-digit codes; the pause's default of 15 minutes, in steps of 5; while paused, the banner's *Reprendre* in place of the header's *Pause*. What the vendor does after *Paiement refusé* waits on Q5. Not drawn: the warning before closing with paid orders uncollected, the iPhone install guide, the pushes.
+
 ### Storefront (`customer-frontend`)
 
 - Basket, Checkout redirect, order-status page behind unguessable link (live updates, shows code).

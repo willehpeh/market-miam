@@ -25,7 +25,7 @@ comes next; each line points at the doc that holds the detail. Update it when a 
 **Next**
 
 * the sandbox tests (Q5, Q14) and the lawyer's DAC7 answer (Q10) (`docs/ordering-board/index.html`)
-* design: the design system as a Design System artifact, then the vendor app's market-day screen and two-phase checklist on a Design canvas (`docs/ORDERING-PLAN.md`, *Vendor app*)
+* design: lo-fi wireframes of the market-day screen and the two-phase checklist, drafted and to agree (`docs/design/vendor-app-wireframes.html`); then the design system as a Design System artifact, and the screens mocked up in it (`docs/ORDERING-PLAN.md`, *Vendor app*)
 * then build, in the plan's order, starting with step 1's payment account in `packages/ordering` (board, *Step 1: the payment account*): the ordering context, the vendor app, the storefront, the website rebuilt around ordering with its price, a pilot with real cards (`docs/ORDERING-PLAN.md` steps 5–9)
 
 ## Product
