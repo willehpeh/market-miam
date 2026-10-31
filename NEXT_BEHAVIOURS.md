@@ -19,12 +19,12 @@ comes next; each line points at the doc that holds the detail. Update it when a 
 * the live client — provide their legal identity, then the storefront footer's stopgap comes out (`docs/MENTIONS-LEGALES-PLAN.md` slice 8); declare every dish's allergens (`docs/ALLERGENS-PLAN.md` slice 4); a test Stripe onboarding; later, connect Stripe from the vendor app like any vendor (board R4)
 * the lawyer — brief ready to send: 15 questions with dated copies of the texts and the draft vendor terms (`docs/ordering-board/avocat.html`, `docs/CGU-CGV-PLAN.md`)
 * the accountant — brief ready to send: 6 questions on cash-register software, e-invoicing, and refunds and disputes (`docs/ordering-board/expert-comptable.html`)
-* Stripe — two sandbox tests on the board: a refused capture (Q5), a French Express account on Accounts v2 (Q14)
+* Stripe — on the board: a French Express account on Accounts v2, in the sandbox (Q14); for a refused capture, which the sandbox can't make, two sandbox checks and a question to Stripe support (Q5)
 * the owner, outside the repo — the Tally form's copy, a CTA and the demo link checked on the real domain (`docs/WEBSITE-PLAN.md` §1–2); the art. 30 register and the DPAs (`docs/PRIVACY-PLAN.md` §2–3); the trademark registration (`docs/MARKET_MIAM.md`)
 
 **Next**
 
-* the sandbox tests (Q5, Q14) and the lawyer's DAC7 answer (Q10) (`docs/ordering-board/index.html`)
+* the sandbox tests (Q14, then Q5), Stripe support's answer on refused captures (Q5) and the lawyer's DAC7 answer (Q10) (`docs/ordering-board/index.html`)
 * design: lo-fi wireframes of the market-day screen and the two-phase checklist, drafted and to agree (`docs/design/vendor-app-wireframes.html`); then the design system as a Design System artifact, and the screens mocked up in it (`docs/ORDERING-PLAN.md`, *Vendor app*)
 * then build, in the plan's order, starting with step 1's payment account in `packages/ordering` (board, *Step 1: the payment account*): the ordering context, the vendor app, the storefront, the website rebuilt around ordering with its price, a pilot with real cards (`docs/ORDERING-PLAN.md` steps 5–9)
 
