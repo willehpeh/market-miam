@@ -123,7 +123,7 @@ SSE trigger: Honeycomb volume or Render bill. Then poke-only + HTTP refetch, mir
 ### Infrastructure
 
 - Stripe platform account: open.
-- Transactional email provider (e.g. Brevo: French, EU-hosted) + DPA, chosen for short or configurable log retention: its logs keep addresses past the shred. Emails carry only the status link, the code where needed and a status line.
+- Transactional email: **Brevo** (French, EU-hosted; free tier 300 emails/day, about 75 orders), decided 2026-10-31, with its DPA. First setup step: a retention rule for transactional logs and email previews, which Brevo otherwise keeps forever; check its shortest period. Its logs keep addresses past the shred, so policy B names it. Emails carry only the status link, the code where needed and a status line.
 - Render Postgres backups + PITR: losing the DB = money taken with no order.
 - Payment-failure alert — both Honeycomb triggers already used.
 - Mobile signal at clients' markets: confirm and code check need network.
