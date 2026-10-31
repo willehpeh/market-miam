@@ -23,9 +23,10 @@ No customer accounts exist — `customer-storefront/` is a read-side query, not 
 
 ### 1. Vendor-facing privacy policy — needed before the first vendor registers
 
-**Drafted and approved by a lawyer on 2026-09-23. It ships with the storefront mentions légales**
-(`docs/MENTIONS-LEGALES-PLAN.md`), along with a second policy for storefront visitors. The final
-sub-processors are Render, Auth0, Cloudinary and Honeycomb. Tally is out, because only the pilot form
+**Drafted and published, and not yet reviewed by a lawyer**: no Market Miam text has been, and the
+lawyer brief asks for a full read of all of them (`docs/ordering-board/avocat.html`, E1). It ships with
+the storefront mentions légales (`docs/MENTIONS-LEGALES-PLAN.md`), along with a second policy for
+storefront visitors. The sub-processors are Render, Auth0, Cloudinary and Honeycomb. Tally is out, because only the pilot form
 uses it and the website's policy already covers that form. Brevo joined them on 2026-10-31, as Auth0's
 email provider for the login emails, and the published policy has named it since the same day: its
 row, its 30-day retention and a transfer sentence narrowed to the US providers

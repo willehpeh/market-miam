@@ -2,15 +2,16 @@
 
 Every storefront owes a mentions-légales page naming its vendor as éditeur (ADR 0054), and
 registered vendors are owed a privacy policy (`PRIVACY-PLAN.md` §1). Both are shipped (slices 1–7
-and 9); slice 8's rollout waits on the live client. The two policies' wording was drafted, checked and approved by a
-lawyer on 2026-09-23; this plan is what it takes to ship them with the vendor's legal identity.
+and 9); slice 8's rollout waits on the live client. **No lawyer has reviewed the two policies' wording,
+nor any other Market Miam text**: the lawyer brief asks for all of it (`ordering-board/avocat.html` E1).
+This plan is what it takes to ship them with the vendor's legal identity.
 
-The approved wording lives in the doc *Market Miam — politiques de confidentialité
+The wording lives in the doc *Market Miam — politiques de confidentialité
 (brouillons)*: **Politique A** (espace traiteur) and **Politique B** (vitrines publiques),
-full versions. Copy them verbatim. A rewording goes back to the lawyer. One sentence already
-has: on 2026-09-23 the retention line for the legal identity dropped *"reste chiffrée"* for
-*"accessible seulement pour répondre à une demande légale"* (`PRIVACY-PLAN.md` §1 rule). The
-lawyer hasn't seen that change yet.
+full versions. The pages copy them verbatim, except for two later changes to policy A: on
+2026-09-23 the retention line for the legal identity dropped *"reste chiffrée"* for
+*"accessible seulement pour répondre à une demande légale"* (`PRIVACY-PLAN.md` §1 rule; brief C3),
+and on 2026-10-31 it named Brevo (brief C4).
 
 ## Decisions taken while drafting
 
@@ -117,7 +118,7 @@ Each slice is reviewable and committable alone. Deploying is gated by the rollou
 
 - `marketmiam.fr/confidentialite-traiteurs` (`apps/website/src/pages/confidentialite-traiteurs.astro`),
   on the public site so a vendor can read it before having an account. In the sitemap.
-- Wording copied from the approved doc. A build-output check confirmed every sentence is there
+- Wording copied from the drafts doc. A build-output check confirmed every sentence is there
   unchanged. One difference: the responsable line takes the address from `EDITEUR`, so it reads
   "Romainville, France".
 - `EDITEUR` moved to `src/editeur.ts`, and the legal pages' header, footer and styles to
@@ -151,8 +152,8 @@ Each slice is reviewable and committable alone. Deploying is gated by the rollou
 - **Open:**
   - LCEN 6-III-1 asks the éditeur to give the hébergeur's phone. The Market Miam block has an
     address and email but no phone. Add one, or confirm the email is enough.
-  - The éditeur block's layout, the hébergeur lines and the "Prix indicatifs" sentence are not
-    lawyer-reviewed text (policy B is).
+  - The éditeur block's layout, the hébergeur lines and the "Prix indicatifs" sentence have not
+    been reviewed by a lawyer, any more than policy B has (brief E1).
   - Both are in the lawyer brief: `ordering-board/avocat.html` D1 (the phone) and D2 (the blocks).
 
 ### 8. Rollout

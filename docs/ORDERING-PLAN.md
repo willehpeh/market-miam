@@ -179,7 +179,7 @@ Per `BOI-TVA-DECLA-30-10-30` (version of 2025-10-01), checked 2026-10-04:
 
 ## Order of work
 
-1. Lawyer + accountant: cash register (confirm scope + self-attestation route), DAC7, CGV + no-show clause, CGU, P2B, policy B.
+1. Lawyer + accountant: cash register (confirm scope + self-attestation route), DAC7, CGV + no-show clause, CGU, P2B, policy B, and a full read of every text already online, none of them reviewed yet (brief E1).
 2. Stripe platform account (open); test onboarding with live client.
 3. Finish mentions légales and add allergens: both deployed 2026-10-13. Each rollout still waits on the live client (`MENTIONS-LEGALES-PLAN.md` slice 8, `ALLERGENS-PLAN.md` slice 4).
 4. Key tombstones for vendor keys: done with mentions légales slice 3 (`21a993e`).

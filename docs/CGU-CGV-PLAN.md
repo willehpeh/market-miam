@@ -263,7 +263,8 @@ publication:
 
 1. **Legal review**, through the brief: B1 for these terms, A1 to A4 and C1 for the
    ordering clauses that articles 2 and 13 and a new article wait on, and article 26's
-   liability cap.
+   liability cap. E1 asks for a full read of the draft, as of every other Market Miam text:
+   no lawyer has reviewed any of them yet.
 2. **The ordering clauses**, drafted from the lawyer's answers.
 3. **§4's code.** Acceptance capture first: until it exists, no vendor's agreement to a
    version is provable, and article 4 promises it is. Decision 14's register check second.

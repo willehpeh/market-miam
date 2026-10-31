@@ -1,6 +1,6 @@
 # 0056. The vendor's legal identity outlives erasure, under its own key
 
-Date: 2026-09-23 · Status: Accepted · Amended 2026-10-04 — the sweep is built, not deferred · Amended 2026-10-05 by [0058](0058-erasure-is-an-event-carried-out-by-a-processor.md) — erasure is an event; `ErasesVendors`, not `VendorErasure`, schedules the `:legal` shred, and read models drop the identity on `VendorErased`
+Date: 2026-09-23 · Status: Accepted · Amended 2026-10-04 — the sweep is built, not deferred · Amended 2026-10-05 by [0058](0058-erasure-is-an-event-carried-out-by-a-processor.md) — erasure is an event; `ErasesVendors`, not `VendorErasure`, schedules the `:legal` shred, and read models drop the identity on `VendorErased` · Amended 2026-10-31 — no lawyer has checked the décret's reading, whatever an earlier version of this record said
 
 Amends ADR 0054 (vendor legal identity) and ADR 0025 (crypto-shredding).
 
@@ -16,8 +16,8 @@ ADR 0025 has one data key per vendor, subject `vendorId`, resolved from event me
 field can survive a shred that the rest does not. ADR 0054 also reuses the storefront's `phone`
 as the LCEN phone, and that field sits under the same key.
 
-The reading of the décret was put to a lawyer with the privacy-policy wording (2026-09-23) and
-not contested.
+No lawyer has checked this reading of the décret. The lawyer brief asks
+(`docs/ordering-board/avocat.html`, C3).
 
 ## Decision
 
