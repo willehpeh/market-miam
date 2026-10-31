@@ -3,7 +3,8 @@ import Legal from '../layouts/Legal.astro';
 import { EDITEUR } from '../editeur';
 
 // Policy A, approved by a lawyer on 2026-09-23 (docs/MENTIONS-LEGALES-PLAN.md). The wording
-// is theirs: a change to it goes back to them first.
+// is theirs: a change to it goes back to them first. Brevo's row, its 30-day retention and the
+// transfer sentence narrowed to the US providers: docs/ordering-board/avocat.html, C4.
 ---
 
 <Legal
@@ -80,8 +81,9 @@ import { EDITEUR } from '../editeur';
       l'impose aux hébergeurs le décret n° 2021-1362. Elle devient ensuite définitivement illisible.
     </li>
     <li>
-      <strong>Traces techniques</strong> : 60 jours chez notre outil de supervision, 1 jour chez Auth0, 7 jours chez notre
-      hébergeur, et jusqu'à un an chez le service de photos (90 jours en ligne, puis en archive).
+      <strong>Traces techniques</strong> : 60 jours chez notre outil de supervision, 30 jours chez notre service d'envoi de
+      mails, 1 jour chez Auth0, 7 jours chez notre hébergeur, et jusqu'à un an chez le service de photos (90 jours en ligne,
+      puis en archive).
     </li>
   </ul>
   <p>
@@ -106,12 +108,14 @@ import { EDITEUR } from '../editeur';
           <td>Supervision technique ; reçoit l'identifiant technique du compte, votre adresse IP et votre navigateur, jamais votre nom ni votre mail</td>
           <td>États-Unis</td>
         </tr>
+        <tr><td>Sendinblue SAS — Brevo (France)</td><td>Envoi des mails de connexion ; reçoit votre adresse mail</td><td>UE</td></tr>
       </tbody>
     </table>
   </div>
   <p>
-    Les transferts hors de l'UE sont encadrés par le Data Privacy Framework UE–États-Unis, auquel chacun de ces
-    prestataires est certifié, et à défaut par les clauses contractuelles types de la Commission européenne.
+    Les transferts hors de l'UE, vers les prestataires américains, sont encadrés par le Data Privacy Framework
+    UE–États-Unis, auquel chacun d'eux est certifié, et à défaut par les clauses contractuelles types de la Commission
+    européenne.
   </p>
   <p>
     Vous pouvez obtenir une copie de ces garanties en écrivant à

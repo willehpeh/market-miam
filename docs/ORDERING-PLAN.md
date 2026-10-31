@@ -130,7 +130,7 @@ Draft wireframes, lo-fi, 2026-10-31, not yet agreed: [`design/vendor-app-wirefra
 ### Infrastructure
 
 - Stripe platform account: open.
-- Transactional email: **Brevo** (French, EU-hosted; free tier 300 emails/day, about 75 orders), decided 2026-10-31, with its DPA. First setup step: a retention rule for transactional logs and email previews, which Brevo otherwise keeps forever; check its shortest period. Its logs keep addresses past the shred, so policy B names it. Emails carry only the status link, the code where needed and a status line.
+- Transactional email: **Brevo** (French, EU-hosted; free tier 300 emails/day, about 75 orders), decided 2026-10-31, with its DPA. Set up the same day: a retention rule keeps transactional logs and email previews 30 days (otherwise forever), and it already sends the vendor login emails as Auth0's email provider, which come out of the same 300 a day. Its logs keep addresses past the shred, so policy B names it; policy A names it for the login emails (C4). Emails carry only the status link, the code where needed and a status line.
 - Render Postgres backups + PITR: losing the DB = money taken with no order.
 - Payment-failure alert — both Honeycomb triggers already used.
 - Mobile signal at clients' markets: confirm and code check need network.
@@ -152,7 +152,7 @@ Prerequisite: `MENTIONS-LEGALES-PLAN.md` slices 3–9 (vendor identity + médiat
 | DAC7 | Seller due diligence + annual DGFiP reporting; sellers <30 sales and <2 000 €/yr excluded from reporting. An *entrepreneur individuel* is likely an individual seller: date of birth + personal tax number (possibly the *numéro fiscal*, not SIRET) beyond `VendorLegalIdentityProvided` v1. Add as a new event version when Ordering lands |
 | Customer CGU | Platform terms, separate from vendor CGV |
 | Insurance | RC pro for Market Miam as intermediary |
-| RGPD | New art. 30 entry for orders. Rewrite policy B: state exactly what survives shred and what Stripe, email provider, Honeycomb (IPs, 60 days) and backups keep. Not "all deleted at end of day" |
+| RGPD | New art. 30 entry for orders. Rewrite policy B: state exactly what survives shred and what Stripe, Brevo (30 days), Honeycomb (IPs, 60 days) and backups keep. Not "all deleted at end of day" |
 | Cash register (art. 286 I 3° bis CGI) | See below |
 | E-reporting | Reaches micro-entreprises Sept 2027. Not urgent |
 | Pseudonymity | After shred, order records + Stripe IDs remain: pseudonymous, not anonymous |

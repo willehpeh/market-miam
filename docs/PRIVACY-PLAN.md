@@ -11,7 +11,7 @@ identity provider (ADR 0021).
 
 | Data | Where it lives | Erasure route |
 |------|----------------|---------------|
-| Vendor email | Auth0; `VendorRegistered` payload (encrypted) | Key shred + Auth0 user delete |
+| Vendor email | Auth0; `VendorRegistered` payload (encrypted); Brevo's logs of the login emails (30 days) | Key shred + Auth0 user delete; Brevo's logs lapse after 30 days |
 | Storefront `name`, `description`, `phone` | `StorefrontInformationEdited` payload (encrypted); `vendor_storefront_views` (plaintext) | Key shred; row dropped on `VendorErased` (ADR 0058) |
 | Vendor legal identity (SIRET, dénomination, adresse, email, phone, TVA, médiateur, société) | `VendorLegalIdentityProvided` payload (encrypted under `{vendorId}:legal`); `vendor_legal_identity_views` (plaintext) | Row dropped on `VendorErased`; `:legal` key shredded 5 years after erasure (ADR 0056) |
 | Website form leads (nom, mail, marchés) | Tally only — never enters the event store | Delete the Tally response |
@@ -26,7 +26,10 @@ No customer accounts exist — `customer-storefront/` is a read-side query, not 
 **Drafted and approved by a lawyer on 2026-09-23. It ships with the storefront mentions légales**
 (`docs/MENTIONS-LEGALES-PLAN.md`), along with a second policy for storefront visitors. The final
 sub-processors are Render, Auth0, Cloudinary and Honeycomb. Tally is out, because only the pilot form
-uses it and the website's policy already covers that form.
+uses it and the website's policy already covers that form. Brevo joined them on 2026-10-31, as Auth0's
+email provider for the login emails, and the published policy has named it since the same day: its
+row, its 30-day retention and a transfer sentence narrowed to the US providers
+(`docs/ordering-board/avocat.html`, C4).
 
 Not a copy of the website one. What actually differs:
 
@@ -35,7 +38,7 @@ Not a copy of the website one. What actually differs:
 | Subjects | Prospects who filled the form | Registered vendors |
 | Legal basis | Intérêt légitime (prospection B2B) | Exécution du contrat |
 | Retention | 3 ans après le dernier échange | Durée du compte + délais légaux |
-| Sub-processors | Tally, Render | Render, Auth0, Cloudinary, Honeycomb |
+| Sub-processors | Tally, Render | Render, Auth0, Cloudinary, Honeycomb, Brevo |
 
 Include one plain-French sentence on irreversibility — *la suppression est définitive,
 vos informations deviennent définitivement illisibles, y compris dans les sauvegardes*.
@@ -56,16 +59,22 @@ the art. 32 security measures — which is where crypto-shredding gets written d
 
 ### 3. Sub-processor register + DPAs
 
-Render, Auth0 (Okta), Cloudinary and Honeycomb for the product, all US companies, and
-Tally (Belgium) for the website's form. Each US one needs its transfer basis recorded — the
-same gap `/mentions-legales` now discloses in prose for Render.
+Render, Auth0 (Okta), Cloudinary and Honeycomb for the product, all US companies; Brevo
+(France, EU-hosted) for the login emails since 2026-10-31; and Tally (Belgium) for the website's
+form. Each US one needs its transfer basis recorded — the same gap `/mentions-legales` now
+discloses in prose for Render.
 
 **Transfer bases checked on 2026-09-23.** The vendor product's four US sub-processors are all
 **Active** on the DPF register (EU-US, plus the UK and Swiss extensions): Render, Auth0, LLC
 (covered under Okta), Cloudinary Inc. and Hound Technology Inc. (Honeycomb). The SCCs in each DPA
 are the fallback if the DPF falls. Log retention: Render 7 days (Hobby), Auth0 1 day (Free),
-Honeycomb 60 days, Cloudinary up to 1 year (90 days online). The DPAs themselves are still
-to be filed.
+Honeycomb 60 days, Cloudinary up to 1 year (90 days online), Brevo 30 days (a rule on transactional
+logs and email previews, set 2026-10-31; its default is forever). The DPAs themselves are still
+to be filed, Brevo's included. Brevo hosts in the EU (GCP Belgium and OVH France, by its own forum),
+so Market Miam transfers nothing to it; its own sub-processors, some reportedly American, are its DPA's
+business — read that list when filing it. Its legal entity is to be confirmed against the DPA in the
+account: the policy names Sendinblue SAS (Paris), which Brevo's French privacy policy names, but a
+2022 German DPA names Sendinblue GmbH (Berlin).
 
 ## Open questions
 

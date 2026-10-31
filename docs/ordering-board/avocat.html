@@ -19,7 +19,7 @@
       juridiques ouvertes, chacune avec les textes à relire. Les textes rédigés par Market Miam sont copiés tels qu'ils
       sont en ligne à la date indiquée, avec un lien vers la version en ligne.
     </p>
-    <p class="meta">Mis à jour le 31 octobre 2026 · 15 questions · William Alexander, <a href="mailto:contact@marketmiam.fr">contact@marketmiam.fr</a></p>
+    <p class="meta">Mis à jour le 31 octobre 2026 · 16 questions · William Alexander, <a href="mailto:contact@marketmiam.fr">contact@marketmiam.fr</a></p>
   </header>
 
   <section aria-labelledby="sommaire">
@@ -28,7 +28,7 @@
       <li><a href="#service">Le service en bref</a></li>
       <li><a href="#a">Vente à distance : les conditions de vente</a> (A1 à A4)</li>
       <li><a href="#b">Market Miam face aux traiteurs</a> (B1 à B4)</li>
-      <li><a href="#c">Données personnelles</a> (C1 à C3)</li>
+      <li><a href="#c">Données personnelles</a> (C1 à C4)</li>
       <li><a href="#d">Les vitrines : mentions et affichage</a> (D1 à D4)</li>
       <li><a href="#annexes">Annexes : les textes à relire</a></li>
     </ol>
@@ -185,8 +185,8 @@
         <li>l'adresse mail du client, le contenu et le montant de sa commande, son code de retrait ;</li>
         <li>deux destinataires : Stripe pour le paiement, et Brevo pour l'envoi des mails ;</li>
         <li>une conservation en deux temps : le mail et le code sont rendus illisibles à la fin du marché, mais
-          subsistent dans les sauvegardes jusqu'à leur expiration, et l'adresse mail dans les journaux du prestataire
-          d'envoi, pour la durée qu'il pratique ; la commande et les identifiants Stripe restent, sous une forme
+          subsistent dans les sauvegardes jusqu'à leur expiration, et l'adresse mail 30 jours dans les journaux du
+          prestataire d'envoi ; la commande et les identifiants Stripe restent, sous une forme
           pseudonyme et non anonyme.</li>
       </ul>
       <p class="ask">Qui est responsable du traitement des données de commande : le traiteur, Market Miam, ou les deux ?
@@ -217,6 +217,30 @@
         changement.</p>
       <p class="ask">La phrase telle qu'elle est en ligne vous convient-elle ?</p>
       <p class="see">À relire : <a href="#annexe-3">annexe 3</a>, passage surligné.</p>
+    </article>
+
+    <article class="brief" id="c4">
+      <div class="brief-head"><span class="brief-id">C4</span><h3>La politique de l'espace traiteur, maintenant que Brevo envoie les mails de connexion</h3></div>
+      <p>Les traiteurs se connectent à l'espace traiteur sans mot de passe : à chaque connexion, ils reçoivent un mail
+        pour se connecter. Ce mail est envoyé par Brevo, pour le compte de Market Miam. Brevo reçoit donc l'adresse mail
+        du traiteur à chaque connexion et la garde 30 jours dans ses journaux. Brevo est une société française, ses
+        données sont hébergées dans l'UE, et il fournit un contrat de sous-traitance (art. 28 RGPD).</p>
+      <p>La politique nomme maintenant Brevo. Par rapport à la copie de l'annexe 3, trois passages changent, ajouts
+        surlignés :</p>
+      <ol>
+        <li>« Qui y a accès », une ligne de plus dans le tableau : <span class="highlight">Sendinblue SAS — Brevo
+          (France) · Envoi des mails de connexion ; reçoit votre adresse mail · UE</span>.</li>
+        <li>« Durée de conservation », traces techniques : « 60 jours chez notre outil de supervision,
+          <span class="highlight">30 jours chez notre service d'envoi de mails,</span> 1 jour chez Auth0, … ».</li>
+        <li>« Qui y a accès », sous le tableau, puisque Brevo n'est pas certifié au Data Privacy Framework et n'a pas à
+          l'être : « Les transferts hors de l'UE<span class="highlight">, vers les prestataires américains,</span> sont
+          encadrés par le Data Privacy Framework UE–États-Unis, auquel chacun <span class="highlight">d'eux</span> est
+          certifié, et à défaut par les clauses contractuelles types de la Commission européenne. »</li>
+      </ol>
+      <p class="ask">Ces trois passages vous conviennent-ils ? La phrase « vos informations deviennent définitivement
+        illisibles » reste-t-elle juste, alors que l'adresse mail reste jusqu'à 30 jours dans les journaux de Brevo
+        après la suppression du compte ?</p>
+      <p class="see">À relire : <a href="#annexe-3">annexe 3</a>, sections « Durée de conservation » et « Qui y a accès ».</p>
     </article>
   </section>
 

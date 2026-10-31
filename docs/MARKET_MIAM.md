@@ -114,7 +114,7 @@ pile line under each dish in the menu editor. See `BILAN-RETROSPECTIVE-PLAN.md`.
 - **Domain:** `packages/market-days` (framework-free), `packages/event-sourcing` (the mechanism, framework-free)
 - **Persistence:** Postgres — single append-only `events` table, globally ordered via serialized appends (ADRs 0005/0028/0029); read models projected via polling subscriptions poked by LISTEN/NOTIFY (ADR 0030); in-memory twin of every adapter for the fast suite
 - **PII:** crypto-shredding — per-vendor data keys, erasure by key deletion (ADR 0025)
-- **Identity:** Auth0 (ADR 0021) · **Photos:** Cloudinary signed uploads · **Hosting:** Render · **Observability:** OpenTelemetry → Honeycomb (ADR 0026)
+- **Identity:** Auth0 (ADR 0021), passwordless by email, sent through Brevo · **Photos:** Cloudinary signed uploads · **Hosting:** Render · **Observability:** OpenTelemetry → Honeycomb (ADR 0026)
 
 ## Bounded Context: Market Days
 

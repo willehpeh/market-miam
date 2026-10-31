@@ -25,7 +25,7 @@ and the draft moved to the ordering site as annexe 6 of the lawyer brief (§7).
 | Price freeze (*le tarif ne bouge pas*) withdrawn, decision 6; off the site since the 4 October holding page, which names no price | `WEBSITE-PLAN.md` |
 | Pilot of 5–10 hand-onboarded traiteurs removed, decision 13 | `WEBSITE-PLAN.md` |
 | No billing system: invoiced by hand, non-payment handled by unpublishing by hand | `WEBSITE-PLAN.md` decisions; ADR 0048 |
-| Hosting Render (US), identity Auth0 (Okta, US), photos Cloudinary, forms Tally (BE) | `MARKET_MIAM.md`, `PRIVACY-PLAN.md` |
+| Hosting Render (US), identity Auth0 (Okta, US), photos Cloudinary, login emails Brevo (FR), forms Tally (BE) | `MARKET_MIAM.md`, `PRIVACY-PLAN.md` |
 | Erasure is irreversible by design; state the consequence, never the algorithm | ADR 0025, `PRIVACY-PLAN.md` |
 | Storefront lives at a subdomain; assignment is a publication requirement | ADRs 0031/0032 |
 | Ordering decided 2026-10-04, paid online through each vendor's Stripe account, in the only package (was: no ordering, no payment on-platform). Still no delivery | `ORDERING-PLAN.md`, `docs/ordering-board/` |
@@ -132,7 +132,7 @@ Settled with the owner; a lawyer may push back on any of them.
 - **Trademark registration outcome.** Pending since 2026-08. Registered or merely filed
   decides the IP clause's strength.
 - **Sub-processor legal identities and transfer bases**: Auth0/Okta, Render, Cloudinary,
-  Tally. `PRIVACY-PLAN.md` §3 owes the list; the CGU's sub-processor annex needs the same
+  Brevo, Tally. `PRIVACY-PLAN.md` §3 owes the list; the CGU's sub-processor annex needs the same
   one. Render's coordinates in `mentions-legales.astro` are unconfirmed against render.com.
 - **Cloudinary is undocumented on the legal side.** It appears in `MARKET_MIAM.md` and
   `apps/api/src/app/signed-uploads/`, not in `PRIVACY-PLAN.md`'s sub-processor list.
