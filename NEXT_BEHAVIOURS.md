@@ -19,7 +19,7 @@ comes next; each line points at the doc that holds the detail. Update it when a 
 * the live client — provide their legal identity, then the storefront footer's stopgap comes out (`docs/MENTIONS-LEGALES-PLAN.md` slice 8); declare every dish's allergens (`docs/ALLERGENS-PLAN.md` slice 4); a test Stripe onboarding; later, connect Stripe from the vendor app like any vendor (board R4)
 * the lawyer — brief ready to send: 15 questions with dated copies of the texts and the draft vendor terms (`docs/ordering-board/avocat.html`, `docs/CGU-CGV-PLAN.md`)
 * the accountant — brief ready to send: 6 questions on cash-register software, e-invoicing, and refunds and disputes (`docs/ordering-board/expert-comptable.html`)
-* Stripe — on the board: a French Express account on Accounts v2, in the sandbox (Q14); for a refused capture, which the sandbox can't make, two sandbox checks and a question to Stripe support (Q5)
+* Stripe — on the board: a French Express account on Accounts v2, in the sandbox, which Stripe's API reference suggests only the preview version allows (Q14); for a refused capture, which the sandbox can't make, two sandbox checks and a question to Stripe support (Q5)
 * the owner, outside the repo — the Tally form's copy, a CTA and the demo link checked on the real domain (`docs/WEBSITE-PLAN.md` §1–2); the art. 30 register and the DPAs (`docs/PRIVACY-PLAN.md` §2–3); the trademark registration (`docs/MARKET_MIAM.md`)
 
 **Next**
