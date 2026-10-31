@@ -18,8 +18,7 @@ const RENDER = {
   telephone: '+1 415 319 8186',
 };
 
-// The éditeur block (LCEN art. 6-III-1 and 19), then policy B. No lawyer has reviewed
-// either yet: the brief, docs/ordering-board/avocat.html, asks for both (E1).
+// The éditeur block (LCEN art. 6-III-1 and 19), then policy B (docs/MENTIONS-LEGALES-PLAN.md).
 @Component({
   selector: 'app-mentions-legales-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
