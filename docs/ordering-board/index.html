@@ -60,7 +60,8 @@
         <p class="refs"><a class="ref r" href="#r3">R3</a><a class="ref r" href="#r4">R4</a><a class="ref" href="#q10">Q10</a><a class="ref" href="#q14">Q14</a></p>
       </li>
       <li class="step">
-        <div class="step-head"><span class="num">2</span><span class="who">Customer</span></div>
+        <div class="step-head"><span class="num">2</span><span class="who">Customer · vendor</span></div>
+        <p class="sticky event">Ordering paused, for a set time or until resumed</p>
         <p class="sticky event">Order placed: card held, not charged<span class="tag stripe">via webhook</span></p>
         <p class="sticky policy">Whenever an order arrives for a sold-out dish, or for a closed or ended day, refuse it</p>
         <p class="sticky stripe stripe-part">Checkout</p>
@@ -294,10 +295,14 @@
         <thead><tr><th>Step</th><th>Decided</th></tr></thead>
         <tbody>
           <tr><td>2</td><td>An order for a sold-out dish, or for a day closed or ended while the customer was in Checkout, is refused automatically. An order is never partly filled, so one sold-out dish refuses it whole</td></tr>
+          <tr><td>2, rush</td><td>The vendor can pause new orders without closing the day, for a set time with a default on the screen, or until they resume. A timed pause records when it ends and needs no timer; only an open-ended one needs <em>Ordering resumed</em>. An order whose Checkout began before the pause still goes through</td></tr>
           <tr><td>3a, 3b</td><td>The vendor has 10 minutes to accept, capped at the day's end time (Q3). The customer can cancel until the vendor's acceptance reaches us, the one anonymous write (R1). The vendor's screen waits a few seconds before sending an acceptance, so a mistaken tap can be undone; until it arrives, the customer can still cancel</td></tr>
           <tr><td>5</td><td>Closing by hand with paid orders not collected asks the vendor to confirm. If the day then ends without reopening, those orders are refunded at the end time instead of becoming no-shows: the vendor chose to leave early</td></tr>
           <tr><td>6</td><td>Refunds go only to the card, never in cash, and start from the Express Dashboard for now (Q8). Each is recorded from Stripe's webhook with its amount, partial ones included. A dispute is not a refund: it gets its own events, opened then won or lost. How both enter the closings and VAT is the accountant's <a href="expert-comptable.html#k6">K6</a></td></tr>
           <tr><td>Payouts</td><td>Nothing of ours reacts to a payout, so it left the timeline; the vendor follows payouts in the Express Dashboard</td></tr>
+          <tr><td>Customer emails</td><td>Order received, with the status link · refused or no answer in time · cancelled by them · paid, with the code · handed over, with or without the code · no-show, sent before the day's details are erased · refunded. Disputes send nothing: the customer's bank handles them</td></tr>
+          <tr><td>Vendor pushes</td><td>A new order · a customer's cancel · a refused capture, which also marks the order <em>payment refused, don't hand over</em> · a disabled payment account, which also shows a banner. A push needs the vendor app installed on the Home Screen</td></tr>
+          <tr><td>Email provider</td><td>Its logs keep recipients' addresses past our end-of-day erasure, so it is chosen for short or configurable log retention, EU hosting and a data processing agreement, and named in policy B (<a href="avocat.html#c1">C1</a>). Emails carry only the status link, the code where needed and a status line, never the customer's name</td></tr>
         </tbody>
       </table>
     </div>

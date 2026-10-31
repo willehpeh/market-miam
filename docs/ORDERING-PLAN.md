@@ -111,8 +111,8 @@ SSE trigger: Honeycomb volume or Render bill. Then poke-only + HTTP refetch, mir
 - Live order list: number, dishes, status; confirm / refuse.
 - Code input; *remis sans code* per order.
 - *Open my Stripe*: a single-use Express Dashboard login link, made per visit (board, *Connect setup*).
-- New-order alerts: web push (see Live updates); email backup.
-- Payment account disabled: a banner on the live screen, and a push where the app is installed (board, *Step 1*).
+- Pushes (see Live updates): a new order, a customer's cancel, a refused capture (also marked on the order), a disabled payment account (also a banner on the live screen). Email backup for new orders (board, *Steps 2 to 6, decided*).
+- Pause ordering during a rush: for a set time, with a default, or until resumed.
 
 ### Storefront (`customer-frontend`)
 
@@ -123,7 +123,7 @@ SSE trigger: Honeycomb volume or Render bill. Then poke-only + HTTP refetch, mir
 ### Infrastructure
 
 - Stripe platform account: open.
-- Transactional email provider (e.g. Brevo: French, EU-hosted) + DPA.
+- Transactional email provider (e.g. Brevo: French, EU-hosted) + DPA, chosen for short or configurable log retention: its logs keep addresses past the shred. Emails carry only the status link, the code where needed and a status line.
 - Render Postgres backups + PITR: losing the DB = money taken with no order.
 - Payment-failure alert — both Honeycomb triggers already used.
 - Mobile signal at clients' markets: confirm and code check need network.
