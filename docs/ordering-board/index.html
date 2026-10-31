@@ -27,9 +27,9 @@
   <section aria-labelledby="now">
     <h2 id="now">Where we are</h2>
     <p class="intro">
-      Event-storming, Stripe Connect first. The timeline is a first pass. Step 1, vendor onboarding, is being
-      worked in detail: R3, R4, the <a href="#setup">Connect setup</a> and the
-      <a href="#account">payment account</a> came out of it.
+      Event-storming, Stripe Connect first. Step 1, vendor onboarding, is decided down to the
+      <a href="#account">payment account</a>'s events, save the lawyer's Q10 and a sandbox test (Q14). Steps 2
+      to 6 were stormed on 31 October at sticky-note level (<a href="#orders">decisions</a>).
     </p>
     <div class="table-wrap">
       <table>
@@ -62,8 +62,9 @@
       <li class="step">
         <div class="step-head"><span class="num">2</span><span class="who">Customer</span></div>
         <p class="sticky event">Order placed: card held, not charged<span class="tag stripe">via webhook</span></p>
+        <p class="sticky policy">Whenever an order arrives for a sold-out dish, or for a closed or ended day, refuse it</p>
         <p class="sticky stripe stripe-part">Checkout</p>
-        <p class="refs"><a class="ref r" href="#r1">R1</a><a class="ref" href="#q3">Q3</a></p>
+        <p class="refs"><a class="ref r" href="#r1">R1</a></p>
       </li>
       <li class="step">
         <div class="step-head"><span class="num">3a</span><span class="who">Vendor</span></div>
@@ -74,12 +75,12 @@
         <p class="refs"><a class="ref r" href="#r2">R2</a><a class="ref" href="#q5">Q5</a></p>
       </li>
       <li class="step">
-        <div class="step-head"><span class="num">3b</span><span class="who">Vendor · clock</span></div>
-        <p class="sticky event">Order refused, or no answer in time</p>
+        <div class="step-head"><span class="num">3b</span><span class="who">Vendor · customer · clock</span></div>
+        <p class="sticky event">Order refused, cancelled by the customer, or no answer within 10 minutes</p>
         <p class="sticky policy">Whenever the payment account is disabled, refuse its held orders</p>
         <p class="sticky event">Hold released<span class="tag stripe">via webhook</span></p>
         <p class="sticky stripe stripe-part">Cancel the hold</p>
-        <p class="refs"><a class="ref r" href="#r2">R2</a><a class="ref r" href="#r4">R4</a><a class="ref" href="#q3">Q3</a></p>
+        <p class="refs"><a class="ref r" href="#r1">R1</a><a class="ref r" href="#r2">R2</a><a class="ref r" href="#r4">R4</a></p>
       </li>
       <li class="step">
         <div class="step-head"><span class="num">4</span><span class="who">Vendor</span></div>
@@ -92,28 +93,24 @@
         <p class="sticky event">Market day ended</p>
         <p class="sticky event">Remaining holds released<span class="tag stripe">via webhook</span></p>
         <p class="sticky event">No-show: paid, never collected</p>
+        <p class="sticky policy">Whenever a day closed by hand ends without reopening, refund its paid orders not collected instead</p>
         <p class="sticky event">The day's customer details erased</p>
-        <p class="sticky stripe stripe-part">Cancel the remaining holds</p>
-        <p class="refs"><a class="ref r" href="#r2">R2</a><a class="ref" href="#q3">Q3</a></p>
+        <p class="sticky stripe stripe-part">Cancel the remaining holds · refunds</p>
+        <p class="refs"><a class="ref r" href="#r2">R2</a></p>
       </li>
       <li class="step">
-        <div class="step-head"><span class="num">6</span><span class="who">Stripe</span></div>
-        <p class="sticky event">Vendor paid out</p>
-        <p class="sticky stripe stripe-part">Payouts</p>
-        <p class="refs"><a class="ref" href="#account">Q1</a></p>
-      </li>
-      <li class="step">
-        <div class="step-head"><span class="num">7</span><span class="who">Customer · vendor</span><span class="note">afterwards</span></div>
-        <p class="sticky event">Refund, or chargeback</p>
-        <p class="sticky stripe stripe-part">Refunds · disputes</p>
-        <p class="refs"><a class="ref" href="#q8">Q8</a></p>
+        <div class="step-head"><span class="num">6</span><span class="who">Vendor · customer's bank</span><span class="note">afterwards</span></div>
+        <p class="sticky event">Order refunded, to the card<span class="tag stripe">via webhook</span></p>
+        <p class="sticky event">Payment disputed, then the dispute won or lost<span class="tag stripe">via webhook</span></p>
+        <p class="sticky stripe stripe-part">Refunds in the Express Dashboard · disputes</p>
+        <p class="refs"><a class="ref" href="expert-comptable.html#k6">K6</a></p>
       </li>
     </ol>
   </section>
 
   <section aria-labelledby="rules">
     <h2 id="rules">Agreed rules</h2>
-    <p class="intro">All four agreed on 24 October 2026; R2, R3 and R4 amended on 31 October.</p>
+    <p class="intro">All four agreed on 24 October 2026, and amended on 31 October.</p>
     <div class="grid">
       <article class="card rule-card" id="r1">
         <span class="tag rule">R1</span>
@@ -121,6 +118,8 @@
         <p>Placing an order only opens a Checkout page. Our first event is the webhook saying the card is held.
           Anonymous traffic never touches the append lock (ADR 0028). An abandoned checkout exists only in
           Stripe's dashboard.</p>
+        <p>One exception: a customer cancelling an order that still waits for the vendor, with the token from
+          its status link. Cancels can't outnumber held orders.</p>
         <p>Saturday noon is about 10 writes a second. The measured ceiling is about 165 a second at a
           1.7 ms round trip to the database (finding M6).</p>
       </article>
@@ -242,8 +241,8 @@
       The create call uses the registration ID as its idempotency key and puts the vendor ID in the account's
       metadata, so the confirming notice finds the vendor. The registration screen says to get in touch if
       nothing happens within 10 minutes; we then check Stripe's dashboard and resend the notice, possible for
-      15 days. A stalled processor trips the stuck-subscription alert first. Payouts (step 6) and
-      the account on erasure wait for those steps. Read
+      15 days. A stalled processor trips the stuck-subscription alert first. Payouts stay in Stripe, and the
+      account on erasure waits for the erasure work. Read
       <a href="https://docs.stripe.com/api/v2/core/accounts/event-types">Account event types</a>,
       <a href="https://docs.stripe.com/event-destinations">How events work</a>,
       <a href="https://docs.stripe.com/connect/handling-api-verification">Handle verification</a>,
@@ -287,9 +286,26 @@
     </p>
   </section>
 
+  <section aria-labelledby="orders">
+    <h2 id="orders">Steps 2 to 6, decided</h2>
+    <p class="intro">Stormed on 31 October 2026, at sticky-note level. How each is built is left to the build.</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Step</th><th>Decided</th></tr></thead>
+        <tbody>
+          <tr><td>2</td><td>An order for a sold-out dish, or for a day closed or ended while the customer was in Checkout, is refused automatically. An order is never partly filled, so one sold-out dish refuses it whole</td></tr>
+          <tr><td>3a, 3b</td><td>The vendor has 10 minutes to accept, capped at the day's end time (Q3). The customer can cancel until the vendor's acceptance reaches us, the one anonymous write (R1). The vendor's screen waits a few seconds before sending an acceptance, so a mistaken tap can be undone; until it arrives, the customer can still cancel</td></tr>
+          <tr><td>5</td><td>Closing by hand with paid orders not collected asks the vendor to confirm. If the day then ends without reopening, those orders are refunded at the end time instead of becoming no-shows: the vendor chose to leave early</td></tr>
+          <tr><td>6</td><td>Refunds go only to the card, never in cash, and start from the Express Dashboard for now (Q8). Each is recorded from Stripe's webhook with its amount, partial ones included. A dispute is not a refund: it gets its own events, opened then won or lost. How both enter the closings and VAT is the accountant's <a href="expert-comptable.html#k6">K6</a></td></tr>
+          <tr><td>Payouts</td><td>Nothing of ours reacts to a payout, so it left the timeline; the vendor follows payouts in the Express Dashboard</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
   <section aria-labelledby="anonymous">
     <h2 id="anonymous">Calls with no login</h2>
-    <p class="intro">All three land on <code>apps/api</code>, next to the public storefront route.</p>
+    <p class="intro">All four land on <code>apps/api</code>, next to the public storefront route.</p>
     <div class="table-wrap">
       <table>
         <thead><tr><th>Call</th><th>From</th><th>Protection</th></tr></thead>
@@ -309,6 +325,11 @@
             <td>Order status</td>
             <td>Customer's browser</td>
             <td>A long random token in the link, never the order number, plus a rate limit</td>
+          </tr>
+          <tr>
+            <td>Cancel an order</td>
+            <td>Customer's browser</td>
+            <td>The status link's token, only while the order waits for the vendor. The one anonymous write (R1)</td>
           </tr>
           <tr>
             <td>Webhooks</td>
@@ -332,10 +353,8 @@
       <span class="tag lawyer">Lawyer</span> in the brief.
     </p>
     <ol class="questions">
-      <li id="q3"><span class="qid">Q3</span><span class="qtext">The confirmation timeout, in minutes, and how it fits the day's end time. Both sit well inside the 7-day card hold.</span><span class="qmeta"><span class="tag decide">Decide</span> Steps 2, 3b, 5 · Read <a href="https://docs.stripe.com/payments/place-a-hold-on-a-payment-method">Place a hold</a></span></li>
       <li id="q5"><span class="qid">Q5</span><span class="qtext">When a capture is refused for good, which webhook reports it, if any? An expired hold sends <code>charge.expired</code> and <code>payment_intent.canceled</code>. No page names an event for a capture call Stripe refuses: the call returns an error. If a sandbox test confirms that, the processor records the failure itself, an exception to R2.</span><span class="qmeta"><span class="tag verify">Check</span> Step 3a, R2 · Read <a href="https://docs.stripe.com/payments/place-a-hold-on-a-payment-method">Place a hold</a>, <a href="https://docs.stripe.com/api/events/types">Event types</a></span></li>
       <li id="q7"><span class="qid">Q7</span><span class="qtext">Code attempts before a lockout, and how long the lockout lasts.</span><span class="qmeta"><span class="tag decide">Decide</span> Step 4</span></li>
-      <li id="q8"><span class="qid">Q8</span><span class="qtext">Refunds and disputes: in the Express Dashboard, or in our app too? The Express Dashboard lets the vendor refund and answer disputes, and Stripe keeps both switched on while it covers losses.</span><span class="qmeta"><span class="tag decide">Decide</span> Step 7</span></li>
       <li id="q10"><span class="qid">Q10</span><span class="qtext">DAC7: is Market Miam a platform when each storefront is one vendor's own shop? If yes, an EI's date of birth and tax number are owed, and asking for them before the Stripe account is created lets R3 prefill them.</span><span class="qmeta"><span class="tag lawyer">Lawyer</span> Step 1 · <a href="avocat.html#b3">B3</a></span></li>
       <li id="q14"><span class="qid">Q14</span><span class="qtext">Does Accounts v2 take a French account on the Express Dashboard with Stripe covering losses? That combination is the preview one, so the likeliest to fail, and no page says. Create one in the sandbox, from an account token (R3), and note the preview version it needs: Stripe's Accounts v2 page now shows <code>2026-10-28.preview</code>. A sandbox may let an account act before its capability is active, so our own fake tests the gate.</span><span class="qmeta"><span class="tag verify">Check</span> Step 1 · Read <a href="https://docs.stripe.com/connect/accounts-v2">Accounts v2</a>, <a href="https://docs.stripe.com/connect/risk-management">Risk and liability</a>, <a href="https://docs.stripe.com/connect/account-capabilities?accounts-namespace=v2">Capabilities</a></span></li>
     </ol>

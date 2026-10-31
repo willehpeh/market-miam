@@ -25,10 +25,10 @@ for the lawyer and the accountant, in French. The board is newer than this plan 
 1. Customer picks dishes on storefront → Stripe Checkout. Card **authorised, not charged**.
 2. Order appears on vendor live screen: number, dishes, status. **Never the code.**
 3. Vendor confirms → capture → code to customer only (status page + email).
-4. Vendor refuses, or timeout → hold cancelled, nothing charged, customer emailed.
+4. Vendor refuses, customer cancels, or 10 minutes pass (capped at `endTime`) → hold cancelled, nothing charged, customer emailed. Orders for a sold-out dish or a closed or ended day are refused automatically.
 5. At stall: customer gives code, vendor types it → server matches day's open orders → *remis* → screen shows that order's dishes.
 6. Lost code: vendor picks a paid order → *remis sans code*. Own event. Customer emailed immediately, so a false hand-over is visible to the real customer.
-7. At day's `endTime`: unconfirmed holds cancelled; paid + uncollected = no-show, vendor keeps money; day's PII key shredded.
+7. At day's `endTime`: unconfirmed holds cancelled; paid + uncollected = no-show, vendor keeps money, unless the vendor closed by hand and didn't reopen, which refunds them; day's PII key shredded.
 
 Authorise-before-confirm, not confirm-then-pay: avoids customer returning to pay (no-show in small), blocks fake orders (bad card fails before vendor sees it).
 
@@ -38,6 +38,7 @@ Vendor never knows the code: stops pickups off a customer-visible tablet, and a 
 
 - Stripe Connect, **Accounts v2, direct charges, Express Dashboard**; Stripe collects its fees from the vendor and covers negative balances (board, *Connect setup*). Vendor = merchant of record; Stripe does KYC, payouts, disputes. Market Miam never holds funds → no DSP2 licence.
 - Hosted Stripe Checkout, `capture_method: 'manual'`. 3DS, Apple/Google Pay, PCI SAQ A.
+- Refunds only to the card, from the Express Dashboard, recorded from webhooks; disputes are their own events (board, *Steps 2 to 6, decided*).
 - Fees 1.5% + 0.25 € per standard EEA card, 2.8% + 0.25 € premium, 20 € per dispute; vendor pays, Market Miam pays no Connect fees. First payout 7–14 days after the first payment, then 3 business days.
 - **Order cap 119,99 €.** ≥120 € online contracts must be archived 10 years (L213-1, D213-1), breaking one-day retention.
 
@@ -167,7 +168,6 @@ Per `BOI-TVA-DECLA-30-10-30` (version of 2025-10-01), checked 2026-10-04:
 
 ## Open
 
-- Confirmation timeout (minutes).
 - Code attempts before lockout; lockout length.
 
 ## Order of work

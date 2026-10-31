@@ -11,7 +11,7 @@ comes next; each line points at the doc that holds the detail. Update it when a 
 
 **Now**
 
-* ordering, event-stormed on the ordering board (`docs/ordering-board/`, published as `ordering-board`). Timeline agreed as a first pass; step 1, vendor onboarding, being worked in detail. Four rules agreed (R1 nothing recorded before Stripe holds the card · R2 processors call Stripe, webhooks record the outcome · R3 Stripe onboarding prefilled from the mentions légales · R4 no orders without a Stripe account that can take payments, publication no longer waiting for it); Connect setup: Accounts v2, direct charges, the Express Dashboard, Stripe collecting its fees from the vendor and covering losses; the payment account (Q1): its events, webhooks read in order by a processor, the prefill sent to Stripe as an account token from the vendor's browser; when payments stop (Q11), held orders refused and ordering paused; Stripe checks its account against the storefront, and the vendor is prompted to update Stripe when their mentions légales change (Q9); 6 questions open
+* ordering, event-stormed on the ordering board (`docs/ordering-board/`, published as `ordering-board`). Timeline agreed as a first pass; step 1, vendor onboarding, being worked in detail. Four rules agreed (R1 nothing recorded before Stripe holds the card · R2 processors call Stripe, webhooks record the outcome · R3 Stripe onboarding prefilled from the mentions légales · R4 no orders without a Stripe account that can take payments, publication no longer waiting for it); Connect setup: Accounts v2, direct charges, the Express Dashboard, Stripe collecting its fees from the vendor and covering losses; the payment account (Q1): its events, webhooks read in order by a processor, the prefill sent to Stripe as an account token from the vendor's browser; when payments stop (Q11), held orders refused and ordering paused; Stripe checks its account against the storefront, and the vendor is prompted to update Stripe when their mentions légales change (Q9); steps 2 to 6 stormed: a 10-minute timeout, the customer's cancel, a refund when the vendor leaves early, refunds only to the card, disputes as their own events; 4 questions open
 * price: one package at 50 € HT a month, ordering included, no commission (`docs/MARKET_MIAM.md`)
 
 **Waiting on someone else**
@@ -24,7 +24,7 @@ comes next; each line points at the doc that holds the detail. Update it when a 
 
 **Next**
 
-* the rest of step 1's questions, then event-storm steps 2 to 7 (`docs/ordering-board/index.html`)
+* the sandbox tests (Q5, Q14) and the lawyer's DAC7 answer (Q10) (`docs/ordering-board/index.html`)
 * then build, in the plan's order: the ordering context, the vendor app, the storefront, the website rebuilt around ordering with its price, a pilot with real cards (`docs/ORDERING-PLAN.md` steps 5–9)
 
 ## Product
