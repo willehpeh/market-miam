@@ -105,7 +105,8 @@ SSE trigger: Honeycomb volume or Render bill. Then poke-only + HTTP refetch, mir
 
 ### Vendor app
 
-- Stripe onboarding as a requirement to publish (`StorefrontPublication` readiness, as for the legal identity): ordering is in the only package, so a published storefront always takes orders. The live client, published before it, connects Stripe afterwards (board R4). The prefill leaves the vendor's browser as a Stripe account token (board R3).
+- Stripe onboarding after publication: the storefront goes live with its legal identity and terms, so Stripe's website check has a site to read, and ordering opens once the account can take payments (board R4). The live client connects Stripe the same way. The prefill leaves the vendor's browser as a Stripe account token (board R3).
+- Mentions légales changed: prompt the vendor to update Stripe through an Express Dashboard login link (board, *Step 1*).
 - Live order list: number, dishes, status; confirm / refuse.
 - Code input; *remis sans code* per order.
 - *Open my Stripe*: a single-use Express Dashboard login link, made per visit (board, *Connect setup*).
