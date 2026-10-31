@@ -221,8 +221,8 @@
         <tbody>
           <tr><td><code>Payment<wbr>Account<wbr>Registration<wbr>Started</code></td><td>Registration ID, account token</td><td>The vendor taps <em>Connect Stripe</em>. Refused while a registration is open or an account exists, so a double tap makes one account</td></tr>
           <tr><td><code>Payment<wbr>Account<wbr>Registration<wbr>Failed</code></td><td>Registration ID, our code</td><td>Stripe refuses the creation. Any error not known to be passing counts as a refusal; the vendor can try again</td></tr>
-          <tr><td>Name to choose</td><td>Stripe's event ID, account ID</td><td>Every account webhook, before anything else happens. Internal to Ordering</td></tr>
-          <tr><td>Name to choose</td><td>Stripe account ID</td><td>A notice confirms the account, which ends the registration</td></tr>
+          <tr><td><code>Payment<wbr>Account<wbr>Update<wbr>Detected</code></td><td>Stripe's event ID, account ID</td><td>Every account webhook, before anything else happens. Internal to Ordering</td></tr>
+          <tr><td><code>Payment<wbr>Account<wbr>Registration<wbr>Confirmed</code></td><td>Stripe account ID</td><td>A notice confirms the account, which ends the registration</td></tr>
           <tr><td><code>Payment<wbr>Account<wbr>Enabled</code></td><td>Nothing more</td><td>Card payments become <code>active</code>, the only status that passes, at publication and for every order (R4)</td></tr>
           <tr><td><code>Payment<wbr>Account<wbr>Disabled</code></td><td>Our code</td><td>Card payments stop being <code>active</code></td></tr>
           <tr><td><code>Payment<wbr>Account<wbr>Issue<wbr>Detected</code></td><td>Our code, Stripe's deadline</td><td>Stripe wants something before it restricts the account: information due, payouts paused. One open at a time</td></tr>
