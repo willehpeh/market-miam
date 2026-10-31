@@ -106,6 +106,11 @@ SSE trigger: Honeycomb volume or Render bill. Then poke-only + HTTP refetch, mir
 
 ### Vendor app
 
+Phone-first, as today: many vendors have no tablet, and the phone lives in a pocket at the stall, so pushes are the main channel. Decided 2026-10-31:
+
+- Market-day screen: two tabs, *Commandes* by default and *Plats*, one tap per dish to mark it sold out. Back to *Commandes* whenever the app returns to the foreground; a new order raises a count and a push, and never switches tab on its own, so nothing moves under the vendor's thumb.
+- Onboarding: today's setup checklist in two phases. Phase 1 unchanged up to publication. Phase 2, *Prendre des commandes*: connect Stripe, install the app, allow notifications, wait for Stripe's checks, then ordering opens. No steering from one step to the next, so nobody is pushed towards photos they don't have yet. Vendors already published, the live client among them, see only phase 2.
+- Installable app (manifest + service worker): pushes on an iPhone need it, iOS 16.4+; Chrome on Android doesn't.
 - Stripe onboarding after publication: the storefront goes live with its legal identity and terms, so Stripe's website check has a site to read, and ordering opens once the account can take payments (board R4). The live client connects Stripe the same way. The prefill leaves the vendor's browser as a Stripe account token (board R3).
 - Mentions légales changed: prompt the vendor to update Stripe through an Express Dashboard login link (board, *Step 1*).
 - Live order list: number, dishes, status; confirm / refuse.
