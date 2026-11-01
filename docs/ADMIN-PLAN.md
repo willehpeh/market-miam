@@ -29,9 +29,9 @@ belongs there, deployed from the owner's machine with the Auth0 CLI.
 `OperatorAuthGuard`; the admin app signs in through GitHub and shows it; a static Render service
 with a strict CSP serves it. Specs: the operator verifier against real RS256 tokens (audience,
 issuer, expiry, subject, the `operate` permission), the guard's 401/403, the route, and a sweep that
-requests every `ops/` route anonymously. Going live needs the admin client id in
-`environments/environment.ts`, the DNS record for `admin.marketmiam.fr`, and a first sign-in
-checked by hand on the deployed site, since the sandbox cannot reach Auth0.
+requests every `ops/` route anonymously. Going live needs the admin app's logout and
+web-origin URLs in Auth0, the DNS record for `admin.marketmiam.fr`, and a first sign-in checked
+by hand on the deployed site, since the sandbox cannot reach Auth0.
 
 **1. Vendor list.** Moves `admin-api`'s one feature: Auth0 users joined to their subdomains. The
 Management API client moves into `api` and caches its token (Auth0 meters machine-to-machine

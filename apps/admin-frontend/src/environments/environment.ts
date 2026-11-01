@@ -5,7 +5,7 @@ export const environment = {
   auth0: {
     domain: 'willalexander.eu.auth0.com',
     // The Market Miam Admin application. A client id is public, not a secret.
-    clientId: 'MARKET_MIAM_ADMIN_CLIENT_ID',
+    clientId: 'xyMOLIElAGrS460vQr5xWT0zQ5BjBqH0',
     audience: 'https://api.marketmiam.fr/ops',
   },
 };
