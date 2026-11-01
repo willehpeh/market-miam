@@ -2,6 +2,7 @@
 // which fakes operator sign-in. Auth0 is not used (see provideAuth).
 export const environment = {
   apiBaseUrl: '',
+  storefrontBaseDomain: 'marketmiam.fr',
   auth0: {
     domain: 'willalexander.eu.auth0.com',
     clientId: 'xyMOLIElAGrS460vQr5xWT0zQ5BjBqH0',

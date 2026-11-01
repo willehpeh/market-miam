@@ -27,6 +27,12 @@ projects:
               # operator's. An identifier, not a secret.
               - key: AUTH0_OPS_AUDIENCE
                 value: https://api.marketmiam.fr/ops
+              # The Auth0 "Management" machine-to-machine app, for the operator API's account
+              # list; it needs only read:users. Set both in the dashboard.
+              - key: AUTH0_MGMT_CLIENT_ID
+                sync: false
+              - key: AUTH0_MGMT_CLIENT_SECRET
+                sync: false
               # Cloudinary signed uploads (vendor photo uploads); set all three in the dashboard
               - key: CLOUDINARY_CLOUD_NAME
                 sync: false

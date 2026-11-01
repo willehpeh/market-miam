@@ -32,10 +32,15 @@ with a strict CSP serves it. Specs: the operator verifier against real RS256 tok
 issuer, expiry, subject, the `operate` permission), the guard's 401/403, the route, and a sweep that
 requests every `ops/` route anonymously.
 
-**1. Account list.** Moves `admin-api`'s one feature: Auth0 users joined to their subdomains. The
-Management API client moves into `api` and caches its token (Auth0 meters machine-to-machine
-tokens); subdomains come through a list method on the `SubdomainRegistry` port, with a contract
-test, instead of raw SQL. Secrets on Render: `AUTH0_MGMT_CLIENT_ID`, `AUTH0_MGMT_CLIENT_SECRET`.
+**1. Account list — built.** Moves `admin-api`'s one feature. `GET /api/ops/accounts` lists every
+Auth0 account with its `vendorId` and the subdomain its vendor holds, ordered by email; the admin
+app shows it under the operator, each storefront linked, once the api has confirmed the operator.
+The Management API client (`Auth0Accounts`, `read:users` only) keeps its token until a minute
+before expiry and shares it between lists started together, since Auth0 meters those tokens; it is
+specced against a fake Auth0 on a local port. Subdomains come through
+`SubdomainRegistry.assignments()`, specced in memory and on Postgres, instead of raw SQL. Going live
+needs the Management app's `AUTH0_MGMT_CLIENT_ID` and `AUTH0_MGMT_CLIENT_SECRET` on Render first:
+the api will not start without them.
 
 **2. Retire `admin-api`.** Delete the app and its `tools/test-all.mjs` entry; correct the README,
 `MARKET_MIAM.md`, `EVENT-SOURCING-ARCHITECTURE.md` §10.5 (gap 1 is wrong about what it writes) and

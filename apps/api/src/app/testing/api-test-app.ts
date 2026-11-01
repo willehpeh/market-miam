@@ -9,6 +9,8 @@ import { AuthModule, OperatorAuthModule } from '@market-miam/auth-nestjs';
 import { MarketDaysModule } from '../market-days/market-days.module';
 import { OpsModule } from '../ops/ops.module';
 import { FakeOperatorTokenVerifier } from './fake-operator-token-verifier';
+import { Account, Accounts } from '../ops/accounts/accounts';
+import { FakeAccounts } from './fake-accounts';
 import { EventSourcingModule } from '../event-sourcing/event-sourcing.module';
 import { InMemoryPersistenceModule } from '../persistence/in-memory-persistence.module';
 import { globalFilters } from '../global-filters';
@@ -34,10 +36,12 @@ export interface ApiTestOptions {
   // 'disabled' (default): tests drive projections explicitly via drain().
   // 'live': keep the profile's real poke-driven polling — for tests of that wiring.
   polling?: 'live' | 'disabled';
+  // The identity provider's accounts, as the operator API lists them.
+  accounts?: Account[];
 }
 
 export function apiTestModule(options: ApiTestOptions = {}): TestingModuleBuilder {
-  const { vendor = testVendor, clock, signer = new FakeSignedUploads(), polling = 'disabled' } = options;
+  const { vendor = testVendor, clock, signer = new FakeSignedUploads(), polling = 'disabled', accounts = [] } = options;
   const builder = Test.createTestingModule({
     imports: [
       AuthModule.forRootAsync({ useFactory: () => new StaticTokenVerifier(vendor) }),
@@ -53,6 +57,7 @@ export function apiTestModule(options: ApiTestOptions = {}): TestingModuleBuilde
     builder.overrideProvider(PollSchedule).useValue(PollSchedule.never());
   }
   builder.overrideProvider(SignedUploads).useValue(signer);
+  builder.overrideProvider(Accounts).useValue(new FakeAccounts(accounts));
   if (clock) {
     builder.overrideProvider(Clock).useValue(clock);
   }

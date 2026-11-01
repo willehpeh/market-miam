@@ -3,6 +3,7 @@ import { INestApplication, RequestMethod } from '@nestjs/common';
 import { ModulesContainer } from '@nestjs/core';
 import { METHOD_METADATA, PATH_METADATA } from '@nestjs/common/constants';
 import request from 'supertest';
+import { InMemorySubdomainRegistry } from '@market-miam/market-days';
 import { bootApiTestApp } from '../testing/api-test-app';
 import { NOT_AN_OPERATOR_TOKEN, OPERATOR_TOKEN, testOperator } from '../testing/fake-operator-token-verifier';
 
@@ -42,11 +43,32 @@ describe('The operator API', () => {
   let app: INestApplication;
 
   beforeEach(async () => {
-    app = await bootApiTestApp();
+    app = await bootApiTestApp({
+      accounts: [
+        { email: 'owner@brioche.test', vendorId: 'brioche-co' },
+        { email: 'owner@acme.test', vendorId: 'acme-bakery' },
+        { email: 'operator@marketmiam.test', vendorId: null },
+        { email: null, vendorId: 'no-email-vendor' },
+      ],
+    });
   });
 
   afterEach(async () => {
     await app.close();
+  });
+
+  it('lists every account with its vendor and subdomain, ordered by email', async () => {
+    await app.get(InMemorySubdomainRegistry).register('acme', 'acme-bakery');
+
+    await request(app.getHttpServer())
+      .get('/ops/accounts')
+      .set('Authorization', `Bearer ${OPERATOR_TOKEN}`)
+      .expect(200, [
+        { email: 'operator@marketmiam.test', vendorId: null, subdomain: null },
+        { email: 'owner@acme.test', vendorId: 'acme-bakery', subdomain: 'acme' },
+        { email: 'owner@brioche.test', vendorId: 'brioche-co', subdomain: null },
+        { email: null, vendorId: 'no-email-vendor', subdomain: null },
+      ]);
   });
 
   it('tells a signed-in operator who they are', async () => {

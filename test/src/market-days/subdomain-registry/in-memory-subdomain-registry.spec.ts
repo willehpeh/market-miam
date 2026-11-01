@@ -59,4 +59,19 @@ describe('InMemorySubdomainRegistry', () => {
     await registry.register('ACME', 'acme-bakery');
     expect(await registry.subdomainFor('acme-bakery')).toBe('acme');
   });
+
+  it('lists every assignment, ordered by subdomain', async () => {
+    const registry = new InMemorySubdomainRegistry();
+    await registry.register('brioche', 'brioche-co');
+    await registry.register('ACME', 'acme-bakery');
+
+    expect(await registry.assignments()).toEqual([
+      { subdomain: 'acme', vendorId: 'acme-bakery' },
+      { subdomain: 'brioche', vendorId: 'brioche-co' },
+    ]);
+  });
+
+  it('lists no assignments before any is made', async () => {
+    expect(await new InMemorySubdomainRegistry().assignments()).toEqual([]);
+  });
 });

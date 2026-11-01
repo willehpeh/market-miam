@@ -1,8 +1,9 @@
 import { Queryable } from '@market-miam/event-sourcing';
-import { SubdomainRegistry } from './subdomain-registry';
+import { SubdomainAssignment, SubdomainRegistry } from './subdomain-registry';
 
 type VendorRow = { vendor_id: string };
 type SubdomainRow = { subdomain: string };
+type AssignmentRow = { subdomain: string; vendor_id: string };
 
 export class PostgresSubdomainRegistry implements SubdomainRegistry {
   constructor(private readonly db: Queryable) {}
@@ -25,5 +26,12 @@ export class PostgresSubdomainRegistry implements SubdomainRegistry {
 
   async removeFor(vendorId: string): Promise<void> {
     await this.db.query('DELETE FROM subdomain_registry WHERE vendor_id = $1', [vendorId]);
+  }
+
+  async assignments(): Promise<SubdomainAssignment[]> {
+    const { rows } = await this.db.query<AssignmentRow>(
+      'SELECT subdomain, vendor_id FROM subdomain_registry ORDER BY subdomain',
+    );
+    return rows.map((row) => ({ subdomain: row.subdomain, vendorId: row.vendor_id }));
   }
 }

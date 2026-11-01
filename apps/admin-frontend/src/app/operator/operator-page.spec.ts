@@ -6,6 +6,7 @@ import { FakeAuth } from '../core/auth/fake.auth';
 import { OperatorPage } from './operator-page';
 
 const WHOAMI = (url: string) => url.endsWith('/api/ops/whoami');
+const ACCOUNTS = (url: string) => url.endsWith('/api/ops/accounts');
 
 describe('OperatorPage', () => {
   let auth: FakeAuth;
@@ -24,7 +25,11 @@ describe('OperatorPage', () => {
     http = TestBed.inject(HttpTestingController);
   });
 
-  afterEach(() => http.verify());
+  afterEach(() => {
+    // The account list is AccountList's to test; here it only has to be answered.
+    http.match((req) => ACCOUNTS(req.url)).forEach((req) => req.flush([]));
+    http.verify();
+  });
 
   async function render(): Promise<HTMLElement> {
     const fixture = TestBed.createComponent(OperatorPage);
@@ -59,7 +64,22 @@ describe('OperatorPage', () => {
     expect(fixture.nativeElement.textContent).toContain('github|1234567');
   });
 
-  it('says so when the API refuses the sign-in', async () => {
+  it('lists the accounts once the API has confirmed the operator', async () => {
+    auth.login();
+    const fixture = TestBed.createComponent(OperatorPage);
+    http.expectNone((req) => ACCOUNTS(req.url));
+
+    http.expectOne((req) => WHOAMI(req.url)).flush({ operatorId: 'github|1234567' });
+    await fixture.whenStable();
+    http.expectOne((req) => ACCOUNTS(req.url)).flush([
+      { email: 'owner@acme.test', vendorId: 'acme-bakery', subdomain: 'acme' },
+    ]);
+    await fixture.whenStable();
+
+    expect(fixture.nativeElement.textContent).toContain('owner@acme.test');
+  });
+
+  it('says so when the API refuses the sign-in, and asks it for nothing more', async () => {
     auth.login();
     const fixture = TestBed.createComponent(OperatorPage);
 
@@ -67,6 +87,7 @@ describe('OperatorPage', () => {
     await fixture.whenStable();
 
     expect(fixture.nativeElement.textContent).toContain('The API refused this sign-in');
+    http.expectNone((req) => ACCOUNTS(req.url));
   });
 
   it('signs out', async () => {

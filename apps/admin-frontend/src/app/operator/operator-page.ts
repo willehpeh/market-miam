@@ -4,6 +4,7 @@ import { HttpClient } from '@angular/common/http';
 import { catchError, map, Observable, of, switchMap } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { Auth } from '../core/auth/auth';
+import { AccountList } from '../accounts/account-list';
 
 interface Operator {
   operatorId: string;
@@ -11,32 +12,38 @@ interface Operator {
 
 type Whoami = Operator | 'refused' | null;
 
-// The walking skeleton's page: sign in, then show who the operator API says you are —
-// the whole chain from the identity provider to the api's guard and back.
+// Sign in, then show who the operator API says you are and, once it has said so, the
+// accounts. Nothing else is asked of the api before it has confirmed the operator.
 @Component({
   selector: 'admin-operator-page',
+  imports: [AccountList],
   template: `
     <div class="mx-auto max-w-2xl p-6">
       <h1 class="mb-4 text-xl font-semibold text-gray-900">Market Miam admin</h1>
       @if (loading()) {
         <p class="text-gray-500">Loading…</p>
       } @else if (signedIn()) {
-        @switch (whoami()) {
-          @case (null) {
-            <p class="text-gray-500">Checking with the API…</p>
+        <div class="flex items-center justify-between gap-4">
+          @switch (whoami()) {
+            @case (null) {
+              <p class="text-gray-500">Checking with the API…</p>
+            }
+            @case ('refused') {
+              <p class="text-red-700">The API refused this sign-in.</p>
+            }
+            @default {
+              <p class="text-gray-900">
+                Signed in as <span class="font-mono">{{ operatorId() }}</span>
+              </p>
+            }
           }
-          @case ('refused') {
-            <p class="text-red-700">The API refused this sign-in.</p>
-          }
-          @default {
-            <p class="text-gray-900">
-              Signed in as <span class="font-mono">{{ operatorId() }}</span>
-            </p>
-          }
+          <button type="button" class="rounded border border-gray-300 px-3 py-1.5 text-sm" (click)="logout()">
+            Sign out
+          </button>
+        </div>
+        @if (operatorId()) {
+          <admin-account-list />
         }
-        <button type="button" class="mt-4 rounded border border-gray-300 px-3 py-1.5 text-sm" (click)="logout()">
-          Sign out
-        </button>
       } @else {
         <button type="button" class="rounded bg-gray-900 px-3 py-1.5 text-sm text-white" (click)="login()">
           Sign in with GitHub

@@ -1,4 +1,4 @@
-import { SubdomainRegistry } from './subdomain-registry';
+import { SubdomainAssignment, SubdomainRegistry } from './subdomain-registry';
 
 export class InMemorySubdomainRegistry implements SubdomainRegistry {
   private readonly vendors = new Map<string, string>();
@@ -22,5 +22,11 @@ export class InMemorySubdomainRegistry implements SubdomainRegistry {
     for (const [subdomain, id] of this.vendors) {
       if (id === vendorId) this.vendors.delete(subdomain);
     }
+  }
+
+  async assignments(): Promise<SubdomainAssignment[]> {
+    return [...this.vendors]
+      .map(([subdomain, vendorId]) => ({ subdomain, vendorId }))
+      .sort((a, b) => (a.subdomain < b.subdomain ? -1 : 1));
   }
 }

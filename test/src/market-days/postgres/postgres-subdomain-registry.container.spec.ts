@@ -54,4 +54,18 @@ describe('PostgresSubdomainRegistry', () => {
   it('returns undefined for a vendor with no subdomain', async () => {
     expect(await new PostgresSubdomainRegistry(pg.pool).subdomainFor('nobody')).toBeUndefined();
   });
+
+  it('lists every assignment, ordered by subdomain', async () => {
+    await seed('brioche', 'brioche-co');
+    await seed('acme', 'acme-bakery');
+
+    expect(await new PostgresSubdomainRegistry(pg.pool).assignments()).toEqual([
+      { subdomain: 'acme', vendorId: 'acme-bakery' },
+      { subdomain: 'brioche', vendorId: 'brioche-co' },
+    ]);
+  });
+
+  it('lists no assignments before any is made', async () => {
+    expect(await new PostgresSubdomainRegistry(pg.pool).assignments()).toEqual([]);
+  });
 });
