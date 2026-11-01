@@ -1,8 +1,8 @@
 # Admin app — plan
 
 The operator console: `admin-frontend`, a static app at `admin.marketmiam.fr`, over operator routes
-in `api` under `/api/ops` (ADR 0059). It replaces `admin-api`, a local tool with no sign-in, and it
-is the ops surface `NEXT_BEHAVIOURS.md` waited on for erasure, rebuilds and the Auth0 delete.
+in `api` under `/api/ops` (ADR 0059). It replaced `admin-api`, a local tool with no sign-in, retired
+on 2026-11-01, and it is the ops surface `NEXT_BEHAVIOURS.md` waited on for erasure, rebuilds and the Auth0 delete.
 
 ## Auth0, outside the repo
 
@@ -42,11 +42,13 @@ specced against a fake Auth0 on a local port. Subdomains come through
 needs the Management app's `AUTH0_MGMT_CLIENT_ID` and `AUTH0_MGMT_CLIENT_SECRET` on Render first:
 the api will not start without them.
 
-**2. Retire `admin-api`.** Delete the app and its `tools/test-all.mjs` entry; correct the README,
-`MARKET_MIAM.md`, `EVENT-SOURCING-ARCHITECTURE.md` §10.5 (gap 1 is wrong about what it writes) and
-ADR 0029's mention. The owner deletes the local `apps/admin-api/.env`, which holds the Management
-secret and the production database's address, and narrows the database's external access on Render
-(no `ipAllowList` in `render.yaml` today).
+**2. Retire `admin-api` — done 2026-11-01.** The app is deleted, with its debug configuration,
+its `tools/test-all.mjs` entry and its layer in the test map. The README and `MARKET_MIAM.md` no
+longer list it, `EVENT-SOURCING-ARCHITECTURE.md` §10.5 loses its first gap (wrong besides: the app
+never wrote anything), and ADR 0029 is amended. Left to the owner: delete the local
+`apps/admin-api/.env`, which held the Management secret and the production database's address, and
+narrow the database's external access on Render (no `ipAllowList` in `render.yaml` today), keeping
+whatever psql access the owner still wants.
 
 **3. Assign a subdomain.** Ends the hand-written SQL every new vendor waits on (ADR 0032). A
 `register` on the port, with `admin`, `api`, `app` and `www` reserved.

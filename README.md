@@ -26,7 +26,6 @@ Decisions are recorded in [`docs/adr/`](docs/adr/README.md).
 | `customer-frontend` | Angular (SSR) | Public per-vendor storefront customers visit. |
 | `website` | Astro | Marketing / landing site. |
 | `design-showcase` | Astro | The design system rendered from `packages/design-system` — tokens, type, component classes, icons. |
-| `admin-api` | NestJS | Local admin tool with no sign-in, being retired for the api's operator routes (ADR 0059). |
 | `admin-frontend` | Angular | Operator console over the api's operator routes, signed in through GitHub (`docs/ADMIN-PLAN.md`). |
 
 ## Packages (`packages/`)

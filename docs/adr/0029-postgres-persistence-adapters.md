@@ -1,6 +1,6 @@
 # 0029. Postgres persistence adapters: raw pg, no ORM, migrate-on-boot
 
-Date: 2026-07-05 · Status: Accepted
+Date: 2026-07-05 · Status: Accepted · Amended 2026-11-01 by [0059](0059-operator-routes-in-the-api-behind-their-own-audience.md) — there is no `admin-api` to share the migrations: operator routes live in `api`
 
 ## Context
 

@@ -55,7 +55,6 @@ const suites = [
     partial: true,
     coverageOnly: true,
   },
-  { name: 'admin-api', args: ['test', 'admin-api'], pass: ['--run', ...vitestCoverage('coverage/admin-api')], coverage: 'coverage/admin-api' },
   { name: 'vendor-frontend', args: ['test', 'vendor-frontend'], angular: true, coverage: 'coverage/vendor-frontend' },
   { name: 'customer-frontend', args: ['test', 'customer-frontend'], angular: true, coverage: 'coverage/customer-frontend' },
   { name: 'admin-frontend', args: ['test', 'admin-frontend'], angular: true, coverage: 'coverage/admin-frontend' },

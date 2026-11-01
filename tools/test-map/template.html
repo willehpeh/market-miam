@@ -346,12 +346,12 @@ const GROUPS = {
   packages: { label: 'Shared-packages suite' },
 };
 function groupOf(layer) {
-  if (layer === 'api' || layer === 'admin-api') return 'backend';
+  if (layer === 'api') return 'backend';
   if (layer.endsWith('-frontend')) return 'frontend';
   return 'packages';
 }
 const PROJECT_LABELS = {
-  'api': 'api', 'admin-api': 'admin-api', 'vendor-frontend': 'vendor-frontend',
+  'api': 'api', 'vendor-frontend': 'vendor-frontend',
   'customer-frontend': 'customer-frontend', 'admin-frontend': 'admin-frontend',
   'test (packages suite)': 'test/ (packages)',
 };

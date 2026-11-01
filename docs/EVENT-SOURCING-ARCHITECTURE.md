@@ -492,21 +492,19 @@ drains, so after would always gauge zero; a gauge failure sets
 
 ### 10.5 Gaps
 
-1. **`admin-api` has no tracing at all** — no bootstrap, no spans, yet it writes
-   `SubdomainRegistry` and creates Auth0 users. Largest gap by surface area.
-2. **The projection⇄checkpoint transaction is invisible**: only the inner
+1. **The projection⇄checkpoint transaction is invisible**: only the inner
    `handle` un-suppresses; `BEGIN`/`COMMIT`/checkpoint `UPDATE` produce no spans.
-3. **`loadFrom`/`head` are unspanned** and suppressed — the most-executed store
+2. **`loadFrom`/`head` are unspanned** and suppressed — the most-executed store
    operations are opaque. Deliberate (§10.4's trade), but real.
-4. **`Subscriptions.rebuild()` emits no span** — the most impactful operation
+3. **`Subscriptions.rebuild()` emits no span** — the most impactful operation
    (and the GDPR-erasure path) leaves no trace of what/how long/how many events.
-5. **Erasure emits no span of its own** tying shred → schedule → subdomain removal
+4. **Erasure emits no span of its own** tying shred → schedule → subdomain removal
    together (`ErasesVendors`, ADR 0058) on a compliance-critical path.
-6. **`exception.slug` values are unenforced convention** — string literals at
+5. **`exception.slug` values are unenforced convention** — string literals at
    call sites; a typo'd seventh slug would silently escape Honeycomb queries.
-7. **No metrics pipeline** — traces only; every SLO is a query over span
+6. **No metrics pipeline** — traces only; every SLO is a query over span
    attributes.
-8. **No sampling** — `ParentBased(AlwaysOn)`; 100% export. Fine at current
+7. **No sampling** — `ParentBased(AlwaysOn)`; 100% export. Fine at current
    volume; a cost cliff later.
 
 Tracked separately in [`O11Y-PLAN.md`](O11Y-PLAN.md): payload attribute
