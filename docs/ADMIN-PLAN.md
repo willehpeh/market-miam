@@ -25,15 +25,14 @@ belongs there, deployed from the owner's machine with the Auth0 CLI.
 
 ## Slices
 
-**0. Walking skeleton — built.** `GET /api/ops/whoami` returns the operator's Auth0 id behind
+**0. Walking skeleton — live since 2026-11-01** at `admin.marketmiam.fr`, checked by signing in
+with GitHub on the deployed site. `GET /api/ops/whoami` returns the operator's Auth0 id behind
 `OperatorAuthGuard`; the admin app signs in through GitHub and shows it; a static Render service
 with a strict CSP serves it. Specs: the operator verifier against real RS256 tokens (audience,
 issuer, expiry, subject, the `operate` permission), the guard's 401/403, the route, and a sweep that
-requests every `ops/` route anonymously. Going live needs the admin app's logout and
-web-origin URLs in Auth0, the DNS record for `admin.marketmiam.fr`, and a first sign-in checked
-by hand on the deployed site, since the sandbox cannot reach Auth0.
+requests every `ops/` route anonymously.
 
-**1. Vendor list.** Moves `admin-api`'s one feature: Auth0 users joined to their subdomains. The
+**1. Account list.** Moves `admin-api`'s one feature: Auth0 users joined to their subdomains. The
 Management API client moves into `api` and caches its token (Auth0 meters machine-to-machine
 tokens); subdomains come through a list method on the `SubdomainRegistry` port, with a contract
 test, instead of raw SQL. Secrets on Render: `AUTH0_MGMT_CLIENT_ID`, `AUTH0_MGMT_CLIENT_SECRET`.
