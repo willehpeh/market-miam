@@ -1,13 +1,15 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { AuthModule } from '@market-miam/auth-nestjs';
+import { AuthModule, OperatorAuthModule } from '@market-miam/auth-nestjs';
 import { vendorPiiFields, vendorPiiKeyScopes } from '@market-miam/market-days';
 import { MarketDaysModule } from './market-days/market-days.module';
+import { OpsModule } from './ops/ops.module';
 import { EventSourcingModule } from './event-sourcing/event-sourcing.module';
 import { InMemoryPersistenceModule } from './persistence/in-memory-persistence.module';
 import { PostgresPersistenceModule } from './persistence/postgres-persistence.module';
 import { globalFilters } from './global-filters';
 import { tokenVerifierFor } from './token-verifier.factory';
+import { operatorTokenVerifierFor } from './operator-token-verifier.factory';
 
 @Module({
   imports: [
@@ -19,6 +21,10 @@ import { tokenVerifierFor } from './token-verifier.factory';
       inject: [ConfigService],
       useFactory: tokenVerifierFor,
     }),
+    OperatorAuthModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: operatorTokenVerifierFor,
+    }),
     process.env.NODE_ENV === 'development'
       // Development runs entirely in memory so local dev needs no running postgres.
       // Only the exact value `development` opts out of postgres;
@@ -27,6 +33,7 @@ import { tokenVerifierFor } from './token-verifier.factory';
       : PostgresPersistenceModule,
     EventSourcingModule.forRoot(vendorPiiFields, vendorPiiKeyScopes),
     MarketDaysModule,
+    OpsModule,
   ],
   providers: [...globalFilters],
 })

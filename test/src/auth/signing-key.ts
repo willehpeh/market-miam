@@ -1,6 +1,7 @@
 import { createLocalJWKSet, exportJWK, generateKeyPair, SignJWT } from 'jose';
 import type { CryptoKey, JWTVerifyGetKey } from 'jose';
 import { AccessTokenClaims } from './test-access-token';
+import { OperatorTokenClaims } from './test-operator-token';
 
 const VENDOR_ID_CLAIM = 'https://marketmiam/vendorId';
 const EMAIL_CLAIM = 'https://marketmiam/email';
@@ -38,5 +39,18 @@ export class SigningKey {
       .setIssuedAt()
       .setExpirationTime(claims.expiresAt)
       .sign(this.privateKey);
+  }
+
+  async signOperator(claims: OperatorTokenClaims): Promise<string> {
+    const token = new SignJWT(claims.permissions === undefined ? {} : { permissions: claims.permissions })
+      .setProtectedHeader({ alg: 'RS256', kid: this.kid })
+      .setIssuer(claims.issuer)
+      .setAudience(claims.audience)
+      .setIssuedAt()
+      .setExpirationTime(claims.expiresAt);
+    if (claims.subject !== undefined) {
+      token.setSubject(claims.subject);
+    }
+    return token.sign(this.privateKey);
   }
 }

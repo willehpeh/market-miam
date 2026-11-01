@@ -37,12 +37,23 @@
               "maximumError": "8kb"
             }
           ],
-          "outputHashing": "all"
+          "outputHashing": "all",
+          "optimization": {
+            "scripts": true,
+            "styles": { "minify": true, "inlineCritical": false },
+            "fonts": true
+          }
         },
         "development": {
           "optimization": false,
           "extractLicenses": false,
-          "sourceMap": true
+          "sourceMap": true,
+          "fileReplacements": [
+            {
+              "replace": "apps/admin-frontend/src/environments/environment.ts",
+              "with": "apps/admin-frontend/src/environments/environment.development.ts"
+            }
+          ]
         }
       },
       "defaultConfiguration": "production"
@@ -51,7 +62,8 @@
       "continuous": true,
       "executor": "@angular/build:dev-server",
       "options": {
-        "proxyConfig": "apps/admin-frontend/proxy.conf.json"
+        "proxyConfig": "apps/admin-frontend/proxy.conf.json",
+        "port": 4300
       },
       "configurations": {
         "production": {

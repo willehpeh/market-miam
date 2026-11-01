@@ -65,3 +65,4 @@ detailed rationale in `docs/archive/DEFERRED.md`).
 | [0056](0056-legal-identity-outlives-erasure.md)                         | The vendor's legal identity outlives erasure, under its own key            | 2026-09-23 |
 | [0057](0057-shreddable-fields-held-as-recorded.md)                      | Shreddable fields are held as recorded, not re-validated                   | 2026-10-04 |
 | [0058](0058-erasure-is-an-event-carried-out-by-a-processor.md)          | Erasure is an event, carried out by a processor                            | 2026-10-05 |
+| [0059](0059-operator-routes-in-the-api-behind-their-own-audience.md)    | Operator routes live in the api, behind their own Auth0 audience           | 2026-11-01 |

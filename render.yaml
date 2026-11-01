@@ -23,6 +23,10 @@ projects:
                 sync: false
               - key: AUTH0_AUDIENCE
                 sync: false
+              # The operator API's own Auth0 audience, so a vendor's token is never an
+              # operator's. An identifier, not a secret.
+              - key: AUTH0_OPS_AUDIENCE
+                value: https://api.marketmiam.fr/ops
               # Cloudinary signed uploads (vendor photo uploads); set all three in the dashboard
               - key: CLOUDINARY_CLOUD_NAME
                 sync: false
@@ -76,6 +80,56 @@ projects:
               paths:
                 - apps/vendor-frontend/**
                 - packages/**
+                - package.json
+                - package-lock.json
+                - nx.json
+                - tsconfig.base.json
+          # The admin app, for operators only: GitHub sign-in through Auth0, and every call
+          # to the api's operator routes checked for the `operate` permission. The headers
+          # keep the page from loading anything but its own files, Auth0 and the api, and
+          # from being framed, indexed or leaking its URL.
+          - type: web
+            name: admin-frontend
+            runtime: static
+            repo: https://github.com/willehpeh/market-miam
+            buildCommand: npm ci && npx nx run admin-frontend:build
+            staticPublishPath: ./dist/apps/admin-frontend/browser
+            routes:
+              - type: rewrite
+                source: /*
+                destination: /index.html
+            headers:
+              - path: /*
+                name: Content-Security-Policy
+                value: "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src https://api.marketmiam.fr https://willalexander.eu.auth0.com; frame-src https://willalexander.eu.auth0.com; base-uri 'self'; form-action 'none'; frame-ancestors 'none'"
+              - path: /*
+                name: X-Frame-Options
+                value: DENY
+              - path: /*
+                name: X-Content-Type-Options
+                value: nosniff
+              - path: /*
+                name: Referrer-Policy
+                value: no-referrer
+              - path: /*
+                name: Strict-Transport-Security
+                value: max-age=31536000
+              - path: /*
+                name: Cross-Origin-Opener-Policy
+                value: same-origin
+              - path: /*
+                name: Permissions-Policy
+                value: camera=(), microphone=(), geolocation=(), payment=()
+              - path: /*
+                name: X-Robots-Tag
+                value: noindex, nofollow
+            domains:
+              - admin.marketmiam.fr
+            autoDeployTrigger: checksPass
+            renderSubdomainPolicy: disabled
+            buildFilter:
+              paths:
+                - apps/admin-frontend/**
                 - package.json
                 - package-lock.json
                 - nx.json

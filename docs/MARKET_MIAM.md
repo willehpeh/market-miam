@@ -110,7 +110,7 @@ pile line under each dish in the menu editor. See `BILAN-RETROSPECTIVE-PLAN.md`.
 
 ## Tech Stack (as built)
 
-- **Apps:** `api` (NestJS + `@nestjs/cqrs`), `vendor-frontend` (Angular), `customer-frontend` (Angular SSR — the only SSR app, ADR 0019), `website` (Astro, static marketing page), `admin-api`/`admin-frontend` (internal ops: users, subdomains)
+- **Apps:** `api` (NestJS + `@nestjs/cqrs`), `vendor-frontend` (Angular), `customer-frontend` (Angular SSR — the only SSR app, ADR 0019), `website` (Astro, static marketing page), `admin-frontend` (operator console over the api's `/api/ops` routes, ADR 0059; `admin-api` being retired)
 - **Domain:** `packages/market-days` (framework-free), `packages/event-sourcing` (the mechanism, framework-free)
 - **Persistence:** Postgres — single append-only `events` table, globally ordered via serialized appends (ADRs 0005/0028/0029); read models projected via polling subscriptions poked by LISTEN/NOTIFY (ADR 0030); in-memory twin of every adapter for the fast suite
 - **PII:** crypto-shredding — per-vendor data keys, erasure by key deletion (ADR 0025)

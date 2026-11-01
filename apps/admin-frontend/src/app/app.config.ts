@@ -1,15 +1,14 @@
-import {
-  ApplicationConfig,
-  provideBrowserGlobalErrorListeners,
-} from '@angular/core';
+import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/core';
 import { provideRouter } from '@angular/router';
-import { provideHttpClient, withFetch } from '@angular/common/http';
 import { appRoutes } from './app.routes';
+import { provideAuth } from './core/auth/auth.providers';
+import { provideEnvHttp } from './core/http/provide-env-http';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
     provideRouter(appRoutes),
-    provideHttpClient(withFetch()),
+    provideAuth(),
+    provideEnvHttp(),
   ],
 };

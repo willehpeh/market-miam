@@ -5,8 +5,10 @@ import { VendorId } from '@market-miam/shared-kernel';
 import { EventStore } from '@market-miam/event-sourcing';
 import { StorefrontOpened, vendorPiiFields, vendorPiiKeyScopes } from '@market-miam/market-days';
 import { StaticTokenVerifier, type VerifiedVendor } from '@market-miam/auth';
-import { AuthModule } from '@market-miam/auth-nestjs';
+import { AuthModule, OperatorAuthModule } from '@market-miam/auth-nestjs';
 import { MarketDaysModule } from '../market-days/market-days.module';
+import { OpsModule } from '../ops/ops.module';
+import { FakeOperatorTokenVerifier } from './fake-operator-token-verifier';
 import { EventSourcingModule } from '../event-sourcing/event-sourcing.module';
 import { InMemoryPersistenceModule } from '../persistence/in-memory-persistence.module';
 import { globalFilters } from '../global-filters';
@@ -39,9 +41,11 @@ export function apiTestModule(options: ApiTestOptions = {}): TestingModuleBuilde
   const builder = Test.createTestingModule({
     imports: [
       AuthModule.forRootAsync({ useFactory: () => new StaticTokenVerifier(vendor) }),
+      OperatorAuthModule.forRootAsync({ useFactory: () => new FakeOperatorTokenVerifier() }),
       InMemoryPersistenceModule,
       EventSourcingModule.forRoot(vendorPiiFields, vendorPiiKeyScopes),
       MarketDaysModule,
+      OpsModule,
     ],
     providers: [...globalFilters],
   });

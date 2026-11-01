@@ -1,4 +1,4 @@
 import { Route } from '@angular/router';
-import { UsersPage } from './users/users';
+import { OperatorPage } from './operator/operator-page';
 
-export const appRoutes: Route[] = [{ path: '', component: UsersPage }];
+export const appRoutes: Route[] = [{ path: '', component: OperatorPage }];

@@ -13,6 +13,7 @@ comes next; each line points at the doc that holds the detail. Update it when a 
 
 * ordering, event-stormed on the ordering board (`docs/ordering-board/`, published as `ordering-board`). Timeline agreed as a first pass; step 1, vendor onboarding, being worked in detail. Four rules agreed (R1 nothing recorded before Stripe holds the card · R2 processors call Stripe, webhooks record the outcome · R3 Stripe onboarding prefilled from the mentions légales · R4 no orders without a Stripe account that can take payments, publication no longer waiting for it); Connect setup: Accounts v2, direct charges, the Express Dashboard, Stripe collecting its fees from the vendor and covering losses; the payment account (Q1): its events, webhooks read in order by a processor, the prefill sent to Stripe as an account token from the vendor's browser; when payments stop (Q11), held orders refused and ordering paused; Stripe checks its account against the storefront, and the vendor is prompted to update Stripe when their mentions légales change (Q9); steps 2 to 6 stormed: a 10-minute timeout, the customer's cancel, a refund when the vendor leaves early, refunds only to the card, disputes as their own events, a rush pause, the customer emails and vendor pushes; 4 questions open
 * price: one package at 50 € HT a month, ordering included, no commission (`docs/MARKET_MIAM.md`)
+* admin app — the walking skeleton: GitHub sign-in to an operator route in `api` (`docs/ADMIN-PLAN.md` slice 0, ADR 0059); live once the admin client id and the DNS record are in; next, the vendor list (slice 1)
 
 **Waiting on someone else**
 
@@ -60,4 +61,4 @@ comes next; each line points at the doc that holds the detail. Update it when a 
 * lock-free appends — when appends stay above ~50/s or p99 append latency climbs; measured ceiling ~155/s at a 1.7 ms round trip (M6); design ready: a capped high-water mark
 * per-type span attributes — evidence-gated, design ready (`docs/O11Y-PLAN.md`; the stuck-subscription alert shipped with live-mode slice 1)
 * OTel collector + tail-based sampling — until volume warrants
-* ops transport for `erase`/`rebuild` + automated Auth0 user delete on erasure — when an ops surface exists
+* ops transport for `erase`/`rebuild` + automated Auth0 user delete on erasure — the ops surface now exists (ADR 0059): slices 5 and 6 of `docs/ADMIN-PLAN.md`

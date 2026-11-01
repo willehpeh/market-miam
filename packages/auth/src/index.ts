@@ -4,3 +4,8 @@ export * from './token-verifier';
 export * from './auth0-token-verifier';
 export * from './static-token-verifier';
 export * from './development-token-verifier';
+export * from './verified-operator';
+export * from './not-an-operator.error';
+export * from './operator-token-verifier';
+export * from './auth0-operator-token-verifier';
+export * from './development-operator-token-verifier';
