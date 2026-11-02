@@ -20,8 +20,9 @@ Set up 2026-10-31 and 2026-11-01 on the `willalexander.eu.auth0.com` tenant:
 
 Still to check: the Ops API's token lifetime (an hour or less), *Implicit* off on the admin app,
 *Disable Sign Ups* on the `email` connection, the *API Explorer* and test applications deleted, and
-the *Management* application down to `read:users`. The Action's code is not in the repo yet; it
-belongs there, deployed from the owner's machine with the Auth0 CLI.
+the *Management* application down to `read:users` (slice 4 adds `create:users`, slice 5
+`delete:users`). The Action's code is not in the repo yet; it comes in with slice 4, which changes
+it, deployed from the owner's machine with the Auth0 CLI.
 
 ## Slices
 
@@ -53,13 +54,43 @@ whatever psql access the owner still wants.
 **3. Assign a subdomain.** Ends the hand-written SQL every new vendor waits on (ADR 0032). A
 `register` on the port, with `admin`, `api`, `app` and `www` reserved.
 
-**4. Create a vendor.** A user on the passwordless `email` connection, created through the
-Management API (`create:users`) with its `vendorId` minted into `app_metadata`, so the subdomain
-can be assigned at once. The Action can then refuse a vendor login without a `vendorId` instead of
-minting one, which amends ADR 0024.
+**4. Invite a vendor — next, ahead of slice 3** (the owner's call, 2026-11-02; ADR 0060). Ends
+creating vendors by hand in the Auth0 Dashboard, and makes Market Miam invitation-only.
+
+- **Domain** (`packages/market-days`). `InviteVendor` raises `VendorInvited { vendorId, invitedAt,
+  email }`, first on the vendor's stream, its `email` added to `vendor-pii-fields.ts`. `Vendor`
+  gains an *invited* state: inviting again is a no-op, `register` works from it as from a new
+  stream, and `erase` accepts it. The vendor app's registration on first load stays: it is the
+  vendor taking up the invitation.
+- **Route.** `POST /api/ops/vendors { email }` refuses with a 409 an email already on an Auth0
+  account (`read:users`), mints the `vendorId`, dispatches `InviteVendor` and answers 202 with the
+  id. The operator's Auth0 id goes in the event's metadata: the first operator write to put it
+  there, and the mechanism later slices reuse.
+- **Processor.** `OpensVendorAccounts`, on `VendorInvited`, creates the user on the `email`
+  connection with the `vendorId` in `app_metadata` (`create:users`), through a `VendorAccounts`
+  port whose Auth0 adapter sits beside `Auth0Accounts` and shares its token. An existing user with
+  the same `vendorId` is done (a retry); one with another id means the invitation lost a race for
+  its address, which the processor logs and leaves for erasure. A vendor erased in the meantime is
+  skipped. Any other failure retries, and `/api/health` reports it.
+- **Admin app.** An email field and an *Invite* button above the account list, disabled while it
+  sends. The new account shows in the list once the processor has run, a few seconds later.
+- **Specs.** The aggregate's states (ADR 0060's table); the route's 202, 409 and metadata, with the
+  anonymous sweep covering its guard; the processor against a fake `VendorAccounts`; the Auth0
+  adapter against the fake Auth0 server, as `Auth0Accounts` is; the form.
+
+Going live, in this order, by the owner:
+
+1. Give the Management application `create:users`, then deploy.
+2. In the account list, find vendor accounts with no `vendorId`: made by hand and never signed in.
+   Delete each in Auth0 and invite it again from the admin app.
+3. Change the post-login Action to stop minting `vendorId`s and to refuse a vendor-app login
+   without one. Its code comes into the repo with this slice; the owner pastes the current version
+   first.
+4. Turn on *Disable Sign Ups* on the `email` connection.
 
 **5. Erase a vendor.** A transport for `EraseVendor`, and a processor on `VendorErased` that
-deletes the Auth0 user (`delete:users`).
+deletes the Auth0 user (`delete:users`), whether the vendor registered or was only invited. It also
+clears an invitation that lost a race for its address (slice 4).
 
 **6. Rebuild a projection.** A transport for `Subscriptions.rebuild()`.
 

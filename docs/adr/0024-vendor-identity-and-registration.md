@@ -1,6 +1,6 @@
 # 0024. Vendor identity: minted UUID, idempotent registration, registered-with email
 
-Date: 2026-06-10 · Status: Accepted
+Date: 2026-06-10 · Status: Accepted · Amended 2026-11-02 by [0060](0060-vendors-join-by-invitation.md) — the api mints the `vendorId` when an operator invites the vendor; the Action no longer mints one
 
 ## Context
 

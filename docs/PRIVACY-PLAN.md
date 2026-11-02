@@ -11,7 +11,7 @@ identity provider (ADR 0021).
 
 | Data | Where it lives | Erasure route |
 |------|----------------|---------------|
-| Vendor email | Auth0; `VendorRegistered` payload (encrypted); Brevo's logs of the login emails (30 days) | Key shred + Auth0 user delete; Brevo's logs lapse after 30 days |
+| Vendor email | Auth0; `VendorRegistered` payload (encrypted); `VendorInvited` payload (encrypted, from admin slice 4, ADR 0060); Brevo's logs of the login emails (30 days) | Key shred + Auth0 user delete; Brevo's logs lapse after 30 days |
 | Storefront `name`, `description`, `phone` | `StorefrontInformationEdited` payload (encrypted); `vendor_storefront_views` (plaintext) | Key shred; row dropped on `VendorErased` (ADR 0058) |
 | Vendor legal identity (SIRET, dénomination, adresse, email, phone, TVA, médiateur, société) | `VendorLegalIdentityProvided` payload (encrypted under `{vendorId}:legal`); `vendor_legal_identity_views` (plaintext) | Row dropped on `VendorErased`; `:legal` key shredded 5 years after erasure (ADR 0056) |
 | Website form leads (nom, mail, marchés) | Tally only — never enters the event store | Delete the Tally response |
