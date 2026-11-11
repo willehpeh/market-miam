@@ -18,6 +18,9 @@ export class Vendor extends Aggregate {
   }
 
   invite(invitedAt: Instant, email: Email) {
+    if (this._status.isInvited()) {
+      return;
+    }
     const event: VendorInvited = {
       type: 'VendorInvited',
       payload: {
@@ -99,6 +102,9 @@ export class Vendor extends Aggregate {
 
   apply(event: VendorEvent): void {
     switch (event.type) {
+      case 'VendorInvited':
+        this._status = VendorStatus.invited();
+        break;
       case 'VendorRegistered':
         this._status = VendorStatus.registered();
         break;

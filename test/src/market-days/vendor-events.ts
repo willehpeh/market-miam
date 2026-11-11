@@ -1,9 +1,13 @@
-import { VendorErased, VendorLegalIdentityProvided, VendorRegistered } from '@market-miam/market-days';
+import { VendorErased, VendorInvited, VendorLegalIdentityProvided, VendorRegistered } from '@market-miam/market-days';
 
 // The events a vendor spec seeds as its Given, typed against the domain's event types
-// (see market-day-events.ts for the stance). Defaults match TestRegisterVendor.valid() and
-// TestProvideVendorLegalIdentity.valid(). Seed them on `vendorStream(vendorId)`.
+// (see market-day-events.ts for the stance). Defaults match TestInviteVendor.valid(),
+// TestRegisterVendor.valid() and TestProvideVendorLegalIdentity.valid(). Seed them on
+// `vendorStream(vendorId)`.
 export const vendorStream = (vendorId = 'vendor-id'): string => `vendor-${vendorId}`;
+
+export const vendorInvited = (vendorId = 'vendor-id', overrides: Partial<VendorInvited['payload']> = {}): VendorInvited =>
+  ({ type: 'VendorInvited', payload: { vendorId, invitedAt: '2026-11-11T09:00:00.000Z', email: 'marie@example.fr', ...overrides }, version: 1 });
 
 export const vendorRegistered = (vendorId = 'vendor-id', overrides: Partial<VendorRegistered['payload']> = {}): VendorRegistered =>
   ({ type: 'VendorRegistered', payload: { vendorId, registeredAt: '2026-06-13T20:33:19.632Z', email: 'vendor@domain.com', ...overrides }, version: 1 });

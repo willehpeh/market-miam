@@ -1,8 +1,12 @@
-type Status = 'registered' | 'unregistered' | 'erased';
+type Status = 'invited' | 'registered' | 'unregistered' | 'erased';
 
 export class VendorStatus {
 
   private constructor(private readonly _status: Status) {
+  }
+
+  static invited(): VendorStatus {
+    return new VendorStatus('invited');
   }
 
   static registered(): VendorStatus {
@@ -15,6 +19,10 @@ export class VendorStatus {
 
   static erased(): VendorStatus {
     return new VendorStatus('erased');
+  }
+
+  isInvited(): boolean {
+    return this._status === 'invited';
   }
 
   isRegistered(): boolean {
