@@ -5,7 +5,7 @@ export type VendorAccount = { vendorId: string; email: string };
 export class InMemoryVendorAccounts extends VendorAccounts {
   private readonly vendorIdByEmail = new Map<string, string>();
 
-  ensureOpenFor({ vendorId, email }: Invitation): Promise<AccountOpening> {
+  openFor({ vendorId, email }: Invitation): Promise<AccountOpening> {
     const holder = this.vendorIdByEmail.get(email);
     if (holder !== undefined && holder !== vendorId) {
       return Promise.resolve('email-in-use');

@@ -7,7 +7,7 @@ export class OpensVendorAccounts implements Processor {
   constructor(private readonly accounts: VendorAccounts) {}
 
   async handle(event: StoredEvent<VendorInvited>): Promise<void> {
-    await this.accounts.ensureOpenFor(event.payload);
+    await this.accounts.openFor(event.payload);
   }
 
   eventTypes(): string[] {

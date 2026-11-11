@@ -12,13 +12,13 @@ export function vendorAccountsContract(name: string, create: () => VendorAccount
     });
 
     it('answers open for a new invitation', async () => {
-      expect(await accounts.ensureOpenFor(marie)).toBe('open');
+      expect(await accounts.openFor(marie)).toBe('open');
     });
 
     it("answers email-in-use when the email holds another vendor's account", async () => {
-      await accounts.ensureOpenFor(marie);
+      await accounts.openFor(marie);
 
-      expect(await accounts.ensureOpenFor({ ...marie, vendorId: 'another-vendor' })).toBe('email-in-use');
+      expect(await accounts.openFor({ ...marie, vendorId: 'another-vendor' })).toBe('email-in-use');
     });
   });
 }
