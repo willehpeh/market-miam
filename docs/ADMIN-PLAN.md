@@ -54,8 +54,8 @@ whatever psql access the owner still wants.
 **3. Assign a subdomain.** Ends the hand-written SQL every new vendor waits on (ADR 0032). A
 `register` on the port, with `admin`, `api`, `app` and `www` reserved.
 
-**4. Invite a vendor — next, ahead of slice 3** (the owner's call, 2026-11-02; ADR 0060). Ends
-creating vendors by hand in the Auth0 Dashboard, and makes Market Miam invitation-only.
+**4. Invite a vendor — in progress, ahead of slice 3** (the owner's call, 2026-11-02; ADR 0060).
+Ends creating vendors by hand in the Auth0 Dashboard, and makes Market Miam invitation-only.
 
 - **Domain** (`packages/market-days`). `InviteVendor` raises `VendorInvited { vendorId, invitedAt,
   email }`, first on the vendor's stream, its `email` added to `vendor-pii-fields.ts`. `Vendor`
@@ -78,6 +78,15 @@ creating vendors by hand in the Auth0 Dashboard, and makes Market Miam invitatio
   anonymous sweep covering its guard; the processor against `InMemoryVendorAccounts`; the
   `VendorAccounts` contract, run against the in-memory adapter and the Auth0 adapter, which also
   runs against the fake Auth0 server as `Auth0Accounts` does; the form.
+
+Progress, 2026-11-11. On `main`, wired into nothing yet: `InviteVendor` and the *invited* state,
+erasure of an invited vendor, the `VendorAccounts` port with its in-memory adapter and contract, and
+`OpensVendorAccounts`, which opens the account, erases an invitation whose address is taken, and
+skips a vendor erased in the meantime. Left: the Auth0 adapter, run against the contract; wiring the
+handler, the processor and the port into the api; the route; the form. Two specs will pass at once
+and belong on the way: registering an invited vendor, and `VendorInvited`'s email encrypted at rest.
+The push that wires the processor waits for step 1 below, or the first invitation fails until
+`create:users` is granted.
 
 Going live, in this order, by the owner:
 
