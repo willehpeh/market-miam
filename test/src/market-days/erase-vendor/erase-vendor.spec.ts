@@ -6,7 +6,7 @@ import {
   VendorScopedEvents,
   Vendors,
 } from '@market-miam/market-days';
-import { vendorErased, vendorRegistered, vendorStream } from '../vendor-events';
+import { vendorErased, vendorInvited, vendorRegistered, vendorStream } from '../vendor-events';
 
 describe('Erase Vendor', () => {
   let store: InMemoryEventStore;
@@ -34,6 +34,20 @@ describe('Erase Vendor', () => {
       expect.objectContaining({
         type: 'VendorErased',
         payload: { vendorId: 'vendor-id', erasedAt: '2026-10-04T09:00:00.000Z' },
+      }),
+    ]);
+  });
+
+  // An invitation that never became an account is erased like any vendor (ADR 0060).
+  it('erases a vendor who was invited and never registered', async () => {
+    given(vendorInvited());
+
+    await handler.execute(new EraseVendor('vendor-id', '2026-11-12T09:00:00.000Z'));
+
+    expect(store.newEvents()).toEqual([
+      expect.objectContaining({
+        type: 'VendorErased',
+        payload: { vendorId: 'vendor-id', erasedAt: '2026-11-12T09:00:00.000Z' },
       }),
     ]);
   });
