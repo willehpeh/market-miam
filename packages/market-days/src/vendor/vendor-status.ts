@@ -1,8 +1,12 @@
-type Status = 'invited' | 'registered' | 'unregistered' | 'erased';
+type Status = 'unknown' | 'invited' | 'registered' | 'erased';
 
 export class VendorStatus {
 
   private constructor(private readonly _status: Status) {
+  }
+
+  static unknown(): VendorStatus {
+    return new VendorStatus('unknown');
   }
 
   static invited(): VendorStatus {
@@ -11,10 +15,6 @@ export class VendorStatus {
 
   static registered(): VendorStatus {
     return new VendorStatus('registered');
-  }
-
-  static unregistered(): VendorStatus {
-    return new VendorStatus('unregistered');
   }
 
   static erased(): VendorStatus {

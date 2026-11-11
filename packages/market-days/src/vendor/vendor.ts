@@ -10,7 +10,7 @@ import { VendorErasedError } from './vendor-erased.error';
 
 export class Vendor extends Aggregate {
 
-  private _status = VendorStatus.unregistered();
+  private _status = VendorStatus.unknown();
   private _legalIdentity: LegalIdentityOnRecord = new NoLegalIdentity();
 
   constructor(private readonly _id: VendorId) {
@@ -18,7 +18,7 @@ export class Vendor extends Aggregate {
   }
 
   invite(invitedAt: Instant, email: Email) {
-    if (this._status.isInvited()) {
+    if (this.alreadyInvited() || this.alreadyRegistered()) {
       return;
     }
     const event: VendorInvited = {
@@ -94,6 +94,10 @@ export class Vendor extends Aggregate {
     if (this._status.isErased()) {
       throw new VendorErasedError();
     }
+  }
+
+  private alreadyInvited() {
+    return this._status.isInvited();
   }
 
   private alreadyRegistered() {
