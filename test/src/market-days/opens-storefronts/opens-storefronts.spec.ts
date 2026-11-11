@@ -1,27 +1,17 @@
 import { VendorScopedEvents } from '@market-miam/market-days';
 import {
-  CommandGateway,
   InMemoryCheckpoint,
   InMemoryEventStore,
   PollingSubscription,
 } from '@market-miam/event-sourcing';
-import { Command } from '@nestjs/cqrs';
 import {
   OpenStorefront,
   RegisterVendorHandler,
   OpensStorefronts,
   Vendors,
 } from '@market-miam/market-days';
+import { RecordingCommandGateway } from '../../recording-command-gateway';
 import { TestRegisterVendor } from '../register-vendor/test-data';
-
-class RecordingCommandGateway extends CommandGateway {
-  readonly dispatched: Command<unknown>[] = [];
-
-  async execute<R>(command: Command<R>): Promise<R> {
-    this.dispatched.push(command);
-    return undefined as R;
-  }
-}
 
 describe('Opens Storefronts', () => {
   let store: InMemoryEventStore;
