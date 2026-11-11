@@ -31,17 +31,23 @@ operator's Auth0 id goes in the event's metadata.
 never chooses one, so an invitation cannot land on an existing vendor's id. The id's nature is
 ADR 0024's: pseudonymous, kept in `app_metadata`, stamped on every vendor token.
 
-**A processor opens the account.** On `VendorInvited` it creates the Auth0 user on the `email`
-connection, with the `vendorId` in `app_metadata`. Every step is safe to repeat:
+**A processor opens the account.** On `VendorInvited` it asks the `VendorAccounts` port to open
+one for the invitation: on the `email` connection, with the `vendorId` in `app_metadata`. The port
+answers in the domain's terms:
 
-- A user with that email and this `vendorId` already exists: done, it is a retry.
-- A user with that email and another id exists: the invitation lost a race for its address. The
-  processor logs it and stops; the stray invitation is erased like any vendor.
+- `open`: this vendor's account is open, just now or already. A retry finds the one it opened.
+- `email-in-use`: the address already holds an account that is not this vendor's, another vendor's
+  or one made by hand. The invitation can never produce an account, so the processor sends
+  `EraseVendor` for it, and its email dies with its key.
 - The vendor was erased in the meantime: skipped.
 - Anything else (network, Auth0 down, rate limit) throws, and the subscription retries.
 
-The route refuses an email already on an Auth0 account before it records anything, so the race is
-the only way the second case arises.
+**Auth0 keeps emails unique.** One account per email is the identity provider's rule, not the
+domain's: a token carries one `vendorId`, so a login maps to one vendor. The domain cannot say what
+"the same vendor" is when it invites one: the email is a login and a contact, and the business's
+identity, its SIRET, comes later with the legal identity. The route refuses an email that already
+has a vendor account before it records anything, so only two invitations of one address, in the
+seconds before the first account opens, reach `email-in-use`.
 
 **The Action stops minting.** It copies `app_metadata.vendorId` into the token and refuses a
 vendor-app login without one. Only an invitation makes one.
@@ -66,7 +72,11 @@ the vendor. The system sends nothing; the operator tells the vendor.
 - The `vendorId` exists from the invitation, so a subdomain can be assigned before the first
   sign-in.
 - Every vendor invited from now on has a stream, so erasure reaches one who never signed in.
-  Deleting their Auth0 user is the same processor as for any erased vendor.
+  Deleting their Auth0 user is the same processor as for any erased vendor, and it finds the user
+  by `vendorId`, never by email: an invitation erased for a taken address shares that address with
+  another vendor's account.
+- A stray invitation leaves `VendorInvited` then `VendorErased` on its stream, with the same
+  correlation id, and nothing else.
 - The rule holds in two places: the event records each invitation, and the Action enforces it.
   The aggregate cannot: vendors from before registered without one, so `RegisterVendor` still
   accepts a new stream.
@@ -90,4 +100,8 @@ the vendor. The system sends nothing; the operator tells the vendor.
 | Raise `VendorRegistered` at invitation, with the typed email | Changes what past events mean: ADR 0024's email is the one Auth0 verified at first sign-in |
 | The admin app mints the `vendorId` | The operator would choose ids, and an existing vendor's would have to be guarded against |
 | A dead-letter queue for the processor | Dead-lettering skips, and a skipped invitation is lost (`docs/archive/DEFERRED.md`); the route refuses the foreseeable failure up front |
+| A reservation table of invited emails | Holds the email outside the encrypted events and needs a transaction commands do not run in, to prevent a second account Auth0 already refuses |
+| A blind index: a keyed hash of the email on the event | Still personal data after erasure, since whoever holds the key can recompute it, and the log cannot drop it |
+| A platform stream holding every invitation | Checking one email would decrypt every vendor's |
+| Logging a stray invitation, or an event of its own | A log line fades and leaves the email behind; a new event would have no reader. Erasure uses events that exist |
 | Invitation tokens that expire | The passwordless account already is the invitation; a token adds state for nothing |

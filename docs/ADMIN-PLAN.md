@@ -62,21 +62,22 @@ creating vendors by hand in the Auth0 Dashboard, and makes Market Miam invitatio
   gains an *invited* state: inviting again is a no-op, `register` works from it as from a new
   stream, and `erase` accepts it. The vendor app's registration on first load stays: it is the
   vendor taking up the invitation.
-- **Route.** `POST /api/ops/vendors { email }` refuses with a 409 an email already on an Auth0
-  account (`read:users`), mints the `vendorId`, dispatches `InviteVendor` and answers 202 with the
+- **Route.** `POST /api/ops/vendors { email }` refuses with a 409 an email that already has a
+  vendor account, on the `email` connection only (`read:users`), mints the `vendorId`, dispatches `InviteVendor` and answers 202 with the
   id. The operator's Auth0 id goes in the event's metadata: the first operator write to put it
   there, and the mechanism later slices reuse.
-- **Processor.** `OpensVendorAccounts`, on `VendorInvited`, creates the user on the `email`
-  connection with the `vendorId` in `app_metadata` (`create:users`), through a `VendorAccounts`
-  port whose Auth0 adapter sits beside `Auth0Accounts` and shares its token. An existing user with
-  the same `vendorId` is done (a retry); one with another id means the invitation lost a race for
-  its address, which the processor logs and leaves for erasure. A vendor erased in the meantime is
-  skipped. Any other failure retries, and `/api/health` reports it.
+- **Processor.** `OpensVendorAccounts`, on `VendorInvited`, asks the `VendorAccounts` port to open
+  the account (`openFor`, answering `open` or `email-in-use`). Its Auth0 adapter creates the user on
+  the `email` connection with the `vendorId` in `app_metadata` (`create:users`), beside
+  `Auth0Accounts` and sharing its token. Auth0 keeps emails unique: on `email-in-use`, an invitation
+  that lost a race for its address, the processor sends `EraseVendor` for it. A vendor erased in
+  the meantime is skipped. Any other failure retries, and `/api/health` reports it.
 - **Admin app.** An email field and an *Invite* button above the account list, disabled while it
   sends. The new account shows in the list once the processor has run, a few seconds later.
 - **Specs.** The aggregate's states (ADR 0060's table); the route's 202, 409 and metadata, with the
-  anonymous sweep covering its guard; the processor against a fake `VendorAccounts`; the Auth0
-  adapter against the fake Auth0 server, as `Auth0Accounts` is; the form.
+  anonymous sweep covering its guard; the processor against `InMemoryVendorAccounts`; the
+  `VendorAccounts` contract, run against the in-memory adapter and the Auth0 adapter, which also
+  runs against the fake Auth0 server as `Auth0Accounts` does; the form.
 
 Going live, in this order, by the owner:
 
@@ -89,8 +90,9 @@ Going live, in this order, by the owner:
 4. Turn on *Disable Sign Ups* on the `email` connection.
 
 **5. Erase a vendor.** A transport for `EraseVendor`, and a processor on `VendorErased` that
-deletes the Auth0 user (`delete:users`), whether the vendor registered or was only invited. It also
-clears an invitation that lost a race for its address (slice 4).
+deletes the Auth0 user (`delete:users`), whether the vendor registered or was only invited. It
+finds the user by `vendorId`, never by email: an invitation erased for a taken address (slice 4)
+shares that address with another vendor's account.
 
 **6. Rebuild a projection.** A transport for `Subscriptions.rebuild()`.
 
