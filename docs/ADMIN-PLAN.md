@@ -62,10 +62,10 @@ creating vendors by hand in the Auth0 Dashboard, and makes Market Miam invitatio
   gains an *invited* state: inviting again is a no-op, `register` works from it as from a new
   stream, and `erase` accepts it. The vendor app's registration on first load stays: it is the
   vendor taking up the invitation.
-- **Route.** `POST /api/ops/vendors { email }` refuses with a 409 an email that already has a
-  vendor account, on the `email` connection only (`read:users`), mints the `vendorId`, dispatches `InviteVendor` and answers 202 with the
-  id. The operator's Auth0 id goes in the event's metadata: the first operator write to put it
-  there, and the mechanism later slices reuse.
+- **Route.** `POST /api/ops/vendors { email }` refuses with a 409 an email that already has a vendor
+  account, on the `email` connection only (`read:users`), mints the `vendorId`, dispatches
+  `InviteVendor` and answers 202 with the id. The operator's Auth0 id goes in the event's metadata:
+  the first operator write to put it there, and the mechanism later slices reuse.
 - **Processor.** `OpensVendorAccounts`, on `VendorInvited`, asks the `VendorAccounts` port to open
   the account (`openFor`, answering `open` or `email-in-use`). Its Auth0 adapter creates the user on
   the `email` connection with the `vendorId` in `app_metadata` (`create:users`), beside
