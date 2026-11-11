@@ -15,6 +15,7 @@ type PiiFieldsOf<E extends DomainEvent> = {
  * crypto-shredded on erasure.
  */
 export const vendorPiiFields: PiiFieldsOf<MarketDaysEvent> = {
+  VendorInvited: ['email'],
   VendorRegistered: ['email'],
   VendorErased: [],
   VendorLegalIdentityProvided: [

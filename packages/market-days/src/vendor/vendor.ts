@@ -1,7 +1,7 @@
 import { Aggregate } from '@market-miam/event-sourcing';
 import { VendorId } from '@market-miam/shared-kernel';
 import { Email, Instant } from '@market-miam/common';
-import { VendorErased, VendorEvent, VendorLegalIdentityProvided, VendorRegistered } from './events';
+import { VendorErased, VendorEvent, VendorInvited, VendorLegalIdentityProvided, VendorRegistered } from './events';
 import { VendorStatus } from './vendor-status';
 import { LegalIdentity } from './legal-identity';
 import { LegalIdentityOnRecord, NoLegalIdentity, ProvidedLegalIdentity } from './legal-identity-on-record';
@@ -15,6 +15,19 @@ export class Vendor extends Aggregate {
 
   constructor(private readonly _id: VendorId) {
     super();
+  }
+
+  invite(invitedAt: Instant, email: Email) {
+    const event: VendorInvited = {
+      type: 'VendorInvited',
+      payload: {
+        vendorId: this._id.value(),
+        invitedAt: invitedAt.value(),
+        email: email.value()
+      },
+      version: 1
+    };
+    this.raise(event);
   }
 
   register(registeredAt: Instant, email: Email) {
