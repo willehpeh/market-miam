@@ -1,13 +1,17 @@
 import { AccountOpening, Invitation, VendorAccounts } from './vendor-accounts';
 
-export type VendorAccount = { vendorId: string; email: string };
+export type VendorAccount = { email: string; vendorId: string | null };
 
 export class InMemoryVendorAccounts extends VendorAccounts {
-  private readonly vendorIdByEmail = new Map<string, string>();
+  private readonly vendorIdByEmail: Map<string, string | null>;
+
+  constructor(existing: VendorAccount[] = []) {
+    super();
+    this.vendorIdByEmail = new Map(existing.map(({ email, vendorId }) => [email, vendorId]));
+  }
 
   openFor({ vendorId, email }: Invitation): Promise<AccountOpening> {
-    const holder = this.vendorIdByEmail.get(email);
-    if (holder !== undefined && holder !== vendorId) {
+    if (this.vendorIdByEmail.has(email) && this.vendorIdByEmail.get(email) !== vendorId) {
       return Promise.resolve('email-in-use');
     }
     this.vendorIdByEmail.set(email, vendorId);
@@ -15,6 +19,6 @@ export class InMemoryVendorAccounts extends VendorAccounts {
   }
 
   all(): VendorAccount[] {
-    return [...this.vendorIdByEmail].map(([email, vendorId]) => ({ vendorId, email }));
+    return [...this.vendorIdByEmail].map(([email, vendorId]) => ({ email, vendorId }));
   }
 }
