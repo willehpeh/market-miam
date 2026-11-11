@@ -60,7 +60,7 @@ describe('Erase Vendor', () => {
     expect(store.newEvents()).toEqual([]);
   });
 
-  it('rejects erasing a vendor who has not registered', async () => {
+  it('rejects erasing a vendor it has no record of', async () => {
     await expect(handler.execute(new EraseVendor('vendor-id', '2026-10-04T09:00:00.000Z'))).rejects.toThrow(
       VendorNotRegisteredError,
     );

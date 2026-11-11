@@ -73,7 +73,7 @@ export class Vendor extends Aggregate {
     if (this._status.isErased()) {
       return;
     }
-    if (!this.alreadyRegistered()) {
+    if (this._status.isUnknown()) {
       throw new VendorNotRegisteredError();
     }
     const event: VendorErased = {
