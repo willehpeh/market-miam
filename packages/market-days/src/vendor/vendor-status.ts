@@ -21,8 +21,8 @@ export class VendorStatus {
     return new VendorStatus('erased');
   }
 
-  isInvited(): boolean {
-    return this._status === 'invited';
+  isUnknown(): boolean {
+    return this._status === 'unknown';
   }
 
   isRegistered(): boolean {

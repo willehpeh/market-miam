@@ -18,7 +18,9 @@ export class Vendor extends Aggregate {
   }
 
   invite(invitedAt: Instant, email: Email) {
-    if (this.alreadyInvited() || this.alreadyRegistered()) {
+    this.assertNotErased();
+    // An invitation opens a stream; an invited or registered vendor keeps what they have.
+    if (!this._status.isUnknown()) {
       return;
     }
     const event: VendorInvited = {
@@ -94,10 +96,6 @@ export class Vendor extends Aggregate {
     if (this._status.isErased()) {
       throw new VendorErasedError();
     }
-  }
-
-  private alreadyInvited() {
-    return this._status.isInvited();
   }
 
   private alreadyRegistered() {

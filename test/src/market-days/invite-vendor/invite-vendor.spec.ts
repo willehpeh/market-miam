@@ -1,6 +1,6 @@
 import { InMemoryEventStore } from '@market-miam/event-sourcing';
-import { InviteVendorHandler, VendorScopedEvents, Vendors } from '@market-miam/market-days';
-import { vendorInvited, vendorRegistered, vendorStream } from '../vendor-events';
+import { InviteVendorHandler, VendorErasedError, VendorScopedEvents, Vendors } from '@market-miam/market-days';
+import { vendorErased, vendorInvited, vendorRegistered, vendorStream } from '../vendor-events';
 import { TestInviteVendor } from './test-data';
 
 describe('Invite Vendor', () => {
@@ -32,6 +32,14 @@ describe('Invite Vendor', () => {
 
     await handler.execute(TestInviteVendor.valid());
 
+    expect(store.newEvents()).toEqual([]);
+  });
+
+  // Erasure is final: the vendor id is not freed for a fresh invitation (ADR 0058).
+  it('refuses to invite an erased vendor', async () => {
+    store.seedWith(vendorStream(), [vendorRegistered(), vendorErased()], { vendorId: 'vendor-id' });
+
+    await expect(handler.execute(TestInviteVendor.valid())).rejects.toThrow(VendorErasedError);
     expect(store.newEvents()).toEqual([]);
   });
 });
