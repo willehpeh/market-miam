@@ -1,14 +1,16 @@
 import { AccountOpening, Invitation, VendorAccounts } from './vendor-accounts';
 
+export type VendorAccount = { vendorId: string; email: string };
+
 export class InMemoryVendorAccounts extends VendorAccounts {
-  private readonly accounts: Invitation[] = [];
+  private readonly accounts: VendorAccount[] = [];
 
   ensureOpenFor({ vendorId, email }: Invitation): Promise<AccountOpening> {
     this.accounts.push({ vendorId, email });
     return Promise.resolve('open');
   }
 
-  all(): Invitation[] {
+  all(): VendorAccount[] {
     return [...this.accounts];
   }
 }
