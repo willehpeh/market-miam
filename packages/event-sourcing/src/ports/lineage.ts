@@ -3,6 +3,8 @@ import { AsyncLocalStorage } from 'node:async_hooks';
 export type LineageIds = {
   correlationId: string;
   causationId: string;
+  // The operator whose request started the chain, on operator routes only.
+  operatorId?: string;
 };
 
 export class Lineage {

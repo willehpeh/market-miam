@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { Body, ConflictException, Controller, Get, HttpCode, HttpStatus, Post, UseGuards } from '@nestjs/common';
+import { Body, ConflictException, Controller, Get, HttpCode, HttpStatus, Post, UseGuards, UseInterceptors } from '@nestjs/common';
 import { z } from 'zod';
 import { CurrentOperator, OperatorAuthGuard } from '@market-miam/auth-nestjs';
 import type { VerifiedOperator } from '@market-miam/auth';
@@ -9,14 +9,17 @@ import { InviteVendor, SubdomainRegistry } from '@market-miam/market-days';
 import { Accounts } from './accounts/accounts';
 import { accountList, AccountListing } from './account-list';
 import { shapeOf } from '../shape-of.pipe';
+import { OperatorLineageInterceptor } from './operator-lineage.interceptor';
 
 // Shape only (ADR 0046): what an email must be is the Email value object's to say.
 const InvitationBody = z.object({ email: z.string() });
 
 // The operator surface: everything the admin app calls lives under ops/, behind the
-// operator guard on the class (never per route — see OperatorAuthGuard).
+// operator guard on the class (never per route — see OperatorAuthGuard), and with the
+// operator on its lineage, so whatever a route records names who asked for it.
 @Controller('ops')
 @UseGuards(OperatorAuthGuard)
+@UseInterceptors(OperatorLineageInterceptor)
 export class OpsController {
   constructor(
     private readonly accounts: Accounts,

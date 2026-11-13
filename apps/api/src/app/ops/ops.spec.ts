@@ -109,6 +109,13 @@ describe('The operator API', () => {
     expect((await app.get(EventStore).load(`vendor-${vendorId}`))[0].payload).toMatchObject({ email: 'marie@example.com' });
   });
 
+  it("records the operator's Auth0 id in the invitation's metadata", async () => {
+    const { vendorId } = (await invite('marie@example.com').expect(202)).body as { vendorId: string };
+
+    const [invited] = await app.get(EventStore).load(`vendor-${vendorId}`);
+    expect(invited.metadata).toMatchObject({ operatorId: testOperator.operatorId });
+  });
+
   it('tells a signed-in operator who they are', async () => {
     await request(app.getHttpServer())
       .get('/ops/whoami')
