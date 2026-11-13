@@ -35,7 +35,7 @@ describe('Invitations', () => {
 
   afterEach(() => http.verify());
 
-  it('sends the address to the operator API, and reports the invitation sent once accepted', () => {
+  it('sends the address to the operator API, and reports whom the invitation went to once accepted', () => {
     facade.invite('marie@example.com');
 
     const request = http.expectOne((req) => VENDORS(req.url));
@@ -43,6 +43,6 @@ describe('Invitations', () => {
     expect(request.request.body).toEqual({ email: 'marie@example.com' });
     request.flush({ vendorId: 'new-vendor' }, { status: 202, statusText: 'Accepted' });
 
-    expect(facade.status()).toBe('sent');
+    expect(facade.sentTo()).toBe('marie@example.com');
   });
 });
