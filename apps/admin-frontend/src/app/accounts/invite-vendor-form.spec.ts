@@ -79,4 +79,16 @@ describe('InviteVendorForm', () => {
     expect(form.textContent).toContain("That isn't a valid email address");
     expect(form.querySelector('input')!.value).toBe('marie@example');
   });
+
+  it("says when the invitation couldn't be sent for any other reason, keeping the address to retry", async () => {
+    const { fixture, form } = await render();
+    type(form.querySelector('input')!, 'marie@example.com');
+
+    (await invite(form)).flush({}, { status: 500, statusText: 'Internal Server Error' });
+    await settle(fixture);
+
+    expect(form.textContent).toContain("The invitation couldn't be sent. Try again.");
+    expect(form.textContent).not.toContain('Invitation sent');
+    expect(form.querySelector('input')!.value).toBe('marie@example.com');
+  });
 });

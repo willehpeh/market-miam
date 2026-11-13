@@ -8,7 +8,7 @@ interface Invitation {
   email: string;
 }
 
-// What the API's refusals of an address tell the operator; any other failure is thrown.
+// What the API's refusals of an address tell the operator; any other failure, that it wasn't sent.
 const REFUSALS: ReadonlyMap<number, string> = new Map([
   [HttpStatusCode.Conflict, 'An account already holds this address'],
   [HttpStatusCode.BadRequest, "That isn't a valid email address"],
@@ -37,7 +37,7 @@ const REFUSALS: ReadonlyMap<number, string> = new Map([
         />
         <button type="submit" class="min-h-11 rounded bg-gray-900 px-4 text-base text-white">Invite</button>
       </div>
-      @for (error of invitation.email().errors(); track error.kind) {
+      @for (error of invitation().errorSummary(); track $index) {
         <p role="alert" class="mt-2 text-red-700">{{ error.message }}</p>
       }
       @if (sent()) {
@@ -61,7 +61,7 @@ export class InviteVendorForm {
       if (refusal) {
         return { fieldTree: field.email, kind: 'server', message: refusal };
       }
-      throw error;
+      return { fieldTree: field, kind: 'server', message: "The invitation couldn't be sent. Try again." };
     }
     this.sent.set(true);
     return undefined;
