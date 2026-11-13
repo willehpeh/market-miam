@@ -89,9 +89,8 @@ erases an invitation whose address is taken, and skips a vendor erased in the me
 `email-in-use`; it runs the contract against FakeAuth0, and by hand against a test tenant (`npx nx
 test:tenant api`). The api wires them per profile: `Auth0AccountsModule` outside development, one
 Management API client shared by both Auth0 adapters, and `DevelopmentAccountsModule` in memory. The
-route is built. The Management application has `create:users` (step 1 below). Left: the form. Two
-specs will pass at once and belong on the way: registering an invited vendor, and `VendorInvited`'s
-email encrypted at rest.
+route is built. The Management application has `create:users` (step 1 below). Left: the form, and a
+spec that will pass at once: `VendorInvited`'s email encrypted at rest.
 
 Going live, in this order, by the owner:
 
