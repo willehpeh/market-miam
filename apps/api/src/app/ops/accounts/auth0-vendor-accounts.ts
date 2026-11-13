@@ -1,7 +1,7 @@
 import { AccountOpening, Invitation, VendorAccounts } from '@market-miam/market-days';
 import { Auth0ManagementApi } from './auth0-management-api';
 
-// Vendors sign in on the passwordless email connection; operators' GitHub accounts are elsewhere.
+// Vendors sign in on the passwordless email connection, and only there.
 const VENDOR_CONNECTION = 'email';
 
 // What Auth0 answers when the email already has a user on the connection.

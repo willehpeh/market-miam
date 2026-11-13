@@ -45,9 +45,12 @@ answers in the domain's terms:
 **Auth0 keeps emails unique.** One account per email is the identity provider's rule, not the
 domain's: a token carries one `vendorId`, so a login maps to one vendor. The domain cannot say what
 "the same vendor" is when it invites one: the email is a login and a contact, and the business's
-identity, its SIRET, comes later with the legal identity. The route refuses an email that already
-has a vendor account before it records anything, so only two invitations of one address, in the
-seconds before the first account opens, reach `email-in-use`.
+identity, its SIRET, comes later with the legal identity. The route looks the email up before it
+records anything and refuses it if any account holds it, so only two invitations of one address, in
+the seconds before the first account opens, reach `email-in-use`. Vendors sign in only on the
+passwordless `email` connection and operators only through GitHub, so neither the lookup nor the
+adapter filters by connection. The one cost: an operator's own GitHub address cannot be invited,
+and a plus alias of it serves for trying the vendor app.
 
 **The Action stops minting.** It copies `app_metadata.vendorId` into the token and refuses a
 vendor-app login without one. Only an invitation makes one.
