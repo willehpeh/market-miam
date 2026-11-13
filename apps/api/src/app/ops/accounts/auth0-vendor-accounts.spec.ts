@@ -38,6 +38,21 @@ describe('Auth0VendorAccounts', () => {
     await expect(accounts().openFor(marie)).rejects.toThrow(/500/);
   });
 
+  // Auth0 checks addresses more strictly than our Email: such an invitation can never become an
+  // account, so the processor erases it instead of retrying it forever.
+  it('answers email-refused when Auth0 refuses the address itself', async () => {
+    auth0.refusesEmails = true;
+
+    expect(await accounts().openFor({ ...marie, email: 'marie,dupont@example.fr' })).toBe('email-refused');
+  });
+
+  // Any other 400 may be ours to fix: thrown, it stalls the processor and alerts, losing nothing.
+  it('fails when Auth0 refuses the request for another reason', async () => {
+    auth0.createStatus = 400;
+
+    await expect(accounts().openFor(marie)).rejects.toThrow(/400/);
+  });
+
   it('fails when Auth0 refuses to say who holds a taken address', async () => {
     auth0.users = [{ connection: 'email', email: marie.email, app_metadata: { vendorId: 'another-vendor' } }];
     auth0.lookupStatus = 503;

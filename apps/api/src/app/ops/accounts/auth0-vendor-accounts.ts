@@ -6,6 +6,13 @@ const VENDOR_CONNECTION = 'email';
 
 // What Auth0 answers when the email already has a user on the connection.
 const CONFLICT = 409;
+// What Auth0 answers when it refuses the request, the address among other reasons.
+const BAD_REQUEST = 400;
+
+interface Refusal {
+  errorCode?: string;
+  message?: string;
+}
 
 interface HeldAccount {
   app_metadata?: { vendorId?: string };
@@ -28,6 +35,9 @@ export class Auth0VendorAccounts extends VendorAccounts {
       const held = await this.accountsHolding(email);
       return held.some((account) => account.app_metadata?.vendorId === vendorId) ? 'open' : 'email-in-use';
     }
+    if (created.status === BAD_REQUEST && refusesTheAddress((await created.json()) as Refusal)) {
+      return 'email-refused';
+    }
     if (!created.ok) {
       throw new Error(`Auth0 refused to open a vendor's account: ${created.status}`);
     }
@@ -41,4 +51,10 @@ export class Auth0VendorAccounts extends VendorAccounts {
     }
     return (await response.json()) as HeldAccount[];
   }
+}
+
+// Auth0's payload validation failing on the email property, and only that: any other 400 may
+// be a fault of ours, better thrown and retried than taken for a refused address.
+function refusesTheAddress({ errorCode, message }: Refusal): boolean {
+  return errorCode === 'invalid_body' && / on property email\b/.test(message ?? '');
 }

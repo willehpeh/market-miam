@@ -30,6 +30,8 @@ export class FakeAuth0 {
   usersStatus = 200;
   createStatus = 201;
   lookupStatus = 200;
+  // Refuses every address as Auth0 refuses one it finds malformed, stricter than our Email.
+  refusesEmails = false;
   expiresInSeconds = 86_400;
   private server!: Server;
 
@@ -71,6 +73,14 @@ export class FakeAuth0 {
         return send(res, this.createStatus, { error: 'server_error' });
       }
       const user = JSON.parse(await bodyOf(req)) as Auth0User;
+      if (this.refusesEmails) {
+        return send(res, 400, {
+          statusCode: 400,
+          error: 'Bad Request',
+          message: `Payload validation error: 'Object didn't pass validation for format email: ${user.email}' on property email (The user's email).`,
+          errorCode: 'invalid_body',
+        });
+      }
       if (this.users.some((held) => held.email === user.email && held.connection === user.connection)) {
         return send(res, 409, { statusCode: 409, error: 'Conflict', message: 'The user already exists.' });
       }

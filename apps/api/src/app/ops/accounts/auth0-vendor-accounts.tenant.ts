@@ -1,4 +1,4 @@
-import { beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { vendorAccountsContract, vendorAccountsContractEmails } from '@market-miam/testing';
 import { Auth0ManagementApi } from './auth0-management-api';
 import { Auth0VendorAccounts } from './auth0-vendor-accounts';
@@ -9,6 +9,9 @@ import { Auth0VendorAccounts } from './auth0-vendor-accounts';
 // passwordless Email connection on. Each case deletes the contract's addresses first and after.
 
 const PRODUCTION_TENANT = 'willalexander.eu.auth0.com';
+
+// An address our Email value object accepts and, by FakeAuth0's account of it, Auth0 refuses.
+const MALFORMED_FOR_AUTH0 = 'marie,dupont@example.com';
 
 const issuer = process.env['AUTH0_TEST_ISSUER'];
 const clientId = process.env['AUTH0_TEST_MGMT_CLIENT_ID'];
@@ -38,7 +41,7 @@ async function deleteUsersWith(email: string): Promise<void> {
 }
 
 async function clear(): Promise<void> {
-  for (const email of vendorAccountsContractEmails) {
+  for (const email of [...vendorAccountsContractEmails, MALFORMED_FOR_AUTH0]) {
     await deleteUsersWith(email);
   }
 }
@@ -58,4 +61,13 @@ vendorAccountsContract('Auth0VendorAccounts on a test tenant', async (existing) 
     );
   }
   return new Auth0VendorAccounts(api);
+});
+
+describe('Auth0VendorAccounts on a test tenant, beyond the contract', () => {
+  // Proves the refusal FakeAuth0 copies: its wording is what the adapter recognises.
+  it('answers email-refused for an address Auth0 finds malformed', async () => {
+    const accounts = new Auth0VendorAccounts(api);
+
+    expect(await accounts.openFor({ vendorId: 'vendor-id', email: MALFORMED_FOR_AUTH0 })).toBe('email-refused');
+  });
 });
