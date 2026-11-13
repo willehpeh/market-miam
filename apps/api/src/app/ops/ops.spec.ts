@@ -98,6 +98,12 @@ describe('The operator API', () => {
     expect(await invitations()).toEqual([]);
   });
 
+  it('refuses a malformed address, and records nothing', async () => {
+    await invite('marie@example').expect(400);
+
+    expect(await invitations()).toEqual([]);
+  });
+
   // Auth0 keeps addresses in lower case: compared any other way, a held one would slip through.
   it('refuses a held address typed in another case', async () => {
     await invite('Owner@ACME.test').expect(409);
