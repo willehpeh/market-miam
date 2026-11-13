@@ -56,4 +56,16 @@ describe('InviteVendorForm', () => {
 
     expect(form.textContent).toContain('Invitation sent');
   });
+
+  it('says when an account already holds the address, keeping it in the field', async () => {
+    const { fixture, form } = await render();
+    type(form.querySelector('input')!, 'owner@acme.test');
+
+    (await invite(form)).flush({ statusCode: 409 }, { status: 409, statusText: 'Conflict' });
+    await settle(fixture);
+
+    expect(form.textContent).toContain('An account already holds this address');
+    expect(form.textContent).not.toContain('Invitation sent');
+    expect(form.querySelector('input')!.value).toBe('owner@acme.test');
+  });
 });

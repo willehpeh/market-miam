@@ -1,5 +1,5 @@
 import { Component, inject, signal } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse, HttpStatusCode } from '@angular/common/http';
 import { form, FormField, FormRoot } from '@angular/forms/signals';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../environments/environment';
@@ -31,6 +31,9 @@ interface Invitation {
         />
         <button type="submit" class="min-h-11 rounded bg-gray-900 px-4 text-base text-white">Invite</button>
       </div>
+      @for (error of invitation.email().errors(); track error.kind) {
+        <p role="alert" class="mt-2 text-red-700">{{ error.message }}</p>
+      }
       @if (sent()) {
         <p role="status" class="mt-2 text-green-800">Invitation sent</p>
       }
@@ -43,9 +46,16 @@ export class InviteVendorForm {
   protected readonly invitation = form(signal<Invitation>({ email: '' }), {
     submission: {
       action: async (field) => {
-        await firstValueFrom(
-          this.http.post<{ vendorId: string }>(`${environment.apiBaseUrl}/api/ops/vendors`, field().value()),
-        );
+        try {
+          await firstValueFrom(
+            this.http.post<{ vendorId: string }>(`${environment.apiBaseUrl}/api/ops/vendors`, field().value()),
+          );
+        } catch (error) {
+          if (error instanceof HttpErrorResponse && error.status === HttpStatusCode.Conflict) {
+            return { fieldTree: field.email, kind: 'server', message: 'An account already holds this address' };
+          }
+          throw error;
+        }
         this.sent.set(true);
         return undefined;
       },
