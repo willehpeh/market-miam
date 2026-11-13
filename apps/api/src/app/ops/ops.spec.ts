@@ -3,8 +3,9 @@ import { INestApplication, RequestMethod } from '@nestjs/common';
 import { ModulesContainer } from '@nestjs/core';
 import { METHOD_METADATA, PATH_METADATA } from '@nestjs/common/constants';
 import request from 'supertest';
+import { EventStore } from '@market-miam/event-sourcing';
 import { InMemorySubdomainRegistry } from '@market-miam/market-days';
-import { bootApiTestApp } from '../testing/api-test-app';
+import { bootApiTestApp, FIXED_NOW, fixedClock } from '../testing/api-test-app';
 import { NOT_AN_OPERATOR_TOKEN, OPERATOR_TOKEN, testOperator } from '../testing/fake-operator-token-verifier';
 
 type Verb = 'get' | 'post' | 'put' | 'patch' | 'delete';
@@ -44,6 +45,7 @@ describe('The operator API', () => {
 
   beforeEach(async () => {
     app = await bootApiTestApp({
+      clock: fixedClock,
       accounts: [
         { email: 'owner@brioche.test', vendorId: 'brioche-co' },
         { email: 'owner@acme.test', vendorId: 'acme-bakery' },
@@ -69,6 +71,22 @@ describe('The operator API', () => {
         { email: 'owner@brioche.test', vendorId: 'brioche-co', subdomain: null },
         { email: null, vendorId: 'no-email-vendor', subdomain: null },
       ]);
+  });
+
+  const invite = (email: string) =>
+    request(app.getHttpServer()).post('/ops/vendors').set('Authorization', `Bearer ${OPERATOR_TOKEN}`).send({ email });
+
+  it('invites a vendor, answering with the vendorId it minted', async () => {
+    const response = await invite('marie@example.com').expect(202);
+
+    const { vendorId } = response.body as { vendorId: string };
+    expect(vendorId).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
+    expect(await app.get(EventStore).load(`vendor-${vendorId}`)).toEqual([
+      expect.objectContaining({
+        type: 'VendorInvited',
+        payload: { vendorId, invitedAt: FIXED_NOW, email: 'marie@example.com' },
+      }),
+    ]);
   });
 
   it('tells a signed-in operator who they are', async () => {
