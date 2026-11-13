@@ -23,7 +23,7 @@ export const invitationFeature = createFeature({
   name: 'invitation',
   reducer: createReducer<InvitationState>(
     initialState,
-    on(InviteVendor, (state): InvitationState => ({ ...state, sending: true })),
+    on(InviteVendor, (state): InvitationState => ({ ...state, sending: true, refusal: null })),
     on(InviteVendorSuccess, (state, { email }): InvitationState => ({ ...state, sending: false, sentTo: email })),
     on(InviteVendorRefused, (state, { refusal }): InvitationState => ({ ...state, sending: false, refusal })),
   ),

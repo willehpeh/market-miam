@@ -81,4 +81,15 @@ describe('Invitations', () => {
     expect(facade.refusal()).toBe('not-sent');
     expect(facade.sending()).toBe(false);
   });
+
+  // A refusal is about the address it answered: the next invitation starts without it.
+  it('forgets a refusal when the next invitation starts', () => {
+    facade.invite('owner@acme.test');
+    http.expectOne((req) => VENDORS(req.url)).flush({ statusCode: 409 }, { status: 409, statusText: 'Conflict' });
+
+    facade.invite('marie@example.com');
+
+    expect(facade.refusal()).toBeNull();
+    http.expectOne((req) => VENDORS(req.url)).flush({ vendorId: 'new-vendor' }, { status: 202, statusText: 'Accepted' });
+  });
 });
