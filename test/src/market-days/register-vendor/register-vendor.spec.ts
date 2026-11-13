@@ -1,7 +1,7 @@
 import { InMemoryEventStore } from '@market-miam/event-sourcing';
 import { VendorScopedEvents } from '@market-miam/market-days';
 import { RegisterVendor, RegisterVendorHandler, VendorErasedError, VendorRegistered, Vendors } from '@market-miam/market-days';
-import { vendorErased, vendorRegistered, vendorStream } from '../vendor-events';
+import { vendorErased, vendorInvited, vendorRegistered, vendorStream } from '../vendor-events';
 import { TestRegisterVendor } from './test-data';
 
 describe('Register Vendor', () => {
@@ -46,6 +46,16 @@ describe('Register Vendor', () => {
       expect.objectContaining({ type: 'VendorRegistered', payload: expect.objectContaining({ vendorId: first.vendorId }) }),
       expect.objectContaining({ type: 'VendorRegistered', payload: expect.objectContaining({ vendorId: second.vendorId }) }),
     ]);
+  });
+
+  // The vendor taking up their invitation at first sign-in (ADR 0060).
+  it('registers an invited vendor', async () => {
+    store.seedWith(vendorStream(), [vendorInvited()], { vendorId: 'vendor-id' });
+    const command = TestRegisterVendor.valid();
+
+    await handler.execute(command);
+
+    expectSingleEventFrom(command);
   });
 
   // Erasure is final: the vendor id is not freed for a fresh registration (ADR 0058).
