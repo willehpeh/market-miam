@@ -98,6 +98,17 @@ describe('The operator API', () => {
     expect(await invitations()).toEqual([]);
   });
 
+  // Auth0 keeps addresses in lower case: compared any other way, a held one would slip through.
+  it('refuses a held address typed in another case', async () => {
+    await invite('Owner@ACME.test').expect(409);
+  });
+
+  it('records the address in lower case, as its account will hold it', async () => {
+    const { vendorId } = (await invite('Marie@Example.COM').expect(202)).body as { vendorId: string };
+
+    expect((await app.get(EventStore).load(`vendor-${vendorId}`))[0].payload).toMatchObject({ email: 'marie@example.com' });
+  });
+
   it('tells a signed-in operator who they are', async () => {
     await request(app.getHttpServer())
       .get('/ops/whoami')

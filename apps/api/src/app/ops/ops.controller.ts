@@ -39,7 +39,9 @@ export class OpsController {
   // Accepted, not created: the account opens when the processor has run (ADR 0060).
   @Post('vendors')
   @HttpCode(HttpStatus.ACCEPTED)
-  async invite(@Body(shapeOf(InvitationBody)) { email }: z.infer<typeof InvitationBody>): Promise<{ vendorId: string }> {
+  async invite(@Body(shapeOf(InvitationBody)) body: z.infer<typeof InvitationBody>): Promise<{ vendorId: string }> {
+    // Auth0 keeps addresses in lower case, so the check and the invitation do too.
+    const email = body.email.toLowerCase();
     if (await this.isHeld(email)) {
       throw new ConflictException({
         statusCode: HttpStatus.CONFLICT,
