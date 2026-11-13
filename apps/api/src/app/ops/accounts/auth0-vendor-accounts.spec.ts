@@ -44,4 +44,13 @@ describe('Auth0VendorAccounts', () => {
 
     await expect(accounts().openFor(marie)).rejects.toThrow(/503/);
   });
+
+  // An operator's GitHub account can share a vendor's address: Auth0 keeps users unique per
+  // connection, so only an account on the email connection makes the address in use.
+  it('opens the account when the address only belongs to a GitHub user', async () => {
+    auth0.users = [{ connection: 'github', email: marie.email }];
+
+    expect(await accounts().openFor(marie)).toBe('open');
+    expect(auth0.users).toContainEqual({ connection: 'email', email: marie.email, app_metadata: { vendorId: marie.vendorId } });
+  });
 });
