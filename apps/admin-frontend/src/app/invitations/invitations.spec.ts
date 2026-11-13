@@ -65,4 +65,12 @@ describe('Invitations', () => {
     expect(facade.sending()).toBe(false);
     expect(facade.sentTo()).toBeNull();
   });
+
+  it('reports an address the API finds malformed, and stops sending', () => {
+    facade.invite('marie@example');
+    http.expectOne((req) => VENDORS(req.url)).flush({ statusCode: 400 }, { status: 400, statusText: 'Bad Request' });
+
+    expect(facade.refusal()).toBe('invalid-email');
+    expect(facade.sending()).toBe(false);
+  });
 });
