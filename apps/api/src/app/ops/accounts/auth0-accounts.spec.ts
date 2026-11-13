@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { FakeAuth0 } from '../../testing/fake-auth0';
 import { Auth0Accounts } from './auth0-accounts';
 import { Auth0ManagementApi } from './auth0-management-api';
+import { Auth0Users } from './auth0-users';
 
 const CLIENT_ID = 'management-client';
 const CLIENT_SECRET = 'management-secret';
@@ -11,7 +12,7 @@ describe('Auth0Accounts', () => {
   let issuer: string;
   let now: number;
 
-  const accounts = () => new Auth0Accounts(new Auth0ManagementApi(issuer, CLIENT_ID, CLIENT_SECRET, () => now));
+  const accounts = () => new Auth0Accounts(new Auth0Users(new Auth0ManagementApi(issuer, CLIENT_ID, CLIENT_SECRET, () => now)));
 
   beforeEach(async () => {
     auth0 = new FakeAuth0();

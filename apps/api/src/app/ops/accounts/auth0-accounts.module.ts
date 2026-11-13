@@ -5,6 +5,7 @@ import { Accounts } from './accounts';
 import { Auth0Accounts } from './auth0-accounts';
 import { Auth0ManagementApi } from './auth0-management-api';
 import { Auth0VendorAccounts } from './auth0-vendor-accounts';
+import { Auth0Users } from './auth0-users';
 
 // The identity provider outside development: the Auth0 tenant, through one Management API
 // client, so the account list and the invitation processor share its metered token.
@@ -21,12 +22,9 @@ import { Auth0VendorAccounts } from './auth0-vendor-accounts';
         ),
       inject: [ConfigService],
     },
-    { provide: Accounts, useFactory: (api: Auth0ManagementApi) => new Auth0Accounts(api), inject: [Auth0ManagementApi] },
-    {
-      provide: VendorAccounts,
-      useFactory: (api: Auth0ManagementApi) => new Auth0VendorAccounts(api),
-      inject: [Auth0ManagementApi],
-    },
+    { provide: Auth0Users, useFactory: (api: Auth0ManagementApi) => new Auth0Users(api), inject: [Auth0ManagementApi] },
+    { provide: Accounts, useFactory: (users: Auth0Users) => new Auth0Accounts(users), inject: [Auth0Users] },
+    { provide: VendorAccounts, useFactory: (users: Auth0Users) => new Auth0VendorAccounts(users), inject: [Auth0Users] },
   ],
   exports: [Accounts, VendorAccounts],
 })

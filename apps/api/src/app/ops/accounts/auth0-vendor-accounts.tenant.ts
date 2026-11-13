@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { vendorAccountsContract, vendorAccountsContractEmails } from '@market-miam/testing';
 import { Auth0ManagementApi } from './auth0-management-api';
+import { Auth0Users } from './auth0-users';
 import { Auth0VendorAccounts } from './auth0-vendor-accounts';
 
 // The VendorAccounts contract against a real Auth0 tenant, proving what FakeAuth0 assumes.
@@ -60,13 +61,13 @@ vendorAccountsContract('Auth0VendorAccounts on a test tenant', async (existing) 
       'create an existing account',
     );
   }
-  return new Auth0VendorAccounts(api);
+  return new Auth0VendorAccounts(new Auth0Users(api));
 });
 
 describe('Auth0VendorAccounts on a test tenant, beyond the contract', () => {
   // Proves the refusal FakeAuth0 copies: its wording is what the adapter recognises.
   it('answers email-refused for an address Auth0 finds malformed', async () => {
-    const accounts = new Auth0VendorAccounts(api);
+    const accounts = new Auth0VendorAccounts(new Auth0Users(api));
 
     expect(await accounts.openFor({ vendorId: 'vendor-id', email: MALFORMED_FOR_AUTH0 })).toBe('email-refused');
   });

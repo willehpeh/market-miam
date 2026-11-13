@@ -2,6 +2,7 @@ import { afterEach, beforeEach } from 'vitest';
 import { vendorAccountsContract } from '@market-miam/testing';
 import { FakeAuth0 } from '../../testing/fake-auth0';
 import { Auth0ManagementApi } from './auth0-management-api';
+import { Auth0Users } from './auth0-users';
 import { Auth0VendorAccounts } from './auth0-vendor-accounts';
 
 let auth0: FakeAuth0;
@@ -22,5 +23,5 @@ vendorAccountsContract('Auth0VendorAccounts on FakeAuth0', (existing) => {
     email,
     ...(vendorId && { app_metadata: { vendorId } }),
   }));
-  return new Auth0VendorAccounts(new Auth0ManagementApi(issuer, 'management-client', 'management-secret'));
+  return new Auth0VendorAccounts(new Auth0Users(new Auth0ManagementApi(issuer, 'management-client', 'management-secret')));
 });
