@@ -37,4 +37,11 @@ describe('Auth0VendorAccounts', () => {
 
     await expect(accounts().openFor(marie)).rejects.toThrow(/500/);
   });
+
+  it('fails when Auth0 refuses to say who holds a taken address', async () => {
+    auth0.users = [{ connection: 'email', email: marie.email, app_metadata: { vendorId: 'another-vendor' } }];
+    auth0.lookupStatus = 503;
+
+    await expect(accounts().openFor(marie)).rejects.toThrow(/503/);
+  });
 });

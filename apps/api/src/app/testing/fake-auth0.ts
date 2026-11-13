@@ -29,6 +29,7 @@ export class FakeAuth0 {
   tokenStatus = 200;
   usersStatus = 200;
   createStatus = 201;
+  lookupStatus = 200;
   expiresInSeconds = 86_400;
   private server!: Server;
 
@@ -79,6 +80,9 @@ export class FakeAuth0 {
     if (req.method === 'GET' && url.pathname === '/api/v2/users-by-email') {
       if (req.headers.authorization !== `Bearer ${this.latestToken()}`) {
         return send(res, 401, { error: 'invalid_token' });
+      }
+      if (this.lookupStatus !== 200) {
+        return send(res, this.lookupStatus, { error: 'server_error' });
       }
       const email = url.searchParams.get('email');
       return send(res, 200, this.users.filter((user) => user.email === email).map(asReturned));

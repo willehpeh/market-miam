@@ -36,6 +36,9 @@ export class Auth0VendorAccounts extends VendorAccounts {
 
   private async accountsHolding(email: string): Promise<HeldAccount[]> {
     const response = await this.api.fetch(`api/v2/users-by-email?${new URLSearchParams({ email })}`);
+    if (!response.ok) {
+      throw new Error(`Auth0 refused to say who holds an address: ${response.status}`);
+    }
     return (await response.json()) as HeldAccount[];
   }
 }
