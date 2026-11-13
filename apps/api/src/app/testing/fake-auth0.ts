@@ -19,7 +19,9 @@ async function bodyOf(req: IncomingMessage): Promise<string> {
 }
 
 // Stands in for the Management API endpoints the adapters call, on a local port:
-// client-credentials tokens, the paged user list and user creation, which want the latest token.
+// client-credentials tokens, then the paged user list, user creation and the lookup by email,
+// which want the latest token. Like Auth0, it refuses a second user with an email already on
+// that connection, and the lookup answers across every connection.
 export class FakeAuth0 {
   readonly tokenRequests: Record<string, string>[] = [];
   readonly userPages: URLSearchParams[] = [];
@@ -64,8 +66,18 @@ export class FakeAuth0 {
         return send(res, 401, { error: 'invalid_token' });
       }
       const user = JSON.parse(await bodyOf(req)) as Auth0User;
+      if (this.users.some((held) => held.email === user.email && held.connection === user.connection)) {
+        return send(res, 409, { statusCode: 409, error: 'Conflict', message: 'The user already exists.' });
+      }
       this.users.push(user);
       return send(res, 201, user);
+    }
+    if (req.method === 'GET' && url.pathname === '/api/v2/users-by-email') {
+      if (req.headers.authorization !== `Bearer ${this.latestToken()}`) {
+        return send(res, 401, { error: 'invalid_token' });
+      }
+      const email = url.searchParams.get('email');
+      return send(res, 200, this.users.flatMap((user, index) => (user.email === email ? [asReturned(user, index)] : [])));
     }
     send(res, 404, {});
   }
@@ -73,4 +85,14 @@ export class FakeAuth0 {
   private latestToken(): string {
     return `token-${this.tokenRequests.length}`;
   }
+}
+
+// A user as the Management API returns it: its connection sits in its identities.
+function asReturned({ connection, email, app_metadata }: Auth0User, index: number) {
+  return {
+    user_id: `${connection}|${index}`,
+    email,
+    ...(app_metadata && { app_metadata }),
+    identities: [{ connection }],
+  };
 }
