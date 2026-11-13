@@ -6,6 +6,8 @@ import { Auth0VendorAccounts } from './auth0-vendor-accounts';
 const CLIENT_ID = 'management-client';
 const CLIENT_SECRET = 'management-secret';
 
+const marie = { vendorId: 'vendor-id', email: 'marie@example.fr' };
+
 describe('Auth0VendorAccounts', () => {
   let auth0: FakeAuth0;
   let issuer: string;
@@ -22,10 +24,17 @@ describe('Auth0VendorAccounts', () => {
   });
 
   it("opens the account on the vendors' email connection, carrying the vendorId", async () => {
-    await accounts().openFor({ vendorId: 'vendor-id', email: 'marie@example.fr' });
+    await accounts().openFor(marie);
 
     expect(auth0.users).toEqual([
       { connection: 'email', email: 'marie@example.fr', app_metadata: { vendorId: 'vendor-id' } },
     ]);
+  });
+
+  // Thrown, so the processor's subscription retries: the account may well not exist.
+  it('fails when Auth0 refuses to open the account for another reason', async () => {
+    auth0.createStatus = 500;
+
+    await expect(accounts().openFor(marie)).rejects.toThrow(/500/);
   });
 });

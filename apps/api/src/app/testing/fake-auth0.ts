@@ -28,6 +28,7 @@ export class FakeAuth0 {
   users: Auth0User[] = [];
   tokenStatus = 200;
   usersStatus = 200;
+  createStatus = 201;
   expiresInSeconds = 86_400;
   private server!: Server;
 
@@ -64,6 +65,9 @@ export class FakeAuth0 {
     if (req.method === 'POST' && url.pathname === '/api/v2/users') {
       if (req.headers.authorization !== `Bearer ${this.latestToken()}`) {
         return send(res, 401, { error: 'invalid_token' });
+      }
+      if (this.createStatus !== 201) {
+        return send(res, this.createStatus, { error: 'server_error' });
       }
       const user = JSON.parse(await bodyOf(req)) as Auth0User;
       if (this.users.some((held) => held.email === user.email && held.connection === user.connection)) {

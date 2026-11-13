@@ -24,11 +24,14 @@ export class Auth0VendorAccounts extends VendorAccounts {
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ connection: VENDOR_CONNECTION, email, app_metadata: { vendorId } }),
     });
-    if (created.status !== CONFLICT) {
-      return 'open';
+    if (created.status === CONFLICT) {
+      const held = await this.accountsHolding(email);
+      return held.some((account) => account.app_metadata?.vendorId === vendorId) ? 'open' : 'email-in-use';
     }
-    const held = await this.accountsHolding(email);
-    return held.some((account) => account.app_metadata?.vendorId === vendorId) ? 'open' : 'email-in-use';
+    if (!created.ok) {
+      throw new Error(`Auth0 refused to open a vendor's account: ${created.status}`);
+    }
+    return 'open';
   }
 
   private async accountsHolding(email: string): Promise<HeldAccount[]> {
