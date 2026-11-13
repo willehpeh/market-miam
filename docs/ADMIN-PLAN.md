@@ -75,12 +75,16 @@ Ends creating vendors by hand in the Auth0 Dashboard, and makes Market Miam invi
   strictly than `Email`: on `email-in-use`, an invitation that lost a race for its address, or
   `email-refused`, an address Auth0 finds malformed, the processor sends `EraseVendor` for it. A
   vendor erased in the meantime is skipped. Any other failure retries, and `/api/health` reports it.
-- **Admin app.** An email field and an *Invite* button above the account list, disabled while it
-  sends. The new account shows in the list once the processor has run, a few seconds later.
+- **Admin app** (ADR 0061). An email field and an *Invite* button above the account list, disabled
+  while it sends, made for a phone first. The page is the smart component: an invitation facade over
+  NgRx sends the address and reports sending, sent or why it was refused, and the account list
+  reloads once the processor has run, a few seconds later. The form and the list are dumb. The
+  account list and the sign-in move behind facades too.
 - **Specs.** The aggregate's states (ADR 0060's table); the route's 202, 409 and metadata, with the
   anonymous sweep covering its guard; the processor against `InMemoryVendorAccounts`; the
   `VendorAccounts` contract, run against the in-memory adapter and the Auth0 adapter, which also
-  runs against the fake Auth0 server as `Auth0Accounts` does; the form.
+  runs against the fake Auth0 server as `Auth0Accounts` does; the page against fake facades,
+  rendering the form and the list; the invitation feature from facade to `HttpTestingController`.
 
 Progress, 2026-11-13. Built: `InviteVendor` and the *invited* state, erasure of an invited vendor,
 the `VendorAccounts` port with its contract, and `OpensVendorAccounts`, which opens the account,
@@ -89,8 +93,9 @@ erases an invitation whose address is taken, and skips a vendor erased in the me
 `email-in-use`; it runs the contract against FakeAuth0, and by hand against a test tenant (`npx nx
 test:tenant api`). The api wires them per profile: `Auth0AccountsModule` outside development, one
 Management API client shared by both Auth0 adapters, and `DevelopmentAccountsModule` in memory. The
-route is built. The Management application has `create:users` (step 1 below). Left: the form, and a
-spec that will pass at once: `VendorInvited`'s email encrypted at rest.
+route is built. The Management application has `create:users` (step 1 below). Left: the form, on
+ADR 0061's layering, with the account list and the sign-in moved across; and a spec that will pass
+at once: `VendorInvited`'s email encrypted at rest.
 
 Going live, in this order, by the owner:
 

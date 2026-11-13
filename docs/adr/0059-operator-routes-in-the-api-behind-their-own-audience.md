@@ -1,6 +1,6 @@
 # 0059. Operator routes live in the api, behind their own Auth0 audience
 
-Date: 2026-11-01 · Status: Accepted
+Date: 2026-11-01 · Status: Accepted · Amended 2026-11-13 by [0061](0061-admin-app-layers-like-the-vendor-app.md) — the admin app now layers like the vendor app: ports, facades over NgRx, smart and dumb components
 
 Extends ADR 0018 (an app per audience) to operators, and retires the "future `admin-api`" ADR 0029
 anticipated. Builds on ADRs 0021, 0022, 0024 and 0058.
