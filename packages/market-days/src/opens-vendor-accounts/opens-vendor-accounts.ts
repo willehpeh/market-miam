@@ -21,7 +21,8 @@ export class OpensVendorAccounts implements Processor {
       return;
     }
     const opening = await this.accounts.openFor(event.payload);
-    if (opening === 'email-in-use') {
+    // Any answer but open means this invitation can never become an account (ADR 0060).
+    if (opening !== 'open') {
       await this.commands.execute(new EraseVendor(event.payload.vendorId, this.clock.now().value()));
     }
   }

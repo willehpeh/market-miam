@@ -69,11 +69,12 @@ Ends creating vendors by hand in the Auth0 Dashboard, and makes Market Miam invi
   on the request's lineage: `OperatorLineageInterceptor`, on the ops controller beside its guard,
   extends it on every operator route, so later operator writes carry it without asking.
 - **Processor.** `OpensVendorAccounts`, on `VendorInvited`, asks the `VendorAccounts` port to open
-  the account (`openFor`, answering `open` or `email-in-use`). Its Auth0 adapter creates the user on
-  the `email` connection with the `vendorId` in `app_metadata` (`create:users`), beside
-  `Auth0Accounts` and sharing its token. Auth0 keeps emails unique: on `email-in-use`, an invitation
-  that lost a race for its address, the processor sends `EraseVendor` for it. A vendor erased in
-  the meantime is skipped. Any other failure retries, and `/api/health` reports it.
+  the account (`openFor`, answering `open`, `email-in-use` or `email-refused`). Its Auth0 adapter
+  creates the user on the `email` connection with the `vendorId` in `app_metadata` (`create:users`),
+  beside `Auth0Accounts` and sharing its token. Auth0 keeps emails unique, and checks them more
+  strictly than `Email`: on `email-in-use`, an invitation that lost a race for its address, or
+  `email-refused`, an address Auth0 finds malformed, the processor sends `EraseVendor` for it. A
+  vendor erased in the meantime is skipped. Any other failure retries, and `/api/health` reports it.
 - **Admin app.** An email field and an *Invite* button above the account list, disabled while it
   sends. The new account shows in the list once the processor has run, a few seconds later.
 - **Specs.** The aggregate's states (ADR 0060's table); the route's 202, 409 and metadata, with the

@@ -41,6 +41,9 @@ answers in the domain's terms:
 - `email-in-use`: the address already holds an account that is not this vendor's, another vendor's
   or one made by hand. The invitation can never produce an account, so the processor sends
   `EraseVendor` for it, and its email dies with its key.
+- `email-refused`: Auth0 refuses the address itself, checking addresses more strictly than the
+  domain's `Email`. That invitation can never produce an account either, so it is erased too. Only
+  Auth0's payload validation failing on the email property counts: any other refusal throws.
 - The vendor was erased in the meantime: skipped.
 - Anything else (network, Auth0 down, rate limit) throws, and the subscription retries.
 

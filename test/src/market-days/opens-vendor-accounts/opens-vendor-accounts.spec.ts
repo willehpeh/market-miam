@@ -1,10 +1,12 @@
 import { InMemoryCheckpoint, InMemoryEventStore, PollingSubscription } from '@market-miam/event-sourcing';
 import {
+  AccountOpening,
   EraseVendor,
   EraseVendorHandler,
   InMemoryVendorAccounts,
   InviteVendorHandler,
   OpensVendorAccounts,
+  VendorAccounts,
   VendorScopedEvents,
   Vendors,
 } from '@market-miam/market-days';
@@ -13,6 +15,13 @@ import { RecordingCommandGateway } from '../../recording-command-gateway';
 import { TestInviteVendor } from '../invite-vendor/test-data';
 
 const NOW = '2026-11-11T09:00:05.000Z';
+
+// Refuses every address, as Auth0 refuses one it finds malformed.
+class RefusingVendorAccounts extends VendorAccounts {
+  openFor(): Promise<AccountOpening> {
+    return Promise.resolve('email-refused');
+  }
+}
 
 describe('Opens Vendor Accounts', () => {
   let store: InMemoryEventStore;
@@ -31,10 +40,10 @@ describe('Opens Vendor Accounts', () => {
     await new InviteVendorHandler(vendors()).execute(invitation);
   }
 
-  async function process(): Promise<void> {
+  async function process(using: VendorAccounts = accounts): Promise<void> {
     await new PollingSubscription(
       store,
-      new OpensVendorAccounts(vendors(), accounts, gateway, clockAt('2026-11-11', NOW)),
+      new OpensVendorAccounts(vendors(), using, gateway, clockAt('2026-11-11', NOW)),
       new InMemoryCheckpoint('opens-vendor-accounts'),
     ).poll();
   }
@@ -55,6 +64,16 @@ describe('Opens Vendor Accounts', () => {
 
     await invite(invitation);
     await process();
+
+    expect(gateway.dispatched).toEqual([new EraseVendor(invitation.vendorId, NOW)]);
+  });
+
+  // Retried, it would fail forever and hold up every invitation behind it.
+  it('erases an invitation whose address Auth0 refuses', async () => {
+    const invitation = TestInviteVendor.valid();
+    await invite(invitation);
+
+    await process(new RefusingVendorAccounts());
 
     expect(gateway.dispatched).toEqual([new EraseVendor(invitation.vendorId, NOW)]);
   });
