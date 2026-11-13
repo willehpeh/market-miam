@@ -1,3 +1,4 @@
+import { SignInAddress } from '@market-miam/common';
 import { Account, Accounts } from '../ops/accounts/accounts';
 
 export class FakeAccounts extends Accounts {
@@ -7,5 +8,9 @@ export class FakeAccounts extends Accounts {
 
   all(): Promise<Account[]> {
     return Promise.resolve(this.accounts);
+  }
+
+  contains(address: SignInAddress): Promise<boolean> {
+    return Promise.resolve(this.accounts.some(({ email }) => email !== null && address.equals(new SignInAddress(email))));
   }
 }

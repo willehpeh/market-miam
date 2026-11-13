@@ -10,3 +10,4 @@ export * from './phone-number';
 export * from './image-reference';
 export * from './photo-upload';
 export * from './week';
+export * from './sign-in-address';

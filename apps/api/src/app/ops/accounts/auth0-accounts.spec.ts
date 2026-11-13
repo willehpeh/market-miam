@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { SignInAddress } from '@market-miam/common';
 import { FakeAuth0 } from '../../testing/fake-auth0';
 import { Auth0Accounts } from './auth0-accounts';
 import { Auth0ManagementApi } from './auth0-management-api';
@@ -94,6 +95,25 @@ describe('Auth0Accounts', () => {
     auth0.tokenStatus = 200;
 
     await expect(directory.all()).resolves.toEqual([]);
+  });
+
+  it('contains an address an account holds, asking Auth0 for that address alone', async () => {
+    auth0.users = [{ connection: 'email', email: 'owner@acme.test', app_metadata: { vendorId: 'acme-bakery' } }];
+
+    expect(await accounts().contains(new SignInAddress('Owner@ACME.test'))).toBe(true);
+    expect(auth0.userPages).toEqual([]);
+  });
+
+  it('does not contain an address no account holds', async () => {
+    auth0.users = [{ connection: 'email', email: 'owner@acme.test' }];
+
+    expect(await accounts().contains(new SignInAddress('marie@example.com'))).toBe(false);
+  });
+
+  it('fails when Auth0 refuses to say who holds an address', async () => {
+    auth0.lookupStatus = 503;
+
+    await expect(accounts().contains(new SignInAddress('marie@example.com'))).rejects.toThrow(/503/);
   });
 
   it('fails when Auth0 refuses the user list', async () => {

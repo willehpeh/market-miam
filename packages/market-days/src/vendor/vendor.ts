@@ -1,6 +1,6 @@
 import { Aggregate } from '@market-miam/event-sourcing';
 import { VendorId } from '@market-miam/shared-kernel';
-import { Email, Instant } from '@market-miam/common';
+import { Email, Instant, SignInAddress } from '@market-miam/common';
 import { VendorErased, VendorEvent, VendorInvited, VendorLegalIdentityProvided, VendorRegistered } from './events';
 import { VendorStatus } from './vendor-status';
 import { LegalIdentity } from './legal-identity';
@@ -17,7 +17,7 @@ export class Vendor extends Aggregate {
     super();
   }
 
-  invite(invitedAt: Instant, email: Email) {
+  invite(invitedAt: Instant, address: SignInAddress) {
     this.assertNotErased();
     // An invitation opens a stream; an invited or registered vendor keeps what they have.
     if (!this._status.isUnknown()) {
@@ -28,7 +28,7 @@ export class Vendor extends Aggregate {
       payload: {
         vendorId: this._id.value(),
         invitedAt: invitedAt.value(),
-        email: email.value()
+        email: address.value()
       },
       version: 1
     };

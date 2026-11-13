@@ -1,3 +1,4 @@
+import { SignInAddress } from '@market-miam/common';
 import { Account, Accounts } from './accounts';
 import { Auth0Users } from './auth0-users';
 
@@ -21,5 +22,9 @@ export class Auth0Accounts extends Accounts {
       }
     }
     return accounts;
+  }
+
+  async contains(address: SignInAddress): Promise<boolean> {
+    return (await this.users.withEmail(address.value())).length > 0;
   }
 }

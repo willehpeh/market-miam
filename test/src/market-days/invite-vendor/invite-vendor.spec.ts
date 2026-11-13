@@ -18,6 +18,13 @@ describe('Invite Vendor', () => {
     expect(store.newEvents()).toEqual([expect.objectContaining(vendorInvited())]);
   });
 
+  // The address the account will sign in with, as Auth0 keeps it, whoever sends the command.
+  it('records the address in lower case', async () => {
+    await handler.execute(TestInviteVendor.with({ email: 'Marie@Example.FR' }));
+
+    expect(store.newEvents()).toEqual([expect.objectContaining(vendorInvited('vendor-id', { email: 'marie@example.fr' }))]);
+  });
+
   it('raises nothing when the vendor is already invited', async () => {
     store.seedWith(vendorStream(), [vendorInvited()], { vendorId: 'vendor-id' });
 
