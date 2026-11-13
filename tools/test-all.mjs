@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Runs every suite (including the Docker-backed container specs) and prints
-// aggregate pass/fail counts plus coverage. `nx scenario api` stays out: it is
-// run by hand, not in a sweep.
+// aggregate pass/fail counts plus coverage. `nx scenario api` and `nx run api:test:tenant`
+// stay out: they are run by hand, not in a sweep.
 import { spawnSync, execFileSync } from 'node:child_process';
 import { mkdirSync, readFileSync, existsSync, rmSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -62,7 +62,7 @@ const suites = [
 
 // A project added to the workspace but not to the table above would just be
 // missing from the sweep, silently — the one failure mode that doesn't announce
-// itself. Deliberately absent from this list: `scenario` (run by hand), `e2e`
+// itself. Deliberately absent from this list: `scenario` and `test:tenant` (run by hand), `e2e`
 // (playwright), `test-ci` (Nx-Cloud-only alias of `test`) and the watch variants.
 // Checked per project, not per target: @nx/vitest infers a `test` target for the
 // `test` project too, which the table deliberately runs as `test:coverage`. The

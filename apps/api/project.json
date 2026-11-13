@@ -19,6 +19,12 @@
         "cwd": "apps/api"
       }
     },
+    "test:tenant": {
+      "command": "vitest run --config vitest.tenant.config.mts",
+      "options": {
+        "cwd": "apps/api"
+      }
+    },
     "build": {
       "executor": "nx:run-commands",
       "options": {

@@ -37,6 +37,7 @@ export default defineConfig(() => ({
       exclude: [
         'src/**/*.spec.ts',
         'src/**/*.scenario.ts', // exploratory, run by hand via `nx scenario api`
+        'src/**/*.tenant.ts', // a real Auth0 test tenant, run by hand via `nx run api:test:tenant`
         'src/main.ts', // bootstrap
         'src/app/app.module.ts', // composition root: prod-only Auth0 + config wiring
         'src/tracing.ts', // OTel SDK bootstrap (side-effect import)

@@ -39,6 +39,7 @@ Running the tests:
 npx nx test test               # the social test suite (see test/README.md)
 npx nx test <project>          # a project's own tests
 npx nx test:container test     # against a real Postgres (Testcontainers)
+npx nx test:tenant api         # against a real Auth0 test tenant, by hand (see the spec's header)
 npx nx mutation test           # Stryker mutation testing
 npm run test:all               # everything
 ```
