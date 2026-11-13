@@ -24,8 +24,10 @@ Until that first sign-in, the vendor exists only in Auth0:
 
 **Market Miam is invitation-only.** An operator invites a vendor from the admin app, and the
 invitation is an event: `VendorInvited { vendorId, invitedAt, email }`, first on the vendor's
-stream. The email is PII, encrypted under the vendor's key and shredded with it (ADR 0025). The
-operator's Auth0 id goes in the event's metadata.
+stream. The email is PII, encrypted under the vendor's key and shredded with it (ADR 0025), and
+kept in lower case, as Auth0 keeps it. The operator's Auth0 id goes in the event's metadata: it
+rides on the request's lineage, which an interceptor beside the operator guard extends on every
+operator route, so each later operator write carries it too.
 
 **The api mints the `vendorId`** when it records the invitation, as a random UUID. The operator
 never chooses one, so an invitation cannot land on an existing vendor's id. The id's nature is

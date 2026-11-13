@@ -62,11 +62,12 @@ Ends creating vendors by hand in the Auth0 Dashboard, and makes Market Miam invi
   gains an *invited* state: inviting again is a no-op, `register` works from it as from a new
   stream, and `erase` accepts it. The vendor app's registration on first load stays: it is the
   vendor taking up the invitation.
-- **Route.** `POST /api/ops/vendors { email }` looks the email up (`read:users`) and refuses it with
-  a 409 if any account holds it, the owner's GitHub address included: a plus alias of it serves for
-  trying the vendor app. It then mints the `vendorId`, dispatches `InviteVendor` and answers 202
-  with the id. The operator's Auth0 id goes in the event's metadata: the first operator write to put
-  it there, and the mechanism later slices reuse.
+- **Route.** `POST /api/ops/vendors { email }` lower-cases the address, as Auth0 keeps it, looks it
+  up (`read:users`) and refuses it with a 409 if any account holds it, the owner's GitHub address
+  included: a plus alias of it serves for trying the vendor app. It then mints the `vendorId`, sends
+  `InviteVendor` and answers 202 with the id. The operator's Auth0 id reaches the event's metadata
+  on the request's lineage: `OperatorLineageInterceptor`, on the ops controller beside its guard,
+  extends it on every operator route, so later operator writes carry it without asking.
 - **Processor.** `OpensVendorAccounts`, on `VendorInvited`, asks the `VendorAccounts` port to open
   the account (`openFor`, answering `open` or `email-in-use`). Its Auth0 adapter creates the user on
   the `email` connection with the `vendorId` in `app_metadata` (`create:users`), beside
@@ -87,9 +88,9 @@ erases an invitation whose address is taken, and skips a vendor erased in the me
 `email-in-use`; it runs the contract against FakeAuth0, and by hand against a test tenant (`npx nx
 test:tenant api`). The api wires them per profile: `Auth0AccountsModule` outside development, one
 Management API client shared by both Auth0 adapters, and `DevelopmentAccountsModule` in memory. The
-Management application has `create:users` (step 1 below). Left: the route; the form. Two specs will
-pass at once and belong on the way: registering an invited vendor, and `VendorInvited`'s email
-encrypted at rest.
+route is built. The Management application has `create:users` (step 1 below). Left: the form. Two
+specs will pass at once and belong on the way: registering an invited vendor, and `VendorInvited`'s
+email encrypted at rest.
 
 Going live, in this order, by the owner:
 
