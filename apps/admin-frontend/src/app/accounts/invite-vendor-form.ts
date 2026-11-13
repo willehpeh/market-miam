@@ -1,12 +1,18 @@
 import { Component, inject, signal } from '@angular/core';
 import { HttpClient, HttpErrorResponse, HttpStatusCode } from '@angular/common/http';
-import { form, FormField, FormRoot } from '@angular/forms/signals';
+import { FieldTree, form, FormField, FormRoot, TreeValidationResult } from '@angular/forms/signals';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../environments/environment';
 
 interface Invitation {
   email: string;
 }
+
+// What the API's refusals of an address tell the operator; any other failure is thrown.
+const REFUSALS: ReadonlyMap<number, string> = new Map([
+  [HttpStatusCode.Conflict, 'An account already holds this address'],
+  [HttpStatusCode.BadRequest, "That isn't a valid email address"],
+]);
 
 // Invites whoever signs in at an address (ADR 0060). Made for a phone first: the email
 // keyboard without capitals or corrections, 44px controls, 16px text so iOS doesn't zoom,
@@ -44,21 +50,20 @@ export class InviteVendorForm {
   private readonly http = inject(HttpClient);
   protected readonly sent = signal(false);
   protected readonly invitation = form(signal<Invitation>({ email: '' }), {
-    submission: {
-      action: async (field) => {
-        try {
-          await firstValueFrom(
-            this.http.post<{ vendorId: string }>(`${environment.apiBaseUrl}/api/ops/vendors`, field().value()),
-          );
-        } catch (error) {
-          if (error instanceof HttpErrorResponse && error.status === HttpStatusCode.Conflict) {
-            return { fieldTree: field.email, kind: 'server', message: 'An account already holds this address' };
-          }
-          throw error;
-        }
-        this.sent.set(true);
-        return undefined;
-      },
-    },
+    submission: { action: (field) => this.send(field) },
   });
+
+  private async send(field: FieldTree<Invitation>): Promise<TreeValidationResult> {
+    try {
+      await firstValueFrom(this.http.post(`${environment.apiBaseUrl}/api/ops/vendors`, field().value()));
+    } catch (error) {
+      const refusal = error instanceof HttpErrorResponse ? REFUSALS.get(error.status) : undefined;
+      if (refusal) {
+        return { fieldTree: field.email, kind: 'server', message: refusal };
+      }
+      throw error;
+    }
+    this.sent.set(true);
+    return undefined;
+  }
 }

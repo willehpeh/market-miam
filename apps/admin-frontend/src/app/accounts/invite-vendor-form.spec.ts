@@ -68,4 +68,15 @@ describe('InviteVendorForm', () => {
     expect(form.textContent).not.toContain('Invitation sent');
     expect(form.querySelector('input')!.value).toBe('owner@acme.test');
   });
+
+  it('says when the API finds the address malformed, keeping it in the field', async () => {
+    const { fixture, form } = await render();
+    type(form.querySelector('input')!, 'marie@example');
+
+    (await invite(form)).flush({ statusCode: 400 }, { status: 400, statusText: 'Bad Request' });
+    await settle(fixture);
+
+    expect(form.textContent).toContain("That isn't a valid email address");
+    expect(form.querySelector('input')!.value).toBe('marie@example');
+  });
 });
