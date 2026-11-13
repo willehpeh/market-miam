@@ -21,7 +21,7 @@ async function bodyOf(req: IncomingMessage): Promise<string> {
 // Stands in for the Management API endpoints the adapters call, on a local port:
 // client-credentials tokens, then the paged user list, user creation and the lookup by email,
 // which want the latest token. Like Auth0, it refuses a second user with an email already on
-// that connection, and the lookup answers across every connection.
+// that connection, and the lookup answers whatever the connection.
 export class FakeAuth0 {
   readonly tokenRequests: Record<string, string>[] = [];
   readonly userPages: URLSearchParams[] = [];
@@ -77,7 +77,7 @@ export class FakeAuth0 {
         return send(res, 401, { error: 'invalid_token' });
       }
       const email = url.searchParams.get('email');
-      return send(res, 200, this.users.flatMap((user, index) => (user.email === email ? [asReturned(user, index)] : [])));
+      return send(res, 200, this.users.filter((user) => user.email === email).map(asReturned));
     }
     send(res, 404, {});
   }
@@ -87,12 +87,7 @@ export class FakeAuth0 {
   }
 }
 
-// A user as the Management API returns it: its connection sits in its identities.
-function asReturned({ connection, email, app_metadata }: Auth0User, index: number) {
-  return {
-    user_id: `${connection}|${index}`,
-    email,
-    ...(app_metadata && { app_metadata }),
-    identities: [{ connection }],
-  };
+// A user as the Management API returns it, which has no top-level connection.
+function asReturned({ email, app_metadata }: Auth0User) {
+  return { email, ...(app_metadata && { app_metadata }) };
 }
