@@ -2,6 +2,7 @@ import { createServer, IncomingMessage, Server, ServerResponse } from 'node:http
 import { AddressInfo } from 'node:net';
 
 export interface Auth0User {
+  connection?: string;
   email?: string;
   app_metadata?: { vendorId?: string };
 }
@@ -17,8 +18,8 @@ async function bodyOf(req: IncomingMessage): Promise<string> {
   return body;
 }
 
-// Stands in for the two Management API endpoints the adapter calls, on a local port:
-// client-credentials tokens, and the paged user list, which wants the latest token.
+// Stands in for the Management API endpoints the adapters call, on a local port:
+// client-credentials tokens, the paged user list and user creation, which want the latest token.
 export class FakeAuth0 {
   readonly tokenRequests: Record<string, string>[] = [];
   readonly userPages: URLSearchParams[] = [];
@@ -57,6 +58,14 @@ export class FakeAuth0 {
       const page = Number(url.searchParams.get('page'));
       const perPage = Number(url.searchParams.get('per_page'));
       return send(res, 200, this.users.slice(page * perPage, (page + 1) * perPage));
+    }
+    if (req.method === 'POST' && url.pathname === '/api/v2/users') {
+      if (req.headers.authorization !== `Bearer ${this.latestToken()}`) {
+        return send(res, 401, { error: 'invalid_token' });
+      }
+      const user = JSON.parse(await bodyOf(req)) as Auth0User;
+      this.users.push(user);
+      return send(res, 201, user);
     }
     send(res, 404, {});
   }
