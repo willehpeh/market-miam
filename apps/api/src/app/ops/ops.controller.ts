@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { Body, Controller, Get, HttpCode, HttpStatus, Post, UseGuards } from '@nestjs/common';
+import { Body, ConflictException, Controller, Get, HttpCode, HttpStatus, Post, UseGuards } from '@nestjs/common';
 import { z } from 'zod';
 import { CurrentOperator, OperatorAuthGuard } from '@market-miam/auth-nestjs';
 import type { VerifiedOperator } from '@market-miam/auth';
@@ -40,8 +40,20 @@ export class OpsController {
   @Post('vendors')
   @HttpCode(HttpStatus.ACCEPTED)
   async invite(@Body(shapeOf(InvitationBody)) { email }: z.infer<typeof InvitationBody>): Promise<{ vendorId: string }> {
+    if (await this.isHeld(email)) {
+      throw new ConflictException({
+        statusCode: HttpStatus.CONFLICT,
+        message: 'EmailInUse - an account already holds this address',
+      });
+    }
     const vendorId = randomUUID();
     await this.commands.execute(new InviteVendor(vendorId, this.clock.now().value(), email));
     return { vendorId };
+  }
+
+  // Any account, whatever its connection: vendors sign in only by email, operators only
+  // through GitHub (ADR 0060).
+  private async isHeld(email: string): Promise<boolean> {
+    return (await this.accounts.all()).some((account) => account.email === email);
   }
 }

@@ -3,7 +3,7 @@ import { INestApplication, RequestMethod } from '@nestjs/common';
 import { ModulesContainer } from '@nestjs/core';
 import { METHOD_METADATA, PATH_METADATA } from '@nestjs/common/constants';
 import request from 'supertest';
-import { EventStore } from '@market-miam/event-sourcing';
+import { Events, EventStore } from '@market-miam/event-sourcing';
 import { InMemorySubdomainRegistry } from '@market-miam/market-days';
 import { bootApiTestApp, FIXED_NOW, fixedClock } from '../testing/api-test-app';
 import { NOT_AN_OPERATOR_TOKEN, OPERATOR_TOKEN, testOperator } from '../testing/fake-operator-token-verifier';
@@ -87,6 +87,15 @@ describe('The operator API', () => {
         payload: { vendorId, invitedAt: FIXED_NOW, email: 'marie@example.com' },
       }),
     ]);
+  });
+
+  const invitations = async () =>
+    (await app.get(Events).loadFrom(0, 100)).filter((event) => event.type === 'VendorInvited');
+
+  it('refuses an address an account already holds, and records nothing', async () => {
+    await invite('owner@acme.test').expect(409);
+
+    expect(await invitations()).toEqual([]);
   });
 
   it('tells a signed-in operator who they are', async () => {
