@@ -56,4 +56,13 @@ describe('Invitations', () => {
     request.flush({ vendorId: 'new-vendor' }, { status: 202, statusText: 'Accepted' });
     expect(facade.sending()).toBe(false);
   });
+
+  it('reports an address an account already holds, and stops sending', () => {
+    facade.invite('owner@acme.test');
+    http.expectOne((req) => VENDORS(req.url)).flush({ statusCode: 409 }, { status: 409, statusText: 'Conflict' });
+
+    expect(facade.refusal()).toBe('email-in-use');
+    expect(facade.sending()).toBe(false);
+    expect(facade.sentTo()).toBeNull();
+  });
 });

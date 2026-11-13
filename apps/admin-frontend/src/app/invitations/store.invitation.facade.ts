@@ -8,6 +8,7 @@ export class StoreInvitationFacade implements InvitationFacade {
   private readonly store = inject(Store);
 
   readonly sending = this.store.selectSignal(invitationFeature.selectSending);
+  readonly refusal = this.store.selectSignal(invitationFeature.selectRefusal);
   readonly sentTo = this.store.selectSignal(invitationFeature.selectSentTo);
 
   invite(email: string): void {

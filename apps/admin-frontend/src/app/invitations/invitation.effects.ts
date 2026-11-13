@@ -2,7 +2,7 @@ import { inject, Injectable } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { exhaustMap, map } from 'rxjs';
 import { Invitations } from './invitations';
-import { InviteVendor, InviteVendorSuccess } from './invitation.state';
+import { InviteVendor, InviteVendorRefused, InviteVendorSuccess } from './invitation.state';
 
 @Injectable()
 export class InvitationEffects {
@@ -14,7 +14,11 @@ export class InvitationEffects {
   invite$ = createEffect(() =>
     this.actions$.pipe(
       ofType(InviteVendor),
-      exhaustMap(({ email }) => this.invitations.send(email).pipe(map(() => InviteVendorSuccess({ email })))),
+      exhaustMap(({ email }) =>
+        this.invitations
+          .send(email)
+          .pipe(map((outcome) => (outcome === 'sent' ? InviteVendorSuccess({ email }) : InviteVendorRefused({ refusal: outcome })))),
+      ),
     ),
   );
 }
