@@ -45,4 +45,15 @@ describe('Invitations', () => {
 
     expect(facade.sentTo()).toBe('marie@example.com');
   });
+
+  it('reports sending while the invitation is in flight, and only then', () => {
+    expect(facade.sending()).toBe(false);
+
+    facade.invite('marie@example.com');
+    const request = http.expectOne((req) => VENDORS(req.url));
+    expect(facade.sending()).toBe(true);
+
+    request.flush({ vendorId: 'new-vendor' }, { status: 202, statusText: 'Accepted' });
+    expect(facade.sending()).toBe(false);
+  });
 });

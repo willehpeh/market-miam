@@ -7,6 +7,7 @@ import { invitationFeature, InviteVendor } from './invitation.state';
 export class StoreInvitationFacade implements InvitationFacade {
   private readonly store = inject(Store);
 
+  readonly sending = this.store.selectSignal(invitationFeature.selectSending);
   readonly sentTo = this.store.selectSignal(invitationFeature.selectSentTo);
 
   invite(email: string): void {
