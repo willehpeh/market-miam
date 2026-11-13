@@ -73,4 +73,12 @@ describe('Invitations', () => {
     expect(facade.refusal()).toBe('invalid-email');
     expect(facade.sending()).toBe(false);
   });
+
+  it('reports an invitation not sent for any other reason, and stops sending', () => {
+    facade.invite('marie@example.com');
+    http.expectOne((req) => VENDORS(req.url)).flush({}, { status: 500, statusText: 'Internal Server Error' });
+
+    expect(facade.refusal()).toBe('not-sent');
+    expect(facade.sending()).toBe(false);
+  });
 });

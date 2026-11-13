@@ -1,8 +1,9 @@
 import { Observable } from 'rxjs';
 
-// What became of an invitation, in the operator's terms.
+// What the api answers to an invitation, in the operator's terms.
 export type InvitationOutcome = 'sent' | 'email-in-use' | 'invalid-email';
-export type InvitationRefusal = Exclude<InvitationOutcome, 'sent'>;
+// Why an invitation didn't go: the api refused the address, or it couldn't be sent at all.
+export type InvitationRefusal = Exclude<InvitationOutcome, 'sent'> | 'not-sent';
 
 // Inviting a vendor through the operator API (ADR 0060).
 export abstract class Invitations {

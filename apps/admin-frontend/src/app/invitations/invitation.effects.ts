@@ -1,7 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
-import { exhaustMap, map } from 'rxjs';
-import { Invitations } from './invitations';
+import { catchError, exhaustMap, map, of } from 'rxjs';
+import { InvitationOutcome, Invitations } from './invitations';
 import { InviteVendor, InviteVendorRefused, InviteVendorSuccess } from './invitation.state';
 
 @Injectable()
@@ -17,8 +17,16 @@ export class InvitationEffects {
       exhaustMap(({ email }) =>
         this.invitations
           .send(email)
-          .pipe(map((outcome) => (outcome === 'sent' ? InviteVendorSuccess({ email }) : InviteVendorRefused({ refusal: outcome })))),
+          .pipe(
+            map((outcome) => answered(email, outcome)),
+            catchError(() => of(InviteVendorRefused({ refusal: 'not-sent' }))),
+          ),
       ),
     ),
   );
+}
+
+// The api's answer to an invitation, as the state records it.
+function answered(email: string, outcome: InvitationOutcome) {
+  return outcome === 'sent' ? InviteVendorSuccess({ email }) : InviteVendorRefused({ refusal: outcome });
 }
