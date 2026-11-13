@@ -80,14 +80,16 @@ Ends creating vendors by hand in the Auth0 Dashboard, and makes Market Miam invi
   `VendorAccounts` contract, run against the in-memory adapter and the Auth0 adapter, which also
   runs against the fake Auth0 server as `Auth0Accounts` does; the form.
 
-Progress, 2026-11-11. On `main`, wired into nothing yet: `InviteVendor` and the *invited* state,
-erasure of an invited vendor, the `VendorAccounts` port with its in-memory adapter and contract, and
-`OpensVendorAccounts`, which opens the account, erases an invitation whose address is taken, and
-skips a vendor erased in the meantime. Left: the Auth0 adapter, run against the contract; wiring the
-handler, the processor and the port into the api; the route; the form. Two specs will pass at once
-and belong on the way: registering an invited vendor, and `VendorInvited`'s email encrypted at rest.
-The push that wires the processor waits for step 1 below, or the first invitation fails until
-`create:users` is granted.
+Progress, 2026-11-13. Built: `InviteVendor` and the *invited* state, erasure of an invited vendor,
+the `VendorAccounts` port with its contract, and `OpensVendorAccounts`, which opens the account,
+erases an invitation whose address is taken, and skips a vendor erased in the meantime.
+`Auth0VendorAccounts` opens accounts on the `email` connection and turns Auth0's 409 into
+`email-in-use`; it runs the contract against FakeAuth0, and by hand against a test tenant (`npx nx
+test:tenant api`). The api wires them per profile: `Auth0AccountsModule` outside development, one
+Management API client shared by both Auth0 adapters, and `DevelopmentAccountsModule` in memory. The
+Management application has `create:users` (step 1 below). Left: the route; the form. Two specs will
+pass at once and belong on the way: registering an invited vendor, and `VendorInvited`'s email
+encrypted at rest.
 
 Going live, in this order, by the owner:
 
