@@ -3,7 +3,7 @@ import { Test, TestingModuleBuilder } from '@nestjs/testing';
 import { Clock, Email, Instant, LocalDate } from '@market-miam/common';
 import { VendorId } from '@market-miam/shared-kernel';
 import { EventStore } from '@market-miam/event-sourcing';
-import { StorefrontOpened, vendorPiiFields, vendorPiiKeyScopes } from '@market-miam/market-days';
+import { InMemoryVendorAccounts, StorefrontOpened, vendorPiiFields, vendorPiiKeyScopes, VendorAccounts } from '@market-miam/market-days';
 import { StaticTokenVerifier, type VerifiedVendor } from '@market-miam/auth';
 import { AuthModule, OperatorAuthModule } from '@market-miam/auth-nestjs';
 import { MarketDaysModule } from '../market-days/market-days.module';
@@ -11,6 +11,7 @@ import { OpsModule } from '../ops/ops.module';
 import { FakeOperatorTokenVerifier } from './fake-operator-token-verifier';
 import { Account, Accounts } from '../ops/accounts/accounts';
 import { FakeAccounts } from './fake-accounts';
+import { DevelopmentAccountsModule } from '../ops/accounts/development-accounts.module';
 import { EventSourcingModule } from '../event-sourcing/event-sourcing.module';
 import { InMemoryPersistenceModule } from '../persistence/in-memory-persistence.module';
 import { globalFilters } from '../global-filters';
@@ -38,15 +39,25 @@ export interface ApiTestOptions {
   polling?: 'live' | 'disabled';
   // The identity provider's accounts, as the operator API lists them.
   accounts?: Account[];
+  // Vendors' sign-in accounts, as the invitation processor opens them.
+  vendorAccounts?: InMemoryVendorAccounts;
 }
 
 export function apiTestModule(options: ApiTestOptions = {}): TestingModuleBuilder {
-  const { vendor = testVendor, clock, signer = new FakeSignedUploads(), polling = 'disabled', accounts = [] } = options;
+  const {
+    vendor = testVendor,
+    clock,
+    signer = new FakeSignedUploads(),
+    polling = 'disabled',
+    accounts = [],
+    vendorAccounts = new InMemoryVendorAccounts(),
+  } = options;
   const builder = Test.createTestingModule({
     imports: [
       AuthModule.forRootAsync({ useFactory: () => new StaticTokenVerifier(vendor) }),
       OperatorAuthModule.forRootAsync({ useFactory: () => new FakeOperatorTokenVerifier() }),
       InMemoryPersistenceModule,
+      DevelopmentAccountsModule,
       EventSourcingModule.forRoot(vendorPiiFields, vendorPiiKeyScopes),
       MarketDaysModule,
       OpsModule,
@@ -58,6 +69,7 @@ export function apiTestModule(options: ApiTestOptions = {}): TestingModuleBuilde
   }
   builder.overrideProvider(SignedUploads).useValue(signer);
   builder.overrideProvider(Accounts).useValue(new FakeAccounts(accounts));
+  builder.overrideProvider(VendorAccounts).useValue(vendorAccounts);
   if (clock) {
     builder.overrideProvider(Clock).useValue(clock);
   }

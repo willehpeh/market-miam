@@ -53,7 +53,10 @@ import {
   SetStorefrontCoverPhotoHandler,
   ShowCartePricesHandler,
   OpensStorefronts,
+  OpensVendorAccounts,
+  InviteVendorHandler,
   Storefronts,
+  VendorAccounts,
   Vendors,
   VendorLegalIdentityViewProjection,
   VendorLegalIdentityViewStore,
@@ -139,9 +142,16 @@ const processors = [
     useFactory: (keys: DataKeys, subdomains: SubdomainRegistry) => new ErasesVendors(keys, subdomains),
     inject: [DataKeys, SubdomainRegistry],
   },
+  {
+    provide: OpensVendorAccounts,
+    useFactory: (vendors: Vendors, accounts: VendorAccounts, gateway: CommandGateway, appClock: Clock) =>
+      new OpensVendorAccounts(vendors, accounts, gateway, appClock),
+    inject: [Vendors, VendorAccounts, CommandGateway, Clock],
+  },
 ];
 
 const commandHandlers = [
+  InviteVendorHandler,
   RegisterVendorHandler,
   ProvideVendorLegalIdentityHandler,
   EraseVendorHandler,

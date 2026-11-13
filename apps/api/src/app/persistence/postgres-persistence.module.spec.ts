@@ -22,6 +22,7 @@ import { EventSourcingModule } from '../event-sourcing/event-sourcing.module';
 import { MarketDaysModule } from '../market-days/market-days.module';
 import { testVendor } from '../testing/api-test-app';
 import { PostgresPersistenceModule } from './postgres-persistence.module';
+import { Auth0AccountsModule } from '../ops/accounts/auth0-accounts.module';
 
 // Resolves the postgres profile's graph without a database: nothing here calls a
 // port, and the things that would connect (the Pool, migrations, LISTEN) are lazy
@@ -46,11 +47,15 @@ describe('PostgresPersistenceModule', () => {
               CLOUDINARY_CLOUD_NAME: 'nowhere',
               CLOUDINARY_API_KEY: 'key',
               CLOUDINARY_API_SECRET: 'secret',
+              AUTH0_ISSUER: 'https://tenant.example.com/',
+              AUTH0_MGMT_CLIENT_ID: 'management-client',
+              AUTH0_MGMT_CLIENT_SECRET: 'management-secret',
             }),
           ],
         }),
         AuthModule.forRootAsync({ useFactory: () => new StaticTokenVerifier(testVendor) }),
         PostgresPersistenceModule,
+        Auth0AccountsModule,
         EventSourcingModule.forRoot(vendorPiiFields, vendorPiiKeyScopes),
         MarketDaysModule,
       ],
