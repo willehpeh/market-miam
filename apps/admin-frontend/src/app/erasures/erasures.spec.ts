@@ -42,4 +42,16 @@ describe('Erasures', () => {
     expect(request.request.method).toBe('POST');
     request.flush(null, { status: 202, statusText: 'Accepted' });
   });
+
+  // So the list can hold that row still while it goes.
+  it('reports whose erasure is in flight, and only while it is', () => {
+    expect(facade.erasing()).toBeNull();
+
+    facade.erase('acme-bakery');
+    const request = http.expectOne((req) => ERASURE_OF('acme-bakery')(req.url));
+    expect(facade.erasing()).toBe('acme-bakery');
+
+    request.flush(null, { status: 202, statusText: 'Accepted' });
+    expect(facade.erasing()).toBeNull();
+  });
 });
