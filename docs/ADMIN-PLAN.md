@@ -21,21 +21,22 @@ Set up 2026-10-31 and 2026-11-01 on the `willalexander.eu.auth0.com` tenant:
 Still to check: the Ops API's token lifetime (an hour or less), *Implicit* off on the admin app,
 *Disable Sign Ups* on the `email` connection, the *API Explorer* and test applications deleted, and
 the *Management* application down to `read:users` (slice 4 adds `create:users`, slice 5
-`delete:users`). The Action's code is not in the repo yet; it comes in with slice 4, which changes
-it, deployed from the owner's machine with the Auth0 CLI.
+`delete:users`). The Action's code is not in the repo yet: slice 4 changed it in Auth0, and it comes
+in once the owner pastes it, deployed from then on from the owner's machine with the Auth0 CLI.
 
 ## Slices
 
 **0. Walking skeleton — live since 2026-11-01** at `admin.marketmiam.fr`, checked by signing in
-with GitHub on the deployed site. `GET /api/ops/whoami` returns the operator's Auth0 id behind
-`OperatorAuthGuard`; the admin app signs in through GitHub and shows it; a static Render service
-with a strict CSP serves it. Specs: the operator verifier against real RS256 tokens (audience,
+with GitHub on the deployed site. `GET /api/ops/whoami` returned the operator's Auth0 id behind
+`OperatorAuthGuard`, and the admin app signed in through GitHub and showed it; slice 4 retired the
+route, the account list answering the same question. A static Render service with a strict CSP
+serves the app. Specs: the operator verifier against real RS256 tokens (audience,
 issuer, expiry, subject, the `operate` permission), the guard's 401/403, the route, and a sweep that
 requests every `ops/` route anonymously.
 
 **1. Account list — built.** Moves `admin-api`'s one feature. `GET /api/ops/accounts` lists every
 Auth0 account with its `vendorId` and the subdomain its vendor holds, ordered by email; the admin
-app shows it under the operator, each storefront linked, once the api has confirmed the operator.
+app shows it at sign-in, each storefront linked, and says so if the api refuses the sign-in.
 The Management API client (`Auth0Accounts`, `read:users` only) keeps its token until a minute
 before expiry and shares it between lists started together, since Auth0 meters those tokens; it is
 specced against a fake Auth0 on a local port. Subdomains come through
@@ -54,7 +55,7 @@ whatever psql access the owner still wants.
 **3. Assign a subdomain.** Ends the hand-written SQL every new vendor waits on (ADR 0032). A
 `register` on the port, with `admin`, `api`, `app` and `www` reserved.
 
-**4. Invite a vendor — in progress, ahead of slice 3** (the owner's call, 2026-11-02; ADR 0060).
+**4. Invite a vendor — built 2026-11-14, ahead of slice 3** (the owner's call, 2026-11-02; ADR 0060).
 Ends creating vendors by hand in the Auth0 Dashboard, and makes Market Miam invitation-only.
 
 - **Domain** (`packages/market-days`). `InviteVendor` raises `VendorInvited { vendorId, invitedAt,
@@ -76,35 +77,38 @@ Ends creating vendors by hand in the Auth0 Dashboard, and makes Market Miam invi
   `email-refused`, an address Auth0 finds malformed, the processor sends `EraseVendor` for it. A
   vendor erased in the meantime is skipped. Any other failure retries, and `/api/health` reports it.
 - **Admin app** (ADR 0061). An email field and an *Invite* button above the account list, disabled
-  while it sends, made for a phone first. The page is the smart component: an invitation facade over
-  NgRx sends the address and reports sending, sent or why it was refused, and the account list
-  reloads once the processor has run, a few seconds later. The form and the list are dumb. The
-  account list and the sign-in move behind facades too.
+  while it sends, made for a phone first. The page is the smart component, over three facades on
+  NgRx: the sign-in, the accounts and the invitations. The invitation facade sends the address and
+  reports sending, the address it went to, or why it did not go: the address is in use (409),
+  refused (400), or the invitation was not sent. A sent invitation joins the list at once, marked
+  *invited* under the `vendorId` the api minted, until the next load brings the account the
+  processor opened. The page loads the list at each sign-in; a 401 or 403 there says the api
+  refused the sign-in, and nothing else is offered. `GET /api/ops/whoami` is retired, its one use
+  covered. The form and the list are dumb.
 - **Specs.** The aggregate's states (ADR 0060's table); the route's 202, 409 and metadata, with the
   anonymous sweep covering its guard; the processor against `InMemoryVendorAccounts`; the
   `VendorAccounts` contract, run against the in-memory adapter and the Auth0 adapter, which also
-  runs against the fake Auth0 server as `Auth0Accounts` does; the page against fake facades,
-  rendering the form and the list; the invitation feature from facade to `HttpTestingController`.
+  runs against the fake Auth0 server as `Auth0Accounts` does; `VendorInvited`'s email encrypted at
+  rest; the page through a page object against fake facades, rendering the form and the list; the
+  accounts and invitation features from facade to `HttpTestingController`, together for the
+  invited row; the sign-in from facade to a fake `Auth`.
 
-Progress, 2026-11-13. Built: `InviteVendor` and the *invited* state, erasure of an invited vendor,
-the `VendorAccounts` port with its contract, and `OpensVendorAccounts`, which opens the account,
-erases an invitation whose address is taken, and skips a vendor erased in the meantime.
-`Auth0VendorAccounts` opens accounts on the `email` connection and turns Auth0's 409 into
-`email-in-use`; it runs the contract against FakeAuth0, and by hand against a test tenant (`npx nx
-test:tenant api`). The api wires them per profile: `Auth0AccountsModule` outside development, one
-Management API client shared by both Auth0 adapters, and `DevelopmentAccountsModule` in memory. The
-route is built. The Management application has `create:users` (step 1 below). Left: the form, on
-ADR 0061's layering, with the account list and the sign-in moved across; and a spec that will pass
-at once: `VendorInvited`'s email encrypted at rest.
+Progress. By 2026-11-13: the domain, the `VendorAccounts` port with its contract, and
+`OpensVendorAccounts`. `Auth0VendorAccounts` runs the contract against FakeAuth0, and by hand
+against a test tenant (`npx nx test:tenant api`). The api wires them per profile:
+`Auth0AccountsModule` outside development, one Management API client shared by both Auth0 adapters,
+and `DevelopmentAccountsModule` in memory. Then the route. 2026-11-14: the admin app on ADR 0061's
+layering, whoami retired, and the spec pinning `VendorInvited`'s email encrypted at rest.
 
 Going live, in this order, by the owner:
 
-1. Give the Management application `create:users`, then deploy.
+1. Give the Management application `create:users`, then deploy. *`create:users` given 2026-11-13;
+   the slice deploys with its push to `main`.*
 2. In the account list, find vendor accounts with no `vendorId`: made by hand and never signed in.
    Delete each in Auth0 and invite it again from the admin app.
 3. Change the post-login Action to stop minting `vendorId`s and to refuse a vendor-app login
-   without one. Its code comes into the repo with this slice; the owner pastes the current version
-   first.
+   without one. *Done in Auth0 by the owner. Its code is still to come into the repo: the owner
+   pastes it.*
 4. Turn on *Disable Sign Ups* on the `email` connection.
 
 **5. Erase a vendor.** A transport for `EraseVendor`, and a processor on `VendorErased` that

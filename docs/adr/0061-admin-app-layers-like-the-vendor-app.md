@@ -17,8 +17,8 @@ component should, mapping the api's refusals itself.
 
 **The admin app takes the vendor app's layering (ADR 0022).**
 
-- **A port with an HTTP adapter** for each thing the app asks the api: the operator (whoami), the
-  accounts, invitations. Sign-in stays behind the `Auth` port.
+- **A port with an HTTP adapter** for each thing the app asks the api: the accounts, invitations.
+  Sign-in stays behind the `Auth` port, and its state goes in the store like the rest.
 - **NgRx Store and Effects hold the state.** Effects call the ports; reducers record what came
   back. The same packages and patterns as the vendor app, so nothing new is installed.
 - **Facades**: abstract classes exposing signals and commands, each with one store-backed
