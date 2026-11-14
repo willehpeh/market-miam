@@ -10,7 +10,7 @@ import {
   VendorScopedEvents,
   Vendors,
 } from '@market-miam/market-days';
-import { vendorInvited, vendorStream } from '../vendor-events';
+import { vendorInvited, vendorStream, vendorSubdomainAssigned } from '../vendor-events';
 
 const ASSIGNED_AT = '2026-11-14T09:00:00.000Z';
 
@@ -100,6 +100,26 @@ describe('Assign Subdomain', () => {
       SubdomainAlreadyAssignedError,
     );
     expect(await registry.assignments()).toEqual([{ subdomain: 'marie-traiteur', vendorId: 'vendor-id' }]);
+    expect(store.newEvents()).toEqual([]);
+  });
+
+  // Assigned by hand before the event existed: assigning it again records it (ADR 0065).
+  it('records a subdomain the vendor already holds, and claims nothing more', async () => {
+    given(vendorInvited());
+    await registry.register('chez-marie', 'vendor-id');
+
+    await handler.execute(new AssignSubdomain('vendor-id', 'chez-marie', ASSIGNED_AT));
+
+    expect(await registry.assignments()).toEqual([{ subdomain: 'chez-marie', vendorId: 'vendor-id' }]);
+    expect(store.newEvents()).toEqual([expect.objectContaining({ type: 'VendorSubdomainAssigned' })]);
+  });
+
+  it('records an assignment once', async () => {
+    given(vendorInvited(), vendorSubdomainAssigned());
+    await registry.register('chez-marie', 'vendor-id');
+
+    await handler.execute(new AssignSubdomain('vendor-id', 'chez-marie', '2026-11-14T10:00:00.000Z'));
+
     expect(store.newEvents()).toEqual([]);
   });
 });

@@ -7,12 +7,14 @@ import { LegalIdentity } from './legal-identity';
 import { Subdomain } from '../subdomain-registry/subdomain';
 import { LegalIdentityOnRecord, NoLegalIdentity, ProvidedLegalIdentity } from './legal-identity-on-record';
 import { AccountOnRecord, ClosedAccount, OpenedAccount, UnrecordedAccount } from './account-on-record';
+import { NoSubdomainOnRecord, RecordedSubdomain, SubdomainOnRecord } from './subdomain-on-record';
 
 export class Vendor extends Aggregate {
 
   private _state: VendorState = new UnknownVendor();
   private _legalIdentity: LegalIdentityOnRecord = new NoLegalIdentity();
   private _account: AccountOnRecord = new UnrecordedAccount();
+  private _subdomain: SubdomainOnRecord = new NoSubdomainOnRecord();
 
   constructor(private readonly _id: VendorId) {
     super();
@@ -40,7 +42,7 @@ export class Vendor extends Aggregate {
   }
 
   assignSubdomain(subdomain: Subdomain, assignedAt: Instant) {
-    this._state.assignSubdomain(() => this.raise(this.subdomainAssigned(subdomain, assignedAt)));
+    this._state.assignSubdomain(() => this._subdomain.record(subdomain, () => this.raise(this.subdomainAssigned(subdomain, assignedAt))));
   }
 
   recordAccountOpened(openedAt: Instant) {
@@ -125,6 +127,9 @@ export class Vendor extends Aggregate {
         break;
       case 'VendorErased':
         this._state = new ErasedVendor();
+        break;
+      case 'VendorSubdomainAssigned':
+        this._subdomain = new RecordedSubdomain(event.payload.subdomain);
         break;
       case 'VendorAccountOpened':
         this._account = new OpenedAccount();

@@ -91,4 +91,12 @@ describe('PostgresSubdomainRegistry', () => {
     expect(await registry.register('chez-marie', 'marie')).toBe('holds-another');
     expect(await registry.vendorFor('chez-marie')).toBeUndefined();
   });
+
+  it("answers already-theirs for the vendor's own subdomain", async () => {
+    await seed('chez-marie', 'marie');
+    const registry = new PostgresSubdomainRegistry(pg.pool);
+
+    expect(await registry.register('chez-marie', 'marie')).toBe('already-theirs');
+    expect(await registry.vendorFor('chez-marie')).toBe('marie');
+  });
 });

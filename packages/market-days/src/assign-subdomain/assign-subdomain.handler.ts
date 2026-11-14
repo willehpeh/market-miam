@@ -23,12 +23,11 @@ export class AssignSubdomainHandler implements ICommandHandler<AssignSubdomain> 
       const vendorId = new VendorId(command.vendorId);
       const vendor = await this.vendors.forVendor(vendorId);
       vendor.assignSubdomain(subdomain, new Instant(command.assignedAt));
-      const claim = await this.registry.register(subdomain.value(), command.vendorId);
-      if (claim === 'taken') {
-        throw new SubdomainTakenError();
-      }
-      if (claim === 'holds-another') {
-        throw new SubdomainAlreadyAssignedError();
+      switch (await this.registry.register(subdomain.value(), command.vendorId)) {
+        case 'taken':
+          throw new SubdomainTakenError();
+        case 'holds-another':
+          throw new SubdomainAlreadyAssignedError();
       }
       await this.vendors.save(vendor, vendorId);
     });
