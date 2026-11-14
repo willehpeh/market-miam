@@ -133,6 +133,20 @@ describe('The operator API', () => {
     expect(await marie.history()).toEqual(history);
   });
 
+  // What a subdomain may be is the Subdomain value object's to say; the route answers 400 to it.
+  it.each([
+    { refusal: 'a malformed subdomain', subdomain: 'chez marie' },
+    { refusal: 'a reserved subdomain', subdomain: 'admin' },
+  ])('answers 400 to $refusal, and claims and records nothing', async ({ subdomain }) => {
+    const marie = await ops.inviteVendor('marie@example.com');
+    const history = await marie.history();
+
+    await ops.assignSubdomain(marie.id, subdomain).expect(400);
+
+    expect(await app.get(InMemorySubdomainRegistry).assignments()).toEqual([]);
+    expect(await marie.history()).toEqual(history);
+  });
+
   // Accepted, not done: the processors carry the erasure out (ADR 0058).
   it('erases a vendor', async () => {
     const marie = await ops.inviteVendor('marie@example.com');
