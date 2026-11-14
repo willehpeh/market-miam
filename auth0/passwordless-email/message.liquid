@@ -1,9 +1,3 @@
-{% comment %}
-  The passwordless email connection's message (ADR 0060). Auth0 sends it twice over: when the
-  Management application opens a vendor's account, which makes it the invitation, and at each
-  sign-in to the vendor app. The invitation has no link: one made for the Management application
-  leads nowhere. Brand values from packages/design-system/tokens.css, inlined for mail clients.
-{% endcomment %}
 {% assign invitation = false %}{% if application.name == "Management" %}{% assign invitation = true %}{% endif %}
 <!DOCTYPE html>
 <html lang="fr">
