@@ -71,8 +71,9 @@ Ends creating vendors by hand in the Auth0 Dashboard, and makes Market Miam invi
   extends it on every operator route, so later operator writes carry it without asking.
 - **Processor.** `OpensVendorAccounts`, on `VendorInvited`, asks the `VendorAccounts` port to open
   the account (`openFor`, answering `open`, `email-in-use` or `email-refused`). Its Auth0 adapter
-  creates the user on the `email` connection with the `vendorId` in `app_metadata` (`create:users`),
-  beside `Auth0Accounts` and sharing its token. Auth0 keeps emails unique, and checks them more
+  creates the user on the `email` connection with the `vendorId` in `app_metadata` (`create:users`,
+  and the connection enabled for the Management application), beside `Auth0Accounts` and sharing
+  its token. A refusal it cannot act on names Auth0's status and error code, never its message. Auth0 keeps emails unique, and checks them more
   strictly than `Email`: on `email-in-use`, an invitation that lost a race for its address, or
   `email-refused`, an address Auth0 finds malformed, the processor sends `EraseVendor` for it. A
   vendor erased in the meantime is skipped. Any other failure retries, and `/api/health` reports it.
@@ -102,8 +103,10 @@ layering, whoami retired, and the spec pinning `VendorInvited`'s email encrypted
 
 Going live, in this order, by the owner:
 
-1. Give the Management application `create:users`, then deploy. *`create:users` given 2026-11-13;
-   the slice deploys with its push to `main`.*
+1. Give the Management application `create:users`, enable the `email` connection for it, then
+   deploy. *`create:users` given 2026-11-13; the slice deployed 2026-11-14, and its first
+   invitation stalled on Auth0's 400 until the connection is enabled: the processor retries it
+   every 30 seconds at most, and `/api/health` answers 503 meanwhile.*
 2. In the account list, find vendor accounts with no `vendorId`: made by hand and never signed in.
    Delete each in Auth0 and invite it again from the admin app.
 3. Change the post-login Action to stop minting `vendorId`s and to refuse a vendor-app login

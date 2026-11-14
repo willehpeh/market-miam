@@ -7,7 +7,9 @@ import { Auth0VendorAccounts } from './auth0-vendor-accounts';
 // The VendorAccounts contract against a real Auth0 tenant, proving what FakeAuth0 assumes.
 // Run by hand with `npx nx run api:test:tenant`, against a tenant kept for tests: its
 // Management client needs read:users, create:users and delete:users, and the tenant needs the
-// passwordless Email connection on. Each case deletes the contract's addresses first and after.
+// passwordless Email connection on and enabled for that client: Auth0 creates a user only on a
+// connection enabled for the client asking. Each case deletes the contract's addresses first and
+// after.
 
 const PRODUCTION_TENANT = 'willalexander.eu.auth0.com';
 
