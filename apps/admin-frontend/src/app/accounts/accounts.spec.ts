@@ -57,4 +57,16 @@ describe('Accounts', () => {
     request.flush([ACME]);
     expect(facade.loading()).toBe(false);
   });
+
+  it('reports a failure to load, and starts the next attempt without it', () => {
+    facade.load();
+    http.expectOne((req) => ACCOUNTS(req.url)).flush(null, { status: 500, statusText: 'Internal Server Error' });
+
+    expect(facade.failed()).toBe(true);
+    expect(facade.loading()).toBe(false);
+
+    facade.load();
+    expect(facade.failed()).toBe(false);
+    http.expectOne((req) => ACCOUNTS(req.url)).flush([ACME]);
+  });
 });
