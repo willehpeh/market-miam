@@ -1,11 +1,7 @@
-import { TestBed } from '@angular/core/testing';
-import { fireEvent, render, screen } from '@testing-library/angular';
-import { provideRouter } from '@angular/router';
-import { CatalogueList } from './catalogue-list';
-import { CatalogueFacade } from './catalogue.facade';
+import { screen } from '@testing-library/angular';
+import { CatalogueListPageObject } from './catalogue-list.page-object';
 import { FakeCatalogueFacade } from './fake.catalogue.facade';
 import { catalogueItem } from './catalogue-item.builder';
-import { StorefrontFacade } from '../storefront/storefront.facade';
 import { FakeStorefrontFacade } from '../storefront/fake.storefront.facade';
 
 const storefrontView = (cartePricesVisible: boolean) => ({
@@ -18,32 +14,22 @@ const storefrontView = (cartePricesVisible: boolean) => ({
   cartePricesVisible,
 });
 
-async function renderList() {
-  const view = await render(CatalogueList, {
-    providers: [
-      provideRouter([]),
-      { provide: CatalogueFacade, useClass: FakeCatalogueFacade },
-      { provide: StorefrontFacade, useClass: FakeStorefrontFacade },
-    ],
-  });
-  const catalogue = TestBed.inject(CatalogueFacade) as FakeCatalogueFacade;
-  const storefront = TestBed.inject(StorefrontFacade) as FakeStorefrontFacade;
-  return { view, catalogue, storefront };
-}
-
 const item = catalogueItem;
 
 describe('CatalogueList', () => {
   // Warm-only lives in the store facade now — the component asks unconditionally.
   it('loads the catalogue on init', async () => {
-    const { catalogue } = await renderList();
+    const catalogue = new FakeCatalogueFacade();
+    await CatalogueListPageObject.render({ catalogue });
+
     expect(catalogue.loaded).toBe(true);
   });
 
   it('lists each item with its name and price in euros', async () => {
-    const { view, catalogue } = await renderList();
+    const catalogue = new FakeCatalogueFacade();
+    const page = await CatalogueListPageObject.render({ catalogue });
     catalogue.items.set([item(), item({ itemId: 'item-2', name: 'Blanquette de veau', price: 1100 })]);
-    view.detectChanges();
+    page.detectChanges();
 
     expect(screen.getByText('Bœuf bourguignon')).toBeInTheDocument();
     expect(screen.getByText('13,00 €')).toBeInTheDocument();
@@ -52,7 +38,8 @@ describe('CatalogueList', () => {
   });
 
   it('shows a variant item as "dès {min} €" with its formats listed', async () => {
-    const { view, catalogue } = await renderList();
+    const catalogue = new FakeCatalogueFacade();
+    const page = await CatalogueListPageObject.render({ catalogue });
     catalogue.items.set([{
       itemId: 'pizza',
       name: 'Pizza',
@@ -64,7 +51,7 @@ describe('CatalogueList', () => {
         { name: 'Grande', description: '', price: 1600 },
       ],
     }]);
-    view.detectChanges();
+    page.detectChanges();
 
     expect(screen.getByText('dès 9,50 €')).toBeInTheDocument();
     expect(screen.getByText('Petite')).toBeInTheDocument();
@@ -75,9 +62,10 @@ describe('CatalogueList', () => {
 
   // The live client's dishes predate allergens; this is how they find the ones left to declare.
   it('flags a dish whose allergens are not declared yet', async () => {
-    const { view, catalogue } = await renderList();
+    const catalogue = new FakeCatalogueFacade();
+    const page = await CatalogueListPageObject.render({ catalogue });
     catalogue.items.set([item({ itemId: 'old', name: 'Tarte tatin', allergens: null }), item({ itemId: 'new', name: 'Parmentier' })]);
-    view.detectChanges();
+    page.detectChanges();
 
     const flagged = screen.getAllByText('Allergènes à renseigner');
     expect(flagged).toHaveLength(1);
@@ -86,86 +74,93 @@ describe('CatalogueList', () => {
 
   // Declared "none" is a declaration, not a gap.
   it('flags nothing on a dish declared free of the 14', async () => {
-    const { view, catalogue } = await renderList();
+    const catalogue = new FakeCatalogueFacade();
+    const page = await CatalogueListPageObject.render({ catalogue });
     catalogue.items.set([item({ allergens: [] })]);
-    view.detectChanges();
+    page.detectChanges();
 
     expect(screen.queryByText('Allergènes à renseigner')).not.toBeInTheDocument();
   });
 
   it('lists the items in catalogue order, as the storefront shows them', async () => {
-    const { view, catalogue } = await renderList();
+    const catalogue = new FakeCatalogueFacade();
+    const page = await CatalogueListPageObject.render({ catalogue });
     catalogue.items.set([item({ itemId: 'item-1' }), item({ itemId: 'item-2' })]);
-    view.detectChanges();
+    page.detectChanges();
 
-    const editHrefs = screen
-      .getAllByRole('link')
-      .map((link) => link.getAttribute('href'))
-      .filter((href) => href?.endsWith('/edit'));
+    const editHrefs = page.dishLinks().map((link) => link.getAttribute('href'));
     expect(editHrefs).toEqual(['/dashboard/catalogue/item-1/edit', '/dashboard/catalogue/item-2/edit']);
   });
 
   it('renders each item photo with a thumbnail rendition', async () => {
-    const { view, catalogue } = await renderList();
+    const catalogue = new FakeCatalogueFacade();
+    const page = await CatalogueListPageObject.render({ catalogue });
     catalogue.items.set([item({ imageReference: 'v1/items/acme/item-1' })]);
-    view.detectChanges();
+    page.detectChanges();
 
-    expect(view.container.querySelector('img')).toHaveAttribute(
+    expect(page.photo()).toHaveAttribute(
       'src',
       expect.stringContaining('c_fill,w_200,h_200,q_auto,f_webp/v1/items/acme/item-1'),
     );
   });
 
   it('shows a camera placeholder instead of a broken image for an item with no photo', async () => {
-    const { view, catalogue } = await renderList();
+    const catalogue = new FakeCatalogueFacade();
+    const page = await CatalogueListPageObject.render({ catalogue });
     catalogue.items.set([item({ imageReference: '' })]);
-    view.detectChanges();
+    page.detectChanges();
 
-    expect(view.container.querySelector('img')).toBeNull();
-    expect(view.container.querySelector('.fa-camera')).not.toBeNull();
+    expect(page.queryPhoto()).toBeNull();
+    expect(page.photoPlaceholder()).not.toBeNull();
   });
 
   it('links each item to its edit route', async () => {
-    const { view, catalogue } = await renderList();
+    const catalogue = new FakeCatalogueFacade();
+    const page = await CatalogueListPageObject.render({ catalogue });
     catalogue.items.set([item()]);
-    view.detectChanges();
+    page.detectChanges();
 
-    expect(screen.getByRole('link', { name: /bœuf bourguignon/i })).toHaveAttribute('href', '/dashboard/catalogue/item-1/edit');
+    expect(page.dishLink(/bœuf bourguignon/i)).toHaveAttribute('href', '/dashboard/catalogue/item-1/edit');
   });
 
   it('links the add-item button to the new-item route', async () => {
-    const { view, catalogue } = await renderList();
+    const catalogue = new FakeCatalogueFacade();
+    const page = await CatalogueListPageObject.render({ catalogue });
     catalogue.items.set([item()]);
-    view.detectChanges();
+    page.detectChanges();
 
-    expect(screen.getByRole('link', { name: /ajouter/i })).toHaveAttribute('href', '/dashboard/catalogue/new');
+    expect(page.addDishLink()).toHaveAttribute('href', '/dashboard/catalogue/new');
   });
 
   it('offers to reorder once there are two items to put in an order', async () => {
-    const { view, catalogue } = await renderList();
+    const catalogue = new FakeCatalogueFacade();
+    const page = await CatalogueListPageObject.render({ catalogue });
     catalogue.items.set([item(), item({ itemId: 'item-2', name: 'Blanquette de veau' })]);
-    view.detectChanges();
+    page.detectChanges();
 
-    expect(screen.getByRole('link', { name: /changer l'ordre/i })).toHaveAttribute('href', '/dashboard/catalogue/order');
+    expect(page.reorderLink()).toHaveAttribute('href', '/dashboard/catalogue/order');
   });
 
   it('has nothing to reorder with a single item', async () => {
-    const { view, catalogue } = await renderList();
+    const catalogue = new FakeCatalogueFacade();
+    const page = await CatalogueListPageObject.render({ catalogue });
     catalogue.items.set([item()]);
-    view.detectChanges();
+    page.detectChanges();
 
-    expect(screen.queryByRole('link', { name: /changer l'ordre/i })).toBeNull();
+    expect(page.queryReorderLink()).toBeNull();
   });
 
   it('says the carte is empty when there are no items', async () => {
-    await renderList();
+    await CatalogueListPageObject.render();
+
     expect(screen.getByText(/carte est vide/i)).toBeInTheDocument();
   });
 
   it('drops the empty line once the catalogue has an item', async () => {
-    const { view, catalogue } = await renderList();
+    const catalogue = new FakeCatalogueFacade();
+    const page = await CatalogueListPageObject.render({ catalogue });
     catalogue.items.set([item()]);
-    view.detectChanges();
+    page.detectChanges();
 
     expect(screen.queryByText(/carte est vide/i)).toBeNull();
   });
@@ -173,20 +168,22 @@ describe('CatalogueList', () => {
   // The vendor's own choice about their public carte, on the screen that shows the prices
   // it governs. Opted in, so a vendor who never touched it reads as showing them.
   it('shows the carte prices as displayed when the vendor has not hidden them', async () => {
-    const { view, storefront } = await renderList();
+    const storefront = new FakeStorefrontFacade();
+    const page = await CatalogueListPageObject.render({ storefront });
     storefront.view.set(storefrontView(true));
-    view.detectChanges();
+    page.detectChanges();
 
-    expect(screen.getByRole('switch')).toHaveAttribute('aria-checked', 'true');
+    expect(page.pricesSwitch()).toHaveAttribute('aria-checked', 'true');
     expect(screen.getByText('Affichés')).toBeInTheDocument();
   });
 
   it('shows them as masked when the vendor has hidden them', async () => {
-    const { view, storefront } = await renderList();
+    const storefront = new FakeStorefrontFacade();
+    const page = await CatalogueListPageObject.render({ storefront });
     storefront.view.set(storefrontView(false));
-    view.detectChanges();
+    page.detectChanges();
 
-    expect(screen.getByRole('switch')).toHaveAttribute('aria-checked', 'false');
+    expect(page.pricesSwitch()).toHaveAttribute('aria-checked', 'false');
     expect(screen.getByText('Masqués')).toBeInTheDocument();
   });
 
@@ -194,28 +191,30 @@ describe('CatalogueList', () => {
   // login). A switch drawn before it lands would tell a vendor who hid their prices that
   // they are showing, and their first tap would save over a state they never saw.
   it('offers no switch until the vitrine has loaded', async () => {
-    const { view } = await renderList();
-    view.detectChanges();
+    const page = await CatalogueListPageObject.render();
+    page.detectChanges();
 
-    expect(screen.queryByRole('switch')).not.toBeInTheDocument();
+    expect(page.queryPricesSwitch()).not.toBeInTheDocument();
   });
 
   it('hides the prices when the vendor turns the switch off', async () => {
-    const { view, storefront } = await renderList();
+    const storefront = new FakeStorefrontFacade();
+    const page = await CatalogueListPageObject.render({ storefront });
     storefront.view.set(storefrontView(true));
-    view.detectChanges();
+    page.detectChanges();
 
-    fireEvent.click(screen.getByRole('switch'));
+    page.hidePrices();
 
     expect(storefront.cartePricesVisibility).toBe(false);
   });
 
   it('shows them again when the vendor turns it back on', async () => {
-    const { view, storefront } = await renderList();
+    const storefront = new FakeStorefrontFacade();
+    const page = await CatalogueListPageObject.render({ storefront });
     storefront.view.set(storefrontView(false));
-    view.detectChanges();
+    page.detectChanges();
 
-    fireEvent.click(screen.getByRole('switch'));
+    page.showPrices();
 
     expect(storefront.cartePricesVisibility).toBe(true);
   });
@@ -224,17 +223,19 @@ describe('CatalogueList', () => {
   // sentence that stops a vendor reporting the featured card as a bug, so it stands in the
   // open — but only once hiding has made it true.
   it('warns that the featured market still quotes, once the prices are hidden', async () => {
-    const { view, storefront } = await renderList();
+    const storefront = new FakeStorefrontFacade();
+    const page = await CatalogueListPageObject.render({ storefront });
     storefront.view.set(storefrontView(false));
-    view.detectChanges();
+    page.detectChanges();
 
     expect(screen.getByText(/Prochain marché.*affiche toujours ses prix/)).toBeInTheDocument();
   });
 
   it('leaves the warning out while the prices are showing', async () => {
-    const { view, storefront } = await renderList();
+    const storefront = new FakeStorefrontFacade();
+    const page = await CatalogueListPageObject.render({ storefront });
     storefront.view.set(storefrontView(true));
-    view.detectChanges();
+    page.detectChanges();
 
     expect(screen.queryByText(/Prochain marché.*affiche toujours ses prix/)).not.toBeInTheDocument();
   });
