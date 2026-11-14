@@ -3,6 +3,8 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { Auth } from '../core/auth/auth';
 import { FakeAuth } from '../core/auth/fake.auth';
+import { InvitationFacade } from '../invitations/invitation.facade';
+import { FakeInvitationFacade } from '../invitations/fake.invitation.facade';
 import { OperatorPage } from './operator-page';
 
 const WHOAMI = (url: string) => url.endsWith('/api/ops/whoami');
@@ -11,18 +13,21 @@ const ACCOUNTS = (url: string) => url.endsWith('/api/ops/accounts');
 describe('OperatorPage', () => {
   let auth: FakeAuth;
   let http: HttpTestingController;
+  let invitations: FakeInvitationFacade;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
       imports: [OperatorPage],
       providers: [
         { provide: Auth, useClass: FakeAuth },
+        { provide: InvitationFacade, useClass: FakeInvitationFacade },
         provideHttpClient(),
         provideHttpClientTesting(),
       ],
     });
     auth = TestBed.inject(Auth) as FakeAuth;
     http = TestBed.inject(HttpTestingController);
+    invitations = TestBed.inject(InvitationFacade) as FakeInvitationFacade;
   });
 
   afterEach(() => {
@@ -30,6 +35,31 @@ describe('OperatorPage', () => {
     http.match((req) => ACCOUNTS(req.url)).forEach((req) => req.flush([]));
     http.verify();
   });
+
+  // Signed in, and confirmed as an operator by the API: the page then shows the accounts and the form.
+  async function signedIn() {
+    auth.login();
+    const fixture = TestBed.createComponent(OperatorPage);
+    http.expectOne((req) => WHOAMI(req.url)).flush({ operatorId: 'github|1234567' });
+    await fixture.whenStable();
+    return { fixture, page: fixture.nativeElement as HTMLElement };
+  }
+
+  // What a browser does as someone types: the value changes, then an input event fires.
+  function type(input: HTMLInputElement, text: string): void {
+    input.value = text;
+    input.dispatchEvent(new Event('input'));
+  }
+
+  function button(page: HTMLElement, label: string): HTMLButtonElement {
+    return Array.from(page.querySelectorAll('button')).find((candidate) => candidate.textContent?.trim() === label)!;
+  }
+
+  // A form's submission is asynchronous: a tick for it to run, then the page to render.
+  async function settle(fixture: { whenStable(): Promise<unknown> }) {
+    await new Promise((resolve) => setTimeout(resolve));
+    await fixture.whenStable();
+  }
 
   async function render(): Promise<HTMLElement> {
     const fixture = TestBed.createComponent(OperatorPage);
@@ -102,5 +132,15 @@ describe('OperatorPage', () => {
     signOut?.click();
 
     expect(auth.loggedOut).toBe(true);
+  });
+
+  it('invites the vendor whose address is typed', async () => {
+    const { fixture, page } = await signedIn();
+
+    type(page.querySelector<HTMLInputElement>('input[type="email"]')!, 'marie@example.com');
+    button(page, 'Invite').click();
+    await settle(fixture);
+
+    expect(invitations.invited).toEqual(['marie@example.com']);
   });
 });
