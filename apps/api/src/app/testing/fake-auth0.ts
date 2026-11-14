@@ -35,8 +35,6 @@ export class FakeAuth0 {
   lookupStatus = 200;
   // The errorCode Auth0 sends with a refused lookup.
   lookupErrorCode?: string;
-  // Searches as a full-text search may: every vendorId containing the one asked for.
-  looseSearch = false;
   // Refuses every address as Auth0 refuses one it finds malformed, stricter than our Email, in a
   // lookup as in a creation.
   refusesEmails = false;
@@ -69,7 +67,8 @@ export class FakeAuth0 {
         return;
       }
       const vendorId = /^app_metadata\.vendorId:"(.*)"$/.exec(url.searchParams.get('q') ?? '')?.[1];
-      const matches = (held?: string) => (this.looseSearch ? !!vendorId && !!held?.includes(vendorId) : held === vendorId);
+      // As loose as a full-text search may be: every vendorId containing the one asked for.
+      const matches = (held?: string) => !!vendorId && !!held?.includes(vendorId);
       return send(res, 200, this.users.filter((user) => matches(user.app_metadata?.vendorId)).map((user) => ({ user_id: this.idOf(user) })));
     }
     if (req.method === 'DELETE' && url.pathname.startsWith('/api/v2/users/')) {

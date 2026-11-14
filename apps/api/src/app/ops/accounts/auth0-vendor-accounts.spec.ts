@@ -34,17 +34,6 @@ describe('Auth0VendorAccounts', () => {
     ]);
   });
 
-  // Auth0's user search is full-text: whatever it answers, only the vendor's own account goes.
-  it("closes only the account holding exactly the vendor's id", async () => {
-    const rose = { connection: 'email', email: 'rose@example.fr', app_metadata: { vendorId: 'vendor-id-2' } };
-    auth0.users = [{ connection: 'email', email: marie.email, app_metadata: { vendorId: marie.vendorId } }, rose];
-    auth0.looseSearch = true;
-
-    await accounts().closeFor({ vendorId: marie.vendorId });
-
-    expect(auth0.users).toEqual([rose]);
-  });
-
   // Thrown, so the processor's subscription retries: the account may well not exist.
   it('fails when Auth0 refuses to open the account for another reason', async () => {
     auth0.createStatus = 500;

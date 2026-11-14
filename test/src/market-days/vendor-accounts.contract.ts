@@ -3,9 +3,11 @@ import { Invitation, VendorAccount, VendorAccounts } from '@market-miam/market-d
 
 // example.com is reserved for examples (RFC 2606): safe should a real tenant ever mail it.
 const marie: Invitation = { vendorId: 'vendor-id', email: 'marie@example.com' };
+// Her vendorId contains Marie's, as a near match in a full-text search would.
+const rose: Invitation = { vendorId: `${marie.vendorId}-2`, email: 'rose@example.com' };
 
 // Every address the contract opens or expects, for adapters on real infrastructure to clear.
-export const vendorAccountsContractEmails: readonly string[] = [marie.email];
+export const vendorAccountsContractEmails: readonly string[] = [marie.email, rose.email];
 
 export function vendorAccountsContract(
   name: string,
@@ -46,6 +48,17 @@ export function vendorAccountsContract(
       await accounts.closeFor({ vendorId: marie.vendorId });
 
       expect(await accounts.openFor({ vendorId: 'another-vendor', email: marie.email })).toBe('open');
+    });
+
+    it("closes no account but the vendor's own", async () => {
+      const accounts = await given(
+        { email: marie.email, vendorId: marie.vendorId },
+        { email: rose.email, vendorId: rose.vendorId },
+      );
+
+      await accounts.closeFor({ vendorId: marie.vendorId });
+
+      expect(await accounts.openFor({ vendorId: 'another-vendor', email: rose.email })).toBe('email-in-use');
     });
   });
 }
