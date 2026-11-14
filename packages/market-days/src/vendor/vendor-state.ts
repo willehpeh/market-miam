@@ -58,6 +58,10 @@ export class InvitedVendor extends VendorState {
   erase(proceed: () => void): void {
     proceed();
   }
+
+  override recordAccountClosed(): void {
+    throw new VendorNotErasedError();
+  }
 }
 
 export class RegisteredVendor extends VendorState {
