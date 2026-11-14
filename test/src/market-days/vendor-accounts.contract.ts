@@ -60,6 +60,13 @@ export function vendorAccountsContract(
       expect(await accounts.openFor(marie)).toBe('email-in-use');
     });
 
+    // Never opened, or deleted by hand: the account is closed all the same (ADR 0063).
+    it('closes a vendor with no account', async () => {
+      const accounts = await given();
+
+      await expect(accounts.closeFor({ vendorId: marie.vendorId })).resolves.toBeUndefined();
+    });
+
     it("closes no account but the vendor's own", async () => {
       const accounts = await given(
         { email: marie.email, vendorId: marie.vendorId },
