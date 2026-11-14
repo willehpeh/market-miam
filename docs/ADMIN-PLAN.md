@@ -73,8 +73,8 @@ Ends creating vendors by hand in the Auth0 Dashboard, and makes Market Miam invi
   the account (`openFor`, answering `open`, `email-in-use` or `email-refused`). Its Auth0 adapter
   creates the user on the `email` connection with the `vendorId` in `app_metadata` (`create:users`,
   and the connection enabled for the Management application), beside `Auth0Accounts` and sharing
-  its token. It opens the address verified, which alone keeps Auth0 from emailing the vendor a
-  sign-in link. A refusal it cannot act on names Auth0's
+  its token. Auth0 emails the vendor as the account opens, and nothing stops it: the tenant's
+  passwordless email template makes that email the invitation (ADR 0060). A refusal it cannot act on names Auth0's
   status and error code, never its message. Auth0 keeps emails unique, and checks them more
   strictly than `Email`: on `email-in-use`, an invitation that lost a race for its address, or
   `email-refused`, an address Auth0 finds malformed, the processor sends `EraseVendor` for it. A
@@ -106,15 +106,18 @@ layering, whoami retired, and the spec pinning `VendorInvited`'s email encrypted
 Going live, in this order, by the owner:
 
 1. Give the Management application `create:users`, enable the `email` connection for it, then
-   deploy. *`create:users` given 2026-11-13; the slice deployed 2026-11-14, and its first
-   invitation stalled on Auth0's 400 until the connection is enabled: the processor retries it
-   every 30 seconds at most, and `/api/health` answers 503 meanwhile.*
+   deploy. *Done: `create:users` given 2026-11-13, the slice deployed 2026-11-14, and the
+   connection enabled the same day, after the first invitation stalled on Auth0's 400 without it.*
 2. In the account list, find vendor accounts with no `vendorId`: made by hand and never signed in.
    Delete each in Auth0 and invite it again from the admin app.
 3. Change the post-login Action to stop minting `vendorId`s and to refuse a vendor-app login
    without one. *Done in Auth0 by the owner. Its code is still to come into the repo: the owner
    pastes it.*
 4. Turn on *Disable Sign Ups* on the `email` connection.
+5. Make the passwordless email template tell the invitation from a sign-in by `application.name`
+   (ADR 0060): from the Management application, the invitation, pointing at `app.marketmiam.fr`
+   with no link; otherwise the sign-in email as it is. Then decide whether the vendor privacy
+   policy needs a line for the invitation email.
 
 **5. Erase a vendor.** A transport for `EraseVendor`, and a processor on `VendorErased` that
 deletes the Auth0 user (`delete:users`), whether the vendor registered or was only invited. It

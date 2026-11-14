@@ -73,7 +73,8 @@ on it, so a storefront still opens at first sign-in.
 
 **An invitation is the account itself.** There is no token, no expiry and nothing to resend:
 whoever holds that inbox can sign in at `app.marketmiam.fr`. Withdrawing an invitation is erasing
-the vendor. The system sends nothing; the operator tells the vendor.
+the vendor. Auth0 emails the vendor as the account opens, and that email is the invitation: the
+system sends nothing of its own.
 
 ## Consequences
 
@@ -93,19 +94,22 @@ the vendor. The system sends nothing; the operator tells the vendor.
 - The Management application gains `create:users`, and the `email` connection is enabled for it:
   Auth0 creates a user only on a connection enabled for the client asking, and answers 400
   otherwise. The first live invitation, on 2026-11-14, found that out.
-- Auth0 emails a passwordless user it creates a sign-in link, in the name of the application
-  that created it ("Sign in to Management"); `verify_email: false` does not stop it, and Auth0's
-  staff call it unpreventable. Creating the address as verified stops it, by reports on Auth0's
-  forum rather than its documentation, so the adapter does that and the system still sends
-  vendors nothing. A live invitation is the test that it holds.
-- The invited email is the address the operator typed, verified in Auth0 on the operator's word;
-  `VendorRegistered`'s is the one the vendor proved at first sign-in. On a passwordless
-  connection they are the same inbox.
+- Auth0 emails every passwordless user it creates a sign-in link, in the name of the application
+  that created it ("Sign in to Management"), and nothing stops it: neither `verify_email: false`
+  nor creating the address verified, both tried on the live tenant on 2026-11-14, and Auth0's
+  staff call it unpreventable. The passwordless email template reads `application.name`, so it
+  tells the two apart: from the Management application it is the invitation, pointing the vendor
+  at `app.marketmiam.fr` with no link, and from the vendor app the usual sign-in email. The
+  template lives in the tenant, as the Action does.
+- The invited email is the address the operator typed, unverified in Auth0; `VendorRegistered`'s
+  is the one the vendor proved at first sign-in. On a passwordless connection they are the same
+  inbox.
 - Vendor and person stay one-to-one, as ADR 0024 assumed. `VendorInvited` brings a new business
   onto the platform. Inviting a teammate to an existing vendor would be another event, and who
   sent it would be payload rather than metadata.
-- An invitation email from the system would be a second processor on `VendorInvited`, and a line
-  in the vendor privacy policy, which names only the sign-in emails today.
+- The invitation email is Auth0's, sent through Brevo as the sign-in emails are. Whether the
+  vendor privacy policy, which names only the sign-in emails, needs a line for it is the owner's
+  call.
 
 ## Rejected
 
@@ -121,3 +125,4 @@ the vendor. The system sends nothing; the operator tells the vendor.
 | A platform stream holding every invitation | Checking one email would decrypt every vendor's |
 | Logging a stray invitation, or an event of its own | A log line fades and leaves the email behind; a new event would have no reader. Erasure uses events that exist |
 | Invitation tokens that expire | The passwordless account already is the invitation; a token adds state for nothing |
+| No account until first sign-in, a pre-registration Action asking the api for the `vendorId` | Avoids Auth0's creation email, but ties sign-up to the api being reachable, and the account no longer opens at invitation |
