@@ -8,6 +8,7 @@ import { vendorPiiFields, vendorPiiKeyScopes } from '@market-miam/market-days';
 import { MarketDaysModule } from '../market-days/market-days.module';
 import { EventSourcingModule } from '../event-sourcing/event-sourcing.module';
 import { PostgresPersistenceModule } from '../persistence/postgres-persistence.module';
+import { DevelopmentAccountsModule } from '../ops/accounts/development-accounts.module';
 import { globalFilters } from '../global-filters';
 import { Migrations } from '../database/migrations';
 import { FakeSignedUploads, SignedUploads } from '../signed-uploads';
@@ -45,6 +46,8 @@ export async function bootPostgresApp(
       }),
       AuthModule.forRootAsync({ useFactory: () => new StaticTokenVerifier(vendor) }),
       PostgresPersistenceModule,
+      // Auth0's accounts in memory: the invitation processor needs them since admin slice 4.
+      DevelopmentAccountsModule,
       EventSourcingModule.forRoot(vendorPiiFields, vendorPiiKeyScopes),
       MarketDaysModule,
     ],
