@@ -65,7 +65,9 @@ Ends creating vendors by hand in the Auth0 Dashboard, and makes Market Miam invi
   vendor taking up the invitation.
 - **Route.** `POST /api/ops/vendors { email }` lower-cases the address, as Auth0 keeps it, looks it
   up (`read:users`) and refuses it with a 409 if any account holds it, the owner's GitHub address
-  included: a plus alias of it serves for trying the vendor app. It then mints the `vendorId`, sends
+  included: a plus alias of it serves for trying the vendor app. An address Auth0 finds malformed
+  fails the lookup with a 400, and the route refuses it with a 400, as `Email` refuses a typo it
+  catches itself. It then mints the `vendorId`, sends
   `InviteVendor` and answers 202 with the id. The operator's Auth0 id reaches the event's metadata
   on the request's lineage: `OperatorLineageInterceptor`, on the ops controller beside its guard,
   extends it on every operator route, so later operator writes carry it without asking.
