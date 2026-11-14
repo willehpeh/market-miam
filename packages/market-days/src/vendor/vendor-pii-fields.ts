@@ -18,6 +18,7 @@ export const vendorPiiFields: PiiFieldsOf<MarketDaysEvent> = {
   VendorInvited: ['email'],
   VendorRegistered: ['email'],
   VendorErased: [],
+  VendorAccountClosed: [],
   VendorLegalIdentityProvided: [
     'siret', 'siren', 'vatNumber', 'legalName', 'address', 'contactEmail', 'phone', 'vatRegime',
     'mediatorName', 'mediatorUrl', 'legalForm', 'shareCapital', 'registryCity', 'legalRepresentative',

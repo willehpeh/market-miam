@@ -2,9 +2,11 @@ import { VendorInvited } from './vendor-invited';
 import { VendorRegistered } from './vendor-registered';
 import { VendorLegalIdentityProvided } from './vendor-legal-identity-provided';
 import { VendorErased } from './vendor-erased';
+import { VendorAccountClosed } from './vendor-account-closed';
 
 export type VendorEvent = |
   VendorInvited |
   VendorRegistered |
   VendorLegalIdentityProvided |
-  VendorErased;
+  VendorErased |
+  VendorAccountClosed;

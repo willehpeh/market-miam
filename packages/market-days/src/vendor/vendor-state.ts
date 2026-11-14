@@ -2,12 +2,17 @@ import { VendorErasedError } from './vendor-erased.error';
 import { VendorNotRegisteredError } from './vendor-not-registered.error';
 
 // What a vendor makes of each command, by where they stand: carry it out (`proceed`), do
-// nothing, or refuse. One class per state, so each row of ADR 0060's table is in one place.
+// nothing, or refuse. One class per state, so each row of ADRs 0060's and 0063's tables is in
+// one place.
 export abstract class VendorState {
   abstract invite(proceed: () => void): void;
   abstract register(proceed: () => void): void;
   abstract provideLegalIdentity(proceed: () => void): void;
   abstract erase(proceed: () => void): void;
+
+  recordAccountClosed(proceed: () => void): void {
+    proceed();
+  }
 
   isErased(): boolean {
     return false;
