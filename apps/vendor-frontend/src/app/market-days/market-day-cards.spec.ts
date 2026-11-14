@@ -1,39 +1,35 @@
-import { fireEvent, render, screen } from '@testing-library/angular';
-import { provideRouter } from '@angular/router';
-import { MarketDayCards } from './market-day-cards';
-import { MarketDayFacade } from './market-day.facade';
+import { screen } from '@testing-library/angular';
+import { MarketDayCardsPageObject } from './market-day-cards.page-object';
 import { FakeMarketDayFacade } from './fake.market-day.facade';
 import { MarketDayView } from './market-days';
 import { testMarketDayView as day } from './test-market-day-view.builder';
 
-async function renderCard(days: MarketDayView[]) {
+// A store that already holds these days.
+function marketDaysOf(...days: MarketDayView[]): FakeMarketDayFacade {
   const marketDays = new FakeMarketDayFacade();
   marketDays.days.set(days);
-  const view = await render(MarketDayCards, {
-    providers: [provideRouter([]), { provide: MarketDayFacade, useValue: marketDays }],
-  });
-  return { view, marketDays };
+  return marketDays;
 }
 
 describe('MarketDayCards', () => {
   it('names the next market day, with the hours a vendor plans quantities around', async () => {
-    await renderCard([day()]);
+    const page = await MarketDayCardsPageObject.render({ marketDays: marketDaysOf(day()) });
 
-    expect(screen.getByRole('heading', { name: /prochain marché/i })).toBeTruthy();
+    expect(page.nextMarketHeading()).toBeTruthy();
     expect(screen.getByText(/samedi 15 août/i)).toBeTruthy();
     expect(screen.getByText(/Marché de la Croix-Rousse/)).toBeTruthy();
     expect(screen.getByText('8h – 13h')).toBeTruthy();
   });
 
   it('counts the items once the day has a menu', async () => {
-    await renderCard([day({ itemIds: ['item-1', 'item-2', 'item-3'] })]);
+    const page = await MarketDayCardsPageObject.render({ marketDays: marketDaysOf(day({ itemIds: ['item-1', 'item-2', 'item-3'] })) });
 
     expect(screen.getByText('3 plats au menu')).toBeTruthy();
-    expect(screen.getByRole('link', { name: /modifier le menu/i })).toBeTruthy();
+    expect(page.editMenuLink()).toBeTruthy();
   });
 
   it('counts a single item in the singular', async () => {
-    await renderCard([day({ itemIds: ['item-1'] })]);
+    await MarketDayCardsPageObject.render({ marketDays: marketDaysOf(day({ itemIds: ['item-1'] })) });
 
     expect(screen.getByText('1 plat au menu')).toBeTruthy();
   });
@@ -41,16 +37,18 @@ describe('MarketDayCards', () => {
   // Without this the card looks identical whether the vendor has not planned the day yet or
   // planned it and cleared it — and both are legal.
   it('says outright when the day carries no items', async () => {
-    await renderCard([day()]);
+    const page = await MarketDayCardsPageObject.render({ marketDays: marketDaysOf(day()) });
 
     expect(screen.getByText('Aucun plat au menu')).toBeTruthy();
-    expect(screen.getByRole('link', { name: /planifier le menu/i })).toBeTruthy();
+    expect(page.planMenuLink()).toBeTruthy();
   });
 
   // A day the vendor has declared themselves away from cannot carry a menu — the query
   // suppresses it — so offering to plan one would be a save that renders nowhere.
   it('skips a day the vendor is absent for', async () => {
-    await renderCard([day({ absent: true }), day({ marketId: 'market-2', date: '2026-08-22', day: 'SAT' })]);
+    await MarketDayCardsPageObject.render({
+      marketDays: marketDaysOf(day({ absent: true }), day({ marketId: 'market-2', date: '2026-08-22', day: 'SAT' })),
+    });
 
     expect(screen.getByText(/samedi 22 août/i)).toBeTruthy();
   });
@@ -58,15 +56,15 @@ describe('MarketDayCards', () => {
   // The horizon is named because the endpoint sees 56 days: a vendor on a longer cadence
   // has a market this card cannot know about, and "aucun marché" alone would be a lie.
   it('warns when no market day is in reach', async () => {
-    await renderCard([]);
+    await MarketDayCardsPageObject.render({ marketDays: marketDaysOf() });
 
     expect(screen.getByText(/aucun marché dans les 8 prochaines semaines/i)).toBeTruthy();
   });
 
   it('opens the day it names', async () => {
-    await renderCard([day()]);
+    const page = await MarketDayCardsPageObject.render({ marketDays: marketDaysOf(day()) });
 
-    expect(screen.getByRole('link', { name: /le menu/i }).getAttribute('href'))
+    expect(page.menuLink().getAttribute('href'))
       .toBe('/dashboard/market/market-1/2026-08-15/menu');
   });
 
@@ -74,29 +72,30 @@ describe('MarketDayCards', () => {
   // menu, the doorway leads to the live screen, not the planner — from midnight, so the
   // 6h sold-out case stays reachable.
   it('opens the live screen once the day is today and has a menu', async () => {
-    await renderCard([day({ phase: 'due', itemIds: ['item-1'] })]);
+    const page = await MarketDayCardsPageObject.render({ marketDays: marketDaysOf(day({ phase: 'due', itemIds: ['item-1'] })) });
 
-    expect(screen.getByRole('link', { name: /suivre le marché/i }).getAttribute('href'))
+    expect(page.followMarketLink().getAttribute('href'))
       .toBe('/dashboard/market/market-1/2026-08-15/live');
   });
 
   // The flip is caused by planning, not by the clock — an unplanned today still opens
   // the editor, whose neutral prompt is what a vendor who forgot needs.
   it('keeps offering the planner while today has no menu', async () => {
-    await renderCard([day({ phase: 'due' })]);
+    const page = await MarketDayCardsPageObject.render({ marketDays: marketDaysOf(day({ phase: 'due' })) });
 
-    expect(screen.getByRole('link', { name: /planifier le menu/i }).getAttribute('href'))
+    expect(page.planMenuLink().getAttribute('href'))
       .toBe('/dashboard/market/market-1/2026-08-15/menu');
   });
 
   it('offers nothing to plan when there is no market day', async () => {
-    await renderCard([]);
+    const page = await MarketDayCardsPageObject.render({ marketDays: marketDaysOf() });
 
-    expect(screen.queryByRole('link', { name: /le menu/i })).toBeNull();
+    expect(page.queryMenuLink()).toBeNull();
   });
 
   it('loads the days it needs', async () => {
-    const { marketDays } = await renderCard([]);
+    const marketDays = marketDaysOf();
+    await MarketDayCardsPageObject.render({ marketDays });
 
     expect(marketDays.loaded).toBe(true);
   });
@@ -104,25 +103,28 @@ describe('MarketDayCards', () => {
   // Decision 55: the vendor who wakes ill opens the app to the dashboard and wants to say
   // so — not to navigate through a button reading *Planifier le menu* to find it.
   it('offers the call-off on a today, planned or not', async () => {
-    const { marketDays } = await renderCard([day({ phase: 'due' })]);
+    const marketDays = marketDaysOf(day({ phase: 'due' }));
+    const page = await MarketDayCardsPageObject.render({ marketDays });
 
-    fireEvent.click(screen.getByRole('button', { name: "Je ne peux pas venir aujourd'hui" }));
+    page.callOff();
 
     expect(marketDays.closures).toEqual([{ marketId: 'market-1', date: '2026-08-15', closed: true }]);
   });
 
   it('keeps the call-off off a day that is not today', async () => {
-    await renderCard([day({ itemIds: ['item-1'] })]);
+    const page = await MarketDayCardsPageObject.render({ marketDays: marketDaysOf(day({ itemIds: ['item-1'] })) });
 
-    expect(screen.queryByRole('button', { name: "Je ne peux pas venir aujourd'hui" })).toBeNull();
+    expect(page.queryCallOffButton()).toBeNull();
   });
 
   // Decision 76: two cards, because they answer different questions — today is a market to
   // run, the next one a market to plan. One card could only ever be one of them.
   it('names today and the market after it, in that order', async () => {
-    await renderCard([day({ phase: 'due' }), day({ date: '2026-08-16', day: 'SUN' })]);
+    const page = await MarketDayCardsPageObject.render({
+      marketDays: marketDaysOf(day({ phase: 'due' }), day({ date: '2026-08-16', day: 'SUN' })),
+    });
 
-    expect(screen.getAllByRole('heading').map(heading => heading.textContent?.trim()))
+    expect(page.headings().map(heading => heading.textContent?.trim()))
       .toEqual(["Aujourd'hui", 'Prochain marché']);
     expect(screen.getByText(/samedi 15 août/i)).toBeTruthy();
     expect(screen.getByText(/dimanche 16 août/i)).toBeTruthy();
@@ -132,29 +134,31 @@ describe('MarketDayCards', () => {
   // opens a menu, so the vendor who called off Saturday morning could not plan Sunday until
   // Saturday's hours ran out.
   it('still opens the following market when today is closed', async () => {
-    await renderCard([day({ phase: 'due', closed: true }), day({ date: '2026-08-16', day: 'SUN' })]);
+    const page = await MarketDayCardsPageObject.render({
+      marketDays: marketDaysOf(day({ phase: 'due', closed: true }), day({ date: '2026-08-16', day: 'SUN' })),
+    });
 
     expect(screen.getByText('Stand fermé')).toBeTruthy();
-    expect(screen.getByRole('link', { name: /planifier le menu/i }).getAttribute('href'))
+    expect(page.planMenuLink().getAttribute('href'))
       .toBe('/dashboard/market/market-1/2026-08-16/menu');
   });
 
   // A vendor at their last booked market sees the day they are standing in, and nothing is
   // owed about a next market the schedule does not have.
   it('shows today alone when nothing follows it', async () => {
-    await renderCard([day({ phase: 'trading' })]);
+    const page = await MarketDayCardsPageObject.render({ marketDays: marketDaysOf(day({ phase: 'trading' })) });
 
-    expect(screen.getAllByRole('heading').map(heading => heading.textContent?.trim())).toEqual(["Aujourd'hui"]);
+    expect(page.headings().map(heading => heading.textContent?.trim())).toEqual(["Aujourd'hui"]);
   });
 
   // Decision 51: closed is read before items, or a closed menu-less day still reads
   // *Planifier le menu* and leads to a save decision 29 refuses.
   it('shows the closed state ahead of whatever the menu says', async () => {
-    await renderCard([day({ phase: 'due', closed: true })]);
+    const page = await MarketDayCardsPageObject.render({ marketDays: marketDaysOf(day({ phase: 'due', closed: true })) });
 
     expect(screen.getByText('Stand fermé')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Rouvrir le stand' })).toBeTruthy();
-    expect(screen.queryByRole('link', { name: /planifier le menu|suivre le marché/i })).toBeNull();
-    expect(screen.queryByRole('button', { name: "Je ne peux pas venir aujourd'hui" })).toBeNull();
+    expect(page.reopenStandButton()).toBeTruthy();
+    expect(page.queryPlanOrFollowLink()).toBeNull();
+    expect(page.queryCallOffButton()).toBeNull();
   });
 });
