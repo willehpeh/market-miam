@@ -40,6 +40,7 @@ import { ErasureFacade } from '../erasures/erasure.facade';
             [accounts]="accounts.accounts()"
             [loading]="accounts.loading()"
             [failed]="accounts.failed()"
+            [erasing]="erasures.erasing() !== null"
             (erase)="erasures.erase($event)"
           />
         }

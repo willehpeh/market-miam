@@ -58,8 +58,9 @@ import { AccountListing } from './accounts';
                   } @else {
                     <button
                       type="button"
-                      class="min-h-11 rounded border border-red-300 px-3 text-red-700"
+                      class="min-h-11 rounded border border-red-300 px-3 text-red-700 disabled:opacity-50"
                       [attr.aria-label]="'Erase ' + (account.email ?? vendorId)"
+                      [disabled]="erasing()"
                       (click)="confirming.set(vendorId)"
                     >
                       Erase
@@ -82,6 +83,8 @@ export class AccountList {
   readonly accounts = input<AccountListing[]>([]);
   readonly loading = input(false);
   readonly failed = input(false);
+  // An erasure the api has not answered: one at a time, so none other is offered meanwhile.
+  readonly erasing = input(false);
   readonly erase = output<string>();
   protected readonly storefrontBaseDomain = environment.storefrontBaseDomain;
   // The vendor whose erasure waits for the operator to confirm it: it cannot be undone (ADR 0058).

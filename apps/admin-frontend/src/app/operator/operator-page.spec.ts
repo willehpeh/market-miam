@@ -207,4 +207,15 @@ describe('OperatorPage', () => {
     expect(page.accounts()).toEqual(['owner@acme.test erased acme-bakery']);
     expect(page.queryEraseButton('owner@acme.test')).not.toBeInTheDocument();
   });
+
+  // One erasure at a time: a second asked for while one is in flight would be ignored, so none is
+  // offered until the api answers.
+  it('holds every Erase button while an erasure is in flight', async () => {
+    accounts.accounts.set([ACME, BRIOCHE]);
+    erasures.erasing.set('acme-bakery');
+    const page = await signedIn();
+
+    expect(page.eraseButton('owner@acme.test')).toBeDisabled();
+    expect(page.eraseButton('owner@brioche.test')).toBeDisabled();
+  });
 });
