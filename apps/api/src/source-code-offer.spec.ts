@@ -1,4 +1,4 @@
-import { sourceCodeUrl } from './source-code-url';
+import { sourceCodeUrl } from './source-code-offer';
 
 describe('sourceCodeUrl', () => {
   it('should pin the offer to the deployed revision', () => {

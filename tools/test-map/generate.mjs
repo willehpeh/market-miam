@@ -98,7 +98,7 @@ function contractTests(specPath, src) {
   const callRe = /\b(\w+Contract)\s*\(\s*(['"`])((?:\\.|(?!\2).)*)\2/g;
   for (const m of src.matchAll(callRe)) {
     const fnName = m[1], instanceName = m[3];
-    const imp = new RegExp(`import\\s*\\{[^}]*\\b${fnName}\\b[^}]*\\}\\s*from\\s*['"]([^'"]+)['"]`).exec(src);
+    const imp = new RegExp(`import\s*\{[^}]*\b${fnName}\b[^}]*}\s*from\s*['"]([^'"]+)['"]`).exec(src);
     if (!imp || !imp[1].startsWith('.')) continue;
     const contractFile = resolve(dirname(specPath), imp[1]) + '.ts';
     if (!contractCache.has(contractFile)) {
@@ -108,8 +108,8 @@ function contractTests(specPath, src) {
     }
     for (const t of contractCache.get(contractFile)) {
       results.push({
-        name: t.name.replace(/\$\{[^}]+\}/g, instanceName),
-        suite: t.suite.map(s => s.replace(/\$\{[^}]+\}/g, instanceName)),
+        name: t.name.replace(/\$\{[^}]+}/g, instanceName),
+        suite: t.suite.map(s => s.replace(/\$\{[^}]+}/g, instanceName)),
         mods: t.mods,
         contract: true,
       });
@@ -131,7 +131,7 @@ const THEME_RULES = [
   ['Vendors & Onboarding', /vendor|onboarding|welcome|landing|dashboard/],
   ['Auth & Identity', /\bauth|auth0|token-verifier|authenticated|users|dev-auth/],
   ['Event Sourcing & Persistence', /event-sourc|event-store|persistence|postgres|subscription|checkpoint|lineage|tracing|keyring|polling|notifications?\.spec|unit-of-work|concurrency|consumer|command-gateway|query-gateway|poll-schedule|dev-seed|data-keys|events\.contract|seeding/],
-  ['Core Primitives', /date|time|email|phone|url\.spec|instant|clock|image-reference|local-|source-code-url/],
+  ['Core Primitives', /date|time|email|phone|url\.spec|instant|clock|image-reference|local-|source-code-url|source-code-offer/],
 ];
 function themeFor(relPath) {
   const base = relPath.split('/').pop();
