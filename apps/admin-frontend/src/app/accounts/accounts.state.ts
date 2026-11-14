@@ -2,6 +2,7 @@ import { createAction, createFeature, createReducer, on, props } from '@ngrx/sto
 import { AccountListing } from './accounts';
 import { InviteVendorSuccess } from '../invitations/invitation.state';
 import { EraseVendorAccepted } from '../erasures/erasure.state';
+import { AssignSubdomainSuccess } from '../assignments/assignment.state';
 
 export const LoadAccounts = createAction('[Accounts] Load');
 export const LoadAccountsSuccess = createAction('[Accounts] Load Success', props<{ accounts: AccountListing[] }>());
@@ -37,7 +38,11 @@ export const accountsFeature = createFeature({
     })),
     on(EraseVendorAccepted, (state, { vendorId }): AccountsState => ({
       ...state,
-      accounts: state.accounts.map(markedErased(vendorId)),
+      accounts: state.accounts.map(changed(vendorId, { erased: true })),
+    })),
+    on(AssignSubdomainSuccess, (state, { vendorId, subdomain }): AccountsState => ({
+      ...state,
+      accounts: state.accounts.map(changed(vendorId, { subdomain })),
     })),
   ),
 });
@@ -50,7 +55,7 @@ function byEmail(a: AccountListing, b: AccountListing): number {
   return a.email < b.email ? -1 : 1;
 }
 
-// The vendor's row marked erased, every other row as it was.
-function markedErased(vendorId: string): (account: AccountListing) => AccountListing {
-  return (account) => (account.vendorId === vendorId ? { ...account, erased: true } : account);
+// The vendor's row changed, every other row as it was.
+function changed(vendorId: string, change: Partial<AccountListing>): (account: AccountListing) => AccountListing {
+  return (account) => (account.vendorId === vendorId ? { ...account, ...change } : account);
 }

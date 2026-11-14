@@ -22,16 +22,23 @@ import { erasureFeature } from '../erasures/erasure.state';
 import { ErasureEffects } from '../erasures/erasure.effects';
 import { ErasureFacade } from '../erasures/erasure.facade';
 import { StoreErasureFacade } from '../erasures/store.erasure.facade';
+import { Assignments } from '../assignments/assignments';
+import { HttpAssignments } from '../assignments/http.assignments';
+import { assignmentFeature } from '../assignments/assignment.state';
+import { AssignmentEffects } from '../assignments/assignment.effects';
+import { AssignmentFacade } from '../assignments/assignment.facade';
+import { StoreAssignmentFacade } from '../assignments/store.assignment.facade';
 
 const ACME = { email: 'owner@acme.test', vendorId: 'acme-bakery', subdomain: 'acme' };
 const BRIOCHE = { email: 'owner@brioche.test', vendorId: 'brioche-co', subdomain: null };
 
 // The account list from its facade to the operator API (ADR 0061), with the invitations that join
-// it and the erasures that mark it.
+// it, the erasures that mark it and the subdomain assignments that fill it in.
 describe('Accounts', () => {
   let facade: AccountsFacade;
   let invitations: InvitationFacade;
   let erasures: ErasureFacade;
+  let assignments: AssignmentFacade;
   let api: FakeOperatorApi;
 
   beforeEach(() => {
@@ -40,21 +47,25 @@ describe('Accounts', () => {
         { provide: Accounts, useClass: HttpAccounts },
         { provide: Invitations, useClass: HttpInvitations },
         { provide: Erasures, useClass: HttpErasures },
+        { provide: Assignments, useClass: HttpAssignments },
         provideStore(),
         provideState(accountsFeature),
         provideState(invitationFeature),
         provideState(erasureFeature),
-        provideEffects(AccountsEffects, InvitationEffects, ErasureEffects),
+        provideState(assignmentFeature),
+        provideEffects(AccountsEffects, InvitationEffects, ErasureEffects, AssignmentEffects),
         provideHttpClient(),
         provideHttpClientTesting(),
         { provide: AccountsFacade, useClass: StoreAccountsFacade },
         { provide: InvitationFacade, useClass: StoreInvitationFacade },
         { provide: ErasureFacade, useClass: StoreErasureFacade },
+        { provide: AssignmentFacade, useClass: StoreAssignmentFacade },
       ],
     });
     facade = TestBed.inject(AccountsFacade);
     invitations = TestBed.inject(InvitationFacade);
     erasures = TestBed.inject(ErasureFacade);
+    assignments = TestBed.inject(AssignmentFacade);
     api = new FakeOperatorApi(TestBed.inject(HttpTestingController));
   });
 
@@ -143,5 +154,16 @@ describe('Accounts', () => {
     api.erasureOf('acme-bakery').accept();
 
     expect(facade.accounts()).toEqual([{ ...ACME, erased: true }, BRIOCHE]);
+  });
+
+  // Claimed and recorded at once (ADR 0065): the next load brings the same.
+  it("lists a vendor's storefront once the API accepts the assignment", () => {
+    facade.load();
+    api.accounts().answer([ACME, BRIOCHE]);
+
+    assignments.assign('brioche-co', 'brioche');
+    api.assignmentOf('brioche-co').noContent();
+
+    expect(facade.accounts()).toEqual([ACME, { ...BRIOCHE, subdomain: 'brioche' }]);
   });
 });
