@@ -1,4 +1,5 @@
 import { fireEvent, render, RenderResult, screen } from '@testing-library/angular';
+import { PageObject } from '../core/page-object';
 import { LegalIdentityForm } from './legal-identity-form';
 import { LegalIdentityFacade } from './legal-identity.facade';
 import { FakeLegalIdentityFacade } from './fake.legal-identity.facade';
@@ -12,8 +13,10 @@ export type VendorDetails = Pick<LegalIdentityView, 'siret' | 'legalName' | 'add
 // The legal-identity screen as the vendor meets it: the fields they fill in, found by the
 // labels they read, and what they do with them (ADR 0062). It asserts nothing, and it never
 // hands out a facade: a spec that wants to see a command builds the fake and passes it in.
-export class LegalIdentityFormPageObject {
-  private constructor(private readonly view: RenderResult<LegalIdentityForm>) {}
+export class LegalIdentityFormPageObject extends PageObject<LegalIdentityForm> {
+  private constructor(view: RenderResult<LegalIdentityForm>) {
+    super(view);
+  }
 
   // The storefront lends the form its phone until an identity is recorded.
   static async render({
@@ -27,12 +30,6 @@ export class LegalIdentityFormPageObject {
       ],
     });
     return new LegalIdentityFormPageObject(view);
-  }
-
-  // For a change from outside the screen, such as a spec setting its fake's state.
-  detectChanges(): this {
-    this.view.detectChanges();
-    return this;
   }
 
   privacyPolicyLink(): HTMLElement {
@@ -215,15 +212,5 @@ export class LegalIdentityFormPageObject {
 
   save(): this {
     return this.press(this.saveButton());
-  }
-
-  private press(element: HTMLElement): this {
-    fireEvent.click(element);
-    return this.detectChanges();
-  }
-
-  private type(field: HTMLElement, value: string): this {
-    fireEvent.input(field, { target: { value } });
-    return this.detectChanges();
   }
 }

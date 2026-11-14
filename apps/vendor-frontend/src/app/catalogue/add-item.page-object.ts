@@ -1,5 +1,6 @@
 import { fireEvent, render, RenderResult, screen, within } from '@testing-library/angular';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
+import { PageObject } from '../core/page-object';
 import { AddItem } from './add-item';
 import { CatalogueFacade } from './catalogue.facade';
 import { FakeCatalogueFacade } from './fake.catalogue.facade';
@@ -7,8 +8,10 @@ import { FakeCatalogueFacade } from './fake.catalogue.facade';
 // The dish screen as the vendor meets it: the controls they reach for, found by the labels
 // they read, and what they do with them (ADR 0062). It asserts nothing, and it never hands
 // out the facade: a spec that wants to see a command builds the fake and passes it in.
-export class AddItemPageObject {
-  private constructor(private readonly view: RenderResult<AddItem>) {}
+export class AddItemPageObject extends PageObject<AddItem> {
+  private constructor(view: RenderResult<AddItem>) {
+    super(view);
+  }
 
   // Adds a dish without an itemId, edits that dish with one.
   static async render({ catalogue = new FakeCatalogueFacade(), itemId }: { catalogue?: CatalogueFacade; itemId?: string } = {}) {
@@ -19,12 +22,6 @@ export class AddItemPageObject {
       providers: [provideRouter([]), { provide: CatalogueFacade, useValue: catalogue }, ...route],
     });
     return new AddItemPageObject(view);
-  }
-
-  // For a change from outside the screen, such as a spec setting its fake's state.
-  detectChanges(): this {
-    this.view.detectChanges();
-    return this;
   }
 
   // The photo
@@ -251,21 +248,5 @@ export class AddItemPageObject {
 
   cancelDelete(): this {
     return this.press(this.cancelDeleteButton());
-  }
-
-  private press(element: HTMLElement): this {
-    fireEvent.click(element);
-    return this.detectChanges();
-  }
-
-  private type(field: HTMLElement, value: string): this {
-    fireEvent.input(field, { target: { value } });
-    return this.detectChanges();
-  }
-
-  private pick(input: HTMLInputElement, file: File): this {
-    Object.defineProperty(input, 'files', { value: [file], configurable: true });
-    fireEvent.change(input);
-    return this.detectChanges();
   }
 }

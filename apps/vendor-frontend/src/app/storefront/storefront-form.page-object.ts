@@ -1,4 +1,5 @@
 import { fireEvent, render, RenderResult, screen } from '@testing-library/angular';
+import { PageObject } from '../core/page-object';
 import { StorefrontForm } from './storefront-form';
 import { StorefrontFacade } from './storefront.facade';
 import { FakeStorefrontFacade } from './fake.storefront.facade';
@@ -6,20 +7,16 @@ import { FakeStorefrontFacade } from './fake.storefront.facade';
 // The storefront screen as the vendor meets it: the controls they reach for, found by the
 // labels they read, and what they do with them (ADR 0062). It asserts nothing, and it never
 // hands out the facade: a spec that wants to see a command builds the fake and passes it in.
-export class StorefrontFormPageObject {
-  private constructor(private readonly view: RenderResult<StorefrontForm>) {}
+export class StorefrontFormPageObject extends PageObject<StorefrontForm> {
+  private constructor(view: RenderResult<StorefrontForm>) {
+    super(view);
+  }
 
   static async render({ storefront = new FakeStorefrontFacade() }: { storefront?: StorefrontFacade } = {}) {
     const view = await render(StorefrontForm, {
       providers: [{ provide: StorefrontFacade, useValue: storefront }],
     });
     return new StorefrontFormPageObject(view);
-  }
-
-  // For a change from outside the screen, such as a spec setting its fake's state.
-  detectChanges(): this {
-    this.view.detectChanges();
-    return this;
   }
 
   // For whatever is still settling once that change is rendered.
@@ -43,10 +40,7 @@ export class StorefrontFormPageObject {
   }
 
   choosePhoto(file: File): this {
-    const input = this.photoInput();
-    Object.defineProperty(input, 'files', { value: [file], configurable: true });
-    fireEvent.change(input);
-    return this.detectChanges();
+    return this.pick(this.photoInput(), file);
   }
 
   // The fields
@@ -94,16 +88,6 @@ export class StorefrontFormPageObject {
 
   save(): this {
     return this.press(this.saveButton());
-  }
-
-  private press(element: HTMLElement): this {
-    fireEvent.click(element);
-    return this.detectChanges();
-  }
-
-  private type(field: HTMLElement, value: string): this {
-    fireEvent.input(field, { target: { value } });
-    return this.detectChanges();
   }
 
   // The input is hidden behind its button and carries no label, so this is the page's only

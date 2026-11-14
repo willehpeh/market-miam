@@ -1,5 +1,6 @@
-import { fireEvent, render, RenderResult, screen, within } from '@testing-library/angular';
+import { render, RenderResult, screen, within } from '@testing-library/angular';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
+import { PageObject } from '../../core/page-object';
 import { LiveScreen } from './live-screen';
 import { MarketDayFacade } from '../market-day.facade';
 import { FakeMarketDayFacade } from '../fake.market-day.facade';
@@ -9,8 +10,10 @@ import { FakeCatalogueFacade } from '../../catalogue/fake.catalogue.facade';
 // The live screen as the vendor runs it on the morning: the rows they tap, the épuisé group
 // the rows move into, and the doors at the foot (ADR 0062). It asserts nothing, and it never
 // hands out a facade: a spec that arranges or checks one builds the fake and passes it in.
-export class LiveScreenPageObject {
-  private constructor(private readonly view: RenderResult<LiveScreen>) {}
+export class LiveScreenPageObject extends PageObject<LiveScreen> {
+  private constructor(view: RenderResult<LiveScreen>) {
+    super(view);
+  }
 
   // Stands on the Saturday the market-day builder stages, unless told otherwise.
   static async render({
@@ -28,12 +31,6 @@ export class LiveScreenPageObject {
       ],
     });
     return new LiveScreenPageObject(view);
-  }
-
-  // For a change from outside the screen, such as a spec setting its fake's state.
-  detectChanges(): this {
-    this.view.detectChanges();
-    return this;
   }
 
   loadingStatus(): HTMLElement {
@@ -130,11 +127,6 @@ export class LiveScreenPageObject {
   // The phone coming out of the apron: the tab is shown again.
   comeBackToTab(): this {
     document.dispatchEvent(new Event('visibilitychange'));
-    return this.detectChanges();
-  }
-
-  private press(element: HTMLElement): this {
-    fireEvent.click(element);
     return this.detectChanges();
   }
 }

@@ -1,5 +1,6 @@
-import { fireEvent, render, RenderResult, screen } from '@testing-library/angular';
+import { render, RenderResult, screen } from '@testing-library/angular';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
+import { PageObject } from '../core/page-object';
 import { PriceEditor } from './price-editor';
 import { MarketPricesFacade } from './market-prices.facade';
 import { FakeMarketPricesFacade } from './fake.market-prices.facade';
@@ -11,8 +12,10 @@ import { FakeMarketScheduleFacade } from '../markets/fake.market-schedule.facade
 // A market's prices as the vendor sets them: a field per dish, found by the dish's name, and
 // what they do with them (ADR 0062). It asserts nothing, and it never hands out a facade: a
 // spec that arranges or checks one builds the fake and passes it in.
-export class PriceEditorPageObject {
-  private constructor(private readonly view: RenderResult<PriceEditor>) {}
+export class PriceEditorPageObject extends PageObject<PriceEditor> {
+  private constructor(view: RenderResult<PriceEditor>) {
+    super(view);
+  }
 
   // Opens on market-1 unless given another market.
   static async render({
@@ -36,12 +39,6 @@ export class PriceEditorPageObject {
       ],
     });
     return new PriceEditorPageObject(view);
-  }
-
-  // For a change from outside the screen, such as a spec setting its fake's state.
-  detectChanges(): this {
-    this.view.detectChanges();
-    return this;
   }
 
   loadingStatus(): HTMLElement {
@@ -85,15 +82,5 @@ export class PriceEditorPageObject {
 
   save(): this {
     return this.press(this.saveButton());
-  }
-
-  private press(element: HTMLElement): this {
-    fireEvent.click(element);
-    return this.detectChanges();
-  }
-
-  private type(field: HTMLElement, value: string): this {
-    fireEvent.input(field, { target: { value } });
-    return this.detectChanges();
   }
 }

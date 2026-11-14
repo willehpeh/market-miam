@@ -1,5 +1,6 @@
-import { fireEvent, render, RenderResult, screen } from '@testing-library/angular';
+import { render, RenderResult, screen } from '@testing-library/angular';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
+import { PageObject } from '../core/page-object';
 import { MenuEditor } from './menu-editor';
 import { MarketDayFacade } from './market-day.facade';
 import { FakeMarketDayFacade } from './fake.market-day.facade';
@@ -13,8 +14,10 @@ import { FakeSellingRecordFacade } from '../selling-record/fake.selling-record.f
 // A market day's menu as the vendor plans it: the dishes they tick, found by their names,
 // and what they do with them (ADR 0062). It asserts nothing, and it never hands out a
 // facade: a spec that arranges or checks one builds the fake and passes it in.
-export class MenuEditorPageObject {
-  private constructor(private readonly view: RenderResult<MenuEditor>) {}
+export class MenuEditorPageObject extends PageObject<MenuEditor> {
+  private constructor(view: RenderResult<MenuEditor>) {
+    super(view);
+  }
 
   // Opens on the Saturday testMarketDayView stages unless given another day.
   static async render({
@@ -43,12 +46,6 @@ export class MenuEditorPageObject {
       ],
     });
     return new MenuEditorPageObject(view);
-  }
-
-  // For a change from outside the screen, such as a spec setting its fake's state.
-  detectChanges(): this {
-    this.view.detectChanges();
-    return this;
   }
 
   loadingStatus(): HTMLElement {
@@ -101,10 +98,5 @@ export class MenuEditorPageObject {
 
   reopenStand(): this {
     return this.press(this.reopenStandButton());
-  }
-
-  private press(element: HTMLElement): this {
-    fireEvent.click(element);
-    return this.detectChanges();
   }
 }

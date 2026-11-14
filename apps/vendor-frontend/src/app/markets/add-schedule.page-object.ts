@@ -1,5 +1,6 @@
 import { fireEvent, render, RenderResult, screen } from '@testing-library/angular';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
+import { PageObject } from '../core/page-object';
 import { AddSchedule } from './add-schedule';
 import { MarketScheduleFacade } from './market-schedule.facade';
 import { FakeMarketScheduleFacade } from './fake.market-schedule.facade';
@@ -7,8 +8,10 @@ import { FakeMarketScheduleFacade } from './fake.market-schedule.facade';
 // The market form as the vendor meets it: the controls they reach for, found by the labels
 // they read, and what they do with them (ADR 0062). It asserts nothing, and it never hands
 // out the facade: a spec that wants to see a command builds the fake and passes it in.
-export class AddSchedulePageObject {
-  private constructor(private readonly view: RenderResult<AddSchedule>) {}
+export class AddSchedulePageObject extends PageObject<AddSchedule> {
+  private constructor(view: RenderResult<AddSchedule>) {
+    super(view);
+  }
 
   // Adds a market without a scheduleId, edits that schedule with one.
   static async render({ markets = new FakeMarketScheduleFacade(), scheduleId }: { markets?: MarketScheduleFacade; scheduleId?: string } = {}) {
@@ -19,12 +22,6 @@ export class AddSchedulePageObject {
       providers: [provideRouter([]), { provide: MarketScheduleFacade, useValue: markets }, ...route],
     });
     return new AddSchedulePageObject(view);
-  }
-
-  // For a change from outside the screen, such as a spec setting its fake's state.
-  detectChanges(): this {
-    this.view.detectChanges();
-    return this;
   }
 
   // The market
@@ -155,15 +152,5 @@ export class AddSchedulePageObject {
 
   save(): this {
     return this.press(this.saveButton());
-  }
-
-  private press(element: HTMLElement): this {
-    fireEvent.click(element);
-    return this.detectChanges();
-  }
-
-  private type(field: HTMLElement, value: string): this {
-    fireEvent.input(field, { target: { value } });
-    return this.detectChanges();
   }
 }

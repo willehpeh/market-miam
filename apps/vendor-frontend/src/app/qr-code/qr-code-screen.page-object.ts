@@ -1,5 +1,6 @@
-import { fireEvent, render, RenderResult, screen } from '@testing-library/angular';
+import { render, RenderResult, screen } from '@testing-library/angular';
 import { provideRouter } from '@angular/router';
+import { PageObject } from '../core/page-object';
 import { QrCodeScreen } from './qr-code-screen';
 import { StorefrontFacade } from '../storefront/storefront.facade';
 import { FakeStorefrontFacade } from '../storefront/fake.storefront.facade';
@@ -9,8 +10,10 @@ import { FakeQrCodeExport } from './fake.qr-code-export';
 // The QR code screen as the vendor meets it: the code, and the two ways to take it off the
 // phone (ADR 0062). It asserts nothing, and it never hands out the facade or the export: a
 // spec that arranges or checks one builds the fake and passes it in.
-export class QrCodeScreenPageObject {
-  private constructor(private readonly view: RenderResult<QrCodeScreen>) {}
+export class QrCodeScreenPageObject extends PageObject<QrCodeScreen> {
+  private constructor(view: RenderResult<QrCodeScreen>) {
+    super(view);
+  }
 
   static async render({
     storefront = new FakeStorefrontFacade(),
@@ -24,12 +27,6 @@ export class QrCodeScreenPageObject {
       ],
     });
     return new QrCodeScreenPageObject(view);
-  }
-
-  // For a change from outside the screen, such as a spec setting its fake's state.
-  detectChanges(): this {
-    this.view.detectChanges();
-    return this;
   }
 
   loadingStatus(): HTMLElement {
@@ -86,10 +83,5 @@ export class QrCodeScreenPageObject {
 
   download(): this {
     return this.press(this.downloadButton());
-  }
-
-  private press(element: HTMLElement): this {
-    fireEvent.click(element);
-    return this.detectChanges();
   }
 }

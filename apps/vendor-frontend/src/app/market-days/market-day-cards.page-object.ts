@@ -1,5 +1,6 @@
-import { fireEvent, render, RenderResult, screen } from '@testing-library/angular';
+import { render, RenderResult, screen } from '@testing-library/angular';
 import { provideRouter } from '@angular/router';
+import { PageObject } from '../core/page-object';
 import { MarketDayCards } from './market-day-cards';
 import { MarketDayFacade } from './market-day.facade';
 import { FakeMarketDayFacade } from './fake.market-day.facade';
@@ -8,20 +9,16 @@ import { FakeMarketDayFacade } from './fake.market-day.facade';
 // market to run and the next one to plan, the controls found by the labels they read, and
 // what they do with them (ADR 0062). It asserts nothing, and it never hands out the facade:
 // a spec that arranges the days or wants to see a command builds the fake and passes it in.
-export class MarketDayCardsPageObject {
-  private constructor(private readonly view: RenderResult<MarketDayCards>) {}
+export class MarketDayCardsPageObject extends PageObject<MarketDayCards> {
+  private constructor(view: RenderResult<MarketDayCards>) {
+    super(view);
+  }
 
   static async render({ marketDays = new FakeMarketDayFacade() }: { marketDays?: MarketDayFacade } = {}) {
     const view = await render(MarketDayCards, {
       providers: [provideRouter([]), { provide: MarketDayFacade, useValue: marketDays }],
     });
     return new MarketDayCardsPageObject(view);
-  }
-
-  // For a change from outside the screen, such as a spec setting its fake's state.
-  detectChanges(): this {
-    this.view.detectChanges();
-    return this;
   }
 
   // The cards, one heading each
@@ -78,10 +75,5 @@ export class MarketDayCardsPageObject {
 
   callOff(): this {
     return this.press(this.callOffButton());
-  }
-
-  private press(element: HTMLElement): this {
-    fireEvent.click(element);
-    return this.detectChanges();
   }
 }

@@ -1,5 +1,6 @@
-import { fireEvent, render, RenderResult, screen } from '@testing-library/angular';
+import { render, RenderResult, screen } from '@testing-library/angular';
 import { provideRouter } from '@angular/router';
+import { PageObject } from '../core/page-object';
 import { Dashboard } from './dashboard';
 import { StorefrontFacade } from '../storefront/storefront.facade';
 import { FakeStorefrontFacade } from '../storefront/fake.storefront.facade';
@@ -18,8 +19,10 @@ import { FakeShare } from '../core/fake.share';
 // published home after it, the controls found by the labels they read, and what they do with
 // them (ADR 0062). It asserts nothing, and it never hands out a facade or the share sheet: a
 // spec that arranges or checks one builds the fake and passes it in.
-export class DashboardPageObject {
-  private constructor(private readonly view: RenderResult<Dashboard>) {}
+export class DashboardPageObject extends PageObject<Dashboard> {
+  private constructor(view: RenderResult<Dashboard>) {
+    super(view);
+  }
 
   // "Lien copié" gives way to Partager at once unless a copiedNoticeDelay says otherwise.
   static async render({
@@ -52,12 +55,6 @@ export class DashboardPageObject {
       ],
     });
     return new DashboardPageObject(view);
-  }
-
-  // For a change from outside the screen, such as a spec setting its fake's state.
-  detectChanges(): this {
-    this.view.detectChanges();
-    return this;
   }
 
   // The page
@@ -183,10 +180,5 @@ export class DashboardPageObject {
   // Tapping the button again while it still says the link was copied.
   shareAgain(): this {
     return this.press(this.linkCopiedButton());
-  }
-
-  private press(element: HTMLElement): this {
-    fireEvent.click(element);
-    return this.detectChanges();
   }
 }

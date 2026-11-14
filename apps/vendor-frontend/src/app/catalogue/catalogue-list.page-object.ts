@@ -1,5 +1,6 @@
-import { fireEvent, render, RenderResult, screen } from '@testing-library/angular';
+import { render, RenderResult, screen } from '@testing-library/angular';
 import { provideRouter } from '@angular/router';
+import { PageObject } from '../core/page-object';
 import { CatalogueList } from './catalogue-list';
 import { CatalogueFacade } from './catalogue.facade';
 import { FakeCatalogueFacade } from './fake.catalogue.facade';
@@ -9,8 +10,10 @@ import { FakeStorefrontFacade } from '../storefront/fake.storefront.facade';
 // The carte as the vendor runs it: their dishes, the links to add and reorder them, and the
 // switch for their prices (ADR 0062). It asserts nothing, and it never hands out a facade:
 // a spec that wants to arrange or see one builds the fake and passes it in.
-export class CatalogueListPageObject {
-  private constructor(private readonly view: RenderResult<CatalogueList>) {}
+export class CatalogueListPageObject extends PageObject<CatalogueList> {
+  private constructor(view: RenderResult<CatalogueList>) {
+    super(view);
+  }
 
   static async render({
     catalogue = new FakeCatalogueFacade(),
@@ -24,12 +27,6 @@ export class CatalogueListPageObject {
       ],
     });
     return new CatalogueListPageObject(view);
-  }
-
-  // For a change from outside the screen, such as a spec setting its fake's state.
-  detectChanges(): this {
-    this.view.detectChanges();
-    return this;
   }
 
   // The dishes
@@ -88,10 +85,5 @@ export class CatalogueListPageObject {
 
   showPrices(): this {
     return this.press(this.pricesSwitch());
-  }
-
-  private press(element: HTMLElement): this {
-    fireEvent.click(element);
-    return this.detectChanges();
   }
 }
