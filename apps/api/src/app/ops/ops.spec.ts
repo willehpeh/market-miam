@@ -97,6 +97,14 @@ describe('The operator API', () => {
     );
   });
 
+  it("records the operator's Auth0 id in the assignment's metadata", async () => {
+    const marie = await ops.inviteVendor('marie@example.com');
+
+    await ops.assignSubdomain(marie.id, 'chez-marie').expect(204);
+
+    expect((await marie.recorded('VendorSubdomainAssigned'))?.metadata).toMatchObject({ operatorId: testOperator.operatorId });
+  });
+
   // Accepted, not done: the processors carry the erasure out (ADR 0058).
   it('erases a vendor', async () => {
     const marie = await ops.inviteVendor('marie@example.com');
