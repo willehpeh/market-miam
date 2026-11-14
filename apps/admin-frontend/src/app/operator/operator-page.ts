@@ -43,6 +43,7 @@ import { AssignmentFacade } from '../assignments/assignment.facade';
             [loadFailed]="accounts.failed()"
             [erasing]="erasures.erasing() !== null"
             [erasureFailed]="erasures.failed()"
+            [assigning]="assignments.assigning() !== null"
             (erase)="erasures.erase($event)"
             (assign)="assignments.assign($event.vendorId, $event.subdomain)"
           />

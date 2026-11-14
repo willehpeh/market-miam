@@ -47,6 +47,7 @@ import { AssignSubdomainForm } from '../assignments/assign-subdomain-form';
                   @if (!account.subdomain) {
                     <admin-assign-subdomain-form
                       [vendor]="account.email ?? vendorId"
+                      [assigning]="assigning()"
                       (assign)="assign.emit({ vendorId, subdomain: $event })"
                     />
                   }
@@ -99,6 +100,8 @@ export class AccountList {
   readonly erasing = input(false);
   // The vendor whose last erasure did not go.
   readonly erasureFailed = input<string | null>(null);
+  // An assignment the api has not answered: one at a time, so none other is offered meanwhile.
+  readonly assigning = input(false);
   readonly erase = output<string>();
   readonly assign = output<{ vendorId: string; subdomain: string }>();
   protected readonly storefrontBaseDomain = environment.storefrontBaseDomain;

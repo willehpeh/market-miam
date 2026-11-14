@@ -29,8 +29,9 @@ interface Assignment {
       </span>
       <button
         type="submit"
-        class="min-h-11 rounded bg-gray-900 px-3 text-white"
+        class="min-h-11 rounded bg-gray-900 px-3 text-white disabled:opacity-50"
         [attr.aria-label]="'Assign a subdomain to ' + vendor()"
+        [disabled]="assigning()"
       >
         Assign
       </button>
@@ -40,6 +41,7 @@ interface Assignment {
 export class AssignSubdomainForm {
   // Whom the subdomain is for, as the operator reads the row.
   readonly vendor = input.required<string>();
+  readonly assigning = input(false);
   readonly assign = output<string>();
   protected readonly storefrontBaseDomain = environment.storefrontBaseDomain;
 

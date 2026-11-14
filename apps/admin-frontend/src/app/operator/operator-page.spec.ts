@@ -8,6 +8,7 @@ import { OperatorPageObject } from './operator-page.page-object';
 
 const ACME = { email: 'owner@acme.test', vendorId: 'acme-bakery', subdomain: 'acme' };
 const BRIOCHE = { email: 'owner@brioche.test', vendorId: 'brioche-co', subdomain: null };
+const CROISSANT = { email: 'owner@croissant.test', vendorId: 'croissant-co', subdomain: null };
 
 describe('OperatorPage', () => {
   let auth: FakeAuthFacade;
@@ -211,6 +212,17 @@ describe('OperatorPage', () => {
     const page = await signedIn();
 
     expect(page.querySubdomainField(account.email)).not.toBeInTheDocument();
+  });
+
+  // One assignment at a time: a second asked for while one is in flight would be ignored, so none
+  // is offered until the api answers.
+  it('holds every Assign button while an assignment is in flight', async () => {
+    accounts.accounts.set([BRIOCHE, CROISSANT]);
+    assignments.assigning.set('brioche-co');
+    const page = await signedIn();
+
+    expect(page.assignButton('owner@brioche.test')).toBeDisabled();
+    expect(page.assignButton('owner@croissant.test')).toBeDisabled();
   });
 
   // Erasure cannot be undone (ADR 0058): the operator confirms it before it goes.
