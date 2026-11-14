@@ -43,6 +43,19 @@ async function deleteUsersWith(email: string): Promise<void> {
   }
 }
 
+// Auth0's user search takes seconds to see a user just created. A case that closes an account
+// waits for it, or would find nothing to close and prove nothing (ADR 0063).
+async function searchable(vendorId: string): Promise<void> {
+  const users = new Auth0Users(api);
+  for (let second = 0; second < 20; second++) {
+    if ((await users.withVendorId(vendorId)).length > 0) {
+      return;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+  }
+  throw new Error(`Auth0's user search did not find vendor ${vendorId} within 20 seconds.`);
+}
+
 async function clear(): Promise<void> {
   for (const email of [...vendorAccountsContractEmails, MALFORMED_FOR_AUTH0]) {
     await deleteUsersWith(email);
@@ -62,6 +75,11 @@ vendorAccountsContract('Auth0VendorAccounts on a test tenant', async (existing) 
       }),
       'create an existing account',
     );
+  }
+  for (const { vendorId } of existing) {
+    if (vendorId) {
+      await searchable(vendorId);
+    }
   }
   return new Auth0VendorAccounts(new Auth0Users(api));
 });
