@@ -4,7 +4,7 @@
 // assigns each file a domain theme, and injects the result into template.html.
 // Output: tmp/test-map/index.html — a self-contained page, no dependencies
 // beyond Node built-ins, so the Render static site builds with a bare `node`.
-import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { execSync } from 'node:child_process';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -12,10 +12,12 @@ import { fileURLToPath } from 'node:url';
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(HERE, '../..');
 
+// git, not find: respects .gitignore, so tool sandboxes (.stryker-tmp) aren't
+// mapped as duplicate specs. existsSync drops tracked specs deleted locally.
 const files = execSync(
-  `find ${ROOT} -name "*.spec.ts" -not -path "*/node_modules/*" | sort`,
+  `git -C ${ROOT} ls-files --cached --others --exclude-standard '*.spec.ts'`,
   { encoding: 'utf8' }
-).trim().split('\n');
+).trim().split('\n').map(f => resolve(ROOT, f)).filter(existsSync).sort();
 
 // Tokenizes just enough TypeScript to find describe/it/test calls and their
 // brace depth, skipping strings, template literals, and comments. Depth is what
@@ -98,7 +100,7 @@ function contractTests(specPath, src) {
   const callRe = /\b(\w+Contract)\s*\(\s*(['"`])((?:\\.|(?!\2).)*)\2/g;
   for (const m of src.matchAll(callRe)) {
     const fnName = m[1], instanceName = m[3];
-    const imp = new RegExp(`import\s*\{[^}]*\b${fnName}\b[^}]*}\s*from\s*['"]([^'"]+)['"]`).exec(src);
+    const imp = new RegExp(String.raw`import\s*\{[^}]*\b${fnName}\b[^}]*}\s*from\s*['"]([^'"]+)['"]`).exec(src);
     if (!imp || !imp[1].startsWith('.')) continue;
     const contractFile = resolve(dirname(specPath), imp[1]) + '.ts';
     if (!contractCache.has(contractFile)) {
@@ -129,9 +131,9 @@ const THEME_RULES = [
   ['Menus', /menu|carte/],
   ['Markets & Schedules', /market-schedule|market-day|markets-list|add-schedule|editable-schedule|upcoming|scenario/],
   ['Vendors & Onboarding', /vendor|onboarding|welcome|landing|dashboard/],
-  ['Auth & Identity', /\bauth|auth0|token-verifier|authenticated|users|dev-auth/],
+  ['Auth & Identity', /\bauth|token-verifier|users/],
   ['Event Sourcing & Persistence', /event-sourc|event-store|persistence|postgres|subscription|checkpoint|lineage|tracing|keyring|polling|notifications?\.spec|unit-of-work|concurrency|consumer|command-gateway|query-gateway|poll-schedule|dev-seed|data-keys|events\.contract|seeding/],
-  ['Core Primitives', /date|time|email|phone|url\.spec|instant|clock|image-reference|local-|source-code-url|source-code-offer/],
+  ['Core Primitives', /\bdate|\btime|email|phone|url\.spec|instant|clock|image-reference|local-|source-code-offer/],
 ];
 function themeFor(relPath) {
   const base = relPath.split('/').pop();
