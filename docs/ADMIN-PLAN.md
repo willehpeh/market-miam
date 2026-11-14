@@ -73,7 +73,8 @@ Ends creating vendors by hand in the Auth0 Dashboard, and makes Market Miam invi
   the account (`openFor`, answering `open`, `email-in-use` or `email-refused`). Its Auth0 adapter
   creates the user on the `email` connection with the `vendorId` in `app_metadata` (`create:users`,
   and the connection enabled for the Management application), beside `Auth0Accounts` and sharing
-  its token, and asks Auth0 to send the vendor no email. A refusal it cannot act on names Auth0's
+  its token. It opens the address verified, which alone keeps Auth0 from emailing the vendor a
+  sign-in link. A refusal it cannot act on names Auth0's
   status and error code, never its message. Auth0 keeps emails unique, and checks them more
   strictly than `Email`: on `email-in-use`, an invitation that lost a race for its address, or
   `email-refused`, an address Auth0 finds malformed, the processor sends `EraseVendor` for it. A

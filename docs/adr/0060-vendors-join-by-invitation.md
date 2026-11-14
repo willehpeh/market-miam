@@ -92,11 +92,15 @@ the vendor. The system sends nothing; the operator tells the vendor.
   retries, and `GET /api/health` turns 503 after five failures in a row.
 - The Management application gains `create:users`, and the `email` connection is enabled for it:
   Auth0 creates a user only on a connection enabled for the client asking, and answers 400
-  otherwise. The first live invitation, on 2026-11-14, found that out, and that Auth0 emails a
-  user it creates unless told not to: the adapter tells it not to, so the system still sends
-  vendors nothing.
-- The invited email is the address the operator typed; `VendorRegistered`'s is the one Auth0
-  verified. On a passwordless connection they are the same inbox.
+  otherwise. The first live invitation, on 2026-11-14, found that out.
+- Auth0 emails a passwordless user it creates a sign-in link, in the name of the application
+  that created it ("Sign in to Management"); `verify_email: false` does not stop it, and Auth0's
+  staff call it unpreventable. Creating the address as verified stops it, by reports on Auth0's
+  forum rather than its documentation, so the adapter does that and the system still sends
+  vendors nothing. A live invitation is the test that it holds.
+- The invited email is the address the operator typed, verified in Auth0 on the operator's word;
+  `VendorRegistered`'s is the one the vendor proved at first sign-in. On a passwordless
+  connection they are the same inbox.
 - Vendor and person stay one-to-one, as ADR 0024 assumed. `VendorInvited` brings a new business
   onto the platform. Inviting a teammate to an existing vendor would be another event, and who
   sent it would be payload rather than metadata.
