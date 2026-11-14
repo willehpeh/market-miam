@@ -13,10 +13,7 @@ export abstract class VendorState {
   abstract erase(proceed: () => void): void;
   abstract recordAccountOpened(proceed: () => void): void;
   abstract recordAccountClosed(proceed: () => void): void;
-
-  assignSubdomain(proceed: () => void): void {
-    proceed();
-  }
+  abstract assignSubdomain(proceed: () => void): void;
 
   isErased(): boolean {
     return false;
@@ -40,6 +37,11 @@ export class UnknownVendor extends VendorState {
 
   erase(): void {
     throw new VendorNotRegisteredError();
+  }
+
+  // A subdomain is for a vendor someone invited (ADR 0065).
+  assignSubdomain(): void {
+    throw new VendorNotInvitedError();
   }
 
   recordAccountOpened(): void {
@@ -70,6 +72,11 @@ export class InvitedVendor extends VendorState {
     proceed();
   }
 
+  // Their address can wait for them at their first sign-in (ADR 0065).
+  assignSubdomain(proceed: () => void): void {
+    proceed();
+  }
+
   recordAccountOpened(proceed: () => void): void {
     proceed();
   }
@@ -93,6 +100,10 @@ export class RegisteredVendor extends VendorState {
   }
 
   erase(proceed: () => void): void {
+    proceed();
+  }
+
+  assignSubdomain(proceed: () => void): void {
     proceed();
   }
 
@@ -124,6 +135,10 @@ export class ErasedVendor extends VendorState {
 
   erase(): void {
     // Already erased: an erasure can be run again.
+  }
+
+  assignSubdomain(): void {
+    throw new VendorErasedError();
   }
 
   recordAccountOpened(): void {

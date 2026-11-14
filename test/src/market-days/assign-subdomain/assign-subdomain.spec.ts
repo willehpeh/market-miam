@@ -7,10 +7,12 @@ import {
   ReservedSubdomainError,
   SubdomainAlreadyAssignedError,
   SubdomainTakenError,
+  VendorErasedError,
+  VendorNotInvitedError,
   VendorScopedEvents,
   Vendors,
 } from '@market-miam/market-days';
-import { vendorInvited, vendorStream, vendorSubdomainAssigned } from '../vendor-events';
+import { vendorErased, vendorInvited, vendorRegistered, vendorStream, vendorSubdomainAssigned } from '../vendor-events';
 
 const ASSIGNED_AT = '2026-11-14T09:00:00.000Z';
 
@@ -120,6 +122,27 @@ describe('Assign Subdomain', () => {
 
     await handler.execute(new AssignSubdomain('vendor-id', 'chez-marie', '2026-11-14T10:00:00.000Z'));
 
+    expect(store.newEvents()).toEqual([]);
+  });
+
+  it('assigns a registered vendor their subdomain', async () => {
+    given(vendorInvited(), vendorRegistered());
+
+    await handler.execute(new AssignSubdomain('vendor-id', 'chez-marie', ASSIGNED_AT));
+
+    expect(await registry.vendorFor('chez-marie')).toBe('vendor-id');
+    expect(store.newEvents()).toEqual([expect.objectContaining({ type: 'VendorSubdomainAssigned' })]);
+  });
+
+  // A subdomain is for a vendor someone invited, who has not been erased (ADR 0065).
+  it.each([
+    { who: 'a vendor with no history', history: [], refusal: VendorNotInvitedError },
+    { who: 'an erased vendor', history: [vendorInvited(), vendorErased()], refusal: VendorErasedError },
+  ])('refuses $who, claiming and recording nothing', async ({ history, refusal }) => {
+    given(...history);
+
+    await expect(handler.execute(new AssignSubdomain('vendor-id', 'chez-marie', ASSIGNED_AT))).rejects.toThrow(refusal);
+    expect(await registry.assignments()).toEqual([]);
     expect(store.newEvents()).toEqual([]);
   });
 });
