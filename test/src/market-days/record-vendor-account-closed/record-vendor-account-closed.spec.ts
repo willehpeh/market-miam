@@ -2,6 +2,7 @@ import { DomainEvent, InMemoryEventStore } from '@market-miam/event-sourcing';
 import {
   RecordVendorAccountClosed,
   RecordVendorAccountClosedHandler,
+  VendorNotErasedError,
   VendorScopedEvents,
   Vendors,
 } from '@market-miam/market-days';
@@ -39,6 +40,16 @@ describe('Record Vendor Account Closed', () => {
 
     await handler.execute(new RecordVendorAccountClosed('vendor-id', '2026-11-14T09:10:00.000Z'));
 
+    expect(store.newEvents()).toEqual([]);
+  });
+
+  // Only erasure closes an account (ADR 0063).
+  it('refuses a registered vendor', async () => {
+    given(vendorRegistered());
+
+    await expect(handler.execute(new RecordVendorAccountClosed('vendor-id', '2026-11-14T09:00:05.000Z'))).rejects.toThrow(
+      VendorNotErasedError,
+    );
     expect(store.newEvents()).toEqual([]);
   });
 });
