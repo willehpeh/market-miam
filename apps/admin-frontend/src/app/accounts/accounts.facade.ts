@@ -3,6 +3,7 @@ import { AccountListing } from './accounts';
 
 export abstract class AccountsFacade {
   abstract readonly accounts: Signal<AccountListing[]>;
+  abstract readonly loading: Signal<boolean>;
 
   abstract load(): void;
 }

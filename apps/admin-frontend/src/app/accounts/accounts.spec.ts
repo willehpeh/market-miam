@@ -46,4 +46,15 @@ describe('Accounts', () => {
 
     expect(facade.accounts()).toEqual([ACME]);
   });
+
+  it('reports loading while the accounts are in flight, and only then', () => {
+    expect(facade.loading()).toBe(false);
+
+    facade.load();
+    const request = http.expectOne((req) => ACCOUNTS(req.url));
+    expect(facade.loading()).toBe(true);
+
+    request.flush([ACME]);
+    expect(facade.loading()).toBe(false);
+  });
 });

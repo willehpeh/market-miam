@@ -8,6 +8,7 @@ export class StoreAccountsFacade implements AccountsFacade {
   private readonly store = inject(Store);
 
   readonly accounts = this.store.selectSignal(accountsFeature.selectAccounts);
+  readonly loading = this.store.selectSignal(accountsFeature.selectLoading);
 
   load(): void {
     this.store.dispatch(LoadAccounts());
