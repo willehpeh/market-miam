@@ -18,6 +18,15 @@ export class InMemoryVendorAccounts extends VendorAccounts {
     return Promise.resolve('open');
   }
 
+  closeFor(vendorId: string): Promise<void> {
+    for (const [email, holder] of this.vendorIdByEmail) {
+      if (holder === vendorId) {
+        this.vendorIdByEmail.delete(email);
+      }
+    }
+    return Promise.resolve();
+  }
+
   all(): VendorAccount[] {
     return [...this.vendorIdByEmail].map(([email, vendorId]) => ({ email, vendorId }));
   }

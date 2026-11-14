@@ -42,6 +42,7 @@ export * from './show-carte-prices';
 export * from './open-storefront';
 export * from './publish-storefront';
 export * from './opens-storefronts';
+export * from './closes-vendor-accounts';
 export * from './erases-vendors';
 export * from './opens-vendor-accounts';
 export * from './vendor-storefront-view';

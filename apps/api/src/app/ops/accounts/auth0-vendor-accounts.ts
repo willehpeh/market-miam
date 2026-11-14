@@ -24,6 +24,10 @@ export class Auth0VendorAccounts extends VendorAccounts {
     }
   }
 
+  closeFor(): Promise<void> {
+    throw new Error('Closing an Auth0 account is not built yet (admin plan slice 5)');
+  }
+
   // A retry after a half-finished run finds the account it opened.
   private async isThisVendors(email: string, vendorId: string): Promise<boolean> {
     return (await this.users.withEmail(email)).some((user) => user.app_metadata?.vendorId === vendorId);

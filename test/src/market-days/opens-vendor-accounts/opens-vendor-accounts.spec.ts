@@ -17,8 +17,8 @@ import { TestInviteVendor } from '../invite-vendor/test-data';
 const NOW = '2026-11-11T09:00:05.000Z';
 
 // Refuses every address, as Auth0 refuses one it finds malformed.
-class RefusingVendorAccounts extends VendorAccounts {
-  openFor(): Promise<AccountOpening> {
+class RefusingVendorAccounts extends InMemoryVendorAccounts {
+  override openFor(): Promise<AccountOpening> {
     return Promise.resolve('email-refused');
   }
 }

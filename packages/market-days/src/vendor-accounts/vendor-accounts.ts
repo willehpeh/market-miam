@@ -6,4 +6,5 @@ export type AccountOpening = 'open' | 'email-in-use' | 'email-refused';
 
 export abstract class VendorAccounts {
   abstract openFor(invitation: Invitation): Promise<AccountOpening>;
+  abstract closeFor(vendorId: string): Promise<void>;
 }
