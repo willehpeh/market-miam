@@ -110,6 +110,15 @@ describe('OperatorPage', () => {
     expect(page.accounts()).toEqual(['marie@example.com invited new-vendor']);
   });
 
+  // Their address waits for their first sign-in (ADR 0065).
+  it("shows an invited vendor's storefront once assigned, still invited", async () => {
+    accounts.accounts.set([{ email: 'marie@example.com', vendorId: 'new-vendor', subdomain: 'chez-marie', invited: true }]);
+
+    const page = await signedIn();
+
+    expect(page.accounts()).toEqual(['marie@example.com invited chez-marie.marketmiam.fr new-vendor']);
+  });
+
   it('says when there are no accounts', async () => {
     await signedIn();
 

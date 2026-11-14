@@ -30,18 +30,21 @@ import { AssignmentRefusal, RefusedAssignment } from '../assignments/assignments
             <span class="flex flex-col items-end gap-0.5 text-sm">
               @if (account.erased) {
                 <span class="italic text-red-700">erased</span>
-              } @else if (account.invited) {
-                <span class="italic text-amber-700">invited</span>
-              } @else if (account.subdomain) {
-                <a
-                  class="text-gray-700 underline"
-                  href="https://{{ account.subdomain }}.{{ storefrontBaseDomain }}"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  >{{ account.subdomain }}.{{ storefrontBaseDomain }}</a
-                >
-              } @else if (account.vendorId) {
-                <span class="italic text-gray-400">no subdomain</span>
+              } @else {
+                @if (account.invited) {
+                  <span class="italic text-amber-700">invited</span>
+                }
+                @if (account.subdomain) {
+                  <a
+                    class="text-gray-700 underline"
+                    href="https://{{ account.subdomain }}.{{ storefrontBaseDomain }}"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    >{{ account.subdomain }}.{{ storefrontBaseDomain }}</a
+                  >
+                } @else if (account.vendorId && !account.invited) {
+                  <span class="italic text-gray-400">no subdomain</span>
+                }
               }
               @if (account.vendorId; as vendorId) {
                 <span class="font-mono text-gray-500">{{ vendorId }}</span>
