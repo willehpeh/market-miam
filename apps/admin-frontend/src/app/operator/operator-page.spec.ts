@@ -1,6 +1,4 @@
 import { TestBed } from '@angular/core/testing';
-import { provideHttpClient } from '@angular/common/http';
-import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { Auth } from '../core/auth/auth';
 import { FakeAuth } from '../core/auth/fake.auth';
 import { InvitationFacade } from '../invitations/invitation.facade';
@@ -10,11 +8,9 @@ import { FakeAccountsFacade } from '../accounts/fake.accounts.facade';
 import { OperatorPage } from './operator-page';
 import { OperatorPageObject } from './operator-page.po';
 
-const WHOAMI = (url: string) => url.endsWith('/api/ops/whoami');
 
 describe('OperatorPage', () => {
   let auth: FakeAuth;
-  let http: HttpTestingController;
   let invitations: FakeInvitationFacade;
   let accounts: FakeAccountsFacade;
 
@@ -25,24 +21,16 @@ describe('OperatorPage', () => {
         { provide: Auth, useClass: FakeAuth },
         { provide: InvitationFacade, useClass: FakeInvitationFacade },
         { provide: AccountsFacade, useClass: FakeAccountsFacade },
-        provideHttpClient(),
-        provideHttpClientTesting(),
       ],
     });
     auth = TestBed.inject(Auth) as FakeAuth;
-    http = TestBed.inject(HttpTestingController);
     invitations = TestBed.inject(InvitationFacade) as FakeInvitationFacade;
     accounts = TestBed.inject(AccountsFacade) as FakeAccountsFacade;
   });
 
-  afterEach(() => http.verify());
-
-  // Signed in, and confirmed as an operator by the API: the page then shows the accounts and the form.
   async function signedIn(): Promise<OperatorPageObject> {
     const page = await OperatorPageObject.open();
     await page.signIn();
-    http.expectOne((req) => WHOAMI(req.url)).flush({ operatorId: 'github|1234567' });
-    await page.settle();
     return page;
   }
 
@@ -50,7 +38,7 @@ describe('OperatorPage', () => {
     const page = await OperatorPageObject.open();
 
     expect(page.offersSignIn()).toBe(true);
-    http.expectNone((req) => WHOAMI(req.url));
+    expect(accounts.loads).toBe(0);
   });
 
   it('starts the sign-in when asked', async () => {
@@ -59,23 +47,19 @@ describe('OperatorPage', () => {
     await page.signIn();
 
     expect(auth.loginStarted).toBe(true);
-    // The fake signs in at once, so the page goes on to ask the API.
-    http.expectOne((req) => WHOAMI(req.url)).flush({ operatorId: 'github|1234567' });
   });
 
-  it('shows who the API says is signed in', async () => {
+  it('shows who is signed in', async () => {
     const page = await signedIn();
 
-    expect(page.says('github|1234567')).toBe(true);
+    expect(page.says(FakeAuth.USER_ID)).toBe(true);
   });
 
-  it('asks for the accounts once the API has confirmed the operator, not before', async () => {
+  it('asks for the accounts once someone is signed in, not before', async () => {
     const page = await OperatorPageObject.open();
-    await page.signIn();
     expect(accounts.loads).toBe(0);
 
-    http.expectOne((req) => WHOAMI(req.url)).flush({ operatorId: 'github|1234567' });
-    await page.settle();
+    await page.signIn();
 
     expect(accounts.loads).toBe(1);
   });
@@ -140,15 +124,13 @@ describe('OperatorPage', () => {
     expect(page.says('Loading accounts')).toBe(true);
   });
 
-  it('says so when the API refuses the sign-in, and asks it for nothing more', async () => {
-    const page = await OperatorPageObject.open();
-    await page.signIn();
+  it('says so when the API refuses the sign-in, and offers no invitation', async () => {
+    accounts.refused.set(true);
 
-    http.expectOne((req) => WHOAMI(req.url)).flush(null, { status: 403, statusText: 'Forbidden' });
-    await page.settle();
+    const page = await signedIn();
 
     expect(page.says('The API refused this sign-in')).toBe(true);
-    expect(accounts.loads).toBe(0);
+    expect(page.offersInvitation()).toBe(false);
   });
 
   it('signs out', async () => {

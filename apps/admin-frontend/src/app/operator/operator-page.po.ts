@@ -34,6 +34,10 @@ export class OperatorPageObject {
     await this.settle();
   }
 
+  offersInvitation(): boolean {
+    return this.screen.queryByLabelText(/invite a vendor/i) !== null;
+  }
+
   addressTyped(): string {
     return (this.screen.getByLabelText(/invite a vendor/i) as HTMLInputElement).value;
   }
