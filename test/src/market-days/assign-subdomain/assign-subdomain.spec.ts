@@ -5,6 +5,7 @@ import {
   InMemorySubdomainRegistry,
   InvalidSubdomainError,
   ReservedSubdomainError,
+  SubdomainAlreadyAssignedError,
   SubdomainTakenError,
   VendorScopedEvents,
   Vendors,
@@ -87,6 +88,18 @@ describe('Assign Subdomain', () => {
       SubdomainTakenError,
     );
     expect(await registry.vendorFor('chez-marie')).toBe('another-vendor');
+    expect(store.newEvents()).toEqual([]);
+  });
+
+  // Once only: the vendor's printed QR codes carry the address (ADR 0055, 0065).
+  it('refuses a vendor who already holds another subdomain, claiming and recording nothing', async () => {
+    given(vendorInvited());
+    await registry.register('marie-traiteur', 'vendor-id');
+
+    await expect(handler.execute(new AssignSubdomain('vendor-id', 'chez-marie', ASSIGNED_AT))).rejects.toThrow(
+      SubdomainAlreadyAssignedError,
+    );
+    expect(await registry.assignments()).toEqual([{ subdomain: 'marie-traiteur', vendorId: 'vendor-id' }]);
     expect(store.newEvents()).toEqual([]);
   });
 });

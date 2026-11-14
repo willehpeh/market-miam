@@ -3,8 +3,9 @@ export interface SubdomainAssignment {
   readonly vendorId: string;
 }
 
-// What claiming a name for a vendor came to: theirs now, or another vendor's already.
-export type SubdomainClaim = 'claimed' | 'taken';
+// What claiming a name for a vendor came to: theirs now, another vendor's already, or refused
+// because the vendor holds another.
+export type SubdomainClaim = 'claimed' | 'taken' | 'holds-another';
 
 export abstract class SubdomainRegistry {
   abstract register(subdomain: string, vendorId: string): Promise<SubdomainClaim>;

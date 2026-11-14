@@ -9,6 +9,10 @@ export class InMemorySubdomainRegistry implements SubdomainRegistry {
     if (holder !== undefined && holder !== vendorId) {
       return 'taken';
     }
+    const held = await this.subdomainFor(vendorId);
+    if (held !== undefined && held !== name) {
+      return 'holds-another';
+    }
     this.vendors.set(name, vendorId);
     return 'claimed';
   }

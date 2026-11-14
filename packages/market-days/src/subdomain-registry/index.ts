@@ -3,5 +3,6 @@ export * from './subdomain';
 export * from './invalid-subdomain.error';
 export * from './reserved-subdomain.error';
 export * from './subdomain-taken.error';
+export * from './subdomain-already-assigned.error';
 export { InMemorySubdomainRegistry } from './in-memory-subdomain-registry';
 export { PostgresSubdomainRegistry } from './postgres-subdomain-registry';
