@@ -1,4 +1,4 @@
-import { AccountOpening, Invitation, VendorAccounts } from './vendor-accounts';
+import { AccountOpening, Erasure, Invitation, VendorAccounts } from './vendor-accounts';
 
 export type VendorAccount = { email: string; vendorId: string | null };
 
@@ -18,7 +18,7 @@ export class InMemoryVendorAccounts extends VendorAccounts {
     return Promise.resolve('open');
   }
 
-  closeFor(vendorId: string): Promise<void> {
+  closeFor({ vendorId }: Erasure): Promise<void> {
     for (const [email, holder] of this.vendorIdByEmail) {
       if (holder === vendorId) {
         this.vendorIdByEmail.delete(email);
