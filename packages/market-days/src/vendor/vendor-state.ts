@@ -1,4 +1,5 @@
 import { VendorErasedError } from './vendor-erased.error';
+import { VendorNotErasedError } from './vendor-not-erased.error';
 import { VendorNotRegisteredError } from './vendor-not-registered.error';
 
 // What a vendor makes of each command, by where they stand: carry it out (`proceed`), do
@@ -74,6 +75,11 @@ export class RegisteredVendor extends VendorState {
 
   erase(proceed: () => void): void {
     proceed();
+  }
+
+  // Only erasure closes an account (ADR 0063).
+  override recordAccountClosed(): void {
+    throw new VendorNotErasedError();
   }
 }
 

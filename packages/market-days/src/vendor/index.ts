@@ -10,4 +10,5 @@ export * from './business-address';
 export * from './contact-phone';
 export * from './vendor-not-registered.error';
 export * from './vendor-erased.error';
+export * from './vendor-not-erased.error';
 export * from './vat-regime';
