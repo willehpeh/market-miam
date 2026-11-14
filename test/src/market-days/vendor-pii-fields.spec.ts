@@ -34,6 +34,23 @@ describe('vendorPiiFields', () => {
     expect(loaded.payload).toEqual(invited.payload);
   });
 
+  // A subdomain can name a person, as `chez-mohamed` does: shredded with the vendor's key (ADR 0065).
+  it('encrypts the subdomain of VendorSubdomainAssigned at rest', async () => {
+    const { store, inner } = shreddingStore();
+    const assigned: DomainEvent = {
+      type: 'VendorSubdomainAssigned',
+      payload: { vendorId: 'v1', subdomain: 'chez-mohamed', assignedAt: '2026-11-14T09:00:00Z' },
+      version: 1,
+    };
+
+    await store.append('vendor-v1', [assigned], 0, { vendorId: 'v1' });
+
+    const [atRest] = await inner.load('vendor-v1');
+    expect(atRest.payload['subdomain']).toMatch(/^enc:v2:/);
+    const [loaded] = await store.load('vendor-v1');
+    expect(loaded.payload).toEqual(assigned.payload);
+  });
+
   it('encrypts the email of VendorRegistered at rest', async () => {
     const { store, inner } = shreddingStore();
     const registered: DomainEvent = {
