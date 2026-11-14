@@ -17,6 +17,23 @@ function shreddingStore() {
 }
 
 describe('vendorPiiFields', () => {
+  // The address an operator invited, kept with the vendor's key and shredded with it (ADR 0060).
+  it('encrypts the email of VendorInvited at rest', async () => {
+    const { store, inner } = shreddingStore();
+    const invited: DomainEvent = {
+      type: 'VendorInvited',
+      payload: { vendorId: 'v1', invitedAt: '2026-11-11T09:00:00Z', email: 'marie@example.fr' },
+      version: 1,
+    };
+
+    await store.append('vendor-v1', [invited], 0, { vendorId: 'v1' });
+
+    const [atRest] = await inner.load('vendor-v1');
+    expect(atRest.payload['email']).toMatch(/^enc:v2:/);
+    const [loaded] = await store.load('vendor-v1');
+    expect(loaded.payload).toEqual(invited.payload);
+  });
+
   it('encrypts the email of VendorRegistered at rest', async () => {
     const { store, inner } = shreddingStore();
     const registered: DomainEvent = {
