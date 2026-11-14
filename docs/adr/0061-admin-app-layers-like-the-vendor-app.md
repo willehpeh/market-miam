@@ -1,6 +1,6 @@
 # 0061. The admin app layers like the vendor app: NgRx behind facades, smart and dumb components
 
-Date: 2026-11-13 · Status: Accepted
+Date: 2026-11-13 · Status: Accepted · Amended 2026-11-14 by [0064](0064-api-specs-call-the-api-through-an-api-object.md) — feature specs answer for the api through a fake api object
 
 Amends ADR 0059 (the admin app without an NgRx bridge). Extends ADR 0022 (frontend ports and
 facades) to the admin app. Builds on ADR 0006.
