@@ -147,8 +147,17 @@ describe('The operator API', () => {
     expect(await marie.history()).toEqual(history);
   });
 
+  // Whether a vendor may be given one is the Vendor's to say (ADR 0065).
   it.each([
     { refusal: 'a vendor never invited or registered', vendor: async () => new VendorOnRecord(app, 'nobody') },
+    {
+      refusal: 'an erased vendor',
+      vendor: async () => {
+        const marie = await ops.inviteVendor('marie@example.com');
+        await ops.erase(marie.id).expect(202);
+        return marie;
+      },
+    },
   ])('answers 400 to $refusal, and claims and records nothing', async ({ vendor }) => {
     const refused = await vendor();
     const history = await refused.history();
