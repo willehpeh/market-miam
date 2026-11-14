@@ -1,6 +1,6 @@
 import { screen } from '@testing-library/angular';
 import { AddSchedulePageObject } from './add-schedule.page-object';
-import { FakeMarketScheduleFacade } from './fake.market-schedule.facade';
+import { FakeMarketScheduleFacade, schedulesOf } from './fake.market-schedule.facade';
 import { MarketScheduleView } from './market-schedules';
 
 describe('AddSchedule', () => {
@@ -188,15 +188,8 @@ describe('AddSchedule', () => {
       frequency: { weeks: 1 },
     };
 
-    // A calendar that has already loaded these schedules.
-    function calendarOf(...schedules: MarketScheduleView[]): FakeMarketScheduleFacade {
-      const markets = new FakeMarketScheduleFacade();
-      markets.schedules.set(schedules);
-      return markets;
-    }
-
     it('pre-fills the form from the schedule and labels it as an edit', async () => {
-      const page = await AddSchedulePageObject.render({ markets: calendarOf(existing), scheduleId: 'schedule-1' });
+      const page = await AddSchedulePageObject.render({ markets: schedulesOf(existing), scheduleId: 'schedule-1' });
 
       expect(screen.getByText(/modifier le marché/i)).toBeVisible();
       expect(page.nameField()).toHaveValue('Marché de Belleville');
@@ -283,7 +276,7 @@ describe('AddSchedule', () => {
     });
 
     it('amends via the facade with the schedule id and edited values', async () => {
-      const markets = calendarOf(existing);
+      const markets = schedulesOf(existing);
       const page = await AddSchedulePageObject.render({ markets, scheduleId: 'schedule-1' });
       page.enterName('Marché Renommé');
 

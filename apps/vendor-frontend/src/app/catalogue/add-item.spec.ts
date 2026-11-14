@@ -1,16 +1,9 @@
 import { screen } from '@testing-library/angular';
 import { AddItemPageObject } from './add-item.page-object';
-import { FakeCatalogueFacade } from './fake.catalogue.facade';
+import { catalogueOf, FakeCatalogueFacade } from './fake.catalogue.facade';
 import { CatalogueItemView } from './catalogue';
 
 const anImage = () => new File(['bytes'], 'plat.jpg', { type: 'image/jpeg' });
-
-// A catalogue that has already loaded these dishes.
-function catalogueOf(...items: CatalogueItemView[]): FakeCatalogueFacade {
-  const catalogue = new FakeCatalogueFacade();
-  catalogue.items.set(items);
-  return catalogue;
-}
 
 const existing: CatalogueItemView = {
   itemId: 'item-1',

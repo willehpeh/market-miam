@@ -4,7 +4,7 @@ import { LiveScreenPageObject } from './live-screen.page-object';
 import { FakeMarketDayFacade } from '../fake.market-day.facade';
 import { testMarketDayView as day } from '../test-market-day-view.builder';
 import { MarketDayView } from '../market-days';
-import { FakeCatalogueFacade } from '../../catalogue/fake.catalogue.facade';
+import { catalogueOf } from '../../catalogue/fake.catalogue.facade';
 import { CatalogueItemView } from '../../catalogue/catalogue';
 import { catalogueItem } from '../../catalogue/catalogue-item.builder';
 
@@ -15,13 +15,6 @@ function showing(view: MarketDayView): FakeMarketDayFacade {
   const marketDays = new FakeMarketDayFacade();
   marketDays.showing(view);
   return marketDays;
-}
-
-// A catalogue that has already loaded these dishes.
-function catalogueOf(...items: CatalogueItemView[]): FakeCatalogueFacade {
-  const catalogue = new FakeCatalogueFacade();
-  catalogue.items.set(items);
-  return catalogue;
 }
 
 describe('LiveScreen', () => {

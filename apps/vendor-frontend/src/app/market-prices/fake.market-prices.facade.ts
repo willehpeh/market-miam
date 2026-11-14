@@ -21,3 +21,10 @@ export class FakeMarketPricesFacade implements MarketPricesFacade {
     this.saved = { marketId, prices };
   }
 }
+
+// Prices that have already loaded, by market.
+export function pricesOf(byMarket: Record<string, PriceList>): FakeMarketPricesFacade {
+  const prices = new FakeMarketPricesFacade();
+  prices.byMarket.set(byMarket);
+  return prices;
+}

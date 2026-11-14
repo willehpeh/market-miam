@@ -77,3 +77,10 @@ export class FakeMarketDayFacade implements MarketDayFacade {
     this.day.update(slot => (slot.status === 'found' ? { status: 'found', day: patch(slot.day) } : slot));
   }
 }
+
+// Market days that have already loaded these days.
+export function marketDaysOf(...days: MarketDayView[]): FakeMarketDayFacade {
+  const marketDays = new FakeMarketDayFacade();
+  marketDays.days.set(days);
+  return marketDays;
+}

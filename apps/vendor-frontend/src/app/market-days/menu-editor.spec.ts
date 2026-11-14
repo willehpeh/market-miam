@@ -1,15 +1,14 @@
 import { screen } from '@testing-library/angular';
 import { MenuEditorPageObject } from './menu-editor.page-object';
-import { FakeMarketDayFacade } from './fake.market-day.facade';
+import { FakeMarketDayFacade, marketDaysOf } from './fake.market-day.facade';
 import { testMarketDayView as day } from './test-market-day-view.builder';
-import { FakeCatalogueFacade } from '../catalogue/fake.catalogue.facade';
+import { catalogueOf, FakeCatalogueFacade } from '../catalogue/fake.catalogue.facade';
 import { CatalogueItemView } from '../catalogue/catalogue';
 import { catalogueItem } from '../catalogue/catalogue-item.builder';
-import { FakeMarketPricesFacade } from '../market-prices/fake.market-prices.facade';
-import { PriceList } from '../market-prices/market-prices';
+import { FakeMarketPricesFacade, pricesOf } from '../market-prices/fake.market-prices.facade';
 import { FakeSellingRecordFacade } from '../selling-record/fake.selling-record.facade';
 import { Bilan } from '../selling-record/selling-record';
-import { ItemOutcome, MarketDayView } from './market-days';
+import { ItemOutcome } from './market-days';
 
 const item = (itemId: string, name: string): CatalogueItemView => catalogueItem({ itemId, name });
 
@@ -22,27 +21,6 @@ const brought = (
 ): Record<string, Record<string, Bilan[]>> => ({
   [marketId]: { [itemId]: outcomes.map((outcome, index) => ({ date: `2026-07-0${index + 1}`, outcome })) },
 });
-
-// Market days that have already loaded these days.
-function daysOf(...days: MarketDayView[]): FakeMarketDayFacade {
-  const marketDays = new FakeMarketDayFacade();
-  marketDays.days.set(days);
-  return marketDays;
-}
-
-// A catalogue that has already loaded these dishes.
-function catalogueOf(...items: CatalogueItemView[]): FakeCatalogueFacade {
-  const catalogue = new FakeCatalogueFacade();
-  catalogue.items.set(items);
-  return catalogue;
-}
-
-// Prices that have already loaded, by market.
-function pricesOf(byMarket: Record<string, PriceList>): FakeMarketPricesFacade {
-  const prices = new FakeMarketPricesFacade();
-  prices.byMarket.set(byMarket);
-  return prices;
-}
 
 // A selling record that has already loaded these bilans.
 function recordOf(bilans: Record<string, Record<string, Bilan[]>>): FakeSellingRecordFacade {
@@ -65,7 +43,7 @@ describe('MenuEditor', () => {
   it('keeps waiting while the catalogue is still arriving', async () => {
     const catalogue = new FakeCatalogueFacade();
     catalogue.loading.set(true);
-    const page = await MenuEditorPageObject.render({ marketDays: daysOf(day()), catalogue });
+    const page = await MenuEditorPageObject.render({ marketDays: marketDaysOf(day()), catalogue });
 
     expect(page.loadingStatus()).toBeTruthy();
     expect(screen.queryByText(/votre carte est vide/i)).toBeNull();
@@ -74,14 +52,14 @@ describe('MenuEditor', () => {
   // A stale bookmark, or a schedule amended since. Saying so beats a silent bounce, and
   // there is no save button in this branch to wipe a menu with.
   it('says so when the day is no longer scheduled', async () => {
-    const page = await MenuEditorPageObject.render({ marketDays: daysOf(day({ marketId: 'market-9' })) });
+    const page = await MenuEditorPageObject.render({ marketDays: marketDaysOf(day({ marketId: 'market-9' })) });
 
     expect(screen.getByText(/ce marché n.est plus programmé/i)).toBeTruthy();
     expect(page.querySaveButton()).toBeNull();
   });
 
   it('names the day it is planning', async () => {
-    await MenuEditorPageObject.render({ marketDays: daysOf(day()) });
+    await MenuEditorPageObject.render({ marketDays: marketDaysOf(day()) });
 
     expect(screen.getByRole('heading', { name: /samedi 15 août/i })).toBeTruthy();
     expect(screen.getByText(/Marché de la Croix-Rousse/)).toBeTruthy();
@@ -89,7 +67,7 @@ describe('MenuEditor', () => {
 
   it('offers the whole catalogue, ticking what the day already carries', async () => {
     const page = await MenuEditorPageObject.render({
-      marketDays: daysOf(day({ itemIds: ['item-2'] })),
+      marketDays: marketDaysOf(day({ itemIds: ['item-2'] })),
       catalogue: catalogueOf(item('item-1', 'Bourguignon'), item('item-2', 'Tatin')),
     });
 
@@ -98,7 +76,7 @@ describe('MenuEditor', () => {
   });
 
   it('saves the whole menu, not just what changed', async () => {
-    const marketDays = daysOf(day({ itemIds: ['item-2'] }));
+    const marketDays = marketDaysOf(day({ itemIds: ['item-2'] }));
     const page = await MenuEditorPageObject.render({
       marketDays,
       catalogue: catalogueOf(item('item-1', 'Bourguignon'), item('item-2', 'Tatin')),
@@ -115,7 +93,7 @@ describe('MenuEditor', () => {
 
   // Clearing a day is an empty set, not a delete.
   it('clears the day when every item is unticked', async () => {
-    const marketDays = daysOf(day({ itemIds: ['item-1'] }));
+    const marketDays = marketDaysOf(day({ itemIds: ['item-1'] }));
     const page = await MenuEditorPageObject.render({
       marketDays,
       catalogue: catalogueOf(item('item-1', 'Bourguignon')),
@@ -139,17 +117,16 @@ describe('MenuEditor', () => {
     expect(record.loaded).toBe(true);
   });
 
-
   // Two doorways in (decision 10, and decision 51's unplanned today), so backing out goes
   // where the card would send them now rather than always to the dashboard.
   it('backs out to the live screen when the day is a planned today', async () => {
-    const page = await MenuEditorPageObject.render({ marketDays: daysOf(day({ phase: 'due', itemIds: ['item-1'] })) });
+    const page = await MenuEditorPageObject.render({ marketDays: marketDaysOf(day({ phase: 'due', itemIds: ['item-1'] })) });
 
     expect(page.backLink().getAttribute('href')).toBe('/dashboard/market/market-1/2026-08-15/live');
   });
 
   it('backs out to the dashboard when the day has no live screen to go back to', async () => {
-    const page = await MenuEditorPageObject.render({ marketDays: daysOf(day({ phase: 'due' })) });
+    const page = await MenuEditorPageObject.render({ marketDays: marketDaysOf(day({ phase: 'due' })) });
 
     expect(page.backLink().getAttribute('href')).toBe('/dashboard');
   });
@@ -158,7 +135,7 @@ describe('MenuEditor', () => {
   // same way — a normal editor would offer an Enregistrer decision 29 refuses in silence.
   it('renders the closed state in place of the list', async () => {
     const page = await MenuEditorPageObject.render({
-      marketDays: daysOf(day({ phase: 'due', closed: true })),
+      marketDays: marketDaysOf(day({ phase: 'due', closed: true })),
       catalogue: catalogueOf(item('item-1', 'Bourguignon')),
     });
 
@@ -170,7 +147,7 @@ describe('MenuEditor', () => {
   // Decision 53: the undo is one tap where the state renders, not a link to somewhere it
   // renders better — this is the path of the tap nobody meant.
   it('reopens the stand from the editor', async () => {
-    const marketDays = daysOf(day({ phase: 'due', closed: true }));
+    const marketDays = marketDaysOf(day({ phase: 'due', closed: true }));
     const page = await MenuEditorPageObject.render({ marketDays });
 
     page.reopenStand();
@@ -182,7 +159,7 @@ describe('MenuEditor', () => {
   // prices is a number the customer will not be charged.
   it('quotes a dish at what this market charges', async () => {
     await MenuEditorPageObject.render({
-      marketDays: daysOf(day()),
+      marketDays: marketDaysOf(day()),
       catalogue: catalogueOf(item('item-1', 'Bœuf bourguignon')),
       prices: pricesOf({ 'market-1': { 'item-1': 1500 } }),
     });
@@ -192,7 +169,7 @@ describe('MenuEditor', () => {
 
   it('marks the dishes it is quoting at a market price', async () => {
     await MenuEditorPageObject.render({
-      marketDays: daysOf(day()),
+      marketDays: marketDaysOf(day()),
       catalogue: catalogueOf(item('item-1', 'Bœuf bourguignon'), item('item-2', 'Tarte aux pommes')),
       prices: pricesOf({ 'market-1': { 'item-1': 1500 } }),
     });
@@ -202,7 +179,7 @@ describe('MenuEditor', () => {
 
   it('quotes the carte price where this market sets none', async () => {
     await MenuEditorPageObject.render({
-      marketDays: daysOf(day()),
+      marketDays: marketDaysOf(day()),
       catalogue: catalogueOf(item('item-1', 'Bœuf bourguignon')),
       prices: pricesOf({ 'market-9': { 'item-1': 1500 } }),
     });
@@ -224,7 +201,7 @@ describe('MenuEditor', () => {
 
   it('takes the cheapest variant at what this market charges for it', async () => {
     await MenuEditorPageObject.render({
-      marketDays: daysOf(day()),
+      marketDays: marketDaysOf(day()),
       catalogue: catalogueOf(pizza()),
       prices: pricesOf({ 'market-1': { pizza: { Margherita: 800 } } }),
     });
@@ -237,7 +214,7 @@ describe('MenuEditor', () => {
   // change what "dès" names, so the row still quotes — and reads as — the carte's.
   it('leaves the row uncued when the cheapest variant is still the carte\'s', async () => {
     await MenuEditorPageObject.render({
-      marketDays: daysOf(day()),
+      marketDays: marketDaysOf(day()),
       catalogue: catalogueOf(pizza()),
       prices: pricesOf({ 'market-1': { pizza: { Pepperoni: 1400 } } }),
     });
@@ -248,7 +225,7 @@ describe('MenuEditor', () => {
 
   it('takes a market price that undercuts a dearer variant', async () => {
     await MenuEditorPageObject.render({
-      marketDays: daysOf(day()),
+      marketDays: marketDaysOf(day()),
       catalogue: catalogueOf(pizza()),
       prices: pricesOf({ 'market-1': { pizza: { Pepperoni: 500 } } }),
     });
@@ -261,7 +238,7 @@ describe('MenuEditor', () => {
   // and it belongs to the market — the edit would silently move every other day at it.
   it('sends the vendor to the market for its prices rather than editing them here', async () => {
     const page = await MenuEditorPageObject.render({
-      marketDays: daysOf(day()),
+      marketDays: marketDaysOf(day()),
       catalogue: catalogueOf(item('item-1', 'Bœuf bourguignon')),
     });
 
@@ -274,7 +251,7 @@ describe('MenuEditor', () => {
     const prices = new FakeMarketPricesFacade();
     prices.loading.set(true);
     const page = await MenuEditorPageObject.render({
-      marketDays: daysOf(day()),
+      marketDays: marketDaysOf(day()),
       catalogue: catalogueOf(item('item-1', 'Bœuf bourguignon')),
       prices,
     });
@@ -285,7 +262,7 @@ describe('MenuEditor', () => {
 
   it('names the pile under a dish it has brought to this market before', async () => {
     await MenuEditorPageObject.render({
-      marketDays: daysOf(day()),
+      marketDays: marketDaysOf(day()),
       catalogue: catalogueOf(item('item-1', 'Bourguignon')),
       record: recordOf(brought('market-1', 'item-1', 'sold_out', 'sold_out', 'did_well')),
     });
@@ -299,7 +276,7 @@ describe('MenuEditor', () => {
   // read it (decision 14). Guards the structure, which the visuals are free to move.
   it('keeps the pile out of the name of the checkbox it sits under', async () => {
     const page = await MenuEditorPageObject.render({
-      marketDays: daysOf(day()),
+      marketDays: marketDaysOf(day()),
       catalogue: catalogueOf(item('item-1', 'Bourguignon')),
       record: recordOf(brought('market-1', 'item-1', 'sold_out', 'sold_out', 'sold_out')),
     });
@@ -310,7 +287,7 @@ describe('MenuEditor', () => {
 
   it('calls a dish that mostly did well Ça part bien', async () => {
     await MenuEditorPageObject.render({
-      marketDays: daysOf(day()),
+      marketDays: marketDaysOf(day()),
       catalogue: catalogueOf(item('item-1', 'Bourguignon')),
       record: recordOf(brought('market-1', 'item-1', 'did_well', 'did_well', 'sold_out')),
     });
@@ -322,7 +299,7 @@ describe('MenuEditor', () => {
   // column; Il en reste is what the vendor says out loud about a tray that came home.
   it('calls a dish that mostly came home Il en reste', async () => {
     await MenuEditorPageObject.render({
-      marketDays: daysOf(day()),
+      marketDays: marketDaysOf(day()),
       catalogue: catalogueOf(item('item-1', 'Bourguignon')),
       record: recordOf(brought('market-1', 'item-1', 'did_not_do_well', 'did_not_do_well', 'did_well')),
     });
@@ -335,7 +312,7 @@ describe('MenuEditor', () => {
   // judgment (decision 7).
   it('calls a dish with no dominant outcome Ça dépend des jours', async () => {
     await MenuEditorPageObject.render({
-      marketDays: daysOf(day()),
+      marketDays: marketDaysOf(day()),
       catalogue: catalogueOf(item('item-1', 'Bourguignon')),
       record: recordOf(brought('market-1', 'item-1', 'sold_out', 'did_well', 'did_not_do_well')),
     });
@@ -347,7 +324,7 @@ describe('MenuEditor', () => {
   // two sold-out mornings must not read as Toujours épuisé.
   it('claims nothing about a dish with only two bilans here', async () => {
     await MenuEditorPageObject.render({
-      marketDays: daysOf(day()),
+      marketDays: marketDaysOf(day()),
       catalogue: catalogueOf(item('item-1', 'Bourguignon')),
       record: recordOf(brought('market-1', 'item-1', 'sold_out', 'sold_out')),
     });
@@ -360,7 +337,7 @@ describe('MenuEditor', () => {
   // one. Here it would be a line under most of the carte saying nothing.
   it('says nothing under a dish it has never brought here', async () => {
     await MenuEditorPageObject.render({
-      marketDays: daysOf(day()),
+      marketDays: marketDaysOf(day()),
       catalogue: catalogueOf(item('item-1', 'Bourguignon'), item('item-2', 'Tatin')),
       record: recordOf(brought('market-1', 'item-1', 'sold_out', 'sold_out', 'sold_out')),
     });
@@ -374,7 +351,7 @@ describe('MenuEditor', () => {
   // vendor will actually have (decision 2).
   it('reads only what this market said, never another market\'s', async () => {
     await MenuEditorPageObject.render({
-      marketDays: daysOf(day()),
+      marketDays: marketDaysOf(day()),
       catalogue: catalogueOf(item('item-1', 'Bourguignon')),
       record: recordOf(brought('market-9', 'item-1', 'sold_out', 'sold_out', 'sold_out')),
     });
@@ -386,7 +363,7 @@ describe('MenuEditor', () => {
   // clientele the vendor is packing for tomorrow, so it breaks the tie.
   it('breaks a tie toward the most recent bilan', async () => {
     await MenuEditorPageObject.render({
-      marketDays: daysOf(day()),
+      marketDays: marketDaysOf(day()),
       catalogue: catalogueOf(item('item-1', 'Bourguignon')),
       record: recordOf(brought('market-1', 'item-1', 'sold_out', 'sold_out', 'did_well', 'did_well')),
     });
@@ -401,7 +378,7 @@ describe('MenuEditor', () => {
     const record = new FakeSellingRecordFacade();
     record.loading.set(true);
     const page = await MenuEditorPageObject.render({
-      marketDays: daysOf(day()),
+      marketDays: marketDaysOf(day()),
       catalogue: catalogueOf(item('item-1', 'Bourguignon')),
       record,
     });

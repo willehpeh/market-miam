@@ -52,3 +52,10 @@ export class FakeCatalogueFacade implements CatalogueFacade {
     this.retiredItem = itemId;
   }
 }
+
+// A catalogue that has already loaded these dishes.
+export function catalogueOf(...items: CatalogueItemView[]): FakeCatalogueFacade {
+  const catalogue = new FakeCatalogueFacade();
+  catalogue.items.set(items);
+  return catalogue;
+}

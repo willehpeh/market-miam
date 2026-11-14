@@ -22,3 +22,10 @@ export class FakeMarketScheduleFacade implements MarketScheduleFacade {
     this.amended = { scheduleId, schedule };
   }
 }
+
+// Schedules that have already loaded.
+export function schedulesOf(...schedules: MarketScheduleView[]): FakeMarketScheduleFacade {
+  const markets = new FakeMarketScheduleFacade();
+  markets.schedules.set(schedules);
+  return markets;
+}

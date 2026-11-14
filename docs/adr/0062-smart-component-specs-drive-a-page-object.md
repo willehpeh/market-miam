@@ -38,7 +38,10 @@ component, in `<component>.page-object.ts`, built on Testing Library.
   such as `screen.getByText('Indiquez le prix.')`, so that an assertion reads whole where it fails.
 - **It never hands out a facade.** The spec builds the fakes it arranges or checks and passes them
   to the page object's `render`. A page object defaults to a fresh fake for specs that look at
-  neither. `TestBed.inject(…) as Fake…` goes.
+  neither. `TestBed.inject(…) as Fake…` goes. A fake that several specs fill with data has a
+  builder beside it, such as `catalogueOf(...items)` in `fake.catalogue.facade.ts`.
+- **It extends `PageObject`** (`core/page-object.ts`), which holds what every page object does
+  alike: change detection, and pressing, typing and picking a file.
 - **It models the screen, not the component tree**: one page object per smart component, covering
   the dumb children it renders, so they can still be split or merged without breaking a test
   (ADR 0061). A part that appears on several screens, such as the photo picker, may get an object

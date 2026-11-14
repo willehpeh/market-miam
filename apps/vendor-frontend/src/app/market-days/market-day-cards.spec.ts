@@ -1,15 +1,7 @@
 import { screen } from '@testing-library/angular';
 import { MarketDayCardsPageObject } from './market-day-cards.page-object';
-import { FakeMarketDayFacade } from './fake.market-day.facade';
-import { MarketDayView } from './market-days';
+import { marketDaysOf } from './fake.market-day.facade';
 import { testMarketDayView as day } from './test-market-day-view.builder';
-
-// A store that already holds these days.
-function marketDaysOf(...days: MarketDayView[]): FakeMarketDayFacade {
-  const marketDays = new FakeMarketDayFacade();
-  marketDays.days.set(days);
-  return marketDays;
-}
 
 describe('MarketDayCards', () => {
   it('names the next market day, with the hours a vendor plans quantities around', async () => {

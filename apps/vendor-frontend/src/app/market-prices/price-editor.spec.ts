@@ -1,11 +1,9 @@
 import { screen } from '@testing-library/angular';
 import { PriceEditorPageObject } from './price-editor.page-object';
-import { FakeMarketPricesFacade } from './fake.market-prices.facade';
-import { PriceList } from './market-prices';
-import { FakeCatalogueFacade } from '../catalogue/fake.catalogue.facade';
-import { CatalogueItemView } from '../catalogue/catalogue';
+import { FakeMarketPricesFacade, pricesOf } from './fake.market-prices.facade';
+import { catalogueOf, FakeCatalogueFacade } from '../catalogue/fake.catalogue.facade';
 import { catalogueItem } from '../catalogue/catalogue-item.builder';
-import { FakeMarketScheduleFacade } from '../markets/fake.market-schedule.facade';
+import { schedulesOf } from '../markets/fake.market-schedule.facade';
 import { MarketScheduleView } from '../markets/market-schedules';
 
 const schedule = (marketId: string, name: string): MarketScheduleView => ({
@@ -19,27 +17,6 @@ const schedule = (marketId: string, name: string): MarketScheduleView => ({
 
 // The market the editor opens on, as the vendor's schedules name it.
 const belleville = schedule('market-1', 'Marché de Belleville');
-
-// A catalogue that has already loaded these dishes.
-function catalogueOf(...items: CatalogueItemView[]): FakeCatalogueFacade {
-  const catalogue = new FakeCatalogueFacade();
-  catalogue.items.set(items);
-  return catalogue;
-}
-
-// Prices that have already loaded, by market.
-function pricesOf(byMarket: Record<string, PriceList>): FakeMarketPricesFacade {
-  const prices = new FakeMarketPricesFacade();
-  prices.byMarket.set(byMarket);
-  return prices;
-}
-
-// Schedules that have already loaded.
-function schedulesOf(...views: MarketScheduleView[]): FakeMarketScheduleFacade {
-  const schedules = new FakeMarketScheduleFacade();
-  schedules.schedules.set(views);
-  return schedules;
-}
 
 describe('PriceEditor', () => {
   it('gives every dish in the catalogue a field of its own', async () => {
