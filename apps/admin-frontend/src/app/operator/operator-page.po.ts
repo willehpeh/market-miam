@@ -34,6 +34,10 @@ export class OperatorPageObject {
     await this.settle();
   }
 
+  canInvite(): boolean {
+    return !(this.screen.getByRole('button', { name: 'Invite' }) as HTMLButtonElement).disabled;
+  }
+
   // Whether the page shows this text anywhere.
   says(text: string): boolean {
     return this.screen.queryAllByText(text, { exact: false }).length > 0;

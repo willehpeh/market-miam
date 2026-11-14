@@ -114,4 +114,14 @@ describe('OperatorPage', () => {
 
     expect(invitations.invited).toEqual(['marie@example.com']);
   });
+
+  it('lets no one press Invite while an invitation is sending', async () => {
+    const page = await signedIn();
+    expect(page.canInvite()).toBe(true);
+
+    invitations.sending.set(true);
+    await page.settle();
+
+    expect(page.canInvite()).toBe(false);
+  });
 });

@@ -1,4 +1,4 @@
-import { Component, output, signal } from '@angular/core';
+import { Component, input, output, signal } from '@angular/core';
 import { form, FormField, FormRoot } from '@angular/forms/signals';
 
 interface Invitation {
@@ -26,12 +26,19 @@ interface Invitation {
           class="min-h-11 w-full rounded border border-gray-300 px-3 text-base"
           [formField]="invitation.email"
         />
-        <button type="submit" class="min-h-11 rounded bg-gray-900 px-4 text-base text-white">Invite</button>
+        <button
+          type="submit"
+          class="min-h-11 rounded bg-gray-900 px-4 text-base text-white disabled:opacity-50"
+          [disabled]="sending()"
+        >
+          Invite
+        </button>
       </div>
     </form>
   `,
 })
 export class InviteVendorForm {
+  readonly sending = input(false);
   readonly invite = output<string>();
 
   protected readonly invitation = form(signal<Invitation>({ email: '' }), {

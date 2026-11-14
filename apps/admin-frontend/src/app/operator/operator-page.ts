@@ -44,7 +44,7 @@ type Whoami = Operator | 'refused' | null;
           </button>
         </div>
         @if (operatorId()) {
-          <admin-invite-vendor-form (invite)="invite($event)" />
+          <admin-invite-vendor-form [sending]="invitations.sending()" (invite)="invitations.invite($event)" />
           <admin-account-list />
         }
       } @else {
@@ -58,7 +58,7 @@ type Whoami = Operator | 'refused' | null;
 export class OperatorPage {
   private readonly auth = inject(Auth);
   private readonly http = inject(HttpClient);
-  private readonly invitations = inject(InvitationFacade);
+  protected readonly invitations = inject(InvitationFacade);
   private readonly userId$ = this.auth.userId$();
 
   protected readonly loading = toSignal(this.auth.isLoading$(), { initialValue: true });
@@ -79,10 +79,6 @@ export class OperatorPage {
 
   protected logout(): void {
     this.auth.logout();
-  }
-
-  protected invite(email: string): void {
-    this.invitations.invite(email);
   }
 
   private fetchWhoami(): Observable<Whoami> {
