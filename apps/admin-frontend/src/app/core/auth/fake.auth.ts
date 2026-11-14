@@ -20,6 +20,11 @@ export class FakeAuth implements Auth {
     this._userId.next(null);
   }
 
+  // As Auth0 is while it checks for a session on start-up.
+  stillLoading(): void {
+    this._isLoading.next(true);
+  }
+
   isLoading$(): Observable<boolean> {
     return this._isLoading.asObservable();
   }
