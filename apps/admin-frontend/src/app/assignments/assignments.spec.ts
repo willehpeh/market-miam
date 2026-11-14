@@ -70,4 +70,15 @@ describe('Assignments', () => {
     expect(facade.refused()).toBeNull();
     api.assignmentOf('brioche-co').noContent();
   });
+
+  it('reports an assignment that failed as not assigned, and takes the next', () => {
+    facade.assign('brioche-co', 'brioche');
+    api.assignmentOf('brioche-co').fail();
+
+    expect(facade.refused()).toEqual({ vendorId: 'brioche-co', refusal: 'not-assigned' });
+    expect(facade.assigning()).toBeNull();
+
+    facade.assign('brioche-co', 'brioche');
+    api.assignmentOf('brioche-co').noContent();
+  });
 });

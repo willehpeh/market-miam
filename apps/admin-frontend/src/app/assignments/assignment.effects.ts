@@ -1,6 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
-import { exhaustMap, map } from 'rxjs';
+import { catchError, exhaustMap, map, of } from 'rxjs';
 import { AssignmentAnswer, Assignments } from './assignments';
 import { AssignSubdomain, AssignSubdomainRefused, AssignSubdomainSuccess } from './assignment.state';
 
@@ -15,7 +15,10 @@ export class AssignmentEffects {
     this.actions$.pipe(
       ofType(AssignSubdomain),
       exhaustMap(({ vendorId, subdomain }) =>
-        this.assignments.assign(vendorId, subdomain).pipe(map((answer) => answered(vendorId, subdomain, answer))),
+        this.assignments.assign(vendorId, subdomain).pipe(
+          map((answer) => answered(vendorId, subdomain, answer)),
+          catchError(() => of(AssignSubdomainRefused({ vendorId, refusal: 'not-assigned' }))),
+        ),
       ),
     ),
   );
