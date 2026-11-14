@@ -121,11 +121,35 @@ Going live, in this order, by the owner:
    with no link; otherwise the sign-in email as it is. Then decide whether the vendor privacy
    policy needs a line for the invitation email.
 
-**5. Erase a vendor.** A transport for `EraseVendor`, and `ClosesVendorAccounts`, a processor on
-`VendorErased` that deletes the Auth0 user (`delete:users`), whether the vendor registered or was
-only invited, and records `VendorAccountClosed` (ADR 0063). It finds the user by `vendorId`, never
-by email: an invitation erased for a taken address (slice 4) shares that address with another
-vendor's account. `OpensVendorAccounts` records `VendorAccountOpened` beside it.
+**5. Erase a vendor — built 2026-11-14** (ADR 0063). Ends deleting erased vendors' Auth0 users by
+hand.
+
+- **Domain.** `VendorAccountOpened` and `VendorAccountClosed`, with no personal data, record when
+  the vendor's account opened and closed. The account is a fact beside the vendor's lifecycle,
+  held as an `AccountOnRecord`; each `VendorState` holds its row of ADR 0063's table.
+- **Processors.** `ClosesVendorAccounts`, on `VendorErased`, closes the account through the
+  `VendorAccounts` port and sends `RecordVendorAccountClosed`. `OpensVendorAccounts` sends
+  `RecordVendorAccountOpened` when it opens one. The Auth0 adapter finds the user by `vendorId`,
+  never by email, and deletes only an exact match (`read:users`, `delete:users`): an invitation
+  erased for a taken address shares it with another vendor's account, and Auth0's search is
+  full-text.
+- **Route.** `POST /api/ops/vendors/:vendorId/erasure` sends `EraseVendor` and answers 202, the
+  operator's Auth0 id in the event's metadata; a vendor never invited or registered gets a 400.
+- **Admin app.** An *Erase* button on each row with a `vendorId`, which asks *Erase for good?*
+  before it sends. Every *Erase* is held while an erasure is in flight, since the effect takes one
+  at a time; an accepted erasure marks the row erased until the next load, and a failed one says
+  so beside the row.
+- **Specs.** The two handlers against ADR 0063's table; both processors; the `VendorAccounts`
+  contract's four closing cases, on both adapters and the test tenant; the api's erasure, end to
+  end; the route; the erasure feature and the page. The api's operator spec and the admin app's
+  account and erasure specs moved to ADR 0064's objects.
+
+Going live, in this order, by the owner:
+
+1. Give the Management application `delete:users`, and the test tenant's Management client too.
+2. Push. `ClosesVendorAccounts` reads the log from its start: it closes the accounts of vendors
+   erased before it, and records each closed.
+3. Run `npx nx test:tenant api` against the test tenant.
 
 **6. Rebuild a projection.** A transport for `Subscriptions.rebuild()`.
 

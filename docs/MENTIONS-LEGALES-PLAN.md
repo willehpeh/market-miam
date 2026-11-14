@@ -186,7 +186,8 @@ their live page, and retire slice 7's footer stopgap.
 
 - Stripe and the 10-year invoice rows in policy A come with Billing (ADR 0048).
 - Cloudinary's IP masking is a dashboard switch and can be flipped at any time.
-- Deleting the Auth0 user on erasure stays manual.
+- Deleting the Auth0 user on erasure is a processor's since admin plan slice 5 (ADR 0063), once
+  it is live.
 - A storefront edit by an erased vendor is refused by the tombstone as a 500, not a domain
-  error: `Storefront` doesn't know about `VendorErased` (ADR 0058). Only matters until the Auth0
-  user is deleted by hand.
+  error: `Storefront` doesn't know about `VendorErased` (ADR 0058). Only matters in the seconds
+  before the processor deletes the Auth0 user.

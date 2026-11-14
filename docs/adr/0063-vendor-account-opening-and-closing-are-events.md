@@ -60,8 +60,9 @@ have accounts and no such event.
 
 - An erasure is finished when the stream ends `VendorErased`, `VendorAccountClosed`. A stream that
   stops at `VendorErased` is an erasure still under way.
-- ADR 0058's erased vendor, final to every command, accepts one: `RecordVendorAccountClosed`,
-  whose event carries no personal data.
+- ADR 0058's erased vendor, final to every command, carries out one: `RecordVendorAccountClosed`,
+  whose event carries no personal data. A late `RecordVendorAccountOpened` it accepts and ignores.
+- Deleting the Auth0 user, manual under ADR 0058, is the processor's.
 - ADR 0058 kept the erasure processor's reactions out of the log, as infrastructure. Keys and the
   subdomain registry are ours and can be checked at any time. Auth0 is not, and its record fades,
   which is why these two are recorded.
@@ -72,6 +73,15 @@ have accounts and no such event.
   account is pending and an erasure whose login is not yet deleted, could complete or replace the
   account list read from Auth0. That view is not part of this decision.
 - `ClosesVendorAccounts` needs `delete:users` on the Management application (admin plan slice 5).
+- A new processor reads the log from its start. Deployed, `ClosesVendorAccounts` closes the
+  account of every vendor erased before it and records each closed. Without `delete:users`, the
+  first of them still holding an account holds it up, and `/api/health` answers 503.
+- Auth0's user search takes seconds to see a user just created. A vendor erased within those
+  seconds of being invited could be missed: closing would find no account and record it closed,
+  while the account remains. An operator erases long after inviting, so it is left open; the
+  tenant spec waits for the search before each case that closes an account.
+- Closing deletes only users whose `vendorId` is exactly the vendor's, whatever the search
+  answers: Auth0's user search is full-text.
 
 ## Rejected
 
