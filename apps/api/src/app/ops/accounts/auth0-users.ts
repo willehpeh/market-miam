@@ -10,6 +10,8 @@ export interface NewAuth0User {
   connection: string;
   email: string;
   app_metadata: { vendorId: string };
+  // Auth0 emails a user it creates unless this is false.
+  verify_email: boolean;
 }
 
 // What asking Auth0 to create a user came to, short of a failure.

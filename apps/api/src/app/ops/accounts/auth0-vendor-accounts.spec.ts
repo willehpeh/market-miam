@@ -32,6 +32,13 @@ describe('Auth0VendorAccounts', () => {
     ]);
   });
 
+  // The system sends vendors nothing: the operator tells them (ADR 0060).
+  it('opens the account without Auth0 emailing the vendor', async () => {
+    await accounts().openFor(marie);
+
+    expect(auth0.emailed).toEqual([]);
+  });
+
   // Thrown, so the processor's subscription retries: the account may well not exist.
   it('fails when Auth0 refuses to open the account for another reason', async () => {
     auth0.createStatus = 500;

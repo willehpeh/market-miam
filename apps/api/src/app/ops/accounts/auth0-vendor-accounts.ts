@@ -5,14 +5,15 @@ import { Auth0Users } from './auth0-users';
 const VENDOR_CONNECTION = 'email';
 
 // Vendors' sign-in accounts in the Auth0 tenant, opened through its Management API
-// (`create:users`), each carrying its vendorId in app_metadata (ADR 0060).
+// (`create:users`), each carrying its vendorId in app_metadata, and sending the vendor nothing:
+// the operator tells them (ADR 0060).
 export class Auth0VendorAccounts extends VendorAccounts {
   constructor(private readonly users: Auth0Users) {
     super();
   }
 
   async openFor({ vendorId, email }: Invitation): Promise<AccountOpening> {
-    switch (await this.users.create({ connection: VENDOR_CONNECTION, email, app_metadata: { vendorId } })) {
+    switch (await this.users.create({ connection: VENDOR_CONNECTION, email, app_metadata: { vendorId }, verify_email: false })) {
       case 'created':
         return 'open';
       case 'address-refused':
