@@ -16,11 +16,11 @@ export interface NewAuth0User {
 export type UserCreation = 'created' | 'already-exists' | 'address-refused';
 
 // Auth0 refusing a request for a reason Market Miam cannot act on. Thrown, so its caller fails
-// loudly and a processor's subscription retries. It carries the status only, never Auth0's body,
-// which can name the address.
+// loudly and a processor's subscription retries. It carries the status and Auth0's error code,
+// never Auth0's message, which can name the address.
 export class Auth0Refusal extends Error {
-  constructor(what: string, readonly status: number) {
-    super(`Auth0 refused to ${what}: ${status}`);
+  constructor(what: string, readonly status: number, errorCode?: string) {
+    super(`Auth0 refused to ${what}: ${[status, errorCode].filter(Boolean).join(' ')}`);
   }
 }
 
@@ -43,16 +43,17 @@ export class Auth0Users {
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify(user),
     });
+    if (response.ok) {
+      return 'created';
+    }
     if (response.status === CONFLICT) {
       return 'already-exists';
     }
-    if (response.status === BAD_REQUEST && refusesTheAddress((await response.json()) as ErrorBody)) {
+    const error = await errorBodyOf(response);
+    if (response.status === BAD_REQUEST && refusesTheAddress(error)) {
       return 'address-refused';
     }
-    if (!response.ok) {
-      throw new Auth0Refusal('create a user', response.status);
-    }
-    return 'created';
+    throw new Auth0Refusal('create a user', response.status, error.errorCode);
   }
 
   async withEmail(email: string): Promise<Auth0User[]> {
@@ -76,6 +77,11 @@ export class Auth0Users {
     }
     return (await response.json()) as T;
   }
+}
+
+// Auth0 answers errors in JSON, but whatever stands in front of it may not.
+async function errorBodyOf(response: Response): Promise<ErrorBody> {
+  return response.json().catch(() => ({}));
 }
 
 // Auth0's payload validation failing on the email property, and only that: any other 400 may

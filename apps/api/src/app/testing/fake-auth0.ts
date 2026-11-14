@@ -29,6 +29,8 @@ export class FakeAuth0 {
   tokenStatus = 200;
   usersStatus = 200;
   createStatus = 201;
+  // The errorCode Auth0 sends with a refused creation.
+  createErrorCode?: string;
   lookupStatus = 200;
   // Refuses every address as Auth0 refuses one it finds malformed, stricter than our Email.
   refusesEmails = false;
@@ -70,7 +72,7 @@ export class FakeAuth0 {
         return send(res, 401, { error: 'invalid_token' });
       }
       if (this.createStatus !== 201) {
-        return send(res, this.createStatus, { error: 'server_error' });
+        return send(res, this.createStatus, { statusCode: this.createStatus, errorCode: this.createErrorCode });
       }
       const user = JSON.parse(await bodyOf(req)) as Auth0User;
       if (this.refusesEmails) {
