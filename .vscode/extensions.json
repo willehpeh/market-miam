@@ -2,7 +2,6 @@
   "recommendations": [
     "nrwl.angular-console",
     "dbaeumer.vscode-eslint",
-    "ms-playwright.playwright",
-    "esbenp.prettier-vscode"
+    "ms-playwright.playwright"
   ]
 }
