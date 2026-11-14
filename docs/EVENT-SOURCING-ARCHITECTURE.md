@@ -534,7 +534,7 @@ provider + `InMemorySpanExporter`, no auto-instrumentation, so
   in-memory profile, `PollSchedule.never()`, `Subscriptions.drain()` driving
   delivery deterministically.
 - **Mutation testing** — nightly Stryker over the fast suite
-  (`stryker.conf.mjs`, `.github/workflows/mutation.yml`), informational (no
+  (`stryker.conf.mjs`, `.github/workflows/nightly.yml`), informational (no
   break threshold). Scope is honest by design: container-only Postgres adapters
   are excluded so the score means "how well does the fast suite own the code it
   claims"; coverage reports `all: true` so wholly-untested files show as 0%

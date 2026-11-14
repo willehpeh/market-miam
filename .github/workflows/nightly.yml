@@ -1,9 +1,15 @@
-name: Mutation
+name: Nightly
 
-# Nightly mutation run over the fast suite (scope defined in stryker.conf.mjs —
+# What is too slow or too broad for CI, which runs the fast suite on every push.
+#
+# mutation: Stryker over the fast suite (scope defined in stryker.conf.mjs —
 # container-only Postgres adapters are deliberately excluded). Informational:
 # no break threshold, so this job only fails on a broken run, not a low score.
 # The HTML report is uploaded as an artifact for inspection.
+#
+# scenarios: the api's scenarios on a real Postgres, which testcontainers starts on
+# the runner — a vendor's whole life from invitation to erasure, and a burst of
+# catalogue commands across two instances. A red run is a real failure.
 on:
   schedule:
     - cron: '17 3 * * *'
@@ -30,3 +36,18 @@ jobs:
         with:
           name: mutation-report
           path: reports/mutation/mutation.html
+
+  scenarios:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - run: npx nx scenario api --skip-nx-cache

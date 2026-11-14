@@ -40,9 +40,15 @@ npx nx test test               # the social test suite (see test/README.md)
 npx nx test <project>          # a project's own tests
 npx nx test:container test     # against a real Postgres (Testcontainers)
 npx nx test:tenant api         # against a real Auth0 test tenant, by hand (see the spec's header)
+npx nx scenario api            # the api's scenarios on Postgres, a vendor's whole life among them
 npx nx mutation test           # Stryker mutation testing
 npm run test:all               # everything
 ```
+
+Mutation testing and the scenarios run nightly too (`.github/workflows/nightly.yml`), not in CI.
+Anything that runs on Postgres can use a database you already have instead of a container: point
+`TEST_POSTGRES_URL` at a throwaway one whose name ends in `_test`, which the harness migrates and
+empties.
 
 ## How this codebase works
 

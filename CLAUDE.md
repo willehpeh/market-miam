@@ -40,6 +40,17 @@ TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE=/var/run/docker.sock \
 npx nx run test:test:container
 ```
 
+With no Docker at all, as in a Claude Code web or mobile container, which has the Postgres 16
+server installed, run a throwaway cluster as the `postgres` user and hand the harness a database
+whose name ends in `_test`:
+
+```sh
+su postgres -s /bin/bash -c "/usr/lib/postgresql/16/bin/initdb -D ~/lifecycle/data -U postgres --auth=trust \
+  && /usr/lib/postgresql/16/bin/pg_ctl -D ~/lifecycle/data -o '-p 5433 -c listen_addresses=localhost' -l ~/lifecycle/server.log start"
+psql postgres://postgres@localhost:5433/postgres -c 'CREATE DATABASE lifecycle_test'
+TEST_POSTGRES_URL=postgres://postgres@localhost:5433/lifecycle_test npx nx scenario api
+```
+
 ## Pushing to `main` deploys
 
 `render.yaml` sets `autoDeployTrigger: checksPass` on every service: a push to `main` that
