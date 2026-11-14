@@ -1,7 +1,7 @@
 import { Aggregate } from '@market-miam/event-sourcing';
 import { VendorId } from '@market-miam/shared-kernel';
 import { Email, Instant, SignInAddress } from '@market-miam/common';
-import { VendorAccountClosed, VendorErased, VendorEvent, VendorInvited, VendorLegalIdentityProvided, VendorRegistered } from './events';
+import { VendorAccountClosed, VendorAccountOpened, VendorErased, VendorEvent, VendorInvited, VendorLegalIdentityProvided, VendorRegistered } from './events';
 import { ErasedVendor, InvitedVendor, RegisteredVendor, UnknownVendor, VendorState } from './vendor-state';
 import { LegalIdentity } from './legal-identity';
 import { LegalIdentityOnRecord, NoLegalIdentity, ProvidedLegalIdentity } from './legal-identity-on-record';
@@ -36,6 +36,10 @@ export class Vendor extends Aggregate {
 
   erase(erasedAt: Instant) {
     this._state.erase(() => this.raise(this.erased(erasedAt)));
+  }
+
+  recordAccountOpened(openedAt: Instant) {
+    this._state.recordAccountOpened(() => this.raise(this.accountOpened(openedAt)));
   }
 
   recordAccountClosed(closedAt: Instant) {
@@ -75,6 +79,14 @@ export class Vendor extends Aggregate {
     return {
       type: 'VendorErased',
       payload: { vendorId: this._id.value(), erasedAt: erasedAt.value() },
+      version: 1,
+    };
+  }
+
+  private accountOpened(openedAt: Instant): VendorAccountOpened {
+    return {
+      type: 'VendorAccountOpened',
+      payload: { vendorId: this._id.value(), openedAt: openedAt.value() },
       version: 1,
     };
   }

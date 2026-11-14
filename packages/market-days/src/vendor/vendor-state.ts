@@ -12,6 +12,10 @@ export abstract class VendorState {
   abstract erase(proceed: () => void): void;
   abstract recordAccountClosed(proceed: () => void): void;
 
+  recordAccountOpened(proceed: () => void): void {
+    proceed();
+  }
+
   isErased(): boolean {
     return false;
   }
