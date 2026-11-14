@@ -1,0 +1,95 @@
+import { fireEvent, render, RenderResult, screen } from '@testing-library/angular';
+import { provideRouter } from '@angular/router';
+import { QrCodeScreen } from './qr-code-screen';
+import { StorefrontFacade } from '../storefront/storefront.facade';
+import { FakeStorefrontFacade } from '../storefront/fake.storefront.facade';
+import { QrCodeExport } from './qr-code-export';
+import { FakeQrCodeExport } from './fake.qr-code-export';
+
+// The QR code screen as the vendor meets it: the code, and the two ways to take it off the
+// phone (ADR 0062). It asserts nothing, and it never hands out the facade or the export: a
+// spec that arranges or checks one builds the fake and passes it in.
+export class QrCodeScreenPageObject {
+  private constructor(private readonly view: RenderResult<QrCodeScreen>) {}
+
+  static async render({
+    storefront = new FakeStorefrontFacade(),
+    exports = new FakeQrCodeExport(),
+  }: { storefront?: StorefrontFacade; exports?: QrCodeExport } = {}) {
+    const view = await render(QrCodeScreen, {
+      providers: [
+        provideRouter([]),
+        { provide: StorefrontFacade, useValue: storefront },
+        { provide: QrCodeExport, useValue: exports },
+      ],
+    });
+    return new QrCodeScreenPageObject(view);
+  }
+
+  // For a change from outside the screen, such as a spec setting its fake's state.
+  detectChanges(): this {
+    this.view.detectChanges();
+    return this;
+  }
+
+  loadingStatus(): HTMLElement {
+    return screen.getByRole('status', { name: /chargement/i });
+  }
+
+  code(): HTMLElement {
+    return screen.getByRole('img', { name: /qr code/i });
+  }
+
+  // Any image at all.
+  queryCode(): HTMLElement | null {
+    return screen.queryByRole('img');
+  }
+
+  // Taking the code off the phone. While a file is being prepared, the button that asked for
+  // it is named for that instead.
+
+  shareButton(): HTMLElement {
+    return screen.getByRole('button', { name: 'Partager' });
+  }
+
+  queryShareButton(): HTMLElement | null {
+    return screen.queryByRole('button', { name: 'Partager' });
+  }
+
+  downloadButton(): HTMLElement {
+    return screen.getByRole('button', { name: /télécharger/i });
+  }
+
+  queryDownloadButton(): HTMLElement | null {
+    return screen.queryByRole('button', { name: /télécharger/i });
+  }
+
+  preparingButton(): HTMLElement {
+    return screen.getByRole('button', { name: 'Préparation…' });
+  }
+
+  alert(): HTMLElement {
+    return screen.getByRole('alert');
+  }
+
+  queryAlert(): HTMLElement | null {
+    return screen.queryByRole('alert');
+  }
+
+  backLink(): HTMLElement {
+    return screen.getByRole('link', { name: /retour/i });
+  }
+
+  share(): this {
+    return this.press(this.shareButton());
+  }
+
+  download(): this {
+    return this.press(this.downloadButton());
+  }
+
+  private press(element: HTMLElement): this {
+    fireEvent.click(element);
+    return this.detectChanges();
+  }
+}

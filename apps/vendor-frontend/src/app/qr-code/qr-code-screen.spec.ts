@@ -1,11 +1,7 @@
-import { TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
-import { fireEvent, render, screen, waitFor } from '@testing-library/angular';
-import { QrCodeScreen } from './qr-code-screen';
-import { StorefrontFacade } from '../storefront/storefront.facade';
+import { screen, waitFor } from '@testing-library/angular';
+import { QrCodeScreenPageObject } from './qr-code-screen.page-object';
 import { FakeStorefrontFacade } from '../storefront/fake.storefront.facade';
 import { StorefrontView } from '../storefront/storefront';
-import { QrCodeExport } from './qr-code-export';
 import { FakeQrCodeExport } from './fake.qr-code-export';
 import { brandedQrCode } from './branded-qr-code';
 
@@ -19,34 +15,19 @@ const published: StorefrontView = {
   cartePricesVisible: true,
 };
 
-async function renderScreen(view?: StorefrontView, shareable = true) {
-  const rendered = await render(QrCodeScreen, {
-    providers: [
-      { provide: FakeQrCodeExport, useFactory: () => Object.assign(new FakeQrCodeExport(), { shareable }) },
-      provideRouter([]),
-      { provide: StorefrontFacade, useClass: FakeStorefrontFacade },
-      { provide: QrCodeExport, useExisting: FakeQrCodeExport },
-    ],
-  });
-  const storefront = TestBed.inject(StorefrontFacade) as FakeStorefrontFacade;
-  const exports = TestBed.inject(QrCodeExport) as FakeQrCodeExport;
-  if (view) {
-    storefront.view.set(view);
-    rendered.detectChanges();
-  }
-  return { rendered, storefront, exports };
-}
-
 describe('QrCodeScreen', () => {
   it('waits for the storefront before showing a code', async () => {
-    await renderScreen();
+    const page = await QrCodeScreenPageObject.render();
 
-    expect(screen.getByRole('status', { name: /chargement/i })).toBeInTheDocument();
-    expect(screen.queryByRole('img')).not.toBeInTheDocument();
+    expect(page.loadingStatus()).toBeInTheDocument();
+    expect(page.queryCode()).not.toBeInTheDocument();
   });
 
   it('shows the code for the storefront address, named after it', async () => {
-    await renderScreen(published);
+    const storefront = new FakeStorefrontFacade();
+    const page = await QrCodeScreenPageObject.render({ storefront });
+    storefront.view.set(published);
+    page.detectChanges();
 
     const image = screen.getByRole('img', { name: 'QR code vers chez-mohamed.marketmiam.fr' });
     expect(image).toHaveAttribute('src', expect.stringMatching(/^data:image\/svg\+xml/));
@@ -54,17 +35,24 @@ describe('QrCodeScreen', () => {
   });
 
   it('shows the very code that reads as the storefront address', async () => {
-    await renderScreen(published);
+    const storefront = new FakeStorefrontFacade();
+    const page = await QrCodeScreenPageObject.render({ storefront });
+    storefront.view.set(published);
+    page.detectChanges();
 
-    const src = screen.getByRole('img', { name: /qr code/i }).getAttribute('src') ?? '';
+    const src = page.code().getAttribute('src') ?? '';
     const shown = decodeURIComponent(src.replace(/^data:image\/svg\+xml;charset=utf-8,/, ''));
     expect(shown).toBe(brandedQrCode('https://chez-mohamed.marketmiam.fr').svg);
   });
 
   it('hands the code, the address and a file named after the stall to the download', async () => {
-    const { exports } = await renderScreen(published);
+    const storefront = new FakeStorefrontFacade();
+    const exports = new FakeQrCodeExport();
+    const page = await QrCodeScreenPageObject.render({ storefront, exports });
+    storefront.view.set(published);
+    page.detectChanges();
 
-    fireEvent.click(screen.getByRole('button', { name: /télécharger/i }));
+    page.download();
 
     await waitFor(() => expect(exports.saved).toHaveLength(1));
     expect(exports.saved[0]).toEqual({
@@ -72,40 +60,52 @@ describe('QrCodeScreen', () => {
       caption: 'chez-mohamed.marketmiam.fr',
       fileName: 'qr-code-chez-mohamed.png',
     });
-    await waitFor(() => expect(screen.getByRole('button', { name: /télécharger/i })).toBeEnabled());
+    await waitFor(() => expect(page.downloadButton()).toBeEnabled());
   });
 
   it('holds the button while the file is being prepared', async () => {
-    const { exports, rendered } = await renderScreen(published);
+    const storefront = new FakeStorefrontFacade();
+    const exports = new FakeQrCodeExport();
+    const page = await QrCodeScreenPageObject.render({ storefront, exports });
+    storefront.view.set(published);
+    page.detectChanges();
     exports.holding = true;
 
-    fireEvent.click(screen.getByRole('button', { name: /télécharger/i }));
+    page.download();
 
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Préparation…' })).toBeDisabled());
+    await waitFor(() => expect(page.preparingButton()).toBeDisabled());
     exports.finish();
-    await waitFor(() => expect(screen.getByRole('button', { name: /télécharger/i })).toBeEnabled());
-    rendered.detectChanges();
+    await waitFor(() => expect(page.downloadButton()).toBeEnabled());
+    page.detectChanges();
   });
 
   it('says so when the file cannot be made, and lets the vendor try again', async () => {
-    const { exports } = await renderScreen(published);
+    const storefront = new FakeStorefrontFacade();
+    const exports = new FakeQrCodeExport();
+    const page = await QrCodeScreenPageObject.render({ storefront, exports });
+    storefront.view.set(published);
+    page.detectChanges();
     exports.outcome = 'failed';
 
-    fireEvent.click(screen.getByRole('button', { name: /télécharger/i }));
+    page.download();
 
-    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent(/n.a pas pu être préparée/i));
-    expect(screen.getByRole('button', { name: /télécharger/i })).toBeEnabled();
+    await waitFor(() => expect(page.alert()).toHaveTextContent(/n.a pas pu être préparée/i));
+    expect(page.downloadButton()).toBeEnabled();
 
     exports.outcome = 'done';
-    fireEvent.click(screen.getByRole('button', { name: /télécharger/i }));
+    page.download();
 
-    await waitFor(() => expect(screen.queryByRole('alert')).not.toBeInTheDocument());
+    await waitFor(() => expect(page.queryAlert()).not.toBeInTheDocument());
   });
 
   it('offers the image to the share sheet where the device has one that takes files', async () => {
-    const { exports } = await renderScreen(published);
+    const storefront = new FakeStorefrontFacade();
+    const exports = new FakeQrCodeExport();
+    const page = await QrCodeScreenPageObject.render({ storefront, exports });
+    storefront.view.set(published);
+    page.detectChanges();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Partager' }));
+    page.share();
 
     await waitFor(() => expect(exports.shared).toHaveLength(1));
     expect(exports.shared[0]).toEqual({
@@ -114,72 +114,100 @@ describe('QrCodeScreen', () => {
       fileName: 'qr-code-chez-mohamed.png',
     });
     expect(exports.saved).toHaveLength(0);
-    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(page.queryAlert()).not.toBeInTheDocument();
   });
 
   it('keeps the sheet off a device that cannot share files, leaving the download', async () => {
-    await renderScreen(published, false);
+    const storefront = new FakeStorefrontFacade();
+    const exports = Object.assign(new FakeQrCodeExport(), { shareable: false });
+    const page = await QrCodeScreenPageObject.render({ storefront, exports });
+    storefront.view.set(published);
+    page.detectChanges();
 
-    expect(screen.queryByRole('button', { name: 'Partager' })).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /télécharger/i })).toBeInTheDocument();
+    expect(page.queryShareButton()).not.toBeInTheDocument();
+    expect(page.downloadButton()).toBeInTheDocument();
   });
 
   it('says nothing when the vendor backs out of the sheet', async () => {
-    const { exports } = await renderScreen(published);
+    const storefront = new FakeStorefrontFacade();
+    const exports = new FakeQrCodeExport();
+    const page = await QrCodeScreenPageObject.render({ storefront, exports });
+    storefront.view.set(published);
+    page.detectChanges();
     exports.outcome = 'backed-out';
 
-    fireEvent.click(screen.getByRole('button', { name: 'Partager' }));
+    page.share();
 
     await waitFor(() => expect(exports.shared).toHaveLength(1));
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Partager' })).toBeEnabled());
-    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    await waitFor(() => expect(page.shareButton()).toBeEnabled());
+    expect(page.queryAlert()).not.toBeInTheDocument();
   });
 
   it('says so when the image for the sheet cannot be made', async () => {
-    const { exports } = await renderScreen(published);
+    const storefront = new FakeStorefrontFacade();
+    const exports = new FakeQrCodeExport();
+    const page = await QrCodeScreenPageObject.render({ storefront, exports });
+    storefront.view.set(published);
+    page.detectChanges();
     exports.outcome = 'failed';
 
-    fireEvent.click(screen.getByRole('button', { name: 'Partager' }));
+    page.share();
 
-    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent(/n.a pas pu être préparée/i));
+    await waitFor(() => expect(page.alert()).toHaveTextContent(/n.a pas pu être préparée/i));
   });
 
   it('holds both actions while the sheet is being prepared, naming the one in progress', async () => {
-    const { exports } = await renderScreen(published);
+    const storefront = new FakeStorefrontFacade();
+    const exports = new FakeQrCodeExport();
+    const page = await QrCodeScreenPageObject.render({ storefront, exports });
+    storefront.view.set(published);
+    page.detectChanges();
     exports.holding = true;
 
-    fireEvent.click(screen.getByRole('button', { name: 'Partager' }));
+    page.share();
 
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Préparation…' })).toBeDisabled());
-    expect(screen.getByRole('button', { name: /télécharger/i })).toBeDisabled();
+    await waitFor(() => expect(page.preparingButton()).toBeDisabled());
+    expect(page.downloadButton()).toBeDisabled();
     exports.finish();
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Partager' })).toBeEnabled());
+    await waitFor(() => expect(page.shareButton()).toBeEnabled());
   });
 
   it('warns that the code leads nowhere until the vitrine is published', async () => {
-    await renderScreen({ ...published, published: false });
+    const storefront = new FakeStorefrontFacade();
+    const page = await QrCodeScreenPageObject.render({ storefront });
+    storefront.view.set({ ...published, published: false });
+    page.detectChanges();
 
     expect(screen.getByText(/pas encore publiée/i)).toBeInTheDocument();
-    expect(screen.getByRole('img', { name: /qr code/i })).toBeInTheDocument();
+    expect(page.code()).toBeInTheDocument();
   });
 
   it('keeps the warning off a published vitrine', async () => {
-    await renderScreen(published);
+    const storefront = new FakeStorefrontFacade();
+    const page = await QrCodeScreenPageObject.render({ storefront });
+    storefront.view.set(published);
+    page.detectChanges();
 
     expect(screen.queryByText(/pas encore publiée/i)).not.toBeInTheDocument();
   });
 
   it('explains the address is pending and offers nothing to download without a subdomain', async () => {
-    await renderScreen({ ...published, subdomain: null });
+    const storefront = new FakeStorefrontFacade();
+    const page = await QrCodeScreenPageObject.render({ storefront });
+    storefront.view.set({ ...published, subdomain: null });
+    page.detectChanges();
 
     expect(screen.getByText(/en cours d.attribution/i)).toBeInTheDocument();
-    expect(screen.queryByRole('img')).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /télécharger/i })).not.toBeInTheDocument();
+    expect(page.queryCode()).not.toBeInTheDocument();
+    expect(page.queryDownloadButton()).not.toBeInTheDocument();
   });
 
   it('leads back to the dashboard', async () => {
-    await renderScreen(published);
+    const storefront = new FakeStorefrontFacade();
+    const page = await QrCodeScreenPageObject.render({ storefront });
+    storefront.view.set(published);
+    page.detectChanges();
 
-    expect(screen.getByRole('link', { name: /retour/i })).toHaveAttribute('href', '/dashboard');
+    expect(page.backLink()).toHaveAttribute('href', '/dashboard');
   });
 });
