@@ -82,6 +82,21 @@ describe('The operator API', () => {
     expect((await marie.recorded('VendorInvited'))?.metadata).toMatchObject({ operatorId: testOperator.operatorId });
   });
 
+  // Claimed and recorded together, in one transaction (ADR 0065).
+  it('assigns a vendor their subdomain', async () => {
+    const marie = await ops.inviteVendor('marie@example.com');
+
+    await ops.assignSubdomain(marie.id, 'chez-marie').expect(204);
+
+    expect(await app.get(InMemorySubdomainRegistry).vendorFor('chez-marie')).toBe(marie.id);
+    expect(await marie.history()).toContainEqual(
+      expect.objectContaining({
+        type: 'VendorSubdomainAssigned',
+        payload: { vendorId: marie.id, subdomain: 'chez-marie', assignedAt: FIXED_NOW },
+      }),
+    );
+  });
+
   // Accepted, not done: the processors carry the erasure out (ADR 0058).
   it('erases a vendor', async () => {
     const marie = await ops.inviteVendor('marie@example.com');

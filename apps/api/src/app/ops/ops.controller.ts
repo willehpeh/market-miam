@@ -1,9 +1,9 @@
-import { Body, ConflictException, Controller, Get, HttpCode, HttpStatus, Param, Post, UseGuards, UseInterceptors } from '@nestjs/common';
+import { Body, ConflictException, Controller, Get, HttpCode, HttpStatus, Param, Post, Put, UseGuards, UseInterceptors } from '@nestjs/common';
 import { z } from 'zod';
 import { OperatorAuthGuard } from '@market-miam/auth-nestjs';
 import { Clock } from '@market-miam/common';
 import { CommandGateway } from '@market-miam/event-sourcing';
-import { EraseVendor, SubdomainRegistry } from '@market-miam/market-days';
+import { AssignSubdomain, EraseVendor, SubdomainRegistry } from '@market-miam/market-days';
 import { Accounts } from './accounts/accounts';
 import { accountList, AccountListing } from './account-list';
 import { shapeOf } from '../shape-of.pipe';
@@ -12,6 +12,8 @@ import { EmailInUseError, Invitations } from './invitations';
 
 // Shape only (ADR 0046): what an email must be is the Email value object's to say.
 const InvitationBody = z.object({ email: z.string() });
+// What a subdomain may be is the Subdomain value object's to say (ADR 0065).
+const SubdomainBody = z.object({ subdomain: z.string() });
 
 // The operator surface: everything the admin app calls lives under ops/, behind the
 // operator guard on the class (never per route — see OperatorAuthGuard), and with the
@@ -46,6 +48,16 @@ export class OpsController {
       }
       throw error;
     }
+  }
+
+  // Claimed and recorded together, in one transaction (ADR 0065).
+  @Put('vendors/:vendorId/subdomain')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async assignSubdomain(
+    @Param('vendorId') vendorId: string,
+    @Body(shapeOf(SubdomainBody)) { subdomain }: z.infer<typeof SubdomainBody>,
+  ): Promise<void> {
+    await this.commands.execute(new AssignSubdomain(vendorId, subdomain, this.clock.now().value()));
   }
 
   // Accepted, not done: the processors carry the erasure out (ADR 0058, 0063).

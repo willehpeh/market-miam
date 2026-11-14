@@ -31,6 +31,10 @@ export class OperatorApi {
     return new VendorOnRecord(this.app, vendorId);
   }
 
+  assignSubdomain(vendorId: string, subdomain: string): Test {
+    return this.call({ verb: 'put', path: `/ops/vendors/${vendorId}/subdomain` }).send({ subdomain });
+  }
+
   erase(vendorId: string): Test {
     return this.call({ verb: 'post', path: `/ops/vendors/${vendorId}/erasure` });
   }
