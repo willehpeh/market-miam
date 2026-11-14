@@ -37,7 +37,7 @@ const schedule = {
 const typesOf = (events: StoredEvent[]): string[] => events.map((event) => event.type);
 
 // One vendor's whole life, on Postgres, through the api as production assembles it: invited,
-// signed in, published, erased. Only the edges are faked: who signs in, Auth0's Management
+// given a subdomain, signed in, published, erased. Only the edges are faked: who signs in, Auth0's Management
 // API, Cloudinary. Run by hand or nightly (`npx nx scenario api`), never in CI.
 describe("A vendor's life, from invitation to erasure", () => {
   let postgres: PostgresHarness;
@@ -66,6 +66,10 @@ describe("A vendor's life, from invitation to erasure", () => {
     expect(typesOf(opened)).toEqual(['VendorInvited', 'VendorAccountOpened']);
     expect(auth0.users).toEqual([{ connection: 'email', email: MARIE, app_metadata: { vendorId: marie.id } }]);
 
+    // Given her subdomain: claimed and recorded in one transaction, waiting for her first sign-in.
+    await ops.assignSubdomain(marie.id, 'chez-marie').expect(204);
+    expect(typesOf(await marie.history())).toEqual(['VendorInvited', 'VendorAccountOpened', 'VendorSubdomainAssigned']);
+
     // Signed in: the vendor app registers her, and a processor opens her storefront.
     const vendor = new VendorApi(app, marie.id, MARIE);
     await vendor.register().expect(201);
@@ -82,8 +86,6 @@ describe("A vendor's life, from invitation to erasure", () => {
       .expect(201);
     await vendor.registerSchedule(schedule).expect(201);
     await vendor.provideLegalIdentity(legalIdentity).expect(200);
-    // By hand, as production assigns one until admin plan slice 3 gives the operator a route.
-    await postgres.pool.query('INSERT INTO subdomain_registry (subdomain, vendor_id) VALUES ($1, $2)', ['chez-marie', marie.id]);
     await vendor.publish().expect(204);
 
     const published = await eventually(
@@ -99,12 +101,14 @@ describe("A vendor's life, from invitation to erasure", () => {
     expect(typesOf(erased)).toEqual([
       'VendorInvited',
       'VendorAccountOpened',
+      'VendorSubdomainAssigned',
       'VendorRegistered',
       'VendorLegalIdentityProvided',
       'VendorErased',
       'VendorAccountClosed',
     ]);
     expect(erased[0].payload['email']).toBe(SHREDDED);
+    expect(erased[2].payload['subdomain']).toBe(SHREDDED);
     expect(await app.get(DataKeys).findKeyFor(marie.id)).toBeNull();
     expect(auth0.users).toEqual([]);
     const gone = await eventually(
