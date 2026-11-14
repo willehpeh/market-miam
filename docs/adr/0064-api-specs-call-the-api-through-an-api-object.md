@@ -49,7 +49,8 @@ call a `VendorApi` signed with a vendor's token.
 - Specs read as the caller's steps, and a vendor is a handle that carries its id rather than a
   string pulled out of a body.
 - The operator API's spec keeps no function of its own: its four helpers and its route discovery
-  became `OperatorApi`, `VendorOnRecord` and `EventLog`.
+  became `OperatorApi`, `VendorOnRecord` and `EventLog`. More code in total, as with ADR 0062: the
+  spec went from 181 lines to 128, and the three objects add 100.
 - An api object grows with its api: assigning subdomains (admin plan slice 3) and rebuilding
   projections (slice 6) add methods to `OperatorApi`.
 
