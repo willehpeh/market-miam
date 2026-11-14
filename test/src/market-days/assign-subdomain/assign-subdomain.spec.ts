@@ -4,6 +4,7 @@ import {
   AssignSubdomainHandler,
   InMemorySubdomainRegistry,
   InvalidSubdomainError,
+  ReservedSubdomainError,
   VendorScopedEvents,
   Vendors,
 } from '@market-miam/market-days';
@@ -61,4 +62,18 @@ describe('Assign Subdomain', () => {
     expect(await registry.assignments()).toEqual([]);
     expect(store.newEvents()).toEqual([]);
   });
+
+  // Hosts Market Miam serves, or may serve: a vendor there would never be reached (ADR 0065).
+  it.each(['admin', 'api', 'app', 'www', 'mail', 'staging', 'status'])(
+    'refuses the reserved subdomain %s, claiming and recording nothing',
+    async (subdomain) => {
+      given(vendorInvited());
+
+      await expect(handler.execute(new AssignSubdomain('vendor-id', subdomain, ASSIGNED_AT))).rejects.toThrow(
+        ReservedSubdomainError,
+      );
+      expect(await registry.assignments()).toEqual([]);
+      expect(store.newEvents()).toEqual([]);
+    },
+  );
 });
