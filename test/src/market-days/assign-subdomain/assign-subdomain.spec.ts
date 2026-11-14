@@ -3,6 +3,7 @@ import {
   AssignSubdomain,
   AssignSubdomainHandler,
   InMemorySubdomainRegistry,
+  InvalidSubdomainError,
   VendorScopedEvents,
   Vendors,
 } from '@market-miam/market-days';
@@ -37,5 +38,27 @@ describe('Assign Subdomain', () => {
         payload: { vendorId: 'vendor-id', subdomain: 'chez-marie', assignedAt: ASSIGNED_AT },
       }),
     ]);
+  });
+
+  // A DNS label a storefront can live at (ADR 0065).
+  it.each([
+    { subdomain: '', why: 'empty' },
+    { subdomain: 'ab', why: 'too short' },
+    { subdomain: 'a'.repeat(64), why: 'too long' },
+    { subdomain: '-marie', why: 'starting with a hyphen' },
+    { subdomain: 'marie-', why: 'ending with a hyphen' },
+    { subdomain: 'xn--crpes', why: 'holding a double hyphen' },
+    { subdomain: 'chez_marie', why: 'holding an underscore' },
+    { subdomain: 'chez.marie', why: 'holding a dot' },
+    { subdomain: 'chez marie', why: 'holding a space' },
+    { subdomain: 'crêpes', why: 'holding an accent' },
+  ])('refuses a subdomain $why, claiming and recording nothing', async ({ subdomain }) => {
+    given(vendorInvited());
+
+    await expect(handler.execute(new AssignSubdomain('vendor-id', subdomain, ASSIGNED_AT))).rejects.toThrow(
+      InvalidSubdomainError,
+    );
+    expect(await registry.assignments()).toEqual([]);
+    expect(store.newEvents()).toEqual([]);
   });
 });
