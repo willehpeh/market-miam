@@ -1,0 +1,80 @@
+{% comment %}
+  The passwordless email connection's message (ADR 0060). Auth0 sends it twice over: when the
+  Management application opens a vendor's account, which makes it the invitation, and at each
+  sign-in to the vendor app. The invitation has no link: one made for the Management application
+  leads nowhere. Brand values from packages/design-system/tokens.css, inlined for mail clients.
+{% endcomment %}
+{% assign invitation = false %}{% if application.name == "Management" %}{% assign invitation = true %}{% endif %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <meta name="supported-color-schemes" content="light">
+  <title>Market Miam</title>
+</head>
+<body style="margin:0; padding:0; background-color:#f1ede5;">
+  <div style="display:none; max-height:0; overflow:hidden; opacity:0;">
+    {% if invitation %}Votre compte est prêt&nbsp;: connectez-vous sur app.marketmiam.fr avec cette adresse.{% elsif link and link != "" %}Votre lien pour vous connecter à Market Miam.{% else %}Votre code pour vous connecter à Market Miam.{% endif %}
+  </div>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f1ede5;">
+    <tr>
+      <td align="center" style="padding:32px 12px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:520px; background-color:#ffffff; border:1px solid #e7e1d6; border-radius:12px;">
+          <tr>
+            <td align="center" style="padding:32px 28px 8px;">
+              <img src="https://app.marketmiam.fr/assets/email-logo.png" width="240" height="40" alt="Market Miam" style="display:block; width:240px; height:auto; border:0;">
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:20px 28px 8px; font-family:'Hanken Grotesk','Helvetica Neue',Helvetica,Arial,sans-serif; font-size:16px; line-height:1.55; color:#2a241e;">
+              {% if invitation %}
+              <h1 style="margin:0 0 16px; font-size:22px; line-height:1.3; font-weight:700; color:#2a241e;">Bienvenue sur Market Miam</h1>
+              <p style="margin:0 0 16px;">Votre compte est prêt. Vous y créerez la vitrine de votre activité&nbsp;: vos plats, les marchés où vous trouver et vos horaires, sur votre propre site.</p>
+              <p style="margin:0 0 24px;">Pour entrer, rendez-vous sur <strong>app.marketmiam.fr</strong> et saisissez cette adresse e-mail&nbsp;: vous recevrez un lien pour vous connecter.</p>
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center">
+                <tr>
+                  <td align="center" bgcolor="#c0562f" style="border-radius:8px;">
+                    <a href="https://app.marketmiam.fr" style="display:inline-block; padding:14px 28px; font-family:'Hanken Grotesk','Helvetica Neue',Helvetica,Arial,sans-serif; font-size:16px; font-weight:700; color:#ffffff; text-decoration:none; border-radius:8px;">Accéder à Market Miam</a>
+                  </td>
+                </tr>
+              </table>
+              {% elsif link and link != "" %}
+              <h1 style="margin:0 0 16px; font-size:22px; line-height:1.3; font-weight:700; color:#2a241e;">Votre lien de connexion</h1>
+              <p style="margin:0 0 24px;">Appuyez sur le bouton pour vous connecter à Market Miam. Ce lien n’est valable que quelques minutes.</p>
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center">
+                <tr>
+                  <td align="center" bgcolor="#c0562f" style="border-radius:8px;">
+                    <a href="{{ link }}" style="display:inline-block; padding:14px 28px; font-family:'Hanken Grotesk','Helvetica Neue',Helvetica,Arial,sans-serif; font-size:16px; font-weight:700; color:#ffffff; text-decoration:none; border-radius:8px;">Me connecter</a>
+                  </td>
+                </tr>
+              </table>
+              <p style="margin:24px 0 0; font-size:13px; line-height:1.5; color:#6f665c;">Le bouton ne fonctionne pas&nbsp;? Copiez ce lien dans votre navigateur&nbsp;:<br>
+                <a href="{{ link }}" style="color:#7a3320; word-break:break-all;">{{ link }}</a></p>
+              {% else %}
+              <h1 style="margin:0 0 16px; font-size:22px; line-height:1.3; font-weight:700; color:#2a241e;">Votre code de connexion</h1>
+              <p style="margin:0 0 20px;">Saisissez ce code pour vous connecter à Market Miam. Il n’est valable que quelques minutes.</p>
+              <p style="margin:0; padding:16px; background-color:#f4e3d8; border-radius:8px; text-align:center; font-family:'Space Mono','Courier New',Courier,monospace; font-size:28px; font-weight:700; letter-spacing:6px; color:#7a3320;">{{ code }}</p>
+              {% endif %}
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:24px 28px 28px; font-family:'Hanken Grotesk','Helvetica Neue',Helvetica,Arial,sans-serif; font-size:13px; line-height:1.5; color:#6f665c;">
+              <hr style="margin:0 0 16px; border:0; border-top:1px solid #e7e1d6;">
+              {% if invitation %}
+              Vous ne vous attendiez pas à cette invitation&nbsp;? Ignorez simplement cet e-mail.
+              {% else %}
+              Vous n’avez pas demandé à vous connecter&nbsp;? Ignorez cet e-mail&nbsp;: sans accès à votre boîte mail, personne ne peut entrer dans votre compte.
+              {% endif %}
+            </td>
+          </tr>
+        </table>
+        <p style="margin:16px 0 0; font-family:'Hanken Grotesk','Helvetica Neue',Helvetica,Arial,sans-serif; font-size:12px; color:#6f665c;">
+          Market Miam · <a href="https://marketmiam.fr" style="color:#6f665c;">marketmiam.fr</a>
+        </p>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
