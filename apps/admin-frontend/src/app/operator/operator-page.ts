@@ -39,8 +39,9 @@ import { ErasureFacade } from '../erasures/erasure.facade';
           <admin-account-list
             [accounts]="accounts.accounts()"
             [loading]="accounts.loading()"
-            [failed]="accounts.failed()"
+            [loadFailed]="accounts.failed()"
             [erasing]="erasures.erasing() !== null"
+            [erasureFailed]="erasures.failed()"
             (erase)="erasures.erase($event)"
           />
         }

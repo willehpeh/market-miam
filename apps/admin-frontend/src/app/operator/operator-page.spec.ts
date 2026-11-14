@@ -218,4 +218,16 @@ describe('OperatorPage', () => {
     expect(page.eraseButton('owner@acme.test')).toBeDisabled();
     expect(page.eraseButton('owner@brioche.test')).toBeDisabled();
   });
+
+  // Beside the row it concerns, whose Erase button is there to try again.
+  it('says which vendor could not be erased, beside their row', async () => {
+    accounts.accounts.set([ACME, BRIOCHE]);
+    erasures.failed.set('acme-bakery');
+    const page = await signedIn();
+
+    expect(page.accounts()).toEqual([
+      'owner@acme.test acme.marketmiam.fr acme-bakery Not erased: try again.',
+      'owner@brioche.test no subdomain brioche-co',
+    ]);
+  });
 });
