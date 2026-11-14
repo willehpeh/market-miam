@@ -1,91 +1,66 @@
-import { TestBed } from '@angular/core/testing';
-import { render, screen, fireEvent } from '@testing-library/angular';
-import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
-import { AddSchedule } from './add-schedule';
-import { MarketScheduleFacade } from './market-schedule.facade';
+import { screen } from '@testing-library/angular';
+import { AddSchedulePageObject } from './add-schedule.page-object';
 import { FakeMarketScheduleFacade } from './fake.market-schedule.facade';
 import { MarketScheduleView } from './market-schedules';
 
-async function renderForm() {
-  const view = await render(AddSchedule, {
-    providers: [provideRouter([]), { provide: MarketScheduleFacade, useClass: FakeMarketScheduleFacade }],
-  });
-  const markets = TestBed.inject(MarketScheduleFacade) as FakeMarketScheduleFacade;
-  return { view, markets };
-}
-
-function fill(label: RegExp, value: string) {
-  fireEvent.input(screen.getByLabelText(label), { target: { value } });
-}
-
-function fillRequired() {
-  fill(/nom du marché/i, 'Marché de Monplaisir');
-  fill(/code postal/i, '69008');
-  fill(/ville/i, 'Lyon');
-}
-
-const submitButton = () => screen.getByRole('button', { name: /ajouter le marché/i });
-
 describe('AddSchedule', () => {
   it('offers a cancel route back to the calendar', async () => {
-    await renderForm();
-    expect(screen.getByRole('link', { name: /annuler/i })).toHaveAttribute('href', '/dashboard/markets');
+    const page = await AddSchedulePageObject.render();
+
+    expect(page.cancelLink()).toHaveAttribute('href', '/dashboard/markets');
   });
 
   it('disables the one-off frequency for now', async () => {
-    await renderForm();
-    expect(screen.getByRole('button', { name: /une seule fois/i })).toBeDisabled();
+    const page = await AddSchedulePageObject.render();
+
+    expect(page.oneOffButton()).toBeDisabled();
   });
 
   it('will not submit an empty form', async () => {
-    await renderForm();
-    expect(submitButton()).toBeDisabled();
+    const page = await AddSchedulePageObject.render();
+
+    expect(page.addButton()).toBeDisabled();
   });
 
   it('adds a time row with default hours when a day is picked', async () => {
-    const { view } = await renderForm();
-    fireEvent.click(screen.getByRole('button', { name: /^mardi$/i }));
-    view.detectChanges();
+    const page = await AddSchedulePageObject.render();
 
-    expect(screen.getByLabelText(/début mardi/i)).toHaveValue('08:00');
-    expect(screen.getByLabelText(/fin mardi/i)).toHaveValue('13:00');
+    page.pickDay('mardi');
+
+    expect(page.startTimeField('mardi')).toHaveValue('08:00');
+    expect(page.endTimeField('mardi')).toHaveValue('13:00');
   });
 
   it('removes the time row when the day is unpicked', async () => {
-    const { view } = await renderForm();
-    fireEvent.click(screen.getByRole('button', { name: /^mardi$/i }));
-    view.detectChanges();
-    fireEvent.click(screen.getByRole('button', { name: /^mardi$/i }));
-    view.detectChanges();
+    const page = await AddSchedulePageObject.render();
 
-    expect(screen.queryByLabelText(/début mardi/i)).toBeNull();
+    page.pickDay('mardi').unpickDay('mardi');
+
+    expect(page.queryStartTimeField('mardi')).toBeNull();
   });
 
   it('flags a postal code that is not five digits', async () => {
-    const { view } = await renderForm();
-    fill(/code postal/i, '69');
-    fireEvent.blur(screen.getByLabelText(/code postal/i));
-    view.detectChanges();
+    const page = await AddSchedulePageObject.render();
+
+    page.enterPostalCode('69').leavePostalCode();
 
     expect(screen.getByText(/5 chiffres/i)).toBeVisible();
   });
 
   it('enables submit once name, town, a 5-digit postal and a day are set', async () => {
-    const { view } = await renderForm();
-    fillRequired();
-    fireEvent.click(screen.getByRole('button', { name: /^mardi$/i }));
-    view.detectChanges();
+    const page = await AddSchedulePageObject.render();
 
-    expect(submitButton()).toBeEnabled();
+    page.enterName('Marché de Monplaisir').enterPostalCode('69008').enterTown('Lyon').pickDay('mardi');
+
+    expect(page.addButton()).toBeEnabled();
   });
 
   it('registers the schedule, omitting empty optionals and defaulting weekly', async () => {
-    const { view, markets } = await renderForm();
-    fillRequired();
-    fireEvent.click(screen.getByRole('button', { name: /^mardi$/i }));
-    view.detectChanges();
+    const markets = new FakeMarketScheduleFacade();
+    const page = await AddSchedulePageObject.render({ markets });
+    page.enterName('Marché de Monplaisir').enterPostalCode('69008').enterTown('Lyon').pickDay('mardi');
 
-    fireEvent.click(submitButton());
+    page.add();
 
     expect(markets.registered).toEqual({
       market: { name: 'Marché de Monplaisir', codePostal: '69008', town: 'Lyon' },
@@ -95,15 +70,18 @@ describe('AddSchedule', () => {
   });
 
   it('carries address, pitch and multiple days in weekday order', async () => {
-    const { view, markets } = await renderForm();
-    fillRequired();
-    fill(/adresse/i, 'Place du Prado');
-    fill(/emplacement/i, 'Allée centrale, stand 24');
-    fireEvent.click(screen.getByRole('button', { name: /^jeudi$/i }));
-    fireEvent.click(screen.getByRole('button', { name: /^mardi$/i }));
-    view.detectChanges();
+    const markets = new FakeMarketScheduleFacade();
+    const page = await AddSchedulePageObject.render({ markets });
+    page
+      .enterName('Marché de Monplaisir')
+      .enterPostalCode('69008')
+      .enterTown('Lyon')
+      .enterAddress('Place du Prado')
+      .enterPitch('Allée centrale, stand 24')
+      .pickDay('jeudi')
+      .pickDay('mardi');
 
-    fireEvent.click(submitButton());
+    page.add();
 
     expect(markets.registered).toEqual({
       market: {
@@ -122,38 +100,32 @@ describe('AddSchedule', () => {
   });
 
   it('will not submit when a day closes before it opens', async () => {
-    const { view } = await renderForm();
-    fillRequired();
-    fireEvent.click(screen.getByRole('button', { name: /^mardi$/i }));
-    view.detectChanges();
-    fireEvent.input(screen.getByLabelText(/fin mardi/i), { target: { value: '07:00' } });
-    view.detectChanges();
+    const page = await AddSchedulePageObject.render();
+    page.enterName('Marché de Monplaisir').enterPostalCode('69008').enterTown('Lyon').pickDay('mardi');
 
-    expect(submitButton()).toBeDisabled();
+    page.enterEndTime('mardi', '07:00');
+
+    expect(page.addButton()).toBeDisabled();
   });
 
   // A day with no closing time never ends: it hides the next day from the vendor's menu
   // card until midnight, and lists a packed-up market to customers all evening.
   it('will not submit a day with no closing time', async () => {
-    const { view } = await renderForm();
-    fillRequired();
-    fireEvent.click(screen.getByRole('button', { name: /^mardi$/i }));
-    view.detectChanges();
-    fireEvent.input(screen.getByLabelText(/fin mardi/i), { target: { value: '' } });
-    view.detectChanges();
+    const page = await AddSchedulePageObject.render();
+    page.enterName('Marché de Monplaisir').enterPostalCode('69008').enterTown('Lyon').pickDay('mardi');
 
-    expect(submitButton()).toBeDisabled();
+    page.clearEndTime('mardi');
+
+    expect(page.addButton()).toBeDisabled();
   });
 
   it('will not submit a day with no opening time', async () => {
-    const { view } = await renderForm();
-    fillRequired();
-    fireEvent.click(screen.getByRole('button', { name: /^mardi$/i }));
-    view.detectChanges();
-    fireEvent.input(screen.getByLabelText(/début mardi/i), { target: { value: '' } });
-    view.detectChanges();
+    const page = await AddSchedulePageObject.render();
+    page.enterName('Marché de Monplaisir').enterPostalCode('69008').enterTown('Lyon').pickDay('mardi');
 
-    expect(submitButton()).toBeDisabled();
+    page.clearStartTime('mardi');
+
+    expect(page.addButton()).toBeDisabled();
   });
 
   // The day rules live outside the form — `days` is a set of custom toggles, not a field —
@@ -161,7 +133,7 @@ describe('AddSchedule', () => {
   // to disable the button and say nothing at all.
   describe('saying why the market cannot be added yet', () => {
     it('names what a blank form is still missing', async () => {
-      await renderForm();
+      await AddSchedulePageObject.render();
 
       expect(screen.getByText('Indiquez le nom du marché.')).toBeVisible();
       expect(screen.getByText('Indiquez la ville.')).toBeVisible();
@@ -170,44 +142,39 @@ describe('AddSchedule', () => {
     });
 
     it('describes the disabled button with those reasons', async () => {
-      const { view } = await renderForm();
+      const page = await AddSchedulePageObject.render();
 
-      const describedBy = submitButton().getAttribute('aria-describedby');
+      const describedBy = page.addButton().getAttribute('aria-describedby');
       expect(describedBy).toBeTruthy();
-      expect(view.container.querySelector(`#${describedBy}`)?.textContent).toContain('Indiquez le nom du marché.');
+      expect(page.addButton()).toHaveAccessibleDescription(expect.stringContaining('Indiquez le nom du marché.'));
     });
 
     it('says when a day has no closing time', async () => {
-      const { view } = await renderForm();
-      fillRequired();
-      fireEvent.click(screen.getByRole('button', { name: /^mardi$/i }));
-      view.detectChanges();
-      fireEvent.input(screen.getByLabelText(/fin mardi/i), { target: { value: '' } });
-      view.detectChanges();
+      const page = await AddSchedulePageObject.render();
+      page.enterName('Marché de Monplaisir').enterPostalCode('69008').enterTown('Lyon').pickDay('mardi');
+
+      page.clearEndTime('mardi');
 
       expect(screen.getByText('Complétez les horaires de chaque jour.')).toBeVisible();
     });
 
     it('says when a day closes before it opens', async () => {
-      const { view } = await renderForm();
-      fillRequired();
-      fireEvent.click(screen.getByRole('button', { name: /^mardi$/i }));
-      view.detectChanges();
-      fireEvent.input(screen.getByLabelText(/fin mardi/i), { target: { value: '07:00' } });
-      view.detectChanges();
+      const page = await AddSchedulePageObject.render();
+      page.enterName('Marché de Monplaisir').enterPostalCode('69008').enterTown('Lyon').pickDay('mardi');
+
+      page.enterEndTime('mardi', '07:00');
 
       expect(screen.getByText('Une fermeture ne peut pas précéder son ouverture.')).toBeVisible();
     });
 
     it('says nothing once the market can be added', async () => {
-      const { view } = await renderForm();
-      fillRequired();
-      fireEvent.click(screen.getByRole('button', { name: /^mardi$/i }));
-      view.detectChanges();
+      const page = await AddSchedulePageObject.render();
 
-      expect(submitButton()).toBeEnabled();
+      page.enterName('Marché de Monplaisir').enterPostalCode('69008').enterTown('Lyon').pickDay('mardi');
+
+      expect(page.addButton()).toBeEnabled();
       expect(screen.queryByText('Choisissez au moins un jour.')).not.toBeInTheDocument();
-      expect(submitButton()).not.toHaveAttribute('aria-describedby');
+      expect(page.addButton()).not.toHaveAttribute('aria-describedby');
     });
   });
 
@@ -221,114 +188,106 @@ describe('AddSchedule', () => {
       frequency: { weeks: 1 },
     };
 
-    async function renderEdit() {
+    // A calendar that has already loaded these schedules.
+    function calendarOf(...schedules: MarketScheduleView[]): FakeMarketScheduleFacade {
       const markets = new FakeMarketScheduleFacade();
-      markets.schedules.set([existing]);
-      const view = await render(AddSchedule, {
-        providers: [
-          provideRouter([]),
-          { provide: MarketScheduleFacade, useValue: markets },
-          { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ scheduleId: 'schedule-1' }) } } },
-        ],
-      });
-      return { view, markets };
+      markets.schedules.set(schedules);
+      return markets;
     }
 
     it('pre-fills the form from the schedule and labels it as an edit', async () => {
-      await renderEdit();
+      const page = await AddSchedulePageObject.render({ markets: calendarOf(existing), scheduleId: 'schedule-1' });
 
       expect(screen.getByText(/modifier le marché/i)).toBeVisible();
-      expect(screen.getByLabelText(/nom du marché/i)).toHaveValue('Marché de Belleville');
-      expect(screen.getByLabelText(/ville/i)).toHaveValue('Paris');
-      expect(screen.getByRole('button', { name: /^mardi$/i })).toHaveAttribute('aria-pressed', 'true');
-      expect(screen.getByLabelText(/début mardi/i)).toHaveValue('07:00');
-      expect(screen.getByLabelText(/fin mardi/i)).toHaveValue('14:30');
+      expect(page.nameField()).toHaveValue('Marché de Belleville');
+      expect(page.townField()).toHaveValue('Paris');
+      expect(page.dayButton('mardi')).toHaveAttribute('aria-pressed', 'true');
+      expect(page.startTimeField('mardi')).toHaveValue('07:00');
+      expect(page.endTimeField('mardi')).toHaveValue('14:30');
     });
 
     // The cold direct-nav the route guard used to cover: the screen waits for the market
     // it names rather than rendering an empty form a save would write back over it.
-    async function renderCold() {
+    function stillLoading(): FakeMarketScheduleFacade {
       const markets = new FakeMarketScheduleFacade();
       markets.loading.set(true);
-      const view = await render(AddSchedule, {
-        providers: [
-          provideRouter([]),
-          { provide: MarketScheduleFacade, useValue: markets },
-          { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ scheduleId: 'schedule-1' }) } } },
-        ],
-      });
-      const deliver = (schedules: MarketScheduleView[]) => {
-        markets.schedules.set(schedules);
-        markets.loading.set(false);
-        view.detectChanges();
-      };
-      return { view, markets, deliver };
+      return markets;
+    }
+
+    function deliver(markets: FakeMarketScheduleFacade, schedules: MarketScheduleView[]) {
+      markets.schedules.set(schedules);
+      markets.loading.set(false);
     }
 
     it('asks for the schedules itself, now that no guard warms them', async () => {
-      const { markets } = await renderCold();
+      const markets = stillLoading();
+      await AddSchedulePageObject.render({ markets, scheduleId: 'schedule-1' });
 
       expect(markets.loaded).toBe(true);
     });
 
     it('waits rather than offering an empty form', async () => {
-      await renderCold();
+      const page = await AddSchedulePageObject.render({ markets: stillLoading(), scheduleId: 'schedule-1' });
 
-      expect(screen.getByRole('status', { name: /chargement/i })).toBeInTheDocument();
-      expect(screen.queryByLabelText(/nom du marché/i)).not.toBeInTheDocument();
-      expect(screen.queryByRole('button', { name: /enregistrer/i })).not.toBeInTheDocument();
+      expect(page.loadingStatus()).toBeInTheDocument();
+      expect(page.queryNameField()).not.toBeInTheDocument();
+      expect(page.querySaveButton()).not.toBeInTheDocument();
     });
 
     it('prefills once the market arrives, days and hours included', async () => {
-      const { deliver } = await renderCold();
+      const markets = stillLoading();
+      const page = await AddSchedulePageObject.render({ markets, scheduleId: 'schedule-1' });
 
-      deliver([existing]);
+      deliver(markets, [existing]);
+      page.detectChanges();
 
-      expect(screen.getByLabelText(/nom du marché/i)).toHaveValue('Marché de Belleville');
-      expect(screen.getByRole('button', { name: /^mardi$/i })).toHaveAttribute('aria-pressed', 'true');
-      expect(screen.getByLabelText(/début mardi/i)).toHaveValue('07:00');
+      expect(page.nameField()).toHaveValue('Marché de Belleville');
+      expect(page.dayButton('mardi')).toHaveAttribute('aria-pressed', 'true');
+      expect(page.startTimeField('mardi')).toHaveValue('07:00');
     });
 
     it('amends the market that arrives rather than registering a second one', async () => {
-      const { view, deliver, markets } = await renderCold();
-      deliver([existing]);
+      const markets = stillLoading();
+      const page = await AddSchedulePageObject.render({ markets, scheduleId: 'schedule-1' });
+      deliver(markets, [existing]);
+      page.detectChanges();
 
-      fireEvent.input(screen.getByLabelText(/nom du marché/i), { target: { value: 'Marché Renommé' } });
-      view.detectChanges();
-      fireEvent.click(screen.getByRole('button', { name: /enregistrer/i }));
+      page.enterName('Marché Renommé').save();
 
       expect(markets.amended?.scheduleId).toBe('schedule-1');
       expect(markets.registered).toBeUndefined();
     });
 
     it('keeps what the vendor typed when the store updates underneath', async () => {
-      const { view, deliver, markets } = await renderCold();
-      deliver([existing]);
-      fireEvent.input(screen.getByLabelText(/nom du marché/i), { target: { value: 'Marché Renommé' } });
-      view.detectChanges();
+      const markets = stillLoading();
+      const page = await AddSchedulePageObject.render({ markets, scheduleId: 'schedule-1' });
+      deliver(markets, [existing]);
+      page.detectChanges().enterName('Marché Renommé');
 
       markets.schedules.set([{ ...existing, startDate: '2026-08-01' }]);
-      view.detectChanges();
+      page.detectChanges();
 
-      expect(screen.getByLabelText(/nom du marché/i)).toHaveValue('Marché Renommé');
+      expect(page.nameField()).toHaveValue('Marché Renommé');
     });
 
     it('says so when the market is no longer in the calendar, offering no save', async () => {
-      const { deliver } = await renderCold();
+      const markets = stillLoading();
+      const page = await AddSchedulePageObject.render({ markets, scheduleId: 'schedule-1' });
 
-      deliver([]);
+      deliver(markets, []);
+      page.detectChanges();
 
       expect(screen.getByText(/n'est plus dans votre calendrier/i)).toBeVisible();
-      expect(screen.getByRole('link', { name: /marchés/i })).toBeInTheDocument();
-      expect(screen.queryByRole('button', { name: /enregistrer/i })).not.toBeInTheDocument();
+      expect(page.marketsLink()).toBeInTheDocument();
+      expect(page.querySaveButton()).not.toBeInTheDocument();
     });
 
     it('amends via the facade with the schedule id and edited values', async () => {
-      const { view, markets } = await renderEdit();
-      fireEvent.input(screen.getByLabelText(/nom du marché/i), { target: { value: 'Marché Renommé' } });
-      view.detectChanges();
+      const markets = calendarOf(existing);
+      const page = await AddSchedulePageObject.render({ markets, scheduleId: 'schedule-1' });
+      page.enterName('Marché Renommé');
 
-      fireEvent.click(screen.getByRole('button', { name: /enregistrer/i }));
+      page.save();
 
       expect(markets.amended).toEqual({
         scheduleId: 'schedule-1',
