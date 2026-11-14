@@ -92,7 +92,9 @@ the vendor. The system sends nothing; the operator tells the vendor.
   retries, and `GET /api/health` turns 503 after five failures in a row.
 - The Management application gains `create:users`, and the `email` connection is enabled for it:
   Auth0 creates a user only on a connection enabled for the client asking, and answers 400
-  otherwise. The first live invitation, on 2026-11-14, found that out.
+  otherwise. The first live invitation, on 2026-11-14, found that out, and that Auth0 emails a
+  user it creates unless told not to: the adapter tells it not to, so the system still sends
+  vendors nothing.
 - The invited email is the address the operator typed; `VendorRegistered`'s is the one Auth0
   verified. On a passwordless connection they are the same inbox.
 - Vendor and person stay one-to-one, as ADR 0024 assumed. `VendorInvited` brings a new business
