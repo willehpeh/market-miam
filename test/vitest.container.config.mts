@@ -17,6 +17,9 @@ export default defineConfig(() => ({
     include: ['test/{src,tests}/**/*.container.spec.{ts,mts}'],
     testTimeout: 60_000,
     hookTimeout: 180_000,
+    // A container per file can run side by side; one database named by TEST_POSTGRES_URL
+    // cannot, since each file empties it.
+    fileParallelism: !process.env['TEST_POSTGRES_URL'],
     reporters: ['default'],
     coverage: {
       enabled: true,
