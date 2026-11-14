@@ -51,7 +51,11 @@ type Whoami = Operator | 'refused' | null;
             [sentTo]="invitations.sentTo()"
             (invite)="invitations.invite($event)"
           />
-          <admin-account-list />
+          <admin-account-list
+            [accounts]="accounts.accounts()"
+            [loading]="accounts.loading()"
+            [failed]="accounts.failed()"
+          />
         }
       } @else {
         <button type="button" class="rounded bg-gray-900 px-3 py-1.5 text-sm text-white" (click)="login()">
@@ -65,7 +69,7 @@ export class OperatorPage {
   private readonly auth = inject(Auth);
   private readonly http = inject(HttpClient);
   protected readonly invitations = inject(InvitationFacade);
-  private readonly accounts = inject(AccountsFacade);
+  protected readonly accounts = inject(AccountsFacade);
   private readonly userId$ = this.auth.userId$();
 
   protected readonly loading = toSignal(this.auth.isLoading$(), { initialValue: true });

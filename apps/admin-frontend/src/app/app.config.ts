@@ -5,6 +5,7 @@ import { provideAuth } from './core/auth/auth.providers';
 import { provideEnvHttp } from './core/http/provide-env-http';
 import { provideNgrx } from './core/ngrx.providers';
 import { provideInvitations } from './invitations/invitation.providers';
+import { provideAccounts } from './accounts/accounts.providers';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -14,5 +15,6 @@ export const appConfig: ApplicationConfig = {
     provideEnvHttp(),
     provideNgrx(),
     provideInvitations(),
+    provideAccounts(),
   ],
 };

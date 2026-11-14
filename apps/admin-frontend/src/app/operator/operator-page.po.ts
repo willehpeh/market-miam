@@ -42,6 +42,15 @@ export class OperatorPageObject {
     return !(this.screen.getByRole('button', { name: 'Invite' }) as HTMLButtonElement).disabled;
   }
 
+  // Each account as the operator reads its row: its visible texts, in order.
+  accounts(): string[] {
+    return this.screen.queryAllByRole('listitem').map(visibleText);
+  }
+
+  storefrontLink(name: string): string | null {
+    return this.screen.queryByRole('link', { name })?.getAttribute('href') ?? null;
+  }
+
   // Whether the page shows this text anywhere.
   says(text: string): boolean {
     return this.screen.queryAllByText(text, { exact: false }).length > 0;
@@ -56,4 +65,16 @@ export class OperatorPageObject {
   private get screen() {
     return within(this.fixture.nativeElement as HTMLElement);
   }
+}
+
+function visibleText(element: Element): string {
+  const texts: string[] = [];
+  const walker = element.ownerDocument.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+  for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+    const text = node.textContent?.trim();
+    if (text) {
+      texts.push(text);
+    }
+  }
+  return texts.join(' ');
 }

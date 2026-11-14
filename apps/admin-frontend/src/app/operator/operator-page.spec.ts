@@ -11,7 +11,6 @@ import { OperatorPage } from './operator-page';
 import { OperatorPageObject } from './operator-page.po';
 
 const WHOAMI = (url: string) => url.endsWith('/api/ops/whoami');
-const ACCOUNTS = (url: string) => url.endsWith('/api/ops/accounts');
 
 describe('OperatorPage', () => {
   let auth: FakeAuth;
@@ -36,15 +35,7 @@ describe('OperatorPage', () => {
     accounts = TestBed.inject(AccountsFacade) as FakeAccountsFacade;
   });
 
-  afterEach(() => {
-    // The account list is AccountList's to test; here it only has to be answered, unless
-    // the page took it away (signing out) and so cancelled its request.
-    http
-      .match((req) => ACCOUNTS(req.url))
-      .filter((req) => !req.cancelled)
-      .forEach((req) => req.flush([]));
-    http.verify();
-  });
+  afterEach(() => http.verify());
 
   // Signed in, and confirmed as an operator by the API: the page then shows the accounts and the form.
   async function signedIn(): Promise<OperatorPageObject> {
@@ -87,6 +78,57 @@ describe('OperatorPage', () => {
     await page.settle();
 
     expect(accounts.loads).toBe(1);
+  });
+
+  it('lists each account with its storefront and its vendor id', async () => {
+    accounts.accounts.set([
+      { email: 'owner@acme.test', vendorId: 'acme-bakery', subdomain: 'acme' },
+      { email: 'owner@brioche.test', vendorId: 'brioche-co', subdomain: null },
+    ]);
+
+    const page = await signedIn();
+
+    expect(page.accounts()).toEqual([
+      'owner@acme.test acme.marketmiam.fr acme-bakery',
+      'owner@brioche.test no subdomain brioche-co',
+    ]);
+    expect(page.storefrontLink('acme.marketmiam.fr')).toBe('https://acme.marketmiam.fr');
+  });
+
+  it('marks an account that is not a vendor, and one without an email', async () => {
+    accounts.accounts.set([
+      { email: 'operator@marketmiam.test', vendorId: null, subdomain: null },
+      { email: null, vendorId: 'no-email-vendor', subdomain: null },
+    ]);
+
+    const page = await signedIn();
+
+    expect(page.accounts()).toEqual([
+      'operator@marketmiam.test not a vendor',
+      'no email no subdomain no-email-vendor',
+    ]);
+  });
+
+  it('says when there are no accounts', async () => {
+    const page = await signedIn();
+
+    expect(page.says('No accounts')).toBe(true);
+  });
+
+  it('says so when the accounts cannot be loaded', async () => {
+    accounts.failed.set(true);
+
+    const page = await signedIn();
+
+    expect(page.says('The accounts could not be loaded')).toBe(true);
+  });
+
+  it('says it is loading the accounts', async () => {
+    accounts.loading.set(true);
+
+    const page = await signedIn();
+
+    expect(page.says('Loading accounts')).toBe(true);
   });
 
   it('says so when the API refuses the sign-in, and asks it for nothing more', async () => {
