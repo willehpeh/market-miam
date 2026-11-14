@@ -53,6 +53,10 @@ text, as it always has, and erasure deletes the row (ADR 0058).
 **Once only.** A vendor keeps the subdomain they were given: their printed QR codes carry it
 (ADR 0055).
 
+**A name freed is free at once.** Erasure deletes the vendor's registry row (ADR 0058), and the
+name can go to another vendor straight away; the erased vendor's QR codes then lead to the new
+vendor's storefront. The owner's call, 2026-11-14.
+
 | Vendor | `AssignSubdomain` |
 |---|---|
 | new | refused: `VendorNotInvitedError` |
@@ -82,7 +86,8 @@ button. An accepted assignment shows the row's storefront address at once, until
   in place of SQL.
 - The appends' global lock (ADR 0028) is held no longer than for any append: the name is
   registered first, and the lock is taken at the append and released at the commit that follows.
-- Erasure frees the name for another vendor, as before, and shreds the event's copy.
+- Erasure frees the name for another vendor at once, as before, and shreds the event's copy.
+  The vendor's lifecycle scenario gives it to the next vendor.
 
 ## Rejected
 
@@ -93,4 +98,5 @@ button. An accepted assignment shows the row's storefront address at once, until
 | The events alone, the registry their projection | Nothing would check a name across vendors before it was recorded |
 | The vendor picks their own subdomain | While vendors are few, a name wants an operator's eye: reserved words, trademarks, taste. Self-service can come with sign-ups |
 | Renaming a subdomain | Printed QR codes carry the old address. It waits for a need |
+| Holding a freed name back for a time, so the erased vendor's QR codes lead nowhere | The owner's call: a freed name is free at once |
 | The subdomain in plain text in the event | A name that is a person's must die with the vendor's key |

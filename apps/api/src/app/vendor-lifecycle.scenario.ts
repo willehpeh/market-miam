@@ -117,5 +117,14 @@ describe("A vendor's life, from invitation to erasure", () => {
     );
     expect(gone).toBe(404);
     await vendor.register().expect(400);
+
+    // Her subdomain is free as soon as the erasure is carried out, for the next vendor to be
+    // given: her QR codes lead to theirs (ADR 0065).
+    const rose = await ops.inviteVendor('rose@example.com');
+    const reassigned = await eventually(
+      async () => (await ops.assignSubdomain(rose.id, 'chez-marie')).status,
+      (status) => status === 204,
+    );
+    expect(reassigned).toBe(204);
   });
 });
