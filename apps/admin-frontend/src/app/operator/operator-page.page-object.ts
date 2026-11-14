@@ -104,6 +104,10 @@ export class OperatorPageObject extends PageObject<OperatorPage> {
     return screen.getByLabelText(`Subdomain for ${vendor}`) as HTMLInputElement;
   }
 
+  querySubdomainField(vendor: string): HTMLElement | null {
+    return screen.queryByLabelText(`Subdomain for ${vendor}`);
+  }
+
   assignButton(vendor: string): HTMLElement {
     return screen.getByRole('button', { name: `Assign a subdomain to ${vendor}` });
   }

@@ -202,6 +202,17 @@ describe('OperatorPage', () => {
     expect(assignments.assigned).toEqual([{ vendorId: 'brioche-co', subdomain: 'brioche' }]);
   });
 
+  // A vendor keeps the subdomain they were given: their QR codes carry it (ADR 0065).
+  it.each([
+    ['a vendor who has one', ACME],
+    ['an erased vendor', { ...BRIOCHE, erased: true as const }],
+  ])('offers no subdomain to %s', async (_, account) => {
+    accounts.accounts.set([account]);
+    const page = await signedIn();
+
+    expect(page.querySubdomainField(account.email)).not.toBeInTheDocument();
+  });
+
   // Erasure cannot be undone (ADR 0058): the operator confirms it before it goes.
   it('erases a vendor once the operator confirms', async () => {
     accounts.accounts.set([ACME]);
