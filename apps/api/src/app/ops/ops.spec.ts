@@ -53,7 +53,7 @@ describe('The operator API', () => {
     ]);
   });
 
-  it('refuses an address an account already holds, and records nothing', async () => {
+  it('refuses an address an account already has, and records nothing', async () => {
     await ops.invite('owner@acme.test').expect(409);
 
     expect(await log.ofType('VendorInvited')).toEqual([]);
@@ -65,8 +65,8 @@ describe('The operator API', () => {
     expect(await log.ofType('VendorInvited')).toEqual([]);
   });
 
-  // Auth0 keeps addresses in lower case: compared any other way, a held one would slip through.
-  it('refuses a held address typed in another case', async () => {
+  // Auth0 keeps addresses in lower case: compared any other way, one in use would slip through.
+  it('refuses an address in use, typed in another case', async () => {
     await ops.invite('Owner@ACME.test').expect(409);
   });
 
@@ -103,6 +103,34 @@ describe('The operator API', () => {
     await ops.assignSubdomain(marie.id, 'chez-marie').expect(204);
 
     expect((await marie.recorded('VendorSubdomainAssigned'))?.metadata).toMatchObject({ operatorId: testOperator.operatorId });
+  });
+
+  // A name is one vendor's, and a vendor has one (ADR 0065).
+  it.each([
+    {
+      refusal: 'a subdomain assigned to another vendor',
+      arrange: async () => {
+        const rose = await ops.inviteVendor('rose@example.com');
+        await ops.assignSubdomain(rose.id, 'chez-marie').expect(204);
+      },
+    },
+    {
+      refusal: 'a vendor who has a subdomain already',
+      arrange: async (marie: VendorOnRecord) => {
+        await ops.assignSubdomain(marie.id, 'marie-traiteur').expect(204);
+      },
+    },
+  ])('answers 409 to $refusal, and claims and records nothing', async ({ arrange }) => {
+    const marie = await ops.inviteVendor('marie@example.com');
+    await arrange(marie);
+    const registry = app.get(InMemorySubdomainRegistry);
+    const assignments = await registry.assignments();
+    const history = await marie.history();
+
+    await ops.assignSubdomain(marie.id, 'chez-marie').expect(409);
+
+    expect(await registry.assignments()).toEqual(assignments);
+    expect(await marie.history()).toEqual(history);
   });
 
   // Accepted, not done: the processors carry the erasure out (ADR 0058).

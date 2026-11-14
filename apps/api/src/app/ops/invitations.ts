@@ -7,11 +7,12 @@ import { Accounts } from './accounts/accounts';
 
 export class EmailInUseError extends Error {
   constructor() {
-    super('An account already holds this address');
+    super('An account already has this address');
+    this.name = 'EmailInUse';
   }
 }
 
-// Inviting a vendor (ADR 0060). An address an account already holds is refused here, so only
+// Inviting a vendor (ADR 0060). An address an account already has is refused here, so only
 // two invitations racing in the seconds before an account opens reach the processor's email-in-use.
 @Injectable()
 export class Invitations {

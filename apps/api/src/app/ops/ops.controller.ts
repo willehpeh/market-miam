@@ -1,4 +1,4 @@
-import { Body, ConflictException, Controller, Get, HttpCode, HttpStatus, Param, Post, Put, UseGuards, UseInterceptors } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Param, Post, Put, UseFilters, UseGuards, UseInterceptors } from '@nestjs/common';
 import { z } from 'zod';
 import { OperatorAuthGuard } from '@market-miam/auth-nestjs';
 import { Clock } from '@market-miam/common';
@@ -8,7 +8,8 @@ import { Accounts } from './accounts/accounts';
 import { accountList, AccountListing } from './account-list';
 import { shapeOf } from '../shape-of.pipe';
 import { OperatorLineageInterceptor } from './operator-lineage.interceptor';
-import { EmailInUseError, Invitations } from './invitations';
+import { Invitations } from './invitations';
+import { ConflictFilter } from './conflict.filter';
 
 // Shape only (ADR 0046): what an email must be is the Email value object's to say.
 const InvitationBody = z.object({ email: z.string() });
@@ -21,6 +22,7 @@ const SubdomainBody = z.object({ subdomain: z.string() });
 @Controller('ops')
 @UseGuards(OperatorAuthGuard)
 @UseInterceptors(OperatorLineageInterceptor)
+@UseFilters(ConflictFilter)
 export class OpsController {
   constructor(
     private readonly accounts: Accounts,
@@ -40,14 +42,7 @@ export class OpsController {
   @Post('vendors')
   @HttpCode(HttpStatus.ACCEPTED)
   async invite(@Body(shapeOf(InvitationBody)) { email }: z.infer<typeof InvitationBody>): Promise<{ vendorId: string }> {
-    try {
-      return { vendorId: await this.invitations.send(email) };
-    } catch (error) {
-      if (error instanceof EmailInUseError) {
-        throw new ConflictException({ statusCode: HttpStatus.CONFLICT, message: `EmailInUse - ${error.message}` });
-      }
-      throw error;
-    }
+    return { vendorId: await this.invitations.send(email) };
   }
 
   // Claimed and recorded together, in one transaction (ADR 0065).
