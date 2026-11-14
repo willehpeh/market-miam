@@ -76,6 +76,10 @@ describe('The operator API', () => {
   const invite = (email: string) =>
     request(app.getHttpServer()).post('/ops/vendors').set('Authorization', `Bearer ${OPERATOR_TOKEN}`).send({ email });
 
+  // The vendorId minted for an invitation the api accepted.
+  const invited = async (email: string): Promise<string> =>
+    ((await invite(email).expect(202)).body as { vendorId: string }).vendorId;
+
   it('invites a vendor, answering with the vendorId it minted', async () => {
     const response = await invite('marie@example.com').expect(202);
 
@@ -110,16 +114,16 @@ describe('The operator API', () => {
   });
 
   it('records the address in lower case, as its account will hold it', async () => {
-    const { vendorId } = (await invite('Marie@Example.COM').expect(202)).body as { vendorId: string };
+    const vendorId = await invited('Marie@Example.COM');
 
     expect((await app.get(EventStore).load(`vendor-${vendorId}`))[0].payload).toMatchObject({ email: 'marie@example.com' });
   });
 
   it("records the operator's Auth0 id in the invitation's metadata", async () => {
-    const { vendorId } = (await invite('marie@example.com').expect(202)).body as { vendorId: string };
+    const vendorId = await invited('marie@example.com');
 
-    const [invited] = await app.get(EventStore).load(`vendor-${vendorId}`);
-    expect(invited.metadata).toMatchObject({ operatorId: testOperator.operatorId });
+    const [invitation] = await app.get(EventStore).load(`vendor-${vendorId}`);
+    expect(invitation.metadata).toMatchObject({ operatorId: testOperator.operatorId });
   });
 
   const erase = (vendorId: string) =>
@@ -127,13 +131,28 @@ describe('The operator API', () => {
 
   // Accepted, not done: the processors carry the erasure out (ADR 0058).
   it('erases a vendor', async () => {
-    const { vendorId } = (await invite('marie@example.com').expect(202)).body as { vendorId: string };
+    const vendorId = await invited('marie@example.com');
 
     await erase(vendorId).expect(202);
 
     expect(await app.get(EventStore).load(`vendor-${vendorId}`)).toContainEqual(
       expect.objectContaining({ type: 'VendorErased', payload: { vendorId, erasedAt: FIXED_NOW } }),
     );
+  });
+
+  it("records the operator's Auth0 id in the erasure's metadata", async () => {
+    const vendorId = await invited('marie@example.com');
+
+    await erase(vendorId).expect(202);
+
+    const erased = (await app.get(EventStore).load(`vendor-${vendorId}`)).find((event) => event.type === 'VendorErased');
+    expect(erased?.metadata).toMatchObject({ operatorId: testOperator.operatorId });
+  });
+
+  it('refuses to erase a vendor who was never invited or registered', async () => {
+    await erase('nobody').expect(400);
+
+    expect(await app.get(EventStore).load('vendor-nobody')).toEqual([]);
   });
 
   it('refuses someone signed in who is not an operator', async () => {
