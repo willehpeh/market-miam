@@ -54,4 +54,16 @@ describe('Erasures', () => {
     request.flush(null, { status: 202, statusText: 'Accepted' });
     expect(facade.erasing()).toBeNull();
   });
+
+  it('reports whose erasure failed, until the next one starts', () => {
+    facade.erase('acme-bakery');
+    http.expectOne((req) => ERASURE_OF('acme-bakery')(req.url)).flush({}, { status: 500, statusText: 'Internal Server Error' });
+
+    expect(facade.failed()).toBe('acme-bakery');
+    expect(facade.erasing()).toBeNull();
+
+    facade.erase('acme-bakery');
+    expect(facade.failed()).toBeNull();
+    http.expectOne((req) => ERASURE_OF('acme-bakery')(req.url)).flush(null, { status: 202, statusText: 'Accepted' });
+  });
 });

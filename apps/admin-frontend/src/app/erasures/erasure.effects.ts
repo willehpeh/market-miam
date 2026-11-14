@@ -1,8 +1,8 @@
 import { inject, Injectable } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
-import { exhaustMap, map } from 'rxjs';
+import { catchError, exhaustMap, map, of } from 'rxjs';
 import { Erasures } from './erasures';
-import { EraseVendor, EraseVendorAccepted } from './erasure.state';
+import { EraseVendor, EraseVendorAccepted, EraseVendorFailed } from './erasure.state';
 
 @Injectable()
 export class ErasureEffects {
@@ -14,7 +14,12 @@ export class ErasureEffects {
   erase$ = createEffect(() =>
     this.actions$.pipe(
       ofType(EraseVendor),
-      exhaustMap(({ vendorId }) => this.erasures.erase(vendorId).pipe(map(() => EraseVendorAccepted({ vendorId })))),
+      exhaustMap(({ vendorId }) =>
+        this.erasures.erase(vendorId).pipe(
+          map(() => EraseVendorAccepted({ vendorId })),
+          catchError(() => of(EraseVendorFailed({ vendorId }))),
+        ),
+      ),
     ),
   );
 }

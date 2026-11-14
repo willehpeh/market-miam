@@ -8,6 +8,7 @@ export class StoreErasureFacade implements ErasureFacade {
   private readonly store = inject(Store);
 
   readonly erasing = this.store.selectSignal(erasureFeature.selectErasing);
+  readonly failed = this.store.selectSignal(erasureFeature.selectFailed);
 
   erase(vendorId: string): void {
     this.store.dispatch(EraseVendor({ vendorId }));
