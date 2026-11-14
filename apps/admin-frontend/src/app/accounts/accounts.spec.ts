@@ -166,4 +166,14 @@ describe('Accounts', () => {
 
     expect(facade.accounts()).toEqual([ACME, { ...BRIOCHE, subdomain: 'brioche' }]);
   });
+
+  it('lists the subdomain in lower case, as the API records it', () => {
+    facade.load();
+    api.accounts().answer([BRIOCHE]);
+
+    assignments.assign('brioche-co', 'Brioche');
+    api.assignmentOf('brioche-co').noContent();
+
+    expect(facade.accounts()).toEqual([{ ...BRIOCHE, subdomain: 'brioche' }]);
+  });
 });

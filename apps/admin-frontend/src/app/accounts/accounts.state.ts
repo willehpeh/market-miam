@@ -40,9 +40,10 @@ export const accountsFeature = createFeature({
       ...state,
       accounts: state.accounts.map(changed(vendorId, { erased: true })),
     })),
+    // In lower case, as the api records it (ADR 0065).
     on(AssignSubdomainSuccess, (state, { vendorId, subdomain }): AccountsState => ({
       ...state,
-      accounts: state.accounts.map(changed(vendorId, { subdomain })),
+      accounts: state.accounts.map(changed(vendorId, { subdomain: subdomain.toLowerCase() })),
     })),
   ),
 });
