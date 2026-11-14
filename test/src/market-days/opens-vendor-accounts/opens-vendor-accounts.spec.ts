@@ -6,6 +6,7 @@ import {
   InMemoryVendorAccounts,
   InviteVendorHandler,
   OpensVendorAccounts,
+  RecordVendorAccountOpened,
   VendorAccounts,
   VendorScopedEvents,
   Vendors,
@@ -55,6 +56,16 @@ describe('Opens Vendor Accounts', () => {
     await process();
 
     expect(accounts.all()).toEqual([{ vendorId: invitation.vendorId, email: invitation.email }]);
+  });
+
+  // When the vendor could first sign in, kept after Auth0's own logs have faded (ADR 0063).
+  it("records the invited vendor's account opened", async () => {
+    const invitation = TestInviteVendor.valid();
+
+    await invite(invitation);
+    await process();
+
+    expect(gateway.dispatched).toEqual([new RecordVendorAccountOpened(invitation.vendorId, NOW)]);
   });
 
   // The invitation lost a race for its address: it can never become an account (ADR 0060).
