@@ -1,6 +1,6 @@
 # 0062. Smart-component specs drive the screen through a page object
 
-Date: 2026-11-14 · Status: Accepted
+Date: 2026-11-14 · Status: Accepted · Extended 2026-11-14 by [0064](0064-api-specs-call-the-api-through-an-api-object.md) — the api's specs call it through api objects
 
 Builds on ADR 0061 (tests at two levels) and ADR 0006 (fakes at boundaries). Covers the
 smart-component specs of the vendor and admin apps.
