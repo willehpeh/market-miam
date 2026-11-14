@@ -19,9 +19,8 @@ Set up 2026-10-31 and 2026-11-01 on the `willalexander.eu.auth0.com` tenant:
   it is refused, and it gets no `vendorId`; vendor claims are minted for the vendor app only.
 
 Still to check: the Ops API's token lifetime (an hour or less), *Implicit* off on the admin app,
-*Disable Sign Ups* on the `email` connection, the *API Explorer* and test applications deleted, and
-the *Management* application down to `read:users` (slice 4 adds `create:users`, slice 5
-`delete:users`). The Action's code is not in the repo yet: slice 4 changed it in Auth0, and it comes
+the *API Explorer* and test applications deleted, and the *Management* application down to
+`read:users`, `create:users` and `delete:users` (slices 1, 4 and 5). The Action's code is not in the repo yet: slice 4 changed it in Auth0, and it comes
 in once the owner pastes it, deployed from then on from the owner's machine with the Auth0 CLI.
 
 ## Slices
@@ -82,8 +81,10 @@ vendor waits on (ADR 0032).
   Postgres, assigning through the route in place of SQL; the assignment feature, the accounts it
   fills in, and the page.
 
-Going live: push. Subdomains assigned by SQL before it have no event; assigning a vendor the name
-they have records it, and changes nothing else.
+Going live: push, then deploy `api` and `admin-frontend` on Render by hand, in that order: the
+push's last commit touched only docs, and Render's build filters read only the last commit.
+Subdomains assigned by SQL before it have no event; assigning a vendor the name they have records
+it, and changes nothing else.
 
 **4. Invite a vendor — built 2026-11-14, ahead of slice 3** (the owner's call, 2026-11-02; ADR 0060).
 Ends creating vendors by hand in the Auth0 Dashboard, and makes Market Miam invitation-only.
@@ -141,15 +142,15 @@ Going live, in this order, by the owner:
    deploy. *Done: `create:users` given 2026-11-13, the slice deployed 2026-11-14, and the
    connection enabled the same day, after the first invitation stalled on Auth0's 400 without it.*
 2. In the account list, find vendor accounts with no `vendorId`: made by hand and never signed in.
-   Delete each in Auth0 and invite it again from the admin app.
+   Delete each in Auth0 and invite it again from the admin app. *Done by the owner, 2026-11-14.*
 3. Change the post-login Action to stop minting `vendorId`s and to refuse a vendor-app login
    without one. *Done in Auth0 by the owner. Its code is still to come into the repo: the owner
    pastes it.*
-4. Turn on *Disable Sign Ups* on the `email` connection.
+4. Turn on *Disable Sign Ups* on the `email` connection. *Done by the owner, 2026-11-14.*
 5. Make the passwordless email template tell the invitation from a sign-in by `application.name`
    (ADR 0060): from the Management application, the invitation, pointing at `app.marketmiam.fr`
    with no link; otherwise the sign-in email as it is. Then decide whether the vendor privacy
-   policy needs a line for the invitation email.
+   policy needs a line for the invitation email. *Done by the owner, 2026-11-14.*
 
 **5. Erase a vendor — built 2026-11-14** (ADR 0063). Ends deleting erased vendors' Auth0 users by
 hand.
@@ -180,6 +181,9 @@ Going live, in this order, by the owner:
 2. Push. `ClosesVendorAccounts` reads the log from its start: it closes the accounts of vendors
    erased before it, and records each closed.
 3. Run `npx nx test:tenant api` against the test tenant.
+
+*All three done 2026-11-14. `/api/health` answered 200 that evening, `closes-vendor-accounts` with
+no failures.*
 
 **6. Rebuild a projection.** A transport for `Subscriptions.rebuild()`.
 
