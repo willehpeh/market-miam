@@ -68,3 +68,4 @@ detailed rationale in `docs/archive/DEFERRED.md`).
 | [0059](0059-operator-routes-in-the-api-behind-their-own-audience.md)    | Operator routes live in the api, behind their own Auth0 audience           | 2026-11-01 |
 | [0060](0060-vendors-join-by-invitation.md)                              | Vendors join by invitation, and the api mints their vendorId               | 2026-11-02 |
 | [0061](0061-admin-app-layers-like-the-vendor-app.md)                    | The admin app layers like the vendor app                                   | 2026-11-13 |
+| [0062](0062-smart-component-specs-drive-a-page-object.md)               | Smart-component specs drive the screen through a page object               | 2026-11-14 |
