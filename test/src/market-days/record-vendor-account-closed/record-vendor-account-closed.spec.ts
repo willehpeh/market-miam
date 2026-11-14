@@ -61,4 +61,11 @@ describe('Record Vendor Account Closed', () => {
     );
     expect(store.newEvents()).toEqual([]);
   });
+
+  it('refuses a vendor with no history', async () => {
+    await expect(handler.execute(new RecordVendorAccountClosed('vendor-id', '2026-11-14T09:00:05.000Z'))).rejects.toThrow(
+      VendorNotErasedError,
+    );
+    expect(store.newEvents()).toEqual([]);
+  });
 });
