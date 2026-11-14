@@ -5,7 +5,7 @@ import {
   VendorScopedEvents,
   Vendors,
 } from '@market-miam/market-days';
-import { vendorAccountOpened, vendorInvited, vendorStream } from '../vendor-events';
+import { vendorAccountOpened, vendorInvited, vendorRegistered, vendorStream } from '../vendor-events';
 
 describe('Record Vendor Account Opened', () => {
   let store: InMemoryEventStore;
@@ -39,5 +39,14 @@ describe('Record Vendor Account Opened', () => {
     await handler.execute(new RecordVendorAccountOpened('vendor-id', '2026-11-11T09:10:00.000Z'));
 
     expect(store.newEvents()).toEqual([]);
+  });
+
+  // The vendor signed in between Auth0 opening the account and the processor recording it.
+  it('records the account opened after the vendor registered', async () => {
+    given(vendorInvited(), vendorRegistered());
+
+    await handler.execute(new RecordVendorAccountOpened('vendor-id', '2026-11-11T09:00:05.000Z'));
+
+    expect(store.newEvents()).toEqual([expect.objectContaining({ type: 'VendorAccountOpened' })]);
   });
 });
