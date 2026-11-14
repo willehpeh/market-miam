@@ -14,8 +14,17 @@ export class OperatorPageObject {
     return page;
   }
 
+  offersSignIn(): boolean {
+    return this.screen.queryByRole('button', { name: /sign in/i }) !== null;
+  }
+
   async signIn(): Promise<void> {
     fireEvent.click(this.screen.getByRole('button', { name: /sign in/i }));
+    await this.settle();
+  }
+
+  async signOut(): Promise<void> {
+    fireEvent.click(this.screen.getByRole('button', { name: /sign out/i }));
     await this.settle();
   }
 
@@ -23,6 +32,11 @@ export class OperatorPageObject {
     fireEvent.input(this.screen.getByLabelText(/invite a vendor/i), { target: { value: email } });
     fireEvent.click(this.screen.getByRole('button', { name: 'Invite' }));
     await this.settle();
+  }
+
+  // Whether the page shows this text anywhere.
+  says(text: string): boolean {
+    return this.screen.queryAllByText(text, { exact: false }).length > 0;
   }
 
   // Lets what the page is waiting on run to the end: a render, a form's asynchronous submission.

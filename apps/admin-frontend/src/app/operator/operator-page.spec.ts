@@ -32,8 +32,12 @@ describe('OperatorPage', () => {
   });
 
   afterEach(() => {
-    // The account list is AccountList's to test; here it only has to be answered.
-    http.match((req) => ACCOUNTS(req.url)).forEach((req) => req.flush([]));
+    // The account list is AccountList's to test; here it only has to be answered, unless
+    // the page took it away (signing out) and so cancelled its request.
+    http
+      .match((req) => ACCOUNTS(req.url))
+      .filter((req) => !req.cancelled)
+      .forEach((req) => req.flush([]));
     http.verify();
   });
 
@@ -46,23 +50,17 @@ describe('OperatorPage', () => {
     return page;
   }
 
-  async function render(): Promise<HTMLElement> {
-    const fixture = TestBed.createComponent(OperatorPage);
-    await fixture.whenStable();
-    return fixture.nativeElement;
-  }
-
   it('offers to sign in when no one is, without calling the API', async () => {
-    const page = await render();
+    const page = await OperatorPageObject.open();
 
-    expect(page.querySelector('button')?.textContent).toContain('Sign in with GitHub');
+    expect(page.offersSignIn()).toBe(true);
     http.expectNone((req) => WHOAMI(req.url));
   });
 
   it('starts the sign-in when asked', async () => {
-    const page = await render();
+    const page = await OperatorPageObject.open();
 
-    page.querySelector('button')?.click();
+    await page.signIn();
 
     expect(auth.loginStarted).toBe(true);
     // The fake signs in at once, so the page goes on to ask the API.
@@ -70,51 +68,41 @@ describe('OperatorPage', () => {
   });
 
   it('shows who the API says is signed in', async () => {
-    auth.login();
-    const fixture = TestBed.createComponent(OperatorPage);
+    const page = await signedIn();
 
-    http.expectOne((req) => WHOAMI(req.url)).flush({ operatorId: 'github|1234567' });
-    await fixture.whenStable();
-
-    expect(fixture.nativeElement.textContent).toContain('github|1234567');
+    expect(page.says('github|1234567')).toBe(true);
   });
 
   it('lists the accounts once the API has confirmed the operator', async () => {
-    auth.login();
-    const fixture = TestBed.createComponent(OperatorPage);
+    const page = await OperatorPageObject.open();
+    await page.signIn();
     http.expectNone((req) => ACCOUNTS(req.url));
 
     http.expectOne((req) => WHOAMI(req.url)).flush({ operatorId: 'github|1234567' });
-    await fixture.whenStable();
+    await page.settle();
     http.expectOne((req) => ACCOUNTS(req.url)).flush([
       { email: 'owner@acme.test', vendorId: 'acme-bakery', subdomain: 'acme' },
     ]);
-    await fixture.whenStable();
+    await page.settle();
 
-    expect(fixture.nativeElement.textContent).toContain('owner@acme.test');
+    expect(page.says('owner@acme.test')).toBe(true);
   });
 
   it('says so when the API refuses the sign-in, and asks it for nothing more', async () => {
-    auth.login();
-    const fixture = TestBed.createComponent(OperatorPage);
+    const page = await OperatorPageObject.open();
+    await page.signIn();
 
     http.expectOne((req) => WHOAMI(req.url)).flush(null, { status: 403, statusText: 'Forbidden' });
-    await fixture.whenStable();
+    await page.settle();
 
-    expect(fixture.nativeElement.textContent).toContain('The API refused this sign-in');
+    expect(page.says('The API refused this sign-in')).toBe(true);
     http.expectNone((req) => ACCOUNTS(req.url));
   });
 
   it('signs out', async () => {
-    auth.login();
-    const fixture = TestBed.createComponent(OperatorPage);
-    http.expectOne((req) => WHOAMI(req.url)).flush({ operatorId: 'github|1234567' });
-    await fixture.whenStable();
+    const page = await signedIn();
 
-    const signOut = Array.from<HTMLButtonElement>(fixture.nativeElement.querySelectorAll('button')).find((button) =>
-      button.textContent?.includes('Sign out'),
-    );
-    signOut?.click();
+    await page.signOut();
 
     expect(auth.loggedOut).toBe(true);
   });

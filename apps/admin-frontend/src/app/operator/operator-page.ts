@@ -5,6 +5,8 @@ import { catchError, map, Observable, of, switchMap } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { Auth } from '../core/auth/auth';
 import { AccountList } from '../accounts/account-list';
+import { InviteVendorForm } from '../invitations/invite-vendor-form';
+import { InvitationFacade } from '../invitations/invitation.facade';
 
 interface Operator {
   operatorId: string;
@@ -16,7 +18,7 @@ type Whoami = Operator | 'refused' | null;
 // accounts. Nothing else is asked of the api before it has confirmed the operator.
 @Component({
   selector: 'admin-operator-page',
-  imports: [AccountList],
+  imports: [AccountList, InviteVendorForm],
   template: `
     <div class="mx-auto max-w-2xl p-6">
       <h1 class="mb-4 text-xl font-semibold text-gray-900">Market Miam admin</h1>
@@ -42,6 +44,7 @@ type Whoami = Operator | 'refused' | null;
           </button>
         </div>
         @if (operatorId()) {
+          <admin-invite-vendor-form (invite)="invite($event)" />
           <admin-account-list />
         }
       } @else {
@@ -55,6 +58,7 @@ type Whoami = Operator | 'refused' | null;
 export class OperatorPage {
   private readonly auth = inject(Auth);
   private readonly http = inject(HttpClient);
+  private readonly invitations = inject(InvitationFacade);
   private readonly userId$ = this.auth.userId$();
 
   protected readonly loading = toSignal(this.auth.isLoading$(), { initialValue: true });
@@ -75,6 +79,10 @@ export class OperatorPage {
 
   protected logout(): void {
     this.auth.logout();
+  }
+
+  protected invite(email: string): void {
+    this.invitations.invite(email);
   }
 
   private fetchWhoami(): Observable<Whoami> {
