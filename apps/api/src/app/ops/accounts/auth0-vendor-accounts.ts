@@ -1,4 +1,4 @@
-import { AccountOpening, Invitation, VendorAccounts } from '@market-miam/market-days';
+import { AccountOpening, Erasure, Invitation, VendorAccounts } from '@market-miam/market-days';
 import { Auth0Users } from './auth0-users';
 
 // Vendors sign in on the passwordless email connection, and only there.
@@ -24,8 +24,12 @@ export class Auth0VendorAccounts extends VendorAccounts {
     }
   }
 
-  closeFor(): Promise<void> {
-    throw new Error('Closing an Auth0 account is not built yet (admin plan slice 5)');
+  // Found by vendorId, never by email: an invitation erased for a taken address shares it with
+  // another vendor's account (ADR 0060).
+  async closeFor({ vendorId }: Erasure): Promise<void> {
+    for (const { user_id } of await this.users.withVendorId(vendorId)) {
+      await this.users.delete(user_id);
+    }
   }
 
   // A retry after a half-finished run finds the account it opened.

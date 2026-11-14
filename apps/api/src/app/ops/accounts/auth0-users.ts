@@ -67,6 +67,24 @@ export class Auth0Users {
     return answerOf(response, 'say who holds an address');
   }
 
+  // Users whose app_metadata holds this vendorId, by Auth0's user search.
+  async withVendorId(vendorId: string): Promise<{ user_id: string }[]> {
+    const query = new URLSearchParams({
+      q: `app_metadata.vendorId:"${vendorId}"`,
+      search_engine: 'v3',
+      fields: 'user_id',
+      include_fields: 'true',
+    });
+    return answerOf(await this.api.fetch(`api/v2/users?${query}`), "find a vendor's users");
+  }
+
+  async delete(userId: string): Promise<void> {
+    const response = await this.api.fetch(`api/v2/users/${encodeURIComponent(userId)}`, { method: 'DELETE' });
+    if (!response.ok) {
+      throw new Auth0Refusal('delete a user', response.status, (await errorBodyOf(response)).errorCode);
+    }
+  }
+
   async page(page: number, perPage: number): Promise<Auth0User[]> {
     const query = new URLSearchParams({
       per_page: String(perPage),

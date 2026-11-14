@@ -20,8 +20,9 @@ async function bodyOf(req: IncomingMessage): Promise<string> {
 
 // Stands in for the Management API endpoints the adapters call, on a local port:
 // client-credentials tokens, then the paged user list, user creation and the lookup by email,
-// which want the latest token. Like Auth0, it refuses a second user with an email already on
-// that connection, and the lookup answers whatever the connection.
+// which want the latest token, and the search by vendorId and deletion that close an account.
+// Like Auth0, it refuses a second user with an email already on that connection, and the lookup
+// answers whatever the connection.
 export class FakeAuth0 {
   readonly tokenRequests: Record<string, string>[] = [];
   readonly userPages: URLSearchParams[] = [];
@@ -39,6 +40,9 @@ export class FakeAuth0 {
   refusesEmails = false;
   expiresInSeconds = 86_400;
   private server!: Server;
+  // Auth0's user_id for each user, kept off the records the specs compare.
+  private readonly ids = new WeakMap<Auth0User, string>();
+  private lastId = 0;
 
   async start(): Promise<string> {
     this.server = createServer((req, res) => void this.handle(req, res));
@@ -58,9 +62,25 @@ export class FakeAuth0 {
         ? send(res, 200, { access_token: this.latestToken(), expires_in: this.expiresInSeconds, token_type: 'Bearer' })
         : send(res, this.tokenStatus, { error: 'access_denied' });
     }
+    if (req.method === 'GET' && url.pathname === '/api/v2/users' && url.searchParams.has('q')) {
+      if (this.refusesToken(req, res)) {
+        return;
+      }
+      const vendorId = /^app_metadata\.vendorId:"(.*)"$/.exec(url.searchParams.get('q') ?? '')?.[1];
+      return send(res, 200, this.users.filter((user) => user.app_metadata?.vendorId === vendorId).map((user) => ({ user_id: this.idOf(user) })));
+    }
+    if (req.method === 'DELETE' && url.pathname.startsWith('/api/v2/users/')) {
+      if (this.refusesToken(req, res)) {
+        return;
+      }
+      const id = decodeURIComponent(url.pathname.slice('/api/v2/users/'.length));
+      this.users = this.users.filter((user) => this.idOf(user) !== id);
+      res.writeHead(204).end();
+      return;
+    }
     if (req.method === 'GET' && url.pathname === '/api/v2/users') {
-      if (req.headers.authorization !== `Bearer ${this.latestToken()}`) {
-        return send(res, 401, { error: 'invalid_token' });
+      if (this.refusesToken(req, res)) {
+        return;
       }
       this.userPages.push(url.searchParams);
       if (this.usersStatus !== 200) {
@@ -71,8 +91,8 @@ export class FakeAuth0 {
       return send(res, 200, this.users.slice(page * perPage, (page + 1) * perPage));
     }
     if (req.method === 'POST' && url.pathname === '/api/v2/users') {
-      if (req.headers.authorization !== `Bearer ${this.latestToken()}`) {
-        return send(res, 401, { error: 'invalid_token' });
+      if (this.refusesToken(req, res)) {
+        return;
       }
       if (this.createStatus !== 201) {
         return send(res, this.createStatus, { statusCode: this.createStatus, errorCode: this.createErrorCode });
@@ -93,8 +113,8 @@ export class FakeAuth0 {
       return send(res, 201, user);
     }
     if (req.method === 'GET' && url.pathname === '/api/v2/users-by-email') {
-      if (req.headers.authorization !== `Bearer ${this.latestToken()}`) {
-        return send(res, 401, { error: 'invalid_token' });
+      if (this.refusesToken(req, res)) {
+        return;
       }
       if (this.refusesEmails) {
         return send(res, 400, { statusCode: 400, error: 'Bad Request' });
@@ -106,6 +126,22 @@ export class FakeAuth0 {
       return send(res, 200, this.users.filter((user) => user.email === email).map(asReturned));
     }
     send(res, 404, {});
+  }
+
+  // Every call but the token's own wants the latest token, as Auth0 wants an unexpired one.
+  private refusesToken(req: IncomingMessage, res: ServerResponse): boolean {
+    if (req.headers.authorization === `Bearer ${this.latestToken()}`) {
+      return false;
+    }
+    send(res, 401, { error: 'invalid_token' });
+    return true;
+  }
+
+  private idOf(user: Auth0User): string {
+    if (!this.ids.has(user)) {
+      this.ids.set(user, `email|${++this.lastId}`);
+    }
+    return this.ids.get(user)!;
   }
 
   private latestToken(): string {
