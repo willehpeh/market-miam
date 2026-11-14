@@ -1,7 +1,7 @@
-import { Controller, Get, INestApplication, UseGuards } from '@nestjs/common';
+import { Controller, Get, INestApplication, Req, UseGuards } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
-import { CurrentOperator, OperatorAuthGuard, OperatorAuthModule } from '@market-miam/auth-nestjs';
+import { OperatorAuthGuard, OperatorAuthModule, OperatorRequest, VERIFIED_OPERATOR } from '@market-miam/auth-nestjs';
 import {
   InvalidTokenError,
   NotAnOperatorError,
@@ -15,9 +15,10 @@ const OPERATOR: VerifiedOperator = { operatorId: 'github|1234567' };
 @Controller()
 @UseGuards(OperatorAuthGuard)
 class OperatorOnlyController {
-  @Get('whoami')
-  whoami(@CurrentOperator() operator: VerifiedOperator) {
-    return { operatorId: operator.operatorId };
+  // Reads the operator as OperatorLineageInterceptor does.
+  @Get('operator')
+  operator(@Req() request: OperatorRequest) {
+    return request[VERIFIED_OPERATOR];
   }
 }
 
@@ -32,7 +33,7 @@ async function bootWith(verifier: OperatorTokenVerifier): Promise<INestApplicati
   return app;
 }
 
-describe('Operator auth integration (guard + decorator + module)', () => {
+describe('Operator auth integration (guard + module)', () => {
   let app: INestApplication;
 
   afterEach(async () => {
@@ -44,7 +45,7 @@ describe('Operator auth integration (guard + decorator + module)', () => {
     app = await bootWith(verifier);
 
     await request(app.getHttpServer())
-      .get('/whoami')
+      .get('/operator')
       .set('Authorization', 'Bearer the.access.token')
       .expect(200, { operatorId: OPERATOR.operatorId });
 
@@ -54,19 +55,19 @@ describe('Operator auth integration (guard + decorator + module)', () => {
   it('answers 401 to a token the verifier finds invalid', async () => {
     app = await bootWith(new FakeOperatorTokenVerifier(new InvalidTokenError()));
 
-    await request(app.getHttpServer()).get('/whoami').set('Authorization', 'Bearer rejected').expect(401);
+    await request(app.getHttpServer()).get('/operator').set('Authorization', 'Bearer rejected').expect(401);
   });
 
   it('answers 403 to a genuine token whose holder is not an operator', async () => {
     app = await bootWith(new FakeOperatorTokenVerifier(new NotAnOperatorError()));
 
-    await request(app.getHttpServer()).get('/whoami').set('Authorization', 'Bearer signed.in').expect(403);
+    await request(app.getHttpServer()).get('/operator').set('Authorization', 'Bearer signed.in').expect(403);
   });
 
   it('answers 401 when verification fails for any other reason', async () => {
     app = await bootWith(new FakeOperatorTokenVerifier(new Error('JWKS unreachable')));
 
-    await request(app.getHttpServer()).get('/whoami').set('Authorization', 'Bearer any').expect(401);
+    await request(app.getHttpServer()).get('/operator').set('Authorization', 'Bearer any').expect(401);
   });
 
   it.each([
@@ -77,7 +78,7 @@ describe('Operator auth integration (guard + decorator + module)', () => {
     const verifier = new FakeOperatorTokenVerifier(OPERATOR);
     app = await bootWith(verifier);
 
-    const call = request(app.getHttpServer()).get('/whoami');
+    const call = request(app.getHttpServer()).get('/operator');
     if (header !== undefined) {
       call.set('Authorization', header);
     }
