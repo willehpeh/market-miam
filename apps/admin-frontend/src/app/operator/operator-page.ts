@@ -47,6 +47,7 @@ type Whoami = Operator | 'refused' | null;
           <admin-invite-vendor-form
             [sending]="invitations.sending()"
             [refusal]="invitations.refusal()"
+            [sentTo]="invitations.sentTo()"
             (invite)="invitations.invite($event)"
           />
           <admin-account-list />

@@ -1,4 +1,4 @@
-import { Component, computed, input, output, signal } from '@angular/core';
+import { Component, computed, input, linkedSignal, output } from '@angular/core';
 import { form, FormField, FormRoot } from '@angular/forms/signals';
 import { InvitationRefusal } from './invitations';
 
@@ -46,12 +46,16 @@ const REFUSALS: Record<InvitationRefusal, string> = {
       @if (refusalMessage(); as message) {
         <p id="invite-refusal" role="alert" class="mt-2 text-red-700">{{ message }}</p>
       }
+      @if (sentTo(); as address) {
+        <p role="status" class="mt-2 text-green-800">Invitation sent to {{ address }}</p>
+      }
     </form>
   `,
 })
 export class InviteVendorForm {
   readonly sending = input(false);
   readonly refusal = input<InvitationRefusal | null>(null);
+  readonly sentTo = input<string | null>(null);
   readonly invite = output<string>();
 
   protected readonly refusalMessage = computed(() => {
@@ -59,7 +63,13 @@ export class InviteVendorForm {
     return refusal ? REFUSALS[refusal] : null;
   });
 
-  protected readonly invitation = form(signal<Invitation>({ email: '' }), {
+  // Empty again whenever an invitation has gone, ready for the next address.
+  private readonly model = linkedSignal<string | null, Invitation>({
+    source: this.sentTo,
+    computation: () => ({ email: '' }),
+  });
+
+  protected readonly invitation = form(this.model, {
     submission: {
       action: async (field) => {
         this.invite.emit(field.email().value());

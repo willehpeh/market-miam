@@ -139,4 +139,15 @@ describe('OperatorPage', () => {
     expect(page.says(message)).toBe(true);
     expect(page.addressTyped()).toBe('owner@acme.test');
   });
+
+  it('says whom the invitation went to, and clears the address for the next', async () => {
+    const page = await signedIn();
+    await page.invite('marie@example.com');
+
+    invitations.sentTo.set('marie@example.com');
+    await page.settle();
+
+    expect(page.says('Invitation sent to marie@example.com')).toBe(true);
+    expect(page.addressTyped()).toBe('');
+  });
 });
