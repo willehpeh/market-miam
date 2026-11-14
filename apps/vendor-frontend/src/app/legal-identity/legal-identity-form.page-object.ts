@@ -11,8 +11,7 @@ import { FakeStorefrontFacade } from '../storefront/fake.storefront.facade';
 export type VendorDetails = Pick<LegalIdentityView, 'siret' | 'legalName' | 'address' | 'contactEmail' | 'phone'>;
 
 // The legal-identity screen as the vendor meets it: the fields they fill in, found by the
-// labels they read, and what they do with them (ADR 0062). It asserts nothing, and it never
-// hands out a facade: a spec that wants to see a command builds the fake and passes it in.
+// labels they read, and what they do with them (ADR 0062).
 export class LegalIdentityFormPageObject extends PageObject<LegalIdentityForm> {
   private constructor(view: RenderResult<LegalIdentityForm>) {
     super(view);
@@ -64,14 +63,14 @@ export class LegalIdentityFormPageObject extends PageObject<LegalIdentityForm> {
 
   leaveSiret(): this {
     fireEvent.blur(this.siretField());
-    return this.detectChanges();
+    return this;
   }
 
   enterLegalName(legalName: string): this {
     return this.type(this.legalNameField(), legalName);
   }
 
-  enterAddress(address: string): this {
+  private enterAddress(address: string): this {
     return this.type(this.addressField(), address);
   }
 
@@ -79,7 +78,7 @@ export class LegalIdentityFormPageObject extends PageObject<LegalIdentityForm> {
     return this.type(this.contactEmailField(), contactEmail);
   }
 
-  enterPhone(phone: string): this {
+  private enterPhone(phone: string): this {
     return this.type(this.phoneField(), phone);
   }
 
@@ -99,7 +98,7 @@ export class LegalIdentityFormPageObject extends PageObject<LegalIdentityForm> {
 
   // Entrepreneur individuel or société, and what a société adds
 
-  individualRadio(): HTMLElement {
+  private individualRadio(): HTMLElement {
     return screen.getByLabelText(/entrepreneur individuel/i);
   }
 
@@ -153,7 +152,7 @@ export class LegalIdentityFormPageObject extends PageObject<LegalIdentityForm> {
     return screen.getByLabelText(/assujetti/i);
   }
 
-  franchiseRadio(): HTMLElement {
+  private franchiseRadio(): HTMLElement {
     return screen.getByLabelText(/franchise en base/i);
   }
 
@@ -176,7 +175,7 @@ export class LegalIdentityFormPageObject extends PageObject<LegalIdentityForm> {
     return screen.getByRole('link', { name });
   }
 
-  mediatorWarningCheckbox(): HTMLElement {
+  private mediatorWarningCheckbox(): HTMLElement {
     return screen.getByLabelText(/je sais que je dois désigner un médiateur/i);
   }
 

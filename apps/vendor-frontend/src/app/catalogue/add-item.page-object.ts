@@ -6,8 +6,7 @@ import { CatalogueFacade } from './catalogue.facade';
 import { FakeCatalogueFacade } from './fake.catalogue.facade';
 
 // The dish screen as the vendor meets it: the controls they reach for, found by the labels
-// they read, and what they do with them (ADR 0062). It asserts nothing, and it never hands
-// out the facade: a spec that wants to see a command builds the fake and passes it in.
+// they read, and what they do with them (ADR 0062).
 export class AddItemPageObject extends PageObject<AddItem> {
   private constructor(view: RenderResult<AddItem>) {
     super(view);
@@ -92,13 +91,13 @@ export class AddItemPageObject extends PageObject<AddItem> {
 
   leavePrice(): this {
     fireEvent.blur(this.priceField());
-    return this.detectChanges();
+    return this;
   }
 
   // Pressing anywhere outside a pending confirmation; the name field is as good as anywhere.
   pressElsewhere(): this {
     fireEvent.pointerDown(this.nameField());
-    return this.detectChanges();
+    return this;
   }
 
   // The formats. Rows count from 1, as the vendor reads them in the buttons' names.

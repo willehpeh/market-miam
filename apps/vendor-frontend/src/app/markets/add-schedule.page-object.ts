@@ -6,8 +6,7 @@ import { MarketScheduleFacade } from './market-schedule.facade';
 import { FakeMarketScheduleFacade } from './fake.market-schedule.facade';
 
 // The market form as the vendor meets it: the controls they reach for, found by the labels
-// they read, and what they do with them (ADR 0062). It asserts nothing, and it never hands
-// out the facade: a spec that wants to see a command builds the fake and passes it in.
+// they read, and what they do with them (ADR 0062).
 export class AddSchedulePageObject extends PageObject<AddSchedule> {
   private constructor(view: RenderResult<AddSchedule>) {
     super(view);
@@ -34,11 +33,11 @@ export class AddSchedulePageObject extends PageObject<AddSchedule> {
     return screen.queryByLabelText(/nom du marché/i);
   }
 
-  addressField(): HTMLInputElement {
+  private addressField(): HTMLInputElement {
     return screen.getByLabelText(/adresse/i) as HTMLInputElement;
   }
 
-  postalCodeField(): HTMLInputElement {
+  private postalCodeField(): HTMLInputElement {
     return screen.getByLabelText(/code postal/i) as HTMLInputElement;
   }
 
@@ -46,7 +45,7 @@ export class AddSchedulePageObject extends PageObject<AddSchedule> {
     return screen.getByLabelText(/ville/i) as HTMLInputElement;
   }
 
-  pitchField(): HTMLInputElement {
+  private pitchField(): HTMLInputElement {
     return screen.getByLabelText(/emplacement/i) as HTMLInputElement;
   }
 
@@ -72,7 +71,7 @@ export class AddSchedulePageObject extends PageObject<AddSchedule> {
 
   leavePostalCode(): this {
     fireEvent.blur(this.postalCodeField());
-    return this.detectChanges();
+    return this;
   }
 
   // The frequency
@@ -126,7 +125,7 @@ export class AddSchedulePageObject extends PageObject<AddSchedule> {
     return screen.getByRole('button', { name: /ajouter le marché/i });
   }
 
-  saveButton(): HTMLElement {
+  private saveButton(): HTMLElement {
     return screen.getByRole('button', { name: /enregistrer/i });
   }
 

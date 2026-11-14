@@ -8,26 +8,23 @@ import { CatalogueFacade } from '../../catalogue/catalogue.facade';
 import { FakeCatalogueFacade } from '../../catalogue/fake.catalogue.facade';
 
 // The live screen as the vendor runs it on the morning: the rows they tap, the épuisé group
-// the rows move into, and the doors at the foot (ADR 0062). It asserts nothing, and it never
-// hands out a facade: a spec that arranges or checks one builds the fake and passes it in.
+// the rows move into, and the doors at the foot (ADR 0062).
 export class LiveScreenPageObject extends PageObject<LiveScreen> {
   private constructor(view: RenderResult<LiveScreen>) {
     super(view);
   }
 
-  // Stands on the Saturday the market-day builder stages, unless told otherwise.
+  // Stands on the Saturday the market-day builder stages.
   static async render({
     marketDays = new FakeMarketDayFacade(),
     catalogue = new FakeCatalogueFacade(),
-    marketId = 'market-1',
-    date = '2026-08-15',
-  }: { marketDays?: MarketDayFacade; catalogue?: CatalogueFacade; marketId?: string; date?: string } = {}) {
+  }: { marketDays?: MarketDayFacade; catalogue?: CatalogueFacade } = {}) {
     const view = await render(LiveScreen, {
       providers: [
         provideRouter([]),
         { provide: MarketDayFacade, useValue: marketDays },
         { provide: CatalogueFacade, useValue: catalogue },
-        { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ marketId, date }) } } },
+        { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ marketId: 'market-1', date: '2026-08-15' }) } } },
       ],
     });
     return new LiveScreenPageObject(view);
@@ -43,7 +40,7 @@ export class LiveScreenPageObject extends PageObject<LiveScreen> {
     return screen.getByRole('button', { name });
   }
 
-  soldOutGroup(): HTMLElement {
+  private soldOutGroup(): HTMLElement {
     return screen.getByRole('region', { name: /épuisé/i });
   }
 

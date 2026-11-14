@@ -6,9 +6,8 @@ import { MarketDayFacade } from './market-day.facade';
 import { FakeMarketDayFacade } from './fake.market-day.facade';
 
 // The market-day cards as the vendor meets them at the top of the published home: today's
-// market to run and the next one to plan, the controls found by the labels they read, and
-// what they do with them (ADR 0062). It asserts nothing, and it never hands out the facade:
-// a spec that arranges the days or wants to see a command builds the fake and passes it in.
+// market to run and the next one to plan, the controls found by the labels they read, and what
+// they do with them (ADR 0062).
 export class MarketDayCardsPageObject extends PageObject<MarketDayCards> {
   private constructor(view: RenderResult<MarketDayCards>) {
     super(view);
@@ -61,7 +60,7 @@ export class MarketDayCardsPageObject extends PageObject<MarketDayCards> {
 
   // Calling off today, and taking it back
 
-  callOffButton(): HTMLElement {
+  private callOffButton(): HTMLElement {
     return screen.getByRole('button', { name: "Je ne peux pas venir aujourd'hui" });
   }
 

@@ -11,29 +11,26 @@ import { FakeMarketPricesFacade } from '../market-prices/fake.market-prices.faca
 import { SellingRecordFacade } from '../selling-record/selling-record.facade';
 import { FakeSellingRecordFacade } from '../selling-record/fake.selling-record.facade';
 
-// A market day's menu as the vendor plans it: the dishes they tick, found by their names,
-// and what they do with them (ADR 0062). It asserts nothing, and it never hands out a
-// facade: a spec that arranges or checks one builds the fake and passes it in.
+// A market day's menu as the vendor plans it: the dishes they tick, found by their names, and
+// what they do with them (ADR 0062).
 export class MenuEditorPageObject extends PageObject<MenuEditor> {
   private constructor(view: RenderResult<MenuEditor>) {
     super(view);
   }
 
-  // Opens on the Saturday testMarketDayView stages unless given another day.
+  // Opens on the Saturday testMarketDayView stages, at market-1 unless given another market.
   static async render({
     marketDays = new FakeMarketDayFacade(),
     catalogue = new FakeCatalogueFacade(),
     prices = new FakeMarketPricesFacade(),
     record = new FakeSellingRecordFacade(),
     marketId = 'market-1',
-    date = '2026-08-15',
   }: {
     marketDays?: MarketDayFacade;
     catalogue?: CatalogueFacade;
     prices?: MarketPricesFacade;
     record?: SellingRecordFacade;
     marketId?: string;
-    date?: string;
   } = {}) {
     const view = await render(MenuEditor, {
       providers: [
@@ -42,7 +39,7 @@ export class MenuEditorPageObject extends PageObject<MenuEditor> {
         { provide: CatalogueFacade, useValue: catalogue },
         { provide: MarketPricesFacade, useValue: prices },
         { provide: SellingRecordFacade, useValue: record },
-        { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ marketId, date }) } } },
+        { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ marketId, date: '2026-08-15' }) } } },
       ],
     });
     return new MenuEditorPageObject(view);
@@ -70,7 +67,7 @@ export class MenuEditorPageObject extends PageObject<MenuEditor> {
     return screen.queryByRole('checkbox', { name });
   }
 
-  saveButton(): HTMLElement {
+  private saveButton(): HTMLElement {
     return screen.getByRole('button', { name: /enregistrer/i });
   }
 
@@ -92,7 +89,7 @@ export class MenuEditorPageObject extends PageObject<MenuEditor> {
 
   // A closed stand
 
-  reopenStandButton(): HTMLElement {
+  private reopenStandButton(): HTMLElement {
     return screen.getByRole('button', { name: 'Rouvrir le stand' });
   }
 

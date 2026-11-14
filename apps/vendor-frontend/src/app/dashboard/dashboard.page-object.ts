@@ -17,8 +17,7 @@ import { FakeShare } from '../core/fake.share';
 
 // The vendor's home as they meet it: the setup steps until the vitrine is published, the
 // published home after it, the controls found by the labels they read, and what they do with
-// them (ADR 0062). It asserts nothing, and it never hands out a facade or the share sheet: a
-// spec that arranges or checks one builds the fake and passes it in.
+// them (ADR 0062).
 export class DashboardPageObject extends PageObject<Dashboard> {
   private constructor(view: RenderResult<Dashboard>) {
     super(view);
@@ -169,7 +168,7 @@ export class DashboardPageObject extends PageObject<Dashboard> {
   }
 
   // The same button while it confirms a copy.
-  linkCopiedButton(): HTMLElement {
+  private linkCopiedButton(): HTMLElement {
     return screen.getByRole('button', { name: /lien copié/i });
   }
 

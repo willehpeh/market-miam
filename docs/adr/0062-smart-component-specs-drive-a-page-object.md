@@ -32,8 +32,9 @@ component, in `<component>.page-object.ts`, built on Testing Library.
   something is absent, a `query…` twin returns `null`, as Testing Library splits `getBy` from
   `queryBy`.
 - **It does what the user does**: `enterName('Pizza')`, `chooseSeveralFormats()`,
-  `askToDelete()`. Each action runs change detection and returns the page object, so actions
-  chain. Rows and steps count from 1, as the user reads them in the controls' names.
+  `askToDelete()`. Each action returns the page object, so actions chain; Testing Library
+  already runs change detection after every event. Rows and steps count from 1, as the user
+  reads them in the controls' names.
 - **It asserts nothing.** `expect` stays in the spec, and so does any copy the spec checks for,
   such as `screen.getByText('Indiquez le prix.')`, so that an assertion reads whole where it fails.
 - **It never hands out a facade.** The spec builds the fakes it arranges or checks and passes them
@@ -41,7 +42,8 @@ component, in `<component>.page-object.ts`, built on Testing Library.
   neither. `TestBed.inject(…) as Fake…` goes. A fake that several specs fill with data has a
   builder beside it, such as `catalogueOf(...items)` in `fake.catalogue.facade.ts`.
 - **It extends `PageObject`** (`core/page-object.ts`), which holds what every page object does
-  alike: change detection, and pressing, typing and picking a file.
+  alike: pressing, typing and picking a file, and `detectChanges()` for a change a spec makes to
+  a fake, which fires no event.
 - **It models the screen, not the component tree**: one page object per smart component, covering
   the dumb children it renders, so they can still be split or merged without breaking a test
   (ADR 0061). A part that appears on several screens, such as the photo picker, may get an object

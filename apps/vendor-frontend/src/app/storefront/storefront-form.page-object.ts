@@ -5,8 +5,7 @@ import { StorefrontFacade } from './storefront.facade';
 import { FakeStorefrontFacade } from './fake.storefront.facade';
 
 // The storefront screen as the vendor meets it: the controls they reach for, found by the
-// labels they read, and what they do with them (ADR 0062). It asserts nothing, and it never
-// hands out the facade: a spec that wants to see a command builds the fake and passes it in.
+// labels they read, and what they do with them (ADR 0062).
 export class StorefrontFormPageObject extends PageObject<StorefrontForm> {
   private constructor(view: RenderResult<StorefrontForm>) {
     super(view);
@@ -73,7 +72,7 @@ export class StorefrontFormPageObject extends PageObject<StorefrontForm> {
   leaveNameBlank(): this {
     fireEvent.focus(this.nameField());
     fireEvent.blur(this.nameField());
-    return this.detectChanges();
+    return this;
   }
 
   // Saving

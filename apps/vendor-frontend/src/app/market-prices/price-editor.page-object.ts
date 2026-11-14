@@ -10,24 +10,21 @@ import { MarketScheduleFacade } from '../markets/market-schedule.facade';
 import { FakeMarketScheduleFacade } from '../markets/fake.market-schedule.facade';
 
 // A market's prices as the vendor sets them: a field per dish, found by the dish's name, and
-// what they do with them (ADR 0062). It asserts nothing, and it never hands out a facade: a
-// spec that arranges or checks one builds the fake and passes it in.
+// what they do with them (ADR 0062).
 export class PriceEditorPageObject extends PageObject<PriceEditor> {
   private constructor(view: RenderResult<PriceEditor>) {
     super(view);
   }
 
-  // Opens on market-1 unless given another market.
+  // Opens on market-1.
   static async render({
     catalogue = new FakeCatalogueFacade(),
     prices = new FakeMarketPricesFacade(),
     schedules = new FakeMarketScheduleFacade(),
-    marketId = 'market-1',
   }: {
     catalogue?: CatalogueFacade;
     prices?: MarketPricesFacade;
     schedules?: MarketScheduleFacade;
-    marketId?: string;
   } = {}) {
     const view = await render(PriceEditor, {
       providers: [
@@ -35,7 +32,7 @@ export class PriceEditorPageObject extends PageObject<PriceEditor> {
         { provide: CatalogueFacade, useValue: catalogue },
         { provide: MarketPricesFacade, useValue: prices },
         { provide: MarketScheduleFacade, useValue: schedules },
-        { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ marketId }) } } },
+        { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ marketId: 'market-1' }) } } },
       ],
     });
     return new PriceEditorPageObject(view);

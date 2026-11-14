@@ -8,8 +8,7 @@ import { QrCodeExport } from './qr-code-export';
 import { FakeQrCodeExport } from './fake.qr-code-export';
 
 // The QR code screen as the vendor meets it: the code, and the two ways to take it off the
-// phone (ADR 0062). It asserts nothing, and it never hands out the facade or the export: a
-// spec that arranges or checks one builds the fake and passes it in.
+// phone (ADR 0062).
 export class QrCodeScreenPageObject extends PageObject<QrCodeScreen> {
   private constructor(view: RenderResult<QrCodeScreen>) {
     super(view);
