@@ -42,4 +42,16 @@ describe('Assignments', () => {
     expect(request.body).toEqual({ subdomain: 'brioche' });
     request.noContent();
   });
+
+  // So the list can hold the field while it goes.
+  it('reports whose assignment is in flight, and only while it is', () => {
+    expect(facade.assigning()).toBeNull();
+
+    facade.assign('brioche-co', 'brioche');
+    const request = api.assignmentOf('brioche-co');
+    expect(facade.assigning()).toBe('brioche-co');
+
+    request.noContent();
+    expect(facade.assigning()).toBeNull();
+  });
 });
