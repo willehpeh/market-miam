@@ -94,6 +94,10 @@ export class OperatorPageObject extends PageObject<OperatorPage> {
     return screen.getByRole('button', { name: `Erase ${email}` });
   }
 
+  queryEraseButton(email: string): HTMLElement | null {
+    return screen.queryByRole('button', { name: `Erase ${email}` });
+  }
+
   confirmErasureButton(): HTMLElement {
     return screen.getByRole('button', { name: /confirm erasure/i });
   }

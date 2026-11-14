@@ -5,6 +5,9 @@ import { FakeAccountsFacade } from '../accounts/fake.accounts.facade';
 import { FakeErasureFacade } from '../erasures/fake.erasure.facade';
 import { OperatorPageObject } from './operator-page.page-object';
 
+const ACME = { email: 'owner@acme.test', vendorId: 'acme-bakery', subdomain: 'acme' };
+const BRIOCHE = { email: 'owner@brioche.test', vendorId: 'brioche-co', subdomain: null };
+
 describe('OperatorPage', () => {
   let auth: FakeAuthFacade;
   let invitations: FakeInvitationFacade;
@@ -188,11 +191,20 @@ describe('OperatorPage', () => {
 
   // Erasure cannot be undone (ADR 0058): the operator confirms it before it goes.
   it('erases a vendor once the operator confirms', async () => {
-    accounts.accounts.set([{ email: 'owner@acme.test', vendorId: 'acme-bakery', subdomain: 'acme' }]);
+    accounts.accounts.set([ACME]);
     const page = await signedIn();
 
     page.askToErase('owner@acme.test').confirmErasure();
 
     expect(erasures.erased).toEqual(['acme-bakery']);
+  });
+
+  // Its account closes once the processor has run: there is nothing left to erase (ADR 0063).
+  it('shows an erased vendor as erased, with nothing left to erase', async () => {
+    accounts.accounts.set([{ ...ACME, erased: true }]);
+    const page = await signedIn();
+
+    expect(page.accounts()).toEqual(['owner@acme.test erased acme-bakery']);
+    expect(page.queryEraseButton('owner@acme.test')).not.toBeInTheDocument();
   });
 });

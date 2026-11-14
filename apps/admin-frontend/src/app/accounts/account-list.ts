@@ -23,7 +23,9 @@ import { AccountListing } from './accounts';
               <span class="italic text-gray-400">no email</span>
             }
             <span class="flex flex-col items-end gap-0.5 text-sm">
-              @if (account.invited) {
+              @if (account.erased) {
+                <span class="italic text-red-700">erased</span>
+              } @else if (account.invited) {
                 <span class="italic text-amber-700">invited</span>
               } @else if (account.subdomain) {
                 <a
@@ -38,29 +40,31 @@ import { AccountListing } from './accounts';
               }
               @if (account.vendorId; as vendorId) {
                 <span class="font-mono text-gray-500">{{ vendorId }}</span>
-                @if (confirming() === vendorId) {
-                  <span class="flex flex-wrap items-center justify-end gap-2">
-                    <span class="text-red-700">Erase for good?</span>
+                @if (!account.erased) {
+                  @if (confirming() === vendorId) {
+                    <span class="flex flex-wrap items-center justify-end gap-2">
+                      <span class="text-red-700">Erase for good?</span>
+                      <button
+                        type="button"
+                        class="min-h-11 rounded bg-red-700 px-3 text-white"
+                        (click)="confirmErasure(vendorId)"
+                      >
+                        Confirm erasure
+                      </button>
+                      <button type="button" class="min-h-11 rounded border border-gray-300 px-3" (click)="confirming.set(null)">
+                        Cancel
+                      </button>
+                    </span>
+                  } @else {
                     <button
                       type="button"
-                      class="min-h-11 rounded bg-red-700 px-3 text-white"
-                      (click)="confirmErasure(vendorId)"
+                      class="min-h-11 rounded border border-red-300 px-3 text-red-700"
+                      [attr.aria-label]="'Erase ' + (account.email ?? vendorId)"
+                      (click)="confirming.set(vendorId)"
                     >
-                      Confirm erasure
+                      Erase
                     </button>
-                    <button type="button" class="min-h-11 rounded border border-gray-300 px-3" (click)="confirming.set(null)">
-                      Cancel
-                    </button>
-                  </span>
-                } @else {
-                  <button
-                    type="button"
-                    class="min-h-11 rounded border border-red-300 px-3 text-red-700"
-                    [attr.aria-label]="'Erase ' + (account.email ?? vendorId)"
-                    (click)="confirming.set(vendorId)"
-                  >
-                    Erase
-                  </button>
+                  }
                 }
               } @else {
                 <span class="italic text-gray-400">not a vendor</span>
