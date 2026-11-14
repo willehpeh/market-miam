@@ -1,13 +1,8 @@
-import { TestBed } from '@angular/core/testing';
-import { AuthFacade } from '../core/auth/auth.facade';
+import { screen } from '@testing-library/angular';
 import { FakeAuthFacade } from '../core/auth/fake.auth.facade';
-import { InvitationFacade } from '../invitations/invitation.facade';
 import { FakeInvitationFacade } from '../invitations/fake.invitation.facade';
-import { AccountsFacade } from '../accounts/accounts.facade';
 import { FakeAccountsFacade } from '../accounts/fake.accounts.facade';
-import { OperatorPage } from './operator-page';
-import { OperatorPageObject } from './operator-page.po';
-
+import { OperatorPageObject } from './operator-page.page-object';
 
 describe('OperatorPage', () => {
   let auth: FakeAuthFacade;
@@ -15,60 +10,54 @@ describe('OperatorPage', () => {
   let accounts: FakeAccountsFacade;
 
   beforeEach(() => {
-    TestBed.configureTestingModule({
-      imports: [OperatorPage],
-      providers: [
-        { provide: AuthFacade, useClass: FakeAuthFacade },
-        { provide: InvitationFacade, useClass: FakeInvitationFacade },
-        { provide: AccountsFacade, useClass: FakeAccountsFacade },
-      ],
-    });
-    auth = TestBed.inject(AuthFacade) as FakeAuthFacade;
-    invitations = TestBed.inject(InvitationFacade) as FakeInvitationFacade;
-    accounts = TestBed.inject(AccountsFacade) as FakeAccountsFacade;
+    auth = new FakeAuthFacade();
+    invitations = new FakeInvitationFacade();
+    accounts = new FakeAccountsFacade();
   });
 
+  function open(): Promise<OperatorPageObject> {
+    return OperatorPageObject.render({ auth, invitations, accounts });
+  }
+
   async function signedIn(): Promise<OperatorPageObject> {
-    const page = await OperatorPageObject.open();
-    await page.signIn();
-    return page;
+    return (await open()).signIn();
   }
 
   it('offers to sign in when no one is, without calling the API', async () => {
-    const page = await OperatorPageObject.open();
+    const page = await open();
 
-    expect(page.offersSignIn()).toBe(true);
+    expect(page.signInButton()).toBeInTheDocument();
     expect(accounts.loads).toBe(0);
   });
 
   it('says it is loading while the sign-in is still pending', async () => {
     auth.status.set('pending');
 
-    const page = await OperatorPageObject.open();
+    const page = await open();
 
-    expect(page.says('Loading')).toBe(true);
-    expect(page.offersSignIn()).toBe(false);
+    expect(screen.getByText('Loading', { exact: false })).toBeInTheDocument();
+    expect(page.querySignInButton()).not.toBeInTheDocument();
   });
 
   it('starts the sign-in when asked', async () => {
-    const page = await OperatorPageObject.open();
+    const page = await open();
 
-    await page.signIn();
+    page.signIn();
 
     expect(auth.loginStarted).toBe(true);
   });
 
   it('shows who is signed in', async () => {
-    const page = await signedIn();
+    await signedIn();
 
-    expect(page.says(FakeAuthFacade.USER_ID)).toBe(true);
+    expect(screen.getByText(FakeAuthFacade.USER_ID, { exact: false })).toBeInTheDocument();
   });
 
   it('asks for the accounts once someone is signed in, not before', async () => {
-    const page = await OperatorPageObject.open();
+    const page = await open();
     expect(accounts.loads).toBe(0);
 
-    await page.signIn();
+    page.signIn();
 
     expect(accounts.loads).toBe(1);
   });
@@ -85,7 +74,7 @@ describe('OperatorPage', () => {
       'owner@acme.test acme.marketmiam.fr acme-bakery',
       'owner@brioche.test no subdomain brioche-co',
     ]);
-    expect(page.storefrontLink('acme.marketmiam.fr')).toBe('https://acme.marketmiam.fr');
+    expect(page.storefrontLink('acme.marketmiam.fr')).toHaveAttribute('href', 'https://acme.marketmiam.fr');
   });
 
   it('marks an account that is not a vendor, and one without an email', async () => {
@@ -112,25 +101,25 @@ describe('OperatorPage', () => {
   });
 
   it('says when there are no accounts', async () => {
-    const page = await signedIn();
+    await signedIn();
 
-    expect(page.says('No accounts')).toBe(true);
+    expect(screen.getByText('No accounts', { exact: false })).toBeInTheDocument();
   });
 
   it('says so when the accounts cannot be loaded', async () => {
     accounts.failed.set(true);
 
-    const page = await signedIn();
+    await signedIn();
 
-    expect(page.says('The accounts could not be loaded')).toBe(true);
+    expect(screen.getByText('The accounts could not be loaded', { exact: false })).toBeInTheDocument();
   });
 
   it('says it is loading the accounts', async () => {
     accounts.loading.set(true);
 
-    const page = await signedIn();
+    await signedIn();
 
-    expect(page.says('Loading accounts')).toBe(true);
+    expect(screen.getByText('Loading accounts', { exact: false })).toBeInTheDocument();
   });
 
   it('says so when the API refuses the sign-in, and offers no invitation', async () => {
@@ -138,14 +127,14 @@ describe('OperatorPage', () => {
 
     const page = await signedIn();
 
-    expect(page.says('The API refused this sign-in')).toBe(true);
-    expect(page.offersInvitation()).toBe(false);
+    expect(screen.getByText('The API refused this sign-in', { exact: false })).toBeInTheDocument();
+    expect(page.queryAddressField()).not.toBeInTheDocument();
   });
 
   it('signs out', async () => {
     const page = await signedIn();
 
-    await page.signOut();
+    page.signOut();
 
     expect(auth.loggedOut).toBe(true);
   });
@@ -160,12 +149,12 @@ describe('OperatorPage', () => {
 
   it('lets no one press Invite while an invitation is sending', async () => {
     const page = await signedIn();
-    expect(page.canInvite()).toBe(true);
+    expect(page.inviteButton()).toBeEnabled();
 
     invitations.sending.set(true);
-    await page.settle();
+    page.detectChanges();
 
-    expect(page.canInvite()).toBe(false);
+    expect(page.inviteButton()).toBeDisabled();
   });
 
   it.each([
@@ -177,10 +166,10 @@ describe('OperatorPage', () => {
     await page.invite('owner@acme.test');
 
     invitations.refusal.set(refusal);
-    await page.settle();
+    page.detectChanges();
 
-    expect(page.says(message)).toBe(true);
-    expect(page.addressTyped()).toBe('owner@acme.test');
+    expect(screen.getByText(message, { exact: false })).toBeInTheDocument();
+    expect(page.addressField()).toHaveValue('owner@acme.test');
   });
 
   it('says whom the invitation went to, and clears the address for the next', async () => {
@@ -188,9 +177,9 @@ describe('OperatorPage', () => {
     await page.invite('marie@example.com');
 
     invitations.sentTo.set('marie@example.com');
-    await page.settle();
+    page.detectChanges();
 
-    expect(page.says('Invitation sent to marie@example.com')).toBe(true);
-    expect(page.addressTyped()).toBe('');
+    expect(screen.getByText('Invitation sent to marie@example.com', { exact: false })).toBeInTheDocument();
+    expect(page.addressField()).toHaveValue('');
   });
 });

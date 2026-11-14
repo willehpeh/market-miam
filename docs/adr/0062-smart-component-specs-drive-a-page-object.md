@@ -33,8 +33,9 @@ component, in `<component>.page-object.ts`, built on Testing Library.
   `queryBy`.
 - **It does what the user does**: `enterName('Pizza')`, `chooseSeveralFormats()`,
   `askToDelete()`. Each action returns the page object, so actions chain; Testing Library
-  already runs change detection after every event. Rows and steps count from 1, as the user
-  reads them in the controls' names.
+  already runs change detection after every event. An action whose work the screen finishes
+  asynchronously, such as a signal form's submission, is async and resolves once the page has
+  settled. Rows and steps count from 1, as the user reads them in the controls' names.
 - **It asserts nothing.** `expect` stays in the spec, and so does any copy the spec checks for,
   such as `screen.getByText('Indiquez le prix.')`, so that an assertion reads whole where it fails.
 - **It never hands out a facade.** The spec builds the fakes it arranges or checks and passes them
@@ -43,7 +44,7 @@ component, in `<component>.page-object.ts`, built on Testing Library.
   builder beside it, such as `catalogueOf(...items)` in `fake.catalogue.facade.ts`.
 - **It extends `PageObject`** (`core/page-object.ts`), which holds what every page object does
   alike: pressing, typing and picking a file, and `detectChanges()` for a change a spec makes to
-  a fake, which fires no event.
+  a fake, which fires no event. Each app keeps its own copy, as the apps share no code.
 - **It models the screen, not the component tree**: one page object per smart component, covering
   the dumb children it renders, so they can still be split or merged without breaking a test
   (ADR 0061). A part that appears on several screens, such as the photo picker, may get an object
@@ -58,9 +59,10 @@ render nothing and are unaffected.
 Moved with this record: the eleven vendor specs that asked for 25 or more queries — the dish
 screen, the dashboard and its market-day cards, the live screen, the menu and price editors, the
 schedule form, the carte list, the QR code screen, and the legal-identity and storefront forms.
-Not moved: the short ones (`bilan`, `markets-list`, `layout`, `reorder-items`, `landing`,
-`bilan-prompt`, `catalogue-page`, `welcome`, `app`), and the admin app, whose specs still test
-components straight over HTTP until ADR 0061's page spec replaces them.
+The admin app's page spec moved too: its page object, written alongside ADR 0061's slice 4,
+answered with booleans and strings and let the spec configure `TestBed` itself, and now follows
+these rules. Not moved: the short vendor specs (`bilan`, `markets-list`, `layout`,
+`reorder-items`, `landing`, `bilan-prompt`, `catalogue-page`, `welcome`, `app`).
 
 ## Consequences
 
