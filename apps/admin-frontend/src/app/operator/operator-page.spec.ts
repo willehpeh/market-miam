@@ -109,6 +109,15 @@ describe('OperatorPage', () => {
     ]);
   });
 
+  // Its account opens once the processor has run (ADR 0060): until then it is an invitation.
+  it('shows an invited vendor as invited, with its vendor id', async () => {
+    accounts.accounts.set([{ email: 'marie@example.com', vendorId: 'new-vendor', subdomain: null, invited: true }]);
+
+    const page = await signedIn();
+
+    expect(page.accounts()).toEqual(['marie@example.com invited new-vendor']);
+  });
+
   it('says when there are no accounts', async () => {
     const page = await signedIn();
 

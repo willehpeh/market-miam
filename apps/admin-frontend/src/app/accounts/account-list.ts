@@ -3,7 +3,8 @@ import { environment } from '../../environments/environment';
 import { AccountListing } from './accounts';
 
 // Every sign-in the identity provider holds, each with the storefront its vendor is
-// reachable at — or a note that it has none yet, or is not a vendor at all.
+// reachable at — or a note that it has none yet, or is not a vendor at all — and the
+// invitations whose accounts have yet to open.
 @Component({
   selector: 'admin-account-list',
   template: `
@@ -22,7 +23,9 @@ import { AccountListing } from './accounts';
               <span class="italic text-gray-400">no email</span>
             }
             <span class="flex flex-col items-end gap-0.5 text-sm">
-              @if (account.subdomain) {
+              @if (account.invited) {
+                <span class="italic text-amber-700">invited</span>
+              } @else if (account.subdomain) {
                 <a
                   class="text-gray-700 underline"
                   href="https://{{ account.subdomain }}.{{ storefrontBaseDomain }}"
