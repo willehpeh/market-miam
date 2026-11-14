@@ -2,7 +2,10 @@ import { createAction, createFeature, createReducer, on, props } from '@ngrx/sto
 import { InvitationRefusal } from './invitations';
 
 export const InviteVendor = createAction('[Invitations] Invite Vendor', props<{ email: string }>());
-export const InviteVendorSuccess = createAction('[Invitations] Invite Vendor Success', props<{ email: string }>());
+export const InviteVendorSuccess = createAction(
+  '[Invitations] Invite Vendor Success',
+  props<{ email: string; vendorId: string }>(),
+);
 export const InviteVendorRefused = createAction('[Invitations] Invite Vendor Refused', props<{ refusal: InvitationRefusal }>());
 
 export interface InvitationState {

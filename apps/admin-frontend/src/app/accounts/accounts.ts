@@ -6,6 +6,8 @@ export interface AccountListing {
   email: string | null;
   vendorId: string | null;
   subdomain: string | null;
+  // An invitation the api has accepted, whose account the processor has yet to open (ADR 0060).
+  invited?: true;
 }
 
 // The accounts, through the operator API.
