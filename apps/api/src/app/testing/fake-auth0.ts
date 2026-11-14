@@ -21,8 +21,8 @@ async function bodyOf(req: IncomingMessage): Promise<string> {
 // Stands in for the Management API endpoints the adapters call, on a local port:
 // client-credentials tokens, then the paged user list, user creation and the lookup by email,
 // which want the latest token. Like Auth0, it refuses a second user with an email already on
-// that connection, emails a user it creates unless told not to, and the lookup answers whatever
-// the connection.
+// that connection, emails a passwordless user it creates a sign-in link unless the address comes
+// verified, and the lookup answers whatever the connection.
 export class FakeAuth0 {
   readonly tokenRequests: Record<string, string>[] = [];
   readonly userPages: URLSearchParams[] = [];
@@ -76,7 +76,7 @@ export class FakeAuth0 {
       if (this.createStatus !== 201) {
         return send(res, this.createStatus, { statusCode: this.createStatus, errorCode: this.createErrorCode });
       }
-      const { verify_email, ...user } = JSON.parse(await bodyOf(req)) as Auth0User & { verify_email?: boolean };
+      const { email_verified, ...user } = JSON.parse(await bodyOf(req)) as Auth0User & { email_verified?: boolean };
       if (this.refusesEmails) {
         return send(res, 400, {
           statusCode: 400,
@@ -89,7 +89,7 @@ export class FakeAuth0 {
         return send(res, 409, { statusCode: 409, error: 'Conflict', message: 'The user already exists.' });
       }
       this.users.push(user);
-      if (verify_email !== false) {
+      if (email_verified !== true) {
         this.emailed.push(user.email!);
       }
       return send(res, 201, user);
