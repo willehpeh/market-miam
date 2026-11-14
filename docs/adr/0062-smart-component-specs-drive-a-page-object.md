@@ -1,6 +1,6 @@
 # 0062. Smart-component specs drive the screen through a page object
 
-Date: 2026-11-14 · Status: Proposed
+Date: 2026-11-14 · Status: Accepted
 
 Builds on ADR 0061 (tests at two levels) and ADR 0006 (fakes at boundaries). Covers the
 smart-component specs of the vendor and admin apps.
@@ -50,6 +50,13 @@ Specs move to page objects as they are next touched, the most repetitive first. 
 little repetition need not move. Feature specs, which run a facade down to `HttpTestingController`,
 render nothing and are unaffected.
 
+Moved with this record: the eleven vendor specs that asked for 25 or more queries — the dish
+screen, the dashboard and its market-day cards, the live screen, the menu and price editors, the
+schedule form, the carte list, the QR code screen, and the legal-identity and storefront forms.
+Not moved: the short ones (`bilan`, `markets-list`, `layout`, `reorder-items`, `landing`,
+`bilan-prompt`, `catalogue-page`, `welcome`, `app`), and the admin app, whose specs still test
+components straight over HTTP until ADR 0061's page spec replaces them.
+
 ## Consequences
 
 - A label change is one line. In the pilot, renaming the "Descendre le format" buttons fails four
@@ -58,7 +65,10 @@ render nothing and are unaffected.
   builds the fake it checks.
 - More code in total, not less. `add-item.spec.ts` went from 842 lines to 703, with no
   `fireEvent` left and 14 of its 128 queries, all checking copy. Its page object adds 271 lines.
-  A page object is code to keep, and it grows with its screen.
+  Across the eleven specs moved, the same 306 tests went from 573 queries to 146, all checking
+  copy, from 172 `fireEvent` calls to none, and from 3,916 lines to 5,442 with the page objects.
+  Some specs grew on their own: a render helper that set its fakes after render now shows that
+  arrangement in each test. A page object is code to keep, and it grows with its screen.
 - Selectors that a label cannot replace remain, now in one place. The dish screen's two file
   inputs are hidden behind their buttons and carry no label.
 - One assertion changed form: the submit button's reasons are checked with
