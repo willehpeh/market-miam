@@ -6,6 +6,7 @@ import { FakeAuth } from '../core/auth/fake.auth';
 import { InvitationFacade } from '../invitations/invitation.facade';
 import { FakeInvitationFacade } from '../invitations/fake.invitation.facade';
 import { OperatorPage } from './operator-page';
+import { OperatorPageObject } from './operator-page.po';
 
 const WHOAMI = (url: string) => url.endsWith('/api/ops/whoami');
 const ACCOUNTS = (url: string) => url.endsWith('/api/ops/accounts');
@@ -37,28 +38,12 @@ describe('OperatorPage', () => {
   });
 
   // Signed in, and confirmed as an operator by the API: the page then shows the accounts and the form.
-  async function signedIn() {
-    auth.login();
-    const fixture = TestBed.createComponent(OperatorPage);
+  async function signedIn(): Promise<OperatorPageObject> {
+    const page = await OperatorPageObject.open();
+    await page.signIn();
     http.expectOne((req) => WHOAMI(req.url)).flush({ operatorId: 'github|1234567' });
-    await fixture.whenStable();
-    return { fixture, page: fixture.nativeElement as HTMLElement };
-  }
-
-  // What a browser does as someone types: the value changes, then an input event fires.
-  function type(input: HTMLInputElement, text: string): void {
-    input.value = text;
-    input.dispatchEvent(new Event('input'));
-  }
-
-  function button(page: HTMLElement, label: string): HTMLButtonElement {
-    return Array.from(page.querySelectorAll('button')).find((candidate) => candidate.textContent?.trim() === label)!;
-  }
-
-  // A form's submission is asynchronous: a tick for it to run, then the page to render.
-  async function settle(fixture: { whenStable(): Promise<unknown> }) {
-    await new Promise((resolve) => setTimeout(resolve));
-    await fixture.whenStable();
+    await page.settle();
+    return page;
   }
 
   async function render(): Promise<HTMLElement> {
@@ -135,11 +120,9 @@ describe('OperatorPage', () => {
   });
 
   it('invites the vendor whose address is typed', async () => {
-    const { fixture, page } = await signedIn();
+    const page = await signedIn();
 
-    type(page.querySelector<HTMLInputElement>('input[type="email"]')!, 'marie@example.com');
-    button(page, 'Invite').click();
-    await settle(fixture);
+    await page.invite('marie@example.com');
 
     expect(invitations.invited).toEqual(['marie@example.com']);
   });
