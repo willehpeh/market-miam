@@ -4,7 +4,7 @@ import { UnitOfWork } from '@market-miam/event-sourcing';
 import { VendorId } from '@market-miam/shared-kernel';
 import { AssignSubdomain } from './assign-subdomain';
 import { Vendors } from '../vendor';
-import { SubdomainRegistry } from '../subdomain-registry';
+import { Subdomain, SubdomainRegistry } from '../subdomain-registry';
 
 // The name is claimed in the registry and recorded on the vendor's stream in one
 // transaction: a name taken fails the claim and records nothing, and an append that fails
@@ -18,11 +18,12 @@ export class AssignSubdomainHandler implements ICommandHandler<AssignSubdomain> 
   ) {}
 
   async execute(command: AssignSubdomain): Promise<void> {
+    const subdomain = new Subdomain(command.subdomain);
     await this.unitOfWork.transaction(async () => {
       const vendorId = new VendorId(command.vendorId);
       const vendor = await this.vendors.forVendor(vendorId);
-      vendor.assignSubdomain(command.subdomain, new Instant(command.assignedAt));
-      await this.registry.register(command.subdomain, command.vendorId);
+      vendor.assignSubdomain(subdomain, new Instant(command.assignedAt));
+      await this.registry.register(subdomain.value(), command.vendorId);
       await this.vendors.save(vendor, vendorId);
     });
   }

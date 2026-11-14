@@ -4,6 +4,7 @@ import { Email, Instant, SignInAddress } from '@market-miam/common';
 import { VendorAccountClosed, VendorAccountOpened, VendorErased, VendorSubdomainAssigned, VendorEvent, VendorInvited, VendorLegalIdentityProvided, VendorRegistered } from './events';
 import { ErasedVendor, InvitedVendor, RegisteredVendor, UnknownVendor, VendorState } from './vendor-state';
 import { LegalIdentity } from './legal-identity';
+import { Subdomain } from '../subdomain-registry/subdomain';
 import { LegalIdentityOnRecord, NoLegalIdentity, ProvidedLegalIdentity } from './legal-identity-on-record';
 import { AccountOnRecord, ClosedAccount, OpenedAccount, UnrecordedAccount } from './account-on-record';
 
@@ -38,7 +39,7 @@ export class Vendor extends Aggregate {
     this._state.erase(() => this.raise(this.erased(erasedAt)));
   }
 
-  assignSubdomain(subdomain: string, assignedAt: Instant) {
+  assignSubdomain(subdomain: Subdomain, assignedAt: Instant) {
     this._state.assignSubdomain(() => this.raise(this.subdomainAssigned(subdomain, assignedAt)));
   }
 
@@ -87,10 +88,10 @@ export class Vendor extends Aggregate {
     };
   }
 
-  private subdomainAssigned(subdomain: string, assignedAt: Instant): VendorSubdomainAssigned {
+  private subdomainAssigned(subdomain: Subdomain, assignedAt: Instant): VendorSubdomainAssigned {
     return {
       type: 'VendorSubdomainAssigned',
-      payload: { vendorId: this._id.value(), subdomain, assignedAt: assignedAt.value() },
+      payload: { vendorId: this._id.value(), subdomain: subdomain.value(), assignedAt: assignedAt.value() },
       version: 1,
     };
   }
