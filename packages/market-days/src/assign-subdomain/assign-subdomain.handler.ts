@@ -26,7 +26,7 @@ export class AssignSubdomainHandler implements ICommandHandler<AssignSubdomain> 
       switch (await this.registry.register(subdomain.value(), command.vendorId)) {
         case 'taken':
           throw new SubdomainTakenError();
-        case 'holds-another':
+        case 'has-another':
           throw new SubdomainAlreadyAssignedError();
       }
       await this.vendors.save(vendor, vendorId);

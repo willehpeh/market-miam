@@ -19,13 +19,13 @@ export class PostgresSubdomainRegistry implements SubdomainRegistry {
     if (rowCount === 1) {
       return 'claimed';
     }
-    // Refused by one of the two unique columns: the name, held by this vendor or another, or
-    // else the vendor, who holds another name.
-    const holder = await this.vendorFor(name);
-    if (holder === undefined) {
-      return 'holds-another';
+    // Refused by one of the two unique columns: the name, assigned to this vendor or another, or
+    // else the vendor, who has another name.
+    const assignedTo = await this.vendorFor(name);
+    if (assignedTo === undefined) {
+      return 'has-another';
     }
-    return holder === vendorId ? 'already-theirs' : 'taken';
+    return assignedTo === vendorId ? 'already-theirs' : 'taken';
   }
 
   async vendorFor(subdomain: string): Promise<string | undefined> {

@@ -11,7 +11,7 @@ Set up 2026-10-31 and 2026-11-01 on the `willalexander.eu.auth0.com` tenant:
 - **Market Miam Ops**, an API with identifier `https://api.marketmiam.fr/ops`: RBAC on, permissions
   in the access token, one permission, `operate`. User-delegated access per app (Market Miam Admin
   only); no client access.
-- **Operator**, a role holding `operate`, given to the owner's GitHub user.
+- **Operator**, a role with the `operate` permission, given to the owner's GitHub user.
 - **Market Miam Admin**, a single-page application: GitHub its only connection; callback, logout
   and web-origin URLs `https://admin.marketmiam.fr` and `http://localhost:4300`.
 - **GitHub**, a social connection with its own GitHub OAuth app, enabled on the admin app only.
@@ -35,7 +35,7 @@ issuer, expiry, subject, the `operate` permission), the guard's 401/403, the rou
 requests every `ops/` route anonymously.
 
 **1. Account list — built.** Moves `admin-api`'s one feature. `GET /api/ops/accounts` lists every
-Auth0 account with its `vendorId` and the subdomain its vendor holds, ordered by email; the admin
+Auth0 account with its `vendorId` and the subdomain assigned to its vendor, ordered by email; the admin
 app shows it at sign-in, each storefront linked, and says so if the api refuses the sign-in.
 The Management API client (`Auth0Accounts`, `read:users` only) keeps its token until a minute
 before expiry and shares it between lists started together, since Auth0 meters those tokens; it is
@@ -67,7 +67,7 @@ Ends creating vendors by hand in the Auth0 Dashboard, and makes Market Miam invi
   stream, and `erase` accepts it. The vendor app's registration on first load stays: it is the
   vendor taking up the invitation.
 - **Route.** `POST /api/ops/vendors { email }` lower-cases the address, as Auth0 keeps it, looks it
-  up (`read:users`) and refuses it with a 409 if any account holds it, the owner's GitHub address
+  up (`read:users`) and refuses it with a 409 if any account has it, the owner's GitHub address
   included: a plus alias of it serves for trying the vendor app. An address Auth0 finds malformed
   fails the lookup with a 400, and the route refuses it with a 400, as `Email` refuses a typo it
   catches itself. It then mints the `vendorId`, sends
@@ -129,7 +129,7 @@ hand.
 
 - **Domain.** `VendorAccountOpened` and `VendorAccountClosed`, with no personal data, record when
   the vendor's account opened and closed. The account is a fact beside the vendor's lifecycle,
-  held as an `AccountOnRecord`; each `VendorState` holds its row of ADR 0063's table.
+  held as an `AccountOnRecord`; each `VendorState` answers its own row of ADR 0063's table.
 - **Processors.** `ClosesVendorAccounts`, on `VendorErased`, closes the account through the
   `VendorAccounts` port and sends `RecordVendorAccountClosed`. `OpensVendorAccounts` sends
   `RecordVendorAccountOpened` when it opens one. The Auth0 adapter finds the user by `vendorId`,

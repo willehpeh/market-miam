@@ -76,7 +76,7 @@ describe('PostgresSubdomainRegistry', () => {
     expect(await registry.vendorFor('chez-marie')).toBe('marie');
   });
 
-  it('answers taken for a subdomain another vendor holds, and leaves it theirs', async () => {
+  it('answers taken for a subdomain assigned to another vendor, and leaves it theirs', async () => {
     await seed('chez-marie', 'another-vendor');
     const registry = new PostgresSubdomainRegistry(pg.pool);
 
@@ -84,11 +84,11 @@ describe('PostgresSubdomainRegistry', () => {
     expect(await registry.vendorFor('chez-marie')).toBe('another-vendor');
   });
 
-  it('answers holds-another for a vendor with a subdomain already, and claims nothing', async () => {
+  it('answers has-another for a vendor with a subdomain already, and claims nothing', async () => {
     await seed('marie-traiteur', 'marie');
     const registry = new PostgresSubdomainRegistry(pg.pool);
 
-    expect(await registry.register('chez-marie', 'marie')).toBe('holds-another');
+    expect(await registry.register('chez-marie', 'marie')).toBe('has-another');
     expect(await registry.vendorFor('chez-marie')).toBeUndefined();
   });
 

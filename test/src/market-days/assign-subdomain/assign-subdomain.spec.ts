@@ -52,11 +52,11 @@ describe('Assign Subdomain', () => {
     { subdomain: 'a'.repeat(64), why: 'too long' },
     { subdomain: '-marie', why: 'starting with a hyphen' },
     { subdomain: 'marie-', why: 'ending with a hyphen' },
-    { subdomain: 'xn--crpes', why: 'holding a double hyphen' },
-    { subdomain: 'chez_marie', why: 'holding an underscore' },
-    { subdomain: 'chez.marie', why: 'holding a dot' },
-    { subdomain: 'chez marie', why: 'holding a space' },
-    { subdomain: 'crêpes', why: 'holding an accent' },
+    { subdomain: 'xn--crpes', why: 'with a double hyphen' },
+    { subdomain: 'chez_marie', why: 'with an underscore' },
+    { subdomain: 'chez.marie', why: 'with a dot' },
+    { subdomain: 'chez marie', why: 'with a space' },
+    { subdomain: 'crêpes', why: 'with an accent' },
   ])('refuses a subdomain $why, claiming and recording nothing', async ({ subdomain }) => {
     given(vendorInvited());
 
@@ -82,7 +82,7 @@ describe('Assign Subdomain', () => {
   );
 
   // One vendor per name, across every vendor: the registry's word, not any stream's (ADR 0065).
-  it('refuses a subdomain another vendor holds, claiming and recording nothing', async () => {
+  it('refuses a subdomain assigned to another vendor, claiming and recording nothing', async () => {
     given(vendorInvited());
     await registry.register('chez-marie', 'another-vendor');
 
@@ -94,7 +94,7 @@ describe('Assign Subdomain', () => {
   });
 
   // Once only: the vendor's printed QR codes carry the address (ADR 0055, 0065).
-  it('refuses a vendor who already holds another subdomain, claiming and recording nothing', async () => {
+  it('refuses a vendor who has a subdomain already, claiming and recording nothing', async () => {
     given(vendorInvited());
     await registry.register('marie-traiteur', 'vendor-id');
 
@@ -106,7 +106,7 @@ describe('Assign Subdomain', () => {
   });
 
   // Assigned by hand before the event existed: assigning it again records it (ADR 0065).
-  it('records a subdomain the vendor already holds, and claims nothing more', async () => {
+  it('records a subdomain assigned to the vendor already, and claims nothing more', async () => {
     given(vendorInvited());
     await registry.register('chez-marie', 'vendor-id');
 

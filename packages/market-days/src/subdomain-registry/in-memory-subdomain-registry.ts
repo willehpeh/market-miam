@@ -5,16 +5,16 @@ export class InMemorySubdomainRegistry implements SubdomainRegistry {
 
   async register(subdomain: string, vendorId: string): Promise<SubdomainClaim> {
     const name = subdomain.toLowerCase();
-    const holder = this.vendors.get(name);
-    if (holder === vendorId) {
+    const assignedTo = this.vendors.get(name);
+    if (assignedTo === vendorId) {
       return 'already-theirs';
     }
-    if (holder !== undefined) {
+    if (assignedTo !== undefined) {
       return 'taken';
     }
     const held = await this.subdomainFor(vendorId);
     if (held !== undefined && held !== name) {
-      return 'holds-another';
+      return 'has-another';
     }
     this.vendors.set(name, vendorId);
     return 'claimed';

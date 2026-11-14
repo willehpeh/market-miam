@@ -28,7 +28,7 @@ Two things must hold together:
 **One transaction claims the name and records it.** `AssignSubdomainHandler` runs its work in the
 ambient unit of work (ADR 0035): it loads the vendor, who decides; registers the name in
 `subdomain_registry`; and appends `VendorSubdomainAssigned { vendorId, subdomain, assignedAt }` to
-the vendor's stream. A name another vendor holds fails the registration, and nothing is appended.
+the vendor's stream. A name assigned to another vendor fails the registration, and nothing is appended.
 An append that fails rolls the registration back. In memory, `UnitOfWork.none()` runs the same
 steps in the same order.
 
@@ -57,14 +57,14 @@ text, as it always has, and erasure deletes the row (ADR 0058).
 |---|---|
 | new | refused: `VendorNotInvitedError` |
 | invited or registered, with no subdomain | raises `VendorSubdomainAssigned` |
-| holding this subdomain already | records it if no event has, else nothing |
-| holding another | refused: `SubdomainAlreadyAssignedError` |
+| with this subdomain already | records it if no event has, else nothing |
+| with another | refused: `SubdomainAlreadyAssignedError` |
 | erased | refused: `VendorErasedError` |
 
-A name another vendor holds is refused with `SubdomainTakenError`.
+A name assigned to another vendor is refused with `SubdomainTakenError`.
 
-**The route answers** 204 once assigned, or when the vendor already holds that name; 409 when the
-name is another vendor's or the vendor holds another; 400 when the name is malformed or reserved,
+**The route answers** 204 once assigned, or when the vendor already has that name; 409 when the
+name is another vendor's or the vendor has another; 400 when the name is malformed or reserved,
 or the vendor is unknown or erased.
 
 **The admin app** offers, on each row with a `vendorId` and no subdomain, a field and an *Assign*
@@ -76,7 +76,7 @@ button. An accepted assignment shows the row's storefront address at once, until
   cannot choose their own.
 - An invited vendor can find their address waiting at their first sign-in.
 - Subdomains assigned by SQL before this decision have no event. Assigning a vendor the name they
-  already hold records it, and changes nothing else.
+  already have records it, and changes nothing else.
 - `AssignSubdomainHandler` takes a `UnitOfWork`. Its spec runs with `UnitOfWork.none()`; the api's
   Postgres scenarios cover the real transaction, the vendor's lifecycle assigning through the route
   in place of SQL.
