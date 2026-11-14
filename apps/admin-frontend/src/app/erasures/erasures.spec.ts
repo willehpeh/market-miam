@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { FakeOperatorApi } from '../core/http/fake-operator-api';
 import { provideState, provideStore } from '@ngrx/store';
 import { provideEffects } from '@ngrx/effects';
 import { Erasures } from './erasures';
@@ -10,12 +11,10 @@ import { ErasureEffects } from './erasure.effects';
 import { ErasureFacade } from './erasure.facade';
 import { StoreErasureFacade } from './store.erasure.facade';
 
-const ERASURE_OF = (vendorId: string) => (url: string) => url.endsWith(`/api/ops/vendors/${vendorId}/erasure`);
-
 // The erasure feature from its facade to the operator API (ADR 0061).
 describe('Erasures', () => {
   let facade: ErasureFacade;
-  let http: HttpTestingController;
+  let api: FakeOperatorApi;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
@@ -30,17 +29,17 @@ describe('Erasures', () => {
       ],
     });
     facade = TestBed.inject(ErasureFacade);
-    http = TestBed.inject(HttpTestingController);
+    api = new FakeOperatorApi(TestBed.inject(HttpTestingController));
   });
 
-  afterEach(() => http.verify());
+  afterEach(() => api.verify());
 
   it("sends the vendor's erasure to the operator API", () => {
     facade.erase('acme-bakery');
 
-    const request = http.expectOne((req) => ERASURE_OF('acme-bakery')(req.url));
-    expect(request.request.method).toBe('POST');
-    request.flush(null, { status: 202, statusText: 'Accepted' });
+    const request = api.erasureOf('acme-bakery');
+    expect(request.method).toBe('POST');
+    request.accept();
   });
 
   // So the list can hold that row still while it goes.
@@ -48,22 +47,22 @@ describe('Erasures', () => {
     expect(facade.erasing()).toBeNull();
 
     facade.erase('acme-bakery');
-    const request = http.expectOne((req) => ERASURE_OF('acme-bakery')(req.url));
+    const request = api.erasureOf('acme-bakery');
     expect(facade.erasing()).toBe('acme-bakery');
 
-    request.flush(null, { status: 202, statusText: 'Accepted' });
+    request.accept();
     expect(facade.erasing()).toBeNull();
   });
 
   it('reports whose erasure failed, until the next one starts', () => {
     facade.erase('acme-bakery');
-    http.expectOne((req) => ERASURE_OF('acme-bakery')(req.url)).flush({}, { status: 500, statusText: 'Internal Server Error' });
+    api.erasureOf('acme-bakery').fail();
 
     expect(facade.failed()).toBe('acme-bakery');
     expect(facade.erasing()).toBeNull();
 
     facade.erase('acme-bakery');
     expect(facade.failed()).toBeNull();
-    http.expectOne((req) => ERASURE_OF('acme-bakery')(req.url)).flush(null, { status: 202, statusText: 'Accepted' });
+    api.erasureOf('acme-bakery').accept();
   });
 });

@@ -54,8 +54,9 @@ the admin app's `FakeOperatorApi`.
   `erasureOf(vendorId)`. Each expects that request, so a route the feature never called fails
   there, as `expectOne` does, and returns it to be answered.
 - **The request is answered in the api's terms**: `answer(body)` for a 200, `accept()` for a 202,
-  `refuse(status)` for a refusal such as a 401 or a 409, `fail()` for a 500. The statuses and
-  their texts live there. The spec reads what it checks off the request: its `method`, its `body`.
+  `refuse(status)` for a refusal such as a 401, `fail()` for a 500. The statuses and their texts
+  live there, each added when a spec first needs it. The spec reads what it checks off the
+  request, such as its `method`.
 - **It verifies that nothing else was sent**, `verify()`, so a spec needs no
   `HttpTestingController` of its own.
 - **Each app keeps its own**, as with `PageObject`: the apps share no code, with each other or
@@ -73,7 +74,10 @@ vendor's token; the admin app's invitation and sign-in specs; the vendor app's f
   string pulled out of a body.
 - The operator API's spec keeps no function of its own: its four helpers and its route discovery
   became `OperatorApi`, `VendorOnRecord` and `EventLog`. More code in total, as with ADR 0062: the
-  spec went from 181 lines to 128, and the three objects add 100.
+  spec went from 181 lines to 128, and the three objects add 100. The admin app's two feature
+  specs barely shrink, from 219 lines to 215, with the fake adding 64: each answer still takes its
+  line, but says `accept()` where it said `flush(null, { status: 202, statusText: 'Accepted' })`,
+  and no spec matches a URL.
 - An api object grows with its api: assigning subdomains (admin plan slice 3) and rebuilding
   projections (slice 6) add methods to `OperatorApi`, and to the admin app's `FakeOperatorApi`.
 - A changed route is changed in three places, by design: the controller, the api object and the

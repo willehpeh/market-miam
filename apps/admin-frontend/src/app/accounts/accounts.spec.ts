@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { FakeOperatorApi } from '../core/http/fake-operator-api';
 import { provideState, provideStore } from '@ngrx/store';
 import { provideEffects } from '@ngrx/effects';
 import { Accounts } from './accounts';
@@ -22,10 +23,6 @@ import { ErasureEffects } from '../erasures/erasure.effects';
 import { ErasureFacade } from '../erasures/erasure.facade';
 import { StoreErasureFacade } from '../erasures/store.erasure.facade';
 
-const ACCOUNTS = (url: string) => url.endsWith('/api/ops/accounts');
-const VENDORS = (url: string) => url.endsWith('/api/ops/vendors');
-const ERASURE_OF = (vendorId: string) => (url: string) => url.endsWith(`/api/ops/vendors/${vendorId}/erasure`);
-
 const ACME = { email: 'owner@acme.test', vendorId: 'acme-bakery', subdomain: 'acme' };
 const BRIOCHE = { email: 'owner@brioche.test', vendorId: 'brioche-co', subdomain: null };
 
@@ -35,7 +32,7 @@ describe('Accounts', () => {
   let facade: AccountsFacade;
   let invitations: InvitationFacade;
   let erasures: ErasureFacade;
-  let http: HttpTestingController;
+  let api: FakeOperatorApi;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
@@ -58,17 +55,17 @@ describe('Accounts', () => {
     facade = TestBed.inject(AccountsFacade);
     invitations = TestBed.inject(InvitationFacade);
     erasures = TestBed.inject(ErasureFacade);
-    http = TestBed.inject(HttpTestingController);
+    api = new FakeOperatorApi(TestBed.inject(HttpTestingController));
   });
 
-  afterEach(() => http.verify());
+  afterEach(() => api.verify());
 
   it('loads every account from the operator API', () => {
     facade.load();
 
-    const request = http.expectOne((req) => ACCOUNTS(req.url));
-    expect(request.request.method).toBe('GET');
-    request.flush([ACME]);
+    const request = api.accounts();
+    expect(request.method).toBe('GET');
+    request.answer([ACME]);
 
     expect(facade.accounts()).toEqual([ACME]);
   });
@@ -77,30 +74,30 @@ describe('Accounts', () => {
     expect(facade.loading()).toBe(false);
 
     facade.load();
-    const request = http.expectOne((req) => ACCOUNTS(req.url));
+    const request = api.accounts();
     expect(facade.loading()).toBe(true);
 
-    request.flush([ACME]);
+    request.answer([ACME]);
     expect(facade.loading()).toBe(false);
   });
 
   it('reports a failure to load, and starts the next attempt without it', () => {
     facade.load();
-    http.expectOne((req) => ACCOUNTS(req.url)).flush(null, { status: 500, statusText: 'Internal Server Error' });
+    api.accounts().fail();
 
     expect(facade.failed()).toBe(true);
     expect(facade.loading()).toBe(false);
 
     facade.load();
     expect(facade.failed()).toBe(false);
-    http.expectOne((req) => ACCOUNTS(req.url)).flush([ACME]);
+    api.accounts().answer([ACME]);
   });
 
   // The account list passes the operator guard, as every operator route does: its 401 or 403
   // is the API refusing this sign-in, not a list that failed to load.
-  it.each([401, 403])('reports the sign-in refused when the API answers %i', (status) => {
+  it.each([401, 403] as const)('reports the sign-in refused when the API answers %i', (status) => {
     facade.load();
-    http.expectOne((req) => ACCOUNTS(req.url)).flush(null, { status, statusText: 'Refused' });
+    api.accounts().refuse(status);
 
     expect(facade.refused()).toBe(true);
     expect(facade.failed()).toBe(false);
@@ -111,10 +108,10 @@ describe('Accounts', () => {
   // invitation, in its place by address, with the vendorId the api minted (ADR 0060).
   it('lists a vendor as invited once the API accepts the invitation', () => {
     facade.load();
-    http.expectOne((req) => ACCOUNTS(req.url)).flush([ACME]);
+    api.accounts().answer([ACME]);
 
     invitations.invite('marie@example.com');
-    http.expectOne((req) => VENDORS(req.url)).flush({ vendorId: 'new-vendor' }, { status: 202, statusText: 'Accepted' });
+    api.invitation().accept({ vendorId: 'new-vendor' });
 
     expect(facade.accounts()).toEqual([
       { email: 'marie@example.com', vendorId: 'new-vendor', subdomain: null, invited: true },
@@ -125,13 +122,13 @@ describe('Accounts', () => {
   // The invited row stands in for the account; Auth0 has the last word at the next load.
   it('replaces an invited row with what the API holds at the next load', () => {
     facade.load();
-    http.expectOne((req) => ACCOUNTS(req.url)).flush([ACME]);
+    api.accounts().answer([ACME]);
     invitations.invite('marie@example.com');
-    http.expectOne((req) => VENDORS(req.url)).flush({ vendorId: 'new-vendor' }, { status: 202, statusText: 'Accepted' });
+    api.invitation().accept({ vendorId: 'new-vendor' });
 
     facade.load();
     const opened = { email: 'marie@example.com', vendorId: 'new-vendor', subdomain: null };
-    http.expectOne((req) => ACCOUNTS(req.url)).flush([opened, ACME]);
+    api.accounts().answer([opened, ACME]);
 
     expect(facade.accounts()).toEqual([opened, ACME]);
   });
@@ -140,10 +137,10 @@ describe('Accounts', () => {
   // vendor as erased, in their place (ADR 0063).
   it('lists a vendor as erased once the API accepts the erasure', () => {
     facade.load();
-    http.expectOne((req) => ACCOUNTS(req.url)).flush([ACME, BRIOCHE]);
+    api.accounts().answer([ACME, BRIOCHE]);
 
     erasures.erase('acme-bakery');
-    http.expectOne((req) => ERASURE_OF('acme-bakery')(req.url)).flush(null, { status: 202, statusText: 'Accepted' });
+    api.erasureOf('acme-bakery').accept();
 
     expect(facade.accounts()).toEqual([{ ...ACME, erased: true }, BRIOCHE]);
   });
