@@ -2,21 +2,24 @@ import { screen } from '@testing-library/angular';
 import { FakeAuthFacade } from '../core/auth/fake.auth.facade';
 import { FakeInvitationFacade } from '../invitations/fake.invitation.facade';
 import { FakeAccountsFacade } from '../accounts/fake.accounts.facade';
+import { FakeErasureFacade } from '../erasures/fake.erasure.facade';
 import { OperatorPageObject } from './operator-page.page-object';
 
 describe('OperatorPage', () => {
   let auth: FakeAuthFacade;
   let invitations: FakeInvitationFacade;
   let accounts: FakeAccountsFacade;
+  let erasures: FakeErasureFacade;
 
   beforeEach(() => {
     auth = new FakeAuthFacade();
     invitations = new FakeInvitationFacade();
     accounts = new FakeAccountsFacade();
+    erasures = new FakeErasureFacade();
   });
 
   function open(): Promise<OperatorPageObject> {
-    return OperatorPageObject.render({ auth, invitations, accounts });
+    return OperatorPageObject.render({ auth, invitations, accounts, erasures });
   }
 
   async function signedIn(): Promise<OperatorPageObject> {
@@ -181,5 +184,15 @@ describe('OperatorPage', () => {
 
     expect(screen.getByText('Invitation sent to marie@example.com', { exact: false })).toBeInTheDocument();
     expect(page.addressField()).toHaveValue('');
+  });
+
+  // Erasure cannot be undone (ADR 0058): the operator confirms it before it goes.
+  it('erases a vendor once the operator confirms', async () => {
+    accounts.accounts.set([{ email: 'owner@acme.test', vendorId: 'acme-bakery', subdomain: 'acme' }]);
+    const page = await signedIn();
+
+    page.askToErase('owner@acme.test').confirmErasure();
+
+    expect(erasures.erased).toEqual(['acme-bakery']);
   });
 });

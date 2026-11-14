@@ -4,6 +4,7 @@ import { AccountList } from '../accounts/account-list';
 import { AccountsFacade } from '../accounts/accounts.facade';
 import { InviteVendorForm } from '../invitations/invite-vendor-form';
 import { InvitationFacade } from '../invitations/invitation.facade';
+import { ErasureFacade } from '../erasures/erasure.facade';
 
 // Sign in, then invite vendors and see the accounts. The api guards every operator route: if
 // it turns this sign-in away, loading the accounts says so, and nothing else is offered.
@@ -39,6 +40,7 @@ import { InvitationFacade } from '../invitations/invitation.facade';
             [accounts]="accounts.accounts()"
             [loading]="accounts.loading()"
             [failed]="accounts.failed()"
+            (erase)="erasures.erase($event)"
           />
         }
       } @else {
@@ -53,6 +55,7 @@ export class OperatorPage {
   protected readonly auth = inject(AuthFacade);
   protected readonly invitations = inject(InvitationFacade);
   protected readonly accounts = inject(AccountsFacade);
+  protected readonly erasures = inject(ErasureFacade);
 
   constructor() {
     // At each sign-in.

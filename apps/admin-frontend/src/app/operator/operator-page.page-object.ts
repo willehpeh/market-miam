@@ -7,9 +7,11 @@ import { InvitationFacade } from '../invitations/invitation.facade';
 import { FakeInvitationFacade } from '../invitations/fake.invitation.facade';
 import { AccountsFacade } from '../accounts/accounts.facade';
 import { FakeAccountsFacade } from '../accounts/fake.accounts.facade';
+import { ErasureFacade } from '../erasures/erasure.facade';
+import { FakeErasureFacade } from '../erasures/fake.erasure.facade';
 
-// The admin page as an operator uses it: signing in and out, the accounts, and the invitation
-// (ADR 0062).
+// The admin page as an operator uses it: signing in and out, the accounts, the invitation, and
+// erasing a vendor (ADR 0062).
 export class OperatorPageObject extends PageObject<OperatorPage> {
   private constructor(view: RenderResult<OperatorPage>) {
     super(view);
@@ -19,12 +21,14 @@ export class OperatorPageObject extends PageObject<OperatorPage> {
     auth = new FakeAuthFacade(),
     invitations = new FakeInvitationFacade(),
     accounts = new FakeAccountsFacade(),
-  }: { auth?: AuthFacade; invitations?: InvitationFacade; accounts?: AccountsFacade } = {}) {
+    erasures = new FakeErasureFacade(),
+  }: { auth?: AuthFacade; invitations?: InvitationFacade; accounts?: AccountsFacade; erasures?: ErasureFacade } = {}) {
     const view = await render(OperatorPage, {
       providers: [
         { provide: AuthFacade, useValue: auth },
         { provide: InvitationFacade, useValue: invitations },
         { provide: AccountsFacade, useValue: accounts },
+        { provide: ErasureFacade, useValue: erasures },
       ],
     });
     return new OperatorPageObject(view);
@@ -50,8 +54,9 @@ export class OperatorPageObject extends PageObject<OperatorPage> {
 
   // The accounts
 
-  // Each account as the operator reads its row: its visible texts, in order. A row's parts sit
-  // in elements of their own with no space between them, so its textContent runs them together.
+  // Each account as the operator reads its row: its visible texts, in order, without the
+  // controls'. A row's parts sit in elements of their own with no space between them, so its
+  // textContent runs them together.
   accounts(): string[] {
     return screen.queryAllByRole('listitem').map(visibleText);
   }
@@ -82,6 +87,24 @@ export class OperatorPageObject extends PageObject<OperatorPage> {
     await this.view.fixture.whenStable();
     return this;
   }
+
+  // Erasing a vendor
+
+  eraseButton(email: string): HTMLElement {
+    return screen.getByRole('button', { name: `Erase ${email}` });
+  }
+
+  confirmErasureButton(): HTMLElement {
+    return screen.getByRole('button', { name: /confirm erasure/i });
+  }
+
+  askToErase(email: string): this {
+    return this.press(this.eraseButton(email));
+  }
+
+  confirmErasure(): this {
+    return this.press(this.confirmErasureButton());
+  }
 }
 
 function visibleText(element: Element): string {
@@ -89,7 +112,7 @@ function visibleText(element: Element): string {
   const walker = element.ownerDocument.createTreeWalker(element, NodeFilter.SHOW_TEXT);
   for (let node = walker.nextNode(); node; node = walker.nextNode()) {
     const text = node.textContent?.trim();
-    if (text) {
+    if (text && !node.parentElement?.closest('button')) {
       texts.push(text);
     }
   }
