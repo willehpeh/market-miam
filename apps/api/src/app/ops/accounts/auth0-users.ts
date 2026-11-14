@@ -67,15 +67,18 @@ export class Auth0Users {
     return answerOf(response, 'say who holds an address');
   }
 
-  // Users whose app_metadata holds this vendorId, by Auth0's user search.
+  // Users whose app_metadata holds exactly this vendorId. Auth0's user search is full-text and
+  // may answer near matches too, which are no one's to touch here.
   async withVendorId(vendorId: string): Promise<{ user_id: string }[]> {
     const query = new URLSearchParams({
       q: `app_metadata.vendorId:"${vendorId}"`,
       search_engine: 'v3',
-      fields: 'user_id',
+      fields: 'user_id,app_metadata',
       include_fields: 'true',
     });
-    return answerOf(await this.api.fetch(`api/v2/users?${query}`), "find a vendor's users");
+    const response = await this.api.fetch(`api/v2/users?${query}`);
+    const found = await answerOf<(Auth0User & { user_id: string })[]>(response, "find a vendor's users");
+    return found.filter((user) => user.app_metadata?.vendorId === vendorId);
   }
 
   async delete(userId: string): Promise<void> {

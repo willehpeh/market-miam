@@ -68,8 +68,8 @@ export class FakeAuth0 {
       }
       const vendorId = /^app_metadata\.vendorId:"(.*)"$/.exec(url.searchParams.get('q') ?? '')?.[1];
       // As loose as a full-text search may be: every vendorId containing the one asked for.
-      const matches = (held?: string) => !!vendorId && !!held?.includes(vendorId);
-      return send(res, 200, this.users.filter((user) => matches(user.app_metadata?.vendorId)).map((user) => ({ user_id: this.idOf(user) })));
+      const found = this.users.filter((user) => !!vendorId && !!user.app_metadata?.vendorId?.includes(vendorId));
+      return send(res, 200, found.map((user) => ({ user_id: this.idOf(user), app_metadata: user.app_metadata })));
     }
     if (req.method === 'DELETE' && url.pathname.startsWith('/api/v2/users/')) {
       if (this.refusesToken(req, res)) {
