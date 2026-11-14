@@ -12,14 +12,16 @@ const RESERVED = new Set(['admin', 'api', 'app', 'www', 'mail', 'staging', 'stat
 export class Subdomain {
   private readonly _subdomain: string;
 
+  // In lower case, as browsers write host names and the registry compares them.
   constructor(subdomain: string) {
-    if (!LABEL.test(subdomain)) {
+    const label = subdomain.toLowerCase();
+    if (!LABEL.test(label)) {
       throw new InvalidSubdomainError();
     }
-    if (RESERVED.has(subdomain)) {
+    if (RESERVED.has(label)) {
       throw new ReservedSubdomainError();
     }
-    this._subdomain = subdomain;
+    this._subdomain = label;
   }
 
   value(): string {

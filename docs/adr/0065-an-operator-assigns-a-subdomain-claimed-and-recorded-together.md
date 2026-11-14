@@ -45,7 +45,8 @@ text, as it always has, and erasure deletes the row (ADR 0058).
 
 - A DNS label, in lower case: letters, digits and hyphens, 3 to 63 characters, starting and ending
   with a letter or a digit, with no `--` (which keeps punycode's `xn--` out). Two letters would read
-  as a country code.
+  as a country code. A name typed in capitals is lower-cased first, as browsers write host names and
+  as the registry compares them.
 - Not reserved: `admin`, `api`, `app` and `www`, which Market Miam serves, and `mail`, `staging`
   and `status`, kept for what it may serve.
 

@@ -145,4 +145,16 @@ describe('Assign Subdomain', () => {
     expect(await registry.assignments()).toEqual([]);
     expect(store.newEvents()).toEqual([]);
   });
+
+  // Browsers lower-case host names, and the registry compares in lower case (ADR 0065).
+  it('lower-cases a subdomain typed in capitals', async () => {
+    given(vendorInvited());
+
+    await handler.execute(new AssignSubdomain('vendor-id', 'Chez-Marie', ASSIGNED_AT));
+
+    expect(await registry.assignments()).toEqual([{ subdomain: 'chez-marie', vendorId: 'vendor-id' }]);
+    expect(store.newEvents()).toEqual([
+      expect.objectContaining({ payload: expect.objectContaining({ subdomain: 'chez-marie' }) }),
+    ]);
+  });
 });
