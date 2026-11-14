@@ -50,6 +50,16 @@ export function vendorAccountsContract(
       expect(await accounts.openFor({ vendorId: 'another-vendor', email: marie.email })).toBe('open');
     });
 
+    // An invitation erased because its address was taken shares it with the vendor who holds it
+    // (ADR 0060): closing goes by vendorId, never by email.
+    it("leaves another vendor's account at the same address", async () => {
+      const accounts = await given({ email: marie.email, vendorId: 'another-vendor' });
+
+      await accounts.closeFor({ vendorId: marie.vendorId });
+
+      expect(await accounts.openFor(marie)).toBe('email-in-use');
+    });
+
     it("closes no account but the vendor's own", async () => {
       const accounts = await given(
         { email: marie.email, vendorId: marie.vendorId },
