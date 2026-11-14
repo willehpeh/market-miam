@@ -8,6 +8,13 @@ type AssignmentRow = { subdomain: string; vendor_id: string };
 export class PostgresSubdomainRegistry implements SubdomainRegistry {
   constructor(private readonly db: Queryable) {}
 
+  async register(subdomain: string, vendorId: string): Promise<void> {
+    await this.db.query('INSERT INTO subdomain_registry (subdomain, vendor_id) VALUES ($1, $2)', [
+      subdomain.toLowerCase(),
+      vendorId,
+    ]);
+  }
+
   async vendorFor(subdomain: string): Promise<string | undefined> {
     const { rows } = await this.db.query<VendorRow>(
       'SELECT vendor_id FROM subdomain_registry WHERE subdomain = $1',

@@ -14,6 +14,10 @@ export abstract class VendorState {
   abstract recordAccountOpened(proceed: () => void): void;
   abstract recordAccountClosed(proceed: () => void): void;
 
+  assignSubdomain(proceed: () => void): void {
+    proceed();
+  }
+
   isErased(): boolean {
     return false;
   }
