@@ -38,5 +38,14 @@ export function vendorAccountsContract(
 
       expect(await accounts.openFor(marie)).toBe('email-in-use');
     });
+
+    // Erasure frees the address: the account that held it is gone (ADR 0063).
+    it("closes the vendor's account", async () => {
+      const accounts = await given({ email: marie.email, vendorId: marie.vendorId });
+
+      await accounts.closeFor({ vendorId: marie.vendorId });
+
+      expect(await accounts.openFor({ vendorId: 'another-vendor', email: marie.email })).toBe('open');
+    });
   });
 }
