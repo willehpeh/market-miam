@@ -1,46 +1,16 @@
-import { TestBed } from '@angular/core/testing';
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/angular';
-import { provideRouter } from '@angular/router';
-import { Dashboard } from './dashboard';
-import { StorefrontFacade } from '../storefront/storefront.facade';
+import { screen, waitFor, within } from '@testing-library/angular';
+import { DashboardPageObject } from './dashboard.page-object';
 import { FakeStorefrontFacade } from '../storefront/fake.storefront.facade';
 import { StorefrontView } from '../storefront/storefront';
-import { CatalogueFacade } from '../catalogue/catalogue.facade';
 import { FakeCatalogueFacade } from '../catalogue/fake.catalogue.facade';
 import { CatalogueItemView } from '../catalogue/catalogue';
-import { MarketScheduleFacade } from '../markets/market-schedule.facade';
 import { FakeMarketScheduleFacade } from '../markets/fake.market-schedule.facade';
 import { MarketScheduleView } from '../markets/market-schedules';
-import { MarketDayFacade } from '../market-days/market-day.facade';
 import { FakeMarketDayFacade } from '../market-days/fake.market-day.facade';
 import { testMarketDayView } from '../market-days/test-market-day-view.builder';
-import { COPIED_NOTICE_DELAY, Share } from '../core/share';
-import { LegalIdentityFacade } from '../legal-identity/legal-identity.facade';
 import { FakeLegalIdentityFacade } from '../legal-identity/fake.legal-identity.facade';
 import { LegalIdentityView } from '../legal-identity/legal-identity';
 import { FakeShare } from '../core/fake.share';
-
-async function renderDashboard(copiedNoticeDelay = 0) {
-  const view = await render(Dashboard, {
-    providers: [
-      provideRouter([]),
-      { provide: StorefrontFacade, useClass: FakeStorefrontFacade },
-      { provide: CatalogueFacade, useClass: FakeCatalogueFacade },
-      { provide: MarketScheduleFacade, useClass: FakeMarketScheduleFacade },
-      { provide: MarketDayFacade, useClass: FakeMarketDayFacade },
-      { provide: Share, useClass: FakeShare },
-      { provide: LegalIdentityFacade, useClass: FakeLegalIdentityFacade },
-      { provide: COPIED_NOTICE_DELAY, useValue: copiedNoticeDelay },
-    ],
-  });
-  const storefront = TestBed.inject(StorefrontFacade) as FakeStorefrontFacade;
-  const catalogue = TestBed.inject(CatalogueFacade) as FakeCatalogueFacade;
-  const markets = TestBed.inject(MarketScheduleFacade) as FakeMarketScheduleFacade;
-  const marketDays = TestBed.inject(MarketDayFacade) as FakeMarketDayFacade;
-  const sharing = TestBed.inject(Share) as FakeShare;
-  const legalIdentity = TestBed.inject(LegalIdentityFacade) as FakeLegalIdentityFacade;
-  return { view, storefront, catalogue, markets, marketDays, sharing, legalIdentity };
-}
 
 const completeStorefront: StorefrontView = {
   name: 'Acme Bakery',
@@ -49,25 +19,13 @@ const completeStorefront: StorefrontView = {
   imageReference: 'v42/storefronts/acme/cover-photo',
   subdomain: null,
   published: false,
-      cartePricesVisible: true,
+  cartePricesVisible: true,
 };
 
-async function renderBlank() {
-  const ctx = await renderDashboard();
-  ctx.storefront.view.set({ name: '', description: '', phone: '', imageReference: '', subdomain: null, published: false, cartePricesVisible: true });
-  ctx.view.detectChanges();
-  return ctx;
-}
-
-async function renderReady(overrides: Partial<StorefrontView> = {}, copiedNoticeDelay = 0) {
-  const ctx = await renderDashboard(copiedNoticeDelay);
-  ctx.storefront.view.set({ ...completeStorefront, subdomain: 'acme', ...overrides });
-  ctx.catalogue.items.set([aItem]);
-  ctx.markets.schedules.set([aSchedule]);
-  ctx.legalIdentity.identity.set(anIdentity);
-  ctx.view.detectChanges();
-  return ctx;
-}
+// A vendor who has filled nothing in.
+const blankStorefront: StorefrontView = {
+  name: '', description: '', phone: '', imageReference: '', subdomain: null, published: false, cartePricesVisible: true,
+};
 
 const aItem: CatalogueItemView = {
   itemId: 'item-1',
@@ -102,134 +60,190 @@ const anIdentity: LegalIdentityView = {
   legalRepresentative: null,
 };
 
+// The stores the setup steps read, for a test to deliver a vitrine through.
+function fakeStores() {
+  return {
+    storefront: new FakeStorefrontFacade(),
+    catalogue: new FakeCatalogueFacade(),
+    markets: new FakeMarketScheduleFacade(),
+    legalIdentity: new FakeLegalIdentityFacade(),
+  };
+}
+
+// Every setup step done, as the stores answer once the dashboard has asked: a vitrine with
+// its name, photo and address, a dish, a market and the mentions légales.
+function deliverReady(
+  { storefront, catalogue, markets, legalIdentity }: ReturnType<typeof fakeStores>,
+  overrides: Partial<StorefrontView> = {},
+) {
+  storefront.view.set({ ...completeStorefront, subdomain: 'acme', ...overrides });
+  catalogue.items.set([aItem]);
+  markets.schedules.set([aSchedule]);
+  legalIdentity.identity.set(anIdentity);
+}
+
 describe('Dashboard', () => {
   it('asks for the legal identity on arrival', async () => {
-    const { legalIdentity } = await renderDashboard();
+    const legalIdentity = new FakeLegalIdentityFacade();
+    await DashboardPageObject.render({ legalIdentity });
 
     expect(legalIdentity.loadCalled).toBe(true);
   });
 
   // The prompt is a card that would otherwise pop in above everything a moment late.
   it('waits for the legal identity before showing anything', async () => {
-    const { view, storefront, legalIdentity } = await renderDashboard();
+    const storefront = new FakeStorefrontFacade();
+    const legalIdentity = new FakeLegalIdentityFacade();
+    const page = await DashboardPageObject.render({ storefront, legalIdentity });
     legalIdentity.loading.set(true);
     storefront.view.set({ ...completeStorefront, subdomain: 'acme', published: true });
-    view.detectChanges();
+    page.detectChanges();
 
-    expect(screen.getByRole('status', { name: /chargement/i })).toBeInTheDocument();
+    expect(page.loadingStatus()).toBeInTheDocument();
   });
 
   // A vendor published before the mentions légales existed never saw the setup steps that
   // now ask for them.
   it('asks for the mentions légales on the published home while none are provided', async () => {
-    const { view, legalIdentity } = await renderReady({ published: true });
-    legalIdentity.identity.set(null);
-    view.detectChanges();
+    const stores = fakeStores();
+    const page = await DashboardPageObject.render(stores);
+    deliverReady(stores, { published: true });
+    page.detectChanges();
+    stores.legalIdentity.identity.set(null);
+    page.detectChanges();
 
-    expect(screen.getByRole('link', { name: /complétez vos mentions légales/i })).toHaveAttribute('href', '/dashboard/legal-identity');
+    expect(page.completeLegalIdentityLink()).toHaveAttribute('href', '/dashboard/legal-identity');
   });
 
   // The setup steps ask already; a card above them would say it twice.
   it('leaves asking to the setup steps before publication', async () => {
-    const { view, legalIdentity } = await renderReady();
-    legalIdentity.identity.set(null);
-    view.detectChanges();
+    const stores = fakeStores();
+    const page = await DashboardPageObject.render(stores);
+    deliverReady(stores);
+    page.detectChanges();
+    stores.legalIdentity.identity.set(null);
+    page.detectChanges();
 
-    expect(screen.queryByRole('link', { name: /complétez vos mentions légales/i })).not.toBeInTheDocument();
+    expect(page.queryCompleteLegalIdentityLink()).not.toBeInTheDocument();
   });
 
   it('leaves the mentions légales step to do until the vendor provides them', async () => {
-    const { view, legalIdentity } = await renderReady();
-    legalIdentity.identity.set(null);
-    view.detectChanges();
+    const stores = fakeStores();
+    const page = await DashboardPageObject.render(stores);
+    deliverReady(stores);
+    page.detectChanges();
+    stores.legalIdentity.identity.set(null);
+    page.detectChanges();
 
-    expect(screen.getByRole('link', { name: /vos mentions légales/i })).toHaveAttribute('href', '/dashboard/legal-identity');
+    expect(page.legalIdentityStep()).toHaveAttribute('href', '/dashboard/legal-identity');
     expect(screen.getByText('Obligatoires pour publier votre vitrine.')).toBeInTheDocument();
-    expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '3');
+    expect(page.progressBar()).toHaveAttribute('aria-valuenow', '3');
   });
 
   // The API refuses to publish without them (slice 9 of the plan), so the button waits too.
   it('holds Publier back until the mentions légales are provided', async () => {
-    const { view, legalIdentity } = await renderReady();
-    legalIdentity.identity.set(null);
-    view.detectChanges();
+    const stores = fakeStores();
+    const page = await DashboardPageObject.render(stores);
+    deliverReady(stores);
+    page.detectChanges();
+    stores.legalIdentity.identity.set(null);
+    page.detectChanges();
 
-    expect(screen.queryByRole('button', { name: /publier/i })).not.toBeInTheDocument();
+    expect(page.queryPublishButton()).not.toBeInTheDocument();
   });
 
   it('marks the mentions légales step done once provided', async () => {
-    await renderReady();
+    const stores = fakeStores();
+    const page = await DashboardPageObject.render(stores);
+    deliverReady(stores);
+    page.detectChanges();
 
     expect(screen.getByText('Renseignées')).toBeInTheDocument();
-    expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '4');
-    expect(screen.getByRole('button', { name: /publier/i })).toBeInTheDocument();
+    expect(page.progressBar()).toHaveAttribute('aria-valuenow', '4');
+    expect(page.publishButton()).toBeInTheDocument();
   });
 
   it('stops asking once the mentions légales are provided', async () => {
-    const { view, legalIdentity } = await renderReady({ published: true });
-    legalIdentity.identity.set(anIdentity);
-    view.detectChanges();
+    const stores = fakeStores();
+    const page = await DashboardPageObject.render(stores);
+    deliverReady(stores, { published: true });
+    page.detectChanges();
+    stores.legalIdentity.identity.set(anIdentity);
+    page.detectChanges();
 
-    expect(screen.queryByRole('link', { name: /complétez vos mentions légales/i })).not.toBeInTheDocument();
+    expect(page.queryCompleteLegalIdentityLink()).not.toBeInTheDocument();
   });
 
   // Unknown is not missing: a failed load says nothing about the vendor.
   it('does not ask while the legal identity is unknown', async () => {
-    await renderReady({ published: true });
+    const stores = fakeStores();
+    const page = await DashboardPageObject.render(stores);
+    deliverReady(stores, { published: true });
+    page.detectChanges();
 
-    expect(screen.queryByRole('link', { name: /complétez vos mentions légales/i })).not.toBeInTheDocument();
+    expect(page.queryCompleteLegalIdentityLink()).not.toBeInTheDocument();
   });
 
   it('opens the mentions légales from the published home', async () => {
-    await renderReady({ published: true });
+    const stores = fakeStores();
+    const page = await DashboardPageObject.render(stores);
+    deliverReady(stores, { published: true });
+    page.detectChanges();
 
-    expect(screen.getByRole('link', { name: 'Mentions légales' })).toHaveAttribute('href', '/dashboard/legal-identity');
+    expect(page.legalIdentityLink()).toHaveAttribute('href', '/dashboard/legal-identity');
   });
 
   it('waits for the storefront to arrive before showing steps or the published home', async () => {
-    await renderDashboard();
+    const page = await DashboardPageObject.render();
 
-    expect(screen.getByRole('status', { name: /chargement/i })).toBeInTheDocument();
-    expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
-    expect(screen.queryByRole('link')).not.toBeInTheDocument();
+    expect(page.loadingStatus()).toBeInTheDocument();
+    expect(page.queryProgressBar()).not.toBeInTheDocument();
+    expect(page.queryAnyLink()).not.toBeInTheDocument();
   });
 
   it('leaves every setup step to do for a vendor who has filled nothing in', async () => {
-    await renderBlank();
+    const storefront = new FakeStorefrontFacade();
+    const page = await DashboardPageObject.render({ storefront });
+    storefront.view.set(blankStorefront);
+    page.detectChanges();
 
-    expect(screen.getByRole('link', { name: /informations de la vitrine/i })).toHaveAttribute('href', '/dashboard/information');
-    expect(screen.getByRole('link', { name: /composez votre catalogue/i })).toHaveAttribute('href', '/dashboard/catalogue');
-    expect(screen.getByRole('link', { name: /indiquez vos marchés/i })).toHaveAttribute('href', '/dashboard/markets');
-    expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '0');
+    expect(page.storefrontStep()).toHaveAttribute('href', '/dashboard/information');
+    expect(page.catalogueStep()).toHaveAttribute('href', '/dashboard/catalogue');
+    expect(page.marketsStep()).toHaveAttribute('href', '/dashboard/markets');
+    expect(page.progressBar()).toHaveAttribute('aria-valuenow', '0');
     expect(screen.getByText('Manquants : nom, photo · Optionnels : description, téléphone')).toBeInTheDocument();
   });
 
   it('marks the storefront step done once name and photo are set', async () => {
-    const { view, storefront } = await renderDashboard();
+    const storefront = new FakeStorefrontFacade();
+    const page = await DashboardPageObject.render({ storefront });
     storefront.view.set(completeStorefront);
-    view.detectChanges();
+    page.detectChanges();
 
     expect(screen.getByText('Renseignés : nom, description, photo · Optionnel : téléphone')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /informations de la vitrine/i })).toHaveAttribute('href', '/dashboard/information');
-    expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '1');
-    expect(screen.getByRole('link', { name: /composez votre catalogue/i })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /indiquez vos marchés/i })).toBeInTheDocument();
+    expect(page.storefrontStep()).toHaveAttribute('href', '/dashboard/information');
+    expect(page.progressBar()).toHaveAttribute('aria-valuenow', '1');
+    expect(page.catalogueStep()).toBeInTheDocument();
+    expect(page.marketsStep()).toBeInTheDocument();
   });
 
   it('loads the catalogue on arrival', async () => {
-    const { catalogue } = await renderDashboard();
+    const catalogue = new FakeCatalogueFacade();
+    await DashboardPageObject.render({ catalogue });
     expect(catalogue.loaded).toBe(true);
   });
 
   it('loads the schedules on arrival', async () => {
-    const { markets } = await renderDashboard();
+    const markets = new FakeMarketScheduleFacade();
+    await DashboardPageObject.render({ markets });
     expect(markets.loaded).toBe(true);
   });
 
   // Warmed ahead of the gate, like the days above it: the prompt renders behind loaded(),
   // and loaded() waits on this very flag.
   it('asks for the unrated days on arrival, before the card that reads them', async () => {
-    const { marketDays } = await renderDashboard();
+    const marketDays = new FakeMarketDayFacade();
+    await DashboardPageObject.render({ marketDays });
 
     expect(marketDays.loadedUnrated).toBe(1);
   });
@@ -238,130 +252,174 @@ describe('Dashboard', () => {
   // destroys the card that dispatched it, which the response then re-creates — for ever,
   // since loadUnrated is deliberately ungated by freshness.
   it('asks once, however the loading flag turns over', async () => {
-    const { marketDays, view } = await renderDashboard();
+    const marketDays = new FakeMarketDayFacade();
+    const page = await DashboardPageObject.render({ marketDays });
     marketDays.unratedLoading.set(true);
-    view.detectChanges();
+    page.detectChanges();
     marketDays.unratedLoading.set(false);
-    view.detectChanges();
+    page.detectChanges();
 
     expect(marketDays.loadedUnrated).toBe(1);
   });
 
   it('marks the markets step done and shows the count once schedules exist', async () => {
-    const { view, markets } = await renderBlank();
+    const storefront = new FakeStorefrontFacade();
+    const markets = new FakeMarketScheduleFacade();
+    const page = await DashboardPageObject.render({ storefront, markets });
+    storefront.view.set(blankStorefront);
+    page.detectChanges();
     markets.schedules.set([aSchedule]);
-    view.detectChanges();
+    page.detectChanges();
 
-    const step = screen.getByRole('link', { name: /indiquez vos marchés/i });
+    const step = page.marketsStep();
     expect(within(step).getByText('✓')).toBeInTheDocument();
     expect(within(step).getByText('1 marché ajouté')).toBeInTheDocument();
-    expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '1');
+    expect(page.progressBar()).toHaveAttribute('aria-valuenow', '1');
   });
 
   it('pluralises the market count', async () => {
-    const { view, markets } = await renderBlank();
+    const storefront = new FakeStorefrontFacade();
+    const markets = new FakeMarketScheduleFacade();
+    const page = await DashboardPageObject.render({ storefront, markets });
+    storefront.view.set(blankStorefront);
+    page.detectChanges();
     markets.schedules.set([aSchedule, { ...aSchedule, scheduleId: 'schedule-2' }]);
-    view.detectChanges();
+    page.detectChanges();
 
-    const step = screen.getByRole('link', { name: /indiquez vos marchés/i });
+    const step = page.marketsStep();
     expect(within(step).getByText('2 marchés ajoutés')).toBeInTheDocument();
   });
 
   it('marks the catalogue step done and shows the item count once items exist', async () => {
-    const { view, catalogue } = await renderBlank();
+    const storefront = new FakeStorefrontFacade();
+    const catalogue = new FakeCatalogueFacade();
+    const page = await DashboardPageObject.render({ storefront, catalogue });
+    storefront.view.set(blankStorefront);
+    page.detectChanges();
     catalogue.items.set([aItem]);
-    view.detectChanges();
+    page.detectChanges();
 
-    const step = screen.getByRole('link', { name: /composez votre catalogue/i });
+    const step = page.catalogueStep();
     expect(within(step).getByText('✓')).toBeInTheDocument();
     expect(within(step).getByText('1 plat ajouté')).toBeInTheDocument();
-    expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '1');
+    expect(page.progressBar()).toHaveAttribute('aria-valuenow', '1');
   });
 
   it('pluralises the item count', async () => {
-    const { view, catalogue } = await renderBlank();
+    const storefront = new FakeStorefrontFacade();
+    const catalogue = new FakeCatalogueFacade();
+    const page = await DashboardPageObject.render({ storefront, catalogue });
+    storefront.view.set(blankStorefront);
+    page.detectChanges();
     catalogue.items.set([aItem, { ...aItem, itemId: 'item-2' }]);
-    view.detectChanges();
+    page.detectChanges();
 
-    const step = screen.getByRole('link', { name: /composez votre catalogue/i });
+    const step = page.catalogueStep();
     expect(within(step).getByText('2 plats ajoutés')).toBeInTheDocument();
   });
 
   it('leaves the catalogue step to do while it holds no items', async () => {
-    await renderBlank();
+    const storefront = new FakeStorefrontFacade();
+    const page = await DashboardPageObject.render({ storefront });
+    storefront.view.set(blankStorefront);
+    page.detectChanges();
 
-    const step = screen.getByRole('link', { name: /composez votre catalogue/i });
+    const step = page.catalogueStep();
     expect(within(step).queryByText('✓')).not.toBeInTheDocument();
   });
 
   it('keeps the storefront step to do while the cover photo is missing', async () => {
-    const { view, storefront } = await renderDashboard();
+    const storefront = new FakeStorefrontFacade();
+    const page = await DashboardPageObject.render({ storefront });
     storefront.view.set({ ...completeStorefront, imageReference: '' });
-    view.detectChanges();
+    page.detectChanges();
 
-    expect(screen.getByRole('link', { name: /informations de la vitrine/i })).toHaveAttribute('href', '/dashboard/information');
-    expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '0');
+    expect(page.storefrontStep()).toHaveAttribute('href', '/dashboard/information');
+    expect(page.progressBar()).toHaveAttribute('aria-valuenow', '0');
     expect(screen.getByText('Renseignés : nom, description · Manquant : photo · Optionnel : téléphone')).toBeInTheDocument();
   });
 
   it('offers publication even when the optional description and phone are empty', async () => {
-    await renderReady({ description: '', phone: '' });
+    const stores = fakeStores();
+    const page = await DashboardPageObject.render(stores);
+    deliverReady(stores, { description: '', phone: '' });
+    page.detectChanges();
 
-    expect(screen.getByRole('button', { name: 'Publier' })).toBeInTheDocument();
+    expect(page.publishButton()).toBeInTheDocument();
     expect(screen.getByText('Renseignés : nom, photo · Optionnels : description, téléphone')).toBeInTheDocument();
   });
 
   it('shows the storefront URL as a link once the vitrine is ready', async () => {
-    await renderReady();
+    const stores = fakeStores();
+    const page = await DashboardPageObject.render(stores);
+    deliverReady(stores);
+    page.detectChanges();
 
     expect(screen.getByText(/sera publiée à/i)).toBeInTheDocument();
-    const link = screen.getByRole('link', { name: 'acme.marketmiam.fr' });
+    const link = page.storefrontLink('acme.marketmiam.fr');
     expect(link).toHaveAttribute('href', 'https://acme.marketmiam.fr');
   });
 
   it('publishes the storefront when Publier is clicked', async () => {
-    const { storefront } = await renderReady();
+    const stores = fakeStores();
+    const page = await DashboardPageObject.render(stores);
+    deliverReady(stores);
+    page.detectChanges();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Publier' }));
+    page.publish();
 
-    expect(storefront.publishCalled).toBe(true);
+    expect(stores.storefront.publishCalled).toBe(true);
   });
 
   it('disables the button and shows progress while publishing', async () => {
-    const { storefront, view } = await renderReady();
-    storefront.publishing.set(true);
-    view.detectChanges();
+    const stores = fakeStores();
+    const page = await DashboardPageObject.render(stores);
+    deliverReady(stores);
+    page.detectChanges();
+    stores.storefront.publishing.set(true);
+    page.detectChanges();
 
-    expect(screen.getByRole('button', { name: 'Publication…' })).toBeDisabled();
+    expect(page.publishingButton()).toBeDisabled();
   });
 
   it('drops the setup steps once the vitrine is published', async () => {
-    await renderReady({ published: true });
+    const stores = fakeStores();
+    const page = await DashboardPageObject.render(stores);
+    deliverReady(stores, { published: true });
+    page.detectChanges();
 
-    expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+    expect(page.queryProgressBar()).not.toBeInTheDocument();
     expect(screen.queryByText(/terminez votre installation/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/votre vitrine est prête/i)).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /publier|publication/i })).not.toBeInTheDocument();
+    expect(page.queryPublishButton()).not.toBeInTheDocument();
     expect(screen.getByText('Votre vitrine')).toBeInTheDocument();
   });
 
   it('offers the live storefront to the share sheet', async () => {
-    const { sharing } = await renderReady({ published: true });
+    const stores = fakeStores();
+    const sharing = new FakeShare();
+    const page = await DashboardPageObject.render({ ...stores, sharing });
+    deliverReady(stores, { published: true });
+    page.detectChanges();
 
-    fireEvent.click(screen.getByRole('button', { name: /partager/i }));
+    page.share();
 
     await waitFor(() => expect(sharing.offered).toEqual({ title: 'Acme Bakery', url: 'https://acme.marketmiam.fr' }));
     expect(screen.queryByText('Lien copié')).not.toBeInTheDocument();
   });
 
   it('confirms the copy, then returns to Partager, where there is no share sheet', async () => {
-    const { sharing } = await renderReady({ published: true });
+    const stores = fakeStores();
+    const sharing = new FakeShare();
+    const page = await DashboardPageObject.render({ ...stores, sharing });
+    deliverReady(stores, { published: true });
+    page.detectChanges();
     sharing.outcome = 'copied';
 
-    fireEvent.click(screen.getByRole('button', { name: /partager/i }));
+    page.share();
 
     await waitFor(() => expect(screen.getByText('Lien copié')).toBeInTheDocument());
-    await waitFor(() => expect(screen.getByRole('button', { name: /partager/i })).toBeInTheDocument());
+    await waitFor(() => expect(page.shareButton()).toBeInTheDocument());
   });
 
   // Each copy is its own receipt. The reset used to be a bare timer per tap, so a second
@@ -369,117 +427,157 @@ describe('Dashboard', () => {
   // a second later, exactly when a vendor is tapping because they doubt it worked.
   it('gives a second copy its own full confirmation window', async () => {
     const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-    const { view, sharing } = await renderReady({ published: true }, 300);
+    const stores = fakeStores();
+    const sharing = new FakeShare();
+    const page = await DashboardPageObject.render({ ...stores, sharing, copiedNoticeDelay: 300 });
+    deliverReady(stores, { published: true });
+    page.detectChanges();
     sharing.outcome = 'copied';
 
-    fireEvent.click(screen.getByRole('button', { name: /partager/i }));
+    page.share();
     await waitFor(() => expect(screen.getByText('Lien copié')).toBeInTheDocument());
 
     await sleep(180);
-    fireEvent.click(screen.getByRole('button', { name: /lien copié/i }));
+    page.shareAgain();
     await waitFor(() => expect(screen.getByText('Lien copié')).toBeInTheDocument());
 
     // ~380ms after the first tap, ~200ms after the second: the first tap's deadline has
     // passed and must not take the second tap's receipt with it.
     await sleep(200);
-    view.detectChanges();
+    page.detectChanges();
     expect(screen.getByText('Lien copié')).toBeInTheDocument();
 
     await waitFor(() => expect(screen.queryByText('Lien copié')).not.toBeInTheDocument());
-    expect(screen.getByRole('button', { name: /partager/i })).toBeInTheDocument();
+    expect(page.shareButton()).toBeInTheDocument();
   });
 
   it('says nothing when the vendor backs out of the share sheet', async () => {
-    const { sharing } = await renderReady({ published: true });
+    const stores = fakeStores();
+    const sharing = new FakeShare();
+    const page = await DashboardPageObject.render({ ...stores, sharing });
+    deliverReady(stores, { published: true });
+    page.detectChanges();
     sharing.outcome = null;
 
-    fireEvent.click(screen.getByRole('button', { name: /partager/i }));
+    page.share();
 
     await waitFor(() => expect(sharing.offered).not.toBeNull());
     expect(screen.queryByText('Lien copié')).not.toBeInTheDocument();
   });
 
   it('offers the storefront as online once published', async () => {
-    await renderReady({ published: true });
+    const stores = fakeStores();
+    const page = await DashboardPageObject.render(stores);
+    deliverReady(stores, { published: true });
+    page.detectChanges();
 
     expect(screen.getByText('Votre vitrine')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /modifier/i })).toHaveAttribute('href', '/dashboard/information');
+    expect(page.editStorefrontLink()).toHaveAttribute('href', '/dashboard/information');
   });
 
   it('opens the catalogue and the markets straight from the published home', async () => {
-    await renderReady({ published: true });
+    const stores = fakeStores();
+    const page = await DashboardPageObject.render(stores);
+    deliverReady(stores, { published: true });
+    page.detectChanges();
 
-    expect(screen.getByRole('link', { name: 'Votre catalogue' })).toHaveAttribute('href', '/dashboard/catalogue');
-    expect(screen.getByRole('link', { name: 'Vos marchés' })).toHaveAttribute('href', '/dashboard/markets');
+    expect(page.catalogueLink()).toHaveAttribute('href', '/dashboard/catalogue');
+    expect(page.marketsLink()).toHaveAttribute('href', '/dashboard/markets');
   });
 
   it('leads to the QR code from the published home', async () => {
-    await renderReady({ published: true });
+    const stores = fakeStores();
+    const page = await DashboardPageObject.render(stores);
+    deliverReady(stores, { published: true });
+    page.detectChanges();
 
-    expect(screen.getByRole('link', { name: /qr code/i })).toHaveAttribute('href', '/dashboard/qr-code');
+    expect(page.qrCodeLink()).toHaveAttribute('href', '/dashboard/qr-code');
   });
 
   it('keeps the QR code off the setup home, where there is nothing to scan yet', async () => {
-    await renderBlank();
+    const storefront = new FakeStorefrontFacade();
+    const page = await DashboardPageObject.render({ storefront });
+    storefront.view.set(blankStorefront);
+    page.detectChanges();
 
-    expect(screen.queryByRole('link', { name: /qr code/i })).not.toBeInTheDocument();
+    expect(page.queryQrCodeLink()).not.toBeInTheDocument();
   });
 
   it('links to the live storefront once published', async () => {
-    await renderReady({ published: true });
+    const stores = fakeStores();
+    const page = await DashboardPageObject.render(stores);
+    deliverReady(stores, { published: true });
+    page.detectChanges();
 
-    const link = screen.getByRole('link', { name: 'acme.marketmiam.fr' });
+    const link = page.storefrontLink('acme.marketmiam.fr');
     expect(link).toHaveAttribute('href', 'https://acme.marketmiam.fr');
     expect(link).toHaveAttribute('target', '_blank');
   });
 
   it('shows an error when publishing fails', async () => {
-    const { storefront, view } = await renderReady();
-    storefront.publishError.set(true);
-    view.detectChanges();
+    const stores = fakeStores();
+    const page = await DashboardPageObject.render(stores);
+    deliverReady(stores);
+    page.detectChanges();
+    stores.storefront.publishError.set(true);
+    page.detectChanges();
 
     expect(screen.getByText(/la publication a échoué/i)).toBeInTheDocument();
   });
 
   it('puts the next menu at the top of the published home', async () => {
-    await renderReady({ published: true });
+    const stores = fakeStores();
+    const page = await DashboardPageObject.render(stores);
+    deliverReady(stores, { published: true });
+    page.detectChanges();
 
-    expect(screen.getByRole('heading', { name: /prochain marché/i })).toBeInTheDocument();
+    expect(page.nextMarketHeading()).toBeInTheDocument();
   });
 
   // Sibling cards, so none of them is the page. Without a heading of its own the document
   // has two competing h1s and no name.
   it('gives the page one top-level heading, not one per card', async () => {
-    await renderReady({ published: true });
+    const stores = fakeStores();
+    const page = await DashboardPageObject.render(stores);
+    deliverReady(stores, { published: true });
+    page.detectChanges();
 
-    expect(screen.getAllByRole('heading', { level: 1 }).map((heading) => heading.textContent))
+    expect(page.topLevelHeadings().map((heading) => heading.textContent))
       .toEqual(['Tableau de bord']);
   });
 
   it('keeps the next menu off the setup home, where there is no audience yet', async () => {
-    await renderBlank();
+    const storefront = new FakeStorefrontFacade();
+    const page = await DashboardPageObject.render({ storefront });
+    storefront.view.set(blankStorefront);
+    page.detectChanges();
 
-    expect(screen.queryByRole('heading', { name: /prochain marché/i })).not.toBeInTheDocument();
+    expect(page.queryNextMarketHeading()).not.toBeInTheDocument();
   });
 
   // The card's empty state is a warning. Painting it before the days land would be a false
   // alarm, so the whole dashboard waits rather than the card flashing. Days already in the
   // store get the same treatment: a refetch means they may be stale, so the spinner wins.
   it('waits for the market days before showing anything, even days it already holds', async () => {
-    const { storefront, marketDays, view } = await renderDashboard();
+    const storefront = new FakeStorefrontFacade();
+    const marketDays = new FakeMarketDayFacade();
+    const page = await DashboardPageObject.render({ storefront, marketDays });
     marketDays.loading.set(true);
     marketDays.days.set([testMarketDayView()]);
     storefront.view.set({ ...completeStorefront, subdomain: 'acme', published: true });
-    view.detectChanges();
+    page.detectChanges();
 
-    expect(screen.getByRole('status', { name: /chargement/i })).toBeInTheDocument();
+    expect(page.loadingStatus()).toBeInTheDocument();
     expect(screen.queryByText(/croix-rousse/i)).not.toBeInTheDocument();
   });
 
   it('explains the URL is pending and offers no button when no subdomain is assigned', async () => {
-    await renderReady({ subdomain: null });
+    const stores = fakeStores();
+    const page = await DashboardPageObject.render(stores);
+    deliverReady(stores, { subdomain: null });
+    page.detectChanges();
 
     expect(screen.getByText(/en cours d.attribution/i)).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Publier' })).not.toBeInTheDocument();
+    expect(page.queryPublishButton()).not.toBeInTheDocument();
   });
 });
