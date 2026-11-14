@@ -6,7 +6,7 @@ import {
   VendorScopedEvents,
   Vendors,
 } from '@market-miam/market-days';
-import { vendorAccountClosed, vendorErased, vendorInvited, vendorRegistered, vendorStream } from '../vendor-events';
+import { vendorAccountClosed, vendorAccountOpened, vendorErased, vendorInvited, vendorRegistered, vendorStream } from '../vendor-events';
 
 describe('Record Vendor Account Closed', () => {
   let store: InMemoryEventStore;
@@ -32,6 +32,14 @@ describe('Record Vendor Account Closed', () => {
         payload: { vendorId: 'vendor-id', closedAt: '2026-11-14T09:00:05.000Z' },
       }),
     ]);
+  });
+
+  it('records closed an account whose opening is on record', async () => {
+    given(vendorInvited(), vendorAccountOpened(), vendorErased());
+
+    await handler.execute(new RecordVendorAccountClosed('vendor-id', '2026-11-14T09:00:05.000Z'));
+
+    expect(store.newEvents()).toEqual([expect.objectContaining({ type: 'VendorAccountClosed' })]);
   });
 
   // The processor sends it again when it retries after a crash between the record and its checkpoint.

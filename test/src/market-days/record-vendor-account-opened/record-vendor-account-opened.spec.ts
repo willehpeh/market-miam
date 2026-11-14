@@ -5,7 +5,7 @@ import {
   VendorScopedEvents,
   Vendors,
 } from '@market-miam/market-days';
-import { vendorInvited, vendorStream } from '../vendor-events';
+import { vendorAccountOpened, vendorInvited, vendorStream } from '../vendor-events';
 
 describe('Record Vendor Account Opened', () => {
   let store: InMemoryEventStore;
@@ -30,5 +30,14 @@ describe('Record Vendor Account Opened', () => {
         payload: { vendorId: 'vendor-id', openedAt: '2026-11-11T09:00:05.000Z' },
       }),
     ]);
+  });
+
+  // The processor sends it again when it retries after a crash between the record and its checkpoint.
+  it('raises nothing when the account is already recorded opened', async () => {
+    given(vendorInvited(), vendorAccountOpened());
+
+    await handler.execute(new RecordVendorAccountOpened('vendor-id', '2026-11-11T09:10:00.000Z'));
+
+    expect(store.newEvents()).toEqual([]);
   });
 });

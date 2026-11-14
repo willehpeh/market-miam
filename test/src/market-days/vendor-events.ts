@@ -1,4 +1,4 @@
-import { VendorAccountClosed, VendorErased, VendorInvited, VendorLegalIdentityProvided, VendorRegistered } from '@market-miam/market-days';
+import { VendorAccountClosed, VendorAccountOpened, VendorErased, VendorInvited, VendorLegalIdentityProvided, VendorRegistered } from '@market-miam/market-days';
 
 // The events a vendor spec seeds as its Given, typed against the domain's event types
 // (see market-day-events.ts for the stance). Defaults match TestInviteVendor.valid(),
@@ -37,6 +37,9 @@ export const legalIdentityProvided = (vendorId = 'vendor-id', overrides: Partial
 
 export const vendorErased = (vendorId = 'vendor-id', erasedAt = '2026-10-04T09:00:00.000Z'): VendorErased =>
   ({ type: 'VendorErased', payload: { vendorId, erasedAt }, version: 1 });
+
+export const vendorAccountOpened = (vendorId = 'vendor-id', openedAt = '2026-11-11T09:00:05.000Z'): VendorAccountOpened =>
+  ({ type: 'VendorAccountOpened', payload: { vendorId, openedAt }, version: 1 });
 
 export const vendorAccountClosed = (vendorId = 'vendor-id', closedAt = '2026-11-14T09:00:05.000Z'): VendorAccountClosed =>
   ({ type: 'VendorAccountClosed', payload: { vendorId, closedAt }, version: 1 });
