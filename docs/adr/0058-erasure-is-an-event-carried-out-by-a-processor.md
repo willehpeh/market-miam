@@ -1,6 +1,6 @@
 # 0058. Erasure is an event, carried out by a processor
 
-Date: 2026-10-05 · Status: Accepted · Amended 2026-11-02 by [0060](0060-vendors-join-by-invitation.md) — `EraseVendor` also erases a vendor who was invited and never signed in
+Date: 2026-10-05 · Status: Accepted · Amended 2026-11-02 by [0060](0060-vendors-join-by-invitation.md) — `EraseVendor` also erases a vendor who was invited and never signed in · Amended 2026-11-14 by [0063](0063-vendor-account-opening-and-closing-are-events.md) — closing the vendor's Auth0 account is recorded, and an erased vendor accepts `RecordVendorAccountClosed`
 
 Amends ADR 0025 (crypto-shredding) and ADR 0056 (legal identity outlives erasure).
 

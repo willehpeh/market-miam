@@ -121,10 +121,11 @@ Going live, in this order, by the owner:
    with no link; otherwise the sign-in email as it is. Then decide whether the vendor privacy
    policy needs a line for the invitation email.
 
-**5. Erase a vendor.** A transport for `EraseVendor`, and a processor on `VendorErased` that
-deletes the Auth0 user (`delete:users`), whether the vendor registered or was only invited. It
-finds the user by `vendorId`, never by email: an invitation erased for a taken address (slice 4)
-shares that address with another vendor's account.
+**5. Erase a vendor.** A transport for `EraseVendor`, and `ClosesVendorAccounts`, a processor on
+`VendorErased` that deletes the Auth0 user (`delete:users`), whether the vendor registered or was
+only invited, and records `VendorAccountClosed` (ADR 0063). It finds the user by `vendorId`, never
+by email: an invitation erased for a taken address (slice 4) shares that address with another
+vendor's account. `OpensVendorAccounts` records `VendorAccountOpened` beside it.
 
 **6. Rebuild a projection.** A transport for `Subscriptions.rebuild()`.
 

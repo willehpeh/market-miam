@@ -1,6 +1,6 @@
 # 0060. Vendors join by invitation, and the api mints their vendorId
 
-Date: 2026-11-02 · Status: Accepted
+Date: 2026-11-02 · Status: Accepted · Amended 2026-11-14 by [0063](0063-vendor-account-opening-and-closing-are-events.md) — the processor records the account it opens as `VendorAccountOpened`
 
 Amends ADR 0024 (vendor identity) and ADR 0058 (erasure). Builds on ADRs 0025 and 0059.
 
