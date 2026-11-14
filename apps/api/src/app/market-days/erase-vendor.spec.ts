@@ -4,7 +4,7 @@ import request from 'supertest';
 import { Subject } from 'rxjs';
 import { Clock, Instant, LocalDate } from '@market-miam/common';
 import { CommandGateway, DataKeys, EventStore, SHREDDED } from '@market-miam/event-sourcing';
-import { EraseVendor, InMemorySubdomainRegistry, VendorLegalIdentityProvided } from '@market-miam/market-days';
+import { EraseVendor, InMemorySubdomainRegistry, InMemoryVendorAccounts, VendorLegalIdentityProvided } from '@market-miam/market-days';
 import { apiTestModule, bootApiTestApp, FIXED_NOW, startApp } from '../testing/api-test-app';
 import { Subscriptions } from '../event-sourcing/subscriptions';
 import { SHRED_SWEEP_TICKS } from './shred-sweep';
@@ -28,9 +28,11 @@ async function erase(app: INestApplication): Promise<void> {
 
 describe('Erasing a vendor', () => {
   let app: INestApplication;
+  let vendorAccounts: InMemoryVendorAccounts;
 
   beforeEach(async () => {
-    app = await bootApiTestApp();
+    vendorAccounts = new InMemoryVendorAccounts([{ email: 'owner@acme.test', vendorId: 'acme-bakery' }]);
+    app = await bootApiTestApp({ vendorAccounts });
     await registerWithStorefront(app);
   });
 
@@ -43,6 +45,15 @@ describe('Erasing a vendor', () => {
 
     expect(await app.get(DataKeys).findKeyFor('acme-bakery')).toBeNull();
     await authed(app, 'get', '/storefront').expect(404);
+  });
+
+  // The login goes with the vendor, and the stream keeps the proof (ADR 0063).
+  it("closes the vendor's account and records it closed", async () => {
+    await erase(app);
+
+    expect(vendorAccounts.all()).toEqual([]);
+    const events = await app.get(EventStore).load('vendor-acme-bakery');
+    expect(events.map((event) => event.type)).toContain('VendorAccountClosed');
   });
 
   it('keeps the storefront view dropped when it is rebuilt', async () => {
