@@ -112,9 +112,13 @@ export class OperatorPageObject extends PageObject<OperatorPage> {
     return screen.getByRole('button', { name: `Assign a subdomain to ${vendor}` });
   }
 
+  typeSubdomain(vendor: string, subdomain: string): this {
+    return this.type(this.subdomainField(vendor), subdomain);
+  }
+
   // The form hands the name over from an asynchronous submission, as the invitation's does.
   async assignSubdomain(vendor: string, subdomain: string): Promise<this> {
-    this.type(this.subdomainField(vendor), subdomain).press(this.assignButton(vendor));
+    this.typeSubdomain(vendor, subdomain).press(this.assignButton(vendor));
     await new Promise((resolve) => setTimeout(resolve));
     await this.view.fixture.whenStable();
     return this;

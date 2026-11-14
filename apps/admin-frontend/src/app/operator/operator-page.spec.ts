@@ -245,6 +245,19 @@ describe('OperatorPage', () => {
     expect(page.subdomainField('owner@brioche.test')).toHaveValue('brioche');
   });
 
+  // Assign would otherwise give the name typed to whichever vendor's row took its place.
+  it('keeps a name typed with its vendor when an invitation joins the list above them', async () => {
+    accounts.accounts.set([BRIOCHE]);
+    const page = await signedIn();
+    page.typeSubdomain('owner@brioche.test', 'brioche');
+
+    accounts.accounts.set([{ email: 'marie@example.com', vendorId: 'new-vendor', subdomain: null, invited: true }, BRIOCHE]);
+    page.detectChanges();
+
+    expect(page.subdomainField('owner@brioche.test')).toHaveValue('brioche');
+    expect(page.subdomainField('marie@example.com')).toHaveValue('');
+  });
+
   // Erasure cannot be undone (ADR 0058): the operator confirms it before it goes.
   it('erases a vendor once the operator confirms', async () => {
     accounts.accounts.set([ACME]);

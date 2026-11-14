@@ -19,7 +19,8 @@ import { AssignmentRefusal, RefusedAssignment } from '../assignments/assignments
       <p class="text-red-700">The accounts could not be loaded.</p>
     } @else {
       <ul class="divide-y divide-gray-200 overflow-hidden rounded-lg border border-gray-200">
-        @for (account of accounts(); track $index) {
+        <!-- By whom each row is, so what is typed in a row stays with them as rows join. -->
+        @for (account of accounts(); track account.vendorId ?? account.email ?? $index) {
           <li class="flex items-center justify-between gap-4 px-4 py-3">
             @if (account.email) {
               <span class="font-medium text-gray-900">{{ account.email }}</span>
