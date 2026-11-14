@@ -68,4 +68,19 @@ describe('PostgresSubdomainRegistry', () => {
   it('lists no assignments before any is made', async () => {
     expect(await new PostgresSubdomainRegistry(pg.pool).assignments()).toEqual([]);
   });
+
+  it('claims a free subdomain for a vendor', async () => {
+    const registry = new PostgresSubdomainRegistry(pg.pool);
+
+    expect(await registry.register('Chez-Marie', 'marie')).toBe('claimed');
+    expect(await registry.vendorFor('chez-marie')).toBe('marie');
+  });
+
+  it('answers taken for a subdomain another vendor holds, and leaves it theirs', async () => {
+    await seed('chez-marie', 'another-vendor');
+    const registry = new PostgresSubdomainRegistry(pg.pool);
+
+    expect(await registry.register('chez-marie', 'marie')).toBe('taken');
+    expect(await registry.vendorFor('chez-marie')).toBe('another-vendor');
+  });
 });

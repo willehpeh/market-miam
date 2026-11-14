@@ -1,5 +1,5 @@
 import { Queryable } from '@market-miam/event-sourcing';
-import { SubdomainAssignment, SubdomainRegistry } from './subdomain-registry';
+import { SubdomainAssignment, SubdomainClaim, SubdomainRegistry } from './subdomain-registry';
 
 type VendorRow = { vendor_id: string };
 type SubdomainRow = { subdomain: string };
@@ -8,11 +8,14 @@ type AssignmentRow = { subdomain: string; vendor_id: string };
 export class PostgresSubdomainRegistry implements SubdomainRegistry {
   constructor(private readonly db: Queryable) {}
 
-  async register(subdomain: string, vendorId: string): Promise<void> {
-    await this.db.query('INSERT INTO subdomain_registry (subdomain, vendor_id) VALUES ($1, $2)', [
-      subdomain.toLowerCase(),
-      vendorId,
-    ]);
+  // ON CONFLICT DO NOTHING rather than a unique violation: inside the assignment's
+  // transaction, a raised error would abort the transaction for every statement after it.
+  async register(subdomain: string, vendorId: string): Promise<SubdomainClaim> {
+    const { rowCount } = await this.db.query(
+      'INSERT INTO subdomain_registry (subdomain, vendor_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
+      [subdomain.toLowerCase(), vendorId],
+    );
+    return rowCount === 1 ? 'claimed' : 'taken';
   }
 
   async vendorFor(subdomain: string): Promise<string | undefined> {

@@ -5,6 +5,7 @@ import {
   InMemorySubdomainRegistry,
   InvalidSubdomainError,
   ReservedSubdomainError,
+  SubdomainTakenError,
   VendorScopedEvents,
   Vendors,
 } from '@market-miam/market-days';
@@ -76,4 +77,16 @@ describe('Assign Subdomain', () => {
       expect(store.newEvents()).toEqual([]);
     },
   );
+
+  // One vendor per name, across every vendor: the registry's word, not any stream's (ADR 0065).
+  it('refuses a subdomain another vendor holds, claiming and recording nothing', async () => {
+    given(vendorInvited());
+    await registry.register('chez-marie', 'another-vendor');
+
+    await expect(handler.execute(new AssignSubdomain('vendor-id', 'chez-marie', ASSIGNED_AT))).rejects.toThrow(
+      SubdomainTakenError,
+    );
+    expect(await registry.vendorFor('chez-marie')).toBe('another-vendor');
+    expect(store.newEvents()).toEqual([]);
+  });
 });

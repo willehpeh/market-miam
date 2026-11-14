@@ -1,10 +1,16 @@
-import { SubdomainAssignment, SubdomainRegistry } from './subdomain-registry';
+import { SubdomainAssignment, SubdomainClaim, SubdomainRegistry } from './subdomain-registry';
 
 export class InMemorySubdomainRegistry implements SubdomainRegistry {
   private readonly vendors = new Map<string, string>();
 
-  async register(subdomain: string, vendorId: string): Promise<void> {
-    this.vendors.set(subdomain.toLowerCase(), vendorId);
+  async register(subdomain: string, vendorId: string): Promise<SubdomainClaim> {
+    const name = subdomain.toLowerCase();
+    const holder = this.vendors.get(name);
+    if (holder !== undefined && holder !== vendorId) {
+      return 'taken';
+    }
+    this.vendors.set(name, vendorId);
+    return 'claimed';
   }
 
   async vendorFor(subdomain: string): Promise<string | undefined> {
