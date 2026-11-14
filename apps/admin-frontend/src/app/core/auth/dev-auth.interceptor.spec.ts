@@ -20,10 +20,10 @@ describe('Dev auth interceptor', () => {
   afterEach(() => TestBed.inject(HttpTestingController).verify());
 
   it('sends the stub token the API accepts in development', () => {
-    expect(authorizationSentTo('/api/ops/whoami')).toBe('Bearer dev');
+    expect(authorizationSentTo('/api/ops/accounts')).toBe('Bearer dev');
   });
 
   it('sends nothing to another origin', () => {
-    expect(authorizationSentTo('https://elsewhere.example/api/ops/whoami')).toBeNull();
+    expect(authorizationSentTo('https://elsewhere.example/api/ops/accounts')).toBeNull();
   });
 });

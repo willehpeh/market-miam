@@ -122,23 +122,16 @@ describe('The operator API', () => {
     expect(invited.metadata).toMatchObject({ operatorId: testOperator.operatorId });
   });
 
-  it('tells a signed-in operator who they are', async () => {
-    await request(app.getHttpServer())
-      .get('/ops/whoami')
-      .set('Authorization', `Bearer ${OPERATOR_TOKEN}`)
-      .expect(200, { operatorId: testOperator.operatorId });
-  });
-
   it('refuses someone signed in who is not an operator', async () => {
     await request(app.getHttpServer())
-      .get('/ops/whoami')
+      .get('/ops/accounts')
       .set('Authorization', `Bearer ${NOT_AN_OPERATOR_TOKEN}`)
       .expect(403);
   });
 
   it("refuses a vendor's token", async () => {
     await request(app.getHttpServer())
-      .get('/ops/whoami')
+      .get('/ops/accounts')
       .set('Authorization', 'Bearer a-vendor-token')
       .expect(401);
   });

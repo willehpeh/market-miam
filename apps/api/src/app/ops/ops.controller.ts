@@ -1,7 +1,6 @@
 import { Body, ConflictException, Controller, Get, HttpCode, HttpStatus, Post, UseGuards, UseInterceptors } from '@nestjs/common';
 import { z } from 'zod';
-import { CurrentOperator, OperatorAuthGuard } from '@market-miam/auth-nestjs';
-import type { VerifiedOperator } from '@market-miam/auth';
+import { OperatorAuthGuard } from '@market-miam/auth-nestjs';
 import { SubdomainRegistry } from '@market-miam/market-days';
 import { Accounts } from './accounts/accounts';
 import { accountList, AccountListing } from './account-list';
@@ -24,11 +23,6 @@ export class OpsController {
     private readonly subdomains: SubdomainRegistry,
     private readonly invitations: Invitations,
   ) {}
-
-  @Get('whoami')
-  whoami(@CurrentOperator() operator: VerifiedOperator): { operatorId: string } {
-    return { operatorId: operator.operatorId };
-  }
 
   @Get('accounts')
   async accountList(): Promise<AccountListing[]> {
