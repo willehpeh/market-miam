@@ -28,6 +28,10 @@ export class FakeOperatorApi {
     return this.expect(`/api/ops/vendors/${vendorId}/erasure`);
   }
 
+  assignmentOf(vendorId: string): ExpectedRequest {
+    return this.expect(`/api/ops/vendors/${vendorId}/subdomain`);
+  }
+
   // Nothing was sent that a spec did not answer.
   verify(): void {
     this.http.verify();
@@ -46,12 +50,20 @@ export class ExpectedRequest {
     return this.request.request.method;
   }
 
+  get body(): unknown {
+    return this.request.request.body;
+  }
+
   answer(body: Body): void {
     this.request.flush(body);
   }
 
   accept(body: Body = null): void {
     this.request.flush(body, { status: HttpStatusCode.Accepted, statusText: 'Accepted' });
+  }
+
+  noContent(): void {
+    this.request.flush(null, { status: HttpStatusCode.NoContent, statusText: 'No Content' });
   }
 
   refuse(status: Refusal): void {
