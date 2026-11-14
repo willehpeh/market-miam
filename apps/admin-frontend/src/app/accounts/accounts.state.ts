@@ -1,6 +1,7 @@
 import { createAction, createFeature, createReducer, on, props } from '@ngrx/store';
 import { AccountListing } from './accounts';
 import { InviteVendorSuccess } from '../invitations/invitation.state';
+import { EraseVendorAccepted } from '../erasures/erasure.state';
 
 export const LoadAccounts = createAction('[Accounts] Load');
 export const LoadAccountsSuccess = createAction('[Accounts] Load Success', props<{ accounts: AccountListing[] }>());
@@ -34,6 +35,10 @@ export const accountsFeature = createFeature({
       ...state,
       accounts: [...state.accounts, { email, vendorId, subdomain: null, invited: true as const }].sort(byEmail),
     })),
+    on(EraseVendorAccepted, (state, { vendorId }): AccountsState => ({
+      ...state,
+      accounts: state.accounts.map(markedErased(vendorId)),
+    })),
   ),
 });
 
@@ -43,4 +48,9 @@ function byEmail(a: AccountListing, b: AccountListing): number {
   if (a.email === null) return 1;
   if (b.email === null) return -1;
   return a.email < b.email ? -1 : 1;
+}
+
+// The vendor's row marked erased, every other row as it was.
+function markedErased(vendorId: string): (account: AccountListing) => AccountListing {
+  return (account) => (account.vendorId === vendorId ? { ...account, erased: true } : account);
 }

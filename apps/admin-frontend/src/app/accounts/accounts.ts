@@ -8,6 +8,8 @@ export interface AccountListing {
   subdomain: string | null;
   // An invitation the api has accepted, whose account the processor has yet to open (ADR 0060).
   invited?: true;
+  // An erasure the api has accepted, whose account the processor has yet to close (ADR 0063).
+  erased?: true;
 }
 
 // The api turning the operator's sign-in away, as every operator route can.
