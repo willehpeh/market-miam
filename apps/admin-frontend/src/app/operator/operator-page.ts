@@ -5,8 +5,9 @@ import { AccountsFacade } from '../accounts/accounts.facade';
 import { InviteVendorForm } from '../invitations/invite-vendor-form';
 import { InvitationFacade } from '../invitations/invitation.facade';
 import { ErasureFacade } from '../erasures/erasure.facade';
+import { AssignmentFacade } from '../assignments/assignment.facade';
 
-// Sign in, then invite vendors and see the accounts. The api guards every operator route: if
+// Sign in, then invite vendors, see the accounts, and give vendors their subdomains. The api guards every operator route: if
 // it turns this sign-in away, loading the accounts says so, and nothing else is offered.
 @Component({
   selector: 'admin-operator-page',
@@ -43,6 +44,7 @@ import { ErasureFacade } from '../erasures/erasure.facade';
             [erasing]="erasures.erasing() !== null"
             [erasureFailed]="erasures.failed()"
             (erase)="erasures.erase($event)"
+            (assign)="assignments.assign($event.vendorId, $event.subdomain)"
           />
         }
       } @else {
@@ -58,6 +60,7 @@ export class OperatorPage {
   protected readonly invitations = inject(InvitationFacade);
   protected readonly accounts = inject(AccountsFacade);
   protected readonly erasures = inject(ErasureFacade);
+  protected readonly assignments = inject(AssignmentFacade);
 
   constructor() {
     // At each sign-in.

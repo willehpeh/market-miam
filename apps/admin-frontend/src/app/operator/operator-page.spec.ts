@@ -3,6 +3,7 @@ import { FakeAuthFacade } from '../core/auth/fake.auth.facade';
 import { FakeInvitationFacade } from '../invitations/fake.invitation.facade';
 import { FakeAccountsFacade } from '../accounts/fake.accounts.facade';
 import { FakeErasureFacade } from '../erasures/fake.erasure.facade';
+import { FakeAssignmentFacade } from '../assignments/fake.assignment.facade';
 import { OperatorPageObject } from './operator-page.page-object';
 
 const ACME = { email: 'owner@acme.test', vendorId: 'acme-bakery', subdomain: 'acme' };
@@ -13,16 +14,18 @@ describe('OperatorPage', () => {
   let invitations: FakeInvitationFacade;
   let accounts: FakeAccountsFacade;
   let erasures: FakeErasureFacade;
+  let assignments: FakeAssignmentFacade;
 
   beforeEach(() => {
     auth = new FakeAuthFacade();
     invitations = new FakeInvitationFacade();
     accounts = new FakeAccountsFacade();
     erasures = new FakeErasureFacade();
+    assignments = new FakeAssignmentFacade();
   });
 
   function open(): Promise<OperatorPageObject> {
-    return OperatorPageObject.render({ auth, invitations, accounts, erasures });
+    return OperatorPageObject.render({ auth, invitations, accounts, erasures, assignments });
   }
 
   async function signedIn(): Promise<OperatorPageObject> {
@@ -187,6 +190,16 @@ describe('OperatorPage', () => {
 
     expect(screen.getByText('Invitation sent to marie@example.com', { exact: false })).toBeInTheDocument();
     expect(page.addressField()).toHaveValue('');
+  });
+
+  // Their storefront's address, which their printed QR codes will carry (ADR 0065).
+  it("assigns the subdomain typed on the row of a vendor with none", async () => {
+    accounts.accounts.set([ACME, BRIOCHE]);
+    const page = await signedIn();
+
+    await page.assignSubdomain('owner@brioche.test', 'brioche');
+
+    expect(assignments.assigned).toEqual([{ vendorId: 'brioche-co', subdomain: 'brioche' }]);
   });
 
   // Erasure cannot be undone (ADR 0058): the operator confirms it before it goes.

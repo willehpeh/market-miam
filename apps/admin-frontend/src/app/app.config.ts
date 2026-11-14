@@ -7,6 +7,7 @@ import { provideNgrx } from './core/ngrx.providers';
 import { provideInvitations } from './invitations/invitation.providers';
 import { provideAccounts } from './accounts/accounts.providers';
 import { provideErasures } from './erasures/erasure.providers';
+import { provideAssignments } from './assignments/assignment.providers';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -18,5 +19,6 @@ export const appConfig: ApplicationConfig = {
     provideInvitations(),
     provideAccounts(),
     provideErasures(),
+    provideAssignments(),
   ],
 };
