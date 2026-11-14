@@ -177,7 +177,7 @@ describe('OperatorPage', () => {
   });
 
   it.each([
-    ['email-in-use', 'An account already holds this address'],
+    ['email-in-use', 'An account already has this address'],
     ['invalid-email', "That isn't a valid email address"],
     ['not-sent', "The invitation couldn't be sent. Try again."],
   ] as const)('says why an invitation was refused (%s), keeping the address to correct or retry', async (refusal, message) => {

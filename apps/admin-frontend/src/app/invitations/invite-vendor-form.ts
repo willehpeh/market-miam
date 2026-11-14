@@ -8,7 +8,7 @@ interface Invitation {
 
 // Why an invitation didn't go, as the operator reads it.
 const REFUSALS: Record<InvitationRefusal, string> = {
-  'email-in-use': 'An account already holds this address',
+  'email-in-use': 'An account already has this address',
   'invalid-email': "That isn't a valid email address",
   'not-sent': "The invitation couldn't be sent. Try again.",
 };

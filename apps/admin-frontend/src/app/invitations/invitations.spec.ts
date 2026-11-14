@@ -57,7 +57,7 @@ describe('Invitations', () => {
     expect(facade.sending()).toBe(false);
   });
 
-  it('reports an address an account already holds, and stops sending', () => {
+  it('reports an address an account already has, and stops sending', () => {
     facade.invite('owner@acme.test');
     http.expectOne((req) => VENDORS(req.url)).flush({ statusCode: 409 }, { status: 409, statusText: 'Conflict' });
 
