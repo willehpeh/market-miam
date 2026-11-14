@@ -15,9 +15,18 @@ export interface PostgresHarness {
 // Starts a throwaway Postgres, applies the real production migrations, and hands
 // back a pool. The same container is shared across a spec; `reset()` truncates
 // between tests (TRUNCATE bypasses the append-only trigger by design).
+//
+// TEST_POSTGRES_URL names a database to use instead, on a machine with Postgres and no
+// Docker. It is migrated and emptied first, so only a database named `…_test` is taken.
 export async function startPostgres(): Promise<PostgresHarness> {
-  const container: StartedPostgreSqlContainer = await new PostgreSqlContainer('postgres:16').start();
-  const databaseUrl = container.getConnectionUri();
+  const existing = process.env['TEST_POSTGRES_URL'];
+  if (existing && !new URL(existing).pathname.endsWith('_test')) {
+    throw new Error('TEST_POSTGRES_URL must name a throwaway database ending in _test: the harness empties it.');
+  }
+  const container: StartedPostgreSqlContainer | undefined = existing
+    ? undefined
+    : await new PostgreSqlContainer('postgres:16').start();
+  const databaseUrl = existing ?? container!.getConnectionUri();
 
   await runner({
     databaseUrl,
@@ -37,16 +46,20 @@ export async function startPostgres(): Promise<PostgresHarness> {
      FROM pg_tables WHERE schemaname = 'public' AND tablename <> 'pgmigrations'`,
   );
   const tables = rows[0].tables;
+  const reset = async () => {
+    await pool.query(`TRUNCATE ${tables} RESTART IDENTITY`);
+  };
+  if (existing) {
+    await reset();
+  }
 
   return {
     pool,
     connectionString: databaseUrl,
-    reset: async () => {
-      await pool.query(`TRUNCATE ${tables} RESTART IDENTITY`);
-    },
+    reset,
     stop: async () => {
       await pool.end();
-      await container.stop();
+      await container?.stop();
     },
   };
 }
