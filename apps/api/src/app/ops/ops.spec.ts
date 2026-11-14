@@ -122,6 +122,20 @@ describe('The operator API', () => {
     expect(invited.metadata).toMatchObject({ operatorId: testOperator.operatorId });
   });
 
+  const erase = (vendorId: string) =>
+    request(app.getHttpServer()).post(`/ops/vendors/${vendorId}/erasure`).set('Authorization', `Bearer ${OPERATOR_TOKEN}`);
+
+  // Accepted, not done: the processors carry the erasure out (ADR 0058).
+  it('erases a vendor', async () => {
+    const { vendorId } = (await invite('marie@example.com').expect(202)).body as { vendorId: string };
+
+    await erase(vendorId).expect(202);
+
+    expect(await app.get(EventStore).load(`vendor-${vendorId}`)).toContainEqual(
+      expect.objectContaining({ type: 'VendorErased', payload: { vendorId, erasedAt: FIXED_NOW } }),
+    );
+  });
+
   it('refuses someone signed in who is not an operator', async () => {
     await request(app.getHttpServer())
       .get('/ops/accounts')

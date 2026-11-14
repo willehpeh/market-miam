@@ -1,7 +1,9 @@
-import { Body, ConflictException, Controller, Get, HttpCode, HttpStatus, Post, UseGuards, UseInterceptors } from '@nestjs/common';
+import { Body, ConflictException, Controller, Get, HttpCode, HttpStatus, Param, Post, UseGuards, UseInterceptors } from '@nestjs/common';
 import { z } from 'zod';
 import { OperatorAuthGuard } from '@market-miam/auth-nestjs';
-import { SubdomainRegistry } from '@market-miam/market-days';
+import { Clock } from '@market-miam/common';
+import { CommandGateway } from '@market-miam/event-sourcing';
+import { EraseVendor, SubdomainRegistry } from '@market-miam/market-days';
 import { Accounts } from './accounts/accounts';
 import { accountList, AccountListing } from './account-list';
 import { shapeOf } from '../shape-of.pipe';
@@ -22,6 +24,8 @@ export class OpsController {
     private readonly accounts: Accounts,
     private readonly subdomains: SubdomainRegistry,
     private readonly invitations: Invitations,
+    private readonly commands: CommandGateway,
+    private readonly clock: Clock,
   ) {}
 
   @Get('accounts')
@@ -42,5 +46,12 @@ export class OpsController {
       }
       throw error;
     }
+  }
+
+  // Accepted, not done: the processors carry the erasure out (ADR 0058, 0063).
+  @Post('vendors/:vendorId/erasure')
+  @HttpCode(HttpStatus.ACCEPTED)
+  async erase(@Param('vendorId') vendorId: string): Promise<void> {
+    await this.commands.execute(new EraseVendor(vendorId, this.clock.now().value()));
   }
 }
