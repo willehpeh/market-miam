@@ -37,8 +37,8 @@ const schedule = {
 const typesOf = (events: StoredEvent[]): string[] => events.map((event) => event.type);
 
 // One vendor's whole life, on Postgres, through the api as production assembles it: invited,
-// given a subdomain, signed in, published, erased. Only the edges are faked: who signs in, Auth0's Management
-// API, Cloudinary. Run by hand or nightly (`npx nx scenario api`), never in CI.
+// given a subdomain, signed in, published, erased. Only the edges are faked: who signs in,
+// Auth0's Management API, Cloudinary. Run by hand or nightly (`npx nx scenario api`), never in CI.
 describe("A vendor's life, from invitation to erasure", () => {
   let postgres: PostgresHarness;
   let auth0: FakeAuth0;
