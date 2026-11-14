@@ -10,6 +10,7 @@ export class StoreAccountsFacade implements AccountsFacade {
   readonly accounts = this.store.selectSignal(accountsFeature.selectAccounts);
   readonly loading = this.store.selectSignal(accountsFeature.selectLoading);
   readonly failed = this.store.selectSignal(accountsFeature.selectFailed);
+  readonly refused = this.store.selectSignal(accountsFeature.selectRefused);
 
   load(): void {
     this.store.dispatch(LoadAccounts());

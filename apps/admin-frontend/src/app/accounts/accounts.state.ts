@@ -5,16 +5,20 @@ import { InviteVendorSuccess } from '../invitations/invitation.state';
 export const LoadAccounts = createAction('[Accounts] Load');
 export const LoadAccountsSuccess = createAction('[Accounts] Load Success', props<{ accounts: AccountListing[] }>());
 export const LoadAccountsFailure = createAction('[Accounts] Load Failure');
+export const LoadAccountsRefused = createAction('[Accounts] Load Refused');
 
 export interface AccountsState {
   loading: boolean;
   failed: boolean;
+  // The api turned the sign-in away.
+  refused: boolean;
   accounts: AccountListing[];
 }
 
 export const initialState: AccountsState = {
   loading: false,
   failed: false,
+  refused: false,
   accounts: [],
 };
 
@@ -22,9 +26,10 @@ export const accountsFeature = createFeature({
   name: 'accounts',
   reducer: createReducer<AccountsState>(
     initialState,
-    on(LoadAccounts, (state): AccountsState => ({ ...state, loading: true, failed: false })),
+    on(LoadAccounts, (state): AccountsState => ({ ...state, loading: true, failed: false, refused: false })),
     on(LoadAccountsSuccess, (state, { accounts }): AccountsState => ({ ...state, loading: false, accounts })),
     on(LoadAccountsFailure, (state): AccountsState => ({ ...state, loading: false, failed: true })),
+    on(LoadAccountsRefused, (state): AccountsState => ({ ...state, loading: false, refused: true })),
     on(InviteVendorSuccess, (state, { email, vendorId }): AccountsState => ({
       ...state,
       accounts: [...state.accounts, { email, vendorId, subdomain: null, invited: true as const }].sort(byEmail),

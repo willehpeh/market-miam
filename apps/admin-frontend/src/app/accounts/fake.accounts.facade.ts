@@ -7,6 +7,7 @@ export class FakeAccountsFacade implements AccountsFacade {
   readonly accounts = signal<AccountListing[]>([]);
   readonly loading = signal(false);
   readonly failed = signal(false);
+  readonly refused = signal(false);
   loads = 0;
 
   load(): void {

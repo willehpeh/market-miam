@@ -82,6 +82,17 @@ describe('Accounts', () => {
     http.expectOne((req) => ACCOUNTS(req.url)).flush([ACME]);
   });
 
+  // The account list passes the operator guard, as every operator route does: its 401 or 403
+  // is the API refusing this sign-in, not a list that failed to load.
+  it.each([401, 403])('reports the sign-in refused when the API answers %i', (status) => {
+    facade.load();
+    http.expectOne((req) => ACCOUNTS(req.url)).flush(null, { status, statusText: 'Refused' });
+
+    expect(facade.refused()).toBe(true);
+    expect(facade.failed()).toBe(false);
+    expect(facade.loading()).toBe(false);
+  });
+
   // The account opens once the processor has run; until the next load, the list shows the
   // invitation, in its place by address, with the vendorId the api minted (ADR 0060).
   it('lists a vendor as invited once the API accepts the invitation', () => {

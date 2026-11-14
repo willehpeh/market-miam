@@ -2,7 +2,7 @@ import { inject, Injectable } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { catchError, map, of, switchMap } from 'rxjs';
 import { Accounts } from './accounts';
-import { LoadAccounts, LoadAccountsFailure, LoadAccountsSuccess } from './accounts.state';
+import { LoadAccounts, LoadAccountsFailure, LoadAccountsRefused, LoadAccountsSuccess } from './accounts.state';
 
 @Injectable()
 export class AccountsEffects {
@@ -14,7 +14,7 @@ export class AccountsEffects {
       ofType(LoadAccounts),
       switchMap(() =>
         this.accounts.list().pipe(
-          map((accounts) => LoadAccountsSuccess({ accounts })),
+          map((answer) => (answer === 'refused' ? LoadAccountsRefused() : LoadAccountsSuccess({ accounts: answer }))),
           catchError(() => of(LoadAccountsFailure())),
         ),
       ),

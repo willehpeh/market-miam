@@ -10,7 +10,10 @@ export interface AccountListing {
   invited?: true;
 }
 
+// The api turning the operator's sign-in away, as every operator route can.
+export type Refused = 'refused';
+
 // The accounts, through the operator API.
 export abstract class Accounts {
-  abstract list(): Observable<AccountListing[]>;
+  abstract list(): Observable<AccountListing[] | Refused>;
 }
