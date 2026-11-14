@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, effect, inject, untracked } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { HttpClient } from '@angular/common/http';
 import { catchError, map, Observable, of, switchMap } from 'rxjs';
@@ -7,6 +7,7 @@ import { Auth } from '../core/auth/auth';
 import { AccountList } from '../accounts/account-list';
 import { InviteVendorForm } from '../invitations/invite-vendor-form';
 import { InvitationFacade } from '../invitations/invitation.facade';
+import { AccountsFacade } from '../accounts/accounts.facade';
 
 interface Operator {
   operatorId: string;
@@ -64,6 +65,7 @@ export class OperatorPage {
   private readonly auth = inject(Auth);
   private readonly http = inject(HttpClient);
   protected readonly invitations = inject(InvitationFacade);
+  private readonly accounts = inject(AccountsFacade);
   private readonly userId$ = this.auth.userId$();
 
   protected readonly loading = toSignal(this.auth.isLoading$(), { initialValue: true });
@@ -72,6 +74,15 @@ export class OperatorPage {
     this.userId$.pipe(switchMap((userId) => (userId ? this.fetchWhoami() : of(null)))),
     { initialValue: null as Whoami },
   );
+
+  constructor() {
+    // Once the api has confirmed the operator, and again at each new sign-in.
+    effect(() => {
+      if (this.operatorId()) {
+        untracked(() => this.accounts.load());
+      }
+    });
+  }
 
   protected operatorId(): string {
     const whoami = this.whoami();

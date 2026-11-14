@@ -5,6 +5,8 @@ import { Auth } from '../core/auth/auth';
 import { FakeAuth } from '../core/auth/fake.auth';
 import { InvitationFacade } from '../invitations/invitation.facade';
 import { FakeInvitationFacade } from '../invitations/fake.invitation.facade';
+import { AccountsFacade } from '../accounts/accounts.facade';
+import { FakeAccountsFacade } from '../accounts/fake.accounts.facade';
 import { OperatorPage } from './operator-page';
 import { OperatorPageObject } from './operator-page.po';
 
@@ -15,6 +17,7 @@ describe('OperatorPage', () => {
   let auth: FakeAuth;
   let http: HttpTestingController;
   let invitations: FakeInvitationFacade;
+  let accounts: FakeAccountsFacade;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
@@ -22,6 +25,7 @@ describe('OperatorPage', () => {
       providers: [
         { provide: Auth, useClass: FakeAuth },
         { provide: InvitationFacade, useClass: FakeInvitationFacade },
+        { provide: AccountsFacade, useClass: FakeAccountsFacade },
         provideHttpClient(),
         provideHttpClientTesting(),
       ],
@@ -29,6 +33,7 @@ describe('OperatorPage', () => {
     auth = TestBed.inject(Auth) as FakeAuth;
     http = TestBed.inject(HttpTestingController);
     invitations = TestBed.inject(InvitationFacade) as FakeInvitationFacade;
+    accounts = TestBed.inject(AccountsFacade) as FakeAccountsFacade;
   });
 
   afterEach(() => {
@@ -73,19 +78,15 @@ describe('OperatorPage', () => {
     expect(page.says('github|1234567')).toBe(true);
   });
 
-  it('lists the accounts once the API has confirmed the operator', async () => {
+  it('asks for the accounts once the API has confirmed the operator, not before', async () => {
     const page = await OperatorPageObject.open();
     await page.signIn();
-    http.expectNone((req) => ACCOUNTS(req.url));
+    expect(accounts.loads).toBe(0);
 
     http.expectOne((req) => WHOAMI(req.url)).flush({ operatorId: 'github|1234567' });
     await page.settle();
-    http.expectOne((req) => ACCOUNTS(req.url)).flush([
-      { email: 'owner@acme.test', vendorId: 'acme-bakery', subdomain: 'acme' },
-    ]);
-    await page.settle();
 
-    expect(page.says('owner@acme.test')).toBe(true);
+    expect(accounts.loads).toBe(1);
   });
 
   it('says so when the API refuses the sign-in, and asks it for nothing more', async () => {
@@ -96,7 +97,7 @@ describe('OperatorPage', () => {
     await page.settle();
 
     expect(page.says('The API refused this sign-in')).toBe(true);
-    http.expectNone((req) => ACCOUNTS(req.url));
+    expect(accounts.loads).toBe(0);
   });
 
   it('signs out', async () => {
