@@ -96,4 +96,18 @@ describe('Accounts', () => {
       ACME,
     ]);
   });
+
+  // The invited row stands in for the account; Auth0 has the last word at the next load.
+  it('replaces an invited row with what the API holds at the next load', () => {
+    facade.load();
+    http.expectOne((req) => ACCOUNTS(req.url)).flush([ACME]);
+    invitations.invite('marie@example.com');
+    http.expectOne((req) => VENDORS(req.url)).flush({ vendorId: 'new-vendor' }, { status: 202, statusText: 'Accepted' });
+
+    facade.load();
+    const opened = { email: 'marie@example.com', vendorId: 'new-vendor', subdomain: null };
+    http.expectOne((req) => ACCOUNTS(req.url)).flush([opened, ACME]);
+
+    expect(facade.accounts()).toEqual([opened, ACME]);
+  });
 });
