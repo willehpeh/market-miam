@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
+import { COVER_PHOTO_PREVIEW_TRANSFORMATION } from '@market-miam/common';
 import { bootApiTestApp } from '../testing/api-test-app';
 
 describe('Signing a cover photo upload over HTTP', () => {
@@ -25,7 +26,10 @@ describe('Signing a cover photo upload over HTTP', () => {
         cloudName: 'test-cloud',
         apiKey: 'test-key',
         signature: 'signed(vendors/acme-bakery/storefront/cover-photo)',
-        params: expect.objectContaining({ public_id: 'vendors/acme-bakery/storefront/cover-photo' }),
+        params: expect.objectContaining({
+          public_id: 'vendors/acme-bakery/storefront/cover-photo',
+          eager: COVER_PHOTO_PREVIEW_TRANSFORMATION,
+        }),
       }),
     );
   });

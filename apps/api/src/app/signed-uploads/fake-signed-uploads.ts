@@ -1,7 +1,20 @@
+import {
+  COVER_PHOTO_PREVIEW_TRANSFORMATION,
+  ITEM_PHOTO_PREVIEW_TRANSFORMATION,
+  ITEM_PHOTO_THUMBNAIL_TRANSFORMATION,
+} from '@market-miam/common';
 import { CloudinarySignedUpload, SignedUploads } from './signed-uploads';
 
 export class FakeSignedUploads extends SignedUploads {
-  for(publicId: string): CloudinarySignedUpload {
+  forCoverPhoto(publicId: string): CloudinarySignedUpload {
+    return this.signed(publicId, COVER_PHOTO_PREVIEW_TRANSFORMATION);
+  }
+
+  forItemPhoto(publicId: string): CloudinarySignedUpload {
+    return this.signed(publicId, `${ITEM_PHOTO_PREVIEW_TRANSFORMATION}|${ITEM_PHOTO_THUMBNAIL_TRANSFORMATION}`);
+  }
+
+  private signed(publicId: string, eager: string): CloudinarySignedUpload {
     return {
       cloudName: 'test-cloud',
       apiKey: 'test-key',
@@ -14,7 +27,7 @@ export class FakeSignedUploads extends SignedUploads {
         invalidate: true,
         allowed_formats: 'jpg,png,webp',
         transformation: 'c_limit,w_2000',
-        eager: 'c_fill,w_1200,h_600,q_auto,f_webp',
+        eager,
       },
     };
   }

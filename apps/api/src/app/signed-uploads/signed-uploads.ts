@@ -17,5 +17,6 @@ export interface CloudinarySignedUpload {
 }
 
 export abstract class SignedUploads {
-  abstract for(publicId: string): CloudinarySignedUpload;
+  abstract forCoverPhoto(publicId: string): CloudinarySignedUpload;
+  abstract forItemPhoto(publicId: string): CloudinarySignedUpload;
 }

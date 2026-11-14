@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, linkedSignal, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { applyEach, applyWhen, form, FormField, required, validate } from '@angular/forms/signals';
+import { ITEM_PHOTO_PREVIEW_TRANSFORMATION } from '@market-miam/common';
 import { Card } from '../core/card';
 import { Spinner } from '../core/spinner';
 import { CloudinaryUrlPipe } from '../core/cloudinary-url.pipe';
@@ -9,8 +10,6 @@ import { CatalogueFacade } from './catalogue.facade';
 import { CatalogueItemView } from './catalogue';
 import { centsToEuros, parseEurosToCents } from './money';
 import { ALLERGENS } from './allergens';
-
-const ITEM_PREVIEW_TRANSFORMATION = 'c_fill,w_600,h_400,q_auto,f_webp';
 
 type FormatModel = { name: string; price: string; description: string };
 // Named because the model signal below is a linkedSignal whose computation returns its
@@ -380,7 +379,7 @@ export class AddItem {
   protected readonly missing = computed(() => this.isEditing && !this.loading() && this.editing() === undefined);
   protected readonly itemId = computed(() => this.editing()?.itemId ?? this.newItemId);
 
-  protected readonly previewTransformation = ITEM_PREVIEW_TRANSFORMATION;
+  protected readonly previewTransformation = ITEM_PHOTO_PREVIEW_TRANSFORMATION;
   protected readonly photoReference = this.catalogue.newPhotoReference;
   protected readonly previewRef = computed(() => this.photoReference() || this.editing()?.imageReference || '');
   protected readonly uploading = this.catalogue.photoUploading;

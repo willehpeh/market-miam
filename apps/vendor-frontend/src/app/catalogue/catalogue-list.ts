@@ -1,11 +1,10 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { ITEM_PHOTO_THUMBNAIL_TRANSFORMATION } from '@market-miam/common';
 import { CloudinaryUrlPipe } from '../core/cloudinary-url.pipe';
 import { CatalogueFacade } from './catalogue.facade';
 import { StorefrontFacade } from '../storefront/storefront.facade';
 import { formatEuros } from './money';
-
-const ITEM_THUMBNAIL_TRANSFORMATION = 'c_fill,w_200,h_200,q_auto,f_webp';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -124,7 +123,7 @@ export class CatalogueList {
     this.storefront.setCartePricesVisible(visible);
   }
 
-  readonly thumbnailTransformation = ITEM_THUMBNAIL_TRANSFORMATION;
+  readonly thumbnailTransformation = ITEM_PHOTO_THUMBNAIL_TRANSFORMATION;
   readonly items = computed(() =>
     this.catalogue.items().map((item) => item.variants
       ? {

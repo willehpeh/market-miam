@@ -1,9 +1,8 @@
 import { ChangeDetectionStrategy, Component, inject, linkedSignal } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { ITEM_PHOTO_THUMBNAIL_TRANSFORMATION } from '@market-miam/common';
 import { CloudinaryUrlPipe } from '../core/cloudinary-url.pipe';
 import { CatalogueFacade } from './catalogue.facade';
-
-const ITEM_ROW_TRANSFORMATION = 'c_fill,w_200,h_200,q_auto,f_webp';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -55,7 +54,7 @@ const ITEM_ROW_TRANSFORMATION = 'c_fill,w_200,h_200,q_auto,f_webp';
 export class ReorderItems {
   private readonly catalogue = inject(CatalogueFacade);
 
-  readonly thumbnailTransformation = ITEM_ROW_TRANSFORMATION;
+  readonly thumbnailTransformation = ITEM_PHOTO_THUMBNAIL_TRANSFORMATION;
   // The vendor's order is theirs alone until they save it, so a failed save leaves what
   // they arranged on screen. It re-seeds from the store when the catalogue arrives cold.
   protected readonly order = linkedSignal(() => this.catalogue.items());

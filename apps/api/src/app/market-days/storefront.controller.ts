@@ -60,7 +60,7 @@ export class StorefrontController {
   @Post('cover-photo/signature')
   @UseGuards(JwtAuthGuard)
   signCoverPhotoUpload(@CurrentVendor() vendor: VerifiedVendor): CloudinarySignedUpload {
-    return this.signedUploads.for(coverPhotoPublicId(vendor.vendorId.value()));
+    return this.signedUploads.forCoverPhoto(coverPhotoPublicId(vendor.vendorId.value()));
   }
 
   @Put('cover-photo')

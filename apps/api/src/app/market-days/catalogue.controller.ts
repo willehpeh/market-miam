@@ -49,10 +49,7 @@ export class CatalogueController {
     @CurrentVendor() vendor: VerifiedVendor,
     @Body(shapeOf(PhotoSignatureBody)) body: z.infer<typeof PhotoSignatureBody>,
   ): CloudinarySignedUpload {
-    // ponytail: reuses the cover-photo eager rendition. Warms the wrong size for an item
-    // card, so the first paint may race Cloudinary. Add an item eager transform once the
-    // form lands and the card rendition is known.
-    return this.signedUploads.for(itemPhotoPublicId(vendor.vendorId.value(), body.itemId));
+    return this.signedUploads.forItemPhoto(itemPhotoPublicId(vendor.vendorId.value(), body.itemId));
   }
 
   @Post()

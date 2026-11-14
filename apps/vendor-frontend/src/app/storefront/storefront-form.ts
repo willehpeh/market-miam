@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, linkedSignal, signal } from '@angular/core';
 import { form, FormField, required } from '@angular/forms/signals';
+import { COVER_PHOTO_PREVIEW_TRANSFORMATION } from '@market-miam/common';
 import { StorefrontFacade } from './storefront.facade';
 import { CloudinaryUrlPipe } from '../core/cloudinary-url.pipe';
 import { Card } from '../core/card';
@@ -24,7 +25,7 @@ const MAX_PHOTO_BYTES = 10 * 1024 * 1024;
             </div>
           } @else if (view()?.imageReference; as ref) {
             <img
-              [src]="ref | cloudinaryUrl: 'c_fill,w_400,h_300'"
+              [src]="ref | cloudinaryUrl: previewTransformation"
               alt="Photo de votre stand"
               class="mx-auto h-32 w-full max-w-xs rounded-card object-cover"
             />
@@ -112,6 +113,7 @@ export class StorefrontForm {
   private readonly storefront = inject(StorefrontFacade);
 
   protected readonly view = this.storefront.view;
+  protected readonly previewTransformation = COVER_PHOTO_PREVIEW_TRANSFORMATION;
   protected readonly saved = this.storefront.saved;
   protected readonly uploading = this.storefront.coverPhotoUploading;
   protected readonly uploadError = this.storefront.coverPhotoError;

@@ -43,7 +43,6 @@ comes next; each line points at the doc that holds the detail. Update it when a 
 
 ## Polish
 
-* dish eager rendition (`ponytail:` in `catalogue.controller.ts` — still warms the cover-photo size)
 * add/revise error banners (`AddItemFailure`/`ReviseItemFailure` emitted but unreduced)
 * variant follow-ups: per-variant photos · per-variant sold-out · incremental variant commands · drag-drop reorder (`docs/archive/DISH-VARIANTS-PLAN.md`)
 * nine small OO refactors (#2–4, #7–12 — per-item fixes in `docs/archive/OO-SMELL-AUDIT.md`)
