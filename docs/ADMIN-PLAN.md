@@ -52,8 +52,11 @@ never wrote anything), and ADR 0029 is amended. Left to the owner: delete the lo
 narrow the database's external access on Render (no `ipAllowList` in `render.yaml` today), keeping
 whatever psql access the owner still wants.
 
-**3. Assign a subdomain.** Ends the hand-written SQL every new vendor waits on (ADR 0032). A
-`register` on the port, with `admin`, `api`, `app` and `www` reserved.
+**3. Assign a subdomain** (ADR 0065). Ends the hand-written SQL every new vendor waits on
+(ADR 0032). `PUT /api/ops/vendors/:vendorId/subdomain`: in one transaction, a `register` on the
+port claims the name and the vendor's stream records `VendorSubdomainAssigned`, the subdomain
+encrypted. Once only; `admin`, `api`, `app`, `www`, `mail`, `staging` and `status` reserved. In
+the admin app, a field and an *Assign* button on each row with a `vendorId` and no subdomain.
 
 **4. Invite a vendor — built 2026-11-14, ahead of slice 3** (the owner's call, 2026-11-02; ADR 0060).
 Ends creating vendors by hand in the Auth0 Dashboard, and makes Market Miam invitation-only.

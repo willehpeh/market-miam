@@ -1,6 +1,6 @@
 # 0035. Appends join the ambient unit of work
 
-Date: 2026-07-31 · Status: Accepted
+Date: 2026-07-31 · Status: Accepted · Extended 2026-11-14 by [0065](0065-an-operator-assigns-a-subdomain-claimed-and-recorded-together.md) — a command, assigning a subdomain, runs in one
 
 ## Context
 

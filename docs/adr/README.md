@@ -71,3 +71,4 @@ detailed rationale in `docs/archive/DEFERRED.md`).
 | [0062](0062-smart-component-specs-drive-a-page-object.md)               | Smart-component specs drive the screen through a page object               | 2026-11-14 |
 | [0063](0063-vendor-account-opening-and-closing-are-events.md)           | Opening and closing a vendor's account are events on their stream          | 2026-11-14 |
 | [0064](0064-api-specs-call-the-api-through-an-api-object.md)            | Specs reach the api through objects                                        | 2026-11-14 |
+| [0065](0065-an-operator-assigns-a-subdomain-claimed-and-recorded-together.md) | An operator assigns a vendor's subdomain once, claimed and recorded in one transaction | 2026-11-14 |

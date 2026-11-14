@@ -1,6 +1,6 @@
 # 0032. An assigned subdomain is a storefront publication requirement
 
-Date: 2026-07-19 · Status: Accepted
+Date: 2026-07-19 · Status: Accepted · Amended 2026-11-14 by [0065](0065-an-operator-assigns-a-subdomain-claimed-and-recorded-together.md) — an operator assigns the subdomain from the admin app, recorded as `VendorSubdomainAssigned`
 
 Amends ADR 0031 (publication readiness) · builds on ADR 0003 (subdomain registry).
 
