@@ -54,4 +54,20 @@ describe('Assignments', () => {
     request.noContent();
     expect(facade.assigning()).toBeNull();
   });
+
+  // So the list can say why beside the vendor's row, until the next assignment starts.
+  it.each([
+    [409, 'taken'],
+    [400, 'invalid'],
+  ] as const)('reports a name the API refuses with a %i as %s', (status, refusal) => {
+    facade.assign('brioche-co', 'brioche');
+    api.assignmentOf('brioche-co').refuse(status);
+
+    expect(facade.refused()).toEqual({ vendorId: 'brioche-co', refusal });
+    expect(facade.assigning()).toBeNull();
+
+    facade.assign('brioche-co', 'brioche-co');
+    expect(facade.refused()).toBeNull();
+    api.assignmentOf('brioche-co').noContent();
+  });
 });

@@ -8,6 +8,7 @@ export class StoreAssignmentFacade implements AssignmentFacade {
   private readonly store = inject(Store);
 
   readonly assigning = this.store.selectSignal(assignmentFeature.selectAssigning);
+  readonly refused = this.store.selectSignal(assignmentFeature.selectRefused);
 
   assign(vendorId: string, subdomain: string): void {
     this.store.dispatch(AssignSubdomain({ vendorId, subdomain }));

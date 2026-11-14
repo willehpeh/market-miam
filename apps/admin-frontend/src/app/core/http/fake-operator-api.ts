@@ -3,8 +3,10 @@ import { HttpTestingController, TestRequest } from '@angular/common/http/testing
 
 // The api's refusals the specs answer with so far, with the texts the api sends them with.
 const REFUSALS = {
+  [HttpStatusCode.BadRequest]: 'Bad Request',
   [HttpStatusCode.Unauthorized]: 'Unauthorized',
   [HttpStatusCode.Forbidden]: 'Forbidden',
+  [HttpStatusCode.Conflict]: 'Conflict',
 } as const;
 
 type Refusal = keyof typeof REFUSALS;
