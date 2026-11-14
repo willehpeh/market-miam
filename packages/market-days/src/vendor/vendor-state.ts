@@ -1,5 +1,6 @@
 import { VendorErasedError } from './vendor-erased.error';
 import { VendorNotErasedError } from './vendor-not-erased.error';
+import { VendorNotInvitedError } from './vendor-not-invited.error';
 import { VendorNotRegisteredError } from './vendor-not-registered.error';
 
 // What a vendor makes of each command, by where they stand: carry it out (`proceed`), do
@@ -10,11 +11,8 @@ export abstract class VendorState {
   abstract register(proceed: () => void): void;
   abstract provideLegalIdentity(proceed: () => void): void;
   abstract erase(proceed: () => void): void;
+  abstract recordAccountOpened(proceed: () => void): void;
   abstract recordAccountClosed(proceed: () => void): void;
-
-  recordAccountOpened(proceed: () => void): void {
-    proceed();
-  }
 
   isErased(): boolean {
     return false;
@@ -38,6 +36,10 @@ export class UnknownVendor extends VendorState {
 
   erase(): void {
     throw new VendorNotRegisteredError();
+  }
+
+  recordAccountOpened(): void {
+    throw new VendorNotInvitedError();
   }
 
   recordAccountClosed(): void {
@@ -64,6 +66,10 @@ export class InvitedVendor extends VendorState {
     proceed();
   }
 
+  recordAccountOpened(proceed: () => void): void {
+    proceed();
+  }
+
   recordAccountClosed(): void {
     throw new VendorNotErasedError();
   }
@@ -83,6 +89,12 @@ export class RegisteredVendor extends VendorState {
   }
 
   erase(proceed: () => void): void {
+    proceed();
+  }
+
+  // The vendor signed in before the processor recorded the opening, or registered before
+  // invitations, with an account all the same.
+  recordAccountOpened(proceed: () => void): void {
     proceed();
   }
 
@@ -110,7 +122,7 @@ export class ErasedVendor extends VendorState {
     // Already erased: an erasure can be run again.
   }
 
-  override recordAccountOpened(): void {
+  recordAccountOpened(): void {
     // Closing is under way, and finds the account by vendorId (ADR 0063).
   }
 

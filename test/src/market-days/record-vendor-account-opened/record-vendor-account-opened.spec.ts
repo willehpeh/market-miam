@@ -2,6 +2,7 @@ import { DomainEvent, InMemoryEventStore } from '@market-miam/event-sourcing';
 import {
   RecordVendorAccountOpened,
   RecordVendorAccountOpenedHandler,
+  VendorNotInvitedError,
   VendorScopedEvents,
   Vendors,
 } from '@market-miam/market-days';
@@ -56,6 +57,14 @@ describe('Record Vendor Account Opened', () => {
 
     await handler.execute(new RecordVendorAccountOpened('vendor-id', '2026-11-11T09:00:05.000Z'));
 
+    expect(store.newEvents()).toEqual([]);
+  });
+
+  // An account opens for an invitation (ADR 0063).
+  it('refuses a vendor with no history', async () => {
+    await expect(handler.execute(new RecordVendorAccountOpened('vendor-id', '2026-11-11T09:00:05.000Z'))).rejects.toThrow(
+      VendorNotInvitedError,
+    );
     expect(store.newEvents()).toEqual([]);
   });
 });
