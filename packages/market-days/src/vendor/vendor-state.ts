@@ -10,10 +10,7 @@ export abstract class VendorState {
   abstract register(proceed: () => void): void;
   abstract provideLegalIdentity(proceed: () => void): void;
   abstract erase(proceed: () => void): void;
-
-  recordAccountClosed(proceed: () => void): void {
-    proceed();
-  }
+  abstract recordAccountClosed(proceed: () => void): void;
 
   isErased(): boolean {
     return false;
@@ -38,6 +35,10 @@ export class UnknownVendor extends VendorState {
   erase(): void {
     throw new VendorNotRegisteredError();
   }
+
+  recordAccountClosed(): void {
+    throw new VendorNotErasedError();
+  }
 }
 
 // Invited by an operator, and not signed in yet.
@@ -59,7 +60,7 @@ export class InvitedVendor extends VendorState {
     proceed();
   }
 
-  override recordAccountClosed(): void {
+  recordAccountClosed(): void {
     throw new VendorNotErasedError();
   }
 }
@@ -82,7 +83,7 @@ export class RegisteredVendor extends VendorState {
   }
 
   // Only erasure closes an account (ADR 0063).
-  override recordAccountClosed(): void {
+  recordAccountClosed(): void {
     throw new VendorNotErasedError();
   }
 }
@@ -103,6 +104,11 @@ export class ErasedVendor extends VendorState {
 
   erase(): void {
     // Already erased: an erasure can be run again.
+  }
+
+  // The one command an erased vendor accepts: its event carries no personal data (ADR 0063).
+  recordAccountClosed(proceed: () => void): void {
+    proceed();
   }
 
   override isErased(): boolean {
