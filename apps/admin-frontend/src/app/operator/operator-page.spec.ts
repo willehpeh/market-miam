@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
-import { Auth } from '../core/auth/auth';
-import { FakeAuth } from '../core/auth/fake.auth';
+import { AuthFacade } from '../core/auth/auth.facade';
+import { FakeAuthFacade } from '../core/auth/fake.auth.facade';
 import { InvitationFacade } from '../invitations/invitation.facade';
 import { FakeInvitationFacade } from '../invitations/fake.invitation.facade';
 import { AccountsFacade } from '../accounts/accounts.facade';
@@ -10,7 +10,7 @@ import { OperatorPageObject } from './operator-page.po';
 
 
 describe('OperatorPage', () => {
-  let auth: FakeAuth;
+  let auth: FakeAuthFacade;
   let invitations: FakeInvitationFacade;
   let accounts: FakeAccountsFacade;
 
@@ -18,12 +18,12 @@ describe('OperatorPage', () => {
     TestBed.configureTestingModule({
       imports: [OperatorPage],
       providers: [
-        { provide: Auth, useClass: FakeAuth },
+        { provide: AuthFacade, useClass: FakeAuthFacade },
         { provide: InvitationFacade, useClass: FakeInvitationFacade },
         { provide: AccountsFacade, useClass: FakeAccountsFacade },
       ],
     });
-    auth = TestBed.inject(Auth) as FakeAuth;
+    auth = TestBed.inject(AuthFacade) as FakeAuthFacade;
     invitations = TestBed.inject(InvitationFacade) as FakeInvitationFacade;
     accounts = TestBed.inject(AccountsFacade) as FakeAccountsFacade;
   });
@@ -41,6 +41,15 @@ describe('OperatorPage', () => {
     expect(accounts.loads).toBe(0);
   });
 
+  it('says it is loading while the sign-in is still pending', async () => {
+    auth.status.set('pending');
+
+    const page = await OperatorPageObject.open();
+
+    expect(page.says('Loading')).toBe(true);
+    expect(page.offersSignIn()).toBe(false);
+  });
+
   it('starts the sign-in when asked', async () => {
     const page = await OperatorPageObject.open();
 
@@ -52,7 +61,7 @@ describe('OperatorPage', () => {
   it('shows who is signed in', async () => {
     const page = await signedIn();
 
-    expect(page.says(FakeAuth.USER_ID)).toBe(true);
+    expect(page.says(FakeAuthFacade.USER_ID)).toBe(true);
   });
 
   it('asks for the accounts once someone is signed in, not before', async () => {

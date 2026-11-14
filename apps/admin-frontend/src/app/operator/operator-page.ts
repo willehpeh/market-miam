@@ -1,6 +1,5 @@
 import { Component, effect, inject, untracked } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
-import { Auth } from '../core/auth/auth';
+import { AuthFacade } from '../core/auth/auth.facade';
 import { AccountList } from '../accounts/account-list';
 import { AccountsFacade } from '../accounts/accounts.facade';
 import { InviteVendorForm } from '../invitations/invite-vendor-form';
@@ -14,9 +13,9 @@ import { InvitationFacade } from '../invitations/invitation.facade';
   template: `
     <div class="mx-auto max-w-2xl p-6">
       <h1 class="mb-4 text-xl font-semibold text-gray-900">Market Miam admin</h1>
-      @if (loading()) {
+      @if (auth.status() === 'pending') {
         <p class="text-gray-500">Loading…</p>
-      } @else if (userId(); as signedIn) {
+      } @else if (auth.userId(); as signedIn) {
         <div class="flex items-center justify-between gap-4">
           @if (accounts.refused()) {
             <p class="text-red-700">The API refused this sign-in.</p>
@@ -25,7 +24,7 @@ import { InvitationFacade } from '../invitations/invitation.facade';
               Signed in as <span class="font-mono">{{ signedIn }}</span>
             </p>
           }
-          <button type="button" class="rounded border border-gray-300 px-3 py-1.5 text-sm" (click)="logout()">
+          <button type="button" class="rounded border border-gray-300 px-3 py-1.5 text-sm" (click)="auth.logout()">
             Sign out
           </button>
         </div>
@@ -43,7 +42,7 @@ import { InvitationFacade } from '../invitations/invitation.facade';
           />
         }
       } @else {
-        <button type="button" class="rounded bg-gray-900 px-3 py-1.5 text-sm text-white" (click)="login()">
+        <button type="button" class="rounded bg-gray-900 px-3 py-1.5 text-sm text-white" (click)="auth.login()">
           Sign in with GitHub
         </button>
       }
@@ -51,27 +50,16 @@ import { InvitationFacade } from '../invitations/invitation.facade';
   `,
 })
 export class OperatorPage {
-  private readonly auth = inject(Auth);
+  protected readonly auth = inject(AuthFacade);
   protected readonly invitations = inject(InvitationFacade);
   protected readonly accounts = inject(AccountsFacade);
-
-  protected readonly loading = toSignal(this.auth.isLoading$(), { initialValue: true });
-  protected readonly userId = toSignal(this.auth.userId$(), { initialValue: null });
 
   constructor() {
     // At each sign-in.
     effect(() => {
-      if (this.userId()) {
+      if (this.auth.userId()) {
         untracked(() => this.accounts.load());
       }
     });
-  }
-
-  protected login(): void {
-    this.auth.login();
-  }
-
-  protected logout(): void {
-    this.auth.logout();
   }
 }

@@ -1,9 +1,22 @@
-import { EnvironmentProviders, isDevMode, makeEnvironmentProviders } from '@angular/core';
+import { EnvironmentProviders, isDevMode, makeEnvironmentProviders, Provider } from '@angular/core';
+import { provideState } from '@ngrx/store';
+import { provideEffects } from '@ngrx/effects';
 import { provideAuth0 } from '@auth0/auth0-angular';
 import { environment } from '../../../environments/environment';
 import { Auth } from './auth';
 import { Auth0Auth } from './auth0.auth';
 import { FakeAuth } from './fake.auth';
+import { authFeature } from './auth.state';
+import { AuthEffects } from './auth.effects';
+import { AuthFacade } from './auth.facade';
+import { StoreAuthFacade } from './store.auth.facade';
+
+// The sign-in in the store, whichever identity provider is behind the port (ADR 0022).
+const signIn: (Provider | EnvironmentProviders)[] = [
+  provideState(authFeature),
+  provideEffects(AuthEffects),
+  { provide: AuthFacade, useClass: StoreAuthFacade },
+];
 
 // Production signs operators in with Auth0, through GitHub only, for the operator API's
 // audience. The token stays in the SDK's memory cache (its default), not in
@@ -11,7 +24,7 @@ import { FakeAuth } from './fake.auth';
 // signing in again after a reload. The interceptor attaches it to operator routes only.
 export function provideAuth(): EnvironmentProviders {
   if (isDevMode()) {
-    return makeEnvironmentProviders([{ provide: Auth, useClass: FakeAuth }]);
+    return makeEnvironmentProviders([{ provide: Auth, useClass: FakeAuth }, ...signIn]);
   }
   return makeEnvironmentProviders([
     provideAuth0({
@@ -27,5 +40,6 @@ export function provideAuth(): EnvironmentProviders {
       },
     }),
     { provide: Auth, useClass: Auth0Auth },
+    ...signIn,
   ]);
 }
