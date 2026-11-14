@@ -147,6 +147,18 @@ describe('The operator API', () => {
     expect(await marie.history()).toEqual(history);
   });
 
+  it.each([
+    { refusal: 'a vendor never invited or registered', vendor: async () => new VendorOnRecord(app, 'nobody') },
+  ])('answers 400 to $refusal, and claims and records nothing', async ({ vendor }) => {
+    const refused = await vendor();
+    const history = await refused.history();
+
+    await ops.assignSubdomain(refused.id, 'chez-marie').expect(400);
+
+    expect(await app.get(InMemorySubdomainRegistry).assignments()).toEqual([]);
+    expect(await refused.history()).toEqual(history);
+  });
+
   // Accepted, not done: the processors carry the erasure out (ADR 0058).
   it('erases a vendor', async () => {
     const marie = await ops.inviteVendor('marie@example.com');
