@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { SignInAddress } from '@market-miam/common';
+import { InvalidEmailError, SignInAddress } from '@market-miam/common';
 import { FakeAuth0 } from '../../testing/fake-auth0';
 import { Auth0Accounts } from './auth0-accounts';
 import { Auth0ManagementApi } from './auth0-management-api';
@@ -110,15 +110,32 @@ describe('Auth0Accounts', () => {
     expect(await accounts().contains(new SignInAddress('marie@example.com'))).toBe(false);
   });
 
+  // Auth0 checks addresses more strictly than Email does. Refused as Email refuses them, so the
+  // operator hears the address was refused, as for a typo Email catches.
+  it('refuses an address Auth0 finds malformed', async () => {
+    auth0.refusesEmails = true;
+
+    await expect(accounts().contains(new SignInAddress('marie,dupont@example.com'))).rejects.toThrow(InvalidEmailError);
+  });
+
   it('fails when Auth0 refuses to say who holds an address', async () => {
     auth0.lookupStatus = 503;
 
     await expect(accounts().contains(new SignInAddress('marie@example.com'))).rejects.toThrow(/503/);
   });
 
+  it("names Auth0's error code when it refuses to say who holds an address", async () => {
+    auth0.lookupStatus = 403;
+    auth0.lookupErrorCode = 'insufficient_scope';
+
+    await expect(accounts().contains(new SignInAddress('marie@example.com'))).rejects.toThrow(
+      'Auth0 refused to say who holds an address: 403 insufficient_scope',
+    );
+  });
+
   it('fails when Auth0 refuses the user list', async () => {
     auth0.usersStatus = 403;
 
-    await expect(accounts().all()).rejects.toThrow(/403/);
+    await expect(accounts().all()).rejects.toThrow('Auth0 refused to list users: 403 insufficient_scope');
   });
 });

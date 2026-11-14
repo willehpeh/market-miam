@@ -1,3 +1,4 @@
+import { InvalidEmailError } from '@market-miam/common';
 import { Auth0ManagementApi } from './auth0-management-api';
 
 // A user as the Management API returns it, as far as Market Miam reads one.
@@ -57,7 +58,13 @@ export class Auth0Users {
   }
 
   async withEmail(email: string): Promise<Auth0User[]> {
-    return this.read(`api/v2/users-by-email?${new URLSearchParams({ email })}`, 'say who holds an address');
+    const response = await this.api.fetch(`api/v2/users-by-email?${new URLSearchParams({ email })}`);
+    // The address is the lookup's one parameter, so Auth0 refusing the lookup refuses the address,
+    // checking addresses more strictly than Email does.
+    if (response.status === BAD_REQUEST) {
+      throw new InvalidEmailError();
+    }
+    return answerOf(response, 'say who holds an address');
   }
 
   async page(page: number, perPage: number): Promise<Auth0User[]> {
@@ -67,16 +74,15 @@ export class Auth0Users {
       fields: 'email,app_metadata',
       include_fields: 'true',
     });
-    return this.read(`api/v2/users?${query}`, 'list users');
+    return answerOf(await this.api.fetch(`api/v2/users?${query}`), 'list users');
   }
+}
 
-  private async read<T>(path: string, what: string): Promise<T> {
-    const response = await this.api.fetch(path);
-    if (!response.ok) {
-      throw new Auth0Refusal(what, response.status);
-    }
-    return (await response.json()) as T;
+async function answerOf<T>(response: Response, what: string): Promise<T> {
+  if (!response.ok) {
+    throw new Auth0Refusal(what, response.status, (await errorBodyOf(response)).errorCode);
   }
+  return (await response.json()) as T;
 }
 
 // Auth0 answers errors in JSON, but whatever stands in front of it may not.

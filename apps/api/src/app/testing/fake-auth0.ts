@@ -32,7 +32,10 @@ export class FakeAuth0 {
   // The errorCode Auth0 sends with a refused creation.
   createErrorCode?: string;
   lookupStatus = 200;
-  // Refuses every address as Auth0 refuses one it finds malformed, stricter than our Email.
+  // The errorCode Auth0 sends with a refused lookup.
+  lookupErrorCode?: string;
+  // Refuses every address as Auth0 refuses one it finds malformed, stricter than our Email, in a
+  // lookup as in a creation.
   refusesEmails = false;
   expiresInSeconds = 86_400;
   private server!: Server;
@@ -61,7 +64,7 @@ export class FakeAuth0 {
       }
       this.userPages.push(url.searchParams);
       if (this.usersStatus !== 200) {
-        return send(res, this.usersStatus, { error: 'insufficient_scope' });
+        return send(res, this.usersStatus, { statusCode: this.usersStatus, errorCode: 'insufficient_scope' });
       }
       const page = Number(url.searchParams.get('page'));
       const perPage = Number(url.searchParams.get('per_page'));
@@ -93,8 +96,11 @@ export class FakeAuth0 {
       if (req.headers.authorization !== `Bearer ${this.latestToken()}`) {
         return send(res, 401, { error: 'invalid_token' });
       }
+      if (this.refusesEmails) {
+        return send(res, 400, { statusCode: 400, error: 'Bad Request' });
+      }
       if (this.lookupStatus !== 200) {
-        return send(res, this.lookupStatus, { error: 'server_error' });
+        return send(res, this.lookupStatus, { statusCode: this.lookupStatus, errorCode: this.lookupErrorCode });
       }
       const email = url.searchParams.get('email');
       return send(res, 200, this.users.filter((user) => user.email === email).map(asReturned));
