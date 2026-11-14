@@ -6,7 +6,7 @@ import {
   VendorScopedEvents,
   Vendors,
 } from '@market-miam/market-days';
-import { vendorAccountClosed, vendorErased, vendorRegistered, vendorStream } from '../vendor-events';
+import { vendorAccountClosed, vendorErased, vendorInvited, vendorRegistered, vendorStream } from '../vendor-events';
 
 describe('Record Vendor Account Closed', () => {
   let store: InMemoryEventStore;
@@ -46,6 +46,15 @@ describe('Record Vendor Account Closed', () => {
   // Only erasure closes an account (ADR 0063).
   it('refuses a registered vendor', async () => {
     given(vendorRegistered());
+
+    await expect(handler.execute(new RecordVendorAccountClosed('vendor-id', '2026-11-14T09:00:05.000Z'))).rejects.toThrow(
+      VendorNotErasedError,
+    );
+    expect(store.newEvents()).toEqual([]);
+  });
+
+  it('refuses an invited vendor', async () => {
+    given(vendorInvited());
 
     await expect(handler.execute(new RecordVendorAccountClosed('vendor-id', '2026-11-14T09:00:05.000Z'))).rejects.toThrow(
       VendorNotErasedError,
