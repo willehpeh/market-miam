@@ -24,19 +24,14 @@ describe('Auth0VendorAccounts', () => {
     await auth0.stop();
   });
 
+  // The address stays unverified: the operator may have mistyped it, and only the vendor's first
+  // sign-in proves the inbox.
   it("opens the account on the vendors' email connection, carrying the vendorId", async () => {
     await accounts().openFor(marie);
 
     expect(auth0.users).toEqual([
       { connection: 'email', email: 'marie@example.fr', app_metadata: { vendorId: 'vendor-id' } },
     ]);
-  });
-
-  // The system sends vendors nothing: the operator tells them (ADR 0060).
-  it('opens the account without Auth0 emailing the vendor', async () => {
-    await accounts().openFor(marie);
-
-    expect(auth0.emailed).toEqual([]);
   });
 
   // Thrown, so the processor's subscription retries: the account may well not exist.

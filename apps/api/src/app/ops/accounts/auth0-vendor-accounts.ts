@@ -5,16 +5,16 @@ import { Auth0Users } from './auth0-users';
 const VENDOR_CONNECTION = 'email';
 
 // Vendors' sign-in accounts in the Auth0 tenant, opened through its Management API
-// (`create:users`), each carrying its vendorId in app_metadata, and sending the vendor nothing:
-// the operator tells them (ADR 0060). The address is opened verified on the operator's word, which
-// alone keeps Auth0 from emailing a sign-in link; the vendor's first sign-in proves the inbox.
+// (`create:users`), each carrying its vendorId in app_metadata (ADR 0060). Auth0 emails the vendor
+// as it opens the account, and nothing here can stop it: the tenant's passwordless email template
+// makes that email the invitation.
 export class Auth0VendorAccounts extends VendorAccounts {
   constructor(private readonly users: Auth0Users) {
     super();
   }
 
   async openFor({ vendorId, email }: Invitation): Promise<AccountOpening> {
-    switch (await this.users.create({ connection: VENDOR_CONNECTION, email, app_metadata: { vendorId }, email_verified: true })) {
+    switch (await this.users.create({ connection: VENDOR_CONNECTION, email, app_metadata: { vendorId } })) {
       case 'created':
         return 'open';
       case 'address-refused':
