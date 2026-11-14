@@ -54,8 +54,10 @@ import {
   ShowCartePricesHandler,
   OpensStorefronts,
   OpensVendorAccounts,
+  ClosesVendorAccounts,
   InviteVendorHandler,
   RecordVendorAccountOpenedHandler,
+  RecordVendorAccountClosedHandler,
   Storefronts,
   VendorAccounts,
   Vendors,
@@ -149,6 +151,12 @@ const processors = [
       new OpensVendorAccounts(vendors, accounts, gateway, appClock),
     inject: [Vendors, VendorAccounts, CommandGateway, Clock],
   },
+  {
+    provide: ClosesVendorAccounts,
+    useFactory: (accounts: VendorAccounts, gateway: CommandGateway, appClock: Clock) =>
+      new ClosesVendorAccounts(accounts, gateway, appClock),
+    inject: [VendorAccounts, CommandGateway, Clock],
+  },
 ];
 
 const commandHandlers = [
@@ -157,6 +165,7 @@ const commandHandlers = [
   ProvideVendorLegalIdentityHandler,
   EraseVendorHandler,
   RecordVendorAccountOpenedHandler,
+  RecordVendorAccountClosedHandler,
   AddItemToCatalogueHandler,
   ChangeItemPhotoHandler,
   ReorderItemsHandler,
