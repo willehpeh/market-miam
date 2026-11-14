@@ -5,11 +5,13 @@ import { VendorAccountClosed, VendorErased, VendorEvent, VendorInvited, VendorLe
 import { ErasedVendor, InvitedVendor, RegisteredVendor, UnknownVendor, VendorState } from './vendor-state';
 import { LegalIdentity } from './legal-identity';
 import { LegalIdentityOnRecord, NoLegalIdentity, ProvidedLegalIdentity } from './legal-identity-on-record';
+import { AccountOnRecord, ClosedAccount, UnrecordedAccount } from './account-on-record';
 
 export class Vendor extends Aggregate {
 
   private _state: VendorState = new UnknownVendor();
   private _legalIdentity: LegalIdentityOnRecord = new NoLegalIdentity();
+  private _account: AccountOnRecord = new UnrecordedAccount();
 
   constructor(private readonly _id: VendorId) {
     super();
@@ -37,7 +39,7 @@ export class Vendor extends Aggregate {
   }
 
   recordAccountClosed(closedAt: Instant) {
-    this._state.recordAccountClosed(() => this.raise(this.accountClosed(closedAt)));
+    this._state.recordAccountClosed(() => this._account.recordClosed(() => this.raise(this.accountClosed(closedAt))));
   }
 
   isErased(): boolean {
@@ -98,6 +100,9 @@ export class Vendor extends Aggregate {
         break;
       case 'VendorErased':
         this._state = new ErasedVendor();
+        break;
+      case 'VendorAccountClosed':
+        this._account = new ClosedAccount();
         break;
     }
   }
