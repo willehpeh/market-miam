@@ -52,11 +52,38 @@ never wrote anything), and ADR 0029 is amended. Left to the owner: delete the lo
 narrow the database's external access on Render (no `ipAllowList` in `render.yaml` today), keeping
 whatever psql access the owner still wants.
 
-**3. Assign a subdomain** (ADR 0065). Ends the hand-written SQL every new vendor waits on
-(ADR 0032). `PUT /api/ops/vendors/:vendorId/subdomain`: in one transaction, a `register` on the
-port claims the name and the vendor's stream records `VendorSubdomainAssigned`, the subdomain
-encrypted. Once only; `admin`, `api`, `app`, `www`, `mail`, `staging` and `status` reserved. In
-the admin app, a field and an *Assign* button on each row with a `vendorId` and no subdomain.
+**3. Assign a subdomain — built 2026-11-14** (ADR 0065). Ends the hand-written SQL every new
+vendor waits on (ADR 0032).
+
+- **Domain.** `AssignSubdomain` raises `VendorSubdomainAssigned { vendorId, subdomain,
+  assignedAt }`, its `subdomain` added to `vendor-pii-fields.ts`. A `Subdomain` value object
+  lower-cases the name and refuses one that is not a DNS label of 3 to 63 characters, or is
+  reserved: `admin`, `api`, `app`, `www`, `mail`, `staging`, `status`. The name is a fact beside
+  the vendor's lifecycle, held as a `SubdomainOnRecord`: given once, and the same name again
+  records it only if no event has. `AssignSubdomainHandler` registers the name and appends the
+  event in one unit of work, the first command to run in one.
+- **Registry.** `register` on `SubdomainRegistry` answers `claimed`, `already-theirs`, `taken` or
+  `has-another`. On Postgres it inserts with `ON CONFLICT DO NOTHING`, since a raised unique
+  violation would abort the transaction.
+- **Route.** `PUT /api/ops/vendors/:vendorId/subdomain { subdomain }` answers 204, the operator's
+  Auth0 id in the event's metadata; 409 to a name another vendor has, or a vendor with one
+  already; 400 to a malformed or reserved name, or a vendor unknown or erased. One exception
+  filter on the ops controller answers its 409s and the invitation's.
+- **Admin app** (ADR 0061). A field and an *Assign* button on each row with a `vendorId` and no
+  subdomain, invited rows included, a dumb form per row. Every *Assign* is held while an
+  assignment is in flight. An accepted one shows the address at once, in lower case, beside
+  *invited* on an invitation's row. A refused one says why beside the row, the name kept in its
+  field: taken (409), not a subdomain a storefront can have (400), or not assigned. Refusals are
+  told by status alone, as the invitation's are, so the two 409s share a message. Rows are
+  tracked by `vendorId`, then email, so a name typed in one stays with its vendor as rows join.
+- **Specs.** The handler against ADR 0065's table, the malformed and reserved names parametrised;
+  every host `render.yaml` names reserved; the Postgres registry's four answers; the subdomain
+  encrypted at rest; the route's 204, metadata, 409s and 400s; the vendor's lifecycle on
+  Postgres, assigning through the route in place of SQL; the assignment feature, the accounts it
+  fills in, and the page.
+
+Going live: push. Subdomains assigned by SQL before it have no event; assigning a vendor the name
+they have records it, and changes nothing else.
 
 **4. Invite a vendor — built 2026-11-14, ahead of slice 3** (the owner's call, 2026-11-02; ADR 0060).
 Ends creating vendors by hand in the Auth0 Dashboard, and makes Market Miam invitation-only.
