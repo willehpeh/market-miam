@@ -225,6 +225,26 @@ describe('OperatorPage', () => {
     expect(page.assignButton('owner@croissant.test')).toBeDisabled();
   });
 
+  // Beside the row it concerns, the name still in its field, to correct or try again.
+  it.each([
+    ['taken', 'Not assigned: that subdomain is taken, or this vendor has one already.'],
+    ['invalid', 'Not assigned: no storefront can have that subdomain.'],
+    ['not-assigned', 'Not assigned: try again.'],
+  ] as const)('says why a subdomain was not assigned (%s), beside its row', async (refusal, message) => {
+    accounts.accounts.set([BRIOCHE, CROISSANT]);
+    const page = await signedIn();
+    await page.assignSubdomain('owner@brioche.test', 'brioche');
+
+    assignments.refused.set({ vendorId: 'brioche-co', refusal });
+    page.detectChanges();
+
+    expect(page.accounts()).toEqual([
+      `owner@brioche.test no subdomain brioche-co ${message}`,
+      'owner@croissant.test no subdomain croissant-co',
+    ]);
+    expect(page.subdomainField('owner@brioche.test')).toHaveValue('brioche');
+  });
+
   // Erasure cannot be undone (ADR 0058): the operator confirms it before it goes.
   it('erases a vendor once the operator confirms', async () => {
     accounts.accounts.set([ACME]);

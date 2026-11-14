@@ -2,6 +2,7 @@ import { Component, input, output, signal } from '@angular/core';
 import { environment } from '../../environments/environment';
 import { AccountListing } from './accounts';
 import { AssignSubdomainForm } from '../assignments/assign-subdomain-form';
+import { AssignmentRefusal, RefusedAssignment } from '../assignments/assignments';
 
 // Every sign-in the identity provider holds, each with the storefront its vendor is
 // reachable at — or a note that it has none yet, or is not a vendor at all — and the
@@ -48,6 +49,7 @@ import { AssignSubdomainForm } from '../assignments/assign-subdomain-form';
                     <admin-assign-subdomain-form
                       [vendor]="account.email ?? vendorId"
                       [assigning]="assigning()"
+                      [refusal]="assignmentRefusalFor(vendorId)"
                       (assign)="assign.emit({ vendorId, subdomain: $event })"
                     />
                   }
@@ -102,11 +104,18 @@ export class AccountList {
   readonly erasureFailed = input<string | null>(null);
   // An assignment the api has not answered: one at a time, so none other is offered meanwhile.
   readonly assigning = input(false);
+  // The vendor whose last assignment did not go, and why.
+  readonly assignmentRefused = input<RefusedAssignment | null>(null);
   readonly erase = output<string>();
   readonly assign = output<{ vendorId: string; subdomain: string }>();
   protected readonly storefrontBaseDomain = environment.storefrontBaseDomain;
   // The vendor whose erasure waits for the operator to confirm it: it cannot be undone (ADR 0058).
   protected readonly confirming = signal<string | null>(null);
+
+  protected assignmentRefusalFor(vendorId: string): AssignmentRefusal | null {
+    const refused = this.assignmentRefused();
+    return refused?.vendorId === vendorId ? refused.refusal : null;
+  }
 
   protected confirmErasure(vendorId: string): void {
     this.confirming.set(null);

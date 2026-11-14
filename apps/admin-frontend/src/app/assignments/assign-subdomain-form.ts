@@ -1,10 +1,18 @@
-import { Component, input, output, signal } from '@angular/core';
+import { Component, computed, input, output, signal } from '@angular/core';
 import { form, FormField, FormRoot } from '@angular/forms/signals';
 import { environment } from '../../environments/environment';
+import { AssignmentRefusal } from './assignments';
 
 interface Assignment {
   subdomain: string;
 }
+
+// Why an assignment didn't go, as the operator reads it beside the vendor's row.
+const REFUSALS: Record<AssignmentRefusal, string> = {
+  taken: 'Not assigned: that subdomain is taken, or this vendor has one already.',
+  invalid: 'Not assigned: no storefront can have that subdomain.',
+  'not-assigned': 'Not assigned: try again.',
+};
 
 // A vendor's subdomain to assign (ADR 0065), typed as the invitation's address is: on a phone
 // first, without capitals or corrections, 44px controls and 16px text. What a subdomain may be
@@ -12,6 +20,7 @@ interface Assignment {
 @Component({
   selector: 'admin-assign-subdomain-form',
   imports: [FormRoot, FormField],
+  host: { class: 'flex flex-col items-end gap-1' },
   template: `
     <form class="flex flex-wrap items-center justify-end gap-2" [formRoot]="assignment">
       <span class="flex items-center gap-1">
@@ -36,14 +45,24 @@ interface Assignment {
         Assign
       </button>
     </form>
+    @if (refusalMessage(); as message) {
+      <span class="text-red-700" role="status">{{ message }}</span>
+    }
   `,
 })
 export class AssignSubdomainForm {
   // Whom the subdomain is for, as the operator reads the row.
   readonly vendor = input.required<string>();
   readonly assigning = input(false);
+  // Why this vendor's last assignment didn't go, the name still in the field.
+  readonly refusal = input<AssignmentRefusal | null>(null);
   readonly assign = output<string>();
   protected readonly storefrontBaseDomain = environment.storefrontBaseDomain;
+
+  protected readonly refusalMessage = computed(() => {
+    const refusal = this.refusal();
+    return refusal ? REFUSALS[refusal] : null;
+  });
 
   private readonly model = signal<Assignment>({ subdomain: '' });
 
