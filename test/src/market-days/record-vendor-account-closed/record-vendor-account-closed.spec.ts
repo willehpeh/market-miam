@@ -20,7 +20,7 @@ describe('Record Vendor Account Closed', () => {
   const given = (...history: DomainEvent[]): void =>
     store.seedWith(vendorStream('vendor-id'), history, { vendorId: 'vendor-id' });
 
-  // The one command an erased vendor accepts: its event carries no personal data (ADR 0063).
+  // The one command an erased vendor carries out: its event carries no personal data (ADR 0063).
   it("records an erased vendor's account closed", async () => {
     given(vendorRegistered(), vendorErased());
 

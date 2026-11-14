@@ -110,7 +110,11 @@ export class ErasedVendor extends VendorState {
     // Already erased: an erasure can be run again.
   }
 
-  // The one command an erased vendor accepts: its event carries no personal data (ADR 0063).
+  override recordAccountOpened(): void {
+    // Closing is under way, and finds the account by vendorId (ADR 0063).
+  }
+
+  // The one command an erased vendor carries out: its event carries no personal data (ADR 0063).
   recordAccountClosed(proceed: () => void): void {
     proceed();
   }

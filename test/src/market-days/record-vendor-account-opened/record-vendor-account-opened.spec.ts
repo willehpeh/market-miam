@@ -5,7 +5,7 @@ import {
   VendorScopedEvents,
   Vendors,
 } from '@market-miam/market-days';
-import { vendorAccountOpened, vendorInvited, vendorRegistered, vendorStream } from '../vendor-events';
+import { vendorAccountOpened, vendorErased, vendorInvited, vendorRegistered, vendorStream } from '../vendor-events';
 
 describe('Record Vendor Account Opened', () => {
   let store: InMemoryEventStore;
@@ -48,5 +48,14 @@ describe('Record Vendor Account Opened', () => {
     await handler.execute(new RecordVendorAccountOpened('vendor-id', '2026-11-11T09:00:05.000Z'));
 
     expect(store.newEvents()).toEqual([expect.objectContaining({ type: 'VendorAccountOpened' })]);
+  });
+
+  // Erased between Auth0 opening the account and the record: closing finds the account by vendorId.
+  it('raises nothing for an erased vendor', async () => {
+    given(vendorInvited(), vendorErased());
+
+    await handler.execute(new RecordVendorAccountOpened('vendor-id', '2026-11-11T09:00:05.000Z'));
+
+    expect(store.newEvents()).toEqual([]);
   });
 });
