@@ -31,6 +31,7 @@ export * from './invite-vendor';
 export * from './register-vendor';
 export * from './provide-vendor-legal-identity';
 export * from './erase-vendor';
+export * from './record-vendor-account-opened';
 export * from './record-vendor-account-closed';
 export * from './vendor/events';
 export * from './vendor';
