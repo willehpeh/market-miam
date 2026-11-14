@@ -34,6 +34,10 @@ export class OperatorPageObject {
     await this.settle();
   }
 
+  addressTyped(): string {
+    return (this.screen.getByLabelText(/invite a vendor/i) as HTMLInputElement).value;
+  }
+
   canInvite(): boolean {
     return !(this.screen.getByRole('button', { name: 'Invite' }) as HTMLButtonElement).disabled;
   }

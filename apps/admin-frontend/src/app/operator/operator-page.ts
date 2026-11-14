@@ -44,7 +44,11 @@ type Whoami = Operator | 'refused' | null;
           </button>
         </div>
         @if (operatorId()) {
-          <admin-invite-vendor-form [sending]="invitations.sending()" (invite)="invitations.invite($event)" />
+          <admin-invite-vendor-form
+            [sending]="invitations.sending()"
+            [refusal]="invitations.refusal()"
+            (invite)="invitations.invite($event)"
+          />
           <admin-account-list />
         }
       } @else {

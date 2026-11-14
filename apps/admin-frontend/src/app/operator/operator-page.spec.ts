@@ -124,4 +124,19 @@ describe('OperatorPage', () => {
 
     expect(page.canInvite()).toBe(false);
   });
+
+  it.each([
+    ['email-in-use', 'An account already holds this address'],
+    ['invalid-email', "That isn't a valid email address"],
+    ['not-sent', "The invitation couldn't be sent. Try again."],
+  ] as const)('says why an invitation was refused (%s), keeping the address to correct or retry', async (refusal, message) => {
+    const page = await signedIn();
+    await page.invite('owner@acme.test');
+
+    invitations.refusal.set(refusal);
+    await page.settle();
+
+    expect(page.says(message)).toBe(true);
+    expect(page.addressTyped()).toBe('owner@acme.test');
+  });
 });

@@ -1,9 +1,17 @@
-import { Component, input, output, signal } from '@angular/core';
+import { Component, computed, input, output, signal } from '@angular/core';
 import { form, FormField, FormRoot } from '@angular/forms/signals';
+import { InvitationRefusal } from './invitations';
 
 interface Invitation {
   email: string;
 }
+
+// Why an invitation didn't go, as the operator reads it.
+const REFUSALS: Record<InvitationRefusal, string> = {
+  'email-in-use': 'An account already holds this address',
+  'invalid-email': "That isn't a valid email address",
+  'not-sent': "The invitation couldn't be sent. Try again.",
+};
 
 // The address to invite (ADR 0060), typed on a phone first: the email keyboard without
 // capitals or corrections, 44px controls, 16px text so iOS doesn't zoom, and the field and
@@ -24,6 +32,7 @@ interface Invitation {
           autocorrect="off"
           spellcheck="false"
           class="min-h-11 w-full rounded border border-gray-300 px-3 text-base"
+          [attr.aria-describedby]="refusalMessage() ? 'invite-refusal' : null"
           [formField]="invitation.email"
         />
         <button
@@ -34,12 +43,21 @@ interface Invitation {
           Invite
         </button>
       </div>
+      @if (refusalMessage(); as message) {
+        <p id="invite-refusal" role="alert" class="mt-2 text-red-700">{{ message }}</p>
+      }
     </form>
   `,
 })
 export class InviteVendorForm {
   readonly sending = input(false);
+  readonly refusal = input<InvitationRefusal | null>(null);
   readonly invite = output<string>();
+
+  protected readonly refusalMessage = computed(() => {
+    const refusal = this.refusal();
+    return refusal ? REFUSALS[refusal] : null;
+  });
 
   protected readonly invitation = form(signal<Invitation>({ email: '' }), {
     submission: {
