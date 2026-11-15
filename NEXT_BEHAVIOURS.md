@@ -20,12 +20,12 @@ comes next; each line points at the doc that holds the detail. Update it when a 
 * the live client — provide their legal identity, then the storefront footer's stopgap comes out (`docs/MENTIONS-LEGALES-PLAN.md` slice 8); declare every dish's allergens (`docs/ALLERGENS-PLAN.md` slice 4); a test Stripe onboarding; later, connect Stripe from the vendor app like any vendor (board R4)
 * the lawyer — brief ready to send: 17 questions with dated copies of the texts and the draft vendor terms. No lawyer has reviewed any Market Miam text yet, so E1 asks for a full read of all of them (`docs/ordering-board/avocat.html`, `docs/CGU-CGV-PLAN.md`)
 * the accountant — brief ready to send: 6 questions on cash-register software, e-invoicing, and refunds and disputes (`docs/ordering-board/expert-comptable.html`)
-* Stripe — on the board, one message to Stripe support: whether a valid hold can still be refused at capture, and what reports it, after two sandbox checks, since the sandbox can't refuse one (Q5); what becomes of Express accounts if their preview ends, needed before the live client's first live account (Q14)
+* Stripe — on the board, one message to Stripe support: whether a valid hold can still be refused at capture, and what reports it, after two sandbox checks, since the sandbox can't refuse one: a cancelled hold's capture refused with no event (2026-11-15), the expiry events read 2026-11-22 (Q5); what becomes of Express accounts if their preview ends, needed before the live client's first live account (Q14)
 * the owner, outside the repo — the Tally form's copy, a CTA and the demo link checked on the real domain (`docs/WEBSITE-PLAN.md` §1–2); the art. 30 register and the DPAs (`docs/PRIVACY-PLAN.md` §2–3); the trademark registration (`docs/MARKET_MIAM.md`)
 
 **Next**
 
-* Q5's sandbox checks, then Stripe support's answers on refused captures (Q5) and on Express accounts if the preview ends (Q14), and the lawyer's DAC7 answer (Q10) (`docs/ordering-board/index.html`)
+* Q5's expiry check on 2026-11-22, then Stripe support's answers on refused captures (Q5) and on Express accounts if the preview ends (Q14), and the lawyer's DAC7 answer (Q10) (`docs/ordering-board/index.html`)
 * design: lo-fi wireframes of the market-day screen and the two-phase checklist, drafted and to agree (`docs/design/vendor-app-wireframes.html`); then the design system as a Design System artifact, and the screens mocked up in it (`docs/ORDERING-PLAN.md`, *Vendor app*)
 * then build, in the plan's order, starting with step 1's payment account in `packages/ordering` (board, *Step 1: the payment account*): the ordering context, the vendor app, the storefront, the website rebuilt around ordering with its price, a pilot with real cards (`docs/ORDERING-PLAN.md` steps 5–9)
 
