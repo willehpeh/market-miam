@@ -40,8 +40,9 @@ describe('Fail Payment Account Registration', () => {
     expect(store.newEvents()).toEqual([]);
   });
 
-  // A failure for an older registration must not close the one now open.
-  it('records nothing when another registration is open', async () => {
+  // Another registration only opens once this one has failed, so this failure is a repeat, as a
+  // processor replaying the first registration would send it: recorded once.
+  it('records nothing for a registration that failed before the open one started', async () => {
     given(
       registrationStarted(),
       registrationFailed(),
