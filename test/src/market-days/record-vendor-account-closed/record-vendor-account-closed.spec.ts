@@ -3,9 +3,9 @@ import {
   RecordVendorAccountClosed,
   RecordVendorAccountClosedHandler,
   VendorNotErasedError,
-  VendorScopedEvents,
   Vendors,
 } from '@market-miam/market-days';
+import { VendorScopedEvents } from '@market-miam/shared-kernel';
 import { vendorAccountClosed, vendorAccountOpened, vendorErased, vendorInvited, vendorRegistered, vendorStream } from '../vendor-events';
 
 describe('Record Vendor Account Closed', () => {

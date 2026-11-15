@@ -1,9 +1,8 @@
-import { MarketId, VendorId } from '@market-miam/shared-kernel';
+import { MarketId, VendorId, VendorScopedEvents } from '@market-miam/shared-kernel';
 import { Clock, LocalDate } from '@market-miam/common';
 import { MarketDay } from './market-day';
 import { MarketHours } from './market-hours';
 import { MarketDayId } from './market-day-id';
-import { VendorScopedEvents } from '../vendor-scoped-events';
 import { Calendars } from '../calendar';
 
 export class MarketDays {

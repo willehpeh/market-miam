@@ -1,6 +1,6 @@
 import { InMemoryEventStore } from '@market-miam/event-sourcing';
-import { VendorScopedEvents } from '@market-miam/market-days';
 import { SetStorefrontCoverPhotoHandler, StorefrontNotOpenError, Storefronts } from '@market-miam/market-days';
+import { VendorScopedEvents } from '@market-miam/shared-kernel';
 import { TestSetStorefrontCoverPhoto } from './test-data';
 
 describe('Set Storefront Cover Photo', () => {

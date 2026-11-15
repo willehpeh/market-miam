@@ -1,5 +1,6 @@
 import { Aggregate, EventStore, StoredEvent } from '@market-miam/event-sourcing';
-import { VENDOR_ID_METADATA_KEY, VendorId } from '@market-miam/shared-kernel';
+import { VendorId } from './vendor-id';
+import { VENDOR_ID_METADATA_KEY } from './vendor-metadata';
 
 export class VendorScopedEvents {
   constructor(private readonly store: EventStore) {

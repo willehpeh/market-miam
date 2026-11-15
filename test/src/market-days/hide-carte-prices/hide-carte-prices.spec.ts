@@ -1,5 +1,6 @@
 import { InMemoryEventStore } from '@market-miam/event-sourcing';
-import { HideCartePricesHandler, StorefrontNotOpenError, Storefronts, VendorScopedEvents } from '@market-miam/market-days';
+import { HideCartePricesHandler, StorefrontNotOpenError, Storefronts } from '@market-miam/market-days';
+import { VendorScopedEvents } from '@market-miam/shared-kernel';
 import { TestHideCartePrices } from './test-data';
 
 // Prices on the carte are the vendor's choice, and they are opted in: a storefront that

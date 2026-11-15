@@ -1,6 +1,6 @@
 import { InMemoryEventStore } from '@market-miam/event-sourcing';
-import { VendorScopedEvents } from '@market-miam/market-days';
 import { Calendars, Catalogues, InMemorySubdomainRegistry, PublishStorefrontHandler, StorefrontNotReadyToPublish, StorefrontPublication, Storefronts, Vendors } from '@market-miam/market-days';
+import { VendorScopedEvents } from '@market-miam/shared-kernel';
 import { TestPublishStorefront } from './test-data';
 
 describe('Publish Storefront', () => {

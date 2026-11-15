@@ -9,9 +9,9 @@ import {
   SubdomainTakenError,
   VendorErasedError,
   VendorNotInvitedError,
-  VendorScopedEvents,
   Vendors,
 } from '@market-miam/market-days';
+import { VendorScopedEvents } from '@market-miam/shared-kernel';
 import { vendorErased, vendorInvited, vendorRegistered, vendorStream, vendorSubdomainAssigned } from '../vendor-events';
 
 const ASSIGNED_AT = '2026-11-14T09:00:00.000Z';

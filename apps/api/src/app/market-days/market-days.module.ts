@@ -64,10 +64,10 @@ import {
   Vendors,
   VendorLegalIdentityViewProjection,
   VendorLegalIdentityViewStore,
-  VendorScopedEvents,
   VendorStorefrontViewProjection,
   VendorStorefrontViewStore,
 } from '@market-miam/market-days';
+import { VendorScopedEvents } from '@market-miam/shared-kernel';
 import { SignedUploads, signedUploadsFor } from '../signed-uploads';
 import { VendorsController } from './vendors.controller';
 import { StorefrontController } from './storefront.controller';

@@ -10,10 +10,10 @@ import {
   UnknownAllergenError,
   VariantInput,
   Catalogues,
-  VendorScopedEvents
 } from '@market-miam/market-days';
 import { EmptyValueError } from '@market-miam/common';
 import { InMemoryEventStore } from '@market-miam/event-sourcing';
+import { VendorScopedEvents } from '@market-miam/shared-kernel';
 import { TestAddItemToCatalogue } from './test-data';
 
 describe('Add Item To Catalogue', () => {

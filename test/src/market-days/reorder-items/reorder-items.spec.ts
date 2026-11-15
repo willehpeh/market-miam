@@ -6,10 +6,9 @@ import {
   NoSuchItemError,
   ReorderItems,
   ReorderItemsHandler,
-  VendorScopedEvents,
 } from '@market-miam/market-days';
 import { catalogueStream, itemAdded, itemRetired, itemsReordered } from '../catalogue-events';
-import { VendorId } from '@market-miam/shared-kernel';
+import { VendorId, VendorScopedEvents } from '@market-miam/shared-kernel';
 
 describe('Reorder Items', () => {
   let store: InMemoryEventStore;

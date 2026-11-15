@@ -1,6 +1,6 @@
 import { InMemoryEventStore } from '@market-miam/event-sourcing';
-import { VendorScopedEvents } from '@market-miam/market-days';
 import { OpenStorefrontHandler, Storefronts } from '@market-miam/market-days';
+import { VendorScopedEvents } from '@market-miam/shared-kernel';
 import { TestOpenStorefront } from './test-data';
 
 describe('Open Storefront', () => {

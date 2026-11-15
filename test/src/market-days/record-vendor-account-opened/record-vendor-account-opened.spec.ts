@@ -3,9 +3,9 @@ import {
   RecordVendorAccountOpened,
   RecordVendorAccountOpenedHandler,
   VendorNotInvitedError,
-  VendorScopedEvents,
   Vendors,
 } from '@market-miam/market-days';
+import { VendorScopedEvents } from '@market-miam/shared-kernel';
 import { vendorAccountOpened, vendorErased, vendorInvited, vendorRegistered, vendorStream } from '../vendor-events';
 
 describe('Record Vendor Account Opened', () => {

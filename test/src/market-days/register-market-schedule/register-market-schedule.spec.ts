@@ -1,5 +1,4 @@
 import { InMemoryEventStore } from '@market-miam/event-sourcing';
-import { VendorScopedEvents } from '@market-miam/market-days';
 import { TestRegisterMarketSchedule } from './test-data';
 import {
   Calendars,
@@ -9,6 +8,7 @@ import {
 } from '@market-miam/market-days';
 import { EmptyValueError } from '@market-miam/common';
 import { InvalidPostalCodeError } from '@market-miam/market-days';
+import { VendorScopedEvents } from '@market-miam/shared-kernel';
 
 describe('Register Market Schedule', () => {
   let store: InMemoryEventStore;

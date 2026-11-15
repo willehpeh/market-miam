@@ -4,9 +4,9 @@ import {
   EraseVendorHandler,
   ErasesVendors,
   InMemorySubdomainRegistry,
-  VendorScopedEvents,
   Vendors,
 } from '@market-miam/market-days';
+import { VendorScopedEvents } from '@market-miam/shared-kernel';
 
 describe('Erases Vendors', () => {
   let store: InMemoryEventStore;

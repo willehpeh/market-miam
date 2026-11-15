@@ -1,5 +1,6 @@
 import { InMemoryEventStore } from '@market-miam/event-sourcing';
-import { ShowCartePricesHandler, StorefrontNotOpenError, Storefronts, VendorScopedEvents } from '@market-miam/market-days';
+import { ShowCartePricesHandler, StorefrontNotOpenError, Storefronts } from '@market-miam/market-days';
+import { VendorScopedEvents } from '@market-miam/shared-kernel';
 import { TestShowCartePrices } from './test-data';
 
 describe('Show Carte Prices', () => {

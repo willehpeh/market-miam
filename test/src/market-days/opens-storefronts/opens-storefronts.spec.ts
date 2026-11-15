@@ -1,4 +1,3 @@
-import { VendorScopedEvents } from '@market-miam/market-days';
 import {
   InMemoryCheckpoint,
   InMemoryEventStore,
@@ -10,6 +9,7 @@ import {
   OpensStorefronts,
   Vendors,
 } from '@market-miam/market-days';
+import { VendorScopedEvents } from '@market-miam/shared-kernel';
 import { RecordingCommandGateway } from '../../recording-command-gateway';
 import { TestRegisterVendor } from '../register-vendor/test-data';
 

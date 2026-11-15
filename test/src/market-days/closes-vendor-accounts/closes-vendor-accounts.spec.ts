@@ -5,9 +5,9 @@ import {
   EraseVendorHandler,
   InMemoryVendorAccounts,
   RecordVendorAccountClosed,
-  VendorScopedEvents,
   Vendors,
 } from '@market-miam/market-days';
+import { VendorScopedEvents } from '@market-miam/shared-kernel';
 import { clockAt } from '../../clock-at';
 import { RecordingCommandGateway } from '../../recording-command-gateway';
 import { vendorRegistered, vendorStream } from '../vendor-events';

@@ -18,9 +18,9 @@ import {
   ReopenMarketDay,
   ReopenMarketDayHandler,
   SetMarketDayMenuHandler,
-  VendorScopedEvents
 } from '@market-miam/market-days';
 import type { ItemOutcome, MarketScheduleAmended, MarketScheduleRegistered } from '@market-miam/market-days';
+import { VendorScopedEvents } from '@market-miam/shared-kernel';
 import { clockAt } from '../clock-at';
 import { seedCatalogue } from '../seed-catalogue';
 import { calendarStream, scheduleAmended, scheduleRegistered } from './calendar-events';

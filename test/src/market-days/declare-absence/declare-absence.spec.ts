@@ -5,8 +5,8 @@ import {
   DeclareAbsenceHandler,
   InvalidDateRangeError,
   NoSuchScheduleError,
-  VendorScopedEvents
 } from '@market-miam/market-days';
+import { VendorScopedEvents } from '@market-miam/shared-kernel';
 import { absenceDeclared, calendarStream, scheduleRegistered } from '../calendar-events';
 
 describe('Declare Absence', () => {

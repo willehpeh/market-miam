@@ -1,6 +1,5 @@
 import { Storefront } from './storefront';
-import { VendorScopedEvents } from '../vendor-scoped-events';
-import { VendorScopedRepository } from '../vendor-scoped-repository';
+import { VendorScopedEvents, VendorScopedRepository } from '@market-miam/shared-kernel';
 
 export class Storefronts extends VendorScopedRepository<Storefront> {
   constructor(vendorEvents: VendorScopedEvents) {

@@ -1,6 +1,5 @@
 import { describe } from 'vitest';
-import { VendorScopedEvents } from '@market-miam/market-days';
-import { VendorId } from '@market-miam/shared-kernel';
+import { VendorId, VendorScopedEvents } from '@market-miam/shared-kernel';
 import { DomainEvent, InMemoryEventStore } from '@market-miam/event-sourcing';
 import { Catalogues, InvalidItemPricingError, NoSuchItemError, ReviseItem, ReviseItemHandler } from '@market-miam/market-days';
 import { catalogueStream, itemAdded, itemRetired, itemRevised } from '../catalogue-events';

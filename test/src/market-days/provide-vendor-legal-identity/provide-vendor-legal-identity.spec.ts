@@ -1,6 +1,7 @@
 import { InMemoryEventStore } from '@market-miam/event-sourcing';
-import { IncompleteCompanyDetailsError, IncompleteMediatorError, InvalidSiretError, InvalidVatRegimeError, ProvideVendorLegalIdentityHandler, VendorErasedError, VendorNotRegisteredError, VendorScopedEvents, Vendors } from '@market-miam/market-days';
+import { IncompleteCompanyDetailsError, IncompleteMediatorError, InvalidSiretError, InvalidVatRegimeError, ProvideVendorLegalIdentityHandler, VendorErasedError, VendorNotRegisteredError, Vendors } from '@market-miam/market-days';
 import { EmptyValueError, InvalidEmailError, InvalidUrlError } from '@market-miam/common';
+import { VendorScopedEvents } from '@market-miam/shared-kernel';
 import { vendorErased, vendorInvited } from '../vendor-events';
 import { TestProvideVendorLegalIdentity } from './test-data';
 

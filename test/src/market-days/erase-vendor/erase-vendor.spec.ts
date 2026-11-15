@@ -3,9 +3,9 @@ import {
   EraseVendor,
   EraseVendorHandler,
   VendorNotRegisteredError,
-  VendorScopedEvents,
   Vendors,
 } from '@market-miam/market-days';
+import { VendorScopedEvents } from '@market-miam/shared-kernel';
 import { vendorErased, vendorInvited, vendorRegistered, vendorStream } from '../vendor-events';
 
 describe('Erase Vendor', () => {

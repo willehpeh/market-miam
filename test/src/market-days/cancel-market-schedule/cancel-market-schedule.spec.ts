@@ -4,8 +4,8 @@ import {
   CancelMarketSchedule,
   CancelMarketScheduleHandler,
   NoSuchScheduleError,
-  VendorScopedEvents
 } from '@market-miam/market-days';
+import { VendorScopedEvents } from '@market-miam/shared-kernel';
 import { calendarStream, scheduleCancelled, scheduleRegistered } from '../calendar-events';
 
 describe('Cancel Market Schedule', () => {

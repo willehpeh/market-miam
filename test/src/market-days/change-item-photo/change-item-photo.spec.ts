@@ -1,7 +1,7 @@
 import { describe } from 'vitest';
-import { VendorScopedEvents } from '@market-miam/market-days';
 import { DomainEvent, InMemoryEventStore } from '@market-miam/event-sourcing';
 import { Catalogues, ChangeItemPhoto, ChangeItemPhotoHandler, NoSuchItemError } from '@market-miam/market-days';
+import { VendorScopedEvents } from '@market-miam/shared-kernel';
 import { catalogueStream, itemAdded } from '../catalogue-events';
 import { TestChangeItemPhoto } from './test-data';
 

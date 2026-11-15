@@ -6,10 +6,10 @@ import {
   NoSuchItemError,
   UnscheduledMarketError,
   SetMarketPricesHandler,
-  VendorScopedEvents
 } from '@market-miam/market-days';
 import { InvalidPriceError } from '@market-miam/market-days';
 import { EmptyValueError } from '@market-miam/common';
+import { VendorScopedEvents } from '@market-miam/shared-kernel';
 import { seedCatalogue } from '../../seed-catalogue';
 import { calendarStream, marketPricesSet, scheduleRegistered } from '../calendar-events';
 import { TestSetMarketPrices } from './test-data';

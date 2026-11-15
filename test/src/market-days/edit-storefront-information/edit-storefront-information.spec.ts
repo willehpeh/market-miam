@@ -1,7 +1,7 @@
 import { InMemoryEventStore } from '@market-miam/event-sourcing';
-import { VendorScopedEvents } from '@market-miam/market-days';
 import { EditStorefrontInformationHandler, StorefrontNotOpenError, Storefronts } from '@market-miam/market-days';
 import { EmptyValueError } from '@market-miam/common';
+import { VendorScopedEvents } from '@market-miam/shared-kernel';
 import { TestEditStorefrontInformation } from './test-data';
 
 describe('Edit Storefront Information', () => {

@@ -5,8 +5,8 @@ import {
   Calendars,
   ImmutableMarketError,
   NoSuchScheduleError,
-  VendorScopedEvents
 } from '@market-miam/market-days';
+import { VendorScopedEvents } from '@market-miam/shared-kernel';
 import { calendarStream, scheduleRegistered } from '../calendar-events';
 import { TestRegisterMarketSchedule } from '../register-market-schedule/test-data';
 

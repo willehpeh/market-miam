@@ -1,5 +1,6 @@
 import { InMemoryEventStore } from '@market-miam/event-sourcing';
-import { InviteVendorHandler, VendorErasedError, VendorScopedEvents, Vendors } from '@market-miam/market-days';
+import { InviteVendorHandler, VendorErasedError, Vendors } from '@market-miam/market-days';
+import { VendorScopedEvents } from '@market-miam/shared-kernel';
 import { vendorErased, vendorInvited, vendorRegistered, vendorStream } from '../vendor-events';
 import { TestInviteVendor } from './test-data';
 
