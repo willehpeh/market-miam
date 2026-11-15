@@ -96,4 +96,22 @@ describe('Creates Payment Accounts', () => {
       new FailPaymentAccountRegistration(registration.vendorId, registration.registrationId, NOW),
     ]);
   });
+
+  // The first attempt created the account but its answer was lost; retried past the token's hour,
+  // Stripe answers token_expired. The account's own notice will confirm the registration (ADR 0068).
+  it('records nothing when its token is unusable but an account was created for it', async () => {
+    const registration = TestStartPaymentAccountRegistration.valid();
+    const createdBefore = new TokenRejectingPaymentAccounts([
+      {
+        vendorId: registration.vendorId,
+        registrationId: registration.registrationId,
+        accountToken: registration.accountToken,
+      },
+    ]);
+
+    await start(registration);
+    await process(createdBefore);
+
+    expect(gateway.dispatched).toEqual([]);
+  });
 });
