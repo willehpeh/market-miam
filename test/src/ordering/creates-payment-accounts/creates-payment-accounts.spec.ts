@@ -84,9 +84,9 @@ describe('Creates Payment Accounts', () => {
     ]);
   });
 
-  // A token error only proves a refusal once no account carries the registration: a lost success,
-  // retried past the token's hour, answers token_expired too (ADR 0068).
-  it('records the registration failed when its token is unusable and no account carries it', async () => {
+  // A token error only proves a refusal once no account was created for the registration: a lost
+  // success, retried past the token's hour, answers token_expired too (ADR 0068).
+  it('records the registration failed when its token is unusable and no account was created for it', async () => {
     const registration = TestStartPaymentAccountRegistration.valid();
 
     await start(registration);

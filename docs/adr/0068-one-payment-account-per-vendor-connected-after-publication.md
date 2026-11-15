@@ -48,9 +48,9 @@ acceptance of Stripe's terms. Only the creation names the preview version (Q14).
 **Only Stripe's final answers refuse a registration.** Anything ambiguous, a timeout, a dropped
 connection, a 5xx or a 429, is retried with the same key. A token error is not final on its own: a
 lost success retried past the token's hour answers `token_expired`, so before recording a refusal
-on one, Ordering looks for an account carrying the registration's ID. This inverts the board's
-"any error not known to be passing counts as a refusal", which would turn a lost success into a
-failure, and the vendor's next tap into a second account.
+on one, Ordering looks for an account already created for the registration. This inverts the
+board's "any error not known to be passing counts as a refusal", which would turn a lost success
+into a failure, and the vendor's next tap into a second account.
 
 **What Stripe says of the account is recorded as observations, one fact at a time**: confirmed,
 card payments active or not, an issue open or resolved. Each is recorded only when it changed, and
