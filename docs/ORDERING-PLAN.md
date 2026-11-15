@@ -46,10 +46,10 @@ Vendor never knows the code: stops pickups off a customer-visible tablet, and a 
 
 ### Domain / API
 
-- New context `packages/ordering` on shared event log (ADR 0048). Orders attach only to live days, whose stream exists (menu set) → no MarketDay materialisation (LIVE-MODE decision 50 trigger not fired).
-- Payment port + in-memory fake; Stripe adapter. Local webhooks via Stripe CLI.
-- Payment account: its events, the webhook notices and the processor that reads them (board, *Step 1: the payment account*).
-- Webhooks: verify signatures (`rawBody: true`); at-least-once → idempotency front gate (`docs/archive/DEFERRED.md` "Client-supplied idempotency") now required.
+- New context `packages/ordering` on shared event log (ADRs 0048, 0066), asking Market Days through narrow published queries, with `VendorErased` the one event it consumes; orders taken while the day's phase is `trading`. Orders attach only to live days, whose stream exists (menu set) → no MarketDay materialisation (LIVE-MODE decision 50 trigger not fired).
+- Payment port + in-memory fake; Stripe adapter over raw HTTP, its contract run against `FakeStripe` on every push and the sandbox nightly (ADR 0069). Local webhooks via Stripe CLI.
+- Payment account: its events, the webhook notices and the processor that reads them (board, *Step 1: the payment account*; ADR 0068): one per vendor, registered after publication, retired on erasure.
+- Webhooks: verify signatures (`rawBody: true`); at-least-once → a stream keyed on the identity Stripe sends back, its first event the gate (ADR 0067). Account notices go through one processor, since their state goes both ways; payment events go direct to the order, which only moves forward.
 - Order confirmed from webhook only, never from redirect.
 - Per-day key, e.g. `${vendorId}:orders:${marketId}:${date}`, in Ordering's own key store (see Keys below).
 
@@ -183,7 +183,7 @@ Per `BOI-TVA-DECLA-30-10-30` (version of 2025-10-01), checked 2026-10-04:
 2. Stripe platform account (open); test onboarding with live client.
 3. Finish mentions légales and add allergens: both deployed 2026-10-13. Each rollout still waits on the live client (`MENTIONS-LEGALES-PLAN.md` slice 8, `ALLERGENS-PLAN.md` slice 4).
 4. Key tombstones for vendor keys: done with mentions légales slice 3 (`21a993e`).
-5. Ordering context: payment port, webhooks, idempotency gate, day-key store + expiry, code check, scheduler.
+5. Ordering context: payment port, webhooks, idempotency gate (designed for step 1 in ADRs 0066–0069), day-key store + expiry, code check, scheduler.
 6. Vendor app: onboarding, live order list, code input, *remis sans code*.
 7. Storefront: basket, Checkout, status page; email provider.
 8. Website rebuilt around ordering.
