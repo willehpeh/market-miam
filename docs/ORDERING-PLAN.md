@@ -46,8 +46,8 @@ Vendor never knows the code: stops pickups off a customer-visible tablet, and a 
 
 ### Domain / API
 
-- New context `packages/ordering` on shared event log (ADRs 0048, 0066), asking Market Days through narrow published queries, with `VendorErased` the one event it consumes; orders taken while the day's phase is `trading`. Orders attach only to live days, whose stream exists (menu set) → no MarketDay materialisation (LIVE-MODE decision 50 trigger not fired).
-- Payment port + in-memory fake; Stripe adapter over raw HTTP, its contract run against `FakeStripe` on every push and the sandbox nightly (ADR 0069). Local webhooks via Stripe CLI.
+- New context `packages/ordering` on shared event log (ADRs 0048, 0066), asking Market Days through narrow published queries, with the vendor's erasure the one event it consumes. Orders attach only to live days, whose stream exists (menu set) → no MarketDay materialisation (LIVE-MODE decision 50 trigger not fired).
+- Payment port + in-memory fake; Stripe adapter over raw HTTP, its contract run against an HTTP fake on every push and the sandbox nightly (ADR 0069). Local webhooks via Stripe CLI.
 - Payment account: its events, the webhook notices and the processor that reads them (board, *Step 1: the payment account*; ADR 0068): one per vendor, registered after publication, retired on erasure.
 - Webhooks: verify signatures (`rawBody: true`); at-least-once → a stream keyed on the identity Stripe sends back, its first event the gate (ADR 0067). Account notices go through one processor, since their state goes both ways; payment events go direct to the order, which only moves forward.
 - Order confirmed from webhook only, never from redirect.

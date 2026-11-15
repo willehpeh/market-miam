@@ -1,6 +1,10 @@
 # Architecture Decision Records
 
 Ordered chronologically by when each decision entered the codebase.
+An ADR records a decision that is hard to reverse or crosses contexts, with
+its reasons, and is written when the code that embodies it lands. Names and
+shapes (routes, classes, commands, streams) come out of the specs, not the
+ADR. Product choices live on the plan or board that owns them.
 Product-level decisions live in `docs/MARKET_MIAM.md`; deliberately
 deferred decisions in the root `NEXT_BEHAVIOURS.md` (see ADR 0017;
 detailed rationale in `docs/archive/DEFERRED.md`).
@@ -75,5 +79,5 @@ detailed rationale in `docs/archive/DEFERRED.md`).
 | [0066](0066-ordering-is-a-context-asking-market-days-through-published-queries.md) | Ordering is a context on the shared log, asking Market Days through published queries | 2026-11-15 |
 | [0067](0067-stripe-notices-accounts-through-a-processor-payments-direct.md) | Stripe's notices: accounts through one processor, payments direct, the first event the gate | 2026-11-15 |
 | [0068](0068-one-payment-account-per-vendor-connected-after-publication.md) | One payment account per vendor, connected after publication, created once | 2026-11-15 |
-| [0069](0069-stripe-adapter-raw-http-one-contract-nightly-sandbox.md) | The Stripe adapter: raw HTTP behind a gateway, one contract, the sandbox nightly | 2026-11-15 |
+| [0069](0069-stripe-adapter-raw-http-one-contract-nightly-sandbox.md) | The Stripe adapter: raw HTTP, one contract, the sandbox nightly | 2026-11-15 |
 | [0070](0070-module-boundaries-by-where-a-project-runs-and-what-it-is.md) | Module boundaries are enforced by two tags: where a project runs and what it is | 2026-11-15 |

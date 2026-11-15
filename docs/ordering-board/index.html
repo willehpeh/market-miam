@@ -265,8 +265,8 @@
       webhook means the same thing: something changed. The processor fetches the account, naming the merchant
       configuration and the requirements in <code>include</code>, and dispatches a command; a repeated
       webhook records nothing. It reads notices in log order, and ADR 0036 lets one instance commit each, so a
-      stale fetch never lands after a fresher one. It sends one command per aspect, each carrying the account
-      ID it saw, and ignores any account but the vendor's current one (ADRs 0067 and 0068).
+      stale fetch never lands after a fresher one. It records one fact at a time, only when it changed, and
+      only for the vendor's current account (ADRs 0067 and 0068).
     </p>
     <p class="aside">
       The create call uses the registration ID as its idempotency key and puts the vendor ID in the account's
@@ -327,8 +327,11 @@
         <tbody>
           <tr><td>2</td><td>An order for a sold-out dish, or for a day closed or ended while the customer was in Checkout, is refused automatically. An order is never partly filled, so one sold-out dish refuses it whole</td></tr>
           <tr><td>2, rush</td><td>The vendor can pause new orders without closing the day, for a set time with a default on the screen, or until they resume. A timed pause records when it ends and needs no timer; only an open-ended one needs <em>Ordering resumed</em>. An order whose Checkout began before the pause still goes through</td></tr>
+          <tr><td>2, when</td><td>Orders are taken while the market trades, its hours by the clock, not before it opens: an order at 6 a.m. for an 8 a.m. market would time out while the vendor sets up. Opening earlier can come if vendors ask (15 November 2026)</td></tr>
+          <tr><td>2, price</td><td>Checkout prices the order from Market Days' menu at that moment; the order then records what Stripe holds, so a price changed in between never reaches it (15 November 2026)</td></tr>
           <tr><td>3a, 3b</td><td>The vendor has 10 minutes to accept, capped at the day's end time (Q3). The customer can cancel until the vendor's acceptance reaches us, the one anonymous write (R1). The vendor's screen waits a few seconds before sending an acceptance, so a mistaken tap can be undone; until it arrives, the customer can still cancel</td></tr>
           <tr><td>5</td><td>Closing by hand with paid orders not collected asks the vendor to confirm. If the day then ends without reopening, those orders are refunded at the end time instead of becoming no-shows: the vendor chose to leave early</td></tr>
+          <tr><td>5, erasure</td><td>A vendor erased with orders in flight: their holds are released, paid orders not yet collected refunded at once, and customers emailed as usual, their day's key living until the day ends. The admin app may warn the operator, never block (15 November 2026)</td></tr>
           <tr><td>6</td><td>Refunds go only to the card, never in cash, and start from the Express Dashboard for now (Q8). Each is recorded from Stripe's webhook with its amount, partial ones included. A dispute is not a refund: it gets its own events, opened then won or lost. How both enter the closings and VAT is the accountant's <a href="expert-comptable.html#k6">K6</a></td></tr>
           <tr><td>Payouts</td><td>Nothing of ours reacts to a payout, so it left the timeline; the vendor follows payouts in the Express Dashboard</td></tr>
           <tr><td>Customer emails</td><td>Order received, with the status link · refused or no answer in time · cancelled by them · paid, with the code · handed over, with or without the code · no-show, sent before the day's details are erased · refunded. Disputes send nothing: the customer's bank handles them</td></tr>
@@ -370,7 +373,7 @@
           <tr>
             <td>Webhooks</td>
             <td>Stripe</td>
-            <td>Stripe's signature, checked by us; a replay finds its stream's first position taken. One route per event destination: accounts now, payments with the orders (ADR 0067)</td>
+            <td>Stripe's signature, checked by us; a replay finds its stream's first position taken (ADR 0067). Stripe files account events and direct-charge events under different scopes, so accounts and payments arrive on separate event destinations, each with its own signing secret</td>
           </tr>
         </tbody>
       </table>
