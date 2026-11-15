@@ -134,7 +134,9 @@
           log only through webhooks: checkout, capture, cancellation, refund. The append lock never waits on
           Stripe.</p>
         <p>Each request uses the order or registration ID as its idempotency key, so a retry cannot act twice.
-          Account creation is a v2 call: a retry within 30 days returns the account already made, and failed
+          Account creation is a v2 call: a retry returns the account already made while the account token
+          lives, an hour; after that it answers <code>token_expired</code>, so a token error makes the
+          processor look for the account by its registration ID before recording a refusal. Failed
           work is finished, not repeated. Captures, cancellations and refunds are v1 calls: keys last 24 hours,
           and a retry gets the first answer again, even an error (ADR 0068). A refused account creation is recorded through a command
           (<a href="#account">step 1</a>); a refused capture still needs a path (<a href="#q5">Q5</a>).</p>
@@ -246,7 +248,7 @@
         <thead><tr><th>Event</th><th>Carries</th><th>When</th></tr></thead>
         <tbody>
           <tr><td><code>Payment<wbr>Account<wbr>Registration<wbr>Started</code></td><td>Registration ID, account token</td><td>The vendor taps <em>Connect Stripe</em>. Refused while a registration is open or an account exists, so a double tap makes one account</td></tr>
-          <tr><td><code>Payment<wbr>Account<wbr>Registration<wbr>Failed</code></td><td>Registration ID, our code</td><td>Stripe refuses the creation for good: a 4xx with its code, a used or expired token among them. A timeout, a 5xx or a 429 is retried with the same key, never counted as a refusal, or a lost success would let the next tap make a second account (ADR 0068). The vendor can try again</td></tr>
+          <tr><td><code>Payment<wbr>Account<wbr>Registration<wbr>Failed</code></td><td>Registration ID, our code</td><td>Stripe refuses the creation for good: a 4xx with its code. A used or expired token counts only once no account carries the registration ID in its metadata. A timeout, a 5xx or a 429 is retried with the same key, never counted as a refusal, or a lost success would let the next tap make a second account (ADR 0068). The vendor can try again</td></tr>
           <tr><td><code>Payment<wbr>Account<wbr>Update<wbr>Detected</code></td><td>Stripe's event ID, account ID</td><td>Every account webhook, before anything else happens, on a stream of its own named after Stripe's event: a replay finds it taken and records nothing (ADR 0067). Internal to Ordering</td></tr>
           <tr><td><code>Payment<wbr>Account<wbr>Registration<wbr>Confirmed</code></td><td>Stripe account ID</td><td>A notice confirms the account, which ends the registration</td></tr>
           <tr><td><code>Payment<wbr>Account<wbr>Enabled</code></td><td>Nothing more</td><td>Card payments become <code>active</code>, the only status that lets an order through (R4)</td></tr>

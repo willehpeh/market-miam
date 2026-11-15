@@ -43,8 +43,10 @@ five minutes off.
    `nightly.yml`, and by hand with `nx run api:test:sandbox`. It refuses a live key, `sk_live_` or
    `rk_live_`, as the tenant spec refuses production, and closes every account it creates. It
    covers what only the real thing proves: a token and an account on the preview, the replay of a
-   creation, a final refusal for a used token, an account fetched and read into our codes, an
-   onboarding link.
+   creation, a refusal for a used token, the lookup that finds an account by its registration ID,
+   an account fetched and read into our codes, an onboarding link. It doesn't wait out a token's
+   hour: `FakeStripe` answers a replay past it with `token_expired`, as the sandbox did on
+   2026-11-15, and the processor's spec proves the lookup follows.
 
 **Each fake has its own job**, and the contract holds them together. The in-memory fake, told to
 fail ambiguously twice and then succeed, proves the processor retries with the same key and

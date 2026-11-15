@@ -21,10 +21,14 @@ The sandbox settled more on 2026-11-15, from the French platform:
   (`tos_acceptance_on_behalf_not_allowed`).
 - A token lives an hour, by its `expires_at`, and makes one account: sent again with a new key, it
   is refused with `token_already_used`.
-- v2's idempotency: a replay with the same key within 30 days returns the account already created,
-  11 minutes later and with the token already used; failed work is finished rather than repeated
-  (Stripe's v2 overview). v1's 24 hours and saved responses govern the payment calls of later
-  steps, not this one.
+- v2's idempotency holds only while the token lives. A replay with the same key returns the
+  account already created, straight away and 11 minutes later with the token already used. After
+  the token's hour it answers `token_expired`: Stripe checks the token before it looks up the key,
+  so the 30 days of Stripe's v2 overview don't hold for this call. Failed work is finished rather
+  than repeated. v1's 24 hours and saved responses govern the payment calls of later steps, not
+  this one.
+- Connected accounts can be listed by creation date with their metadata, `GET /v1/accounts`, a
+  top-level list and so immediately consistent. Our v2 accounts appear there; closed ones don't.
 - An account can't take a hold before its onboarding is done: "Your account cannot currently make
   charges".
 - The sandbox closed accounts of our setup, though Stripe's reference lists
@@ -57,13 +61,18 @@ behind the vendor's guard.
 - `POST /v2/core/accounts` with `Stripe-Version: 2026-10-28.preview`, on this call only; the
   registration ID as the idempotency key; the vendor ID and the registration ID in the account's
   metadata; the token, with no terms accepted in it.
-- Only a final answer is a refusal. A 4xx with Stripe's code, an expired or used token among them,
-  sends `FailPaymentAccountRegistration`, which records
+- Only a final answer is a refusal. A 4xx with Stripe's code sends
+  `FailPaymentAccountRegistration`, which records
   `PaymentAccountRegistrationFailed { registrationId, code }`; the vendor can tap again.
+- A token error, `token_expired` or `token_already_used`, can hide a success whose answer was lost,
+  once retries outlast the token's hour, and the processor can't tell a first attempt from a retry.
+  So on a token error it first looks for an account carrying the registration ID in its metadata,
+  among accounts created since the registration started. Found, it records nothing, and the
+  account's notice confirms the registration. Not found, the refusal is recorded.
 - Anything ambiguous, a timeout, a dropped connection, a 5xx or a 429, throws. The subscription
-  rolls the event back with its checkpoint and retries it with the same key (ADR 0015), and v2's
-  replay tells the truth. While Stripe is down the processor waits, and the stuck-subscription
-  alert fires.
+  rolls the event back with its checkpoint and retries it with the same key (ADR 0015); while the
+  token lives, v2's replay tells the truth. While Stripe is down the processor waits, and the
+  stuck-subscription alert fires.
 - This inverts the board's "any error not known to be passing counts as a refusal", which would
   turn a lost success into a failure, and the vendor's next tap into a second account.
 
@@ -111,7 +120,8 @@ be kept and for how long.
 
 ## Consequences
 
-- A double tap, a resent request, a processor's replay and a lost answer all end in one account.
+- A double tap, a resent request, a processor's replay and a lost answer all end in one account,
+  even a lost answer whose retries outlast the token.
 - Step 1 asks Market Days one thing, whether the storefront is published, and reacts to one event,
   `VendorErased`.
 - The preview is pinned on one call. Upgrading it is a one-line change, proved by the next nightly
@@ -130,6 +140,7 @@ be kept and for how long.
 | Requiring a complete legal identity as well | The owner's call: publication only. Only the live client is published without one, and they are handled by hand |
 | A registration ID minted by the server | A request resent by a flaky connection would come back an error though the first had worked |
 | Counting every error not known to be transient as a refusal (the board's rule) | A lost success becomes a failure, and the vendor's next tap a second account |
+| Counting a token error as final without looking | The same, once a lost success's retries outlast the token's hour |
 | Re-registering after Stripe rejects the account | A vendor Stripe turned down for fraud could make another account with a tap |
 | One event holding the whole observed state | Simpler to write, but every reader would diff states to find what changed, and the vendor app pushes on *Disabled* itself |
 | Closing the Stripe account at erasure | Money and disputes outlive the vendor's time with us, and Stripe refuses an account with a balance |
