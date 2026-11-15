@@ -23,6 +23,9 @@
       "@market-miam/market-days": [
         "packages/market-days/src/index.ts"
       ],
+      "@market-miam/ordering": [
+        "packages/ordering/src/index.ts"
+      ],
       "@market-miam/event-sourcing": [
         "packages/event-sourcing/src/index.ts"
       ],

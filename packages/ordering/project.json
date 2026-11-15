@@ -1,0 +1,11 @@
+{
+  "name": "ordering",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "packages/ordering/src",
+  "projectType": "library",
+  "tags": ["scope:server", "type:context"],
+  "// targets": "to see all targets run: nx show project ordering --web",
+  "targets": {
+    "typecheck": {}
+  }
+}
