@@ -1,6 +1,6 @@
 # 0048. Billing is a second bounded context on the shared event log
 
-Date: 2026-08-11 · Status: Accepted · Amends 0004
+Date: 2026-08-11 · Status: Accepted · Amends 0004 · Amended 2026-11-15 by [0066](0066-ordering-is-a-context-asking-market-days-through-published-queries.md) — Ordering is real: a third context, asking Market Days through published queries, with `VendorErased` the one event it consumes
 
 ## Context
 

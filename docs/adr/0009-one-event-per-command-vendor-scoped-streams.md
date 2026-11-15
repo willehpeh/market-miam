@@ -1,6 +1,6 @@
 # 0009. One event per command; vendor-scoped stream per aggregate
 
-Date: 2026-05-02 · Status: Accepted
+Date: 2026-05-02 · Status: Accepted · Amended 2026-11-15 by [0067](0067-stripe-notices-accounts-through-a-processor-payments-direct.md) — a Stripe notice's stream is named after Stripe's event, since no vendor is known when it arrives
 
 ## Context
 

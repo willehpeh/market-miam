@@ -72,3 +72,7 @@ detailed rationale in `docs/archive/DEFERRED.md`).
 | [0063](0063-vendor-account-opening-and-closing-are-events.md)           | Opening and closing a vendor's account are events on their stream          | 2026-11-14 |
 | [0064](0064-api-specs-call-the-api-through-an-api-object.md)            | Specs reach the api through objects                                        | 2026-11-14 |
 | [0065](0065-an-operator-assigns-a-subdomain-claimed-and-recorded-together.md) | An operator assigns a vendor's subdomain once, claimed and recorded in one transaction | 2026-11-14 |
+| [0066](0066-ordering-is-a-context-asking-market-days-through-published-queries.md) | Ordering is a context on the shared log, asking Market Days through published queries | 2026-11-15 |
+| [0067](0067-stripe-notices-accounts-through-a-processor-payments-direct.md) | Stripe's notices: accounts through one processor, payments direct, the first event the gate | 2026-11-15 |
+| [0068](0068-one-payment-account-per-vendor-connected-after-publication.md) | One payment account per vendor, connected after publication, created once | 2026-11-15 |
+| [0069](0069-stripe-adapter-raw-http-one-contract-nightly-sandbox.md) | The Stripe adapter: raw HTTP behind a gateway, one contract, the sandbox nightly | 2026-11-15 |
