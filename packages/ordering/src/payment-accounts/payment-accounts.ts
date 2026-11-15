@@ -9,4 +9,5 @@ export type AccountCreation = 'created' | 'refused' | 'token-unusable';
 // The vendors' payment accounts as Stripe holds them, where Merchants holds Ordering's own record.
 export abstract class PaymentAccounts {
   abstract createFor(registration: Registration): Promise<AccountCreation>;
+  abstract wasCreatedFor(registration: Registration): Promise<boolean>;
 }
