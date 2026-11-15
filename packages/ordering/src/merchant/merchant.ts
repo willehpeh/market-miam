@@ -32,6 +32,9 @@ export class Merchant extends Aggregate {
       case 'PaymentAccountRegistrationStarted':
         this._openRegistration = event.payload.registrationId;
         break;
+      case 'PaymentAccountRegistrationFailed':
+        this._openRegistration = undefined;
+        break;
     }
   }
 
