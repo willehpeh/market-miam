@@ -22,6 +22,13 @@ class RefusingPaymentAccounts extends InMemoryPaymentAccounts {
   }
 }
 
+// Can't use any token, as Stripe answers a token that has expired or was used already.
+class TokenRejectingPaymentAccounts extends InMemoryPaymentAccounts {
+  override createFor() {
+    return Promise.resolve('token-unusable' as const);
+  }
+}
+
 describe('Creates Payment Accounts', () => {
   let store: InMemoryEventStore;
   let accounts: InMemoryPaymentAccounts;
@@ -71,6 +78,19 @@ describe('Creates Payment Accounts', () => {
 
     await start(registration);
     await process(new RefusingPaymentAccounts());
+
+    expect(gateway.dispatched).toEqual([
+      new FailPaymentAccountRegistration(registration.vendorId, registration.registrationId, NOW),
+    ]);
+  });
+
+  // A token error only proves a refusal once no account carries the registration: a lost success,
+  // retried past the token's hour, answers token_expired too (ADR 0068).
+  it('records the registration failed when its token is unusable and no account carries it', async () => {
+    const registration = TestStartPaymentAccountRegistration.valid();
+
+    await start(registration);
+    await process(new TokenRejectingPaymentAccounts());
 
     expect(gateway.dispatched).toEqual([
       new FailPaymentAccountRegistration(registration.vendorId, registration.registrationId, NOW),
