@@ -4,7 +4,7 @@
   "projectType": "application",
   "prefix": "mm",
   "sourceRoot": "apps/vendor-frontend/src",
-  "tags": [],
+  "tags": ["scope:client", "type:app"],
   "targets": {
     "typecheck": {},
     "build": {

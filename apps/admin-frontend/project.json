@@ -4,7 +4,7 @@
   "projectType": "application",
   "prefix": "admin",
   "sourceRoot": "apps/admin-frontend/src",
-  "tags": [],
+  "tags": ["scope:client", "type:app"],
   "targets": {
     "typecheck": {},
     "build": {
