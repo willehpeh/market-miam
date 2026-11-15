@@ -4,12 +4,17 @@ import { RegistrationAlreadyOpenError } from './registration-already-open.error'
 // AccountOnRecord: each state answers for its own rule.
 export abstract class PaymentAccountOnRecord {
   abstract startRegistration(registrationId: string, proceed: () => void): void;
+  abstract failRegistration(proceed: () => void): void;
 }
 
 // No registration open: none started yet, or the last one failed.
 export class NoRegistration extends PaymentAccountOnRecord {
   startRegistration(registrationId: string, proceed: () => void): void {
     proceed();
+  }
+
+  failRegistration(): void {
+    // Nothing open to fail: the failure was recorded already.
   }
 }
 
@@ -24,5 +29,9 @@ export class OpenRegistration extends PaymentAccountOnRecord {
       return;
     }
     throw new RegistrationAlreadyOpenError();
+  }
+
+  failRegistration(proceed: () => void): void {
+    proceed();
   }
 }
