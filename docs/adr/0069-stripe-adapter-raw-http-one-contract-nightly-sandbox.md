@@ -32,8 +32,8 @@ compared in constant time with each `v1` in `Stripe-Signature`, and refused when
 five minutes off.
 
 **One contract, `connectedPaymentAccountsContract`, run three ways.** The port is
-`ConnectedPaymentAccounts`: the vendors' accounts as Stripe holds them, named apart from
-`PaymentAccounts`, the repository of Ordering's own record of each one (ADR 0068).
+`ConnectedPaymentAccounts`: the vendors' accounts as Stripe holds them, as opposed to the
+merchant's own record of each, held by the `Merchant` aggregate (ADR 0068).
 
 1. **`InMemoryConnectedPaymentAccounts`**, for Ordering's specs, the api's specs and the api run
    locally with no Stripe key, as `InMemoryVendorAccounts` is. It speaks the port only,

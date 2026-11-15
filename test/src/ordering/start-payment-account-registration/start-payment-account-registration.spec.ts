@@ -1,7 +1,7 @@
 import { InMemoryEventStore } from '@market-miam/event-sourcing';
 import {
   InMemoryPublishedStorefronts,
-  PaymentAccounts,
+  Merchants,
   StartPaymentAccountRegistration,
   StartPaymentAccountRegistrationHandler,
 } from '@market-miam/ordering';
@@ -17,7 +17,7 @@ describe('Start Payment Account Registration', () => {
   beforeEach(() => {
     store = new InMemoryEventStore();
     storefronts = new InMemoryPublishedStorefronts();
-    handler = new StartPaymentAccountRegistrationHandler(new PaymentAccounts(new VendorScopedEvents(store)), storefronts);
+    handler = new StartPaymentAccountRegistrationHandler(new Merchants(new VendorScopedEvents(store)), storefronts);
   });
 
   // The vendor taps Connect Stripe once their storefront is published; the app minted the
@@ -31,7 +31,7 @@ describe('Start Payment Account Registration', () => {
 
     expect(store.newEvents()).toEqual([
       expect.objectContaining({
-        streamId: 'ordering-payment-account-vendor-id',
+        streamId: 'ordering-merchant-vendor-id',
         type: 'PaymentAccountRegistrationStarted',
         payload: {
           vendorId: 'vendor-id',

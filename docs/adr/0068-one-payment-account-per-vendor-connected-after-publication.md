@@ -39,8 +39,14 @@ The sandbox settled more on 2026-11-15, from the French platform:
 
 ## Decision
 
-**One stream per vendor, `ordering-payment-account-{vendorId}`** (ADR 0009), holding the
-registration and the account.
+**The payment account is part of the merchant.** In Ordering the vendor is the merchant
+(ADR 0048), one `Merchant` aggregate per vendor, on `ordering-merchant-{vendorId}` (ADR 0009),
+saved through `Merchants`, built on the shared kernel's `VendorScopedRepository`. Its payment
+account is a piece of its state, `PaymentAccountOnRecord`: none, registering, confirmed or
+retired, with the account's ID and whether card payments are active. Market Days holds the vendor's Auth0 account
+the same way, as `AccountOnRecord` inside `Vendor` (ADR 0063). The rush pause (board, step 2)
+joins the merchant later, so R4's "does this vendor take orders now?" is one question on one
+aggregate: card payments active, and ordering not paused.
 
 **Registering.** `POST /api/payment-account/registrations { registrationId, accountToken }`,
 behind the vendor's guard.
@@ -120,6 +126,9 @@ be kept and for how long.
 
 ## Consequences
 
+- Ordering's facts about a vendor live on one stream, the merchant's; the events keep their
+  `PaymentAccount` names, and the merchant holds the rest of what Ordering knows of the vendor as
+  it comes.
 - A double tap, a resent request, a processor's replay and a lost answer all end in one account,
   even a lost answer whose retries outlast the token.
 - Step 1 asks Market Days one thing, whether the storefront is published, and reacts to one event,
@@ -136,6 +145,7 @@ be kept and for how long.
 
 | Option | Why not |
 |---|---|
+| A payment-account aggregate of its own, `ordering-payment-account-{vendorId}` | It would split "does this vendor take orders?" across streams once the rush pause lands, and Market Days already keeps a vendor's outside account inside the vendor (ADR 0063) |
 | Registering before publication | Stripe checks the account against a storefront that isn't live, and the one-shot prefill can't be redone, since each vendor gets one account |
 | Requiring a complete legal identity as well | The owner's call: publication only. Only the live client is published without one, and they are handled by hand |
 | A registration ID minted by the server | A request resent by a flaky connection would come back an error though the first had worked |
