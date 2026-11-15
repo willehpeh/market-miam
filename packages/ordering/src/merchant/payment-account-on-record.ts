@@ -1,20 +1,17 @@
 import { RegistrationAlreadyOpenError } from './registration-already-open.error';
 
-// What the merchant's stream says of their payment account, as Market Days' Vendor holds its
-// AccountOnRecord: each state answers for its own rule.
 export abstract class PaymentAccountOnRecord {
   abstract startRegistration(registrationId: string, proceed: () => void): void;
-  abstract failRegistration(registrationId: string, proceed: () => void): void;
+  abstract isOpen(registrationId: string): boolean;
 }
 
-// No registration open: none started yet, or the last one failed.
-export class NoRegistration extends PaymentAccountOnRecord {
+export class NoOpenRegistration extends PaymentAccountOnRecord {
   startRegistration(registrationId: string, proceed: () => void): void {
     proceed();
   }
 
-  failRegistration(): void {
-    // Nothing open to fail: the failure was recorded already.
+  isOpen(): boolean {
+    return false;
   }
 }
 
@@ -24,16 +21,12 @@ export class OpenRegistration extends PaymentAccountOnRecord {
   }
 
   startRegistration(registrationId: string): void {
-    if (registrationId === this.registrationId) {
-      // The same tap sent again: already started.
-      return;
+    if (!this.isOpen(registrationId)) {
+      throw new RegistrationAlreadyOpenError();
     }
-    throw new RegistrationAlreadyOpenError();
   }
 
-  failRegistration(registrationId: string, proceed: () => void): void {
-    if (registrationId === this.registrationId) {
-      proceed();
-    }
+  isOpen(registrationId: string): boolean {
+    return registrationId === this.registrationId;
   }
 }

@@ -2,11 +2,10 @@ import { Aggregate } from '@market-miam/event-sourcing';
 import { Instant } from '@market-miam/common';
 import { VendorId } from '@market-miam/shared-kernel';
 import { MerchantEvent, PaymentAccountRegistrationFailed, PaymentAccountRegistrationStarted } from './events';
-import { NoRegistration, OpenRegistration, PaymentAccountOnRecord } from './payment-account-on-record';
+import { NoOpenRegistration, OpenRegistration, PaymentAccountOnRecord } from './payment-account-on-record';
 
-// The vendor as Ordering sees them: a merchant, who takes orders once they can take payments.
 export class Merchant extends Aggregate {
-  private _paymentAccount: PaymentAccountOnRecord = new NoRegistration();
+  private _paymentAccount: PaymentAccountOnRecord = new NoOpenRegistration();
 
   constructor(private readonly _id: VendorId) {
     super();
@@ -19,7 +18,9 @@ export class Merchant extends Aggregate {
   }
 
   failPaymentAccountRegistration(registrationId: string, failedAt: Instant) {
-    this._paymentAccount.failRegistration(registrationId, () => this.raise(this.registrationFailed(registrationId, failedAt)));
+    if (this._paymentAccount.isOpen(registrationId)) {
+      this.raise(this.registrationFailed(registrationId, failedAt));
+    }
   }
 
   apply(event: MerchantEvent): void {
@@ -28,7 +29,7 @@ export class Merchant extends Aggregate {
         this._paymentAccount = new OpenRegistration(event.payload.registrationId);
         break;
       case 'PaymentAccountRegistrationFailed':
-        this._paymentAccount = new NoRegistration();
+        this._paymentAccount = new NoOpenRegistration();
         break;
     }
   }

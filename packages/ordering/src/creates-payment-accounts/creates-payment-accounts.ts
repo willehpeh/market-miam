@@ -12,29 +12,32 @@ export class CreatesPaymentAccounts implements Processor {
     private readonly clock: Clock,
   ) {}
 
-  // On success it writes nothing: Stripe's notice confirms the account (board, R2). A refusal is
-  // known only here, so this is where it is recorded.
   async handle(event: StoredEvent<PaymentAccountRegistrationStarted>): Promise<void> {
-    const { vendorId, registrationId } = event.payload;
-    if (await this.refused(event.payload)) {
-      await this.commands.execute(new FailPaymentAccountRegistration(vendorId, registrationId, this.clock.now().value()));
+    if (await this.stripeRefusesForGood(event.payload)) {
+      await this.fail(event.payload);
     }
   }
 
-  // Only Stripe's final answers refuse. A token error is final only once no account was created for
-  // the registration: a lost success retried past the token's hour answers it too (ADR 0068).
-  private async refused(registration: Registration): Promise<boolean> {
+  eventTypes(): string[] {
+    return ['PaymentAccountRegistrationStarted'];
+  }
+
+  private async stripeRefusesForGood(registration: Registration): Promise<boolean> {
     switch (await this.accounts.createFor(registration)) {
       case 'created':
         return false;
       case 'refused':
         return true;
       case 'token-unusable':
-        return !(await this.accounts.wasCreatedFor(registration));
+        return this.noAccountWasCreatedFor(registration);
     }
   }
 
-  eventTypes(): string[] {
-    return ['PaymentAccountRegistrationStarted'];
+  private async noAccountWasCreatedFor(registration: Registration): Promise<boolean> {
+    return !(await this.accounts.wasCreatedFor(registration));
+  }
+
+  private fail({ vendorId, registrationId }: Registration): Promise<void> {
+    return this.commands.execute(new FailPaymentAccountRegistration(vendorId, registrationId, this.clock.now().value()));
   }
 }
