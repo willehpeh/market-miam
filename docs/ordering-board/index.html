@@ -21,14 +21,15 @@
       <a href="https://github.com/willehpeh/market-miam/blob/main/docs/ORDERING-PLAN.md"><code>docs/ORDERING-PLAN.md</code></a>.
       The briefs for the <a href="avocat.html">lawyer</a> and the <a href="expert-comptable.html">accountant</a> are in French.
     </p>
-    <p class="meta">Updated 31 October 2026</p>
+    <p class="meta">Updated 15 November 2026</p>
   </header>
 
   <section aria-labelledby="now">
     <h2 id="now">Where we are</h2>
     <p class="intro">
       Event-storming, Stripe Connect first. Step 1, vendor onboarding, is decided down to the
-      <a href="#account">payment account</a>'s events, save the lawyer's Q10 and a sandbox test (Q14). Steps 2
+      <a href="#account">payment account</a>'s events, save the lawyer's Q10 and Stripe support's answer on the
+      preview our <a href="#setup">Connect setup</a> needs (Q14). Steps 2
       to 6 were stormed on 31 October at sticky-note level (<a href="#orders">decisions</a>).
     </p>
     <div class="table-wrap">
@@ -151,7 +152,10 @@
           (<a href="#account">step 1</a>). The live client fills in their mentions légales first.</p>
         <p>French platforms must use account tokens. The vendor app sends the prefill from the vendor's browser
           to Stripe with Stripe.js, loaded only from <code>js.stripe.com</code>, and only the single-use token
-          reaches our API; the account is created from it. Stripe.js also collects fraud signals from the
+          reaches our API; the account is created from it. The token carries no acceptance of Stripe's terms:
+          Stripe collects the requirements on our setup, so it refuses an acceptance made on the vendor's behalf
+          (<code>tos_<wbr>acceptance_<wbr>on_<wbr>behalf_<wbr>not_<wbr>allowed</code>, found running Q14), and the
+          vendor accepts them on Stripe's onboarding page. Stripe.js also collects fraud signals from the
           vendor's device, a line for the vendor-space privacy policy (<a href="avocat.html#c2">C2</a>). Read
           <a href="https://docs.stripe.com/connect/account-tokens">Account tokens</a>.</p>
       </article>
@@ -172,7 +176,8 @@
   <section aria-labelledby="setup">
     <h2 id="setup">Connect setup</h2>
     <p class="intro">
-      Read in Stripe's docs on 29 October 2026. Standard, Express and Custom accounts are legacy; a new
+      Read in Stripe's docs on 29 October 2026, tried in the sandbox on 15 November. Standard, Express and
+      Custom accounts are legacy; a new
       platform creating v1 accounts gets an error unless it turns v1 support on.
     </p>
     <div class="table-wrap">
@@ -183,7 +188,7 @@
           <tr><td>Direct charges</td><td>The vendor is merchant of record. Stripe's August 2026 block on direct charges covers legacy Express and Custom accounts only</td></tr>
           <tr><td>Stripe collects fees</td><td>The vendor pays every Stripe fee on their payments: 1,5 % + 0,25 € per standard EEA card, 2,8 % + 0,25 € premium, 20 € per dispute, Radar, 3D Secure. Market Miam pays no Connect fees</td></tr>
           <tr><td>Stripe covers losses</td><td>Market Miam carries no loss. We can't pause a vendor's payments or payouts, or debit them</td></tr>
-          <tr><td>Express Dashboard</td><td>Decided 30 October 2026. Our branding and a simpler screen than Stripe's full Dashboard. With Stripe covering losses it is in public preview: account creation sends <code>Stripe-Version: 2026-09-30.preview</code>. Vendors reach it through a single-use login link from our app, then a code Stripe texts or emails them. We set Radar rules from our dashboard, and both of us see what Radar blocked</td></tr>
+          <tr><td>Express Dashboard</td><td>Decided 30 October 2026. Our branding and a simpler screen than Stripe's full Dashboard. With Stripe covering losses it is in public preview: account creation, and only that call, sends <code>Stripe-Version: 2026-10-28.preview</code> (Q14). Vendors reach it through a single-use login link from our app, then a code Stripe texts or emails them. We set Radar rules from our dashboard, and both of us see what Radar blocked</td></tr>
           <tr><td>Payouts</td><td>First payout 7 to 14 days after the first payment, then 3 business days after each capture. Tell vendors before their first market with ordering</td></tr>
         </tbody>
       </table>
@@ -198,6 +203,23 @@
       <a href="https://stripe.com/fr/pricing">Pricing</a>,
       <a href="https://stripe.com/fr/connect/pricing">Connect pricing</a>,
       <a href="https://docs.stripe.com/payouts">Payouts</a>.
+    </p>
+    <p class="aside">
+      Tried on 15 November 2026 from our French platform's sandbox, each account created from an account
+      token (Q14). The general release, <code>2026-10-28.endive</code>, refuses Express with Stripe collecting
+      fees and covering losses, with <code>account_<wbr>controller_<wbr>unsupported_<wbr>configuration</code>,
+      which Stripe's reference ties to the preview being off; <code>2026-10-28.preview</code> accepts it. The
+      general release reads the account back and makes its onboarding link, so only the create call needs the
+      preview. The full Dashboard with Stripe collecting fees and covering losses is accepted on the general
+      release. An account's dashboard can't change once set, so every account keeps the setup it was created
+      with.
+    </p>
+    <p class="aside">
+      We build on Express (decided 15 November 2026). If Stripe ends the preview, new accounts start on the
+      full Dashboard, one value in the adapter, and <em>Open my Stripe</em> becomes a link to Stripe's
+      Dashboard, which has no login links. What becomes of accounts already on Express goes to Stripe support
+      (Q14) before the live client's first live account; if the answer is unclear, that account starts on the
+      full Dashboard. Read <a href="https://docs.stripe.com/release-phases">Release phases</a>.
     </p>
   </section>
 
@@ -358,10 +380,10 @@
       <span class="tag lawyer">Lawyer</span> in the brief.
     </p>
     <ol class="questions">
-      <li id="q5"><span class="qid">Q5</span><span class="qtext">When a capture is refused for good, which webhook reports it, if any? An expired hold sends <code>charge.expired</code> and <code>payment_intent.canceled</code>. No page names an event for a capture call Stripe refuses: the call returns an error. The sandbox can't make one: Stripe's test cards fail a refund and open disputes, but none fails a capture. So two sandbox checks: capturing a cancelled hold returns an error and sends no event; a hold left 7 days sends both expiry events. Then Stripe support: can a valid hold still be refused at capture, and what reports it? If nothing does, the processor records the failure itself, an exception to R2.</span><span class="qmeta"><span class="tag verify">Check</span> Step 3a, R2 · Read <a href="https://docs.stripe.com/payments/place-a-hold-on-a-payment-method">Place a hold</a>, <a href="https://docs.stripe.com/api/events/types">Event types</a>, <a href="https://docs.stripe.com/testing">Testing</a></span></li>
+      <li id="q5"><span class="qid">Q5</span><span class="qtext">When a capture is refused for good, which webhook reports it, if any? An expired hold sends <code>charge.expired</code> and <code>payment_intent.canceled</code>. No page names an event for a capture call Stripe refuses: the call returns an error. The sandbox can't make one: Stripe's test cards fail a refund and open disputes, but none fails a capture. So two sandbox checks: capturing a cancelled hold returns an error and sends no event; a hold left 7 days sends both expiry events. Then Stripe support: can a valid hold still be refused at capture, and what reports it? If nothing does, the processor records the failure itself, an exception to R2. The same message asks <a href="#q14">Q14</a>'s question.</span><span class="qmeta"><span class="tag verify">Check</span> Step 3a, R2 · Read <a href="https://docs.stripe.com/payments/place-a-hold-on-a-payment-method">Place a hold</a>, <a href="https://docs.stripe.com/api/events/types">Event types</a>, <a href="https://docs.stripe.com/testing">Testing</a></span></li>
       <li id="q7"><span class="qid">Q7</span><span class="qtext">Code attempts before a lockout, and how long the lockout lasts.</span><span class="qmeta"><span class="tag decide">Decide</span> Step 4</span></li>
       <li id="q10"><span class="qid">Q10</span><span class="qtext">DAC7: is Market Miam a platform when each storefront is one vendor's own shop? If yes, an EI's date of birth and tax number are owed, and asking for them before the Stripe account is created lets R3 prefill them.</span><span class="qmeta"><span class="tag lawyer">Lawyer</span> Step 1 · <a href="avocat.html#b3">B3</a></span></li>
-      <li id="q14"><span class="qid">Q14</span><span class="qtext">Does Accounts v2 take a French account on the Express Dashboard with Stripe covering losses? That combination is the preview one, so the likeliest to fail. Stripe's API reference lists an error for it, <code>account_<wbr>controller_<wbr>express_<wbr>dash_<wbr>without_<wbr>application_<wbr>losses_<wbr>or_<wbr>fees</code>: &ldquo;If <code>dashboard</code> is <code>express</code>, <code>fees_collector</code> must be <code>application</code> and <code>losses_collector</code> must be <code>application</code>.&rdquo; So the general release, <code>2026-10-28.endive</code>, looks to refuse it. Create one in the sandbox, from an account token (R3), on that version and on <code>2026-10-28.preview</code>, the one Stripe's Accounts v2 page shows, and note which accepts it. If neither does, the Connect setup needs a decision before we build. A sandbox may let an account act before its capability is active, so our own fake tests the gate.</span><span class="qmeta"><span class="tag verify">Check</span> Step 1 · Read <a href="https://docs.stripe.com/connect/accounts-v2">Accounts v2</a>, <a href="https://docs.stripe.com/api/v2/core/accounts/create">Create an account</a>, <a href="https://docs.stripe.com/connect/risk-management">Risk and liability</a>, <a href="https://docs.stripe.com/connect/account-capabilities?accounts-namespace=v2">Capabilities</a></span></li>
+      <li id="q14"><span class="qid">Q14</span><span class="qtext">What becomes of accounts on the Express Dashboard with Stripe covering losses if Stripe changes or ends that preview, and is it headed for general release? The sandbox answered the rest on 15 November 2026: only <code>2026-10-28.preview</code> creates such an account, and its dashboard can't change afterwards (<a href="#setup">Connect setup</a>). Ask Stripe support in the same message as Q5's question. Needed before the live client's first live account; if the answer is unclear, that account starts on the full Dashboard. A sandbox may let an account act before its capability is active, so our own fake tests the gate.</span><span class="qmeta"><span class="tag verify">Check</span> Step 1 · Read <a href="https://docs.stripe.com/connect/risk-management">Risk and liability</a>, <a href="https://docs.stripe.com/release-phases">Release phases</a>, <a href="https://docs.stripe.com/connect/account-capabilities?accounts-namespace=v2">Capabilities</a></span></li>
     </ol>
   </section>
 

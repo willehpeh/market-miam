@@ -36,7 +36,7 @@ Vendor never knows the code: stops pickups off a customer-visible tablet, and a 
 
 ## Payment
 
-- Stripe Connect, **Accounts v2, direct charges, Express Dashboard**; Stripe collects its fees from the vendor and covers negative balances (board, *Connect setup*). Vendor = merchant of record; Stripe does KYC, payouts, disputes. Market Miam never holds funds → no DSP2 licence.
+- Stripe Connect, **Accounts v2, direct charges, Express Dashboard**; Stripe collects its fees from the vendor and covers negative balances (board, *Connect setup*). That combination is public preview: only account creation sends the preview version, the general release refuses it, and an account's dashboard is fixed for good; built on Express, new accounts move to the full Dashboard if the preview ends (board, Q14). Vendor = merchant of record; Stripe does KYC, payouts, disputes. Market Miam never holds funds → no DSP2 licence.
 - Hosted Stripe Checkout, `capture_method: 'manual'`. 3DS, Apple/Google Pay, PCI SAQ A.
 - Refunds only to the card, from the Express Dashboard, recorded from webhooks; disputes are their own events (board, *Steps 2 to 6, decided*).
 - Fees 1.5% + 0.25 € per standard EEA card, 2.8% + 0.25 € premium, 20 € per dispute; vendor pays, Market Miam pays no Connect fees. First payout 7–14 days after the first payment, then 3 business days.
