@@ -2,25 +2,20 @@ import { Aggregate } from '@market-miam/event-sourcing';
 import { Instant } from '@market-miam/common';
 import { VendorId } from '@market-miam/shared-kernel';
 import { MerchantEvent, PaymentAccountRegistrationFailed, PaymentAccountRegistrationStarted } from './events';
-import { RegistrationAlreadyOpenError } from './registration-already-open.error';
+import { NoRegistration, OpenRegistration, PaymentAccountOnRecord } from './payment-account-on-record';
 
 // The vendor as Ordering sees them: a merchant, who takes orders once they can take payments.
 export class Merchant extends Aggregate {
-  private _openRegistration?: string;
+  private _paymentAccount: PaymentAccountOnRecord = new NoRegistration();
 
   constructor(private readonly _id: VendorId) {
     super();
   }
 
   startPaymentAccountRegistration(registrationId: string, accountToken: string, startedAt: Instant) {
-    if (registrationId === this._openRegistration) {
-      // The same tap sent again: already started.
-      return;
-    }
-    if (this._openRegistration !== undefined) {
-      throw new RegistrationAlreadyOpenError();
-    }
-    this.raise(this.registrationStarted(registrationId, accountToken, startedAt));
+    this._paymentAccount.startRegistration(registrationId, () =>
+      this.raise(this.registrationStarted(registrationId, accountToken, startedAt)),
+    );
   }
 
   failPaymentAccountRegistration(registrationId: string, failedAt: Instant) {
@@ -30,10 +25,10 @@ export class Merchant extends Aggregate {
   apply(event: MerchantEvent): void {
     switch (event.type) {
       case 'PaymentAccountRegistrationStarted':
-        this._openRegistration = event.payload.registrationId;
+        this._paymentAccount = new OpenRegistration(event.payload.registrationId);
         break;
       case 'PaymentAccountRegistrationFailed':
-        this._openRegistration = undefined;
+        this._paymentAccount = new NoRegistration();
         break;
     }
   }
