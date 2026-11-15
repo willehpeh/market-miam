@@ -2,6 +2,7 @@ import { Aggregate } from '@market-miam/event-sourcing';
 import { Instant } from '@market-miam/common';
 import { VendorId } from '@market-miam/shared-kernel';
 import { MerchantEvent, PaymentAccountRegistrationStarted } from './events';
+import { RegistrationAlreadyOpenError } from './registration-already-open.error';
 
 // The vendor as Ordering sees them: a merchant, who takes orders once they can take payments.
 export class Merchant extends Aggregate {
@@ -15,6 +16,9 @@ export class Merchant extends Aggregate {
     if (registrationId === this._openRegistration) {
       // The same tap sent again: already started.
       return;
+    }
+    if (this._openRegistration !== undefined) {
+      throw new RegistrationAlreadyOpenError();
     }
     this.raise(this.registrationStarted(registrationId, accountToken, startedAt));
   }
