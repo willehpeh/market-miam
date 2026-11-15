@@ -13,6 +13,7 @@ import {
   QueryGateway,
   ShreddingEventStore,
 } from '@market-miam/event-sourcing';
+import { VENDOR_ID_METADATA_KEY } from '@market-miam/shared-kernel';
 import { LineageModule } from '../lineage/lineage.module';
 import { TracingCommandGateway } from './tracing/command-gateway';
 import { TracingQueryGateway } from './tracing/query-gateway';
@@ -37,11 +38,11 @@ export class EventSourcingModule {
       controllers: [HealthController],
       providers: [
         {
-          // 'vendorId' names the PII subject in append metadata — application
+          // The vendor's id in append metadata names the PII subject — application
           // policy, decided here, not in the package.
           provide: EventStore,
           useFactory: (inner: EventStore & Events, keys: DataKeys, lineage: Lineage) =>
-            new ApplicationEventStore(new ShreddingEventStore(inner, keys, piiFields, 'vendorId', keyScopes), lineage),
+            new ApplicationEventStore(new ShreddingEventStore(inner, keys, piiFields, VENDOR_ID_METADATA_KEY, keyScopes), lineage),
           inject: [PERSISTED_EVENTS, DataKeys, Lineage],
         },
         { provide: Events, useExisting: EventStore },

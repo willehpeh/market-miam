@@ -1,5 +1,5 @@
 import { Aggregate, EventStore, StoredEvent } from '@market-miam/event-sourcing';
-import { VendorId } from '@market-miam/shared-kernel';
+import { VENDOR_ID_METADATA_KEY, VendorId } from '@market-miam/shared-kernel';
 
 export class VendorScopedEvents {
   constructor(private readonly store: EventStore) {
@@ -17,7 +17,7 @@ export class VendorScopedEvents {
       streamId,
       aggregate.raisedEvents(),
       aggregate.currentStreamPosition(),
-      { vendorId: vendorId.value() },
+      { [VENDOR_ID_METADATA_KEY]: vendorId.value() },
     );
   }
 }
