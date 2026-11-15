@@ -39,4 +39,17 @@ describe('Fail Payment Account Registration', () => {
 
     expect(store.newEvents()).toEqual([]);
   });
+
+  // A failure for an older registration must not close the one now open.
+  it('records nothing when another registration is open', async () => {
+    given(
+      registrationStarted(),
+      registrationFailed(),
+      registrationStarted('vendor-id', { registrationId: 'another-registration-id' }),
+    );
+
+    await handler.execute(new FailPaymentAccountRegistration('vendor-id', 'registration-id', FAILED_AT));
+
+    expect(store.newEvents()).toEqual([]);
+  });
 });
