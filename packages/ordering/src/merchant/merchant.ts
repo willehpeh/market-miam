@@ -19,7 +19,7 @@ export class Merchant extends Aggregate {
   }
 
   failPaymentAccountRegistration(registrationId: string, failedAt: Instant) {
-    this._paymentAccount.failRegistration(() => this.raise(this.registrationFailed(registrationId, failedAt)));
+    this._paymentAccount.failRegistration(registrationId, () => this.raise(this.registrationFailed(registrationId, failedAt)));
   }
 
   apply(event: MerchantEvent): void {
