@@ -1,21 +1,36 @@
 import { InMemoryCheckpoint, InMemoryEventStore, PollingSubscription } from '@market-miam/event-sourcing';
 import {
   CreatesPaymentAccounts,
+  FailPaymentAccountRegistration,
   InMemoryPaymentAccounts,
   InMemoryPublishedStorefronts,
   Merchants,
+  PaymentAccounts,
   StartPaymentAccountRegistrationHandler,
 } from '@market-miam/ordering';
 import { VendorScopedEvents } from '@market-miam/shared-kernel';
+import { clockAt } from '../../clock-at';
+import { RecordingCommandGateway } from '../../recording-command-gateway';
 import { TestStartPaymentAccountRegistration } from '../start-payment-account-registration/test-data';
+
+const NOW = '2026-11-16T09:00:05.000Z';
+
+// Refuses every registration for good, as Stripe refuses an account it won't create.
+class RefusingPaymentAccounts extends InMemoryPaymentAccounts {
+  override createFor() {
+    return Promise.resolve('refused' as const);
+  }
+}
 
 describe('Creates Payment Accounts', () => {
   let store: InMemoryEventStore;
   let accounts: InMemoryPaymentAccounts;
+  let gateway: RecordingCommandGateway;
 
   beforeEach(() => {
     store = new InMemoryEventStore();
     accounts = new InMemoryPaymentAccounts();
+    gateway = new RecordingCommandGateway();
   });
 
   async function start(registration = TestStartPaymentAccountRegistration.valid()): Promise<void> {
@@ -26,10 +41,10 @@ describe('Creates Payment Accounts', () => {
     );
   }
 
-  async function process(): Promise<void> {
+  async function process(using: PaymentAccounts = accounts): Promise<void> {
     await new PollingSubscription(
       store,
-      new CreatesPaymentAccounts(accounts),
+      new CreatesPaymentAccounts(using, gateway, clockAt('2026-11-16', NOW)),
       new InMemoryCheckpoint('creates-payment-accounts'),
     ).poll();
   }
@@ -47,6 +62,18 @@ describe('Creates Payment Accounts', () => {
         registrationId: registration.registrationId,
         accountToken: registration.accountToken,
       },
+    ]);
+  });
+
+  // Stripe won't create it: the registration ends, and the vendor can tap again (ADR 0068).
+  it('records the registration failed when Stripe refuses the account for good', async () => {
+    const registration = TestStartPaymentAccountRegistration.valid();
+
+    await start(registration);
+    await process(new RefusingPaymentAccounts());
+
+    expect(gateway.dispatched).toEqual([
+      new FailPaymentAccountRegistration(registration.vendorId, registration.registrationId, NOW),
     ]);
   });
 });
