@@ -16,7 +16,8 @@ export class CreatesPaymentAccounts implements Processor {
   // known only here, so this is where it is recorded.
   async handle(event: StoredEvent<PaymentAccountRegistrationStarted>): Promise<void> {
     const { vendorId, registrationId } = event.payload;
-    if ((await this.accounts.createFor(event.payload)) === 'refused') {
+    const creation = await this.accounts.createFor(event.payload);
+    if (creation === 'refused' || creation === 'token-unusable') {
       await this.commands.execute(new FailPaymentAccountRegistration(vendorId, registrationId, this.clock.now().value()));
     }
   }
