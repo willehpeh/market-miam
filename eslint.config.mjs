@@ -1,28 +1,26 @@
 import nx from '@nx/eslint-plugin';
 import { checkpointDecoratorRule } from './eslint-rules/checkpoint-decorator.mjs';
 
-// Module boundaries (ADR 0001, made concrete by ADR 0070). Every project carries two tags: where
-// it runs, `scope:`, and what it is, `type:`. Each type depends only on the types below it.
-const BELOW_APPS = ['type:util', 'type:platform', 'type:kernel', 'type:auth', 'type:context'];
-const boundaries = (appsMayUseTesting) => [
-  // The browser never loads server code, and the server never loads the browser's.
+const LIBRARY_TYPES = ['type:util', 'type:platform', 'type:kernel', 'type:auth', 'type:context'];
+const TEST_FILES = ['**/*.spec.ts', '**/*.scenario.ts', '**/*.tenant.ts', '**/testing/**'];
+
+const dependencyRules = ({ appsMayUseTheTestProject }) => [
   { sourceTag: 'scope:client', onlyDependOnLibsWithTags: ['scope:client', 'scope:shared'] },
   { sourceTag: 'scope:server', onlyDependOnLibsWithTags: ['scope:server', 'scope:shared'] },
   { sourceTag: 'scope:shared', onlyDependOnLibsWithTags: ['scope:shared'] },
   { sourceTag: 'type:util', onlyDependOnLibsWithTags: ['type:util'] },
-  // Event sourcing knows no domain: no vendor, no context.
   { sourceTag: 'type:platform', onlyDependOnLibsWithTags: ['type:util'] },
   { sourceTag: 'type:kernel', onlyDependOnLibsWithTags: ['type:util', 'type:platform'] },
   { sourceTag: 'type:auth', onlyDependOnLibsWithTags: ['type:util', 'type:kernel', 'type:auth'] },
-  // A context never reaches into another (ADRs 0048 and 0066); it shares only the kernel.
   { sourceTag: 'type:context', onlyDependOnLibsWithTags: ['type:util', 'type:platform', 'type:kernel'] },
-  { sourceTag: 'type:testing', onlyDependOnLibsWithTags: [...BELOW_APPS, 'type:testing'] },
-  { sourceTag: 'type:app', onlyDependOnLibsWithTags: appsMayUseTesting ? [...BELOW_APPS, 'type:testing'] : BELOW_APPS },
+  { sourceTag: 'type:testing', onlyDependOnLibsWithTags: [...LIBRARY_TYPES, 'type:testing'] },
+  {
+    sourceTag: 'type:app',
+    onlyDependOnLibsWithTags: appsMayUseTheTestProject ? [...LIBRARY_TYPES, 'type:testing'] : LIBRARY_TYPES,
+  },
 ];
-// An app's specs, scenarios and test wiring may use the test project's contracts and fakes; the
-// code it ships may not.
-const TEST_FILES = ['**/*.spec.ts', '**/*.scenario.ts', '**/*.tenant.ts', '**/testing/**'];
-const moduleBoundaries = (appsMayUseTesting) => [
+
+const moduleBoundaries = ({ appsMayUseTheTestProject }) => [
   'error',
   {
     enforceBuildableLibDependency: true,
@@ -35,7 +33,7 @@ const moduleBoundaries = (appsMayUseTesting) => [
       // reads its source as text to render the tokens.
       '^.*/packages/design-system/.*$',
     ],
-    depConstraints: boundaries(appsMayUseTesting),
+    depConstraints: dependencyRules({ appsMayUseTheTestProject }),
   },
 ];
 
@@ -56,14 +54,14 @@ export default [
   {
     files: ['**/*.ts', '**/*.tsx', '**/*.js', '**/*.jsx'],
     rules: {
-      '@nx/enforce-module-boundaries': moduleBoundaries(true),
+      '@nx/enforce-module-boundaries': moduleBoundaries({ appsMayUseTheTestProject: true }),
     },
   },
   {
     files: ['**/*.ts', '**/*.tsx', '**/*.js', '**/*.jsx'],
     ignores: TEST_FILES,
     rules: {
-      '@nx/enforce-module-boundaries': moduleBoundaries(false),
+      '@nx/enforce-module-boundaries': moduleBoundaries({ appsMayUseTheTestProject: false }),
     },
   },
   {
