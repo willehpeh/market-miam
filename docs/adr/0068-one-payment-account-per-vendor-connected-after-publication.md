@@ -33,10 +33,9 @@ The sandbox settled more on 2026-11-15, from the French platform:
 open, the account's ID, whether card payments are active, whether it is retired. That is what its
 rules decide on, and nothing else of Stripe's is kept (board, Q1).
 
-**A vendor registers once their storefront is published.** Before that, registration is refused,
-naming what is missing as publication's own refusal does (ADR 0031). Publication requires a
-complete legal identity, so the prefill has its source; the live client, published before that
-rule, fills in their mentions légales first, by hand (board, R3).
+**A vendor registers once their storefront is published.** Before that, registration is refused.
+Publication requires a complete legal identity (ADR 0031), so the prefill has its source; the live
+client, published before that rule, fills in their mentions légales first, by hand (board, R3).
 
 **One registration at a time, each made once.** The vendor app gives each registration its ID and
 makes the account token at the tap. A resent request is a quiet success; a second registration

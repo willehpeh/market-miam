@@ -2,9 +2,9 @@ import { InMemoryEventStore } from '@market-miam/event-sourcing';
 import {
   InMemoryPublishedStorefronts,
   Merchants,
-  NotReadyToRegisterPaymentAccount,
   StartPaymentAccountRegistration,
   StartPaymentAccountRegistrationHandler,
+  StorefrontNotPublishedError,
 } from '@market-miam/ordering';
 import { VendorScopedEvents } from '@market-miam/shared-kernel';
 
@@ -45,13 +45,11 @@ describe('Start Payment Account Registration', () => {
   });
 
   // Stripe checks the account against the storefront, and the prefill can't be redone (ADR 0068).
-  it('refuses a vendor whose storefront isn’t published, naming what is missing, and records nothing', async () => {
-    const failure = await handler
-      .execute(new StartPaymentAccountRegistration('vendor-id', 'registration-id', 'accttok_test_1', STARTED_AT))
-      .catch((e: unknown) => e);
+  it('refuses a vendor whose storefront isn’t published, recording nothing', async () => {
+    await expect(
+      handler.execute(new StartPaymentAccountRegistration('vendor-id', 'registration-id', 'accttok_test_1', STARTED_AT)),
+    ).rejects.toThrow(StorefrontNotPublishedError);
 
-    expect(failure).toBeInstanceOf(NotReadyToRegisterPaymentAccount);
-    expect((failure as NotReadyToRegisterPaymentAccount).missing).toEqual(['publication']);
     expect(store.newEvents()).toEqual([]);
   });
 });
