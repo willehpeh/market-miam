@@ -1,7 +1,7 @@
 import { Aggregate } from '@market-miam/event-sourcing';
 import { Instant } from '@market-miam/common';
 import { VendorId } from '@market-miam/shared-kernel';
-import { MerchantEvent, PaymentAccountRegistrationStarted } from './events';
+import { MerchantEvent, PaymentAccountRegistrationFailed, PaymentAccountRegistrationStarted } from './events';
 import { RegistrationAlreadyOpenError } from './registration-already-open.error';
 
 // The vendor as Ordering sees them: a merchant, who takes orders once they can take payments.
@@ -23,6 +23,10 @@ export class Merchant extends Aggregate {
     this.raise(this.registrationStarted(registrationId, accountToken, startedAt));
   }
 
+  failPaymentAccountRegistration(registrationId: string, failedAt: Instant) {
+    this.raise(this.registrationFailed(registrationId, failedAt));
+  }
+
   apply(event: MerchantEvent): void {
     switch (event.type) {
       case 'PaymentAccountRegistrationStarted':
@@ -35,6 +39,14 @@ export class Merchant extends Aggregate {
     return {
       type: 'PaymentAccountRegistrationStarted',
       payload: { vendorId: this._id.value(), registrationId, accountToken, startedAt: startedAt.value() },
+      version: 1,
+    };
+  }
+
+  private registrationFailed(registrationId: string, failedAt: Instant): PaymentAccountRegistrationFailed {
+    return {
+      type: 'PaymentAccountRegistrationFailed',
+      payload: { vendorId: this._id.value(), registrationId, failedAt: failedAt.value() },
       version: 1,
     };
   }
