@@ -1,7 +1,8 @@
-import { InMemoryEventStore } from '@market-miam/event-sourcing';
+import { DomainEvent, InMemoryEventStore } from '@market-miam/event-sourcing';
 import {
   InMemoryPublishedStorefronts,
   Merchants,
+  PaymentAccountRegistrationStarted,
   StartPaymentAccountRegistrationHandler,
   StorefrontNotPublishedError,
 } from '@market-miam/ordering';
@@ -17,6 +18,15 @@ describe('Start Payment Account Registration', () => {
     store = new InMemoryEventStore();
     storefronts = new InMemoryPublishedStorefronts();
     handler = new StartPaymentAccountRegistrationHandler(new Merchants(new VendorScopedEvents(store)), storefronts);
+  });
+
+  const given = (...history: DomainEvent[]): void =>
+    store.seedWith('ordering-merchant-vendor-id', history, { vendorId: 'vendor-id' });
+
+  const registrationStarted = (): PaymentAccountRegistrationStarted => ({
+    type: 'PaymentAccountRegistrationStarted',
+    payload: { vendorId: 'vendor-id', registrationId: 'registration-id', accountToken: 'accttok_test_1', startedAt: STARTED_AT },
+    version: 1,
   });
 
   // The vendor taps Connect Stripe once their storefront is published; the app minted the
@@ -43,6 +53,16 @@ describe('Start Payment Account Registration', () => {
   // Stripe checks the account against the storefront, and the prefill can't be redone (ADR 0068).
   it('refuses a vendor whose storefront isn’t published, recording nothing', async () => {
     await expect(handler.execute(TestStartPaymentAccountRegistration.valid())).rejects.toThrow(StorefrontNotPublishedError);
+
+    expect(store.newEvents()).toEqual([]);
+  });
+
+  // A phone on a flaky connection sends the same tap twice; the second is a quiet success (ADR 0068).
+  it('records nothing when the same registration is started again', async () => {
+    storefronts.publish('vendor-id');
+    given(registrationStarted());
+
+    await handler.execute(TestStartPaymentAccountRegistration.valid());
 
     expect(store.newEvents()).toEqual([]);
   });
