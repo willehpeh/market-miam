@@ -76,4 +76,4 @@ detailed rationale in `docs/archive/DEFERRED.md`).
 | [0067](0067-stripe-notices-accounts-through-a-processor-payments-direct.md) | Stripe's notices: accounts through one processor, payments direct, the first event the gate | 2026-11-15 |
 | [0068](0068-one-payment-account-per-vendor-connected-after-publication.md) | One payment account per vendor, connected after publication, created once | 2026-11-15 |
 | [0069](0069-stripe-adapter-raw-http-one-contract-nightly-sandbox.md) | The Stripe adapter: raw HTTP behind a gateway, one contract, the sandbox nightly | 2026-11-15 |
-| [0070](0070-module-boundaries-by-where-a-project-runs-and-what-it-is.md) | Module boundaries are enforced by two tags: where a project runs and what it is (proposed) | 2026-11-15 |
+| [0070](0070-module-boundaries-by-where-a-project-runs-and-what-it-is.md) | Module boundaries are enforced by two tags: where a project runs and what it is | 2026-11-15 |

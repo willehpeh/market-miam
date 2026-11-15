@@ -1,6 +1,6 @@
 # 0070. Module boundaries are enforced by two tags: where a project runs and what it is
 
-Date: 2026-11-15 · Status: Proposed
+Date: 2026-11-15 · Status: Accepted
 
 Makes ADR 0001's boundary enforcement real. Enforces ADRs 0048 and 0066's dependency rules.
 

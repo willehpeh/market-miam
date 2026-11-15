@@ -1,6 +1,6 @@
 # 0001. Nx polyglot monorepo with scoped package boundaries
 
-Date: 2026-05-01 · Status: Accepted
+Date: 2026-05-01 · Status: Accepted · Amended 2026-11-15 by [0070](0070-module-boundaries-by-where-a-project-runs-and-what-it-is.md) — the boundary rule now has constraints: every project tagged by where it runs and what it is
 
 ## Context
 
