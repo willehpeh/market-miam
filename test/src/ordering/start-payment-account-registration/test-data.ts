@@ -1,6 +1,6 @@
 import { StartPaymentAccountRegistration } from '@market-miam/ordering';
 
-export const STARTED_AT = '2026-11-16T09:00:00.000Z';
+const STARTED_AT = '2026-11-16T09:00:00.000Z';
 
 export class TestStartPaymentAccountRegistration {
   static valid(): StartPaymentAccountRegistration {

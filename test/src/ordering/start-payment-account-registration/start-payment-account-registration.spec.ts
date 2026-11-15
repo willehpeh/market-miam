@@ -2,13 +2,13 @@ import { DomainEvent, InMemoryEventStore } from '@market-miam/event-sourcing';
 import {
   InMemoryPublishedStorefronts,
   Merchants,
-  PaymentAccountRegistrationStarted,
   RegistrationAlreadyOpenError,
   StartPaymentAccountRegistrationHandler,
   StorefrontNotPublishedError,
 } from '@market-miam/ordering';
 import { VendorScopedEvents } from '@market-miam/shared-kernel';
-import { STARTED_AT, TestStartPaymentAccountRegistration } from './test-data';
+import { merchantStream, registrationStarted } from '../merchant-events';
+import { TestStartPaymentAccountRegistration } from './test-data';
 
 describe('Start Payment Account Registration', () => {
   let store: InMemoryEventStore;
@@ -21,15 +21,7 @@ describe('Start Payment Account Registration', () => {
     handler = new StartPaymentAccountRegistrationHandler(new Merchants(new VendorScopedEvents(store)), storefronts);
   });
 
-  const merchantStream = 'ordering-merchant-vendor-id';
-
-  const given = (...history: DomainEvent[]): void => store.seedWith(merchantStream, history, { vendorId: 'vendor-id' });
-
-  const registrationStarted = (): PaymentAccountRegistrationStarted => ({
-    type: 'PaymentAccountRegistrationStarted',
-    payload: { vendorId: 'vendor-id', registrationId: 'registration-id', accountToken: 'accttok_test_1', startedAt: STARTED_AT },
-    version: 1,
-  });
+  const given = (...history: DomainEvent[]): void => store.seedWith(merchantStream(), history, { vendorId: 'vendor-id' });
 
   // The vendor taps Connect Stripe once their storefront is published; the app minted the
   // registration ID and made the token at the tap (ADR 0068).
@@ -38,7 +30,7 @@ describe('Start Payment Account Registration', () => {
 
     await handler.execute(TestStartPaymentAccountRegistration.valid());
 
-    expect(store.newEvents()).toEqual([expect.objectContaining({ streamId: merchantStream, ...registrationStarted() })]);
+    expect(store.newEvents()).toEqual([expect.objectContaining({ streamId: merchantStream(), ...registrationStarted() })]);
   });
 
   // Stripe checks the account against the storefront, and the prefill can't be redone (ADR 0068).
