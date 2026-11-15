@@ -16,7 +16,6 @@ describe('Fail Payment Account Registration', () => {
 
   const given = (...history: DomainEvent[]): void => store.seedWith(merchantStream(), history, { vendorId: 'vendor-id' });
 
-  // Stripe refused the account for good: the registration ends (ADR 0068).
   it('records the open registration failed', async () => {
     given(registrationStarted());
 
@@ -31,7 +30,6 @@ describe('Fail Payment Account Registration', () => {
     ]);
   });
 
-  // The same failure arriving twice, as a retried processor would send it: recorded once.
   it('records nothing when the registration has already failed', async () => {
     given(registrationStarted(), registrationFailed());
 
@@ -40,8 +38,6 @@ describe('Fail Payment Account Registration', () => {
     expect(store.newEvents()).toEqual([]);
   });
 
-  // Another registration only opens once this one has failed, so this failure is a repeat, as a
-  // processor replaying the first registration would send it: recorded once.
   it('records nothing for a registration that failed before the open one started', async () => {
     given(
       registrationStarted(),

@@ -1,19 +1,6 @@
-import { Aggregate, DomainEvent, InMemoryEventStore } from '@market-miam/event-sourcing';
+import { InMemoryEventStore } from '@market-miam/event-sourcing';
 import { VendorId, VendorScopedEvents } from '@market-miam/shared-kernel';
-
-// Every context's aggregate saves go through this door: Market Days' repositories hold a
-// VendorScopedEvents and nothing else in that package may call append (the no-restricted-syntax
-// append rule in its eslint config). So the vendorId stamp — which erasure and shredding key off —
-// is asserted here once, not per use case.
-class Tally extends Aggregate {
-  apply(): void {
-    // Nothing to fold: the spec watches what is raised, not what is held.
-  }
-
-  count(what: string): void {
-    this.raise({ type: 'Counted', payload: { what }, version: 1 } satisfies DomainEvent);
-  }
-}
+import { Tally } from './tally';
 
 describe('VendorScopedEvents', () => {
   const vendorId = new VendorId('vendor-1');

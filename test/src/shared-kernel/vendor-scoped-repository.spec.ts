@@ -1,23 +1,6 @@
-import { Aggregate, DomainEvent, InMemoryEventStore } from '@market-miam/event-sourcing';
+import { InMemoryEventStore } from '@market-miam/event-sourcing';
 import { VendorId, VendorScopedEvents, VendorScopedRepository } from '@market-miam/shared-kernel';
-
-// A vendor's aggregate lives in a stream named after its kind and the vendor (ADR 0009), and every
-// context's repositories inherit that naming from here.
-class Tally extends Aggregate {
-  private counted: string[] = [];
-
-  apply(event: DomainEvent): void {
-    this.counted.push(event.payload['what'] as string);
-  }
-
-  count(what: string): void {
-    this.raise({ type: 'Counted', payload: { what }, version: 1 } satisfies DomainEvent);
-  }
-
-  hasCounted(): string[] {
-    return this.counted.slice();
-  }
-}
+import { Tally } from './tally';
 
 class Tallies extends VendorScopedRepository<Tally> {
   constructor(events: VendorScopedEvents) {

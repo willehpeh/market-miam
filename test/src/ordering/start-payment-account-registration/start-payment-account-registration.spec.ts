@@ -23,8 +23,6 @@ describe('Start Payment Account Registration', () => {
 
   const given = (...history: DomainEvent[]): void => store.seedWith(merchantStream(), history, { vendorId: 'vendor-id' });
 
-  // The vendor taps Connect Stripe once their storefront is published; the app minted the
-  // registration ID and made the token at the tap (ADR 0068).
   it('starts a published vendor’s registration, carrying their account token', async () => {
     storefronts.publish('vendor-id');
 
@@ -33,14 +31,12 @@ describe('Start Payment Account Registration', () => {
     expect(store.newEvents()).toEqual([expect.objectContaining({ streamId: merchantStream(), ...registrationStarted() })]);
   });
 
-  // Stripe checks the account against the storefront, and the prefill can't be redone (ADR 0068).
   it('refuses a vendor whose storefront isn’t published, recording nothing', async () => {
     await expect(handler.execute(TestStartPaymentAccountRegistration.valid())).rejects.toThrow(StorefrontNotPublishedError);
 
     expect(store.newEvents()).toEqual([]);
   });
 
-  // A phone on a flaky connection sends the same tap twice; the second is a quiet success (ADR 0068).
   it('records nothing when the same registration is started again', async () => {
     storefronts.publish('vendor-id');
     given(registrationStarted());
@@ -50,7 +46,6 @@ describe('Start Payment Account Registration', () => {
     expect(store.newEvents()).toEqual([]);
   });
 
-  // A double tap makes one account: a second registration waits for the first to end (ADR 0068).
   it('refuses another registration while one is open, recording nothing', async () => {
     storefronts.publish('vendor-id');
     given(registrationStarted());
@@ -62,7 +57,6 @@ describe('Start Payment Account Registration', () => {
     expect(store.newEvents()).toEqual([]);
   });
 
-  // Stripe refused the last one for good: the vendor can tap again (ADR 0068).
   it('starts a new registration once the last one failed', async () => {
     storefronts.publish('vendor-id');
     given(registrationStarted(), registrationFailed());

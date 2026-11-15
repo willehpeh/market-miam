@@ -15,14 +15,12 @@ import { TestStartPaymentAccountRegistration } from '../start-payment-account-re
 
 const NOW = '2026-11-16T09:00:05.000Z';
 
-// Refuses every registration for good, as Stripe refuses an account it won't create.
 class RefusingPaymentAccounts extends InMemoryPaymentAccounts {
   override createFor() {
     return Promise.resolve('refused' as const);
   }
 }
 
-// Can't use any token, as Stripe answers a token that has expired or was used already.
 class TokenRejectingPaymentAccounts extends InMemoryPaymentAccounts {
   override createFor() {
     return Promise.resolve('token-unusable' as const);
@@ -56,7 +54,6 @@ describe('Creates Payment Accounts', () => {
     ).poll();
   }
 
-  // The vendor's tap becomes their account at Stripe, made from the token their browser sent (ADR 0068).
   it('creates the payment account for a started registration, from its token', async () => {
     const registration = TestStartPaymentAccountRegistration.valid();
 
@@ -72,7 +69,6 @@ describe('Creates Payment Accounts', () => {
     ]);
   });
 
-  // Stripe won't create it: the registration ends, and the vendor can tap again (ADR 0068).
   it('records the registration failed when Stripe refuses the account for good', async () => {
     const registration = TestStartPaymentAccountRegistration.valid();
 
@@ -84,8 +80,6 @@ describe('Creates Payment Accounts', () => {
     ]);
   });
 
-  // A token error only proves a refusal once no account was created for the registration: a lost
-  // success, retried past the token's hour, answers token_expired too (ADR 0068).
   it('records the registration failed when its token is unusable and no account was created for it', async () => {
     const registration = TestStartPaymentAccountRegistration.valid();
 
@@ -97,8 +91,6 @@ describe('Creates Payment Accounts', () => {
     ]);
   });
 
-  // The first attempt created the account but its answer was lost; retried past the token's hour,
-  // Stripe answers token_expired. The account's own notice will confirm the registration (ADR 0068).
   it('records nothing when its token is unusable but an account was created for it', async () => {
     const registration = TestStartPaymentAccountRegistration.valid();
     const createdBefore = new TokenRejectingPaymentAccounts([
