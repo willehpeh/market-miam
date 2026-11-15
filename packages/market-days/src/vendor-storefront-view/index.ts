@@ -6,3 +6,5 @@ export { FindVendorStorefrontHandler } from './find-vendor-storefront.handler';
 export { VendorStorefrontViewProjection } from './vendor-storefront-view.projection';
 export { InMemoryVendorStorefrontViews } from './in-memory-vendor-storefront.views';
 export { PostgresVendorStorefrontViews } from './postgres-vendor-storefront.views';
+export { IsStorefrontPublished } from './is-storefront-published';
+export { IsStorefrontPublishedHandler } from './is-storefront-published.handler';
