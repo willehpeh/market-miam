@@ -20,8 +20,9 @@ describe('Start Payment Account Registration', () => {
     handler = new StartPaymentAccountRegistrationHandler(new Merchants(new VendorScopedEvents(store)), storefronts);
   });
 
-  const given = (...history: DomainEvent[]): void =>
-    store.seedWith('ordering-merchant-vendor-id', history, { vendorId: 'vendor-id' });
+  const merchantStream = 'ordering-merchant-vendor-id';
+
+  const given = (...history: DomainEvent[]): void => store.seedWith(merchantStream, history, { vendorId: 'vendor-id' });
 
   const registrationStarted = (): PaymentAccountRegistrationStarted => ({
     type: 'PaymentAccountRegistrationStarted',
@@ -36,18 +37,7 @@ describe('Start Payment Account Registration', () => {
 
     await handler.execute(TestStartPaymentAccountRegistration.valid());
 
-    expect(store.newEvents()).toEqual([
-      expect.objectContaining({
-        streamId: 'ordering-merchant-vendor-id',
-        type: 'PaymentAccountRegistrationStarted',
-        payload: {
-          vendorId: 'vendor-id',
-          registrationId: 'registration-id',
-          accountToken: 'accttok_test_1',
-          startedAt: STARTED_AT,
-        },
-      }),
-    ]);
+    expect(store.newEvents()).toEqual([expect.objectContaining({ streamId: merchantStream, ...registrationStarted() })]);
   });
 
   // Stripe checks the account against the storefront, and the prefill can't be redone (ADR 0068).
