@@ -135,8 +135,8 @@
           Stripe.</p>
         <p>Each request uses the order or registration ID as its idempotency key, so a retry cannot act twice.
           Account creation is a v2 call: a retry returns the account already made while the account token
-          lives, an hour; after that it answers <code>token_expired</code>, so a token error makes the
-          processor look for the account by its registration ID before recording a refusal. Failed
+          lives, an hour; after that it answers <code>token_expired</code>, so on a token error the Stripe
+          adapter looks for the account by its registration ID before answering that Stripe refused. Failed
           work is finished, not repeated. Captures, cancellations and refunds are v1 calls: keys last 24 hours,
           and a retry gets the first answer again, even an error (ADR 0068). A refused account creation is recorded through a command
           (<a href="#account">step 1</a>); a refused capture still needs a path (<a href="#q5">Q5</a>).</p>

@@ -36,7 +36,8 @@ we read, and webhook signatures are checked by Stripe's documented scheme.
    spec refuses production, and closes every account it creates.
 
 **Each fake has its own job.** The in-memory fake lets a spec prove the retry rule; the HTTP fake
-proves the adapter turns timeouts into ambiguous answers, and Stripe's 4xx into final ones.
+proves the adapter turns timeouts into ambiguous answers and Stripe's 4xx into refusals, and that a
+token error is a refusal only when no account was created for the registration (ADR 0068).
 
 **The nightly run's key is a restricted sandbox key**, kept as a GitHub secret and used for nothing
 else.

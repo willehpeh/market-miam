@@ -13,28 +13,13 @@ export class CreatesPaymentAccounts implements Processor {
   ) {}
 
   async handle(event: StoredEvent<PaymentAccountRegistrationStarted>): Promise<void> {
-    if (await this.stripeRefusesForGood(event.payload)) {
+    if ((await this.accounts.createFor(event.payload)) === 'refused') {
       await this.fail(event.payload);
     }
   }
 
   eventTypes(): string[] {
     return ['PaymentAccountRegistrationStarted'];
-  }
-
-  private async stripeRefusesForGood(registration: Registration): Promise<boolean> {
-    switch (await this.accounts.createFor(registration)) {
-      case 'created':
-        return false;
-      case 'refused':
-        return true;
-      case 'token-unusable':
-        return this.noAccountWasCreatedFor(registration);
-    }
-  }
-
-  private async noAccountWasCreatedFor(registration: Registration): Promise<boolean> {
-    return !(await this.accounts.wasCreatedFor(registration));
   }
 
   private fail({ vendorId, registrationId }: Registration): Promise<void> {

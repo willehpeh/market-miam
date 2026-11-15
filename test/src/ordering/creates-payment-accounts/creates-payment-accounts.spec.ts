@@ -21,12 +21,6 @@ class RefusingPaymentAccounts extends InMemoryPaymentAccounts {
   }
 }
 
-class TokenRejectingPaymentAccounts extends InMemoryPaymentAccounts {
-  override createFor() {
-    return Promise.resolve('token-unusable' as const);
-  }
-}
-
 describe('Creates Payment Accounts', () => {
   let store: InMemoryEventStore;
   let accounts: InMemoryPaymentAccounts;
@@ -78,32 +72,5 @@ describe('Creates Payment Accounts', () => {
     expect(gateway.dispatched).toEqual([
       new FailPaymentAccountRegistration(registration.vendorId, registration.registrationId, NOW),
     ]);
-  });
-
-  it('records the registration failed when its token is unusable and no account was created for it', async () => {
-    const registration = TestStartPaymentAccountRegistration.valid();
-
-    await start(registration);
-    await process(new TokenRejectingPaymentAccounts());
-
-    expect(gateway.dispatched).toEqual([
-      new FailPaymentAccountRegistration(registration.vendorId, registration.registrationId, NOW),
-    ]);
-  });
-
-  it('records nothing when its token is unusable but an account was created for it', async () => {
-    const registration = TestStartPaymentAccountRegistration.valid();
-    const createdBefore = new TokenRejectingPaymentAccounts([
-      {
-        vendorId: registration.vendorId,
-        registrationId: registration.registrationId,
-        accountToken: registration.accountToken,
-      },
-    ]);
-
-    await start(registration);
-    await process(createdBefore);
-
-    expect(gateway.dispatched).toEqual([]);
   });
 });
