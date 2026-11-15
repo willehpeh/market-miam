@@ -3,6 +3,7 @@ import {
   InMemoryPublishedStorefronts,
   Merchants,
   PaymentAccountRegistrationStarted,
+  RegistrationAlreadyOpenError,
   StartPaymentAccountRegistrationHandler,
   StorefrontNotPublishedError,
 } from '@market-miam/ordering';
@@ -53,6 +54,18 @@ describe('Start Payment Account Registration', () => {
     given(registrationStarted());
 
     await handler.execute(TestStartPaymentAccountRegistration.valid());
+
+    expect(store.newEvents()).toEqual([]);
+  });
+
+  // A double tap makes one account: a second registration waits for the first to end (ADR 0068).
+  it('refuses another registration while one is open, recording nothing', async () => {
+    storefronts.publish('vendor-id');
+    given(registrationStarted());
+
+    await expect(
+      handler.execute(TestStartPaymentAccountRegistration.with({ registrationId: 'another-registration-id' })),
+    ).rejects.toThrow(RegistrationAlreadyOpenError);
 
     expect(store.newEvents()).toEqual([]);
   });
