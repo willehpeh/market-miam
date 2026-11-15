@@ -16,7 +16,7 @@ import {
 import { VENDOR_ID_METADATA_KEY } from '@market-miam/shared-kernel';
 import { LineageModule } from '../lineage/lineage.module';
 import { TracingCommandGateway } from './tracing/command-gateway';
-import { metadataAttributes } from './tracing/metadata-attributes';
+import { spanMetadata } from './tracing/span-metadata';
 import { TracingQueryGateway } from './tracing/query-gateway';
 import { Subscriptions } from './subscriptions';
 import { HealthController } from './health.controller';
@@ -46,7 +46,7 @@ export class EventSourcingModule {
             new ApplicationEventStore(
               new ShreddingEventStore(inner, keys, piiFields, VENDOR_ID_METADATA_KEY, keyScopes),
               lineage,
-              metadataAttributes,
+              spanMetadata,
             ),
           inject: [PERSISTED_EVENTS, DataKeys, Lineage],
         },
