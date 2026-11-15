@@ -18,6 +18,7 @@ import {
 } from '@market-miam/event-sourcing';
 import { ContinuedLineageHandler } from '../lineage/continued-lineage.handler';
 import { PollSchedule } from './poll-schedule';
+import { metadataAttributes } from './tracing/metadata-attributes';
 
 // The durability seam. Default builds in-memory checkpoints; provide a factory that
 // returns PostgresCheckpoint to make checkpoints survive restart. The runner depends
@@ -153,6 +154,7 @@ export class Subscriptions implements OnApplicationBootstrap, OnApplicationShutd
       const subscription = new PollingSubscription(this.events, driven, checkpoint, {
         unitOfWork: this.unitOfWork,
         name,
+        metadataAttributes,
       });
       const shape = { name, checkpoint, subscription };
       // Sound: only @CheckpointedProjection stamps kind 'projection', and its

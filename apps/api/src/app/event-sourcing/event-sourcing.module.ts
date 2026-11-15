@@ -16,6 +16,7 @@ import {
 import { VENDOR_ID_METADATA_KEY } from '@market-miam/shared-kernel';
 import { LineageModule } from '../lineage/lineage.module';
 import { TracingCommandGateway } from './tracing/command-gateway';
+import { metadataAttributes } from './tracing/metadata-attributes';
 import { TracingQueryGateway } from './tracing/query-gateway';
 import { Subscriptions } from './subscriptions';
 import { HealthController } from './health.controller';
@@ -42,7 +43,11 @@ export class EventSourcingModule {
           // policy, decided here, not in the package.
           provide: EventStore,
           useFactory: (inner: EventStore & Events, keys: DataKeys, lineage: Lineage) =>
-            new ApplicationEventStore(new ShreddingEventStore(inner, keys, piiFields, VENDOR_ID_METADATA_KEY, keyScopes), lineage),
+            new ApplicationEventStore(
+              new ShreddingEventStore(inner, keys, piiFields, VENDOR_ID_METADATA_KEY, keyScopes),
+              lineage,
+              metadataAttributes,
+            ),
           inject: [PERSISTED_EVENTS, DataKeys, Lineage],
         },
         { provide: Events, useExisting: EventStore },

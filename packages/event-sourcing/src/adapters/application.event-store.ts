@@ -4,6 +4,7 @@ import { Events } from '../ports/events';
 import { EventStore } from '../ports/event-store';
 import { Lineage } from '../ports/lineage';
 import { StoredEvent } from '../domain/stored-event';
+import { attributesFrom, MetadataAttributes } from './metadata-attributes';
 import { traceparentOf } from './traceparent';
 import { traced } from './with-span';
 
@@ -13,6 +14,7 @@ export class ApplicationEventStore extends EventStore implements Events {
   constructor(
     private readonly store: EventStore & Events,
     private readonly lineage: Lineage,
+    private readonly metadataAttributes: MetadataAttributes = {},
   ) {
     super();
   }
@@ -35,7 +37,7 @@ export class ApplicationEventStore extends EventStore implements Events {
       'event.type': events[0]?.type,
       'event.count': events.length,
       stream_id: streamId,
-      'vendor.id': metadata?.['vendorId'] as string
+      ...attributesFrom(metadata, this.metadataAttributes),
     };
   }
 

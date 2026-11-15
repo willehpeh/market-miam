@@ -6,6 +6,7 @@ import { Events } from '../ports/events';
 import { StoredEvent } from '../domain/stored-event';
 import { Subscription } from '../ports/subscription';
 import { UnitOfWork } from '../ports/unit-of-work';
+import { attributesFrom, MetadataAttributes } from './metadata-attributes';
 import { producerLinks } from './traceparent';
 import { traced } from './with-span';
 
@@ -17,15 +18,21 @@ const BATCH_SIZE = 100;
 export class PollingSubscription implements Subscription {
   private readonly unitOfWork: UnitOfWork;
   private readonly name: string;
+  private readonly metadataAttributes: MetadataAttributes;
 
   constructor(
     private readonly events: Events,
     private readonly handler: EventHandler,
     private readonly checkpoint: Checkpoint,
-    { unitOfWork = UnitOfWork.none(), name = 'subscription' }: { unitOfWork?: UnitOfWork; name?: string } = {},
+    {
+      unitOfWork = UnitOfWork.none(),
+      name = 'subscription',
+      metadataAttributes = {},
+    }: { unitOfWork?: UnitOfWork; name?: string; metadataAttributes?: MetadataAttributes } = {},
   ) {
     this.unitOfWork = unitOfWork;
     this.name = name;
+    this.metadataAttributes = metadataAttributes;
   }
 
   // One span per polling cycle, and only one: an idle poll is two "is there anything
@@ -88,7 +95,7 @@ export class PollingSubscription implements Subscription {
         span.setAttributes({
           'event.type': event.type,
           'processing.lag_ms': Date.now() - event.timestamp,
-          'vendor.id': event.metadata?.['vendorId'] as string,
+          ...attributesFrom(event.metadata, this.metadataAttributes),
           // The same names the dispatch spans carry, so one correlation-id
           // query follows a request across the commit boundary.
           'app.correlation_id': event.metadata?.['correlationId'] as string,

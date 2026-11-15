@@ -9,6 +9,7 @@ import {
 } from '@market-miam/event-sourcing';
 
 import { registerSpanCapture } from '../../testing/span-capture';
+import { metadataAttributes } from './metadata-attributes';
 
 const exporter = registerSpanCapture();
 const tracer = trace.getTracer('test');
@@ -57,7 +58,10 @@ function storedEvent(metadata?: Record<string, unknown>): StoredEvent {
 }
 
 function subscription(events: Events, handler: EventHandler = new StubHandler()) {
-  return new PollingSubscription(events, handler, new InMemoryCheckpoint('sub-1'), { name: 'catalogue' });
+  return new PollingSubscription(events, handler, new InMemoryCheckpoint('sub-1'), {
+    name: 'catalogue',
+    metadataAttributes,
+  });
 }
 
 function deliver(event: StoredEvent, handler?: EventHandler) {
@@ -153,6 +157,24 @@ describe('PollingSubscription handler tracing', () => {
       'processing.lag_ms': expect.any(Number),
       'app.correlation_id': 'corr-1',
       'app.causation_id': 'cause-1',
+    });
+  });
+
+  // The package lifts only the metadata keys its builder names; the vendor is the api's choice.
+  it('lifts the metadata keys it is given onto the span, under the names it is given', async () => {
+    const handled = new PollingSubscription(
+      new StubEvents(() => Promise.resolve([storedEvent({ vendorId: 'vendor-1', tenantId: 'tenant-1' })])),
+      new StubHandler(),
+      new InMemoryCheckpoint('sub-1'),
+      { name: 'catalogue', metadataAttributes: { tenantId: 'tenant.id' } },
+    );
+
+    await handled.poll();
+
+    expect(handleSpan()?.attributes).toEqual({
+      'event.type': 'TestEvent',
+      'tenant.id': 'tenant-1',
+      'processing.lag_ms': expect.any(Number),
     });
   });
 
