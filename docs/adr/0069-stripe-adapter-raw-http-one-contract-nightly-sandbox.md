@@ -31,11 +31,13 @@ Stripe's documented scheme: HMAC-SHA256 of `{t}.{raw body}` with the destination
 compared in constant time with each `v1` in `Stripe-Signature`, and refused when `t` is more than
 five minutes off.
 
-**One contract, `paymentAccountsContract`, run three ways:**
+**One contract, `connectedPaymentAccountsContract`, run three ways.** The port is
+`ConnectedPaymentAccounts`: the vendors' accounts as Stripe holds them, named apart from
+`PaymentAccounts`, the repository of Ordering's own record of each one (ADR 0068).
 
-1. **`InMemoryPaymentAccounts`**, for Ordering's specs, the api's specs and the api run locally
-   with no Stripe key, as `InMemoryVendorAccounts` is. It speaks the port only, "created",
-   "refused, code X", "ambiguous", never Stripe's statuses or requirements.
+1. **`InMemoryConnectedPaymentAccounts`**, for Ordering's specs, the api's specs and the api run
+   locally with no Stripe key, as `InMemoryVendorAccounts` is. It speaks the port only,
+   "created", "refused, code X", "ambiguous", never Stripe's statuses or requirements.
 2. **The Stripe adapter against `FakeStripe`**, an HTTP fake like `FakeAuth0`, on every push. It
    serves the endpoints the adapter calls with just enough state to prove the translation, and
    plays the timeouts and 5xx that must come back ambiguous.
