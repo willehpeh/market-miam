@@ -7,7 +7,7 @@ import {
   StorefrontNotPublishedError,
 } from '@market-miam/ordering';
 import { VendorScopedEvents } from '@market-miam/shared-kernel';
-import { merchantStream, registrationStarted } from '../merchant-events';
+import { merchantStream, registrationFailed, registrationStarted } from '../merchant-events';
 import { TestStartPaymentAccountRegistration } from './test-data';
 
 describe('Start Payment Account Registration', () => {
@@ -60,5 +60,17 @@ describe('Start Payment Account Registration', () => {
     ).rejects.toThrow(RegistrationAlreadyOpenError);
 
     expect(store.newEvents()).toEqual([]);
+  });
+
+  // Stripe refused the last one for good: the vendor can tap again (ADR 0068).
+  it('starts a new registration once the last one failed', async () => {
+    storefronts.publish('vendor-id');
+    given(registrationStarted(), registrationFailed());
+
+    await handler.execute(TestStartPaymentAccountRegistration.with({ registrationId: 'another-registration-id' }));
+
+    expect(store.newEvents()).toEqual([
+      expect.objectContaining(registrationStarted('vendor-id', { registrationId: 'another-registration-id' })),
+    ]);
   });
 });

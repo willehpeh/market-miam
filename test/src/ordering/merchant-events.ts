@@ -1,4 +1,4 @@
-import { PaymentAccountRegistrationStarted } from '@market-miam/ordering';
+import { PaymentAccountRegistrationFailed, PaymentAccountRegistrationStarted } from '@market-miam/ordering';
 
 // The events a merchant spec seeds as its Given, typed against the domain's event types, as
 // vendor-events.ts does for Market Days. Defaults match TestStartPaymentAccountRegistration.valid().
@@ -17,5 +17,14 @@ export const registrationStarted = (
     startedAt: '2026-11-16T09:00:00.000Z',
     ...overrides,
   },
+  version: 1,
+});
+
+export const registrationFailed = (
+  vendorId = 'vendor-id',
+  overrides: Partial<PaymentAccountRegistrationFailed['payload']> = {},
+): PaymentAccountRegistrationFailed => ({
+  type: 'PaymentAccountRegistrationFailed',
+  payload: { vendorId, registrationId: 'registration-id', failedAt: '2026-11-16T09:00:05.000Z', ...overrides },
   version: 1,
 });
