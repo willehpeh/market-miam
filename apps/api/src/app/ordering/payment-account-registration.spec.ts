@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { INestApplication } from '@nestjs/common';
-import request from 'supertest';
+import request, { Test } from 'supertest';
 import { EventStore } from '@market-miam/event-sourcing';
 import { InMemoryPaymentAccounts } from '@market-miam/ordering';
 import { bootApiTestApp, FIXED_NOW, fixedClock } from '../testing/api-test-app';
@@ -24,11 +24,7 @@ describe('Registering a payment account over HTTP', () => {
     app = await bootApiTestApp({ clock: fixedClock });
     await publishStorefrontFor('acme-bakery');
 
-    await request(app.getHttpServer())
-      .post('/payment-account/registrations')
-      .set('Authorization', 'Bearer any-token')
-      .send({ registrationId: 'registration-1', accountToken: 'accttok_test_1' })
-      .expect(202);
+    await startRegistration().expect(202);
 
     expect(await new EventLog(app).ofType('PaymentAccountRegistrationStarted')).toEqual([
       expect.objectContaining({
@@ -40,11 +36,7 @@ describe('Registering a payment account over HTTP', () => {
   it('records the registration failed once Stripe refuses its account', async () => {
     app = await bootApiTestApp({ clock: fixedClock, paymentAccounts: new RefusingPaymentAccounts() });
     await publishStorefrontFor('acme-bakery');
-    await request(app.getHttpServer())
-      .post('/payment-account/registrations')
-      .set('Authorization', 'Bearer any-token')
-      .send({ registrationId: 'registration-1', accountToken: 'accttok_test_1' })
-      .expect(202);
+    await startRegistration().expect(202);
 
     await app.get(Subscriptions).drain();
 
@@ -54,6 +46,13 @@ describe('Registering a payment account over HTTP', () => {
       }),
     ]);
   });
+
+  function startRegistration(): Test {
+    return request(app.getHttpServer())
+      .post('/payment-account/registrations')
+      .set('Authorization', 'Bearer any-token')
+      .send({ registrationId: 'registration-1', accountToken: 'accttok_test_1' });
+  }
 
   async function publishStorefrontFor(vendorId: string): Promise<void> {
     await app.get(EventStore).append(`storefront-${vendorId}`, [
