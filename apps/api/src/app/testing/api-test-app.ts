@@ -8,6 +8,7 @@ import { StaticTokenVerifier, type VerifiedVendor } from '@market-miam/auth';
 import { AuthModule, OperatorAuthModule } from '@market-miam/auth-nestjs';
 import { MarketDaysModule } from '../market-days/market-days.module';
 import { OpsModule } from '../ops/ops.module';
+import { OrderingModule } from '../ordering/ordering.module';
 import { FakeOperatorTokenVerifier } from './fake-operator-token-verifier';
 import { Account, Accounts } from '../ops/accounts/accounts';
 import { FakeAccounts } from './fake-accounts';
@@ -60,6 +61,7 @@ export function apiTestModule(options: ApiTestOptions = {}): TestingModuleBuilde
       DevelopmentAccountsModule,
       EventSourcingModule.forRoot(vendorPiiFields, vendorPiiKeyScopes),
       MarketDaysModule,
+      OrderingModule,
       OpsModule,
     ],
     providers: [...globalFilters],
