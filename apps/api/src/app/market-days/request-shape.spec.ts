@@ -46,6 +46,8 @@ describe('Request shape', () => {
     ['a carte-price choice whose visible is not a boolean', 'put', '/storefront/carte-prices', { visible: 'oui' }, 'visible'],
     ['a legal identity without a SIRET', 'put', '/legal-identity', { ...legalIdentityBody(), siret: undefined }, 'siret'],
     ['a legal identity leaving out its médiateur rather than sending null', 'put', '/legal-identity', { ...legalIdentityBody(), mediatorName: undefined }, 'mediatorName'],
+    ['a payment account registration without its id', 'post', '/payment-account/registrations', { accountToken: 'accttok_test_1' }, 'registrationId'],
+    ['a payment account registration without its account token', 'post', '/payment-account/registrations', { registrationId: 'registration-1' }, 'accountToken'],
   ];
 
   it.each(cases)('rejects %s as a 400 naming the field', async (_description, method, url, body, field) => {
