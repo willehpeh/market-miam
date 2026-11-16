@@ -1,9 +1,10 @@
 import { DomainError, EmptyValueError } from './errors';
 
 export class InvalidTimeError extends DomainError {
+  override readonly name = 'InvalidTimeError';
+
   constructor() {
     super('Time must be in HH:mm format (24-hour)');
-    this.name = 'InvalidTimeError';
   }
 }
 

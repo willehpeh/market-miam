@@ -1,6 +1,8 @@
 import { DomainError } from '@market-miam/common';
 
 export class IncompleteCompanyDetailsError extends DomainError {
+  override readonly name = 'IncompleteCompanyDetailsError';
+
   constructor() {
     super('A société gives its legal form, capital, greffe and representative together, or none of them');
   }

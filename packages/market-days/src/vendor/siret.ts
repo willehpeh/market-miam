@@ -1,6 +1,8 @@
 import { DomainError } from '@market-miam/common';
 
 export class InvalidSiretError extends DomainError {
+  override readonly name = 'InvalidSiretError';
+
   constructor() {
     super('SIRET must be 14 digits with a valid check digit');
   }

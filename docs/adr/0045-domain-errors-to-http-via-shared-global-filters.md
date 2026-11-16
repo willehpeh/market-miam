@@ -1,6 +1,6 @@
 # 0045. Domain errors reach HTTP through one shared filter list
 
-Date: 2026-08-10 · Status: Accepted
+Date: 2026-08-10 · Status: Accepted · Amended 2026-11-16 — each error declares its name; none is read from its class
 
 Records a decision in force since the API's first controllers, referenced by
 ADRs 0031 and 0033 before it had a number, and extended during menu du jour
@@ -41,8 +41,11 @@ answered 500 — nothing boots `AppModule` in a test, so nothing would notice.
   the moment it extends `DomainError`, with no edge change.
 - One error dialect for clients: `statusCode` + `"Name - message"`. The
   request-shape gate (ADR 0046) deliberately mirrors it.
-- Error class names travel to clients in the message. Accepted: the only
-  consumers are our own frontends, and the names are the diagnosis.
+- Error names travel to clients in the message. Accepted: the only consumers
+  are our own frontends, and the names are the diagnosis. Each error declares
+  its name, and `DomainError` requires one; none is read from the class at
+  runtime, so renaming a class or minifying the build can't change what a
+  client sees.
 - 409 vs 400 splits "retry it" from "fix it" for the frontends' error
   handling.
 - Test/production filter parity is structural, not disciplinary — the shared

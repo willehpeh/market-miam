@@ -1,6 +1,8 @@
 import { DomainError, Url } from '@market-miam/common';
 
 export class IncompleteMediatorError extends DomainError {
+  override readonly name = 'IncompleteMediatorError';
+
   constructor() {
     super('A médiateur is named together with its site, or not at all');
   }

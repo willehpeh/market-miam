@@ -2,9 +2,10 @@ import { DomainError, EmptyValueError } from './errors';
 import { Instant } from './instant';
 
 export class InvalidDateError extends DomainError {
+  override readonly name = 'InvalidDateError';
+
   constructor() {
     super('Date must be in YYYY-MM-DD format');
-    this.name = 'InvalidDateError';
   }
 }
 

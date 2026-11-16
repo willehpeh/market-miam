@@ -2,6 +2,8 @@ import { DomainError } from '@market-miam/common';
 import { Siret } from './siret';
 
 export class InvalidVatRegimeError extends DomainError {
+  override readonly name = 'InvalidVatRegimeError';
+
   constructor() {
     super('TVA regime must be assujetti or franchise');
   }

@@ -1,9 +1,10 @@
 import { DomainError, EmptyValueError } from './errors';
 
 export class InvalidUrlError extends DomainError {
+  override readonly name = 'InvalidUrlError';
+
   constructor() {
     super('URL must be a valid http or https URL');
-    this.name = 'InvalidUrlError';
   }
 }
 
