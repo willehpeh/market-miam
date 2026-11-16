@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { Clock, DateClock } from '@market-miam/common';
-import { CommandGateway, EventStore } from '@market-miam/event-sourcing';
+import { CommandGateway } from '@market-miam/event-sourcing';
 import {
   CreatesPaymentAccounts,
   FailPaymentAccountRegistrationHandler,
@@ -18,7 +18,6 @@ import { PaymentAccountController } from './payment-account.controller';
   controllers: [PaymentAccountController],
   providers: [
     { provide: Clock, useClass: DateClock },
-    { provide: VendorScopedEvents, useFactory: (store: EventStore) => new VendorScopedEvents(store), inject: [EventStore] },
     { provide: Merchants, useFactory: (events: VendorScopedEvents) => new Merchants(events), inject: [VendorScopedEvents] },
     { provide: PublishedStorefronts, useClass: MarketDaysPublishedStorefronts },
     { provide: PaymentAccounts, useClass: InMemoryPaymentAccounts },

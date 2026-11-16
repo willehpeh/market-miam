@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { CommandGateway, DataKeys, EventStore } from '@market-miam/event-sourcing';
+import { CommandGateway, DataKeys } from '@market-miam/event-sourcing';
 import { Clock, DateClock } from '@market-miam/common';
 import {
   AddItemToCatalogueHandler,
@@ -88,7 +88,6 @@ const signedUploads = [
 ];
 
 const repositories = [
-  { provide: VendorScopedEvents, useFactory: (store: EventStore) => new VendorScopedEvents(store), inject: [EventStore] },
   { provide: Vendors, useFactory: (events: VendorScopedEvents) => new Vendors(events), inject: [VendorScopedEvents] },
   { provide: Catalogues, useFactory: (events: VendorScopedEvents) => new Catalogues(events), inject: [VendorScopedEvents] },
   { provide: Calendars, useFactory: (events: VendorScopedEvents) => new Calendars(events), inject: [VendorScopedEvents] },
@@ -197,7 +196,7 @@ const domainServices = [StorefrontPublication];
 
 const queryHandlers = [FindCustomerStorefrontHandler, FindVendorStorefrontHandler, FindVendorCatalogueHandler, FindVendorLegalIdentityHandler, FindVendorSchedulesHandler, FindUpcomingMarketDaysHandler, FindUnratedMarketDaysHandler, FindMarketDayHandler, FindMarketPricesHandler, FindSellingRecordHandler, IsStorefrontPublishedHandler];
 
-// EventStore / CommandGateway / QueryGateway come from the global
+// VendorScopedEvents / CommandGateway / QueryGateway come from the global
 // EventSourcingModule; the view stores from the global persistence module the
 // composition root picked. Nothing here knows which profile is running.
 @Module({

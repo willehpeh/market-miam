@@ -13,7 +13,7 @@ import {
   QueryGateway,
   ShreddingEventStore,
 } from '@market-miam/event-sourcing';
-import { VENDOR_ID_METADATA_KEY } from '@market-miam/shared-kernel';
+import { VENDOR_ID_METADATA_KEY, VendorScopedEvents } from '@market-miam/shared-kernel';
 import { LineageModule } from '../lineage/lineage.module';
 import { TracingCommandGateway } from './tracing/command-gateway';
 import { spanMetadata } from './tracing/span-metadata';
@@ -51,6 +51,7 @@ export class EventSourcingModule {
           inject: [PERSISTED_EVENTS, DataKeys, Lineage],
         },
         { provide: Events, useExisting: EventStore },
+        { provide: VendorScopedEvents, useFactory: (store: EventStore) => new VendorScopedEvents(store), inject: [EventStore] },
         TracingCommandGateway,
         { provide: CommandGateway, useExisting: TracingCommandGateway },
         TracingQueryGateway,
@@ -59,7 +60,7 @@ export class EventSourcingModule {
         // inseparable from where the pokes come from.
         Subscriptions,
       ],
-      exports: [EventStore, Events, CommandGateway, QueryGateway, Subscriptions],
+      exports: [EventStore, Events, VendorScopedEvents, CommandGateway, QueryGateway, Subscriptions],
     };
   }
 }
