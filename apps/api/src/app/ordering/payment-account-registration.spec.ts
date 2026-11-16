@@ -1,23 +1,27 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { EventStore } from '@market-miam/event-sourcing';
+import { InMemoryPaymentAccounts } from '@market-miam/ordering';
 import { bootApiTestApp, FIXED_NOW, fixedClock } from '../testing/api-test-app';
 import { EventLog } from '../testing/event-log';
 import { Subscriptions } from '../event-sourcing/subscriptions';
 
+class RefusingPaymentAccounts extends InMemoryPaymentAccounts {
+  override createFor() {
+    return Promise.resolve('refused' as const);
+  }
+}
+
 describe('Registering a payment account over HTTP', () => {
   let app: INestApplication;
-
-  beforeEach(async () => {
-    app = await bootApiTestApp({ clock: fixedClock });
-  });
 
   afterEach(async () => {
     await app.close();
   });
 
   it('starts the registration of a vendor whose storefront is published', async () => {
+    app = await bootApiTestApp({ clock: fixedClock });
     await publishStorefrontFor('acme-bakery');
 
     await request(app.getHttpServer())
@@ -29,6 +33,24 @@ describe('Registering a payment account over HTTP', () => {
     expect(await new EventLog(app).ofType('PaymentAccountRegistrationStarted')).toEqual([
       expect.objectContaining({
         payload: { vendorId: 'acme-bakery', registrationId: 'registration-1', accountToken: 'accttok_test_1', startedAt: FIXED_NOW },
+      }),
+    ]);
+  });
+
+  it('records the registration failed once Stripe refuses its account', async () => {
+    app = await bootApiTestApp({ clock: fixedClock, paymentAccounts: new RefusingPaymentAccounts() });
+    await publishStorefrontFor('acme-bakery');
+    await request(app.getHttpServer())
+      .post('/payment-account/registrations')
+      .set('Authorization', 'Bearer any-token')
+      .send({ registrationId: 'registration-1', accountToken: 'accttok_test_1' })
+      .expect(202);
+
+    await app.get(Subscriptions).drain();
+
+    expect(await new EventLog(app).ofType('PaymentAccountRegistrationFailed')).toEqual([
+      expect.objectContaining({
+        payload: { vendorId: 'acme-bakery', registrationId: 'registration-1', failedAt: FIXED_NOW },
       }),
     ]);
   });
