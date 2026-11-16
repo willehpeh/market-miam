@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import { bootApiTestApp, fixedClock } from '../testing/api-test-app';
+import { bootApiTestApp, fixedClock } from './testing/api-test-app';
 
 // The transport gate: a body that isn't the shape the handler reads earns a 400 naming
 // the field, never a 500 from deep inside a value object. Shape only — a well-shaped
