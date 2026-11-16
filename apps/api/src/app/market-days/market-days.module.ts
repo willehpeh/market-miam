@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { CommandGateway, DataKeys } from '@market-miam/event-sourcing';
-import { Clock, DateClock } from '@market-miam/common';
+import { Clock } from '@market-miam/common';
 import {
   AddItemToCatalogueHandler,
   AmendMarketScheduleHandler,
@@ -69,6 +69,7 @@ import {
   VendorStorefrontViewStore,
 } from '@market-miam/market-days';
 import { VendorScopedEvents } from '@market-miam/shared-kernel';
+import { ClockModule } from '../clock.module';
 import { SignedUploads, signedUploadsFor } from '../signed-uploads';
 import { VendorsController } from './vendors.controller';
 import { StorefrontController } from './storefront.controller';
@@ -80,8 +81,6 @@ import { MarketPricesController } from './market-prices.controller';
 import { SellingRecordController } from './selling-record.controller';
 import { PublicStorefrontController } from './public-storefront.controller';
 import { dailyShredSweep, ShredSweep } from './shred-sweep';
-
-const clock = [{ provide: Clock, useClass: DateClock }];
 
 const signedUploads = [
   { provide: SignedUploads, useFactory: signedUploadsFor, inject: [ConfigService, Clock] },
@@ -200,9 +199,9 @@ const queryHandlers = [FindCustomerStorefrontHandler, FindVendorStorefrontHandle
 // EventSourcingModule; the view stores from the global persistence module the
 // composition root picked. Nothing here knows which profile is running.
 @Module({
+  imports: [ClockModule],
   controllers: [VendorsController, StorefrontController, LegalIdentityController, CatalogueController, MarketScheduleController, MarketDayController, MarketPricesController, SellingRecordController, PublicStorefrontController],
   providers: [
-    ...clock,
     ...signedUploads,
     ...repositories,
     ...projections,
