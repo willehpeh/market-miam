@@ -4,6 +4,7 @@ import { Clock, Email, Instant, LocalDate } from '@market-miam/common';
 import { VendorId } from '@market-miam/shared-kernel';
 import { EventStore } from '@market-miam/event-sourcing';
 import { InMemoryVendorAccounts, StorefrontOpened, vendorPiiFields, vendorPiiKeyScopes, VendorAccounts } from '@market-miam/market-days';
+import { InMemoryPaymentAccounts, PaymentAccounts } from '@market-miam/ordering';
 import { StaticTokenVerifier, type VerifiedVendor } from '@market-miam/auth';
 import { AuthModule, OperatorAuthModule } from '@market-miam/auth-nestjs';
 import { MarketDaysModule } from '../market-days/market-days.module';
@@ -42,6 +43,7 @@ export interface ApiTestOptions {
   accounts?: Account[];
   // Vendors' sign-in accounts, as the invitation processor opens them.
   vendorAccounts?: InMemoryVendorAccounts;
+  paymentAccounts?: PaymentAccounts;
 }
 
 export function apiTestModule(options: ApiTestOptions = {}): TestingModuleBuilder {
@@ -52,6 +54,7 @@ export function apiTestModule(options: ApiTestOptions = {}): TestingModuleBuilde
     polling = 'disabled',
     accounts = [],
     vendorAccounts = new InMemoryVendorAccounts(),
+    paymentAccounts = new InMemoryPaymentAccounts(),
   } = options;
   const builder = Test.createTestingModule({
     imports: [
@@ -72,6 +75,7 @@ export function apiTestModule(options: ApiTestOptions = {}): TestingModuleBuilde
   builder.overrideProvider(SignedUploads).useValue(signer);
   builder.overrideProvider(Accounts).useValue(new FakeAccounts(accounts));
   builder.overrideProvider(VendorAccounts).useValue(vendorAccounts);
+  builder.overrideProvider(PaymentAccounts).useValue(paymentAccounts);
   if (clock) {
     builder.overrideProvider(Clock).useValue(clock);
   }
