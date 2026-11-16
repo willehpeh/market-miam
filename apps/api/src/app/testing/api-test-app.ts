@@ -3,7 +3,7 @@ import { Test, TestingModuleBuilder } from '@nestjs/testing';
 import { Clock, Email, Instant, LocalDate } from '@market-miam/common';
 import { VendorId } from '@market-miam/shared-kernel';
 import { EventStore } from '@market-miam/event-sourcing';
-import { InMemoryVendorAccounts, StorefrontOpened, vendorPiiFields, vendorPiiKeyScopes, VendorAccounts } from '@market-miam/market-days';
+import { InMemoryVendorAccounts, StorefrontOpened, StorefrontPublished, vendorPiiFields, vendorPiiKeyScopes, VendorAccounts } from '@market-miam/market-days';
 import { InMemoryPaymentAccounts, PaymentAccounts } from '@market-miam/ordering';
 import { StaticTokenVerifier, type VerifiedVendor } from '@market-miam/auth';
 import { AuthModule, OperatorAuthModule } from '@market-miam/auth-nestjs';
@@ -96,4 +96,10 @@ export async function openStorefrontFor(app: INestApplication, vendorId: string)
   const opened: StorefrontOpened = { type: 'StorefrontOpened', payload: { vendorId }, version: 1 };
   const store = app.get(EventStore);
   await store.append(`storefront-${vendorId}`, [opened], 0, { vendorId });
+}
+
+export async function publishStorefrontFor(app: INestApplication, vendorId: string): Promise<void> {
+  await openStorefrontFor(app, vendorId);
+  const published: StorefrontPublished = { type: 'StorefrontPublished', payload: {}, version: 1 };
+  await app.get(EventStore).append(`storefront-${vendorId}`, [published], 1, { vendorId });
 }
