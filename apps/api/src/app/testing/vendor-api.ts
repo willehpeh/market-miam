@@ -48,6 +48,10 @@ export class VendorApi {
     return this.call('post', '/storefront/publish');
   }
 
+  startPaymentAccountRegistration(registration: { registrationId: string; accountToken: string }): Test {
+    return this.call('post', '/payment-account/registrations').send(registration);
+  }
+
   private call(verb: Verb, path: string): Test {
     return request(this.app.getHttpServer())[verb](path).set('Authorization', `Bearer ${this.token}`);
   }

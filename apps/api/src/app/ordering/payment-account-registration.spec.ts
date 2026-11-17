@@ -1,9 +1,17 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { INestApplication } from '@nestjs/common';
-import request, { Test } from 'supertest';
 import { InMemoryPaymentAccounts } from '@market-miam/ordering';
-import { bootApiTestApp, FIXED_NOW, fixedClock, openStorefrontFor, publishStorefrontFor } from '../testing/api-test-app';
+import {
+  ApiTestOptions,
+  bootApiTestApp,
+  FIXED_NOW,
+  fixedClock,
+  openStorefrontFor,
+  publishStorefrontFor,
+  testVendor,
+} from '../testing/api-test-app';
 import { EventLog } from '../testing/event-log';
+import { VendorApi } from '../testing/vendor-api';
 import { Subscriptions } from '../event-sourcing/subscriptions';
 
 class RefusingPaymentAccounts extends InMemoryPaymentAccounts {
@@ -12,19 +20,22 @@ class RefusingPaymentAccounts extends InMemoryPaymentAccounts {
   }
 }
 
+const registration = { registrationId: 'registration-1', accountToken: 'accttok_test_1' };
+
 describe('Registering a payment account over HTTP', () => {
   let app: INestApplication;
+  let vendor: VendorApi;
 
   afterEach(async () => {
     await app.close();
   });
 
   it('starts the registration of a vendor whose storefront is published', async () => {
-    app = await bootApiTestApp({ clock: fixedClock });
+    await boot();
     await publishStorefrontFor(app, 'acme-bakery');
     await app.get(Subscriptions).drain();
 
-    await startRegistration().expect(202);
+    await vendor.startPaymentAccountRegistration(registration).expect(202);
 
     expect(await new EventLog(app).ofType('PaymentAccountRegistrationStarted')).toEqual([
       expect.objectContaining({
@@ -34,10 +45,10 @@ describe('Registering a payment account over HTTP', () => {
   });
 
   it('records the registration failed once Stripe refuses its account', async () => {
-    app = await bootApiTestApp({ clock: fixedClock, paymentAccounts: new RefusingPaymentAccounts() });
+    await boot({ paymentAccounts: new RefusingPaymentAccounts() });
     await publishStorefrontFor(app, 'acme-bakery');
     await app.get(Subscriptions).drain();
-    await startRegistration().expect(202);
+    await vendor.startPaymentAccountRegistration(registration).expect(202);
 
     await app.get(Subscriptions).drain();
 
@@ -49,30 +60,30 @@ describe('Registering a payment account over HTTP', () => {
   });
 
   it('refuses as a bad request a vendor whose storefront is not published', async () => {
-    app = await bootApiTestApp({ clock: fixedClock });
+    await boot();
     await openStorefrontFor(app, 'acme-bakery');
     await app.get(Subscriptions).drain();
 
-    const response = await startRegistration().expect(400);
+    const response = await vendor.startPaymentAccountRegistration(registration).expect(400);
 
     expect(response.body.message).toContain('not published');
   });
 
   it('refuses as a bad request another registration while one is open', async () => {
-    app = await bootApiTestApp({ clock: fixedClock });
+    await boot();
     await publishStorefrontFor(app, 'acme-bakery');
     await app.get(Subscriptions).drain();
-    await startRegistration('registration-1').expect(202);
+    await vendor.startPaymentAccountRegistration(registration).expect(202);
 
-    const response = await startRegistration('registration-2').expect(400);
+    const response = await vendor
+      .startPaymentAccountRegistration({ ...registration, registrationId: 'registration-2' })
+      .expect(400);
 
     expect(response.body.message).toContain('already open');
   });
 
-  function startRegistration(registrationId = 'registration-1'): Test {
-    return request(app.getHttpServer())
-      .post('/payment-account/registrations')
-      .set('Authorization', 'Bearer any-token')
-      .send({ registrationId, accountToken: 'accttok_test_1' });
+  async function boot(options: ApiTestOptions = {}): Promise<void> {
+    app = await bootApiTestApp({ clock: fixedClock, ...options });
+    vendor = new VendorApi(app, testVendor.vendorId.value(), testVendor.email.value());
   }
 });
