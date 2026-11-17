@@ -1,6 +1,7 @@
 import { createHmac } from 'node:crypto';
 import { Clock } from '@market-miam/common';
 import { Signature } from './signature';
+import { StripeSignatureHeader } from './stripe-signature-header';
 
 const TOLERANCE_IN_SECONDS = 5 * 60;
 
@@ -10,23 +11,15 @@ export class StripeEventDestination {
     private readonly clock: Clock,
   ) {}
 
-  isGenuine(body: Buffer, header: string | undefined): boolean {
-    const fields = (header ?? '').split(',').map((field) => field.split('='));
-    const timestamp = fields.find(([key]) => key === 't')?.[1];
-    const provided = fields.filter(([key]) => key === 'v1').map(([, hex]) => Signature.fromHex(hex ?? ''));
-    return this.isRecent(timestamp) && this.anyMatches(provided, this.signatureOf(body, timestamp));
+  isGenuine(body: Buffer, signatureHeader: string | undefined): boolean {
+    const header = StripeSignatureHeader.parse(signatureHeader);
+    return (
+      header.wasSignedWithin(TOLERANCE_IN_SECONDS, this.clock.now()) &&
+      header.matches(this.signatureOf(header.signedPayloadFor(body)))
+    );
   }
 
-  private isRecent(timestamp: string | undefined): boolean {
-    const nowInSeconds = new Date(this.clock.now().value()).getTime() / 1000;
-    return nowInSeconds - Number(timestamp) <= TOLERANCE_IN_SECONDS;
-  }
-
-  private signatureOf(body: Buffer, timestamp: string | undefined): Signature {
-    return new Signature(createHmac('sha256', this.secret).update(`${timestamp}.`).update(body).digest());
-  }
-
-  private anyMatches(provided: Signature[], expected: Signature): boolean {
-    return provided.some((signature) => signature.matches(expected));
+  private signatureOf(signedPayload: Buffer): Signature {
+    return new Signature(createHmac('sha256', this.secret).update(signedPayload).digest());
   }
 }
