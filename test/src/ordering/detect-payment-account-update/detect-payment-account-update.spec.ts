@@ -3,6 +3,12 @@ import { DetectPaymentAccountUpdateHandler, PaymentAccountNotices } from '@marke
 import { noticeStream, updateDetected } from '../notice-events';
 import { TestDetectPaymentAccountUpdate } from './test-data';
 
+class UnreachableEventStore extends InMemoryEventStore {
+  override append(): Promise<void> {
+    return Promise.reject(new Error('connection refused'));
+  }
+}
+
 describe('Detect Payment Account Update', () => {
   let store: InMemoryEventStore;
   let handler: DetectPaymentAccountUpdateHandler;
@@ -26,5 +32,11 @@ describe('Detect Payment Account Update', () => {
     await handler.execute(TestDetectPaymentAccountUpdate.valid());
 
     expect(store.newEvents()).toEqual([]);
+  });
+
+  it('lets a failure to record the notice through, so Stripe sends it again', async () => {
+    const unreachable = new DetectPaymentAccountUpdateHandler(new PaymentAccountNotices(new UnreachableEventStore()));
+
+    await expect(unreachable.execute(TestDetectPaymentAccountUpdate.valid())).rejects.toThrow('connection refused');
   });
 });
