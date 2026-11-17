@@ -1,4 +1,4 @@
-import { EventStore } from '@market-miam/event-sourcing';
+import { ConcurrencyError, EventStore } from '@market-miam/event-sourcing';
 import { PaymentAccountUpdateDetected } from './events';
 
 export type Notice = PaymentAccountUpdateDetected['payload'];
@@ -12,6 +12,12 @@ export class PaymentAccountNotices {
       payload: { noticeId, accountId },
       version: 1,
     };
-    await this.store.append(`ordering-payment-account-notice-${noticeId}`, [detected], 0);
+    try {
+      await this.store.append(`ordering-payment-account-notice-${noticeId}`, [detected], 0);
+    } catch (error) {
+      if (!(error instanceof ConcurrencyError)) {
+        throw error;
+      }
+    }
   }
 }
