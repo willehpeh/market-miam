@@ -1,9 +1,10 @@
-import { InMemoryEventStore } from '@market-miam/event-sourcing';
+import { DomainEvent, InMemoryEventStore } from '@market-miam/event-sourcing';
 import {
   DetectPaymentAccountUpdate,
   DetectPaymentAccountUpdateHandler,
   PaymentAccountNotices,
 } from '@market-miam/ordering';
+import { noticeStream, updateDetected } from '../notice-events';
 
 describe('Detect Payment Account Update', () => {
   let store: InMemoryEventStore;
@@ -13,6 +14,8 @@ describe('Detect Payment Account Update', () => {
     store = new InMemoryEventStore();
     handler = new DetectPaymentAccountUpdateHandler(new PaymentAccountNotices(store));
   });
+
+  const given = (...history: DomainEvent[]): void => store.seedWith(noticeStream(), history);
 
   it('records the update a notice reports, on a stream named after the notice', async () => {
     await handler.execute(new DetectPaymentAccountUpdate('evt_test_1', 'acct_test_1'));
@@ -24,5 +27,13 @@ describe('Detect Payment Account Update', () => {
         payload: { noticeId: 'evt_test_1', accountId: 'acct_test_1' },
       }),
     ]);
+  });
+
+  it('records nothing when Stripe sends the same notice again', async () => {
+    given(updateDetected());
+
+    await handler.execute(new DetectPaymentAccountUpdate('evt_test_1', 'acct_test_1'));
+
+    expect(store.newEvents()).toEqual([]);
   });
 });
