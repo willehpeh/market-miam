@@ -11,10 +11,14 @@ export class StripeEventDestination {
   ) {}
 
   isGenuine(body: Buffer, header: string | undefined): boolean {
-    const fields = new Map((header ?? '').split(',').map((field) => field.split('=') as [string, string]));
-    const timestamp = fields.get('t');
-    const provided = Signature.fromHex(fields.get('v1') ?? '');
-    return this.isRecent(timestamp) && provided.matches(this.signatureOf(body, timestamp));
+    const fields = (header ?? '').split(',').map((field) => field.split('='));
+    const timestamp = fields.find(([key]) => key === 't')?.[1];
+    const provided = fields.filter(([key]) => key === 'v1').map(([, hex]) => Signature.fromHex(hex ?? ''));
+    return this.isRecent(timestamp) && this.anyMatches(provided, this.signatureOf(body, timestamp));
+  }
+
+  private anyMatches(provided: Signature[], expected: Signature): boolean {
+    return provided.some((signature) => signature.matches(expected));
   }
 
   private isRecent(timestamp: string | undefined): boolean {
