@@ -1,7 +1,8 @@
-import baseConfig from '../../eslint.config.mjs';
+import baseConfig, { domainObjectsExposeNoAccessors } from '../../eslint.config.mjs';
 
 export default [
   ...baseConfig,
+  domainObjectsExposeNoAccessors,
   // Erasure and shredding find a vendor's events by the vendorId in their metadata,
   // and VendorScopedEvents.save, in the shared kernel, is the only place that stamp
   // is written. An append reaching the store by any other route produces events that

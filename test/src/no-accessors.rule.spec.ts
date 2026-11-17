@@ -9,8 +9,8 @@ function lint(code: string): Linter.LintMessage[] {
     {
       files: ['**/*.ts'],
       languageOptions: { parser: tseslint.parser as Linter.Parser },
-      plugins: { conventions: { rules: { 'no-accessors': noAccessorsRule } } },
-      rules: { 'conventions/no-accessors': 'error' },
+      plugins: { domain: { rules: { 'no-accessors': noAccessorsRule } } },
+      rules: { 'domain/no-accessors': 'error' },
     },
     'price.ts',
   );

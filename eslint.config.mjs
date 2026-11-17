@@ -1,5 +1,6 @@
 import nx from '@nx/eslint-plugin';
 import { checkpointDecoratorRule } from './eslint-rules/checkpoint-decorator.mjs';
+import { noAccessorsRule } from './eslint-rules/no-accessors.mjs';
 
 const LIBRARY_TYPES = ['type:util', 'type:platform', 'type:kernel', 'type:auth', 'type:context'];
 const TEST_FILES = ['**/*.spec.ts', '**/*.scenario.ts', '**/*.tenant.ts', '**/testing/**'];
@@ -36,6 +37,13 @@ const moduleBoundaries = ({ appsMayUseTheTestProject }) => [
     depConstraints: dependencyRules({ appsMayUseTheTestProject }),
   },
 ];
+
+export const domainObjectsExposeNoAccessors = {
+  files: ['**/*.ts'],
+  ignores: TEST_FILES,
+  plugins: { domain: { rules: { 'no-accessors': noAccessorsRule } } },
+  rules: { 'domain/no-accessors': 'error' },
+};
 
 const eventSourcingConventions = {
   rules: {

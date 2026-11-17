@@ -1,9 +1,10 @@
-import baseConfig from '../../eslint.config.mjs';
+import baseConfig, { domainObjectsExposeNoAccessors } from '../../eslint.config.mjs';
 
 const noticesBelongToNoVendor = ['src/payment-account-notices/payment-account-notices.ts'];
 
 export default [
   ...baseConfig,
+  domainObjectsExposeNoAccessors,
   {
     files: ['**/*.ts'],
     rules: {

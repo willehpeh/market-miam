@@ -1,4 +1,4 @@
-import baseConfig from '../../eslint.config.mjs';
+import baseConfig, { domainObjectsExposeNoAccessors } from '../../eslint.config.mjs';
 
 const commandBusOnlyInTheGateway = {
   name: '@nestjs/cqrs',
@@ -21,6 +21,7 @@ const restrictedImports = (...paths) => ({ 'no-restricted-imports': ['error', { 
 
 export default [
   ...baseConfig,
+  domainObjectsExposeNoAccessors,
   {
     // Commands must be dispatched through CommandGateway, so every command
     // is uniformly traced. Importing the raw bus anywhere else bypasses the
