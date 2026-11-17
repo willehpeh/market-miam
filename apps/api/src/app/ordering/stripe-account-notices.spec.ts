@@ -27,7 +27,7 @@ describe("Stripe's account notices over HTTP", () => {
   });
 
   function notify(notice: object): Test {
-    const body = JSON.stringify(notice);
+    const body = formattedLikeStripe(notice);
     return request(app.getHttpServer())
       .post('/webhooks/stripe/accounts')
       .set('Content-Type', 'application/json')
@@ -45,6 +45,10 @@ function accountUpdated(noticeId: string, accountId: string): object {
     created: FIXED_NOW,
     related_object: { id: accountId, type: 'v2.core.account', url: `/v2/core/accounts/${accountId}` },
   };
+}
+
+function formattedLikeStripe(notice: object): string {
+  return JSON.stringify(notice, null, 2);
 }
 
 function signatureFor(body: string): string {
