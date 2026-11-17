@@ -1,4 +1,4 @@
-import baseConfig, { domainObjectsExposeNoAccessors } from '../../eslint.config.mjs';
+import baseConfig, { domainObjectsExposeNoAccessors, spansOnlyThroughTraced } from '../../eslint.config.mjs';
 
 export default [
   ...baseConfig,
@@ -15,6 +15,7 @@ export default [
     rules: {
       'no-restricted-syntax': [
         'error',
+        spansOnlyThroughTraced,
         {
           selector: "MemberExpression[property.name='append']",
           message:

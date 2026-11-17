@@ -1,4 +1,10 @@
-import baseConfig, { domainObjectsExposeNoAccessors } from '../../eslint.config.mjs';
+import baseConfig, { domainObjectsExposeNoAccessors, spansOnlyThroughTraced } from '../../eslint.config.mjs';
+
+const appendsOnlyThroughVendorScopedEvents = {
+  selector: "MemberExpression[property.name='append']",
+  message:
+    'Appending outside VendorScopedEvents loses the vendorId metadata erasure keys off; save through a vendor-scoped repository.',
+};
 
 const noticesBelongToNoVendor = ['src/payment-account-notices/payment-account-notices.ts'];
 
@@ -8,20 +14,13 @@ export default [
   {
     files: ['**/*.ts'],
     rules: {
-      'no-restricted-syntax': [
-        'error',
-        {
-          selector: "MemberExpression[property.name='append']",
-          message:
-            'Appending outside VendorScopedEvents loses the vendorId metadata erasure keys off; save through a vendor-scoped repository.',
-        },
-      ],
+      'no-restricted-syntax': ['error', spansOnlyThroughTraced, appendsOnlyThroughVendorScopedEvents],
     },
   },
   {
     files: noticesBelongToNoVendor,
     rules: {
-      'no-restricted-syntax': 'off',
+      'no-restricted-syntax': ['error', spansOnlyThroughTraced],
     },
   },
 ];
