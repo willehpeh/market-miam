@@ -2,6 +2,8 @@ import { createHmac } from 'node:crypto';
 import { Clock } from '@market-miam/common';
 import { Signature } from './signature';
 
+const TOLERANCE_IN_SECONDS = 5 * 60;
+
 export class StripeEventDestination {
   constructor(
     private readonly secret: string,
@@ -11,8 +13,13 @@ export class StripeEventDestination {
   isGenuine(body: Buffer, header: string): boolean {
     const fields = new Map(header.split(',').map((field) => field.split('=') as [string, string]));
     const timestamp = fields.get('t');
-    const ageInSeconds = new Date(this.clock.now().value()).getTime() / 1000 - Number(timestamp);
-    return ageInSeconds <= 300 && Signature.fromHex(fields.get('v1') ?? '').matches(this.signatureOf(body, timestamp));
+    const provided = Signature.fromHex(fields.get('v1') ?? '');
+    return this.isRecent(timestamp) && provided.matches(this.signatureOf(body, timestamp));
+  }
+
+  private isRecent(timestamp: string | undefined): boolean {
+    const nowInSeconds = new Date(this.clock.now().value()).getTime() / 1000;
+    return nowInSeconds - Number(timestamp) <= TOLERANCE_IN_SECONDS;
   }
 
   private signatureOf(body: Buffer, timestamp: string | undefined): Signature {
