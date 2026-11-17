@@ -1,13 +1,12 @@
-import { createHmac } from 'node:crypto';
 import { Clock } from '@market-miam/common';
-import { Signature } from './signature';
+import { SigningSecret } from './signing-secret';
 import { StripeSignatureHeader } from './stripe-signature-header';
 
 const TOLERANCE_IN_SECONDS = 5 * 60;
 
 export class StripeEventDestination {
   constructor(
-    private readonly secret: string,
+    private readonly secret: SigningSecret,
     private readonly clock: Clock,
   ) {}
 
@@ -15,11 +14,7 @@ export class StripeEventDestination {
     const header = StripeSignatureHeader.parse(signatureHeader);
     return (
       header.wasSignedWithin(TOLERANCE_IN_SECONDS, this.clock.now()) &&
-      header.matches(this.signatureOf(header.signedPayloadFor(body)))
+      header.matches(this.secret.sign(header.signedPayloadFor(body)))
     );
-  }
-
-  private signatureOf(signedPayload: Buffer): Signature {
-    return new Signature(createHmac('sha256', this.secret).update(signedPayload).digest());
   }
 }
