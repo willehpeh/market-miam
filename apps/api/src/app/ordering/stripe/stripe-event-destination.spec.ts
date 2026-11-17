@@ -15,6 +15,12 @@ describe('A Stripe event destination', () => {
     expect(destination.isGenuine(BODY, signatureFor(BODY))).toBe(true);
   });
 
+  it('takes a body as genuine when any of its v1 signatures was made with its secret, as while a secret is rolled', () => {
+    const rolling = `t=${timestampOf(FIXED_NOW)},v1=${hmacOf(BODY)},v1=${hmacOf(BODY, { secret: ANOTHER_SECRET })}`;
+
+    expect(destination.isGenuine(BODY, rolling)).toBe(true);
+  });
+
   it('refuses a body signed more than five minutes ago', () => {
     expect(destination.isGenuine(BODY, signatureFor(BODY, { at: SIX_MINUTES_EARLIER }))).toBe(false);
   });
