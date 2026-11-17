@@ -7,6 +7,6 @@ export class DetectPaymentAccountUpdateHandler implements ICommandHandler<Detect
   constructor(private readonly notices: PaymentAccountNotices) {}
 
   async execute({ noticeId, accountId }: DetectPaymentAccountUpdate): Promise<void> {
-    await this.notices.recordUpdate(noticeId, accountId);
+    await this.notices.recordUpdate({ noticeId, accountId });
   }
 }

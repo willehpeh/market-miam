@@ -1,10 +1,12 @@
 import { EventStore } from '@market-miam/event-sourcing';
 import { PaymentAccountUpdateDetected } from './events';
 
+export type Notice = PaymentAccountUpdateDetected['payload'];
+
 export class PaymentAccountNotices {
   constructor(private readonly store: EventStore) {}
 
-  async recordUpdate(noticeId: string, accountId: string): Promise<void> {
+  async recordUpdate({ noticeId, accountId }: Notice): Promise<void> {
     const detected: PaymentAccountUpdateDetected = {
       type: 'PaymentAccountUpdateDetected',
       payload: { noticeId, accountId },
