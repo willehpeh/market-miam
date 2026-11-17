@@ -14,13 +14,12 @@ export class PaymentAccountNotices {
     });
   }
 
-  private async recordOnce(streamId: string, detected: PaymentAccountUpdateDetected): Promise<void> {
-    try {
-      await this.store.append(streamId, [detected], 0);
-    } catch (error) {
-      if (!(error instanceof ConcurrencyError)) {
-        throw error;
+  private recordOnce(streamId: string, detected: PaymentAccountUpdateDetected): Promise<void> {
+    return this.store.append(streamId, [detected], 0).catch((error: unknown) => {
+      if (error instanceof ConcurrencyError) {
+        return;
       }
-    }
+      throw error;
+    });
   }
 }
