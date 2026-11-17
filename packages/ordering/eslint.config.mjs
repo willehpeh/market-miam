@@ -1,5 +1,7 @@
 import baseConfig from '../../eslint.config.mjs';
 
+const noticesBelongToNoVendor = ['src/payment-account-notices/payment-account-notices.ts'];
+
 export default [
   ...baseConfig,
   {
@@ -13,6 +15,12 @@ export default [
             'Appending outside VendorScopedEvents loses the vendorId metadata erasure keys off; save through a vendor-scoped repository.',
         },
       ],
+    },
+  },
+  {
+    files: noticesBelongToNoVendor,
+    rules: {
+      'no-restricted-syntax': 'off',
     },
   },
 ];
