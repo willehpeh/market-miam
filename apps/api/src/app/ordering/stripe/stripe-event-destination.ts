@@ -10,8 +10,8 @@ export class StripeEventDestination {
     private readonly clock: Clock,
   ) {}
 
-  isGenuine(body: Buffer, header: string): boolean {
-    const fields = new Map(header.split(',').map((field) => field.split('=') as [string, string]));
+  isGenuine(body: Buffer, header: string | undefined): boolean {
+    const fields = new Map((header ?? '').split(',').map((field) => field.split('=') as [string, string]));
     const timestamp = fields.get('t');
     const provided = Signature.fromHex(fields.get('v1') ?? '');
     return this.isRecent(timestamp) && provided.matches(this.signatureOf(body, timestamp));
