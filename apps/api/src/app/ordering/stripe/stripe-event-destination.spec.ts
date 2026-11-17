@@ -29,6 +29,10 @@ describe('A Stripe event destination', () => {
     expect(destination.isGenuine(BODY, signatureFor(BODY, { secret: ANOTHER_SECRET }))).toBe(false);
   });
 
+  it('refuses a delivery with no signature header at all', () => {
+    expect(destination.isGenuine(BODY, undefined)).toBe(false);
+  });
+
   it('refuses a header with no v1 signature, rather than failing', () => {
     expect(destination.isGenuine(BODY, `t=${timestampOf(FIXED_NOW)}`)).toBe(false);
   });
