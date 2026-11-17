@@ -16,10 +16,14 @@ export class PaymentAccountNotices {
 
   private recordOnce(streamId: string, detected: PaymentAccountUpdateDetected): Promise<void> {
     return this.store.append(streamId, [detected], 0).catch((error: unknown) => {
-      if (error instanceof ConcurrencyError) {
+      if (this.isReplay(error)) {
         return;
       }
       throw error;
     });
+  }
+
+  private isReplay(error: unknown): boolean {
+    return error instanceof ConcurrencyError;
   }
 }
