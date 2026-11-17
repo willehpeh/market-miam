@@ -14,9 +14,9 @@ export class PaymentAccountNotices {
     });
   }
 
-  private async recordOnce(streamId: string, notice: PaymentAccountUpdateDetected): Promise<void> {
+  private async recordOnce(streamId: string, detected: PaymentAccountUpdateDetected): Promise<void> {
     try {
-      await this.store.append(streamId, [notice], 0);
+      await this.store.append(streamId, [detected], 0);
     } catch (error) {
       if (!(error instanceof ConcurrencyError)) {
         throw error;
