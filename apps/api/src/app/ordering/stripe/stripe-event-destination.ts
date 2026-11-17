@@ -10,7 +10,9 @@ export class StripeEventDestination {
 
   isGenuine(body: Buffer, header: string): boolean {
     const fields = new Map(header.split(',').map((field) => field.split('=') as [string, string]));
-    return Signature.fromHex(fields.get('v1') ?? '').matches(this.signatureOf(body, fields.get('t')));
+    const timestamp = fields.get('t');
+    const ageInSeconds = new Date(this.clock.now().value()).getTime() / 1000 - Number(timestamp);
+    return ageInSeconds <= 300 && Signature.fromHex(fields.get('v1') ?? '').matches(this.signatureOf(body, timestamp));
   }
 
   private signatureOf(body: Buffer, timestamp: string | undefined): Signature {
