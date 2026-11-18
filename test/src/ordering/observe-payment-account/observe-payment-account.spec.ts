@@ -47,6 +47,14 @@ describe('Observe Payment Account', () => {
     expect(store.newEvents()).toEqual([expect.objectContaining({ streamId: merchantStream(), ...accountEnabled() })]);
   });
 
+  it('records nothing when card payments are still active', async () => {
+    given(registrationStarted(), registrationConfirmed(), accountEnabled());
+
+    await handler.execute(TestObservePaymentAccount.with({ cardPayments: 'active' }));
+
+    expect(store.newEvents()).toEqual([]);
+  });
+
   it('records nothing about an account left over from a registration that failed', async () => {
     given(
       registrationStarted('vendor-id', { registrationId: 'failed-registration-id' }),
