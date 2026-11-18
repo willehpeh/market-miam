@@ -1,11 +1,13 @@
 import { Module } from '@nestjs/common';
 import { Clock } from '@market-miam/common';
-import { CommandGateway } from '@market-miam/event-sourcing';
+import { CommandGateway, EventStore } from '@market-miam/event-sourcing';
 import {
   CreatesPaymentAccounts,
+  DetectPaymentAccountUpdateHandler,
   FailPaymentAccountRegistrationHandler,
   InMemoryPaymentAccounts,
   Merchants,
+  PaymentAccountNotices,
   PaymentAccounts,
   PublishedStorefronts,
   StartPaymentAccountRegistrationHandler,
@@ -14,12 +16,14 @@ import { VendorScopedEvents } from '@market-miam/shared-kernel';
 import { ClockModule } from '../clock.module';
 import { MarketDaysPublishedStorefronts } from './market-days-published-storefronts';
 import { PaymentAccountController } from './payment-account.controller';
+import { StripeWebhooksController } from './stripe/stripe-webhooks.controller';
 
 @Module({
   imports: [ClockModule],
-  controllers: [PaymentAccountController],
+  controllers: [PaymentAccountController, StripeWebhooksController],
   providers: [
     { provide: Merchants, useFactory: (events: VendorScopedEvents) => new Merchants(events), inject: [VendorScopedEvents] },
+    { provide: PaymentAccountNotices, useFactory: (store: EventStore) => new PaymentAccountNotices(store), inject: [EventStore] },
     { provide: PublishedStorefronts, useClass: MarketDaysPublishedStorefronts },
     { provide: PaymentAccounts, useClass: InMemoryPaymentAccounts },
     {
@@ -30,6 +34,7 @@ import { PaymentAccountController } from './payment-account.controller';
     },
     StartPaymentAccountRegistrationHandler,
     FailPaymentAccountRegistrationHandler,
+    DetectPaymentAccountUpdateHandler,
   ],
 })
 export class OrderingModule {}
