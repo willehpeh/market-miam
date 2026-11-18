@@ -19,6 +19,7 @@ export class TestObservePaymentAccount {
       overrides.accountId ?? defaults.accountId,
       overrides.cardPayments ?? defaults.cardPayments,
       overrides.observedAt ?? defaults.observedAt,
+      overrides.informationDueBy ?? defaults.informationDueBy,
     );
   }
 }

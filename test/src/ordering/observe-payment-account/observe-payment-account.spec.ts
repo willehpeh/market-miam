@@ -83,4 +83,18 @@ describe('Observe Payment Account', () => {
       }),
     ]);
   });
+
+  it('records an issue when Stripe wants information from an enabled account by a deadline', async () => {
+    given(registrationStarted(), registrationConfirmed(), accountEnabled());
+
+    await handler.execute(TestObservePaymentAccount.with({ cardPayments: 'active', informationDueBy: '2026-12-01T00:00:00.000Z' }));
+
+    expect(store.newEvents()).toEqual([
+      expect.objectContaining({
+        streamId: merchantStream(),
+        type: 'PaymentAccountIssueDetected',
+        payload: { vendorId: 'vendor-id', informationDueBy: '2026-12-01T00:00:00.000Z', detectedAt: '2026-11-16T09:01:00.000Z' },
+      }),
+    ]);
+  });
 });
