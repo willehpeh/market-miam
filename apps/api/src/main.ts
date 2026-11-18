@@ -4,12 +4,13 @@ import './tracing';
 import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app/app.module';
+import { applicationOptions } from './app/application-options';
 import { seedDev } from './app/dev-seed';
 import { offerSourceCode } from './source-code-offer';
 import { MARKET_MIAM_CORS_SETUP } from './cors-options';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, applicationOptions);
   app.enableCors(MARKET_MIAM_CORS_SETUP);
   app.use(offerSourceCode);
   const globalPrefix = 'api';

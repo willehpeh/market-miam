@@ -2,6 +2,7 @@ import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { OperatorTokenVerifier, TokenVerifier } from '@market-miam/auth';
 import { Migrations } from '../database/migrations';
+import { applicationOptions } from '../application-options';
 import { FakeSignedUploads, SignedUploads } from '../signed-uploads';
 import { FakeOperatorTokenVerifier } from './fake-operator-token-verifier';
 import { NamingTokenVerifier } from './naming-token-verifier';
@@ -34,7 +35,7 @@ export async function bootProductionApp(connectionString: string, auth0Issuer: s
     .overrideProvider(Migrations)
     .useValue({})
     .compile();
-  const app = moduleRef.createNestApplication({ logger: false });
+  const app = moduleRef.createNestApplication({ ...applicationOptions, logger: false });
   await app.listen(0);
   return app;
 }

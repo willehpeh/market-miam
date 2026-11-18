@@ -18,6 +18,7 @@ import { DevelopmentAccountsModule } from '../ops/accounts/development-accounts.
 import { EventSourcingModule } from '../event-sourcing/event-sourcing.module';
 import { InMemoryPersistenceModule } from '../persistence/in-memory-persistence.module';
 import { globalFilters } from '../global-filters';
+import { applicationOptions } from '../application-options';
 import { PollSchedule } from '../event-sourcing/poll-schedule';
 import { FakeSignedUploads, SignedUploads } from '../signed-uploads';
 import { STRIPE_ACCOUNTS_SIGNING_SECRET } from './stripe-events';
@@ -91,7 +92,7 @@ export function apiTestModule(options: ApiTestOptions = {}): TestingModuleBuilde
 }
 
 export async function startApp(builder: TestingModuleBuilder): Promise<INestApplication> {
-  const app = (await builder.compile()).createNestApplication({ rawBody: true });
+  const app = (await builder.compile()).createNestApplication(applicationOptions);
   await app.init();
   return app;
 }

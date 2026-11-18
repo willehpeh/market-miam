@@ -10,6 +10,7 @@ import { EventSourcingModule } from '../event-sourcing/event-sourcing.module';
 import { PostgresPersistenceModule } from '../persistence/postgres-persistence.module';
 import { DevelopmentAccountsModule } from '../ops/accounts/development-accounts.module';
 import { globalFilters } from '../global-filters';
+import { applicationOptions } from '../application-options';
 import { Migrations } from '../database/migrations';
 import { FakeSignedUploads, SignedUploads } from '../signed-uploads';
 import { testVendor } from './api-test-app';
@@ -61,7 +62,7 @@ export async function bootPostgresApp(
     builder.overrideProvider(Clock).useValue(clock);
   }
 
-  const app = (await builder.compile()).createNestApplication(logger ? {} : { logger: false });
+  const app = (await builder.compile()).createNestApplication(logger ? applicationOptions : { ...applicationOptions, logger: false });
   // listen(0), not init(): supertest binds an unbound server per request, which a
   // concurrent burst turns into ECONNRESET. One bound port for the app's lifetime.
   await app.listen(0);
