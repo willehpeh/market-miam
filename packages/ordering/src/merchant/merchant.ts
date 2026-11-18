@@ -6,6 +6,7 @@ import {
   MerchantEvent,
   PaymentAccountDisabled,
   PaymentAccountEnabled,
+  PaymentAccountIssueDetected,
   PaymentAccountRegistrationConfirmed,
   PaymentAccountRegistrationFailed,
   PaymentAccountRegistrationStarted,
@@ -35,9 +36,18 @@ export class Merchant extends Aggregate {
     }
   }
 
-  observePaymentAccount(registrationId: string, accountId: string, cardPayments: CardPayments, observedAt: Instant) {
+  observePaymentAccount(
+    registrationId: string,
+    accountId: string,
+    cardPayments: CardPayments,
+    observedAt: Instant,
+    informationDueBy?: string,
+  ) {
     this.confirmRegistration(registrationId, accountId, observedAt);
     this.recordCardPayments(accountId, cardPayments, observedAt);
+    if (informationDueBy && accountId === this._currentAccountId && this._paymentAccount.isEnabled()) {
+      this.raise(this.issueDetected(informationDueBy, observedAt));
+    }
   }
 
   apply(event: MerchantEvent): void {
@@ -117,6 +127,14 @@ export class Merchant extends Aggregate {
     return {
       type: 'PaymentAccountDisabled',
       payload: { vendorId: this._id.value(), disabledAt: disabledAt.value() },
+      version: 1,
+    };
+  }
+
+  private issueDetected(informationDueBy: string, detectedAt: Instant): PaymentAccountIssueDetected {
+    return {
+      type: 'PaymentAccountIssueDetected',
+      payload: { vendorId: this._id.value(), informationDueBy, detectedAt: detectedAt.value() },
       version: 1,
     };
   }

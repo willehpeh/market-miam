@@ -6,10 +6,15 @@ export abstract class PaymentAccountOnRecord {
   abstract allowNewRegistration(): void;
   abstract isOpen(registrationId: string): boolean;
   abstract cardPaymentsChangeTo(cardPayments: CardPayments): boolean;
+  abstract isEnabled(): boolean;
 }
 
 abstract class NoAccountYet extends PaymentAccountOnRecord {
   override cardPaymentsChangeTo(): boolean {
+    return false;
+  }
+
+  override isEnabled(): boolean {
     return false;
   }
 }
@@ -51,5 +56,9 @@ export class ConfirmedAccount extends PaymentAccountOnRecord {
 
   override cardPaymentsChangeTo(cardPayments: CardPayments): boolean {
     return cardPayments !== this.cardPayments;
+  }
+
+  override isEnabled(): boolean {
+    return this.cardPayments === 'active';
   }
 }

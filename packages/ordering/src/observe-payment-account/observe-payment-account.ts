@@ -8,5 +8,6 @@ export class ObservePaymentAccount extends Command<void> {
     readonly accountId: string,
     readonly cardPayments: CardPayments,
     readonly observedAt: string,
+    readonly informationDueBy?: string,
   ) { super(); }
 }
