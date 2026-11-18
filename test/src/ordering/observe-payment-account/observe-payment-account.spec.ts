@@ -61,4 +61,18 @@ describe('Observe Payment Account', () => {
 
     expect(store.newEvents()).toEqual([]);
   });
+
+  it('records the account disabled, with our code, when its card payments stop being active', async () => {
+    given(registrationStarted(), registrationConfirmed(), accountEnabled());
+
+    await handler.execute(TestObservePaymentAccount.with({ cardPayments: 'information-due' }));
+
+    expect(store.newEvents()).toEqual([
+      expect.objectContaining({
+        streamId: merchantStream(),
+        type: 'PaymentAccountDisabled',
+        payload: { vendorId: 'vendor-id', code: 'information-due', disabledAt: '2026-11-16T09:01:00.000Z' },
+      }),
+    ]);
+  });
 });
