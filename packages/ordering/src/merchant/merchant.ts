@@ -1,7 +1,12 @@
 import { Aggregate } from '@market-miam/event-sourcing';
 import { Instant } from '@market-miam/common';
 import { VendorId } from '@market-miam/shared-kernel';
-import { MerchantEvent, PaymentAccountRegistrationFailed, PaymentAccountRegistrationStarted } from './events';
+import {
+  MerchantEvent,
+  PaymentAccountRegistrationConfirmed,
+  PaymentAccountRegistrationFailed,
+  PaymentAccountRegistrationStarted,
+} from './events';
 import { NoOpenRegistration, OpenRegistration, PaymentAccountOnRecord } from './payment-account-on-record';
 
 export class Merchant extends Aggregate {
@@ -20,6 +25,12 @@ export class Merchant extends Aggregate {
   failPaymentAccountRegistration(registrationId: string, failedAt: Instant) {
     if (this._paymentAccount.isOpen(registrationId)) {
       this.raise(this.registrationFailed(registrationId, failedAt));
+    }
+  }
+
+  confirmPaymentAccountRegistration(registrationId: string, accountId: string, confirmedAt: Instant) {
+    if (this._paymentAccount.isOpen(registrationId)) {
+      this.raise(this.registrationConfirmed(registrationId, accountId, confirmedAt));
     }
   }
 
@@ -46,6 +57,18 @@ export class Merchant extends Aggregate {
     return {
       type: 'PaymentAccountRegistrationFailed',
       payload: { vendorId: this._id.value(), registrationId, failedAt: failedAt.value() },
+      version: 1,
+    };
+  }
+
+  private registrationConfirmed(
+    registrationId: string,
+    accountId: string,
+    confirmedAt: Instant,
+  ): PaymentAccountRegistrationConfirmed {
+    return {
+      type: 'PaymentAccountRegistrationConfirmed',
+      payload: { vendorId: this._id.value(), registrationId, accountId, confirmedAt: confirmedAt.value() },
       version: 1,
     };
   }
