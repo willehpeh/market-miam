@@ -6,3 +6,5 @@ export * from './creates-payment-accounts';
 export * from './fail-payment-account-registration';
 export * from './payment-account-notices';
 export * from './detect-payment-account-update';
+export * from './confirm-payment-account-registration';
+export * from './checks-payment-accounts';
