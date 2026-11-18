@@ -5,16 +5,11 @@ import { RegistrationAlreadyOpenError } from './registration-already-open.error'
 export abstract class PaymentAccountOnRecord {
   abstract allowNewRegistration(): void;
   abstract isOpen(registrationId: string): boolean;
-  abstract becomesEnabledBy(cardPayments: CardPayments): boolean;
-  abstract becomesDisabledBy(cardPayments: CardPayments): boolean;
+  abstract cardPaymentsChangeTo(cardPayments: CardPayments): boolean;
 }
 
 abstract class NoAccountYet extends PaymentAccountOnRecord {
-  override becomesEnabledBy(): boolean {
-    return false;
-  }
-
-  override becomesDisabledBy(): boolean {
+  override cardPaymentsChangeTo(): boolean {
     return false;
   }
 }
@@ -41,7 +36,11 @@ export class OpenRegistration extends NoAccountYet {
   }
 }
 
-abstract class ExistingAccount extends PaymentAccountOnRecord {
+export class ConfirmedAccount extends PaymentAccountOnRecord {
+  constructor(private readonly cardPayments: CardPayments) {
+    super();
+  }
+
   override allowNewRegistration(): void {
     throw new PaymentAccountAlreadyExistsError();
   }
@@ -49,24 +48,8 @@ abstract class ExistingAccount extends PaymentAccountOnRecord {
   override isOpen(): boolean {
     return false;
   }
-}
 
-export class ConfirmedAccount extends ExistingAccount {
-  override becomesEnabledBy(cardPayments: CardPayments): boolean {
-    return cardPayments === 'active';
-  }
-
-  override becomesDisabledBy(): boolean {
-    return false;
-  }
-}
-
-export class EnabledAccount extends ExistingAccount {
-  override becomesEnabledBy(): boolean {
-    return false;
-  }
-
-  override becomesDisabledBy(cardPayments: CardPayments): boolean {
-    return cardPayments === 'inactive';
+  override cardPaymentsChangeTo(cardPayments: CardPayments): boolean {
+    return cardPayments !== this.cardPayments;
   }
 }

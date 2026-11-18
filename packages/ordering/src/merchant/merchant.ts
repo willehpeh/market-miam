@@ -10,13 +10,7 @@ import {
   PaymentAccountRegistrationFailed,
   PaymentAccountRegistrationStarted,
 } from './events';
-import {
-  ConfirmedAccount,
-  EnabledAccount,
-  NoOpenRegistration,
-  OpenRegistration,
-  PaymentAccountOnRecord,
-} from './payment-account-on-record';
+import { ConfirmedAccount, NoOpenRegistration, OpenRegistration, PaymentAccountOnRecord } from './payment-account-on-record';
 
 export class Merchant extends Aggregate {
   private _paymentAccount: PaymentAccountOnRecord = new NoOpenRegistration();
@@ -57,13 +51,13 @@ export class Merchant extends Aggregate {
         break;
       case 'PaymentAccountRegistrationConfirmed':
         this._currentAccountId = event.payload.accountId;
-        this._paymentAccount = new ConfirmedAccount();
+        this._paymentAccount = new ConfirmedAccount('inactive');
         break;
       case 'PaymentAccountEnabled':
-        this._paymentAccount = new EnabledAccount();
+        this._paymentAccount = new ConfirmedAccount('active');
         break;
       case 'PaymentAccountDisabled':
-        this._paymentAccount = new ConfirmedAccount();
+        this._paymentAccount = new ConfirmedAccount('inactive');
         break;
     }
   }
@@ -78,10 +72,8 @@ export class Merchant extends Aggregate {
     if (accountId !== this._currentAccountId) {
       return;
     }
-    if (this._paymentAccount.becomesEnabledBy(cardPayments)) {
-      this.raise(this.accountEnabled(observedAt));
-    } else if (this._paymentAccount.becomesDisabledBy(cardPayments)) {
-      this.raise(this.accountDisabled(observedAt));
+    if (this._paymentAccount.cardPaymentsChangeTo(cardPayments)) {
+      this.raise(cardPayments === 'active' ? this.accountEnabled(observedAt) : this.accountDisabled(observedAt));
     }
   }
 
