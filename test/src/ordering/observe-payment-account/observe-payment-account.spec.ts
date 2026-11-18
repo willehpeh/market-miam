@@ -98,4 +98,12 @@ describe('Observe Payment Account', () => {
 
     expect(store.newEvents()).toEqual([expect.objectContaining({ streamId: merchantStream(), ...issueDetected() })]);
   });
+
+  it('records no issue for an account still onboarding, when everything is due', async () => {
+    given(registrationStarted(), registrationConfirmed());
+
+    await handler.execute(TestObservePaymentAccount.with({ cardPayments: 'inactive', informationDueBy: '2026-12-01T00:00:00.000Z' }));
+
+    expect(store.newEvents()).toEqual([]);
+  });
 });
