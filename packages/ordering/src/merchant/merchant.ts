@@ -40,6 +40,7 @@ export class Merchant extends Aggregate {
         this._paymentAccount = new OpenRegistration(event.payload.registrationId);
         break;
       case 'PaymentAccountRegistrationFailed':
+      case 'PaymentAccountRegistrationConfirmed':
         this._paymentAccount = new NoOpenRegistration();
         break;
     }
