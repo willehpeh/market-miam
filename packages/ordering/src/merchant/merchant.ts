@@ -32,14 +32,8 @@ export class Merchant extends Aggregate {
     }
   }
 
-  confirmPaymentAccountRegistration(registrationId: string, accountId: string, confirmedAt: Instant) {
-    if (this._paymentAccount.isOpen(registrationId)) {
-      this.raise(this.registrationConfirmed(registrationId, accountId, confirmedAt));
-    }
-  }
-
   observePaymentAccount(registrationId: string, accountId: string, cardPayments: CardPayments, observedAt: Instant) {
-    this.confirmPaymentAccountRegistration(registrationId, accountId, observedAt);
+    this.confirmRegistration(registrationId, accountId, observedAt);
   }
 
   apply(event: MerchantEvent): void {
@@ -54,6 +48,12 @@ export class Merchant extends Aggregate {
       case 'PaymentAccountRegistrationConfirmed':
         this._paymentAccount = new ConfirmedAccount();
         break;
+    }
+  }
+
+  private confirmRegistration(registrationId: string, accountId: string, confirmedAt: Instant) {
+    if (this._paymentAccount.isOpen(registrationId)) {
+      this.raise(this.registrationConfirmed(registrationId, accountId, confirmedAt));
     }
   }
 

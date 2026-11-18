@@ -4,7 +4,6 @@ import { Clock } from '@market-miam/common';
 import { CommandGateway, EventStore } from '@market-miam/event-sourcing';
 import {
   ChecksPaymentAccounts,
-  ConfirmPaymentAccountRegistrationHandler,
   CreatesPaymentAccounts,
   ObservePaymentAccountHandler,
   DetectPaymentAccountUpdateHandler,
@@ -52,7 +51,6 @@ import { StripeWebhooksController } from './stripe/stripe-webhooks.controller';
     },
     StartPaymentAccountRegistrationHandler,
     FailPaymentAccountRegistrationHandler,
-    ConfirmPaymentAccountRegistrationHandler,
     ObservePaymentAccountHandler,
     DetectPaymentAccountUpdateHandler,
   ],
