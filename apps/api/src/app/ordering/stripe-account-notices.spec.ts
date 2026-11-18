@@ -25,6 +25,14 @@ describe("Stripe's account notices over HTTP", () => {
     ]);
   });
 
+  it('answers a notice Stripe sends again as delivered, recording it once', async () => {
+    await stripe.accountUpdated('evt_test_1', 'acct_test_1').expect(200);
+
+    await stripe.accountUpdated('evt_test_1', 'acct_test_1').expect(200);
+
+    expect(await new EventLog(app).ofType('PaymentAccountUpdateDetected')).toHaveLength(1);
+  });
+
   it('refuses a notice signed with another secret, recording nothing', async () => {
     const impostor = new StripeEvents(app, 'whsec_test_someone_else');
 
