@@ -21,9 +21,8 @@ export class Merchant extends Aggregate {
     if (this._registrationsMade.has(registrationId)) {
       return;
     }
-    this._paymentAccount.startNewRegistration(() =>
-      this.raise(this.registrationStarted(registrationId, accountToken, startedAt)),
-    );
+    this._paymentAccount.allowNewRegistration();
+    this.raise(this.registrationStarted(registrationId, accountToken, startedAt));
   }
 
   failPaymentAccountRegistration(registrationId: string, failedAt: Instant) {

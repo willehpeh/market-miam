@@ -97,6 +97,12 @@ export default [
     rules: {},
   },
   {
+    files: ['**/*.ts', '**/*.tsx'],
+    rules: {
+      '@typescript-eslint/no-empty-function': ['error', { allow: ['overrideMethods'] }],
+    },
+  },
+  {
     files: ['**/*.ts'],
     plugins: { 'event-sourcing': eventSourcingConventions },
     rules: {

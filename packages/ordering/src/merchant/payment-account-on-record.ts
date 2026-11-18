@@ -2,16 +2,14 @@ import { PaymentAccountAlreadyExistsError } from './payment-account-already-exis
 import { RegistrationAlreadyOpenError } from './registration-already-open.error';
 
 export abstract class PaymentAccountOnRecord {
-  abstract startNewRegistration(start: () => void): void;
+  abstract allowNewRegistration(): void;
   abstract isOpen(registrationId: string): boolean;
 }
 
 export class NoOpenRegistration extends PaymentAccountOnRecord {
-  startNewRegistration(start: () => void): void {
-    start();
-  }
+  override allowNewRegistration(): void {}
 
-  isOpen(): boolean {
+  override isOpen(): boolean {
     return false;
   }
 }
@@ -21,21 +19,21 @@ export class OpenRegistration extends PaymentAccountOnRecord {
     super();
   }
 
-  startNewRegistration(): void {
+  override allowNewRegistration(): void {
     throw new RegistrationAlreadyOpenError();
   }
 
-  isOpen(registrationId: string): boolean {
+  override isOpen(registrationId: string): boolean {
     return registrationId === this.registrationId;
   }
 }
 
 export class ConfirmedAccount extends PaymentAccountOnRecord {
-  startNewRegistration(): void {
+  override allowNewRegistration(): void {
     throw new PaymentAccountAlreadyExistsError();
   }
 
-  isOpen(): boolean {
+  override isOpen(): boolean {
     return false;
   }
 }
