@@ -6,6 +6,7 @@ import {
   ChecksPaymentAccounts,
   ConfirmPaymentAccountRegistrationHandler,
   CreatesPaymentAccounts,
+  ObservePaymentAccountHandler,
   DetectPaymentAccountUpdateHandler,
   FailPaymentAccountRegistrationHandler,
   InMemoryPaymentAccounts,
@@ -52,6 +53,7 @@ import { StripeWebhooksController } from './stripe/stripe-webhooks.controller';
     StartPaymentAccountRegistrationHandler,
     FailPaymentAccountRegistrationHandler,
     ConfirmPaymentAccountRegistrationHandler,
+    ObservePaymentAccountHandler,
     DetectPaymentAccountUpdateHandler,
   ],
 })

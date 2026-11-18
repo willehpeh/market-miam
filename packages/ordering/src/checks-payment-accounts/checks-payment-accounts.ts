@@ -1,6 +1,6 @@
 import { Clock } from '@market-miam/common';
 import { CheckpointedProcessor, CommandGateway, Processor, StoredEvent } from '@market-miam/event-sourcing';
-import { ConfirmPaymentAccountRegistration } from '../confirm-payment-account-registration';
+import { ObservePaymentAccount } from '../observe-payment-account';
 import { PaymentAccountUpdateDetected } from '../payment-account-notices';
 import { PaymentAccount, PaymentAccounts } from '../payment-accounts';
 
@@ -15,7 +15,7 @@ export class ChecksPaymentAccounts implements Processor {
   async handle(event: StoredEvent<PaymentAccountUpdateDetected>): Promise<void> {
     const account = await this.accounts.find(event.payload.accountId);
     if (account) {
-      await this.confirm(account);
+      await this.observe(account);
     }
   }
 
@@ -23,9 +23,9 @@ export class ChecksPaymentAccounts implements Processor {
     return ['PaymentAccountUpdateDetected'];
   }
 
-  private confirm({ vendorId, registrationId, accountId }: PaymentAccount): Promise<void> {
+  private observe({ vendorId, registrationId, accountId, cardPayments }: PaymentAccount): Promise<void> {
     return this.commands.execute(
-      new ConfirmPaymentAccountRegistration(vendorId, registrationId, accountId, this.clock.now().value()),
+      new ObservePaymentAccount(vendorId, registrationId, accountId, cardPayments, this.clock.now().value()),
     );
   }
 }

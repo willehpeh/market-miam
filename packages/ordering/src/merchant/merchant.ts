@@ -1,6 +1,7 @@
 import { Aggregate } from '@market-miam/event-sourcing';
 import { Instant } from '@market-miam/common';
 import { VendorId } from '@market-miam/shared-kernel';
+import { CardPayments } from './card-payments';
 import {
   MerchantEvent,
   PaymentAccountRegistrationConfirmed,
@@ -35,6 +36,10 @@ export class Merchant extends Aggregate {
     if (this._paymentAccount.isOpen(registrationId)) {
       this.raise(this.registrationConfirmed(registrationId, accountId, confirmedAt));
     }
+  }
+
+  observePaymentAccount(registrationId: string, accountId: string, cardPayments: CardPayments, observedAt: Instant) {
+    this.confirmPaymentAccountRegistration(registrationId, accountId, observedAt);
   }
 
   apply(event: MerchantEvent): void {

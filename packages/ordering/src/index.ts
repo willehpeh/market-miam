@@ -8,3 +8,4 @@ export * from './payment-account-notices';
 export * from './detect-payment-account-update';
 export * from './confirm-payment-account-registration';
 export * from './checks-payment-accounts';
+export * from './observe-payment-account';
