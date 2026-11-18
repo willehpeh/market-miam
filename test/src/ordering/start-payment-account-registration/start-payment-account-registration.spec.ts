@@ -2,12 +2,13 @@ import { DomainEvent, InMemoryEventStore } from '@market-miam/event-sourcing';
 import {
   InMemoryPublishedStorefronts,
   Merchants,
+  PaymentAccountAlreadyExistsError,
   RegistrationAlreadyOpenError,
   StartPaymentAccountRegistrationHandler,
   StorefrontNotPublishedError,
 } from '@market-miam/ordering';
 import { VendorScopedEvents } from '@market-miam/shared-kernel';
-import { merchantStream, registrationFailed, registrationStarted } from '../merchant-events';
+import { merchantStream, registrationConfirmed, registrationFailed, registrationStarted } from '../merchant-events';
 import { TestStartPaymentAccountRegistration } from './test-data';
 
 describe('Start Payment Account Registration', () => {
@@ -66,5 +67,16 @@ describe('Start Payment Account Registration', () => {
     expect(store.newEvents()).toEqual([
       expect.objectContaining(registrationStarted('vendor-id', { registrationId: 'another-registration-id' })),
     ]);
+  });
+
+  it('refuses a registration once the vendor has a payment account, recording nothing', async () => {
+    storefronts.publish('vendor-id');
+    given(registrationStarted(), registrationConfirmed());
+
+    await expect(
+      handler.execute(TestStartPaymentAccountRegistration.with({ registrationId: 'another-registration-id' })),
+    ).rejects.toThrow(PaymentAccountAlreadyExistsError);
+
+    expect(store.newEvents()).toEqual([]);
   });
 });
