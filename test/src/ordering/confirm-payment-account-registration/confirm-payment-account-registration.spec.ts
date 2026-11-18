@@ -35,4 +35,12 @@ describe('Confirm Payment Account Registration', () => {
 
     expect(store.newEvents()).toEqual([]);
   });
+
+  it('records nothing for a registration other than the open one', async () => {
+    given(registrationStarted('vendor-id', { registrationId: 'another-registration-id' }));
+
+    await handler.execute(new ConfirmPaymentAccountRegistration('vendor-id', 'registration-id', 'acct_test_1', CONFIRMED_AT));
+
+    expect(store.newEvents()).toEqual([]);
+  });
 });
