@@ -4,11 +4,18 @@ import { VendorId } from '@market-miam/shared-kernel';
 import { CardPayments } from './card-payments';
 import {
   MerchantEvent,
+  PaymentAccountEnabled,
   PaymentAccountRegistrationConfirmed,
   PaymentAccountRegistrationFailed,
   PaymentAccountRegistrationStarted,
 } from './events';
-import { ConfirmedAccount, NoOpenRegistration, OpenRegistration, PaymentAccountOnRecord } from './payment-account-on-record';
+import {
+  ConfirmedAccount,
+  EnabledAccount,
+  NoOpenRegistration,
+  OpenRegistration,
+  PaymentAccountOnRecord,
+} from './payment-account-on-record';
 
 export class Merchant extends Aggregate {
   private _paymentAccount: PaymentAccountOnRecord = new NoOpenRegistration();
@@ -34,6 +41,7 @@ export class Merchant extends Aggregate {
 
   observePaymentAccount(registrationId: string, accountId: string, cardPayments: CardPayments, observedAt: Instant) {
     this.confirmRegistration(registrationId, accountId, observedAt);
+    this.recordCardPayments(cardPayments, observedAt);
   }
 
   apply(event: MerchantEvent): void {
@@ -48,12 +56,21 @@ export class Merchant extends Aggregate {
       case 'PaymentAccountRegistrationConfirmed':
         this._paymentAccount = new ConfirmedAccount();
         break;
+      case 'PaymentAccountEnabled':
+        this._paymentAccount = new EnabledAccount();
+        break;
     }
   }
 
   private confirmRegistration(registrationId: string, accountId: string, confirmedAt: Instant) {
     if (this._paymentAccount.isOpen(registrationId)) {
       this.raise(this.registrationConfirmed(registrationId, accountId, confirmedAt));
+    }
+  }
+
+  private recordCardPayments(cardPayments: CardPayments, observedAt: Instant) {
+    if (this._paymentAccount.becomesEnabledBy(cardPayments)) {
+      this.raise(this.accountEnabled(observedAt));
     }
   }
 
@@ -81,6 +98,14 @@ export class Merchant extends Aggregate {
     return {
       type: 'PaymentAccountRegistrationConfirmed',
       payload: { vendorId: this._id.value(), registrationId, accountId, confirmedAt: confirmedAt.value() },
+      version: 1,
+    };
+  }
+
+  private accountEnabled(enabledAt: Instant): PaymentAccountEnabled {
+    return {
+      type: 'PaymentAccountEnabled',
+      payload: { vendorId: this._id.value(), enabledAt: enabledAt.value() },
       version: 1,
     };
   }
