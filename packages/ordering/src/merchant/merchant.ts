@@ -7,7 +7,7 @@ import {
   PaymentAccountRegistrationFailed,
   PaymentAccountRegistrationStarted,
 } from './events';
-import { NoOpenRegistration, OpenRegistration, PaymentAccountOnRecord } from './payment-account-on-record';
+import { ConfirmedAccount, NoOpenRegistration, OpenRegistration, PaymentAccountOnRecord } from './payment-account-on-record';
 
 export class Merchant extends Aggregate {
   private _paymentAccount: PaymentAccountOnRecord = new NoOpenRegistration();
@@ -40,8 +40,10 @@ export class Merchant extends Aggregate {
         this._paymentAccount = new OpenRegistration(event.payload.registrationId);
         break;
       case 'PaymentAccountRegistrationFailed':
-      case 'PaymentAccountRegistrationConfirmed':
         this._paymentAccount = new NoOpenRegistration();
+        break;
+      case 'PaymentAccountRegistrationConfirmed':
+        this._paymentAccount = new ConfirmedAccount();
         break;
     }
   }

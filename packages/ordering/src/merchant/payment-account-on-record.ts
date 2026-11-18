@@ -1,3 +1,4 @@
+import { PaymentAccountAlreadyExistsError } from './payment-account-already-exists.error';
 import { RegistrationAlreadyOpenError } from './registration-already-open.error';
 
 export abstract class PaymentAccountOnRecord {
@@ -28,5 +29,15 @@ export class OpenRegistration extends PaymentAccountOnRecord {
 
   isOpen(registrationId: string): boolean {
     return registrationId === this.registrationId;
+  }
+}
+
+export class ConfirmedAccount extends PaymentAccountOnRecord {
+  startRegistration(): void {
+    throw new PaymentAccountAlreadyExistsError();
+  }
+
+  isOpen(): boolean {
+    return false;
   }
 }
