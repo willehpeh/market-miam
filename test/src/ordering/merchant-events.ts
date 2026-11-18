@@ -1,4 +1,5 @@
 import {
+  PaymentAccountEnabled,
   PaymentAccountRegistrationConfirmed,
   PaymentAccountRegistrationFailed,
   PaymentAccountRegistrationStarted,
@@ -47,5 +48,14 @@ export const registrationConfirmed = (
     confirmedAt: '2026-11-16T09:01:00.000Z',
     ...overrides,
   },
+  version: 1,
+});
+
+export const accountEnabled = (
+  vendorId = registration.vendorId,
+  overrides: Partial<PaymentAccountEnabled['payload']> = {},
+): PaymentAccountEnabled => ({
+  type: 'PaymentAccountEnabled',
+  payload: { vendorId, enabledAt: '2026-11-16T09:01:00.000Z', ...overrides },
   version: 1,
 });

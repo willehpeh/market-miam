@@ -1,7 +1,7 @@
 import { DomainEvent, InMemoryEventStore } from '@market-miam/event-sourcing';
 import { Merchants, ObservePaymentAccountHandler } from '@market-miam/ordering';
 import { VendorScopedEvents } from '@market-miam/shared-kernel';
-import { merchantStream, registrationConfirmed, registrationStarted } from '../merchant-events';
+import { accountEnabled, merchantStream, registrationConfirmed, registrationStarted } from '../merchant-events';
 import { TestObservePaymentAccount } from './test-data';
 
 describe('Observe Payment Account', () => {
@@ -44,12 +44,6 @@ describe('Observe Payment Account', () => {
 
     await handler.execute(TestObservePaymentAccount.with({ cardPayments: 'active' }));
 
-    expect(store.newEvents()).toEqual([
-      expect.objectContaining({
-        streamId: merchantStream(),
-        type: 'PaymentAccountEnabled',
-        payload: { vendorId: 'vendor-id', enabledAt: '2026-11-16T09:01:00.000Z' },
-      }),
-    ]);
+    expect(store.newEvents()).toEqual([expect.objectContaining({ streamId: merchantStream(), ...accountEnabled() })]);
   });
 });
