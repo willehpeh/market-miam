@@ -11,13 +11,7 @@ export class ObservePaymentAccountHandler implements ICommandHandler<ObservePaym
   async execute(request: ObservePaymentAccount): Promise<void> {
     const vendorId = new VendorId(request.vendorId);
     const merchant = await this.merchants.forVendor(vendorId);
-    merchant.observePaymentAccount(
-      request.registrationId,
-      request.accountId,
-      request.cardPayments,
-      new Instant(request.observedAt),
-      request.informationDueBy,
-    );
+    merchant.observePaymentAccount(request.account, new Instant(request.observedAt));
     await this.merchants.save(merchant, vendorId);
   }
 }

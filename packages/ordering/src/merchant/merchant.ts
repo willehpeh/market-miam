@@ -2,6 +2,7 @@ import { Aggregate } from '@market-miam/event-sourcing';
 import { Instant } from '@market-miam/common';
 import { VendorId } from '@market-miam/shared-kernel';
 import { CardPayments } from './card-payments';
+import { ObservedAccount } from './observed-account';
 import {
   MerchantEvent,
   PaymentAccountDisabled,
@@ -36,17 +37,11 @@ export class Merchant extends Aggregate {
     }
   }
 
-  observePaymentAccount(
-    registrationId: string,
-    accountId: string,
-    cardPayments: CardPayments,
-    observedAt: Instant,
-    informationDueBy?: string,
-  ) {
-    this.confirmRegistration(registrationId, accountId, observedAt);
-    this.recordCardPayments(accountId, cardPayments, observedAt);
-    if (informationDueBy && accountId === this._currentAccountId && this._paymentAccount.isEnabled()) {
-      this.raise(this.issueDetected(informationDueBy, observedAt));
+  observePaymentAccount(account: ObservedAccount, observedAt: Instant) {
+    this.confirmRegistration(account, observedAt);
+    if (account.accountId === this._currentAccountId) {
+      this.recordCardPayments(account.cardPayments, observedAt);
+      this.recordInformationDue(account.informationDueBy, observedAt);
     }
   }
 
@@ -72,18 +67,21 @@ export class Merchant extends Aggregate {
     }
   }
 
-  private confirmRegistration(registrationId: string, accountId: string, confirmedAt: Instant) {
+  private confirmRegistration({ registrationId, accountId }: ObservedAccount, confirmedAt: Instant) {
     if (this._paymentAccount.isOpen(registrationId)) {
       this.raise(this.registrationConfirmed(registrationId, accountId, confirmedAt));
     }
   }
 
-  private recordCardPayments(accountId: string, cardPayments: CardPayments, observedAt: Instant) {
-    if (accountId !== this._currentAccountId) {
-      return;
-    }
+  private recordCardPayments(cardPayments: CardPayments, observedAt: Instant) {
     if (this._paymentAccount.cardPaymentsChangeTo(cardPayments)) {
       this.raise(cardPayments === 'active' ? this.accountEnabled(observedAt) : this.accountDisabled(observedAt));
+    }
+  }
+
+  private recordInformationDue(informationDueBy: string | undefined, observedAt: Instant) {
+    if (informationDueBy && this._paymentAccount.isEnabled()) {
+      this.raise(this.issueDetected(informationDueBy, observedAt));
     }
   }
 

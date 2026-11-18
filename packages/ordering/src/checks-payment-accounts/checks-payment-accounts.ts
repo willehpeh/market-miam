@@ -23,9 +23,7 @@ export class ChecksPaymentAccounts implements Processor {
     return ['PaymentAccountUpdateDetected'];
   }
 
-  private observe({ vendorId, registrationId, accountId, cardPayments, informationDueBy }: PaymentAccount): Promise<void> {
-    return this.commands.execute(
-      new ObservePaymentAccount(vendorId, registrationId, accountId, cardPayments, this.clock.now().value(), informationDueBy),
-    );
+  private observe({ vendorId, ...account }: PaymentAccount): Promise<void> {
+    return this.commands.execute(new ObservePaymentAccount(vendorId, account, this.clock.now().value()));
   }
 }
