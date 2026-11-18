@@ -46,4 +46,12 @@ describe('Observe Payment Account', () => {
 
     expect(store.newEvents()).toEqual([expect.objectContaining({ streamId: merchantStream(), ...accountEnabled() })]);
   });
+
+  it("records nothing about an account other than the vendor's current one", async () => {
+    given(registrationStarted(), registrationConfirmed());
+
+    await handler.execute(TestObservePaymentAccount.with({ accountId: 'acct_another_account', cardPayments: 'active' }));
+
+    expect(store.newEvents()).toEqual([]);
+  });
 });
