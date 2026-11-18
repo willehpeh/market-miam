@@ -79,4 +79,13 @@ describe('Start Payment Account Registration', () => {
 
     expect(store.newEvents()).toEqual([]);
   });
+
+  it('records nothing when a confirmed registration is sent again', async () => {
+    storefronts.publish('vendor-id');
+    given(registrationStarted(), registrationConfirmed());
+
+    await handler.execute(TestStartPaymentAccountRegistration.valid());
+
+    expect(store.newEvents()).toEqual([]);
+  });
 });
