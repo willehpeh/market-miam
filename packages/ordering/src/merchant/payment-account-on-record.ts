@@ -5,7 +5,7 @@ import { RegistrationAlreadyOpenError } from './registration-already-open.error'
 export abstract class PaymentAccountOnRecord {
   abstract allowNewRegistration(): void;
   abstract isOpen(registrationId: string): boolean;
-  abstract becomesEnabledBy(cardPayments: CardPayments): boolean;
+  abstract becomesEnabledBy(accountId: string, cardPayments: CardPayments): boolean;
 }
 
 abstract class NoAccountYet extends PaymentAccountOnRecord {
@@ -47,8 +47,12 @@ abstract class ExistingAccount extends PaymentAccountOnRecord {
 }
 
 export class ConfirmedAccount extends ExistingAccount {
-  override becomesEnabledBy(cardPayments: CardPayments): boolean {
-    return cardPayments === 'active';
+  constructor(private readonly accountId: string) {
+    super();
+  }
+
+  override becomesEnabledBy(accountId: string, cardPayments: CardPayments): boolean {
+    return accountId === this.accountId && cardPayments === 'active';
   }
 }
 

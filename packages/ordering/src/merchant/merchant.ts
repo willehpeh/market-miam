@@ -41,7 +41,7 @@ export class Merchant extends Aggregate {
 
   observePaymentAccount(registrationId: string, accountId: string, cardPayments: CardPayments, observedAt: Instant) {
     this.confirmRegistration(registrationId, accountId, observedAt);
-    this.recordCardPayments(cardPayments, observedAt);
+    this.recordCardPayments(accountId, cardPayments, observedAt);
   }
 
   apply(event: MerchantEvent): void {
@@ -54,7 +54,7 @@ export class Merchant extends Aggregate {
         this._paymentAccount = new NoOpenRegistration();
         break;
       case 'PaymentAccountRegistrationConfirmed':
-        this._paymentAccount = new ConfirmedAccount();
+        this._paymentAccount = new ConfirmedAccount(event.payload.accountId);
         break;
       case 'PaymentAccountEnabled':
         this._paymentAccount = new EnabledAccount();
@@ -68,8 +68,8 @@ export class Merchant extends Aggregate {
     }
   }
 
-  private recordCardPayments(cardPayments: CardPayments, observedAt: Instant) {
-    if (this._paymentAccount.becomesEnabledBy(cardPayments)) {
+  private recordCardPayments(accountId: string, cardPayments: CardPayments, observedAt: Instant) {
+    if (this._paymentAccount.becomesEnabledBy(accountId, cardPayments)) {
       this.raise(this.accountEnabled(observedAt));
     }
   }
