@@ -38,4 +38,18 @@ describe('Observe Payment Account', () => {
 
     expect(store.newEvents()).toEqual([]);
   });
+
+  it('records the account enabled when its card payments become active', async () => {
+    given(registrationStarted(), registrationConfirmed());
+
+    await handler.execute(TestObservePaymentAccount.with({ cardPayments: 'active' }));
+
+    expect(store.newEvents()).toEqual([
+      expect.objectContaining({
+        streamId: merchantStream(),
+        type: 'PaymentAccountEnabled',
+        payload: { vendorId: 'vendor-id', enabledAt: '2026-11-16T09:01:00.000Z' },
+      }),
+    ]);
+  });
 });
