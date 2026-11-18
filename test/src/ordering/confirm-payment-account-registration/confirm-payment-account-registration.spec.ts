@@ -27,4 +27,12 @@ describe('Confirm Payment Account Registration', () => {
 
     expect(store.newEvents()).toEqual([expect.objectContaining({ streamId: merchantStream(), ...registrationConfirmed() })]);
   });
+
+  it('records nothing when the registration is already confirmed', async () => {
+    given(registrationStarted(), registrationConfirmed());
+
+    await handler.execute(new ConfirmPaymentAccountRegistration('vendor-id', 'registration-id', 'acct_test_1', CONFIRMED_AT));
+
+    expect(store.newEvents()).toEqual([]);
+  });
 });
