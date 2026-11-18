@@ -5,7 +5,7 @@ import {
   Merchants,
 } from '@market-miam/ordering';
 import { VendorScopedEvents } from '@market-miam/shared-kernel';
-import { merchantStream, registrationStarted } from '../merchant-events';
+import { merchantStream, registrationConfirmed, registrationStarted } from '../merchant-events';
 
 const CONFIRMED_AT = '2026-11-16T09:01:00.000Z';
 
@@ -25,12 +25,6 @@ describe('Confirm Payment Account Registration', () => {
 
     await handler.execute(new ConfirmPaymentAccountRegistration('vendor-id', 'registration-id', 'acct_test_1', CONFIRMED_AT));
 
-    expect(store.newEvents()).toEqual([
-      expect.objectContaining({
-        streamId: merchantStream(),
-        type: 'PaymentAccountRegistrationConfirmed',
-        payload: { vendorId: 'vendor-id', registrationId: 'registration-id', accountId: 'acct_test_1', confirmedAt: CONFIRMED_AT },
-      }),
-    ]);
+    expect(store.newEvents()).toEqual([expect.objectContaining({ streamId: merchantStream(), ...registrationConfirmed() })]);
   });
 });
