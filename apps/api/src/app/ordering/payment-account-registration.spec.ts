@@ -11,6 +11,7 @@ import {
   testVendor,
 } from '../testing/api-test-app';
 import { EventLog } from '../testing/event-log';
+import { StripeEvents } from '../testing/stripe-events';
 import { VendorApi } from '../testing/vendor-api';
 import { Subscriptions } from '../event-sourcing/subscriptions';
 
@@ -55,6 +56,23 @@ describe('Registering a payment account over HTTP', () => {
     expect(await new EventLog(app).ofType('PaymentAccountRegistrationFailed')).toEqual([
       expect.objectContaining({
         payload: { vendorId: 'acme-bakery', registrationId: 'registration-1', failedAt: FIXED_NOW },
+      }),
+    ]);
+  });
+
+  it('confirms the registration once Stripe notices the account it made for it', async () => {
+    await boot();
+    await publishStorefrontFor(app, 'acme-bakery');
+    await app.get(Subscriptions).drain();
+    await vendor.startPaymentAccountRegistration(registration).expect(202);
+    await app.get(Subscriptions).drain();
+
+    await new StripeEvents(app).accountUpdated('evt_test_1', 'acct_registration-1').expect(200);
+    await app.get(Subscriptions).drain();
+
+    expect(await new EventLog(app).ofType('PaymentAccountRegistrationConfirmed')).toEqual([
+      expect.objectContaining({
+        payload: { vendorId: 'acme-bakery', registrationId: 'registration-1', accountId: 'acct_registration-1', confirmedAt: FIXED_NOW },
       }),
     ]);
   });
