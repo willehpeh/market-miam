@@ -33,8 +33,14 @@ export class OpenRegistration extends PaymentAccountOnRecord {
 }
 
 export class ConfirmedAccount extends PaymentAccountOnRecord {
-  startRegistration(): void {
-    throw new PaymentAccountAlreadyExistsError();
+  constructor(private readonly registrationId: string) {
+    super();
+  }
+
+  startRegistration(registrationId: string): void {
+    if (registrationId !== this.registrationId) {
+      throw new PaymentAccountAlreadyExistsError();
+    }
   }
 
   isOpen(): boolean {
