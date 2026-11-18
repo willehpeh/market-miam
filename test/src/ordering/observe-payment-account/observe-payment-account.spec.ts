@@ -1,7 +1,7 @@
 import { DomainEvent, InMemoryEventStore } from '@market-miam/event-sourcing';
 import { Merchants, ObservePaymentAccountHandler } from '@market-miam/ordering';
 import { VendorScopedEvents } from '@market-miam/shared-kernel';
-import { accountEnabled, merchantStream, registrationConfirmed, registrationStarted } from '../merchant-events';
+import { accountEnabled, merchantStream, registrationConfirmed, registrationFailed, registrationStarted } from '../merchant-events';
 import { TestObservePaymentAccount } from './test-data';
 
 describe('Observe Payment Account', () => {
@@ -47,10 +47,17 @@ describe('Observe Payment Account', () => {
     expect(store.newEvents()).toEqual([expect.objectContaining({ streamId: merchantStream(), ...accountEnabled() })]);
   });
 
-  it("records nothing about an account other than the vendor's current one", async () => {
-    given(registrationStarted(), registrationConfirmed());
+  it('records nothing about an account left over from a registration that failed', async () => {
+    given(
+      registrationStarted('vendor-id', { registrationId: 'failed-registration-id' }),
+      registrationFailed('vendor-id', { registrationId: 'failed-registration-id' }),
+      registrationStarted(),
+      registrationConfirmed(),
+    );
 
-    await handler.execute(TestObservePaymentAccount.with({ accountId: 'acct_another_account', cardPayments: 'active' }));
+    await handler.execute(
+      TestObservePaymentAccount.with({ registrationId: 'failed-registration-id', accountId: 'acct_left_over', cardPayments: 'active' }),
+    );
 
     expect(store.newEvents()).toEqual([]);
   });
