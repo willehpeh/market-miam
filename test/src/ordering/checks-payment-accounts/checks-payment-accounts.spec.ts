@@ -1,9 +1,8 @@
 import { InMemoryCheckpoint, InMemoryEventStore, PollingSubscription } from '@market-miam/event-sourcing';
 import {
   ChecksPaymentAccounts,
-  ConfirmPaymentAccountRegistration,
   InMemoryPaymentAccounts,
-  ObserveCardPayments,
+  ObservePaymentAccount,
   PaymentAccounts,
 } from '@market-miam/ordering';
 import { clockAt } from '../../clock-at';
@@ -40,24 +39,13 @@ describe('Checks Payment Accounts', () => {
     );
   }
 
-  it('confirms the registration of the vendor whose account Stripe noticed', async () => {
-    store.seedWith(noticeStream(), [updateDetected()]);
-
-    await subscribe(new InMemoryPaymentAccounts([account])).poll();
-
-    expect(gateway.dispatched).toContainEqual(
-      new ConfirmPaymentAccountRegistration(registration.vendorId, registration.registrationId, noticed.accountId, NOW),
-    );
-  });
-
-  it('observes whether its card payments are active, once the registration is confirmed', async () => {
+  it('observes the noticed account as Stripe has it now, for the vendor and registration it belongs to', async () => {
     store.seedWith(noticeStream(), [updateDetected()]);
 
     await subscribe(new InMemoryPaymentAccounts([account])).poll();
 
     expect(gateway.dispatched).toEqual([
-      new ConfirmPaymentAccountRegistration(registration.vendorId, registration.registrationId, noticed.accountId, NOW),
-      new ObserveCardPayments(registration.vendorId, noticed.accountId, 'active', NOW),
+      new ObservePaymentAccount(registration.vendorId, registration.registrationId, noticed.accountId, 'active', NOW),
     ]);
   });
 });
