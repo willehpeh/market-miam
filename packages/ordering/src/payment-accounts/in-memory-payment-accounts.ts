@@ -4,6 +4,10 @@ export class InMemoryPaymentAccounts extends PaymentAccounts {
   private readonly created: Registration[] = [];
   private readonly accountsById: Map<string, PaymentAccount>;
 
+  static accountIdFor(registrationId: string): string {
+    return `acct_${registrationId}`;
+  }
+
   constructor(existing: PaymentAccount[] = []) {
     super();
     this.accountsById = new Map(existing.map((account) => [account.accountId, account]));
@@ -11,7 +15,8 @@ export class InMemoryPaymentAccounts extends PaymentAccounts {
 
   createFor({ vendorId, registrationId, accountToken }: Registration): Promise<AccountCreation> {
     this.created.push({ vendorId, registrationId, accountToken });
-    this.accountsById.set(`acct_${registrationId}`, { accountId: `acct_${registrationId}`, vendorId, registrationId });
+    const accountId = InMemoryPaymentAccounts.accountIdFor(registrationId);
+    this.accountsById.set(accountId, { accountId, vendorId, registrationId });
     return Promise.resolve('created');
   }
 

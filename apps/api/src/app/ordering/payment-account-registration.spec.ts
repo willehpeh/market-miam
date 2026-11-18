@@ -67,12 +67,13 @@ describe('Registering a payment account over HTTP', () => {
     await vendor.startPaymentAccountRegistration(registration).expect(202);
     await app.get(Subscriptions).drain();
 
-    await new StripeEvents(app).accountUpdated('evt_test_1', 'acct_registration-1').expect(200);
+    const accountId = InMemoryPaymentAccounts.accountIdFor(registration.registrationId);
+    await new StripeEvents(app).accountUpdated('evt_test_1', accountId).expect(200);
     await app.get(Subscriptions).drain();
 
     expect(await new EventLog(app).ofType('PaymentAccountRegistrationConfirmed')).toEqual([
       expect.objectContaining({
-        payload: { vendorId: 'acme-bakery', registrationId: 'registration-1', accountId: 'acct_registration-1', confirmedAt: FIXED_NOW },
+        payload: { vendorId: 'acme-bakery', registrationId: 'registration-1', accountId, confirmedAt: FIXED_NOW },
       }),
     ]);
   });
