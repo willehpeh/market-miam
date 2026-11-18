@@ -11,12 +11,16 @@ import { ConfirmedAccount, NoOpenRegistration, OpenRegistration, PaymentAccountO
 
 export class Merchant extends Aggregate {
   private _paymentAccount: PaymentAccountOnRecord = new NoOpenRegistration();
+  private readonly _registrationsMade = new Set<string>();
 
   constructor(private readonly _id: VendorId) {
     super();
   }
 
   startPaymentAccountRegistration(registrationId: string, accountToken: string, startedAt: Instant) {
+    if (this._registrationsMade.has(registrationId)) {
+      return;
+    }
     this._paymentAccount.startRegistration(registrationId, () =>
       this.raise(this.registrationStarted(registrationId, accountToken, startedAt)),
     );
@@ -37,6 +41,7 @@ export class Merchant extends Aggregate {
   apply(event: MerchantEvent): void {
     switch (event.type) {
       case 'PaymentAccountRegistrationStarted':
+        this._registrationsMade.add(event.payload.registrationId);
         this._paymentAccount = new OpenRegistration(event.payload.registrationId);
         break;
       case 'PaymentAccountRegistrationFailed':
