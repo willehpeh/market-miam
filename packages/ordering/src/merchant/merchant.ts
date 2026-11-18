@@ -21,7 +21,7 @@ export class Merchant extends Aggregate {
     if (this._registrationsMade.has(registrationId)) {
       return;
     }
-    this._paymentAccount.startRegistration(registrationId, () =>
+    this._paymentAccount.startNewRegistration(() =>
       this.raise(this.registrationStarted(registrationId, accountToken, startedAt)),
     );
   }
@@ -48,7 +48,7 @@ export class Merchant extends Aggregate {
         this._paymentAccount = new NoOpenRegistration();
         break;
       case 'PaymentAccountRegistrationConfirmed':
-        this._paymentAccount = new ConfirmedAccount(event.payload.registrationId);
+        this._paymentAccount = new ConfirmedAccount();
         break;
     }
   }
