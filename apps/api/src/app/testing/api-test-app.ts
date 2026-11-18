@@ -1,5 +1,6 @@
 import { INestApplication } from '@nestjs/common';
 import { Test, TestingModuleBuilder } from '@nestjs/testing';
+import { ConfigModule } from '@nestjs/config';
 import { Clock, Email, Instant, LocalDate } from '@market-miam/common';
 import { VendorId } from '@market-miam/shared-kernel';
 import { EventStore } from '@market-miam/event-sourcing';
@@ -19,6 +20,7 @@ import { InMemoryPersistenceModule } from '../persistence/in-memory-persistence.
 import { globalFilters } from '../global-filters';
 import { PollSchedule } from '../event-sourcing/poll-schedule';
 import { FakeSignedUploads, SignedUploads } from '../signed-uploads';
+import { STRIPE_ACCOUNTS_SIGNING_SECRET } from './stripe-events';
 
 export const testVendor: VerifiedVendor = {
   vendorId: new VendorId('acme-bakery'),
@@ -58,6 +60,12 @@ export function apiTestModule(options: ApiTestOptions = {}): TestingModuleBuilde
   } = options;
   const builder = Test.createTestingModule({
     imports: [
+      ConfigModule.forRoot({
+        isGlobal: true,
+        ignoreEnvFile: true,
+        skipProcessEnv: true,
+        load: [() => ({ STRIPE_ACCOUNTS_WEBHOOK_SECRET: STRIPE_ACCOUNTS_SIGNING_SECRET })],
+      }),
       AuthModule.forRootAsync({ useFactory: () => new StaticTokenVerifier(vendor) }),
       OperatorAuthModule.forRootAsync({ useFactory: () => new FakeOperatorTokenVerifier() }),
       InMemoryPersistenceModule,
@@ -83,7 +91,7 @@ export function apiTestModule(options: ApiTestOptions = {}): TestingModuleBuilde
 }
 
 export async function startApp(builder: TestingModuleBuilder): Promise<INestApplication> {
-  const app = (await builder.compile()).createNestApplication();
+  const app = (await builder.compile()).createNestApplication({ rawBody: true });
   await app.init();
   return app;
 }
