@@ -24,4 +24,12 @@ describe("Stripe's account notices over HTTP", () => {
       expect.objectContaining({ payload: { noticeId: 'evt_test_1', accountId: 'acct_test_1' } }),
     ]);
   });
+
+  it('refuses a notice signed with another secret, recording nothing', async () => {
+    const impostor = new StripeEvents(app, 'whsec_test_someone_else');
+
+    await impostor.accountUpdated('evt_test_1', 'acct_test_1').expect(400);
+
+    expect(await new EventLog(app).ofType('PaymentAccountUpdateDetected')).toEqual([]);
+  });
 });
