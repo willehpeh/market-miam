@@ -8,8 +8,14 @@ import {
 import { clockAt } from '../../clock-at';
 import { RecordingCommandGateway } from '../../recording-command-gateway';
 import { noticeStream, updateDetected } from '../notice-events';
+import { TestDetectPaymentAccountUpdate } from '../detect-payment-account-update/test-data';
+import { TestStartPaymentAccountRegistration } from '../start-payment-account-registration/test-data';
 
 const NOW = '2026-11-16T09:01:00.000Z';
+
+const registration = TestStartPaymentAccountRegistration.valid();
+const noticed = TestDetectPaymentAccountUpdate.valid();
+const account = { accountId: noticed.accountId, vendorId: registration.vendorId, registrationId: registration.registrationId };
 
 describe('Checks Payment Accounts', () => {
   let store: InMemoryEventStore;
@@ -29,15 +35,12 @@ describe('Checks Payment Accounts', () => {
   }
 
   it('confirms the registration of the vendor whose account Stripe noticed', async () => {
-    const accounts = new InMemoryPaymentAccounts([
-      { accountId: 'acct_test_1', vendorId: 'vendor-id', registrationId: 'registration-id' },
-    ]);
-    store.seedWith(noticeStream(), [updateDetected({ accountId: 'acct_test_1' })]);
+    store.seedWith(noticeStream(), [updateDetected()]);
 
-    await subscribe(accounts).poll();
+    await subscribe(new InMemoryPaymentAccounts([account])).poll();
 
     expect(gateway.dispatched).toEqual([
-      new ConfirmPaymentAccountRegistration('vendor-id', 'registration-id', 'acct_test_1', NOW),
+      new ConfirmPaymentAccountRegistration(registration.vendorId, registration.registrationId, noticed.accountId, NOW),
     ]);
   });
 });
