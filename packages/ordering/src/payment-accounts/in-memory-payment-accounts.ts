@@ -11,6 +11,7 @@ export class InMemoryPaymentAccounts extends PaymentAccounts {
 
   createFor({ vendorId, registrationId, accountToken }: Registration): Promise<AccountCreation> {
     this.created.push({ vendorId, registrationId, accountToken });
+    this.accountsById.set(`acct_${registrationId}`, { accountId: `acct_${registrationId}`, vendorId, registrationId });
     return Promise.resolve('created');
   }
 

@@ -3,6 +3,8 @@ import { ConfigService } from '@nestjs/config';
 import { Clock } from '@market-miam/common';
 import { CommandGateway, EventStore } from '@market-miam/event-sourcing';
 import {
+  ChecksPaymentAccounts,
+  ConfirmPaymentAccountRegistrationHandler,
   CreatesPaymentAccounts,
   DetectPaymentAccountUpdateHandler,
   FailPaymentAccountRegistrationHandler,
@@ -41,8 +43,15 @@ import { StripeWebhooksController } from './stripe/stripe-webhooks.controller';
         new CreatesPaymentAccounts(accounts, commands, clock),
       inject: [PaymentAccounts, CommandGateway, Clock],
     },
+    {
+      provide: ChecksPaymentAccounts,
+      useFactory: (accounts: PaymentAccounts, commands: CommandGateway, clock: Clock) =>
+        new ChecksPaymentAccounts(accounts, commands, clock),
+      inject: [PaymentAccounts, CommandGateway, Clock],
+    },
     StartPaymentAccountRegistrationHandler,
     FailPaymentAccountRegistrationHandler,
+    ConfirmPaymentAccountRegistrationHandler,
     DetectPaymentAccountUpdateHandler,
   ],
 })
