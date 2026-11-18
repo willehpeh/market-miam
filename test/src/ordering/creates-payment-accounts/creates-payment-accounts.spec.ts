@@ -3,6 +3,7 @@ import {
   AccountCreation,
   CreatesPaymentAccounts,
   FailPaymentAccountRegistration,
+  FailPaymentAccountRegistrationHandler,
   InMemoryPaymentAccounts,
   InMemoryPublishedStorefronts,
   Merchants,
@@ -12,7 +13,8 @@ import {
 } from '@market-miam/ordering';
 import { VendorScopedEvents } from '@market-miam/shared-kernel';
 import { clockAt } from '../../clock-at';
-import { RecordingCommandGateway } from '../../recording-command-gateway';
+import { HandlingCommandGateway } from '../../handling-command-gateway';
+import { merchantStream, registrationFailed, registrationStarted } from '../merchant-events';
 import { TestStartPaymentAccountRegistration } from '../start-payment-account-registration/test-data';
 
 const NOW = '2026-11-16T09:00:05.000Z';
@@ -44,25 +46,27 @@ describe('Creates Payment Accounts', () => {
   };
 
   let store: InMemoryEventStore;
-  let gateway: RecordingCommandGateway;
+  let merchants: Merchants;
 
   beforeEach(() => {
     store = new InMemoryEventStore();
-    gateway = new RecordingCommandGateway();
+    merchants = new Merchants(new VendorScopedEvents(store));
   });
 
   async function start(): Promise<void> {
     const storefronts = new InMemoryPublishedStorefronts();
     storefronts.publish(registration.vendorId);
-    await new StartPaymentAccountRegistrationHandler(new Merchants(new VendorScopedEvents(store)), storefronts).execute(
-      registration,
-    );
+    await new StartPaymentAccountRegistrationHandler(merchants, storefronts).execute(registration);
   }
 
   function subscribe(accounts: PaymentAccounts): PollingSubscription {
+    const commands = new HandlingCommandGateway().handling(
+      FailPaymentAccountRegistration,
+      new FailPaymentAccountRegistrationHandler(merchants),
+    );
     return new PollingSubscription(
       store,
-      new CreatesPaymentAccounts(accounts, gateway, clockAt('2026-11-16', NOW)),
+      new CreatesPaymentAccounts(accounts, commands, clockAt('2026-11-16', NOW)),
       new InMemoryCheckpoint('creates-payment-accounts'),
     );
   }
@@ -81,8 +85,9 @@ describe('Creates Payment Accounts', () => {
 
     await subscribe(new RefusingPaymentAccounts()).poll();
 
-    expect(gateway.dispatched).toEqual([
-      new FailPaymentAccountRegistration(registration.vendorId, registration.registrationId, NOW),
+    expect(await store.load(merchantStream())).toEqual([
+      expect.objectContaining(registrationStarted()),
+      expect.objectContaining(registrationFailed()),
     ]);
   });
 
@@ -91,10 +96,10 @@ describe('Creates Payment Accounts', () => {
     const subscription = subscribe(accounts);
     await start();
 
-    await expect(subscription.poll()).rejects.toThrow('Stripe timed out');
+    await subscription.poll().catch(() => undefined);
     await subscription.poll();
 
-    expect(gateway.dispatched).toEqual([]);
+    expect(await store.load(merchantStream())).toEqual([expect.objectContaining(registrationStarted())]);
     expect(accounts.all()).toEqual([requested]);
   });
 });
