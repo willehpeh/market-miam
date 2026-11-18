@@ -4,6 +4,7 @@ import { VendorId } from '@market-miam/shared-kernel';
 import { CardPayments } from './card-payments';
 import {
   MerchantEvent,
+  PaymentAccountDisabled,
   PaymentAccountEnabled,
   PaymentAccountRegistrationConfirmed,
   PaymentAccountRegistrationFailed,
@@ -61,6 +62,9 @@ export class Merchant extends Aggregate {
       case 'PaymentAccountEnabled':
         this._paymentAccount = new EnabledAccount();
         break;
+      case 'PaymentAccountDisabled':
+        this._paymentAccount = new ConfirmedAccount();
+        break;
     }
   }
 
@@ -76,6 +80,8 @@ export class Merchant extends Aggregate {
     }
     if (this._paymentAccount.becomesEnabledBy(cardPayments)) {
       this.raise(this.accountEnabled(observedAt));
+    } else if (this._paymentAccount.becomesDisabledBy(cardPayments)) {
+      this.raise(this.accountDisabled(observedAt));
     }
   }
 
@@ -111,6 +117,14 @@ export class Merchant extends Aggregate {
     return {
       type: 'PaymentAccountEnabled',
       payload: { vendorId: this._id.value(), enabledAt: enabledAt.value() },
+      version: 1,
+    };
+  }
+
+  private accountDisabled(disabledAt: Instant): PaymentAccountDisabled {
+    return {
+      type: 'PaymentAccountDisabled',
+      payload: { vendorId: this._id.value(), disabledAt: disabledAt.value() },
       version: 1,
     };
   }

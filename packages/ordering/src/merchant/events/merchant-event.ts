@@ -1,3 +1,4 @@
+import { PaymentAccountDisabled } from './payment-account-disabled';
 import { PaymentAccountEnabled } from './payment-account-enabled';
 import { PaymentAccountRegistrationConfirmed } from './payment-account-registration-confirmed';
 import { PaymentAccountRegistrationFailed } from './payment-account-registration-failed';
@@ -7,4 +8,5 @@ export type MerchantEvent =
   | PaymentAccountRegistrationStarted
   | PaymentAccountRegistrationFailed
   | PaymentAccountRegistrationConfirmed
-  | PaymentAccountEnabled;
+  | PaymentAccountEnabled
+  | PaymentAccountDisabled;

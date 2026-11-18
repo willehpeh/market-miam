@@ -6,10 +6,15 @@ export abstract class PaymentAccountOnRecord {
   abstract allowNewRegistration(): void;
   abstract isOpen(registrationId: string): boolean;
   abstract becomesEnabledBy(cardPayments: CardPayments): boolean;
+  abstract becomesDisabledBy(cardPayments: CardPayments): boolean;
 }
 
 abstract class NoAccountYet extends PaymentAccountOnRecord {
   override becomesEnabledBy(): boolean {
+    return false;
+  }
+
+  override becomesDisabledBy(): boolean {
     return false;
   }
 }
@@ -50,10 +55,18 @@ export class ConfirmedAccount extends ExistingAccount {
   override becomesEnabledBy(cardPayments: CardPayments): boolean {
     return cardPayments === 'active';
   }
+
+  override becomesDisabledBy(): boolean {
+    return false;
+  }
 }
 
 export class EnabledAccount extends ExistingAccount {
   override becomesEnabledBy(): boolean {
     return false;
+  }
+
+  override becomesDisabledBy(cardPayments: CardPayments): boolean {
+    return cardPayments === 'inactive';
   }
 }
