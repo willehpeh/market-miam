@@ -3,6 +3,7 @@ import {
   ChecksPaymentAccounts,
   ConfirmPaymentAccountRegistration,
   InMemoryPaymentAccounts,
+  ObserveCardPayments,
   PaymentAccounts,
 } from '@market-miam/ordering';
 import { clockAt } from '../../clock-at';
@@ -15,7 +16,12 @@ const NOW = '2026-11-16T09:01:00.000Z';
 
 const registration = TestStartPaymentAccountRegistration.valid();
 const noticed = TestDetectPaymentAccountUpdate.valid();
-const account = { accountId: noticed.accountId, vendorId: registration.vendorId, registrationId: registration.registrationId };
+const account = {
+  accountId: noticed.accountId,
+  vendorId: registration.vendorId,
+  registrationId: registration.registrationId,
+  cardPayments: 'active' as const,
+};
 
 describe('Checks Payment Accounts', () => {
   let store: InMemoryEventStore;
@@ -39,8 +45,19 @@ describe('Checks Payment Accounts', () => {
 
     await subscribe(new InMemoryPaymentAccounts([account])).poll();
 
+    expect(gateway.dispatched).toContainEqual(
+      new ConfirmPaymentAccountRegistration(registration.vendorId, registration.registrationId, noticed.accountId, NOW),
+    );
+  });
+
+  it('observes whether its card payments are active, once the registration is confirmed', async () => {
+    store.seedWith(noticeStream(), [updateDetected()]);
+
+    await subscribe(new InMemoryPaymentAccounts([account])).poll();
+
     expect(gateway.dispatched).toEqual([
       new ConfirmPaymentAccountRegistration(registration.vendorId, registration.registrationId, noticed.accountId, NOW),
+      new ObserveCardPayments(registration.vendorId, noticed.accountId, 'active', NOW),
     ]);
   });
 });
