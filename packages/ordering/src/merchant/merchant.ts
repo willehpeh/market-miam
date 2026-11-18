@@ -20,6 +20,7 @@ import {
 export class Merchant extends Aggregate {
   private _paymentAccount: PaymentAccountOnRecord = new NoOpenRegistration();
   private readonly _registrationsMade = new Set<string>();
+  private _currentAccountId?: string;
 
   constructor(private readonly _id: VendorId) {
     super();
@@ -54,7 +55,8 @@ export class Merchant extends Aggregate {
         this._paymentAccount = new NoOpenRegistration();
         break;
       case 'PaymentAccountRegistrationConfirmed':
-        this._paymentAccount = new ConfirmedAccount(event.payload.accountId);
+        this._currentAccountId = event.payload.accountId;
+        this._paymentAccount = new ConfirmedAccount();
         break;
       case 'PaymentAccountEnabled':
         this._paymentAccount = new EnabledAccount();
@@ -69,7 +71,10 @@ export class Merchant extends Aggregate {
   }
 
   private recordCardPayments(accountId: string, cardPayments: CardPayments, observedAt: Instant) {
-    if (this._paymentAccount.becomesEnabledBy(accountId, cardPayments)) {
+    if (accountId !== this._currentAccountId) {
+      return;
+    }
+    if (this._paymentAccount.becomesEnabledBy(cardPayments)) {
       this.raise(this.accountEnabled(observedAt));
     }
   }
