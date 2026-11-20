@@ -106,4 +106,12 @@ describe('Observe Payment Account', () => {
 
     expect(store.newEvents()).toEqual([]);
   });
+
+  it('records nothing while the issue is still open', async () => {
+    given(registrationStarted(), registrationConfirmed(), accountEnabled(), issueDetected());
+
+    await handler.execute(TestObservePaymentAccount.with({ cardPayments: 'active', informationDueBy: '2026-12-01T00:00:00.000Z' }));
+
+    expect(store.newEvents()).toEqual([]);
+  });
 });
