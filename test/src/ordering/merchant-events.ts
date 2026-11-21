@@ -1,6 +1,7 @@
 import {
   PaymentAccountEnabled,
   PaymentAccountIssueDetected,
+  PaymentAccountIssueResolved,
   PaymentAccountRegistrationConfirmed,
   PaymentAccountRegistrationFailed,
   PaymentAccountRegistrationStarted,
@@ -67,5 +68,14 @@ export const issueDetected = (
 ): PaymentAccountIssueDetected => ({
   type: 'PaymentAccountIssueDetected',
   payload: { vendorId, informationDueBy: '2026-12-01T00:00:00.000Z', detectedAt: '2026-11-16T09:01:00.000Z', ...overrides },
+  version: 1,
+});
+
+export const issueResolved = (
+  vendorId = registration.vendorId,
+  overrides: Partial<PaymentAccountIssueResolved['payload']> = {},
+): PaymentAccountIssueResolved => ({
+  type: 'PaymentAccountIssueResolved',
+  payload: { vendorId, resolvedAt: '2026-11-16T09:01:00.000Z', ...overrides },
   version: 1,
 });

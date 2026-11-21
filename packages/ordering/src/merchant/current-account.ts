@@ -14,12 +14,11 @@ export class CurrentAccount {
     return cardPayments !== this.cardPayments;
   }
 
-  detectsIssue(informationDueBy: string | undefined): boolean {
-    return informationDueBy !== undefined && this.cardPayments === 'active' && !this.issueOpen;
-  }
-
-  resolvesIssue(informationDueBy: string | undefined): boolean {
-    return this.issueOpen && informationDueBy === undefined;
+  issueChangesWith(informationDueBy: string | undefined): boolean {
+    if (this.issueOpen) {
+      return informationDueBy === undefined;
+    }
+    return informationDueBy !== undefined && this.cardPayments === 'active';
   }
 
   enable(): void {

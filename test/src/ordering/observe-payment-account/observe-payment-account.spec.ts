@@ -4,6 +4,7 @@ import { VendorScopedEvents } from '@market-miam/shared-kernel';
 import {
   accountEnabled,
   issueDetected,
+  issueResolved,
   merchantStream,
   registrationConfirmed,
   registrationFailed,
@@ -120,12 +121,6 @@ describe('Observe Payment Account', () => {
 
     await handler.execute(TestObservePaymentAccount.with({ cardPayments: 'active' }));
 
-    expect(store.newEvents()).toEqual([
-      expect.objectContaining({
-        streamId: merchantStream(),
-        type: 'PaymentAccountIssueResolved',
-        payload: { vendorId: 'vendor-id', resolvedAt: '2026-11-16T09:01:00.000Z' },
-      }),
-    ]);
+    expect(store.newEvents()).toEqual([expect.objectContaining({ streamId: merchantStream(), ...issueResolved() })]);
   });
 });

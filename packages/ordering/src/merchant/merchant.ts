@@ -88,10 +88,8 @@ export class Merchant extends Aggregate {
   }
 
   private recordInformationDue(account: CurrentAccount, informationDueBy: string | undefined, observedAt: Instant) {
-    if (informationDueBy && account.detectsIssue(informationDueBy)) {
-      this.raise(this.issueDetected(informationDueBy, observedAt));
-    } else if (account.resolvesIssue(informationDueBy)) {
-      this.raise(this.issueResolved(observedAt));
+    if (account.issueChangesWith(informationDueBy)) {
+      this.raise(informationDueBy ? this.issueDetected(informationDueBy, observedAt) : this.issueResolved(observedAt));
     }
   }
 
