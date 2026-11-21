@@ -12,13 +12,13 @@ import {
   PaymentAccountRegistrationFailed,
   PaymentAccountRegistrationStarted,
 } from './events';
-import { ConfirmedAccount, NoOpenRegistration, OpenRegistration, PaymentAccountOnRecord } from './payment-account-on-record';
+import { CurrentAccount } from './current-account';
+import { ConfirmedRegistration, NoOpenRegistration, OpenRegistration, RegistrationOnRecord } from './registration-on-record';
 
 export class Merchant extends Aggregate {
-  private _paymentAccount: PaymentAccountOnRecord = new NoOpenRegistration();
+  private _registration: RegistrationOnRecord = new NoOpenRegistration();
   private readonly _registrationsMade = new Set<string>();
-  private _currentAccountId?: string;
-  private _issueOpen = false;
+  private _currentAccount?: CurrentAccount;
 
   constructor(private readonly _id: VendorId) {
     super();
@@ -28,21 +28,21 @@ export class Merchant extends Aggregate {
     if (this._registrationsMade.has(registrationId)) {
       return;
     }
-    this._paymentAccount.allowNewRegistration();
+    this._registration.allowNewRegistration();
     this.raise(this.registrationStarted(registrationId, accountToken, startedAt));
   }
 
   failPaymentAccountRegistration(registrationId: string, failedAt: Instant) {
-    if (this._paymentAccount.isOpen(registrationId)) {
+    if (this._registration.isOpen(registrationId)) {
       this.raise(this.registrationFailed(registrationId, failedAt));
     }
   }
 
   observePaymentAccount(account: ObservedAccount, observedAt: Instant) {
     this.confirmRegistration(account, observedAt);
-    if (account.accountId === this._currentAccountId) {
-      this.recordCardPayments(account.cardPayments, observedAt);
-      this.recordInformationDue(account.informationDueBy, observedAt);
+    if (this._currentAccount?.is(account.accountId)) {
+      this.recordCardPayments(this._currentAccount, account.cardPayments, observedAt);
+      this.recordInformationDue(this._currentAccount, account.informationDueBy, observedAt);
     }
   }
 
@@ -50,41 +50,41 @@ export class Merchant extends Aggregate {
     switch (event.type) {
       case 'PaymentAccountRegistrationStarted':
         this._registrationsMade.add(event.payload.registrationId);
-        this._paymentAccount = new OpenRegistration(event.payload.registrationId);
+        this._registration = new OpenRegistration(event.payload.registrationId);
         break;
       case 'PaymentAccountRegistrationFailed':
-        this._paymentAccount = new NoOpenRegistration();
+        this._registration = new NoOpenRegistration();
         break;
       case 'PaymentAccountRegistrationConfirmed':
-        this._currentAccountId = event.payload.accountId;
-        this._paymentAccount = new ConfirmedAccount('inactive');
+        this._registration = new ConfirmedRegistration();
+        this._currentAccount = new CurrentAccount(event.payload.accountId);
         break;
       case 'PaymentAccountEnabled':
-        this._paymentAccount = new ConfirmedAccount('active');
+        this._currentAccount?.enable();
         break;
       case 'PaymentAccountDisabled':
-        this._paymentAccount = new ConfirmedAccount('inactive');
+        this._currentAccount?.disable();
         break;
       case 'PaymentAccountIssueDetected':
-        this._issueOpen = true;
+        this._currentAccount?.openIssue();
         break;
     }
   }
 
   private confirmRegistration({ registrationId, accountId }: ObservedAccount, confirmedAt: Instant) {
-    if (this._paymentAccount.isOpen(registrationId)) {
+    if (this._registration.isOpen(registrationId)) {
       this.raise(this.registrationConfirmed(registrationId, accountId, confirmedAt));
     }
   }
 
-  private recordCardPayments(cardPayments: CardPayments, observedAt: Instant) {
-    if (this._paymentAccount.cardPaymentsChangeTo(cardPayments)) {
+  private recordCardPayments(account: CurrentAccount, cardPayments: CardPayments, observedAt: Instant) {
+    if (account.cardPaymentsChangeTo(cardPayments)) {
       this.raise(cardPayments === 'active' ? this.accountEnabled(observedAt) : this.accountDisabled(observedAt));
     }
   }
 
-  private recordInformationDue(informationDueBy: string | undefined, observedAt: Instant) {
-    if (informationDueBy && this._paymentAccount.isEnabled() && !this._issueOpen) {
+  private recordInformationDue(account: CurrentAccount, informationDueBy: string | undefined, observedAt: Instant) {
+    if (informationDueBy && account.detectsIssue(informationDueBy)) {
       this.raise(this.issueDetected(informationDueBy, observedAt));
     }
   }
