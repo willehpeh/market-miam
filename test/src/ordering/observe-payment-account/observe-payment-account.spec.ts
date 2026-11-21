@@ -114,4 +114,18 @@ describe('Observe Payment Account', () => {
 
     expect(store.newEvents()).toEqual([]);
   });
+
+  it('records the issue resolved once nothing is due any more', async () => {
+    given(registrationStarted(), registrationConfirmed(), accountEnabled(), issueDetected());
+
+    await handler.execute(TestObservePaymentAccount.with({ cardPayments: 'active' }));
+
+    expect(store.newEvents()).toEqual([
+      expect.objectContaining({
+        streamId: merchantStream(),
+        type: 'PaymentAccountIssueResolved',
+        payload: { vendorId: 'vendor-id', resolvedAt: '2026-11-16T09:01:00.000Z' },
+      }),
+    ]);
+  });
 });
