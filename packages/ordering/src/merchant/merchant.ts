@@ -18,6 +18,7 @@ export class Merchant extends Aggregate {
   private _paymentAccount: PaymentAccountOnRecord = new NoOpenRegistration();
   private readonly _registrationsMade = new Set<string>();
   private _currentAccountId?: string;
+  private _issueOpen = false;
 
   constructor(private readonly _id: VendorId) {
     super();
@@ -64,6 +65,9 @@ export class Merchant extends Aggregate {
       case 'PaymentAccountDisabled':
         this._paymentAccount = new ConfirmedAccount('inactive');
         break;
+      case 'PaymentAccountIssueDetected':
+        this._issueOpen = true;
+        break;
     }
   }
 
@@ -80,7 +84,7 @@ export class Merchant extends Aggregate {
   }
 
   private recordInformationDue(informationDueBy: string | undefined, observedAt: Instant) {
-    if (informationDueBy && this._paymentAccount.isEnabled()) {
+    if (informationDueBy && this._paymentAccount.isEnabled() && !this._issueOpen) {
       this.raise(this.issueDetected(informationDueBy, observedAt));
     }
   }
