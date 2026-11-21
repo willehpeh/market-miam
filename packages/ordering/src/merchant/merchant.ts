@@ -8,6 +8,7 @@ import {
   PaymentAccountDisabled,
   PaymentAccountEnabled,
   PaymentAccountIssueDetected,
+  PaymentAccountIssueResolved,
   PaymentAccountRegistrationConfirmed,
   PaymentAccountRegistrationFailed,
   PaymentAccountRegistrationStarted,
@@ -68,6 +69,9 @@ export class Merchant extends Aggregate {
       case 'PaymentAccountIssueDetected':
         this._currentAccount?.openIssue();
         break;
+      case 'PaymentAccountIssueResolved':
+        this._currentAccount?.resolveIssue();
+        break;
     }
   }
 
@@ -86,6 +90,8 @@ export class Merchant extends Aggregate {
   private recordInformationDue(account: CurrentAccount, informationDueBy: string | undefined, observedAt: Instant) {
     if (informationDueBy && account.detectsIssue(informationDueBy)) {
       this.raise(this.issueDetected(informationDueBy, observedAt));
+    } else if (account.resolvesIssue(informationDueBy)) {
+      this.raise(this.issueResolved(observedAt));
     }
   }
 
@@ -137,6 +143,14 @@ export class Merchant extends Aggregate {
     return {
       type: 'PaymentAccountIssueDetected',
       payload: { vendorId: this._id.value(), informationDueBy, detectedAt: detectedAt.value() },
+      version: 1,
+    };
+  }
+
+  private issueResolved(resolvedAt: Instant): PaymentAccountIssueResolved {
+    return {
+      type: 'PaymentAccountIssueResolved',
+      payload: { vendorId: this._id.value(), resolvedAt: resolvedAt.value() },
       version: 1,
     };
   }

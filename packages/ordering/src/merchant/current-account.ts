@@ -18,6 +18,10 @@ export class CurrentAccount {
     return informationDueBy !== undefined && this.cardPayments === 'active' && !this.issueOpen;
   }
 
+  resolvesIssue(informationDueBy: string | undefined): boolean {
+    return this.issueOpen && informationDueBy === undefined;
+  }
+
   enable(): void {
     this.cardPayments = 'active';
   }
@@ -28,5 +32,9 @@ export class CurrentAccount {
 
   openIssue(): void {
     this.issueOpen = true;
+  }
+
+  resolveIssue(): void {
+    this.issueOpen = false;
   }
 }

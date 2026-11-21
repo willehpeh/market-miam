@@ -4,4 +4,5 @@ export * from './payment-account-registration-confirmed';
 export * from './payment-account-enabled';
 export * from './payment-account-disabled';
 export * from './payment-account-issue-detected';
+export * from './payment-account-issue-resolved';
 export * from './merchant-event';
