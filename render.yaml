@@ -218,7 +218,7 @@ projects:
                 - tools/test-map/**
           # The event model (tools/event-model) — the system's behaviour as
           # slices of commands, events, read models and automations, derived
-          # from the packages test suite and the domain package's declared
+          # from the packages test suite and each bounded context's declared
           # seams. Same contract as test-map: bare Node, no npm ci.
           - type: web
             name: event-model
@@ -231,6 +231,7 @@ projects:
               paths:
                 - apps/api/**
                 - packages/market-days/**
+                - packages/ordering/**
                 - test/**
                 - tools/event-model/**
           # The ordering board (docs/ordering-board): hand-written pages, the board for the

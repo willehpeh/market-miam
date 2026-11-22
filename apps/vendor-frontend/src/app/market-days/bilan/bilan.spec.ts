@@ -64,7 +64,7 @@ describe('Bilan', () => {
   it("asks after the day's menu, in catalogue order", async () => {
     await renderBilan((marketDays, catalogue) => {
       marketDays.showing(day({ phase: 'past', itemIds: ['item-3', 'item-1'] }));
-      catalogue.items.set(carte);
+      catalogue.holding(...carte);
     });
 
     expect(screen.getAllByRole('group').map(each => each.querySelector('legend')?.textContent)).toEqual([
@@ -79,7 +79,7 @@ describe('Bilan', () => {
   it('prefills épuisé for a dish marked sold out during service', async () => {
     await renderBilan((marketDays, catalogue) => {
       marketDays.showing(day({ phase: 'past', itemIds: ['item-1', 'item-2'], soldOutItemIds: ['item-1'] }));
-      catalogue.items.set(carte);
+      catalogue.holding(...carte);
     });
 
     expect(chosen('Bourguignon')).toEqual(['Épuisé']);
@@ -98,7 +98,7 @@ describe('Bilan', () => {
           outcomes: { 'item-1': 'did_well' },
         }),
       );
-      catalogue.items.set(carte);
+      catalogue.holding(...carte);
     });
 
     expect(chosen('Bourguignon')).toEqual(['Bien vendu']);
@@ -109,7 +109,7 @@ describe('Bilan', () => {
   it('submits the whole set, prefills included', async () => {
     const { marketDays } = await renderBilan((marketDays, catalogue) => {
       marketDays.showing(day({ phase: 'past', itemIds: ['item-1', 'item-2'], soldOutItemIds: ['item-1'] }));
-      catalogue.items.set(carte);
+      catalogue.holding(...carte);
     });
 
     answer('Rôti', 'Moins bien vendu');
@@ -128,7 +128,7 @@ describe('Bilan', () => {
   it('leaves an unanswered dish out of the set', async () => {
     const { marketDays } = await renderBilan((marketDays, catalogue) => {
       marketDays.showing(day({ phase: 'past', itemIds: ['item-1', 'item-2'] }));
-      catalogue.items.set(carte);
+      catalogue.holding(...carte);
     });
 
     answer('Bourguignon', 'Bien vendu');
@@ -143,7 +143,7 @@ describe('Bilan', () => {
   it('says a half-answered bilan is not whole', async () => {
     const { marketDays } = await renderBilan((marketDays, catalogue) => {
       marketDays.showing(day({ phase: 'past', itemIds: ['item-1', 'item-2'] }));
-      catalogue.items.set(carte);
+      catalogue.holding(...carte);
     });
 
     answer('Bourguignon', 'Bien vendu');
@@ -158,7 +158,7 @@ describe('Bilan', () => {
   it('says a bilan is whole when the only dish left unanswered has left the catalogue', async () => {
     const { marketDays } = await renderBilan((marketDays, catalogue) => {
       marketDays.showing(day({ phase: 'past', itemIds: ['item-1', 'item-retired'] }));
-      catalogue.items.set(carte);
+      catalogue.holding(...carte);
     });
 
     answer('Bourguignon', 'Bien vendu');
@@ -170,7 +170,7 @@ describe('Bilan', () => {
   it('keeps the last answer when the vendor changes their mind', async () => {
     const { marketDays } = await renderBilan((marketDays, catalogue) => {
       marketDays.showing(day({ phase: 'past', itemIds: ['item-1'], soldOutItemIds: ['item-1'] }));
-      catalogue.items.set(carte);
+      catalogue.holding(...carte);
     });
 
     answer('Bourguignon', 'Moins bien vendu');
@@ -185,7 +185,7 @@ describe('Bilan', () => {
   it('declines a market that is still to come, and points at the live screen', async () => {
     await renderBilan((marketDays, catalogue) => {
       marketDays.showing(day({ phase: 'trading', itemIds: ['item-1'] }));
-      catalogue.items.set(carte);
+      catalogue.holding(...carte);
     });
 
     expect(screen.getByText(/pas encore terminé/i)).toBeTruthy();
@@ -200,7 +200,7 @@ describe('Bilan', () => {
   it('sends the vendor back to the dashboard when there is no live screen to offer', async () => {
     await renderBilan((marketDays, catalogue) => {
       marketDays.showing(day({ phase: 'future', itemIds: ['item-1'] }));
-      catalogue.items.set(carte);
+      catalogue.holding(...carte);
     });
 
     expect(screen.getByText(/pas encore terminé/i)).toBeTruthy();
@@ -212,7 +212,7 @@ describe('Bilan', () => {
   it('declines a market the vendor called off before it opened', async () => {
     await renderBilan((marketDays, catalogue) => {
       marketDays.showing(day({ phase: 'due', closed: true, calledOff: true, itemIds: ['item-1'] }));
-      catalogue.items.set(carte);
+      catalogue.holding(...carte);
     });
 
     expect(screen.getByText(/n'a pas eu lieu/i)).toBeTruthy();
@@ -223,7 +223,7 @@ describe('Bilan', () => {
   it('judges a day the vendor called off before its hours ran out', async () => {
     await renderBilan((marketDays, catalogue) => {
       marketDays.showing(day({ phase: 'trading', closed: true, itemIds: ['item-1'] }));
-      catalogue.items.set(carte);
+      catalogue.holding(...carte);
     });
 
     expect(group('Bourguignon').getAllByRole('radio')).toHaveLength(3);
@@ -234,7 +234,7 @@ describe('Bilan', () => {
   it('renders an empty bilan for a finished day that carried no menu', async () => {
     await renderBilan((marketDays, catalogue) => {
       marketDays.showing(day({ phase: 'past' }));
-      catalogue.items.set(carte);
+      catalogue.holding(...carte);
     });
 
     expect(screen.getByText(/aucun plat/i)).toBeTruthy();

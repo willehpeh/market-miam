@@ -5,10 +5,10 @@ import { Card } from '../core/card';
 import { Spinner } from '../core/spinner';
 import { CatalogueFacade } from '../catalogue/catalogue.facade';
 import { MarketScheduleFacade } from '../markets/market-schedule.facade';
-import { CatalogueItemView } from '../catalogue/catalogue';
-import { centsToEuros, formatEuros, parseEurosToCents } from '../catalogue/money';
+import { Dish } from '../catalogue/dish';
+import { Euros } from '../core/euros';
 import { MarketPricesFacade } from './market-prices.facade';
-import { PriceList } from './market-prices';
+import { MarketPrice, PriceList } from './market-prices';
 
 // `stored` is what this market charges as last saved; `price` is what the field holds.
 // Their difference is the whole of the two row states (decision 7).
@@ -122,11 +122,13 @@ export class PriceEditor {
     () => this.schedules.schedules().find((schedule) => schedule.marketId === this.marketId)?.market.name,
   );
 
-  private readonly set = this.prices.pricesFor(this.marketId);
+  private readonly marketPrices = this.prices.pricesFor(this.marketId);
 
-  private readonly model = linkedSignal<{ items: CatalogueItemView[]; set: PriceList }, { dishes: DishModel[] }>({
-    source: () => ({ items: this.catalogue.items(), set: this.set() }),
-    computation: ({ items, set }) => ({ dishes: items.map((item) => dishModel(item, set[item.itemId])) }),
+  private readonly model = linkedSignal<{ dishes: Dish[]; marketPrices: PriceList }, { dishes: DishModel[] }>({
+    source: () => ({ dishes: this.catalogue.items(), marketPrices: this.marketPrices() }),
+    computation: ({ dishes, marketPrices }) => ({
+      dishes: dishes.map((dish) => this.modelOf(dish, marketPrices[dish.itemId()])),
+    }),
   });
 
   // Blank is a valid answer here — it is the dish selling at its carte price — so only a
@@ -135,7 +137,7 @@ export class PriceEditor {
     applyEach(path.dishes, (dish) => {
       applyEach(dish.rows, (row) => {
         validate(row.price, ({ value }) =>
-          value() !== '' && parseEurosToCents(value()) === null ? { kind: 'price' } : undefined,
+          value() !== '' && Euros.parse(value()) === null ? { kind: 'price' } : undefined,
         );
       });
     });
@@ -164,39 +166,26 @@ export class PriceEditor {
     if (this.fields().invalid()) {
       return;
     }
-    this.prices.setPrices(this.marketId, listOf(this.fields().value().dishes));
+    this.prices.setPrices(this.marketId, this.priceListOf(this.fields().value().dishes));
   }
-}
 
-function listOf(dishes: DishModel[]): PriceList {
-  const list: PriceList = {};
-  for (const dish of dishes) {
-    const priced = dish.rows.flatMap((row) => {
-      const cents = parseEurosToCents(row.price);
-      return cents === null ? [] : [[row.label, cents] as const];
-    });
-    if (priced.length === 0) {
-      continue;
+  private priceListOf(typed: DishModel[]): PriceList {
+    const list: PriceList = {};
+    for (const { itemId, rows } of typed) {
+      const dish = this.catalogue.items().find((candidate) => candidate.hasId(itemId));
+      const price = dish?.pricing().marketPriceFrom(rows.map((row) => Euros.parse(row.price)));
+      if (price !== undefined) {
+        list[itemId] = price;
+      }
     }
-    list[dish.itemId] = dish.rows.length > 1 ? Object.fromEntries(priced) : priced[0][1];
+    return list;
   }
-  return list;
-}
 
-// A set whose shape disagrees with the dish is ignored rather than rendered, the answer
-// the read side already gives it: the vendor sees the carte price and can retype.
-function dishModel(item: CatalogueItemView, set: number | Record<string, number> | undefined): DishModel {
-  const rows = item.variants
-    ? item.variants.map((variant) => row(variant.name, variant.price, pricedVariant(set, variant.name)))
-    : [row(item.name, item.price ?? 0, typeof set === 'number' ? set : undefined)];
-  return { itemId: item.itemId, name: item.name, rows };
-}
-
-function pricedVariant(set: number | Record<string, number> | undefined, variant: string): number | undefined {
-  return typeof set === 'object' ? set[variant] : undefined;
-}
-
-function row(label: string, catalogue: number, set: number | undefined): RowModel {
-  const stored = set === undefined ? '' : centsToEuros(set);
-  return { label, carte: `carte ${formatEuros(catalogue)}`, stored, price: stored };
+  private modelOf(dish: Dish, market: MarketPrice | undefined): DishModel {
+    const rows = dish.pricing().marketRows(market).map((row) => {
+      const stored = row.market()?.asTyped() ?? '';
+      return { label: row.variant() ?? dish.name(), carte: `carte ${row.carte().label()}`, stored, price: stored };
+    });
+    return { itemId: dish.itemId(), name: dish.name(), rows };
+  }
 }

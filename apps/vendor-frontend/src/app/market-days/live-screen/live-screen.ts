@@ -4,14 +4,11 @@ import { fromEvent } from 'rxjs';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Card } from '../../core/card';
 import { Spinner } from '../../core/spinner';
-import { formatTime, longDate } from '../../core/french-date';
 import { CatalogueFacade } from '../../catalogue/catalogue.facade';
 import { MarketDayFacade } from '../market-day.facade';
-import { awaitingStart, broadcasting, isFinished, isOver, isToday } from './live-status';
 import { ClosedNotice } from '../closed-notice';
 import { ReopenStand } from '../reopen-stand';
-
-type Row = { itemId: string; name: string };
+import { Dish } from '../../catalogue/dish';
 
 @Component({
   selector: 'mm-live-screen',
@@ -24,26 +21,26 @@ type Row = { itemId: string; name: string };
           <mm-spinner label="Chargement du marché…" />
         </div>
       } @else if (day(); as marketDay) {
-        <h1 class="text-xl leading-tight">{{ marketDay.label }}</h1>
-        <p class="mt-3 text-sm text-ink-soft">{{ marketDay.marketName }}</p>
+        <h1 class="text-xl leading-tight">{{ marketDay.label() }}</h1>
+        <p class="mt-3 text-sm text-ink-soft">{{ marketDay.marketName() }}</p>
 
         <!-- One slot, three server-said states (decisions 27, 37, 38): the stated boundary
              while waiting, the broadcast receipt once live, and the closed state that
              outranks both — a closed day leaves the customer's list entirely. Never a countdown. -->
-        @if (marketDay.closed) {
+        @if (marketDay.isClosed()) {
           <mm-closed-notice />
-        } @else if (marketDay.over) {
+        } @else if (marketDay.isAfterHours()) {
           <div class="mt-4 rounded-card bg-surface-sunk p-3">
             <p class="font-bold text-ink">Marché terminé</p>
           </div>
-        } @else if (live()) {
+        } @else if (marketDay.isBroadcasting()) {
           <div class="mt-4 rounded-card border border-brand bg-surface p-3">
             <p class="font-bold text-brand">En direct</p>
             <p class="text-sm text-ink-soft">Vos clients voient ce menu.</p>
           </div>
-        } @else if (waiting()) {
+        } @else if (marketDay.isAwaitingStart()) {
           <div class="mt-4 rounded-card bg-surface-sunk p-3">
-            <p class="text-sm text-ink-soft">Vos clients verront ce menu à partir de {{ startLabel() }}.</p>
+            <p class="text-sm text-ink-soft">Vos clients verront ce menu à partir de {{ marketDay.opensAt() }}.</p>
           </div>
         }
 
@@ -54,18 +51,18 @@ type Row = { itemId: string; name: string };
              the same two groups — and decision 70 left them there when the bilan took its
              own route, so nothing but availability has ever landed on them. -->
         <ul class="mt-6 space-y-2">
-          @for (item of active(); track item.itemId) {
+          @for (item of active(); track item.itemId()) {
             <li>
               <button
                 #row
                 type="button"
                 class="w-full rounded-card border p-3 text-left font-bold text-ink disabled:opacity-100"
-                [class]="marketDay.inert ? 'border-transparent bg-canvas' : 'border-line bg-surface'"
-                [attr.data-item]="item.itemId"
-                [disabled]="marketDay.inert"
+                [class]="marketDay.hasEnded() ? 'border-transparent bg-canvas' : 'border-line bg-surface'"
+                [attr.data-item]="item.itemId()"
+                [disabled]="marketDay.hasEnded()"
                 (click)="markSoldOut(item)"
               >
-                {{ item.name }}
+                {{ item.name() }}
               </button>
             </li>
           }
@@ -75,18 +72,18 @@ type Row = { itemId: string; name: string };
           <section class="mt-8" aria-labelledby="epuises-heading">
             <h2 id="epuises-heading" class="text-sm font-bold uppercase tracking-wide text-muted">Épuisés</h2>
             <ul class="mt-3 space-y-2">
-              @for (item of epuises(); track item.itemId) {
+              @for (item of epuises(); track item.itemId()) {
                 <li>
                   <button
                     #row
                     type="button"
                     class="w-full rounded-card border p-3 text-left font-bold text-muted disabled:opacity-100"
-                    [class]="marketDay.inert ? 'border-transparent bg-canvas' : 'border-line bg-surface-sunk'"
-                    [attr.data-item]="item.itemId"
-                    [disabled]="marketDay.inert"
+                    [class]="marketDay.hasEnded() ? 'border-transparent bg-canvas' : 'border-line bg-surface-sunk'"
+                    [attr.data-item]="item.itemId()"
+                    [disabled]="marketDay.hasEnded()"
                     (click)="markAvailable(item)"
                   >
-                    {{ item.name }}
+                    {{ item.name() }}
                   </button>
                 </li>
               }
@@ -101,7 +98,7 @@ type Row = { itemId: string; name: string };
              be able to say so. It closes with the market (decision 63): an edit at 15h
              rewrites the set 2b is about to ask the vendor to judge. The screen declines
              it, the domain still accepts it — same split as the rows above. -->
-        @if (!marketDay.inert) {
+        @if (!marketDay.hasEnded()) {
           <a [routerLink]="editorLink" class="mt-8 block text-center text-sm font-bold text-brand no-underline">
             Modifier le menu
           </a>
@@ -114,12 +111,12 @@ type Row = { itemId: string; name: string };
              as an early endTime and the clock already ran out; and no Rouvrir, because
              decision 50 refuses one past endTime and the failure path is a silent
              snap-back. What lands here is the bilan's door, below. -->
-        @if (!marketDay.over) {
-          @if (marketDay.closed) {
+        @if (!marketDay.isAfterHours()) {
+          @if (marketDay.isClosed()) {
             <mm-reopen-stand [marketId]="marketId" [date]="date" />
           } @else {
             <button type="button" class="quiet mt-8 flex w-full max-w-xs mx-auto justify-center" (click)="closeStand()">
-              @if (marketDay.trading) {
+              @if (marketDay.isTrading()) {
                 Fermer le stand
               } @else {
                 Je ne peux pas venir aujourd'hui
@@ -134,7 +131,7 @@ type Row = { itemId: string; name: string };
              ended day it is the only thing here. Nearly the flag the rows read, except for
              the day called off before it opened: inert like any closed stand, but never
              traded, so there is nothing to look back on (decision 75). -->
-        @if (marketDay.judgeable) {
+        @if (marketDay.canBeJudged()) {
           <a [routerLink]="bilanLink" class="btn-link mt-8 flex w-full max-w-xs mx-auto">Faire le bilan</a>
         }
 
@@ -170,49 +167,19 @@ export class LiveScreen {
     return slot.status === 'found' ? slot.day : undefined;
   });
 
-  readonly day = computed(() => {
-    const occurrence = this.occurrence();
-    return isToday(occurrence) && occurrence
-      ? {
-          label: longDate(occurrence.day, occurrence.date),
-          marketName: occurrence.market.name,
-          closed: occurrence.closed,
-          trading: occurrence.phase === 'trading',
-          over: occurrence.phase === 'over',
-          // The rows stop being availability controls when the vendor packs up and again
-          // when the clock ends the day (decision 48).
-          inert: isOver(occurrence),
-          // Nearly the same day, one exception: a stand called off before the market opened
-          // is just as inert, and has nothing to look back on (decision 75). The domain
-          // refuses that bilan, so the door does not offer it.
-          judgeable: isFinished(occurrence),
-        }
-      : undefined;
-  });
+  // Only today: the commands this screen fires are refused for any other day.
+  readonly day = computed(() => (this.occurrence()?.isToday() ? this.occurrence() : undefined));
 
-  // The rows are the day's menu, not the catalogue: what the vendor brought, in
-  // catalogue order — same join the editor makes, narrowed to the planned set.
-  private readonly planned = computed(() => {
-    const onMenu = new Set(this.occurrence()?.itemIds ?? []);
-    return this.catalogue.items().filter((item) => onMenu.has(item.itemId));
-  });
+  // The rows are the day's menu, not the catalogue: what the vendor brought.
+  private readonly planned = computed(() => this.occurrence()?.menuOf(this.catalogue.items()) ?? []);
 
-  private readonly soldOut = computed(() => new Set(this.occurrence()?.soldOutItemIds ?? []));
-
-  readonly active = computed(() => this.planned().filter((item) => !this.soldOut().has(item.itemId)));
-  readonly epuises = computed(() => this.planned().filter((item) => this.soldOut().has(item.itemId)));
+  readonly active = computed(() => this.planned().filter((item) => !this.isSoldOut(item)));
+  readonly epuises = computed(() => this.planned().filter((item) => this.isSoldOut(item)));
 
   // The duration alone, not the day it came from: the day object changes on every
   // optimistic tap, and re-arming the timer there would push the boundary further away
   // with each one — a vendor marking dishes all morning would never be re-asked.
-  private readonly countdown = computed(() => this.occurrence()?.nextPhaseInMs);
-
-  readonly live = computed(() => broadcasting(this.occurrence()));
-  readonly waiting = computed(() => awaitingStart(this.occurrence()));
-  readonly startLabel = computed(() => {
-    const startTime = this.occurrence()?.startTime;
-    return startTime ? formatTime(startTime) : '';
-  });
+  private readonly countdown = computed(() => this.occurrence()?.nextPhaseInMs());
 
   readonly note = signal('');
 
@@ -258,6 +225,10 @@ export class LiveScreen {
     });
   }
 
+  private isSoldOut(item: Dish): boolean {
+    return this.occurrence()?.isSoldOut(item.itemId()) ?? false;
+  }
+
   private reask(): void {
     this.marketDays.loadDay(this.marketId, this.date);
   }
@@ -266,14 +237,14 @@ export class LiveScreen {
     this.marketDays.close(this.marketId, this.date);
   }
 
-  markSoldOut(item: Row): void {
-    this.marketDays.markSoldOut(this.marketId, this.date, item.itemId);
-    this.moved(`${item.name} épuisé`, item.itemId);
+  markSoldOut(item: Dish): void {
+    this.marketDays.markSoldOut(this.marketId, this.date, item.itemId());
+    this.moved(`${item.name()} épuisé`, item.itemId());
   }
 
-  markAvailable(item: Row): void {
-    this.marketDays.markAvailable(this.marketId, this.date, item.itemId);
-    this.moved(`${item.name} disponible`, item.itemId);
+  markAvailable(item: Dish): void {
+    this.marketDays.markAvailable(this.marketId, this.date, item.itemId());
+    this.moved(`${item.name()} disponible`, item.itemId());
   }
 
   private moved(note: string, itemId: string): void {

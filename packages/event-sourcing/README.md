@@ -14,17 +14,23 @@ opinion (ADR 0044) — it instruments itself via the no-op-safe
   (id, positions, timestamp, metadata).
 - **Ports** — `EventStore` (write + load a stream), `Events` (global `loadFrom`
   for subscriptions), `Checkpoint`, `Subscription`, `EventHandler`
-  (→ `Projection` / `Processor`), `CommandGateway`, `Lineage`.
+  (→ `Projection` / `Processor`), `CommandGateway`, `QueryGateway`, `UnitOfWork`,
+  `DataKeys`, `Lineage`.
 - **In-memory adapters** — `InMemoryEventStore`, `InMemoryCheckpoint`,
-  `InMemorySubscription`. Used in tests and in local dev (`NODE_ENV=development`).
+  `InMemoryDataKeys`. Used in tests and in local dev (`NODE_ENV=development`).
+- **`PollingSubscription`** — the one `Subscription`, in memory and on Postgres
+  alike: it reads `Events` on from its checkpoint (ADR 0015), poked by
+  `PostgresNotifications` where there is a database (ADR 0030).
 - **Postgres adapters** (over a `pg` `Pool`/`Client`) — `PostgresEventStore`
   (`EventStore` + `Events`; append in a transaction, load by stream / global
-  position), `PostgresCheckpoint`, `PostgresNotifications` (long-lived
-  `LISTEN events` connection exposed as a poke stream with reconnect/backoff),
-  and `PostgresDataKeys` (AES-256-GCM keys envelope-encrypted under a master
-  key, for crypto-shredding). The runtime default in every non-development
-  environment (the app wires in-memory only for local dev); exported and
-  contract-tested.
+  position), `PostgresCheckpoint` (advanced by compare-and-set, ADR 0036),
+  `PostgresNotifications` (long-lived `LISTEN events` connection exposed as a poke
+  stream with reconnect/backoff), `PostgresUnitOfWork` (the ambient transaction
+  appends join, ADR 0035), `PostgresDataKeys` (AES-256-GCM keys envelope-encrypted
+  under a master key, for crypto-shredding) with `MasterKeyring` (rotating that key,
+  ADR 0040), and `Queryable`, which the contexts' Postgres read models query
+  through. The runtime default in every non-development environment (the app wires
+  in-memory only for local dev); exported and contract-tested.
 - **Composed store** — `ApplicationEventStore`: the store an app wires in.
   Tracing spans, `traceparent` and lineage ids inline, over an injected
   inner store (in production: `ShreddingEventStore` around a leaf adapter,
@@ -36,8 +42,9 @@ opinion (ADR 0044) — it instruments itself via the no-op-safe
 
 This library has no specs of its own; it's a `typecheck`-only Nx project. Its
 behaviour is covered socially from the top-level `test` project — shared port
-contracts (e.g. `eventStoreContract`) plus the `market-days` use-case, projection
-and processor specs.
+contracts (e.g. `eventStoreContract`), its own specs under
+`test/src/event-sourcing/`, and the contexts' use-case, projection and processor
+specs.
 
 ```sh
 npx nx test test          # the suite that exercises this package

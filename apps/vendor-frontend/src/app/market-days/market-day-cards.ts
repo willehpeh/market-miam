@@ -1,10 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Card } from '../core/card';
-import { longDate, timeRange } from '../core/french-date';
 import { MarketDayFacade } from './market-day.facade';
-import { hasLiveScreen, isToday } from './live-screen/live-status';
-import { MarketDayView } from './market-days';
+import { MarketDay } from './market-day';
 import { ClosedNotice } from './closed-notice';
 import { ReopenStand } from './reopen-stand';
 
@@ -28,28 +26,28 @@ import { ReopenStand } from './reopen-stand';
     }
   `,
   template: `
-    @for (day of cards(); track day.marketId + day.date) {
+    @for (card of cards(); track card.heading) {
       <mm-card>
-        <h2 class="text-xl leading-tight">{{ day.heading }}</h2>
+        <h2 class="text-xl leading-tight">{{ card.heading }}</h2>
 
-        <p class="mt-4 font-bold text-ink">{{ day.label }}</p>
-        <p class="text-sm text-muted">{{ day.marketName }}</p>
-        @if (day.hours) {
-          <p class="text-sm text-muted">{{ day.hours }}</p>
+        <p class="mt-4 font-bold text-ink">{{ card.day.label() }}</p>
+        <p class="text-sm text-muted">{{ card.day.marketName() }}</p>
+        @if (card.day.hours(); as hours) {
+          <p class="text-sm text-muted">{{ hours }}</p>
         }
-        <p class="mt-3 text-sm text-ink-soft">{{ day.menu }}</p>
-        
-        @if (day.closed) {
+        <p class="mt-3 text-sm text-ink-soft">{{ card.menu }}</p>
+
+        @if (card.day.isClosed()) {
           <mm-closed-notice />
-          <mm-reopen-stand [marketId]="day.marketId" [date]="day.date" />
+          <mm-reopen-stand [marketId]="card.day.marketId()" [date]="card.day.date()" />
         } @else {
-          <a [routerLink]="day.link" class="btn-link mt-4">
+          <a [routerLink]="card.link" class="btn-link mt-4">
             <i class="fa-solid fa-calendar-check" aria-hidden="true"></i>
-            {{ day.action }}
+            {{ card.action }}
           </a>
-          
-          @if (day.today) {
-            <button type="button" class="plain mt-4 flex w-full justify-center text-sm" (click)="callOff(day)">
+
+          @if (card.day.isToday()) {
+            <button type="button" class="plain mt-4 flex w-full justify-center text-sm" (click)="callOff(card.day)">
               Je ne peux pas venir aujourd'hui
             </button>
           }
@@ -71,40 +69,34 @@ export class MarketDayCards {
   // reachable from nowhere in the app. Today first — a vendor opening the app on a market
   // morning wants the morning.
   readonly cards = computed(() => {
-    const days = this.marketDays.days().filter(day => !day.absent);
-    const today = days.find(isToday);
-    const next = days.find(day => !isToday(day));
+    const days = this.marketDays.days().filter(day => !day.isAbsent());
+    const today = days.find(day => day.isToday());
+    const next = days.find(day => !day.isToday());
     return [
       ...(today ? [this.cardFor("Aujourd'hui", today)] : []),
       ...(next ? [this.cardFor('Prochain marché', next)] : []),
     ];
   });
 
-  callOff(day: { marketId: string; date: string }): void {
-    this.marketDays.close(day.marketId, day.date);
+  callOff(day: MarketDay): void {
+    this.marketDays.close(day.marketId(), day.date());
   }
 
   constructor() {
     this.marketDays.load();
   }
 
-  private cardFor(heading: string, day: MarketDayView) {
-    const items = day.itemIds.length;
+  private cardFor(heading: string, day: MarketDay) {
+    const items = day.menuItemIds().length;
     // The doorway flips on planning plus the server-said today, never the clock alone
     // (decisions 27, 42) — so it leads to the live screen from midnight, not from startTime.
-    const live = hasLiveScreen(day);
+    const live = day.hasLiveScreen();
     return {
       heading,
-      label: longDate(day.day, day.date),
-      marketName: day.market.name,
-      hours: timeRange(day),
+      day,
       menu: items ? `${items} plat${items > 1 ? 's' : ''} au menu` : 'Aucun plat au menu',
       action: live ? 'Suivre le marché' : items ? 'Modifier le menu' : 'Planifier le menu',
-      link: ['/dashboard/market', day.marketId, day.date, live ? 'live' : 'menu'],
-      marketId: day.marketId,
-      date: day.date,
-      today: isToday(day),
-      closed: day.closed,
+      link: ['/dashboard/market', day.marketId(), day.date(), live ? 'live' : 'menu'],
     };
   }
 }

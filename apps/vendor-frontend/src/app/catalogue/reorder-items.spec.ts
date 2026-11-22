@@ -10,7 +10,7 @@ const item = (itemId: string, name: string): CatalogueItemView => catalogueItem(
 
 async function renderReorder(items: CatalogueItemView[] = []) {
   const catalogue = new FakeCatalogueFacade();
-  catalogue.items.set(items);
+  catalogue.holding(...items);
   const view = await render(ReorderItems, {
     providers: [provideRouter([]), { provide: CatalogueFacade, useValue: catalogue }],
   });
@@ -85,7 +85,7 @@ describe('ReorderItems', () => {
   it('shows the items once a cold catalogue has loaded', async () => {
     const { view, catalogue } = await renderReorder();
 
-    catalogue.items.set([item('item-1', 'Bœuf bourguignon')]);
+    catalogue.holding(item('item-1', 'Bœuf bourguignon'));
     view.detectChanges();
 
     expect(rowNames()).toEqual(['Bœuf bourguignon']);

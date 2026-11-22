@@ -5,10 +5,7 @@ import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { catchError, concatMap, map, of, switchMap, tap, withLatestFrom } from 'rxjs';
 import { Store } from '@ngrx/store';
 import { MarketDays } from '../market-days';
-import { hasLiveScreen } from '../live-screen/live-status';
-import {
-  marketDayFeature,
-} from './market-day.state';
+import { selectMarketDays } from './market-day.state';
 import {
   ChangeItemAvailability,
   ChangeItemAvailabilityFailure, ChangeItemAvailabilitySuccess,
@@ -140,10 +137,10 @@ export class MarketDayEffects {
     () =>
       this.actions$.pipe(
         ofType(SetMarketDayMenuSuccess),
-        withLatestFrom(this.store.select(marketDayFeature.selectDays)),
+        withLatestFrom(this.store.select(selectMarketDays)),
         tap(([{ marketId, date }, days]) => {
-          const saved = days.find(day => day.marketId === marketId && day.date === date);
-          void this.router.navigate(hasLiveScreen(saved) ? ['/dashboard/market', marketId, date, 'live'] : ['/dashboard']);
+          const saved = days.find(day => day.isOn(marketId, date));
+          void this.router.navigate(saved?.hasLiveScreen() ? ['/dashboard/market', marketId, date, 'live'] : ['/dashboard']);
         }),
       ),
     { dispatch: false },

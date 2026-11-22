@@ -1,19 +1,23 @@
 # MarketMiam
 
 SaaS for itinerant French market food vendors (*traiteurs*). Each vendor gets
-their own branded storefront where they publish market-day menus, share their
-schedule, and gather demand signals from regulars — a Shopify-style model that
-preserves the personal vendor–customer relationship of *marché* culture.
+their own branded storefront where they publish market-day menus and share their
+schedule — a Shopify-style model that preserves the personal vendor–customer
+relationship of *marché* culture.
 
 See [`docs/MARKET_MIAM.md`](docs/MARKET_MIAM.md) for the product design.
 
 ## Architecture
 
-- **Nx monorepo**, polyglot with scoped package boundaries.
+- **Nx monorepo** in TypeScript, each app on its own framework (NestJS, Angular,
+  Astro), with scoped package boundaries.
 - **Event Sourcing + CQRS** as the persistence model; a single events table with
   stream and global positions.
-- **Hexagonal** — ports and adapters; the domain is framework-agnostic.
-- **Multi-tenant** by subdomain (`chez-mohamed.example.fr`).
+- **Hexagonal** — ports and adapters; the domain is framework-agnostic apart from
+  a deliberate, narrow dependency on `@nestjs/cqrs` for its commands, queries and
+  their handlers (ADR 0011).
+- **Multi-tenant** by subdomain: each vendor's storefront on a subdomain of its
+  own, `<subdomain>.marketmiam.fr` (ADR 0065).
 
 Decisions are recorded in [`docs/adr/`](docs/adr/README.md).
 
@@ -21,8 +25,8 @@ Decisions are recorded in [`docs/adr/`](docs/adr/README.md).
 
 | App | Stack | What it is |
 |-----|-------|------------|
-| `api` | NestJS | Main backend: command/query bus, event store, projections/processors, uploads. |
-| `vendor-frontend` | Angular | Vendor-facing app: onboarding, storefront, dashboard. |
+| `api` | NestJS | Main backend: command/query bus, event store, projections/processors, signed image uploads, operator routes, Stripe webhooks. |
+| `vendor-frontend` | Angular | Vendor-facing app: onboarding, storefront, catalogue, markets and prices, live market days. |
 | `customer-frontend` | Angular (SSR) | Public per-vendor storefront customers visit. |
 | `website` | Astro | Marketing / landing site. |
 | `design-showcase` | Astro | The design system rendered from `packages/design-system` — tokens, type, component classes, icons. |
@@ -32,20 +36,22 @@ Decisions are recorded in [`docs/adr/`](docs/adr/README.md).
 
 | Package | What it is |
 |---------|------------|
-| `market-days` | The domain: aggregates, commands, events, projections, repositories. |
-| `event-sourcing` | Event-sourcing kernel — ports, `Aggregate` base, in-memory adapters. |
-| `shared-kernel` | Cross-context identifiers (`VendorId`, `MarketId`). |
+| `market-days` | The Market Days context — vendors, storefronts, catalogues, schedules and market days: aggregates, commands, events, projections, processors. |
+| `ordering` | The Ordering context — the vendor's payment account with Stripe, and orders. |
+| `event-sourcing` | Event-sourcing kernel — ports, `Aggregate` base, in-memory and Postgres adapters. |
+| `shared-kernel` | What the contexts must agree on — `VendorId`, `MarketId`, vendor-scoped streams. |
 | `common` | Reusable value objects — dates, times, email, phone, URL, image refs. |
-| `auth` | Token verification (Auth0 / static), framework-agnostic. |
-| `auth-nestjs` | NestJS auth glue — guard, `@CurrentVendor` decorator, module. |
+| `auth` | Token verification for vendors and operators (Auth0 / static / development), framework-agnostic. |
+| `auth-nestjs` | NestJS auth glue — vendor and operator guards, `@CurrentVendor` decorator, modules. |
+| `design-system` | The brand — tokens, the Tailwind theme and self-hosted fonts, for every app with a face. |
 
 ## Development
 
 ```sh
 npx nx serve api               # run the backend
 npx nx serve vendor-frontend   # run a frontend
-npx nx test test               # the social test suite (see test/README.md)
-npx nx test <project>          # a project's own tests
+npx nx test test               # the social test suite, covering the domain packages (see test/README.md)
+npx nx test <project>          # an app's own tests: api, vendor-, customer- or admin-frontend
 npx nx build <project>         # production build
 npx nx graph                   # explore the project graph
 ```

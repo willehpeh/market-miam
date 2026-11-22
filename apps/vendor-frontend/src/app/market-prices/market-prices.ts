@@ -1,8 +1,12 @@
 import { Observable } from 'rxjs';
 
+// What one dish costs at one market: a number for a flat dish, cents per variant name for a
+// dish sold by variant (ADR 0052). Sparse — a variant it does not name keeps its catalogue price.
+export type MarketPrice = number | Record<string, number>;
+
 // Sparse, exactly as the API answers: what a market's list does not name sells at the
-// catalogue price, and a dish sold by variant is priced variant by variant.
-export type PriceList = Record<string, number | Record<string, number>>;
+// catalogue price.
+export type PriceList = Record<string, MarketPrice>;
 
 export interface MarketPricesView {
   marketId: string;
