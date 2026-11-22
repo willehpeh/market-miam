@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
-import { provideState, provideStore, Store } from '@ngrx/store';
+import { provideRouter } from '@angular/router';
+import { provideState, provideStore } from '@ngrx/store';
 import { provideEffects } from '@ngrx/effects';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { MarketRecord, SellingRecord } from './selling-record';
@@ -8,8 +9,12 @@ import { sellingRecordFeature } from './selling-record.state';
 import { SellingRecordEffects } from './selling-record.effects';
 import { SellingRecordFacade } from './selling-record.facade';
 import { StoreSellingRecordFacade } from './store.selling-record.facade';
-
-import { RecordBilanSuccess } from '../market-days/store/market-day.actions';
+import { MarketDays } from '../market-days/market-days';
+import { HttpMarketDays } from '../market-days/http.market-days';
+import { marketDayFeature } from '../market-days/store/market-day.state';
+import { MarketDayEffects } from '../market-days/store/market-day.effects';
+import { MarketDayFacade } from '../market-days/market-day.facade';
+import { StoreMarketDayFacade } from '../market-days/store.market-day.facade';
 
 const markets: MarketRecord[] = [
   { marketId: 'market-1', items: [{ itemId: 'item-1', bilans: [{ date: '2026-07-04', outcome: 'sold_out' }] }] },
@@ -17,8 +22,8 @@ const markets: MarketRecord[] = [
 
 describe('SellingRecord', () => {
   let facade: SellingRecordFacade;
+  let marketDays: MarketDayFacade;
   let httpCtrl: HttpTestingController;
-  let store: Store;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
@@ -29,11 +34,16 @@ describe('SellingRecord', () => {
         provideEffects(SellingRecordEffects),
         provideHttpClientTesting(),
         { provide: SellingRecordFacade, useClass: StoreSellingRecordFacade },
+        { provide: MarketDays, useClass: HttpMarketDays },
+        provideState(marketDayFeature),
+        provideEffects(MarketDayEffects),
+        { provide: MarketDayFacade, useClass: StoreMarketDayFacade },
+        provideRouter([{ path: 'dashboard', children: [] }]),
       ],
     });
     facade = TestBed.inject(SellingRecordFacade);
+    marketDays = TestBed.inject(MarketDayFacade);
     httpCtrl = TestBed.inject(HttpTestingController);
-    store = TestBed.inject(Store);
   });
 
   afterEach(() => {
@@ -108,9 +118,8 @@ describe('SellingRecord', () => {
     facade.load();
     httpCtrl.expectOne('/api/selling-record').flush({ markets });
 
-    store.dispatch(
-      RecordBilanSuccess({ marketId: 'market-1', date: '2026-07-11', outcomes: {}, complete: false }),
-    );
+    marketDays.recordBilan('market-1', '2026-07-11', {}, false);
+    httpCtrl.expectOne('/api/market-days/market-1/2026-07-11/bilan').flush(null);
     facade.load();
 
     expect(httpCtrl.expectOne('/api/selling-record').request.method).toBe('GET');
