@@ -4,6 +4,8 @@ import { applyEach, applyWhen, form, FormField, required, validate } from '@angu
 import { ITEM_PHOTO_PREVIEW_TRANSFORMATION } from '@market-miam/common';
 import { Card } from '../core/card';
 import { SubmitButton } from '../core/submit-button';
+import { MoveButtons } from '../core/move-buttons';
+import { Arrangement } from '../core/arrangement';
 import { Spinner } from '../core/spinner';
 import { CloudinaryUrlPipe } from '../core/cloudinary-url.pipe';
 import { DismissOnOutsidePress } from '../core/dismiss-on-outside-press';
@@ -21,7 +23,7 @@ type ItemModel = { name: string; price: string; description: string; variants: F
 @Component({
   selector: 'mm-add-item',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, Card, FormField, CloudinaryUrlPipe, DismissOnOutsidePress, Spinner, SubmitButton],
+  imports: [RouterLink, Card, FormField, CloudinaryUrlPipe, DismissOnOutsidePress, MoveButtons, Spinner, SubmitButton],
   styles: `
     .segment {
       flex: 1;
@@ -241,24 +243,13 @@ type ItemModel = { name: string; price: string; description: string; variants: F
                           Supprimer
                         </button>
                       } @else {
-                        <button
-                          type="button"
-                          class="icon-btn shrink-0"
-                          [attr.aria-label]="'Descendre le format ' + ($index + 1)"
-                          [disabled]="$index === fields.variants.length - 1"
-                          (click)="moveFormatDown($index)"
-                        >
-                          <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
-                        </button>
-                        <button
-                          type="button"
-                          class="icon-btn shrink-0"
-                          [attr.aria-label]="'Monter le format ' + ($index + 1)"
-                          [disabled]="$index === 0"
-                          (click)="moveFormatUp($index)"
-                        >
-                          <i class="fa-solid fa-chevron-up" aria-hidden="true"></i>
-                        </button>
+                        <mm-move-buttons
+                          [label]="'le format ' + ($index + 1)"
+                          [first]="$first"
+                          [last]="$last"
+                          (moveUp)="moveFormatUp($index)"
+                          (moveDown)="moveFormatDown($index)"
+                        />
                         <button
                           type="button"
                           class="icon-btn shrink-0"
@@ -494,23 +485,13 @@ export class AddItem {
   }
 
   protected moveFormatUp(index: number): void {
-    this.swapFormats(index, index - 1);
+    this.confirmingFormat.set(null);
+    this.model.update((m) => ({ ...m, variants: new Arrangement(m.variants).movedUp(index) }));
   }
 
   protected moveFormatDown(index: number): void {
-    this.swapFormats(index, index + 1);
-  }
-
-  private swapFormats(a: number, b: number): void {
     this.confirmingFormat.set(null);
-    this.model.update((m) => {
-      if (a < 0 || b < 0 || a >= m.variants.length || b >= m.variants.length) {
-        return m;
-      }
-      const variants = [...m.variants];
-      [variants[a], variants[b]] = [variants[b], variants[a]];
-      return { ...m, variants };
-    });
+    this.model.update((m) => ({ ...m, variants: new Arrangement(m.variants).movedDown(index) }));
   }
 
   // Kept in the regulation's order whatever order they are ticked in. Unticking the last one
