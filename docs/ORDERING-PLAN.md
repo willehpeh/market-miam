@@ -28,7 +28,7 @@ for the lawyer and the accountant, in French. The board is newer than this plan 
 4. Vendor refuses, customer cancels, or 10 minutes pass (capped at `endTime`) → hold cancelled, nothing charged, customer emailed. Orders for a sold-out dish or a closed or ended day are refused automatically.
 5. At stall: customer gives code, vendor types it → server matches day's open orders → *remis* → screen shows that order's dishes.
 6. Lost code: vendor picks a paid order → *remis sans code*. Own event. Customer emailed immediately, so a false hand-over is visible to the real customer.
-7. At day's `endTime`: unconfirmed holds cancelled; paid + uncollected = no-show, vendor keeps money, unless the vendor closed by hand and didn't reopen, which refunds them; day's PII key shredded.
+7. At day's `endTime`: unconfirmed holds cancelled; paid + uncollected = no-show, vendor keeps money, unless the vendor closed by hand and didn't reopen, which refunds them. The day's PII key is shredded at midnight.
 
 Authorise-before-confirm, not confirm-then-pay: avoids customer returning to pay (no-show in small), blocks fake orders (bad card fails before vendor sees it).
 
@@ -62,7 +62,7 @@ Vendor never knows the code: stops pickups off a customer-visible tablet, and a 
 - Only the email processor decrypts the email → no plaintext projection to clean.
 - Cash-register closings (daily per market day, monthly, annual) + publisher attestation, for VAT-registered vendors (see Legal → Cash register).
 - First scheduler in the API (interval or Render cron): confirmation timeout; key sweep.
-- Shred at `endTime`, **not at close**: close is by hand (ADR 0049), vendor can reopen until `endTime` (decision 50).
+- Shred at midnight, Paris time, on the market's date, **not at close** or `endTime`: close is by hand (ADR 0049), vendor can reopen until `endTime` (decision 50), and the end-of-market emails need the key (board, *Steps 2 to 6, decided*, 22 November 2026).
 
 ### Keys
 
@@ -71,7 +71,7 @@ Vendor never knows the code: stops pickups off a customer-visible tablet, and a 
 | Key | Death date | Fix |
 |---|---|---|
 | Vendor (`${vendorId}`, `:legal`) | Arbitrary (erasure; legal key +5 years) | **Tombstone**: `shred` nulls the key material, keeps the row with `shredded_at`; `getOrCreateKeyFor` throws on it; `findKeyFor` → `null` → `SHREDDED` as now. Also a dated proof of erasure (RGPD art. 5(2)). **Shipped** with mentions légales slice 3, with `shred_after` + a daily `shredDue` sweep (ADR 0056 amendment) |
-| Market day (Ordering) | Known at mint: day's `endTime` + grace (hours from ADR 0051) | **Expiry rule, no tombstone**: `shred_after` stored at mint; minting a key already past expiry throws; sweep `DELETE`s expired rows. `MarketDayEndedError` guard still blocks first; the mint rule turns a guard failure into a loud error, not silent retention |
+| Market day (Ordering) | Known at mint: midnight, Paris time, on the market's date | **Expiry rule, no tombstone**: `shred_after` stored at mint; minting a key already past expiry throws; sweep `DELETE`s expired rows. `MarketDayEndedError` guard still blocks first; the mint rule turns a guard failure into a loud error, not silent retention |
 
 - Day keys live in **their own table** (e.g. `order_data_keys`): different lifecycle (bulk churn, ~78k rows/yr at 500 vendors) and different context (ADR 0048).
 - Wiring: **stack a second `ShreddingEventStore`** for Ordering's event types (disjoint from Market Days'), with its own PII registry, its own `DataKeys` over that table, and a resolver `event → { subject, expiresAt }`. Static `KeyScopes` (type → scope) stays for Market Days.
