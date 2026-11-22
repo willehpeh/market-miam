@@ -38,4 +38,13 @@ describe('Place Order', () => {
 
     expect(store.newEvents()).toEqual([expect.objectContaining({ streamId: orderStream(), ...orderRefused() })]);
   });
+
+  it('records nothing when Stripe sends a placed order’s hold again after its dish sold out', async () => {
+    given(orderPlaced());
+    tradingDays.markSoldOut('another-dish-id');
+
+    await handler.execute(TestPlaceOrder.valid());
+
+    expect(store.newEvents()).toEqual([]);
+  });
 });
