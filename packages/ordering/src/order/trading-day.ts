@@ -16,9 +16,9 @@ export class TradingDay {
   }
 
   refusalOf(lines: OrderLine[]): RefusalReason | undefined {
-    if (lines.some(line => this.soldOut.has(line.dishId))) {
-      return 'sold-out';
+    if (this.closed) {
+      return 'closed';
     }
-    return this.closed ? 'closed' : undefined;
+    return lines.some(line => this.soldOut.has(line.dishId)) ? 'sold-out' : undefined;
   }
 }
