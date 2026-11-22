@@ -18,8 +18,10 @@ export class TradingDay {
     if (this.facts.ended) {
       return 'ended';
     }
-    return lines.some(line => !this.facts.menuDishIds.includes(line.dishId) || this.facts.soldOutDishIds.includes(line.dishId))
-      ? 'sold-out'
-      : 'available';
+    return lines.every(line => this.offers(line)) ? 'available' : 'sold-out';
+  }
+
+  private offers({ dishId }: OrderLine): boolean {
+    return this.facts.menuDishIds.includes(dishId) && !this.facts.soldOutDishIds.includes(dishId);
   }
 }
