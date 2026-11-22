@@ -1,7 +1,6 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Card } from '../core/card';
-import { MarketDayFacade } from './market-day.facade';
 import { MarketDay } from './market-day';
 import { ClosedNotice } from './closed-notice';
 import { ReopenStand } from './reopen-stand';
@@ -39,7 +38,7 @@ import { ReopenStand } from './reopen-stand';
 
         @if (card.day.isClosed()) {
           <mm-closed-notice />
-          <mm-reopen-stand (reopen)="reopen(card.day)" />
+          <mm-reopen-stand (reopen)="reopen.emit(card.day)" />
         } @else {
           <a [routerLink]="card.link" class="btn-link mt-4">
             <i class="fa-solid fa-calendar-check" aria-hidden="true"></i>
@@ -47,7 +46,7 @@ import { ReopenStand } from './reopen-stand';
           </a>
 
           @if (card.day.isToday()) {
-            <button type="button" class="plain mt-4 flex w-full justify-center text-sm" (click)="callOff(card.day)">
+            <button type="button" class="plain mt-4 flex w-full justify-center text-sm" (click)="callOff.emit(card.day)">
               Je ne peux pas venir aujourd'hui
             </button>
           }
@@ -62,14 +61,17 @@ import { ReopenStand } from './reopen-stand';
   `,
 })
 export class MarketDayCards {
-  private readonly marketDays = inject(MarketDayFacade);
+  readonly days = input.required<MarketDay[]>();
+
+  readonly callOff = output<MarketDay>();
+  readonly reopen = output<MarketDay>();
 
   // Two cards, not one (decision 76): today is a market to run and the next one is a market
   // to plan, and while a closed or trading today held the single card, the day after it was
   // reachable from nowhere in the app. Today first — a vendor opening the app on a market
   // morning wants the morning.
   readonly cards = computed(() => {
-    const days = this.marketDays.days().filter(day => !day.isAbsent());
+    const days = this.days().filter(day => !day.isAbsent());
     const today = days.find(day => day.isToday());
     const next = days.find(day => !day.isToday());
     return [
@@ -77,18 +79,6 @@ export class MarketDayCards {
       ...(next ? [this.cardFor('Prochain marché', next)] : []),
     ];
   });
-
-  callOff(day: MarketDay): void {
-    this.marketDays.close(day.marketId(), day.date());
-  }
-
-  reopen(day: MarketDay): void {
-    this.marketDays.reopen(day.marketId(), day.date());
-  }
-
-  constructor() {
-    this.marketDays.load();
-  }
 
   private cardFor(heading: string, day: MarketDay) {
     const items = day.menuItemIds().length;

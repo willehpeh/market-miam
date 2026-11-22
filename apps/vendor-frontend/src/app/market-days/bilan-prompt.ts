@@ -1,7 +1,6 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Card } from '../core/card';
-import { MarketDayFacade } from './market-day.facade';
 import { UnratedMarketDay } from './unrated-market-day';
 
 // Decision 65: the vendor this exists for is the one packing up and driving home, and they
@@ -27,9 +26,10 @@ import { UnratedMarketDay } from './unrated-market-day';
   `,
 })
 export class BilanPrompt {
-  private readonly marketDays = inject(MarketDayFacade);
+  // Oldest first, as the query answers them.
+  readonly unrated = input.required<UnratedMarketDay[]>();
 
   // One day, never a list: a backlog is the cross-month retrospective this slice defers,
-  // and the query answers oldest first, so this is the one about to fall out of the window.
-  readonly dayToJudge = computed((): UnratedMarketDay | undefined => this.marketDays.unrated()[0]);
+  // and the oldest is the one about to fall out of the window.
+  protected readonly dayToJudge = computed((): UnratedMarketDay | undefined => this.unrated()[0]);
 }

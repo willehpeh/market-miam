@@ -1,23 +1,18 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Subject, switchMap, timer } from 'rxjs';
 import { RouterLink } from '@angular/router';
 import { Card } from '../core/card';
 import { COPIED_NOTICE_DELAY, Share } from '../core/share';
-import { StorefrontFacade } from '../storefront/storefront.facade';
+import { StorefrontView } from '../storefront/storefront';
 import { storefrontUrl } from '../storefront/storefront-url';
-import { MarketDayCards } from '../market-days/market-day-cards';
-import { BilanPrompt } from '../market-days/bilan-prompt';
 
 @Component({
   selector: 'mm-storefront-home',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, Card, MarketDayCards, BilanPrompt],
+  imports: [RouterLink, Card],
   host: { class: 'contents' },
   template: `
-    <mm-market-day-cards />
-    <mm-bilan-prompt />
-
     <mm-card>
       <ul class="divide-y divide-line">
         @for (destination of destinations; track destination.title) {
@@ -57,6 +52,8 @@ import { BilanPrompt } from '../market-days/bilan-prompt';
   `
 })
 export class StorefrontHome {
+  readonly storefront = input.required<StorefrontView>();
+
   readonly copied = signal(false);
 
   readonly destinations: {
@@ -66,8 +63,7 @@ export class StorefrontHome {
     { title: 'Vos marchés', link: '/dashboard/markets', icon: 'fa-calendar-days' },
     { title: 'Mentions légales', link: '/dashboard/legal-identity', icon: 'fa-scale-balanced' }
   ];
-  private readonly storefront = inject(StorefrontFacade);
-  readonly storefrontUrl = computed(() => storefrontUrl(this.storefront.view()?.subdomain));
+  readonly storefrontUrl = computed(() => storefrontUrl(this.storefront().subdomain));
   private readonly sharing = inject(Share);
   private readonly copiedNoticeDelay = inject(COPIED_NOTICE_DELAY);
   private readonly copies = new Subject<void>();
@@ -84,7 +80,7 @@ export class StorefrontHome {
     if (!url) {
       return;
     }
-    const outcome = await this.sharing.link(this.storefront.view()?.name ?? '', url.href);
+    const outcome = await this.sharing.link(this.storefront().name, url.href);
     if (outcome !== 'copied') {
       return;
     }

@@ -1,11 +1,8 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Card } from '../core/card';
-import { StorefrontFacade } from '../storefront/storefront.facade';
+import { StorefrontView } from '../storefront/storefront';
 import { storefrontUrl } from '../storefront/storefront-url';
-import { CatalogueFacade } from '../catalogue/catalogue.facade';
-import { MarketScheduleFacade } from '../markets/market-schedule.facade';
-import { LegalIdentityFacade } from '../legal-identity/legal-identity.facade';
 
 @Component({
   selector: 'mm-setup-steps',
@@ -78,14 +75,14 @@ import { LegalIdentityFacade } from '../legal-identity/legal-identity.facade';
             Votre vitrine sera publiée à
             <a [href]="url.href" target="_blank" rel="noopener" class="font-bold text-brand">{{ url.label }}</a>
           </p>
-          @if (publishError()) {
+          @if (publishFailed()) {
             <p class="mt-4 text-center text-sm text-danger">La publication a échoué. Veuillez réessayer.</p>
           }
           <button
             type="button"
             class="mt-4 flex w-full max-w-xs mx-auto justify-center"
             [disabled]="publishing()"
-            (click)="publish()"
+            (click)="publish.emit()"
           >
             {{ publishing() ? 'Publication…' : 'Publier' }}
           </button>
@@ -99,27 +96,30 @@ import { LegalIdentityFacade } from '../legal-identity/legal-identity.facade';
   `
 })
 export class SetupSteps {
-  private readonly storefront = inject(StorefrontFacade);
-  private readonly catalogue = inject(CatalogueFacade);
-  private readonly markets = inject(MarketScheduleFacade);
-  private readonly legalIdentity = inject(LegalIdentityFacade);
-  readonly publishing = this.storefront.publishing;
-  readonly publishError = this.storefront.publishError;
-  readonly storefrontUrl = computed(() => storefrontUrl(this.storefront.view()?.subdomain));
+  readonly storefront = input.required<StorefrontView>();
+  readonly dishCount = input.required<number>();
+  readonly marketCount = input.required<number>();
+  readonly legalIdentityProvided = input.required<boolean>();
+  readonly publishing = input.required<boolean>();
+  readonly publishFailed = input.required<boolean>();
+
+  readonly publish = output<void>();
+
+  readonly storefrontUrl = computed(() => storefrontUrl(this.storefront().subdomain));
   readonly steps = computed(() => {
-    const view = this.storefront.view();
+    const view = this.storefront();
     const fields = [
-      { label: 'nom', set: !!view?.name, required: true },
-      { label: 'description', set: !!view?.description, required: false },
-      { label: 'photo', set: !!view?.imageReference, required: true },
-      { label: 'téléphone', set: !!view?.phone, required: false }
+      { label: 'nom', set: !!view.name, required: true },
+      { label: 'description', set: !!view.description, required: false },
+      { label: 'photo', set: !!view.imageReference, required: true },
+      { label: 'téléphone', set: !!view.phone, required: false }
     ];
     const present = fields.filter((field) => field.set).map((field) => field.label);
     const missing = fields.filter((field) => !field.set && field.required).map((field) => field.label);
     const optional = fields.filter((field) => !field.set && !field.required).map((field) => field.label);
-    const itemCount = this.catalogue.items().length;
-    const scheduleCount = this.markets.schedules().length;
-    const legalIdentityProvided = !!this.legalIdentity.identity();
+    const itemCount = this.dishCount();
+    const scheduleCount = this.marketCount();
+    const legalIdentityProvided = this.legalIdentityProvided();
     const steps = [
       {
         number: 1,
@@ -162,10 +162,6 @@ export class SetupSteps {
       ? 'Si vous êtes satisfait·e de votre configuration, cliquez sur Publier.'
       : 'Vous pourrez publier votre vitrine dès que ce sera fait.'
   );
-
-  publish(): void {
-    this.storefront.publish();
-  }
 }
 
 function itemsAdded(count: number): string {
