@@ -6,7 +6,8 @@ Live client and every prospect: Market Miam unusable until customers can order. 
 
 Work in progress lives on [`ordering-board/`](ordering-board/index.html), published as the `ordering-board`
 static site (`render.yaml`): the board with its timeline, agreed rules and open questions, and the briefs
-for the lawyer and the accountant, in French. The board is newer than this plan where they disagree.
+for the lawyer and the accountant, in French. The board is newer than this plan where they disagree, and a section marked
+*Newer on the board* is kept here for history: read the board, the ADRs and the code for it.
 
 ## Scope
 
@@ -22,6 +23,8 @@ for the lawyer and the accountant, in French. The board is newer than this plan 
 
 ## Flow
 
+*Newer on the board:* its *Timeline* and *Steps 2 to 6, decided*. The two reasons below the steps live only here.
+
 1. Customer picks dishes on storefront → Stripe Checkout. Card **authorised, not charged**.
 2. Order appears on vendor live screen: number, dishes, status. **Never the code.**
 3. Vendor confirms → capture → code to customer only (status page + email).
@@ -36,6 +39,8 @@ Vendor never knows the code: stops pickups off a customer-visible tablet, and a 
 
 ## Payment
 
+*Newer on the board:* *Connect setup* for accounts, fees and payouts, *Steps 2 to 6, decided* for refunds, *Calls with no login* for the cap. The Checkout line lives only here.
+
 - Stripe Connect, **Accounts v2, direct charges, Express Dashboard**; Stripe collects its fees from the vendor and covers negative balances (board, *Connect setup*). That combination is public preview: only account creation sends the preview version, the general release refuses it, and an account's dashboard is fixed for good; built on Express, new accounts move to the full Dashboard if the preview ends (board, Q14). Vendor = merchant of record; Stripe does KYC, payouts, disputes. Market Miam never holds funds → no DSP2 licence.
 - Hosted Stripe Checkout, `capture_method: 'manual'`. 3DS, Apple/Google Pay, PCI SAQ A.
 - Refunds only to the card, from the Express Dashboard, recorded from webhooks; disputes are their own events (board, *Steps 2 to 6, decided*).
@@ -45,6 +50,8 @@ Vendor never knows the code: stops pickups off a customer-visible tablet, and a 
 ## Engineering
 
 ### Domain / API
+
+*Newer in ADRs 0066 to 0069 and the board's Step 1* for the context, the payment account and the webhooks; the code now carries the build.
 
 - New context `packages/ordering` on shared event log (ADRs 0048, 0066), asking Market Days through narrow published queries, with the vendor's erasure the one event it consumes. Orders attach only to live days, whose stream exists (menu set) → no MarketDay materialisation (LIVE-MODE decision 50 trigger not fired).
 - Payment port + in-memory fake; Stripe adapter over raw HTTP, its contract run against an HTTP fake on every push and the sandbox nightly (ADR 0069). Local webhooks via Stripe CLI.
@@ -71,7 +78,7 @@ Vendor never knows the code: stops pickups off a customer-visible tablet, and a 
 | Key | Death date | Fix |
 |---|---|---|
 | Vendor (`${vendorId}`, `:legal`) | Arbitrary (erasure; legal key +5 years) | **Tombstone**: `shred` nulls the key material, keeps the row with `shredded_at`; `getOrCreateKeyFor` throws on it; `findKeyFor` → `null` → `SHREDDED` as now. Also a dated proof of erasure (RGPD art. 5(2)). **Shipped** with mentions légales slice 3, with `shred_after` + a daily `shredDue` sweep (ADR 0056 amendment) |
-| Market day (Ordering) | Known at mint: midnight, Paris time, on the market's date | **Expiry rule, no tombstone**: `shred_after` stored at mint; minting a key already past expiry throws; sweep `DELETE`s expired rows. `MarketDayEndedError` guard still blocks first; the mint rule turns a guard failure into a loud error, not silent retention |
+| Market day (Ordering) | Known at mint: midnight, Paris time, on the market's date (board, *5, the day's key*) | **Expiry rule, no tombstone**: `shred_after` stored at mint; minting a key already past expiry throws; a sweep soon after midnight (today's runs daily from the api's start) `DELETE`s expired rows. `MarketDayEndedError` guard still blocks first; the mint rule turns a guard failure into a loud error, not silent retention |
 
 - Day keys live in **their own table** (e.g. `order_data_keys`): different lifecycle (bulk churn, ~78k rows/yr at 500 vendors) and different context (ADR 0048).
 - Wiring: **stack a second `ShreddingEventStore`** for Ordering's event types (disjoint from Market Days'), with its own PII registry, its own `DataKeys` over that table, and a resolver `event → { subject, expiresAt }`. Static `KeyScopes` (type → scope) stays for Market Days.
@@ -140,6 +147,8 @@ Draft wireframes, lo-fi, 2026-10-31, not yet agreed: [`design/vendor-app-wirefra
 Holding page live (`9e054a0`, `WEBSITE-PLAN.md`). Rebuild around ordering once shipped. Pricing promise dropped: live client co-designed pricing, has a year free.
 
 ## Legal (lawyer + accountant)
+
+*Newer on the board:* the briefs for the lawyer (`avocat.html`) and the accountant (`expert-comptable.html`).
 
 Prerequisite: `MENTIONS-LEGALES-PLAN.md` slices 3–9 (vendor identity + médiateur on page).
 
