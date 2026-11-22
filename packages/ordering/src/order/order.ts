@@ -18,9 +18,9 @@ export class Order extends Aggregate {
     if (this._holdRecorded) {
       return;
     }
-    const refusal = day.refusalOf(held.lines);
-    this.raise(refusal
-      ? this.orderRefused(vendorId, held, refusal, receivedAt)
+    const reason = day.reasonToRefuse(held.lines);
+    this.raise(reason
+      ? this.orderRefused(vendorId, held, reason, receivedAt)
       : this.orderPlaced(vendorId, held, receivedAt));
   }
 

@@ -10,7 +10,7 @@ export type TradingDayFacts = {
 export class TradingDay {
   constructor(private readonly facts: TradingDayFacts) {}
 
-  refusalOf(lines: OrderLine[]): RefusalReason | undefined {
+  reasonToRefuse(lines: OrderLine[]): RefusalReason | undefined {
     if (this.facts.closed) {
       return 'closed';
     }
