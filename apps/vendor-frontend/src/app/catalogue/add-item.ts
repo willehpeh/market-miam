@@ -3,6 +3,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { applyEach, applyWhen, form, FormField, required, validate } from '@angular/forms/signals';
 import { ITEM_PHOTO_PREVIEW_TRANSFORMATION } from '@market-miam/common';
 import { Card } from '../core/card';
+import { SubmitButton } from '../core/submit-button';
 import { Spinner } from '../core/spinner';
 import { CloudinaryUrlPipe } from '../core/cloudinary-url.pipe';
 import { DismissOnOutsidePress } from '../core/dismiss-on-outside-press';
@@ -20,7 +21,7 @@ type ItemModel = { name: string; price: string; description: string; variants: F
 @Component({
   selector: 'mm-add-item',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, Card, FormField, CloudinaryUrlPipe, DismissOnOutsidePress, Spinner],
+  imports: [RouterLink, Card, FormField, CloudinaryUrlPipe, DismissOnOutsidePress, Spinner, SubmitButton],
   styles: `
     .segment {
       flex: 1;
@@ -316,21 +317,9 @@ type ItemModel = { name: string; price: string; description: string; variants: F
           </label>
         </fieldset>
 
-        <button
-          type="submit"
-          class="mt-6 flex w-full max-w-xs mx-auto justify-center"
-          [disabled]="cannotSubmit()"
-          [attr.aria-describedby]="blockers().length ? 'submit-blockers' : null"
-        >
+        <mm-submit-button [disabled]="cannotSubmit()" [reasons]="blockers()">
           {{ isEditing ? 'Enregistrer' : 'Ajouter à ma carte ✓' }}
-        </button>
-        @if (blockers().length) {
-          <ul id="submit-blockers" class="mt-2 space-y-0.5 text-center text-xs text-muted">
-            @for (blocker of blockers(); track blocker) {
-              <li>{{ blocker }}</li>
-            }
-          </ul>
-        }
+        </mm-submit-button>
 
         <!-- Every button here is type="button": a stray Enter in the name field submits the
              form's default button, and none of these should be the one that answers it. -->
@@ -458,9 +447,7 @@ export class AddItem {
 
   protected readonly cannotSubmit = computed(() => this.uploading() || this.fields().invalid() || this.allergens() === null);
 
-  // A disabled button is not an explanation. These read the form's own state rather than
-  // re-deriving the rules — the schema owns those — and are tied to the button by
-  // aria-describedby, so a screen reader announces the reason with it.
+  // These read the form's own state rather than re-deriving the rules — the schema owns those.
   protected readonly blockers = computed(() => {
     const reasons: string[] = [];
     if (this.uploading()) {

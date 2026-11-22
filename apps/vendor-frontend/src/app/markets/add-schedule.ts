@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, linkedSignal } fr
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { form, FormField, required, validate } from '@angular/forms/signals';
 import { Card } from '../core/card';
+import { SubmitButton } from '../core/submit-button';
 import { Spinner } from '../core/spinner';
 import { MarketScheduleFacade } from './market-schedule.facade';
 import { MarketScheduleView } from './market-schedules';
@@ -23,7 +24,7 @@ type MarketModel = { name: string; streetAddress: string; codePostal: string; to
 @Component({
   selector: 'mm-add-schedule',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, Card, FormField, Spinner],
+  imports: [RouterLink, Card, FormField, Spinner, SubmitButton],
   template: `
     <mm-card>
       @if (loading()) {
@@ -177,21 +178,9 @@ type MarketModel = { name: string; streetAddress: string; codePostal: string; to
                  placeholder="ex. Allée centrale, stand 24" />
         </div>
 
-        <button
-          type="submit"
-          class="mt-6 flex w-full max-w-xs mx-auto justify-center"
-          [disabled]="cannotSubmit()"
-          [attr.aria-describedby]="blockers().length ? 'submit-blockers' : null"
-        >
+        <mm-submit-button [disabled]="cannotSubmit()" [reasons]="blockers()">
           {{ isEditing ? 'Enregistrer' : 'Ajouter le marché ✓' }}
-        </button>
-        @if (blockers().length) {
-          <ul id="submit-blockers" class="mt-2 space-y-0.5 text-center text-xs text-muted">
-            @for (blocker of blockers(); track blocker) {
-              <li>{{ blocker }}</li>
-            }
-          </ul>
-        }
+        </mm-submit-button>
       </form>
       }
     </mm-card>
@@ -283,8 +272,7 @@ export class AddSchedule {
 
   protected readonly cannotSubmit = computed(() => this.fields().invalid() || this.dayProblems().length > 0);
 
-  // A disabled button is not an explanation. The field reasons read the form's own state;
-  // the schema still owns the rules.
+  // The field reasons read the form's own state; the schema still owns the rules.
   protected readonly blockers = computed(() => {
     const reasons: string[] = [];
     if (this.fields.name().invalid()) {
