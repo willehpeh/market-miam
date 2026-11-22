@@ -10,7 +10,10 @@ export class TestPlaceOrder {
         orderId: 'order-id',
         marketId: 'market-id',
         date: '2026-11-21',
-        lines: [{ dishId: 'dish-id', quantity: 2, unitPrice: 1250 }],
+        lines: [
+          { dishId: 'dish-id', quantity: 2, unitPrice: 1250 },
+          { dishId: 'another-dish-id', variant: 'Small', quantity: 1, unitPrice: 900 },
+        ],
         paymentIntentId: 'pi_test_1',
       },
       PLACED_AT,
