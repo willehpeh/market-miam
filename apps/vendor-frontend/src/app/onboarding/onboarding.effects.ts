@@ -2,7 +2,7 @@ import { inject, Injectable, InjectionToken } from '@angular/core';
 import { Router } from '@angular/router';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { delay, map, tap } from 'rxjs';
-import { RegisterVendor, RegisterVendorSuccess } from '../vendor/vendor.state';
+import { RegisterVendor, RegisterVendorSuccess } from '../vendor/vendor.actions';
 import {
   EditStorefrontSuccess,
   HideSavedModal,

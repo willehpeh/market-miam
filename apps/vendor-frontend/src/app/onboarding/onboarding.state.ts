@@ -1,6 +1,6 @@
 import { createAction, createFeature, createReducer, on } from '@ngrx/store';
 import { LoginSuccess } from '../core/auth/auth.state';
-import { RegisterVendorFailure } from '../vendor/vendor.state';
+import { RegisterVendorFailure } from '../vendor/vendor.actions';
 import { LoadStorefrontFailure, LoadStorefrontSuccess } from '../storefront/storefront.state';
 
 export const RetryOnboarding = createAction('[Onboarding] Retry');

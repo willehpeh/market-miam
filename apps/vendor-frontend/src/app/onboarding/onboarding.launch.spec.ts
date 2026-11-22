@@ -14,9 +14,7 @@ import { AuthFacade } from '../core/auth/auth.facade';
 import { StoreAuthFacade } from '../core/auth/store.auth.facade';
 import { Vendor } from '../vendor/vendor';
 import { HttpVendor } from '../vendor/http.vendor';
-import { vendorFeature } from '../vendor/vendor.state';
 import { VendorEffects } from '../vendor/vendor.effects';
-import { VendorFacade } from '../vendor/vendor.facade';
 import { Storefront } from '../storefront/storefront';
 import { HttpStorefront } from '../storefront/http.storefront';
 import { PhotoUploads } from '../storefront/photo-uploads';
@@ -67,7 +65,6 @@ describe('Onboarding launch', () => {
         provideRouter(appRoutes),
         provideStore(),
         provideState(authFeature),
-        provideState(vendorFeature),
         provideState(storefrontFeature),
         provideState(catalogueFeature),
         provideState(marketScheduleFeature),
@@ -84,7 +81,6 @@ describe('Onboarding launch', () => {
         { provide: PhotoDownscale, useClass: FakePhotoDownscale },
         { provide: Share, useClass: FakeShare },
         { provide: AuthFacade, useClass: StoreAuthFacade },
-        VendorFacade,
         { provide: StorefrontFacade, useClass: StoreStorefrontFacade },
         { provide: CatalogueFacade, useClass: StoreCatalogueFacade },
         { provide: MarketScheduleFacade, useClass: StoreMarketScheduleFacade },
