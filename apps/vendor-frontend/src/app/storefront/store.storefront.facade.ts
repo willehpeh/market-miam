@@ -25,6 +25,10 @@ export class StoreStorefrontFacade implements StorefrontFacade {
   readonly publishing = this.store.selectSignal(storefrontFeature.selectPublishing);
   readonly publishError = this.store.selectSignal(storefrontFeature.selectPublishError);
 
+  load(): void {
+    // Nothing yet.
+  }
+
   save(name: string, description: string, phone: string): void {
     this.store.dispatch(EditStorefront({ name, description, phone }));
   }

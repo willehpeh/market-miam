@@ -15,10 +15,15 @@ export class FakeStorefrontFacade implements StorefrontFacade {
   readonly coverPhotoError = signal(false);
   readonly publishing = signal(false);
   readonly publishError = signal(false);
+  loaded = false;
   savedInfo: { name: string; description: string; phone: string } | undefined;
   uploadedFile: File | undefined;
   publishCalled = false;
   cartePricesVisibility: boolean | undefined;
+
+  load(): void {
+    this.loaded = true;
+  }
 
   save(name: string, description: string, phone: string): void {
     this.savedInfo = { name, description, phone };
