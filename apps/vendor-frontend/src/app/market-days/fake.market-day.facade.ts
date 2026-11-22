@@ -1,7 +1,8 @@
 import { Injectable, signal } from '@angular/core';
 import { MarketDayFacade } from './market-day.facade';
-import { ItemOutcome, MarketDaySlot, MarketDayView, UnratedMarketDay } from './market-days';
+import { ItemOutcome, MarketDaySlot, MarketDayView } from './market-days';
 import { MarketDay } from './market-day';
+import { UnratedMarketDay } from './unrated-market-day';
 
 @Injectable()
 export class FakeMarketDayFacade implements MarketDayFacade {

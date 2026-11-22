@@ -1,7 +1,8 @@
 import { createFeature, createReducer, createSelector, on } from '@ngrx/store';
 import { AmendMarketScheduleSuccess, RegisterMarketScheduleSuccess } from '../../markets/market-schedule.state';
-import { MarketDaySlot, MarketDayView, UnratedMarketDay } from '../market-days';
+import { MarketDaySlot, MarketDayView, UnratedMarketDayView } from '../market-days';
 import { MarketDay } from '../market-day';
+import { UnratedMarketDay } from '../unrated-market-day';
 import {
   ChangeItemAvailability,
   ChangeItemAvailabilityFailure,
@@ -25,7 +26,7 @@ export interface MarketDayState {
   fresh: boolean;
   days: MarketDayView[];
   day: MarketDaySlot<MarketDayView>;
-  unrated: UnratedMarketDay[];
+  unrated: UnratedMarketDayView[];
   unratedLoading: boolean;
   // Days whose bilan was saved whole and which the unrated query may still name anyway:
   // the projection lags the response by 4–275ms and the dashboard re-asks on arrival, so
@@ -121,7 +122,7 @@ export const marketDayFeature = createFeature({
       const key = dayKey(marketId, date);
       return {
         ...patchDay(state, marketId, date, day => day.withOutcomes(outcomes)),
-        unrated: state.unrated.filter(day => day.marketId !== marketId || day.date !== date),
+        unrated: state.unrated.filter(day => dayKey(day.marketId, day.date) !== key),
         judged: complete && !state.judged.includes(key) ? [...state.judged, key] : state.judged,
       };
     }),
@@ -146,6 +147,10 @@ export const marketDayFeature = createFeature({
 // Plain views in the store, days out of it: what the screens and the effects read.
 export const selectMarketDays = createSelector(marketDayFeature.selectDays, (days) =>
   days.map((day) => new MarketDay(day)),
+);
+
+export const selectUnratedMarketDays = createSelector(marketDayFeature.selectUnrated, (days) =>
+  days.map((day) => new UnratedMarketDay(day)),
 );
 
 export const selectMarketDaySlot = createSelector(

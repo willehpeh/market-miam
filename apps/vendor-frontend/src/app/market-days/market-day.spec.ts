@@ -6,6 +6,7 @@ import { provideEffects } from '@ngrx/effects';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { MarketDays, MarketDayView } from './market-days';
 import { MarketDay } from './market-day';
+import { UnratedMarketDay } from './unrated-market-day';
 import { HttpMarketDays } from './http.market-days';
 import { marketDayFeature } from './store/market-day.state';
 import { MarketDayEffects } from './store/market-day.effects';
@@ -440,7 +441,7 @@ describe('MarketDays', () => {
 
     await waitFor(() =>
       expect(facade.unrated()).toEqual([
-        { marketId: 'market-1', date: '2026-08-15', day: 'SAT', marketName: 'Le marché' },
+        new UnratedMarketDay({ marketId: 'market-1', date: '2026-08-15', day: 'SAT', marketName: 'Le marché' }),
       ]));
   });
 
@@ -458,7 +459,7 @@ describe('MarketDays', () => {
     facade.recordBilan('market-1', '2026-08-15', { 'item-1': 'did_well' }, true);
     httpCtrl.expectOne(bilan).flush(null);
 
-    await waitFor(() => expect(facade.unrated().map(day => day.marketId)).toEqual(['market-2']));
+    await waitFor(() => expect(facade.unrated().map(day => day.marketId())).toEqual(['market-2']));
   });
 
   // The bug the mask exists for: the dashboard re-asks on arrival, the query answers off a
@@ -476,7 +477,7 @@ describe('MarketDays', () => {
       ],
     });
 
-    await waitFor(() => expect(facade.unrated().map(day => day.marketId)).toEqual(['market-2']));
+    await waitFor(() => expect(facade.unrated().map(day => day.marketId())).toEqual(['market-2']));
   });
 
   // The mask is a wait, not a blocklist: the first answer that no longer names the day is
@@ -496,7 +497,7 @@ describe('MarketDays', () => {
       marketDays: [{ marketId: 'market-1', date: '2026-08-15', day: 'SAT', marketName: 'Le marché' }],
     });
 
-    await waitFor(() => expect(facade.unrated().map(day => day.marketId)).toEqual(['market-1']));
+    await waitFor(() => expect(facade.unrated().map(day => day.marketId())).toEqual(['market-1']));
   });
 
   // Partial counts as unrated (decision 65), so a query that names it again is right rather
@@ -510,7 +511,7 @@ describe('MarketDays', () => {
       marketDays: [{ marketId: 'market-1', date: '2026-08-15', day: 'SAT', marketName: 'Le marché' }],
     });
 
-    await waitFor(() => expect(facade.unrated().map(day => day.marketId)).toEqual(['market-1']));
+    await waitFor(() => expect(facade.unrated().map(day => day.marketId())).toEqual(['market-1']));
   });
 
   // A nudge that failed to load is silent, not broken: nothing else on the dashboard

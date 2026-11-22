@@ -52,7 +52,7 @@ export interface MarketDayView {
 // What the dashboard prompt renders (decision 65): a day to name and the two halves of the
 // link to its bilan. Deliberately not a MarketDayView — the prompt shows no menu, no hours
 // and no phase, and the bilan screen reads the day itself when the vendor arrives.
-export interface UnratedMarketDay {
+export interface UnratedMarketDayView {
   marketId: string;
   date: string;
   day: string;
@@ -69,7 +69,7 @@ export type MarketDaySlot<Day> =
 
 export abstract class MarketDays {
   abstract upcoming(): Observable<MarketDayView[]>;
-  abstract unrated(): Observable<UnratedMarketDay[]>;
+  abstract unrated(): Observable<UnratedMarketDayView[]>;
   abstract day(marketId: string, date: string): Observable<MarketDayView>;
   abstract setMenu(marketId: string, date: string, itemIds: string[]): Observable<void>;
   abstract changeAvailability(marketId: string, date: string, itemId: string, soldOut: boolean): Observable<void>;

@@ -1,6 +1,7 @@
 import { Signal } from '@angular/core';
-import { ItemOutcome, MarketDaySlot, UnratedMarketDay } from './market-days';
+import { ItemOutcome, MarketDaySlot } from './market-days';
 import { MarketDay } from './market-day';
+import { UnratedMarketDay } from './unrated-market-day';
 
 export abstract class MarketDayFacade {
   abstract readonly days: Signal<MarketDay[]>;
