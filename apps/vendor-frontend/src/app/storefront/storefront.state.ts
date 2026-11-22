@@ -1,5 +1,7 @@
-import { createAction, createFeature, createReducer, on, props } from '@ngrx/store';
+import { createAction, createFeature, createReducer, createSelector, on, props } from '@ngrx/store';
 import { StorefrontView } from './storefront';
+import { StorefrontAddress } from './storefront-address';
+import { environment } from '../../environments/environment';
 
 export const LoadStorefront = createAction('[Storefront] Load Storefront');
 export const LoadStorefrontSuccess = createAction(
@@ -105,3 +107,9 @@ export const storefrontFeature = createFeature({
     on(PublishStorefrontFailure, (state): StorefrontState => ({ ...state, publishing: false, publishError: true }))
   ),
 });
+
+export const selectPublished = createSelector(storefrontFeature.selectView, (view) => view?.published === true);
+
+export const selectAddress = createSelector(storefrontFeature.selectView, (view) =>
+  StorefrontAddress.of(view?.subdomain, environment.storefrontBaseDomain),
+);

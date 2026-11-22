@@ -1,8 +1,12 @@
 import { Signal } from '@angular/core';
 import { StorefrontView } from './storefront';
+import { StorefrontAddress } from './storefront-address';
 
 export abstract class StorefrontFacade {
   abstract readonly view: Signal<StorefrontView | undefined>;
+  abstract readonly published: Signal<boolean>;
+  // None until the vitrine has a subdomain.
+  abstract readonly address: Signal<StorefrontAddress | null>;
   abstract readonly loading: Signal<boolean>;
   abstract readonly saved: Signal<boolean>;
   abstract readonly coverPhotoUploading: Signal<boolean>;

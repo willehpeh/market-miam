@@ -1,11 +1,11 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Subject, switchMap, timer } from 'rxjs';
 import { RouterLink } from '@angular/router';
 import { Card } from '../core/card';
 import { COPIED_NOTICE_DELAY, Share } from '../core/share';
 import { StorefrontView } from '../storefront/storefront';
-import { storefrontUrl } from '../storefront/storefront-url';
+import { StorefrontAddress } from '../storefront/storefront-address';
 
 @Component({
   selector: 'mm-storefront-home',
@@ -30,8 +30,8 @@ import { storefrontUrl } from '../storefront/storefront-url';
     <mm-card>
       <h2 class="text-xl leading-tight">Votre vitrine</h2>
 
-      @if (storefrontUrl(); as url) {
-        <a [href]="url.href" target="_blank" rel="noopener" class="mt-4 block text-brand-deep">{{ url.label }}</a>
+      @if (address(); as url) {
+        <a [href]="url.href()" target="_blank" rel="noopener" class="mt-4 block text-brand-deep">{{ url.label() }}</a>
       }
 
       <div class="mt-4 grid grid-cols-2 gap-3">
@@ -53,6 +53,7 @@ import { storefrontUrl } from '../storefront/storefront-url';
 })
 export class StorefrontHome {
   readonly storefront = input.required<StorefrontView>();
+  readonly address = input.required<StorefrontAddress | null>();
 
   readonly copied = signal(false);
 
@@ -63,7 +64,6 @@ export class StorefrontHome {
     { title: 'Vos marchés', link: '/dashboard/markets', icon: 'fa-calendar-days' },
     { title: 'Mentions légales', link: '/dashboard/legal-identity', icon: 'fa-scale-balanced' }
   ];
-  readonly storefrontUrl = computed(() => storefrontUrl(this.storefront().subdomain));
   private readonly sharing = inject(Share);
   private readonly copiedNoticeDelay = inject(COPIED_NOTICE_DELAY);
   private readonly copies = new Subject<void>();
@@ -76,11 +76,11 @@ export class StorefrontHome {
   }
 
   async share(): Promise<void> {
-    const url = this.storefrontUrl();
-    if (!url) {
+    const address = this.address();
+    if (!address) {
       return;
     }
-    const outcome = await this.sharing.link(this.storefront().name, url.href);
+    const outcome = await this.sharing.link(this.storefront().name, address.href());
     if (outcome !== 'copied') {
       return;
     }

@@ -92,7 +92,24 @@ describe('Storefront', () => {
 
     httpCtrl.expectOne('/api/storefront').flush({ ...ACME, published: true });
 
-    expect(facade.view()?.published).toBe(true);
+    expect(facade.published()).toBe(true);
+  });
+
+  it('gives the vitrine its address under the storefronts\' domain once it has a subdomain', () => {
+    store.dispatch(LoadStorefront());
+
+    httpCtrl.expectOne('/api/storefront').flush({ ...ACME, subdomain: 'acme' });
+
+    expect(facade.address()?.href()).toBe('https://acme.marketmiam.fr');
+    expect(facade.address()?.label()).toBe('acme.marketmiam.fr');
+  });
+
+  it('has no address before an operator assigns a subdomain', () => {
+    store.dispatch(LoadStorefront());
+
+    httpCtrl.expectOne('/api/storefront').flush(ACME);
+
+    expect(facade.address()).toBeNull();
   });
 
   it('retries after a 404 and loads once the storefront is projected', async () => {
@@ -222,7 +239,7 @@ describe('Storefront', () => {
     facade.publish();
     httpCtrl.expectOne('/api/storefront/publish').flush(null);
 
-    expect(facade.view()?.published).toBe(true);
+    expect(facade.published()).toBe(true);
     expect(facade.publishError()).toBe(false);
   });
 
@@ -234,7 +251,7 @@ describe('Storefront', () => {
     httpCtrl.expectOne('/api/storefront/publish').flush(null, { status: 400, statusText: 'Bad Request' });
 
     expect(facade.publishing()).toBe(false);
-    expect(facade.view()?.published).toBe(false);
+    expect(facade.published()).toBe(false);
     expect(facade.publishError()).toBe(true);
   });
 

@@ -42,10 +42,11 @@ import { SetupSteps } from './setup-steps';
       @if (published()) {
         <mm-market-day-cards [days]="days()" (callOff)="callOff($event)" (reopen)="reopen($event)" />
         <mm-bilan-prompt [unrated]="unrated()" />
-        <mm-storefront-home [storefront]="storefront" />
+        <mm-storefront-home [storefront]="storefront" [address]="address()" />
       } @else {
         <mm-setup-steps
           [storefront]="storefront"
+          [address]="address()"
           [dishCount]="dishCount()"
           [marketCount]="marketCount()"
           [legalIdentityProvided]="legalIdentityProvided()"
@@ -76,7 +77,8 @@ export class Dashboard {
       !this.legalIdentity.loading(),
   );
   protected readonly view = this.storefront.view;
-  readonly published = computed(() => this.storefront.view()?.published === true);
+  readonly published = this.storefront.published;
+  protected readonly address = this.storefront.address;
   // Null, not merely absent: an identity that failed to load says nothing about the vendor.
   // Published homes only: before publication, the setup steps ask for it.
   readonly legalIdentityMissing = computed(() => this.published() && this.legalIdentity.identity() === null);

@@ -1,13 +1,23 @@
 import { inject, Injectable } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { StorefrontFacade } from './storefront.facade';
-import { EditStorefront, PublishStorefront, SetCartePricesVisible, storefrontFeature, UploadCoverPhoto } from './storefront.state';
+import {
+  EditStorefront,
+  PublishStorefront,
+  selectAddress,
+  selectPublished,
+  SetCartePricesVisible,
+  storefrontFeature,
+  UploadCoverPhoto,
+} from './storefront.state';
 
 @Injectable()
 export class StoreStorefrontFacade implements StorefrontFacade {
   private readonly store = inject(Store);
 
   readonly view = this.store.selectSignal(storefrontFeature.selectView);
+  readonly published = this.store.selectSignal(selectPublished);
+  readonly address = this.store.selectSignal(selectAddress);
   readonly loading = this.store.selectSignal(storefrontFeature.selectLoading);
   readonly saved = this.store.selectSignal(storefrontFeature.selectSaved);
   readonly coverPhotoUploading = this.store.selectSignal(storefrontFeature.selectCoverPhotoUploading);

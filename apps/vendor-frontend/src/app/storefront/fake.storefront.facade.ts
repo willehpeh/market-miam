@@ -1,10 +1,14 @@
-import { Injectable, signal } from '@angular/core';
+import { computed, Injectable, signal } from '@angular/core';
 import { StorefrontFacade } from './storefront.facade';
 import { StorefrontView } from './storefront';
+import { StorefrontAddress } from './storefront-address';
+import { environment } from '../../environments/environment';
 
 @Injectable()
 export class FakeStorefrontFacade implements StorefrontFacade {
   readonly view = signal<StorefrontView | undefined>(undefined);
+  readonly published = computed(() => this.view()?.published === true);
+  readonly address = computed(() => StorefrontAddress.of(this.view()?.subdomain, environment.storefrontBaseDomain));
   readonly loading = signal(false);
   readonly saved = signal(false);
   readonly coverPhotoUploading = signal(false);

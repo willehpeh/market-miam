@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, input, output } from '@an
 import { RouterLink } from '@angular/router';
 import { Card } from '../core/card';
 import { StorefrontView } from '../storefront/storefront';
-import { storefrontUrl } from '../storefront/storefront-url';
+import { StorefrontAddress } from '../storefront/storefront-address';
 
 @Component({
   selector: 'mm-setup-steps',
@@ -70,10 +70,10 @@ import { storefrontUrl } from '../storefront/storefront-url';
       </ul>
 
       @if (allDone()) {
-        @if (storefrontUrl(); as url) {
+        @if (address(); as url) {
           <p class="mt-6 text-center text-ink">
             Votre vitrine sera publiée à
-            <a [href]="url.href" target="_blank" rel="noopener" class="font-bold text-brand">{{ url.label }}</a>
+            <a [href]="url.href()" target="_blank" rel="noopener" class="font-bold text-brand">{{ url.label() }}</a>
           </p>
           @if (publishFailed()) {
             <p class="mt-4 text-center text-sm text-danger">La publication a échoué. Veuillez réessayer.</p>
@@ -97,6 +97,7 @@ import { storefrontUrl } from '../storefront/storefront-url';
 })
 export class SetupSteps {
   readonly storefront = input.required<StorefrontView>();
+  readonly address = input.required<StorefrontAddress | null>();
   readonly dishCount = input.required<number>();
   readonly marketCount = input.required<number>();
   readonly legalIdentityProvided = input.required<boolean>();
@@ -105,7 +106,6 @@ export class SetupSteps {
 
   readonly publish = output<void>();
 
-  readonly storefrontUrl = computed(() => storefrontUrl(this.storefront().subdomain));
   readonly steps = computed(() => {
     const view = this.storefront();
     const fields = [
