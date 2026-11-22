@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { AuthFacade } from './auth/auth.facade';
 import { NotificationsFacade } from './notifications/notifications.facade';
@@ -10,7 +10,7 @@ import { LogoutButton } from './auth/logout-button';
     <div class="grid min-h-svh grid-rows-[auto_1fr_auto]">
       <header class="sticky top-0 z-40 flex h-15 items-center justify-between px-6 bg-surface">
         <img src="assets/logo-transparent.png" alt="Market Miam" class="h-6 w-auto rounded-2xl">
-        @if (authenticated()) {
+        @if (signedIn()) {
           <mm-logout-button />
         }
       </header>
@@ -71,7 +71,7 @@ export class Layout {
   private readonly auth = inject(AuthFacade);
   private readonly notifications = inject(NotificationsFacade);
 
-  protected readonly authenticated = computed(() => this.auth.status() === 'authenticated');
+  protected readonly signedIn = this.auth.signedIn;
   protected readonly errorMessage = this.notifications.message;
 
   protected dismiss(): void {

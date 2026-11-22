@@ -1,15 +1,14 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
-import { filter, map, take } from 'rxjs';
+import { map, take } from 'rxjs';
 import { AuthFacade } from './auth.facade';
 
-// Holds the navigation until the session says something other than "still asking".
+// Holds the navigation until the session is known.
 export const authenticated: CanActivateFn = () => {
   const auth = inject(AuthFacade);
   const router = inject(Router);
-  return auth.status$.pipe(
-    filter(status => status !== 'pending'),
+  return auth.signedIn$.pipe(
     take(1),
-    map(status => (status === 'authenticated' ? true : router.parseUrl('/'))),
+    map(signedIn => signedIn || router.parseUrl('/')),
   );
 };
