@@ -593,6 +593,13 @@ describe('Dashboard', () => {
     return page;
   }
 
+  it('asks for the storefront on arrival', async () => {
+    const storefront = new FakeStorefrontFacade();
+    await DashboardPageObject.render({ storefront });
+
+    expect(storefront.loaded).toBe(true);
+  });
+
   it('loads the market days on arrival', async () => {
     const marketDays = new FakeMarketDayFacade();
     await DashboardPageObject.render({ marketDays });

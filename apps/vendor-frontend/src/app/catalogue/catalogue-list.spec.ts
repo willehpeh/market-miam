@@ -17,6 +17,13 @@ const storefrontView = (cartePricesVisible: boolean) => ({
 const item = catalogueItem;
 
 describe('CatalogueList', () => {
+
+  it('asks for the storefront on arrival', async () => {
+    const storefront = new FakeStorefrontFacade();
+    await CatalogueListPageObject.render({ storefront });
+
+    expect(storefront.loaded).toBe(true);
+  });
   // Warm-only lives in the store facade now — the component asks unconditionally.
   it('loads the catalogue on init', async () => {
     const catalogue = new FakeCatalogueFacade();

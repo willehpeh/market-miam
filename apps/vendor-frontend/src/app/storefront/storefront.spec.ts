@@ -71,6 +71,32 @@ describe('Storefront', () => {
     expect(req.request.method).toBe('GET');
   });
 
+  // Every screen that reads the storefront asks for it, as the catalogue's readers ask for
+  // theirs.
+  it('asks for the storefront through its facade', () => {
+    facade.load();
+
+    expect(httpCtrl.expectOne('/api/storefront').request.method).toBe('GET');
+  });
+
+  // The sign-in asks first and the screens after it ask again, so only an unknown storefront
+  // is fetched: a re-GET could put a projection that lags a save back over it.
+  it('does not ask again once it holds the storefront', () => {
+    facade.load();
+    httpCtrl.expectOne('/api/storefront').flush(ACME);
+
+    facade.load();
+
+    httpCtrl.expectNone('/api/storefront');
+  });
+
+  it('does not ask again while it is already asking', () => {
+    facade.load();
+    facade.load();
+
+    httpCtrl.expectOne('/api/storefront').flush(ACME);
+  });
+
   it('shows as loading until the view arrives', () => {
     store.dispatch(LoadStorefront());
 

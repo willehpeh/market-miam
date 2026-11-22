@@ -16,6 +16,13 @@ const published: StorefrontView = {
 };
 
 describe('QrCodeScreen', () => {
+
+  it('asks for the storefront on arrival', async () => {
+    const storefront = new FakeStorefrontFacade();
+    await QrCodeScreenPageObject.render({ storefront });
+
+    expect(storefront.loaded).toBe(true);
+  });
   it('waits for the storefront before showing a code', async () => {
     const page = await QrCodeScreenPageObject.render();
 

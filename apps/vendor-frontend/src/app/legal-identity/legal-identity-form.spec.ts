@@ -15,6 +15,13 @@ const individual: VendorDetails = {
 };
 
 describe('LegalIdentityForm', () => {
+
+  it('asks for the storefront on arrival', async () => {
+    const storefront = new FakeStorefrontFacade();
+    await LegalIdentityFormPageObject.render({ storefront });
+
+    expect(storefront.loaded).toBe(true);
+  });
   it('saves the identity of an entrepreneur individuel with their médiateur', async () => {
     const legalIdentity = new FakeLegalIdentityFacade();
     const page = await LegalIdentityFormPageObject.render({ legalIdentity });
