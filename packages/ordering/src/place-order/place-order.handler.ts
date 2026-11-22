@@ -19,7 +19,7 @@ export class PlaceOrderHandler implements ICommandHandler<PlaceOrder> {
       this.orders.forId(new OrderId(held.orderId)),
       this.tradingDays.forVendorAtMarketOn(vendorId, held.marketId, held.date),
     ]);
-    order.place(vendorId, held, day, new Instant(request.placedAt));
+    order.place(vendorId, held, day, new Instant(request.receivedAt));
     await this.orders.save(order, vendorId);
   }
 }

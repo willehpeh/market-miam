@@ -14,14 +14,14 @@ export class Order extends Aggregate {
     super();
   }
 
-  place(vendorId: VendorId, held: HeldOrder, day: TradingDay, placedAt: Instant) {
+  place(vendorId: VendorId, held: HeldOrder, day: TradingDay, receivedAt: Instant) {
     if (this._holdRecorded) {
       return;
     }
     const refusal = day.refusalOf(held.lines);
     this.raise(refusal
-      ? this.orderRefused(vendorId, held, refusal, placedAt)
-      : this.orderPlaced(vendorId, held, placedAt));
+      ? this.orderRefused(vendorId, held, refusal, receivedAt)
+      : this.orderPlaced(vendorId, held, receivedAt));
   }
 
   streamId(): string {
