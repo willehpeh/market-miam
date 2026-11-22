@@ -18,6 +18,12 @@
     --packages-tint: rgba(27, 175, 122, 0.15);
     --mark: rgba(237, 161, 0, 0.35);
     --shadow: 0 12px 32px rgba(11, 11, 11, 0.14);
+    --sel: rgba(42, 120, 214, 0.09);
+    --code-kw: #8a3ab9;
+    --code-str: #1a7f37;
+    --code-type: #a65200;
+    --code-fn: #1f63b5;
+    --code-num: #b3261e;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
@@ -37,6 +43,12 @@
       --packages-tint: rgba(25, 158, 112, 0.20);
       --mark: rgba(201, 133, 0, 0.45);
       --shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+      --sel: rgba(57, 135, 229, 0.16);
+      --code-kw: #c792ea;
+      --code-str: #8fd19e;
+      --code-type: #f0a35e;
+      --code-fn: #79b0f2;
+      --code-num: #f28b82;
     }
   }
   :root[data-theme="dark"] {
@@ -56,6 +68,12 @@
     --packages-tint: rgba(25, 158, 112, 0.20);
     --mark: rgba(201, 133, 0, 0.45);
     --shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+    --sel: rgba(57, 135, 229, 0.16);
+    --code-kw: #c792ea;
+    --code-str: #8fd19e;
+    --code-type: #f0a35e;
+    --code-fn: #79b0f2;
+    --code-num: #f28b82;
   }
 
   * { box-sizing: border-box; }
@@ -142,20 +160,29 @@
     background: var(--surface); border: 1px solid var(--hairline); border-radius: 12px;
     overflow: hidden;
   }
-  .tm-theme { position: absolute; }
-  .tm-theme-head {
-    position: absolute; left: 0; right: 0; top: 0; height: 26px;
+  .tm-group { position: absolute; border-radius: 7px; }
+  .tm-group:not(.depth-0) { box-shadow: inset 0 0 0 1px var(--hairline); }
+  .tm-head {
+    position: absolute; left: 0; right: 0; top: 0;
     display: flex; align-items: center; gap: 7px; padding: 0 8px;
     border: 0; background: none; cursor: zoom-in; text-align: left; overflow: hidden; white-space: nowrap;
     border-radius: 6px;
   }
-  .tm-theme-head:hover { background: var(--border); }
-  .tm-theme-head:focus-visible { outline: 2px solid var(--backend); outline-offset: -2px; }
-  .tm-theme-head .t-name {
+  .tm-head:hover { background: var(--border); }
+  .tm-head:focus-visible { outline: 2px solid var(--backend); outline-offset: -2px; }
+  .tm-head .t-name {
     font-size: 11.5px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase;
     color: var(--ink-2); overflow: hidden; text-overflow: ellipsis;
   }
-  .tm-theme-head .t-count { font-size: 11px; color: var(--ink-3); font-variant-numeric: tabular-nums; flex: none; }
+  .tm-group:not(.depth-0) > .tm-head { padding: 0 6px; gap: 6px; }
+  .tm-group:not(.depth-0) > .tm-head .t-name { font-size: 11px; font-weight: 650; letter-spacing: 0.01em; text-transform: none; }
+  .t-sep { color: var(--ink-3); font-weight: 400; margin: 0 4px; }
+  .tm-head .t-count { font-size: 11px; color: var(--ink-3); font-variant-numeric: tabular-nums; flex: none; }
+  .supporting > .tm-head .t-name { color: var(--ink-3); }
+  .tag {
+    font-size: 9.5px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; line-height: 15px;
+    color: var(--ink-3); border: 1px solid var(--hairline); border-radius: 999px; padding: 0 6px; flex: none;
+  }
   .tm-cell {
     position: absolute; border: 0; padding: 8px 4px 4px 7px; text-align: left; cursor: pointer;
     border-radius: 5px; overflow: hidden; display: block;
@@ -196,6 +223,7 @@
     display: flex; flex-direction: column;
   }
   #panel.open { transform: none; }
+  #panel.reading { width: min(940px, 96vw); }
   .panel-head { padding: 18px 20px 12px; border-bottom: 1px solid var(--hairline); }
   .panel-head .close {
     position: absolute; top: 12px; right: 12px; border: 1px solid var(--hairline);
@@ -206,13 +234,58 @@
   .panel-head .close:focus-visible { outline: 2px solid var(--backend); }
   .panel-head h2 { margin: 0 0 6px; font-size: 16.5px; line-height: 1.3; padding-right: 30px; word-break: break-word; }
   .panel-path { font-size: 11.5px; color: var(--ink-3); word-break: break-all; margin: 0 0 10px; }
+  .panel-path a { color: var(--backend); font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-weight: 600; text-decoration: none; white-space: nowrap; margin-left: 6px; }
+  .panel-path a:hover { text-decoration: underline; }
+  .panel-suite { font-size: 12px; color: var(--ink-3); margin: 0 0 3px; padding-right: 30px; }
+  .back {
+    border: 0; background: none; padding: 0; margin: 0 0 8px; cursor: pointer;
+    color: var(--backend); font-size: 12.5px; font-weight: 600;
+  }
+  .back:hover { text-decoration: underline; }
+  .back:focus-visible { outline: 2px solid var(--backend); outline-offset: 2px; border-radius: 3px; }
+  .roles { display: grid; grid-template-columns: auto 1fr; gap: 3px 10px; margin: 10px 0 0; font-size: 12px; }
+  .roles dt { color: var(--ink-3); font-weight: 600; }
+  .roles dd { margin: 0; color: var(--ink-2); }
+  .roles code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 11.5px;
+    background: var(--border); border-radius: 4px; padding: 0.5px 5px; margin: 0 3px 2px 0; display: inline-block;
+  }
   .badges { display: flex; flex-wrap: wrap; gap: 6px; }
   .badge {
     font-size: 11px; padding: 2.5px 9px; border-radius: 999px; border: 1px solid var(--hairline);
     color: var(--ink-2); display: inline-flex; align-items: center; gap: 5px;
   }
   .badge .dot { width: 7px; height: 7px; border-radius: 50%; }
-  .panel-body { overflow-y: auto; padding: 10px 20px 30px; flex: 1; }
+  .panel-body { overflow-y: auto; padding: 10px 20px 30px; flex: 1; position: relative; }
+  #panel.reading .panel-body { padding: 0 0 30px; }
+
+  /* ---- code view ---- */
+  .code-hint { font-size: 12px; color: var(--ink-3); margin: 0; padding: 10px 20px 8px; }
+  .code-note { font-size: 13px; color: var(--ink-2); padding: 14px 20px; margin: 0; }
+  .code { overflow-x: auto; font: 12px/1.65 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  .code-lines { display: inline-block; min-width: 100%; padding-bottom: 6px; }
+  .ln { display: flex; white-space: pre; min-height: 1.65em; }
+  .ln .no {
+    position: sticky; left: 0; flex: none; width: 4.2em; padding-right: 14px; text-align: right;
+    color: var(--ink-3); background: var(--surface); user-select: none;
+  }
+  .ln .src { padding-right: 20px; }
+  .ln.sel { background: var(--sel); }
+  .ln.sel .no { color: var(--ink); background: var(--sel); box-shadow: inset 3px 0 0 var(--backend); }
+  .tk-k { color: var(--code-kw); }
+  .tk-s { color: var(--code-str); }
+  .tk-t { color: var(--code-type); }
+  .tk-f { color: var(--code-fn); }
+  .tk-n { color: var(--code-num); }
+  .tk-c { color: var(--ink-3); font-style: italic; }
+  .fold {
+    font: inherit; border: 1px dashed var(--hairline); background: var(--plane); border-radius: 5px;
+    padding: 0 6px; cursor: pointer; color: var(--ink-2);
+  }
+  .fold:hover { border-color: var(--ink-3); background: var(--border); }
+  .fold:focus-visible { outline: 2px solid var(--backend); outline-offset: 1px; }
+  .fold .fold-n { color: var(--ink-3); font-family: system-ui, -apple-system, "Segoe UI", sans-serif; font-size: 11px; margin-left: 4px; }
   .suite-h {
     font-size: 12px; font-weight: 700; letter-spacing: 0.04em; color: var(--ink-2);
     margin: 16px 0 4px; text-transform: none;
@@ -224,6 +297,12 @@
     border-bottom: 1px solid var(--hairline); word-break: break-word;
   }
   .tests-ul li:last-child { border-bottom: 0; }
+  .test-link {
+    border: 0; background: none; padding: 0; margin: 0; font: inherit; text-align: left; cursor: pointer;
+    color: inherit; line-height: inherit;
+  }
+  .test-link:hover .t-title { text-decoration: underline; text-decoration-color: var(--ink-3); text-underline-offset: 3px; }
+  .test-link:focus-visible { outline: 2px solid var(--backend); outline-offset: 2px; border-radius: 3px; }
   .tests-ul li::before {
     content: ""; position: absolute; left: 2px; top: 12px; width: 7px; height: 7px;
     border-radius: 50%; background: var(--t-color, var(--ink-3));
@@ -240,23 +319,27 @@
   /* ---- list view ---- */
   #listview { display: none; }
   #listview.show { display: block; }
-  .lv-theme {
+  .lv-group.depth-0 {
     background: var(--surface); border: 1px solid var(--hairline); border-radius: 12px;
     margin-bottom: 14px; overflow: hidden;
   }
-  .lv-theme > summary {
-    list-style: none; cursor: pointer; padding: 13px 18px; display: flex; align-items: baseline; gap: 12px;
+  .lv-group:not(.depth-0) { border-top: 1px solid var(--hairline); }
+  .lv-group > summary {
+    list-style: none; cursor: pointer; padding: 13px 18px; display: flex; align-items: center; gap: 12px;
   }
-  .lv-theme > summary::-webkit-details-marker { display: none; }
-  .lv-theme > summary:hover { background: var(--border); }
-  .lv-theme > summary:focus-visible { outline: 2px solid var(--backend); outline-offset: -2px; }
-  .lv-theme .marker { color: var(--ink-3); font-size: 11px; transition: transform 0.15s; flex: none; align-self: center; }
-  .lv-theme[open] > summary .marker { transform: rotate(90deg); }
-  .lv-theme h3 { margin: 0; font-size: 15px; }
-  .lv-theme .lv-count { margin-left: auto; color: var(--ink-2); font-size: 12.5px; font-variant-numeric: tabular-nums; flex: none; }
+  .lv-group.depth-1 > summary { padding: 9px 18px 9px 34px; }
+  .lv-group.depth-2 > summary { padding: 8px 18px 8px 50px; }
+  .lv-group > summary::-webkit-details-marker { display: none; }
+  .lv-group > summary:hover { background: var(--border); }
+  .lv-group > summary:focus-visible { outline: 2px solid var(--backend); outline-offset: -2px; }
+  .lv-group .marker { color: var(--ink-3); font-size: 11px; transition: transform 0.15s; flex: none; }
+  .lv-group[open] > summary > .marker { transform: rotate(90deg); }
+  .lv-group h3 { margin: 0; font-size: 15px; }
+  .lv-group:not(.depth-0) h3 { font-size: 13.5px; font-weight: 650; }
+  .lv-group .lv-count { margin-left: auto; color: var(--ink-2); font-size: 12.5px; font-variant-numeric: tabular-nums; flex: none; }
   .lv-file { border-top: 1px solid var(--hairline); }
   .lv-file > summary {
-    list-style: none; cursor: pointer; padding: 9px 18px 9px 22px; display: flex; align-items: center; gap: 9px; font-size: 13px;
+    list-style: none; cursor: pointer; padding: 9px 18px 9px 66px; display: flex; align-items: center; gap: 9px; font-size: 13px;
   }
   .lv-file > summary::-webkit-details-marker { display: none; }
   .lv-file > summary:hover { background: var(--border); }
@@ -264,7 +347,7 @@
   .lv-file .dot { width: 9px; height: 9px; border-radius: 3px; flex: none; }
   .lv-file .path { color: var(--ink-3); font-size: 11.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .lv-file .lv-count { margin-left: auto; color: var(--ink-2); font-size: 12px; font-variant-numeric: tabular-nums; flex: none; }
-  .lv-file .lv-tests { padding: 2px 18px 12px 40px; }
+  .lv-file .lv-tests { padding: 2px 18px 12px 84px; }
   .lv-hidden { display: none; }
 
   footer { margin-top: 22px; color: var(--ink-3); font-size: 12.5px; max-width: 78ch; }
@@ -277,7 +360,7 @@
     #treemap { height: max(440px, calc(100vh - 360px)); }
   }
   @media (prefers-reduced-motion: reduce) {
-    #panel, .tm-cell, .lv-theme .marker { transition: none; }
+    #panel, .tm-cell, .lv-group .marker { transition: none; }
   }
 </style>
 
@@ -289,8 +372,9 @@
     </div>
     <div class="stats" id="stats"></div>
   </header>
-  <p class="subtitle">Every automated test in the monorepo, grouped by what it protects rather than
-    where it lives. Blocks are sized by test count. Click a theme to zoom in, click a file to read its tests.</p>
+  <p class="subtitle">Every automated test in the monorepo, grouped by the bounded context it protects,
+    then by kind of test, then by the app it lives in. Blocks are sized by test count. Click a header to
+    zoom in, a file to list its tests, and a test to read its code.</p>
 
   <div class="controls">
     <div class="search">
@@ -308,18 +392,29 @@
 
   <div class="map-shell" id="mapview">
     <div class="crumbs" id="crumbs"></div>
-    <div id="treemap" role="group" aria-label="Treemap of tests by theme"></div>
+    <div id="treemap" role="group" aria-label="Treemap of tests by context, kind of test and app"></div>
   </div>
 
   <div id="listview"></div>
 
   <footer>
-    <p>Colour marks the layer a test exercises: <b>backend APIs</b> (NestJS apps), <b>frontends</b>
-      (Angular apps), and the <b>shared-packages suite</b> under <span class="mono">test/</span> that
-      covers the domain libraries.</p>
+    <p><b>Contexts.</b> Market Days and Ordering are the bounded contexts (ADRs 0004, 0048, 0066).
+      Groups tagged <span class="tag">supporting</span> are what every context leans on; Cross-cutting
+      holds app shells, tooling and tests that span contexts. A test's context is the directory it sits in.</p>
+    <p><b>Kinds</b>, read from what a test drives. <b>Unit</b>: in-process, against fakes or in-memory
+      adapters — in the packages suite these are sociable, driven through use cases. <b>Component</b>:
+      a frontend component rendered and driven through its page object. <b>Integration</b>: across real
+      I/O — Postgres in Docker (<span class="mono">.container.spec.ts</span>), a local server, or the Auth0
+      test tenant (<span class="mono">.tenant.ts</span>, run by hand). <b>API</b>: the api booted in memory
+      and called over HTTP. <b>E2E</b>: the production app on real Postgres through a whole lifecycle
+      (<span class="mono">.scenario.ts</span>, nightly).</p>
+    <p>Colour marks the app's layer: <b>backend APIs</b> (NestJS apps), <b>frontends</b> (Angular apps),
+      and the <b>shared-packages suite</b> under <span class="mono">test/</span> that covers the domain
+      libraries.</p>
     <p>Parameterised <span class="mono">it.each</span> tables count as one test. Shared contract suites
-      are expanded once per implementation that runs them; files ending in
-      <span class="mono">.container.spec.ts</span> run against real Postgres in Docker.</p>
+      are expanded once per implementation that runs them. Click a test to read its code, with
+      everything else in its file folded away; <b>Real</b>, <b>Through</b> and <b>Stand-ins</b> are read
+      from the file's imports by the repo's naming, a reading aid rather than a proof.</p>
     <p>Snapshot generated from source on __GENERATED__.</p>
   </footer>
 </div>
@@ -329,15 +424,19 @@
 <aside id="panel" aria-label="Spec file detail" aria-hidden="true">
   <div class="panel-head">
     <button class="close" id="panelClose" aria-label="Close detail panel">✕</button>
+    <button class="back" id="panelBack" hidden>‹ All tests in this file</button>
+    <p class="panel-suite" id="panelSuite" hidden></p>
     <h2 id="panelTitle"></h2>
-    <p class="panel-path mono" id="panelPath"></p>
+    <p class="panel-path"><span class="mono" id="panelPath"></span><a id="panelGitHub" target="_blank" rel="noopener">GitHub ↗</a></p>
     <div class="badges" id="panelBadges"></div>
+    <div id="panelRoles"></div>
   </div>
   <div class="panel-body" id="panelBody"></div>
 </aside>
 
 <script>
-const DATA = __DATA__;
+const MODEL = __DATA__;
+const DATA = MODEL.files;
 
 /* ---------- derived model ---------- */
 const GROUPS = {
@@ -355,32 +454,83 @@ const PROJECT_LABELS = {
   'customer-frontend': 'customer-frontend', 'admin-frontend': 'admin-frontend',
   'test (packages suite)': 'test/ (packages)',
 };
-for (const f of DATA) {
+const projectLabel = p => PROJECT_LABELS[p] || p;
+const SUPPORTING = new Set(MODEL.contexts.filter(c => c.supporting).map(c => c.name));
+const CONTEXT_ORDER = MODEL.contexts.map(c => c.name);
+DATA.forEach((f, index) => {
+  f.index = index;
   f.group = groupOf(f.layer);
-  f.short = f.file.split('/').pop().replace(/\.spec\.ts$/, '');
+  f.short = f.file.split('/').pop().replace(/\.spec\.ts$/, '').replace(/\.ts$/, '');
   f.container = /\.container\.spec\.ts$/.test(f.file);
-  f.haystack = (f.file + ' ' + f.tests.map(t => t.suite.join(' ') + ' ' + t.name).join(' ')).toLowerCase();
-}
+});
 const PROJECTS = [...new Set(DATA.map(f => f.layer))]
   .sort((a, b) => DATA.filter(f => f.layer === b).length - DATA.filter(f => f.layer === a).length);
-const themeTotals = {};
-for (const f of DATA) themeTotals[f.theme] = (themeTotals[f.theme] || 0) + f.tests.length;
-const THEMES = Object.keys(themeTotals).sort((a, b) => themeTotals[b] - themeTotals[a]);
 const TOTAL_TESTS = DATA.reduce((s, f) => s + f.tests.length, 0);
+
+// The hierarchy: context › kind › app › files. Contexts keep the generator's
+// order (bounded contexts first), kinds go up the test pyramid, apps by size.
+const LEVELS = [
+  { key: 'context', order: (a, b) => CONTEXT_ORDER.indexOf(a.name) - CONTEXT_ORDER.indexOf(b.name) },
+  { key: 'kind', order: (a, b) => MODEL.kinds.indexOf(a.name) - MODEL.kinds.indexOf(b.name) },
+  { key: 'layer', order: (a, b) => b.total - a.total },
+];
+function buildTree() {
+  const root = { name: 'All', label: 'All contexts', path: [], depth: -1, children: [], files: [], total: 0 };
+  for (const f of DATA) {
+    let node = root;
+    node.total += f.tests.length;
+    LEVELS.forEach((lv, depth) => {
+      const name = f[lv.key];
+      let child = node.children.find(c => c.name === name);
+      if (!child) {
+        child = { name, label: lv.key === 'layer' ? projectLabel(name) : name,
+          path: [...node.path, name], depth, children: [], files: [], total: 0 };
+        node.children.push(child);
+      }
+      child.total += f.tests.length;
+      node = child;
+    });
+    node.files.push(f);
+  }
+  (function sort(node) {
+    if (node.children.length) { node.children.sort(LEVELS[node.depth + 1].order); node.children.forEach(sort); }
+    node.files.sort((a, b) => b.tests.length - a.tests.length);
+  })(root);
+  return root;
+}
+const TREE = buildTree();
+function nodeAt(path) {
+  let node = TREE;
+  for (const name of path) node = node.children.find(c => c.name === name) || node;
+  return node;
+}
+// A group holding a single sub-group says nothing on its own: "API" with only
+// "api" in it is drawn as one block, "API · api".
+// A context keeps a header of its own even when it holds one kind.
+function descend(node) {
+  const labels = [node.label];
+  if (node.depth <= 0) return { node, labels };
+  while (node.children.length === 1) { node = node.children[0]; labels.push(node.label); }
+  return { node, labels };
+}
+const drawnAlike = path => path.length > 1 && nodeAt(path).children.length === 1;
+const filesUnder = node => node.children.length ? node.children.flatMap(filesUnder) : node.files;
 
 /* ---------- state ---------- */
 const state = {
-  zoom: null,            // theme name or null
+  zoom: [],              // path into TREE: [context, kind, app], or a prefix of it
   query: '',
   projects: new Set(PROJECTS),
   view: 'map',
   openFile: null,
+  openTest: null,        // index into openFile.tests when reading a test's code
+  unfolded: new Set(),   // folds the reader has opened in the open file
 };
 
 /* ---------- header stats ---------- */
 document.getElementById('stats').innerHTML = [
-  [TOTAL_TESTS, 'tests'], [DATA.length, 'spec files'],
-  [THEMES.length, 'themes'], [PROJECTS.length, 'projects'],
+  [TOTAL_TESTS, 'tests'], [DATA.length, 'test files'],
+  [TREE.children.filter(c => !SUPPORTING.has(c.name)).length, 'bounded contexts'], [PROJECTS.length, 'projects'],
 ].map(([n, l]) => `<div class="stat"><b>${n}</b><span>${l}</span></div>`).join('');
 
 /* ---------- legend + chips ---------- */
@@ -405,18 +555,22 @@ chipsEl.addEventListener('click', e => {
 
 /* ---------- filtering ---------- */
 function fileVisible(f) {
-  if (!state.projects.has(f.layer)) return false;
-  if (state.query && !f.haystack.includes(state.query)) return false;
-  return true;
+  return state.projects.has(f.layer) && matchedTests(f) > 0;
+}
+// The tests a file contributes to the current search: those whose title
+// matches, or all of them when the query names the file, its context, kind or app.
+function matchedTests(f) {
+  if (!state.query) return f.tests.length;
+  const hits = f.tests.filter(t => (t.suite.join(' ') + ' ' + t.name).toLowerCase().includes(state.query)).length;
+  const fileHit = [f.file, f.context, f.kind, f.layer].some(s => s.toLowerCase().includes(state.query));
+  return hits || (fileHit ? f.tests.length : 0);
 }
 function matchCounts() {
   let files = 0, tests = 0;
   for (const f of DATA) {
     if (!state.projects.has(f.layer)) continue;
-    if (!state.query) { files++; tests += f.tests.length; continue; }
-    const hits = f.tests.filter(t => (t.suite.join(' ') + ' ' + t.name).toLowerCase().includes(state.query)).length;
-    const fileNameHit = f.file.toLowerCase().includes(state.query);
-    if (hits || fileNameHit) { files++; tests += hits || f.tests.length; }
+    const n = matchedTests(f);
+    if (n) { files++; tests += n; }
   }
   return { files, tests };
 }
@@ -470,38 +624,55 @@ function squarify(items, x, y, w, h) {
 
 /* ---------- rendering: treemap ---------- */
 const mapEl = document.getElementById('treemap');
-const GAP = 2, HEAD = 26, PAD = 3;
+const GAP = 2, PAD = 3;
+const headHeight = node => node.depth === 0 ? 26 : 20;
 
 function renderMap() {
   const W = mapEl.clientWidth, H = mapEl.clientHeight;
   mapEl.innerHTML = '';
-  if (state.zoom) { renderFiles(mapEl, state.zoom, GAP, GAP, W - GAP * 2, H - GAP * 2); }
-  else {
-    const items = THEMES.map(t => ({ id: t, value: themeTotals[t] }));
-    for (const r of squarify(items, GAP, GAP, W - GAP * 2, H - GAP * 2)) {
-      const t = r.item.id;
-      const block = document.createElement('div');
-      block.className = 'tm-theme';
-      block.style.cssText = `left:${r.x + 1}px;top:${r.y + 1}px;width:${r.w - GAP}px;height:${r.h - GAP}px;`;
-      const nFiles = DATA.filter(f => f.theme === t).length;
-      const head = document.createElement('button');
-      head.className = 'tm-theme-head';
-      head.innerHTML = `<span class="t-name">${esc(t)}</span><span class="t-count">${themeTotals[t]}</span>`;
-      head.title = `${t} — ${themeTotals[t]} tests in ${nFiles} files. Click to zoom.`;
-      head.addEventListener('click', () => { state.zoom = t; refresh(); });
-      block.appendChild(head);
-      renderFiles(block, t, PAD, HEAD, r.w - GAP - PAD * 2, r.h - GAP - HEAD - PAD);
-      mapEl.appendChild(block);
-    }
-  }
+  renderContent(mapEl, nodeAt(state.zoom), GAP, GAP, W - GAP * 2, H - GAP * 2);
   renderCrumbs();
 }
 
-function renderFiles(parent, theme, x, y, w, h) {
-  const files = DATA.filter(f => f.theme === theme && f.tests.length > 0)
-    .map(f => ({ id: f.file, value: f.tests.length, f }))
-    .sort((a, b) => b.value - a.value);
-  for (const r of squarify(files, x, y, w, h)) {
+// Lays out what a node holds: its sub-groups, or its files once it has none.
+function renderContent(parent, node, x, y, w, h) {
+  node = descend(node).node;
+  if (!node.children.length) { renderFiles(parent, node.files, x, y, w, h); return; }
+  const items = node.children.map(c => ({ id: c.name, value: c.total, node: c }));
+  for (const r of squarify(items, x, y, w, h)) renderGroup(parent, r.item.node, r);
+}
+
+function renderGroup(parent, node, r) {
+  const bw = r.w - GAP, bh = r.h - GAP;
+  if (bw < 3 || bh < 3) return;
+  const { node: inner, labels } = descend(node);
+  const supporting = node.depth === 0 && SUPPORTING.has(node.name);
+  const block = document.createElement('div');
+  block.className = `tm-group depth-${node.depth}` + (supporting ? ' supporting' : '');
+  block.style.cssText = `left:${r.x + 1}px;top:${r.y + 1}px;width:${bw}px;height:${bh}px;`;
+  const hh = headHeight(node);
+  const hasHead = bw >= 44 && bh >= hh + 16;
+  if (hasHead) {
+    const nFiles = filesUnder(inner).length;
+    const head = document.createElement('button');
+    head.className = 'tm-head';
+    head.style.height = `${hh}px`;
+    head.innerHTML = `<span class="t-name">${labels.map(esc).join('<span class="t-sep">·</span>')}</span>` +
+      (supporting && bw >= 160 ? '<span class="tag">supporting</span>' : '') +
+      `<span class="t-count">${node.total}</span>`;
+    head.title = `${labels.join(' · ')} — ${node.total} tests in ${nFiles} file${nFiles === 1 ? '' : 's'}. Click to zoom.`;
+    head.addEventListener('click', () => { state.zoom = inner.path; refresh(); });
+    block.appendChild(head);
+  }
+  const top = hasHead ? hh : PAD;
+  renderContent(block, inner, PAD, top, bw - PAD * 2, bh - top - PAD);
+  parent.appendChild(block);
+}
+
+function renderFiles(parent, files, x, y, w, h) {
+  const items = files.filter(f => f.tests.length > 0)
+    .map(f => ({ id: f.file, value: f.tests.length, f }));
+  for (const r of squarify(items, x, y, w, h)) {
     const f = r.item.f;
     const cw = Math.max(0, r.w - GAP), chh = Math.max(0, r.h - GAP);
     if (cw < 3 || chh < 3) continue;
@@ -513,7 +684,7 @@ function renderFiles(parent, theme, x, y, w, h) {
     const showCount = cw >= 52 && chh >= 44;
     cell.innerHTML = (showName ? `<span class="f-name">${esc(f.short)}</span>` : '') +
       (showCount ? `<span class="f-count">${f.tests.length}</span>` : '');
-    cell.setAttribute('aria-label', `${f.short}, ${f.tests.length} tests, ${f.layer}`);
+    cell.setAttribute('aria-label', `${f.short}, ${f.tests.length} tests, ${f.kind}, ${f.layer}`);
     cell.addEventListener('click', () => openPanel(f));
     cell.addEventListener('mousemove', e => showTip(e, f));
     cell.addEventListener('mouseleave', hideTip);
@@ -521,17 +692,23 @@ function renderFiles(parent, theme, x, y, w, h) {
   }
 }
 
+// One crumb per level that changes the view: a level holding a single
+// sub-group draws the same blocks as that sub-group, so it gets no crumb.
 function renderCrumbs() {
   const c = document.getElementById('crumbs');
-  if (!state.zoom) {
-    c.innerHTML = `<button class="crumb" disabled>All themes</button>
-      <span class="hint">Click a theme header to zoom</span>`;
-  } else {
-    c.innerHTML = `<button class="crumb" id="crumbRoot">All themes</button>
-      <span class="sep">›</span><button class="crumb" disabled>${esc(state.zoom)}</button>
-      <span class="hint">Esc to zoom out</span>`;
-    document.getElementById('crumbRoot').addEventListener('click', () => { state.zoom = null; refresh(); });
-  }
+  const paths = [[], ...state.zoom.map((_, i) => state.zoom.slice(0, i + 1))]
+    .filter((p, i, all) => i === all.length - 1 || !drawnAlike(p));
+  c.innerHTML = paths.map((p, i) => i === paths.length - 1
+    ? `<button class="crumb" disabled>${esc(nodeAt(p).label)}</button>`
+    : `<button class="crumb" data-i="${i}">${esc(nodeAt(p).label)}</button><span class="sep">›</span>`).join('') +
+    `<span class="hint">${state.zoom.length ? 'Esc to zoom out' : 'Click a header to zoom'}</span>`;
+  c.querySelectorAll('.crumb[data-i]').forEach(b =>
+    b.addEventListener('click', () => { state.zoom = paths[+b.dataset.i]; refresh(); }));
+}
+function zoomOut() {
+  const path = [...state.zoom];
+  do path.pop(); while (drawnAlike(path));
+  state.zoom = path;
 }
 
 /* ---------- tooltip ---------- */
@@ -539,7 +716,7 @@ const tip = document.getElementById('tooltip');
 function showTip(e, f) {
   tip.innerHTML = `<div class="tt-file mono">${esc(f.file)}</div>
     <div class="tt-meta"><span class="dot" style="background:var(--${f.group})"></span>
-    ${esc(PROJECT_LABELS[f.layer] || f.layer)} · ${f.tests.length} test${f.tests.length === 1 ? '' : 's'}` +
+    ${esc(projectLabel(f.layer))} · ${esc(f.kind)} · ${esc(f.context)} · ${f.tests.length} test${f.tests.length === 1 ? '' : 's'}` +
     (f.container ? ' · Docker Postgres' : '') +
     (f.tests.some(t => t.contract) ? ' · contract suite' : '') + `</div>`;
   tip.style.display = 'block';
@@ -552,40 +729,85 @@ function showTip(e, f) {
 function hideTip() { tip.style.display = 'none'; }
 
 /* ---------- detail panel ---------- */
+// The panel shows a file's tests, or one test's code. state.openTest is the
+// index of that test in its file, or null for the list.
 const panel = document.getElementById('panel'), backdrop = document.getElementById('backdrop');
+const panelBody = document.getElementById('panelBody');
 function openPanel(f) {
+  if (state.openFile !== f) state.unfolded = new Set();
   state.openFile = f;
+  state.openTest = null;
+  showPanel(document.getElementById('panelClose'));
+}
+function openTest(f, i) {
+  if (state.openFile !== f) state.unfolded = new Set();
+  state.openFile = f;
+  state.openTest = i;
+  showPanel(document.getElementById('panelBack'));
+}
+function showPanel(focus) {
   hideTip();
-  document.getElementById('panelTitle').textContent = f.short;
-  document.getElementById('panelPath').textContent = f.file;
-  const badges = [
-    `<span class="badge"><span class="dot" style="background:var(--${f.group})"></span>${esc(PROJECT_LABELS[f.layer] || f.layer)}</span>`,
-    `<span class="badge">${esc(f.theme)}</span>`,
-    `<span class="badge">${f.tests.length} test${f.tests.length === 1 ? '' : 's'}</span>`,
-  ];
-  if (f.container) badges.push('<span class="badge">🐳 Docker Postgres</span>');
-  if (f.tests.some(t => t.contract)) badges.push('<span class="badge">contract suite</span>');
-  document.getElementById('panelBadges').innerHTML = badges.join('');
-  document.getElementById('panelBody').innerHTML = suiteTreeHTML(f);
+  renderPanel();
   panel.classList.add('open'); backdrop.classList.add('open');
   panel.setAttribute('aria-hidden', 'false');
-  document.getElementById('panelClose').focus();
+  focus.focus({ preventScroll: true });
 }
 function closePanel() {
-  panel.classList.remove('open'); backdrop.classList.remove('open');
+  panel.classList.remove('open', 'reading'); backdrop.classList.remove('open');
   panel.setAttribute('aria-hidden', 'true');
   state.openFile = null;
+  state.openTest = null;
 }
 document.getElementById('panelClose').addEventListener('click', closePanel);
+document.getElementById('panelBack').addEventListener('click', () => openPanel(state.openFile));
 backdrop.addEventListener('click', closePanel);
 
+const githubUrl = (path, from, to) =>
+  `${MODEL.repo}/blob/${MODEL.commit}/${path}` + (from ? `#L${from}` + (to && to !== from ? `-L${to}` : '') : '');
+
+function renderPanel() {
+  const f = state.openFile, t = state.openTest == null ? null : f.tests[state.openTest];
+  const path = t ? t.src || f.file : f.file;
+  panel.classList.toggle('reading', !!t);
+  document.getElementById('panelBack').hidden = !t;
+  const suite = document.getElementById('panelSuite');
+  suite.hidden = !t || !t.suite.length;
+  suite.textContent = t ? t.suite.join(' › ') : '';
+  document.getElementById('panelTitle').textContent = t ? t.name : f.short;
+  document.getElementById('panelPath').textContent = t ? `${path}:${t.line}` : f.file;
+  document.getElementById('panelGitHub').href = t ? githubUrl(path, t.line, t.endLine) : githubUrl(f.file);
+  const badges = [
+    `<span class="badge">${esc(f.context)}${SUPPORTING.has(f.context) ? ' · supporting' : ''}</span>`,
+    `<span class="badge">${esc(f.kind)}</span>`,
+    `<span class="badge"><span class="dot" style="background:var(--${f.group})"></span>${esc(projectLabel(f.layer))}</span>`,
+  ];
+  if (!t) badges.push(`<span class="badge">${f.tests.length} test${f.tests.length === 1 ? '' : 's'}</span>`);
+  if (f.container) badges.push('<span class="badge">🐳 Docker Postgres</span>');
+  if (t ? t.contract : f.tests.some(t => t.contract)) badges.push('<span class="badge">contract suite</span>');
+  document.getElementById('panelBadges').innerHTML = badges.join('');
+  document.getElementById('panelRoles').innerHTML = rolesHTML(f);
+  panelBody.innerHTML = t ? codeViewHTML(f, state.openTest) : suiteTreeHTML(f);
+  panelBody.scrollLeft = 0;
+  const first = panelBody.querySelector('.ln.sel');
+  panelBody.scrollTop = first ? Math.max(0, first.offsetTop - panelBody.clientHeight / 5) : 0;
+}
+
+function rolesHTML(f) {
+  const rows = [['Real', f.roles.real], ['Through', f.roles.through], ['Stand-ins', f.roles.standIns]]
+    .filter(([, names]) => names.length);
+  if (!rows.length) return '';
+  return `<dl class="roles" title="Read from the file's imports by the repo's naming: a reading aid, not a proof">` +
+    rows.map(([label, names]) => `<dt>${label}</dt><dd>${names.map(n => `<code>${esc(n)}</code>`).join('')}</dd>`).join('') +
+    '</dl>';
+}
+
 function suiteTreeHTML(f) {
-  const groups = new Map();  // suite chain -> tests
-  for (const t of f.tests) {
+  const groups = new Map();  // suite chain -> [test, index in file]
+  f.tests.forEach((t, i) => {
     const key = t.suite.join(' › ');
     if (!groups.has(key)) groups.set(key, []);
-    groups.get(key).push(t);
-  }
+    groups.get(key).push([t, i]);
+  });
   let html = '';
   for (const [key, tests] of groups) {
     if (key) {
@@ -593,41 +815,218 @@ function suiteTreeHTML(f) {
       html += `<h3 class="suite-h">${esc(parts[0])}` +
         (parts.length > 1 ? ` <span class="sub">› ${esc(parts.slice(1).join(' › '))}</span>` : '') + '</h3>';
     } else html += '<h3 class="suite-h"><span class="sub">(top level)</span></h3>';
-    html += `<ul class="tests-ul" style="--t-color:var(--${f.group})">` + tests.map(t => {
+    html += `<ul class="tests-ul" style="--t-color:var(--${f.group})">` + tests.map(([t, i]) => {
       let name = esc(t.name);
       if (state.query) {
-        const i = t.name.toLowerCase().indexOf(state.query);
-        if (i >= 0) name = esc(t.name.slice(0, i)) + '<mark>' + esc(t.name.slice(i, i + state.query.length)) + '</mark>' + esc(t.name.slice(i + state.query.length));
+        const at = t.name.toLowerCase().indexOf(state.query);
+        if (at >= 0) name = esc(t.name.slice(0, at)) + '<mark>' + esc(t.name.slice(at, at + state.query.length)) + '</mark>' + esc(t.name.slice(at + state.query.length));
       }
       const flags = [];
       if (t.mods.includes('.each')) flags.push('each');
       if (t.mods.includes('.skip') || t.mods.includes('.todo')) flags.push('skipped');
       if (t.contract) flags.push('contract');
-      return `<li>${name}${flags.map(fl => `<span class="flag">${fl}</span>`).join('')}</li>`;
+      return `<li><button class="test-link" data-i="${i}" title="Read this test's code"><span class="t-title">${name}</span>` +
+        `${flags.map(fl => `<span class="flag">${fl}</span>`).join('')}</button></li>`;
     }).join('') + '</ul>';
   }
   return html;
 }
 
+panelBody.addEventListener('click', e => {
+  const link = e.target.closest('.test-link');
+  if (link) { openTest(state.openFile, +link.dataset.i); return; }
+  const fold = e.target.closest('.fold');
+  if (!fold) return;
+  if (fold.dataset.test) {
+    // Several call sites can run one contract: stay with the one being read.
+    const cur = state.openFile.tests[state.openTest];
+    const i = state.openFile.tests.findIndex(t => t.start === +fold.dataset.test &&
+      (t.src || '') === (cur.src || '') && (!t.contract || t.suite[0] === cur.suite[0]));
+    if (i >= 0) openTest(state.openFile, i);
+  } else {
+    state.unfolded.add(fold.dataset.open);
+    renderPanel();
+  }
+});
+
+/* ---------- code view ---------- */
+// The code lives in sources.js, loaded once the map has drawn.
+let SOURCES = null, sourcesFailed = false;
+function loadSources() {
+  const script = document.createElement('script');
+  script.src = 'sources.js?v=__SOURCES_VERSION__';
+  script.onload = () => { SOURCES = window.TEST_SOURCES || null; sourcesFailed = !SOURCES; rerenderCode(); };
+  script.onerror = () => { sourcesFailed = true; rerenderCode(); };
+  document.head.appendChild(script);
+}
+const rerenderCode = () => { if (state.openTest != null) renderPanel(); };
+
+const lineStartsCache = new Map();
+function lineAt(path, text, offset) {
+  if (!lineStartsCache.has(path)) {
+    const starts = [0];
+    for (let i = 0; i < text.length; i++) if (text[i] === '\n') starts.push(i + 1);
+    lineStartsCache.set(path, starts);
+  }
+  const starts = lineStartsCache.get(path);
+  let lo = 0, hi = starts.length - 1;
+  while (lo < hi) { const mid = (lo + hi + 1) >> 1; if (starts[mid] <= offset) lo = mid; else hi = mid - 1; }
+  return lo + 1;
+}
+
+// The test's file as written, with what the test doesn't depend on folded to
+// a line: the imports, every other test, and every describe it isn't inside.
+// What stays open is the test and everything in scope for it — its describes'
+// setup and the file's helpers. A fold opens on click; a folded test opens in
+// place of this one.
+function codeViewHTML(f, i) {
+  const t = f.tests[i];
+  const path = t.src || f.file;
+  const link = `<a href="${esc(githubUrl(path, t.line, t.endLine))}" target="_blank" rel="noopener">GitHub</a>`;
+  if (!SOURCES) {
+    return `<p class="code-note">${sourcesFailed ? `The code didn't load. Read it on ${link}.` : 'Loading the code…'}</p>`;
+  }
+  const source = SOURCES[path];
+  const sel = source && source.spans.find(sp => sp[1] === t.start);
+  if (!sel) return `<p class="code-note">This page's copy of the code is out of date. Read it on ${link}.</p>`;
+  const text = source.text, [, selStart, , , selEnd] = sel;
+
+  const folds = [];
+  if (source.imports && !state.unfolded.has(`${path}:imports`)) {
+    const [start, end] = source.imports;
+    folds.push({ start, end, open: `${path}:imports`,
+      label: tokensHTML('import …') + `<span class="fold-n">${lineAt(path, text, end) - lineAt(path, text, start) + 1} lines</span>` });
+  }
+  for (const [isDescribe, start, titleStart, titleEnd, end] of source.spans) {
+    if (start === selStart) continue;
+    if (isDescribe && ((start <= selStart && selEnd <= end) || state.unfolded.has(`${path}:${start}`))) continue;
+    let head = text.slice(start, titleStart);
+    if (head.includes('\n') || head.length > 32) head = head.slice(0, head.indexOf('(')) + '(…)(';
+    const label = tokensHTML(head + text.slice(titleStart, titleEnd) + ', …)');
+    folds.push(isDescribe ? { start, end, open: `${path}:${start}`, label } : { start, end, test: start, label });
+  }
+  folds.sort((a, b) => a.start - b.start || b.end - a.end);
+  const outer = [];
+  for (const fold of folds) if (!outer.length || fold.start >= outer[outer.length - 1].end) outer.push(fold);
+
+  // Lay the file out line by line, each numbered as in the file: a fold takes
+  // one line, numbered where it starts, and the numbering jumps past it.
+  const lines = [];
+  let fileLine = 1, cur = { no: 1, html: '' }, pos = 0;
+  const addText = chunk => {
+    for (const [cls, str] of tokens(chunk)) {
+      str.split('\n').forEach((part, k) => {
+        if (k > 0) { lines.push(cur); cur = { no: ++fileLine, html: '' }; }
+        if (part) cur.html += cls ? `<span class="tk-${cls}">${esc(part)}</span>` : esc(part);
+      });
+    }
+  };
+  for (const fold of outer) {
+    addText(text.slice(pos, fold.start));
+    cur.fold = true;
+    cur.html += `<button class="fold" ${fold.test != null ? `data-test="${fold.test}" title="Read this test"` : `data-open="${esc(fold.open)}" title="Unfold"`}>${fold.label}</button>`;
+    fileLine = lineAt(path, text, fold.end);
+    pos = fold.end;
+  }
+  addText(text.slice(pos));
+  lines.push(cur);
+  const selFrom = lineAt(path, text, selStart), selTo = lineAt(path, text, selEnd - 1);
+  const body = lines.map(line => {
+    const selected = line.no >= selFrom && line.no <= selTo && !line.fold;
+    return `<div class="ln${selected ? ' sel' : ''}"><span class="no">${line.no}</span><span class="src">${line.html || ' '}</span></div>`;
+  }).join('');
+  return '<p class="code-hint">Everything this test doesn’t rely on is folded. Click a fold to open it.</p>' +
+    `<div class="code"><div class="code-lines">${body}</div></div>`;
+}
+
+// Just enough TypeScript highlighting to read a test by: keywords, strings,
+// comments, numbers, types, and the test framework's own calls.
+const KEYWORDS = new Set(('import from export const let var function async await return new if else for of in while do ' +
+  'switch case break continue throw try catch finally typeof instanceof void delete class extends implements ' +
+  'interface type enum as readonly private public protected static this super null undefined true false').split(' '));
+const TEST_CALLS = new Set(['describe', 'it', 'test', 'expect', 'beforeEach', 'afterEach', 'beforeAll', 'afterAll', 'vi']);
+function tokens(text) {
+  const out = [];
+  let i = 0, prev = '', plain = '';
+  const n = text.length;
+  const emit = (cls, str) => { if (plain) { out.push(['', plain]); plain = ''; } out.push([cls, str]); };
+  while (i < n) {
+    const c = text[i];
+    if (c === '/' && text[i + 1] === '/') { let j = text.indexOf('\n', i); if (j < 0) j = n; emit('c', text.slice(i, j)); i = j; continue; }
+    if (c === '/' && text[i + 1] === '*') { let j = text.indexOf('*/', i + 2); j = j < 0 ? n : j + 2; emit('c', text.slice(i, j)); i = j; continue; }
+    if (c === "'" || c === '"' || c === '`') {
+      let j = i + 1;
+      while (j < n && text[j] !== c) { if (text[j] === '\\') j++; j++; }
+      emit('s', text.slice(i, j + 1)); i = j + 1; prev = ')'; continue;
+    }
+    if (c === '/' && (prev === '' || /[(,=:[!&|?{};]/.test(prev))) {
+      let j = i + 1, inClass = false, found = false;
+      while (j < n && text[j] !== '\n') {
+        if (text[j] === '\\') { j += 2; continue; }
+        if (text[j] === '[') inClass = true;
+        else if (text[j] === ']') inClass = false;
+        else if (text[j] === '/' && !inClass) { found = true; j++; while (j < n && /[a-z]/.test(text[j])) j++; break; }
+        j++;
+      }
+      if (found) { emit('s', text.slice(i, j)); i = j; prev = ')'; continue; }
+    }
+    if (/[A-Za-z_$]/.test(c)) {
+      let j = i;
+      while (j < n && /[\w$]/.test(text[j])) j++;
+      const word = text.slice(i, j);
+      const cls = KEYWORDS.has(word) ? 'k' : TEST_CALLS.has(word) ? 'f' : /^[A-Z][a-z]/.test(word) ? 't' : '';
+      if (cls) emit(cls, word); else plain += word;
+      i = j; prev = 'a'; continue;
+    }
+    if (/[0-9]/.test(c)) {
+      let j = i;
+      while (j < n && /[\w.]/.test(text[j])) j++;
+      emit('n', text.slice(i, j)); i = j; prev = 'a'; continue;
+    }
+    plain += c;
+    if (!/\s/.test(c)) prev = c;
+    i++;
+  }
+  if (plain) out.push(['', plain]);
+  return out;
+}
+const tokensHTML = text => tokens(text).map(([cls, str]) => cls ? `<span class="tk-${cls}">${esc(str)}</span>` : esc(str)).join('');
+
 /* ---------- list view ---------- */
 function renderList() {
-  const lv = document.getElementById('listview');
-  lv.innerHTML = THEMES.map(t => {
-    const files = DATA.filter(f => f.theme === t && fileVisible(f));
-    const shown = files.length > 0;
-    const nTests = files.reduce((s, f) => s + f.tests.length, 0);
-    return `<details class="lv-theme${shown ? '' : ' lv-hidden'}" ${state.query ? 'open' : ''}>
-      <summary><span class="marker">▶</span><h3>${esc(t)}</h3>
-        <span class="lv-count">${nTests} tests · ${files.length} files</span></summary>
-      ${files.map(f => `<details class="lv-file" ${state.query ? 'open' : ''}>
-        <summary><span class="dot" style="background:var(--${f.group})"></span>
-          <span>${esc(f.short)}</span><span class="path mono">${esc(f.file)}</span>
-          <span class="lv-count">${f.tests.length}</span></summary>
-        <div class="lv-tests">${suiteTreeHTML(f)}</div>
-      </details>`).join('')}
-    </details>`;
-  }).join('');
+  document.getElementById('listview').innerHTML = TREE.children.map(groupHTML).join('');
 }
+// Contexts start closed; inside one, every kind and app is open down to its
+// files, which stay closed. A search opens everything it matches.
+function groupHTML(node) {
+  const { node: inner, labels } = descend(node);
+  const files = filesUnder(inner).filter(fileVisible);
+  const nTests = files.reduce((s, f) => s + matchedTests(f), 0);
+  const open = state.query || node.depth > 0;
+  const supporting = node.depth === 0 && SUPPORTING.has(node.name);
+  const body = inner.children.length
+    ? inner.children.map(groupHTML).join('')
+    : inner.files.filter(fileVisible).map(fileHTML).join('');
+  return `<details class="lv-group depth-${node.depth}${files.length ? '' : ' lv-hidden'}" ${open ? 'open' : ''}>
+    <summary><span class="marker">▶</span><h3>${labels.map(esc).join('<span class="t-sep">·</span>')}</h3>
+      ${supporting ? '<span class="tag">supporting</span>' : ''}
+      <span class="lv-count">${nTests} test${nTests === 1 ? '' : 's'} · ${files.length} file${files.length === 1 ? '' : 's'}</span></summary>
+    ${body}
+  </details>`;
+}
+function fileHTML(f) {
+  return `<details class="lv-file" data-fi="${f.index}" ${state.query ? 'open' : ''}>
+    <summary><span class="dot" style="background:var(--${f.group})"></span>
+      <span>${esc(f.short)}</span><span class="path mono">${esc(f.file)}</span>
+      <span class="lv-count">${f.tests.length}</span></summary>
+    <div class="lv-tests">${suiteTreeHTML(f)}</div>
+  </details>`;
+}
+
+document.getElementById('listview').addEventListener('click', e => {
+  const link = e.target.closest('.test-link');
+  if (link) openTest(DATA[+link.closest('.lv-file').dataset.fi], +link.dataset.i);
+});
 
 /* ---------- search + view toggle ---------- */
 const qEl = document.getElementById('q'), qClear = document.getElementById('qClear');
@@ -657,7 +1056,7 @@ btnList.addEventListener('click', () => setView('list'));
 document.addEventListener('keydown', e => {
   if (e.key !== 'Escape') return;
   if (panel.classList.contains('open')) closePanel();
-  else if (state.zoom) { state.zoom = null; refresh(); }
+  else if (state.zoom.length) { zoomOut(); refresh(); }
 });
 
 /* ---------- refresh + resize ---------- */
@@ -676,4 +1075,5 @@ function esc(s) {
 }
 
 refresh();
+(window.requestIdleCallback || setTimeout)(loadSources);
 </script>
