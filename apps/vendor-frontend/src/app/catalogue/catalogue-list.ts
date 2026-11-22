@@ -4,7 +4,7 @@ import { ITEM_PHOTO_THUMBNAIL_TRANSFORMATION } from '@market-miam/common';
 import { CloudinaryUrlPipe } from '../core/cloudinary-url.pipe';
 import { CatalogueFacade } from './catalogue.facade';
 import { StorefrontFacade } from '../storefront/storefront.facade';
-import { formatEuros } from './money';
+import { Euros } from '../core/euros';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -132,15 +132,15 @@ export class CatalogueList {
           imageReference: item.imageReference,
           // The newline is load-bearing: whitespace-pre keeps it, so "dès" always sits on
           // its own line and the price column stays as narrow as its widest price.
-          priceLabel: `dès\n${formatEuros(Math.min(...item.variants.map((v) => v.price)))}`,
-          formats: item.variants.map((v) => ({ name: v.name, priceLabel: formatEuros(v.price) })),
+          priceLabel: `dès\n${Euros.ofCents(Math.min(...item.variants.map((v) => v.price))).label()}`,
+          formats: item.variants.map((v) => ({ name: v.name, priceLabel: Euros.ofCents(v.price).label() })),
           allergensUndeclared: item.allergens === null,
         }
       : {
           itemId: item.itemId,
           name: item.name,
           imageReference: item.imageReference,
-          priceLabel: formatEuros(item.price ?? 0),
+          priceLabel: Euros.ofCents(item.price ?? 0).label(),
           formats: null as { name: string; priceLabel: string }[] | null,
           allergensUndeclared: item.allergens === null,
         },

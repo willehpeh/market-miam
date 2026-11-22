@@ -7,7 +7,7 @@ import { CatalogueItemView } from '../catalogue/catalogue';
 import { MarketPricesFacade } from '../market-prices/market-prices.facade';
 import { SellingRecordFacade } from '../selling-record/selling-record.facade';
 import { pile, PileName } from '../selling-record/pile';
-import { formatEuros } from '../catalogue/money';
+import { Euros } from '../core/euros';
 import { MarketDayFacade } from './market-day.facade';
 import { ClosedNotice } from './closed-notice';
 import { ReopenStand } from './reopen-stand';
@@ -156,12 +156,12 @@ function quote(
 ): { priceLabel: string; atMarketPrice: boolean } {
   if (!item.variants) {
     const market = typeof set === 'number' ? set : undefined;
-    return { priceLabel: formatEuros(market ?? item.price ?? 0), atMarketPrice: market !== undefined };
+    return { priceLabel: Euros.ofCents(market ?? item.price ?? 0).label(), atMarketPrice: market !== undefined };
   }
   const variants = item.variants.map((variant) => {
     const market = typeof set === 'object' ? set[variant.name] : undefined;
     return { price: market ?? variant.price, atMarketPrice: market !== undefined };
   });
   const cheapest = variants.reduce((lowest, variant) => (variant.price < lowest.price ? variant : lowest));
-  return { priceLabel: `dès ${formatEuros(cheapest.price)}`, atMarketPrice: cheapest.atMarketPrice };
+  return { priceLabel: `dès ${Euros.ofCents(cheapest.price).label()}`, atMarketPrice: cheapest.atMarketPrice };
 }

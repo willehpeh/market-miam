@@ -6,7 +6,7 @@ import { Spinner } from '../core/spinner';
 import { CatalogueFacade } from '../catalogue/catalogue.facade';
 import { MarketScheduleFacade } from '../markets/market-schedule.facade';
 import { CatalogueItemView } from '../catalogue/catalogue';
-import { centsToEuros, formatEuros, parseEurosToCents } from '../catalogue/money';
+import { Euros } from '../core/euros';
 import { MarketPricesFacade } from './market-prices.facade';
 import { PriceList } from './market-prices';
 
@@ -135,7 +135,7 @@ export class PriceEditor {
     applyEach(path.dishes, (dish) => {
       applyEach(dish.rows, (row) => {
         validate(row.price, ({ value }) =>
-          value() !== '' && parseEurosToCents(value()) === null ? { kind: 'price' } : undefined,
+          value() !== '' && Euros.parse(value()) === null ? { kind: 'price' } : undefined,
         );
       });
     });
@@ -172,7 +172,7 @@ function listOf(dishes: DishModel[]): PriceList {
   const list: PriceList = {};
   for (const dish of dishes) {
     const priced = dish.rows.flatMap((row) => {
-      const cents = parseEurosToCents(row.price);
+      const cents = Euros.parse(row.price)?.inCents() ?? null;
       return cents === null ? [] : [[row.label, cents] as const];
     });
     if (priced.length === 0) {
@@ -197,6 +197,6 @@ function pricedVariant(set: number | Record<string, number> | undefined, variant
 }
 
 function row(label: string, catalogue: number, set: number | undefined): RowModel {
-  const stored = set === undefined ? '' : centsToEuros(set);
-  return { label, carte: `carte ${formatEuros(catalogue)}`, stored, price: stored };
+  const stored = set === undefined ? '' : Euros.ofCents(set).asTyped();
+  return { label, carte: `carte ${Euros.ofCents(catalogue).label()}`, stored, price: stored };
 }

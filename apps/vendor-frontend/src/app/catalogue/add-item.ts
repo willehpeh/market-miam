@@ -8,7 +8,7 @@ import { CloudinaryUrlPipe } from '../core/cloudinary-url.pipe';
 import { DismissOnOutsidePress } from '../core/dismiss-on-outside-press';
 import { CatalogueFacade } from './catalogue.facade';
 import { CatalogueItemView } from './catalogue';
-import { centsToEuros, parseEurosToCents } from './money';
+import { Euros } from '../core/euros';
 import { ALLERGENS } from './allergens';
 
 type FormatModel = { name: string; price: string; description: string };
@@ -424,7 +424,7 @@ export class AddItem {
       path,
       () => this.mode() === 'single',
       (single) => {
-        validate(single.price, ({ value }) => (parseEurosToCents(value()) === null ? { kind: 'price' } : undefined));
+        validate(single.price, ({ value }) => (Euros.parse(value()) === null ? { kind: 'price' } : undefined));
       },
     );
     applyWhen(
@@ -434,7 +434,7 @@ export class AddItem {
         applyEach(formats.variants, (format) => {
           // Trimmed, not `required`: a name of spaces is a blank name on the storefront.
           validate(format.name, ({ value }) => (value().trim() === '' ? { kind: 'required' } : undefined));
-          validate(format.price, ({ value }) => (parseEurosToCents(value()) === null ? { kind: 'price' } : undefined));
+          validate(format.price, ({ value }) => (Euros.parse(value()) === null ? { kind: 'price' } : undefined));
         });
         // On the list itself: uniqueness is a property of the set, not of any one row.
         validate(formats.variants, ({ value }) => {
@@ -455,7 +455,7 @@ export class AddItem {
   });
   protected readonly declaresNone = computed(() => this.allergens()?.length === 0);
 
-  private readonly priceCents = computed(() => parseEurosToCents(this.fields().value().price));
+  private readonly priceCents = computed(() => Euros.parse(this.fields().value().price)?.inCents() ?? null);
   protected readonly cannotSubmit = computed(() => this.uploading() || this.fields().invalid() || this.allergens() === null);
 
   // A disabled button is not an explanation. These read the form's own state rather than
@@ -592,7 +592,7 @@ export class AddItem {
     const rows = this.fields().value().variants.map((row) => ({
       name: row.name,
       description: row.description,
-      price: parseEurosToCents(row.price),
+      price: Euros.parse(row.price)?.inCents() ?? null,
     }));
     if (rows.some((row) => row.price === null)) {
       return null;
@@ -608,10 +608,10 @@ function emptyFormat(): FormatModel {
 function modelOf(item: CatalogueItemView | undefined): ItemModel {
   return {
     name: item?.name ?? '',
-    price: item && item.price !== undefined ? centsToEuros(item.price) : '',
+    price: item && item.price !== undefined ? Euros.ofCents(item.price).asTyped() : '',
     description: item?.description ?? '',
     variants: item?.variants
-      ? item.variants.map((v) => ({ name: v.name, price: centsToEuros(v.price), description: v.description }))
+      ? item.variants.map((v) => ({ name: v.name, price: Euros.ofCents(v.price).asTyped(), description: v.description }))
       : [emptyFormat(), emptyFormat()],
   };
 }
