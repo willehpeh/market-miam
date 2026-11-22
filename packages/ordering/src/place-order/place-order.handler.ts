@@ -14,14 +14,12 @@ export class PlaceOrderHandler implements ICommandHandler<PlaceOrder> {
 
   async execute(request: PlaceOrder): Promise<void> {
     const vendorId = new VendorId(request.vendorId);
-    const order = await this.orders.forId(new OrderId(request.order.orderId));
-    const at = new Instant(request.placedAt);
-    const refusal = await this.tradingDays.refusalOf(vendorId, request.order);
-    if (refusal) {
-      order.refuse(vendorId, request.order, refusal, at);
-    } else {
-      order.place(vendorId, request.order, at);
-    }
+    const held = request.order;
+    const [order, day] = await Promise.all([
+      this.orders.forId(new OrderId(held.orderId)),
+      this.tradingDays.forVendorAtMarketOn(vendorId, held.marketId, held.date),
+    ]);
+    order.place(vendorId, held, day, new Instant(request.receivedAt));
     await this.orders.save(order, vendorId);
   }
 }

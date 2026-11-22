@@ -2,9 +2,10 @@
 // Builds the event-model webpage: an event model (in Martin Dilger's sense —
 // vertical slices of commands, events, read models and automations on a
 // timeline) derived from the system's own tests and declared seams, never
-// hand-maintained. Sources of truth, in order:
+// hand-maintained. Each bounded context (CONTEXTS below) is read from the same
+// places, <context> standing for its directory name. Sources of truth, in order:
 //
-//   test/src/market-days/<slice>/          one directory per slice; the specs give
+//   test/src/<context>/<slice>/            one directory per slice; the specs give
 //                                          each slice its title, Given/When/Then
 //                                          lines, the event the command emits (the
 //                                          type asserted on store.newEvents()),
@@ -12,85 +13,116 @@
 //                                          stream ids. A directory with only
 //                                          find-*.spec.ts is a read model computed
 //                                          at query time from the views it reads
-//   packages/market-days/src/*/events/     which aggregate each event belongs to
-//   packages/market-days/src/*.projection  which events feed each read model
-//   packages/market-days/src (processors)  eventTypes() consumed / commands dispatched
-//   packages/market-days/src find-*.handler which read models each query reads
-//   apps/api .../market-days/*.controller  which actor issues each command/query
+//   packages/<context>/src/*/events/       which aggregate each event belongs to
+//   packages/<context>/src/*.projection    which events feed each read model
+//   packages/<context>/src (processors)    eventTypes() consumed / commands dispatched
+//   packages/<context>/src find-*.handler  which read models each query reads
+//   apps/api/src/app (controllers, ops/)   which actor issues each command/query
 //
 // Output: tmp/event-model/index.html — self-contained, bare Node, no npm ci —
 // same contract as tools/test-map. The spec tokenizer is a copy of test-map's
 // (each tool stays self-contained so its Render build filter covers it).
 //
-// Chapters are the aggregates, laid out in STORY order below: dependencies
-// between slices always win, the declared order only breaks ties between
-// chapters the tests leave independent (publishing a storefront precedes
-// trading a market day in the vendor's story, but no spec presupposes it).
+// Contexts run left to right in the order declared. Within one, chapters are
+// the aggregates, laid out in its story order: dependencies between slices
+// always win, the declared order only breaks ties between chapters the tests
+// leave independent (publishing a storefront precedes trading a market day in
+// the vendor's story, but no spec presupposes it).
 import { readFileSync, writeFileSync, mkdirSync, readdirSync, statSync } from 'node:fs';
 import { dirname, resolve, join, basename } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const STORY = ['vendor', 'storefront', 'catalogue', 'calendar', 'market-day'];
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(HERE, '../..');
-const SLICES_DIR = resolve(ROOT, 'test/src/market-days');
-const DOMAIN_DIR = resolve(ROOT, 'packages/market-days/src');
-const CONTROLLERS_DIR = resolve(ROOT, 'apps/api/src/app/market-days');
+// The bounded contexts (ADRs 0004, 0048, 0066), each with its story order.
+const CONTEXTS = [
+  { id: 'market-days', name: 'Market Days', story: ['vendor', 'storefront', 'catalogue', 'calendar', 'market-day'] },
+  { id: 'ordering', name: 'Ordering', story: ['merchant', 'payment-account-notices', 'order'] },
+].map(c => ({ ...c, slicesDir: resolve(ROOT, 'test/src', c.id), domainDir: resolve(ROOT, 'packages', c.id, 'src') }));
+const API_DIR = resolve(ROOT, 'apps/api/src/app');
 
 const warnings = [];
 const warn = (msg) => { warnings.push(msg); console.warn(`WARNING — ${msg}`); };
 
-/* ---------- spec tokenizer (copied from tools/test-map/generate.mjs, plus
-   source offsets so each test's body can be inspected) ---------- */
+/* ---------- spec tokenizer (copied from tools/test-map/generate.mjs, keeping
+   only each call's start offset, which is how each test's body is cut out) ---------- */
+// Skips the comment or literal starting at `i` — comment, string, template, or
+// a regex where an operand may start — and returns the index just past it, or
+// -1 if none starts there. `prev` is the last significant character before `i`,
+// which is what tells a regex from a division.
+function skipLiteral(src, i, prev) {
+  const n = src.length, c = src[i];
+  if (c === '/' && src[i + 1] === '/') { while (i < n && src[i] !== '\n') i++; return i; }
+  if (c === '/' && src[i + 1] === '*') { i += 2; while (i < n && !(src[i] === '*' && src[i + 1] === '/')) i++; return i + 2; }
+  if (c === "'" || c === '"') { i++; while (i < n && src[i] !== c) { if (src[i] === '\\') i++; i++; } return i + 1; }
+  if (c === '`') {
+    i++;
+    while (i < n && src[i] !== '`') {
+      if (src[i] === '\\') { i += 2; continue; }
+      if (src[i] === '$' && src[i + 1] === '{') {
+        i += 2;
+        let d = 1, p = '{';
+        while (i < n && d > 0) {
+          const after = skipLiteral(src, i, p);
+          if (after >= 0) { i = after; p = ')'; continue; }
+          if (src[i] === '{') d++; else if (src[i] === '}') d--;
+          if (!/\s/.test(src[i])) p = src[i];
+          i++;
+        }
+        continue;
+      }
+      i++;
+    }
+    return i + 1;
+  }
+  if (c === '/' && (prev === '' || /[(,=:[!&|?{};+\-*%<>~^]/.test(prev))) {
+    let k = i + 1, inClass = false;
+    while (k < n && src[k] !== '\n') {
+      if (src[k] === '\\') { k += 2; continue; }
+      if (src[k] === '[') inClass = true;
+      else if (src[k] === ']') inClass = false;
+      else if (src[k] === '/' && !inClass) { k++; while (k < n && /[a-z]/.test(src[k])) k++; return k; }
+      k++;
+    }
+  }
+  return -1;
+}
+const isComment = (src, i) => src[i] === '/' && (src[i + 1] === '/' || src[i + 1] === '*');
+
+// Finds describe/it/test calls, their brace depth and where each starts.
 function parseSpecs(src) {
   const calls = [];
-  let i = 0, depth = 0;
+  let i = 0, depth = 0, prev = '';
   const n = src.length;
   while (i < n) {
+    const after = skipLiteral(src, i, prev);
+    if (after >= 0) { if (!isComment(src, i)) prev = ')'; i = after; continue; }
     const c = src[i];
-    if (c === '/' && src[i + 1] === '/') { while (i < n && src[i] !== '\n') i++; continue; }
-    if (c === '/' && src[i + 1] === '*') { i += 2; while (i < n && !(src[i] === '*' && src[i + 1] === '/')) i++; i += 2; continue; }
-    if (c === "'" || c === '"') {
-      i++; while (i < n && src[i] !== c) { if (src[i] === '\\') i++; i++; } i++; continue;
-    }
-    if (c === '`') {
-      i++;
-      while (i < n && src[i] !== '`') {
-        if (src[i] === '\\') { i += 2; continue; }
-        if (src[i] === '$' && src[i + 1] === '{') {
-          i += 2; let d = 1;
-          while (i < n && d > 0) { if (src[i] === '{') d++; else if (src[i] === '}') d--; i++; }
-          continue;
-        }
-        i++;
-      }
-      i++; continue;
-    }
-    if (c === '{') { depth++; i++; continue; }
-    if (c === '}') { depth--; i++; continue; }
-    if (/[A-Za-z_]/.test(c)) {
-      const m = /^(describe|it|test)((?:\.(?:each|skip|only|todo|concurrent|fails|skipIf|runIf)(?:\([^)]*\))*)*)\s*\(/.exec(src.slice(i, i + 4000));
-      if (m) {
+    if (c === '{') { depth++; prev = c; i++; continue; }
+    if (c === '}') { depth--; prev = c; i++; continue; }
+    if (/[A-Za-z_$]/.test(c)) {
+      // The 4000-char window must cover the longest it.each table between the
+      // keyword and the test title.
+      const m = /^(describe|it|test)((?:\.(?:each|skip|only|todo|concurrent|fails|skipIf|runIf)(?:\([^)]*\))?)*)\s*\(/.exec(src.slice(i, i + 4000));
+      if (m && !/[\w$.]/.test(src[i - 1] ?? '')) {
         let j = i + m[0].length;
         while (j < n && /\s/.test(src[j])) j++;
         const q = src[j];
-        let name = null;
         if (q === "'" || q === '"' || q === '`') {
-          let k = j + 1, buf = '';
+          let k = j + 1, name = '';
           while (k < n && src[k] !== q) {
-            if (src[k] === '\\') { buf += src[k + 1]; k += 2; continue; }
-            buf += src[k]; k++;
+            if (src[k] === '\\') { name += src[k + 1]; k += 2; continue; }
+            name += src[k]; k++;
           }
-          name = buf;
-        }
-        if (name !== null) {
           calls.push({ type: m[1], mods: m[2] || '', name, depth, start: i });
-          i = j; continue;
+          prev = q; i = k + 1; continue;
         }
       }
       while (i < n && /[A-Za-z0-9_$.]/.test(src[i])) i++;
+      prev = 'a';
       continue;
     }
+    if (!/\s/.test(c)) prev = c;
     i++;
   }
   return calls;
@@ -98,6 +130,8 @@ function parseSpecs(src) {
 
 // The source of one test = from its call to the next describe/it call (or EOF).
 // Close enough to classify a spec line as a rejection by what it asserts.
+// Everything outside the tests — imports, beforeEach, shared helpers — is the
+// setup every test shares.
 function testsWithBodies(src) {
   const calls = parseSpecs(src);
   const tests = [];
@@ -107,9 +141,12 @@ function testsWithBodies(src) {
     while (stack.length && stack[stack.length - 1].depth >= c.depth) stack.pop();
     if (c.type === 'describe') { stack.push({ name: c.name, depth: c.depth }); continue; }
     const end = k + 1 < calls.length ? calls[k + 1].start : src.length;
-    tests.push({ name: c.name, mods: c.mods, body: src.slice(c.start, end) });
+    tests.push({ name: c.name, mods: c.mods, start: c.start, body: src.slice(c.start, end) });
   }
-  return { tests, describeTitle: calls.find(c => c.type === 'describe')?.name ?? null };
+  let setup = '', at = 0;
+  for (const t of tests) { setup += src.slice(at, t.start); at = t.start + t.body.length; }
+  setup += src.slice(at);
+  return { tests, setup, describeTitle: calls.find(c => c.type === 'describe')?.name ?? null };
 }
 
 /* ---------- small text utilities ---------- */
@@ -169,22 +206,23 @@ function* walk(dir) {
 const read = (p) => readFileSync(p, 'utf8');
 const rel = (p) => p.slice(ROOT.length + 1);
 
-/* ---------- declared seams in the domain package ---------- */
+/* ---------- declared seams in each context's domain package ---------- */
 // Event -> aggregate (the stream lane it lives on), from where the event type
-// is declared: packages/market-days/src/<aggregate>/events/*.ts
+// is declared: packages/<context>/src/<aggregate>/events/*.ts
 const eventAggregate = {};
-for (const f of walk(DOMAIN_DIR)) {
+const eventContext = {};
+for (const ctx of CONTEXTS) for (const f of walk(ctx.domainDir)) {
   const m = /\/src\/([^/]+)\/events\/[^/]+\.ts$/.exec(f);
   if (!m) continue;
   const src = read(f);
-  for (const d of src.matchAll(/DomainEvent<\s*'(\w+)'/g)) eventAggregate[d[1]] = m[1];
+  for (const d of src.matchAll(/DomainEvent<\s*'(\w+)'/g)) { eventAggregate[d[1]] = m[1]; eventContext[d[1]] = ctx.id; }
 }
 const EVENT_TYPES = Object.keys(eventAggregate);
 
 // Read models: each *.projection.ts declares the events it consumes as its
 // handler-map keys.
 const projections = {};   // slice dir name -> { consumes, file }
-for (const f of walk(DOMAIN_DIR)) {
+for (const ctx of CONTEXTS) for (const f of walk(ctx.domainDir)) {
   if (!f.endsWith('.projection.ts')) continue;
   const src = read(f);
   const body = /handlers\(\)[^{]*\{([\s\S]*?)\n {2}\}/.exec(src);
@@ -196,7 +234,7 @@ for (const f of walk(DOMAIN_DIR)) {
 // Automations: each @CheckpointedProcessor declares eventTypes() and
 // dispatches commands through the gateway.
 const processors = {};    // slice dir name -> { consumes, dispatches, file }
-for (const f of walk(DOMAIN_DIR)) {
+for (const ctx of CONTEXTS) for (const f of walk(ctx.domainDir)) {
   if (!f.endsWith('.ts') || f.endsWith('.spec.ts')) continue;
   const src = read(f);
   if (!src.includes('@CheckpointedProcessor')) continue;
@@ -211,7 +249,7 @@ for (const f of walk(DOMAIN_DIR)) {
 const viewSliceOfInterface = (iface) =>
   iface.replace(/Views$/, 'View').replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
 const queries = [];       // { query, reads: [view slice dirs], file }
-for (const f of walk(DOMAIN_DIR)) {
+for (const ctx of CONTEXTS) for (const f of walk(ctx.domainDir)) {
   if (!/\/find-[^/]+\.handler\.ts$/.test(f)) continue;
   const src = read(f);
   const cls = /class (Find\w+)Handler/.exec(src);
@@ -220,68 +258,101 @@ for (const f of walk(DOMAIN_DIR)) {
   queries.push({ query: cls[1], reads, file: rel(f), dir: basename(dirname(f)) });
 }
 
-/* ---------- actors, from the API controllers ---------- */
-// public-* controllers serve the customer storefront; the rest sit behind the
-// vendor app's auth guard.
-const actorOf = {};       // command/query class -> 'vendor' | 'customer'
-for (const f of walk(CONTROLLERS_DIR)) {
-  if (!f.endsWith('.controller.ts')) continue;
-  const actor = basename(f).startsWith('public-') ? 'customer' : 'vendor';
-  for (const m of read(f).matchAll(/new ([A-Z]\w+)\(/g)) actorOf[m[1]] ??= actor;
+/* ---------- actors, from where the api builds each command and query ---------- */
+// The operator console's routes and services (ops/, ADR 0059), Stripe's
+// webhooks, the customer storefront (public-* controllers), and otherwise the
+// vendor app behind its auth guard. A command more than one of them issues
+// keeps all of them.
+function actorOfFile(f) {
+  if (/\/ops\//.test(f)) return 'operator';
+  if (/\/stripe\/|webhook/.test(f)) return 'stripe';
+  if (basename(f).startsWith('public-')) return 'customer';
+  return 'vendor';
 }
-for (const p of Object.values(processors)) for (const c of p.dispatches) actorOf[c] = 'automation';
+const actorsOf = {};      // command/query class -> Set of actors
+for (const f of walk(API_DIR)) {
+  if (!f.endsWith('.ts') || /\.(spec|scenario|tenant)\.ts$/.test(f) || f.includes('/testing/')) continue;
+  if (!f.endsWith('.controller.ts') && !/\/ops\//.test(f)) continue;
+  for (const m of read(f).matchAll(/new ([A-Z]\w+)\(/g)) (actorsOf[m[1]] ??= new Set()).add(actorOfFile(f));
+}
+for (const p of Object.values(processors)) for (const c of p.dispatches) actorsOf[c] = new Set(['automation']);
+const actorList = (cls) => actorsOf[cls] ? [...actorsOf[cls]].sort() : [];
 
-/* ---------- the test harness: which helper drives which command ---------- */
+/* ---------- the test harnesses: which helper drives which command ---------- */
+// Any *-harness.ts at a suite's root, e.g. test/src/market-days/market-day-harness.ts.
 const helperCommand = {}; // helper name -> command class
-{
-  const harness = read(join(SLICES_DIR, 'market-day-harness.ts'));
-  for (const m of harness.matchAll(/(\w+):\s*\([^)]*\)[^=]*=>\s*\r?\n?\s*\w+\.execute\((?:new (\w+)\(|Test(\w+)\.)/g)) {
+for (const ctx of CONTEXTS) for (const f of readdirSync(ctx.slicesDir)) {
+  if (!f.endsWith('-harness.ts')) continue;
+  for (const m of read(join(ctx.slicesDir, f)).matchAll(/(\w+):\s*\([^)]*\)[^=]*=>\s*\r?\n?\s*\w+\.execute\((?:new (\w+)\(|Test(\w+)\.)/g)) {
     helperCommand[m[1]] = m[2] || m[3];
   }
 }
 
-/* ---------- the event builders: which helper seeds which event as a Given ---------- */
-// Any exported const at the suite's root whose body names an event type, e.g.
-// `export const menuSet = (...): MarketDayMenuSet => ({ type: 'MarketDayMenuSet', ... })`.
-const helperEvent = {};   // builder name -> event type
-for (const f of readdirSync(SLICES_DIR)) {
-  if (!f.endsWith('.ts') || f.endsWith('.spec.ts') || f.endsWith('.contract.ts')) continue;
-  for (const m of read(join(SLICES_DIR, f)).matchAll(/export const (\w+) = [^;]*?type: '(\w+)'/g)) {
-    if (eventAggregate[m[2]]) helperEvent[m[1]] = m[2];
+/* ---------- the event builders: which helper seeds which event ---------- */
+// Any exported const at a suite's root whose body names an event type, e.g.
+// `export const menuSet = (...): MarketDayMenuSet => ({ type: 'MarketDayMenuSet', ... })`,
+// and the stream-id helpers beside them, e.g.
+// `export const merchantStream = (vendorId = …): string => `ordering-merchant-${vendorId}``.
+const helperEvent = {};   // context -> builder name -> event type
+const helperEventSrc = {};// context -> event type -> the builder's source, from its type on
+const helperStream = {};  // context -> helper name -> stream id template
+for (const ctx of CONTEXTS) {
+  helperEvent[ctx.id] = {};
+  helperEventSrc[ctx.id] = {};
+  helperStream[ctx.id] = {};
+  for (const f of readdirSync(ctx.slicesDir)) {
+    if (!f.endsWith('.ts') || f.endsWith('.spec.ts') || f.endsWith('.contract.ts')) continue;
+    const src = read(join(ctx.slicesDir, f));
+    for (const m of src.matchAll(/export const (\w+) = [^;]*?type: '(\w+)'/g)) {
+      if (!eventAggregate[m[2]]) continue;
+      helperEvent[ctx.id][m[1]] = m[2];
+      const at = src.indexOf(`type: '${m[2]}'`, m.index);
+      helperEventSrc[ctx.id][m[2]] ??= src.slice(at, at + 2000);
+    }
+    for (const m of src.matchAll(/export const (\w+) = \([^)]*\)[^=;]*=>\s*`([^`]+)`/g)) helperStream[ctx.id][m[1]] = m[2];
   }
 }
+// A call to a suite helper, plain or spread (`...orderPlaced()`), not a method.
+const callsHelper = (src, helper) => new RegExp(`(?:^|[^\\w$.]|\\.\\.\\.)${helper}\\(`).test(src);
 
-/* ---------- slices, from the packages suite ---------- */
+/* ---------- slices, from each context's packages suite ---------- */
 const slices = [];
 const skipped = [];
-for (const dir of readdirSync(SLICES_DIR).sort()) {
-  const path = join(SLICES_DIR, dir);
+for (const ctx of CONTEXTS) for (const dir of readdirSync(ctx.slicesDir).sort()) {
+  const path = join(ctx.slicesDir, dir);
   if (!statSync(path).isDirectory()) continue;
   const specFiles = readdirSync(path).filter(f => f.endsWith('.spec.ts') && !f.includes('contract') && !f.endsWith('.container.spec.ts'));
-  if (!specFiles.length) { skipped.push(`${dir} (contract/infrastructure specs only)`); continue; }
+  if (!specFiles.length) { skipped.push(`${ctx.id}/${dir} (contract/infrastructure specs only)`); continue; }
+  if (slices.some(s => s.id === dir)) warn(`slice ${dir} appears in more than one context`);
   const src = specFiles.map(f => read(join(path, f))).join('\n');
-  const { tests, describeTitle } = testsWithBodies(src);
-  const specs = tests.map(t => ({
-    name: t.name,
-    mods: t.mods,
-    kind: /rejects\.|toThrow\(|toBeInstanceOf\(\s*[A-Z]/.test(t.body) ? 'rejection' : 'happy',
-  }));
-  const mentioned = [...new Set([
-    ...EVENT_TYPES.filter(e => src.includes(`'${e}'`) || src.includes(`type: '${e}'`) || new RegExp(`\\b${e}\\b`).test(src)),
-    ...Object.keys(helperEvent).filter(h => new RegExp(`(?<![.\\w])${h}\\(`).test(src)).map(h => helperEvent[h]),
+  const { tests, setup, describeTitle } = testsWithBodies(src);
+  const isRejection = (body) => /rejects\.|toThrow\(|toBeInstanceOf\(\s*[A-Z]/.test(body);
+  const specs = tests.map(t => ({ name: t.name, mods: t.mods, kind: isRejection(t.body) ? 'rejection' : 'happy' }));
+  const builders = Object.entries(helperEvent[ctx.id]);
+  const mentionedIn = (text) => [...new Set([
+    ...EVENT_TYPES.filter(e => text.includes(`'${e}'`) || text.includes(`type: '${e}'`) || new RegExp(`\\b${e}\\b`).test(text)),
+    ...builders.filter(([h]) => callsHelper(text, h)).map(([, e]) => e),
     // seedCatalogue seeds the two catalogue items as events; the harness calls it.
-    ...(src.includes('marketDayHarness(') || src.includes('seedCatalogue(') ? ['ItemAddedToCatalogue'] : []),
+    ...(text.includes('marketDayHarness(') || text.includes('seedCatalogue(') ? ['ItemAddedToCatalogue'] : []),
   ])];
+  const mentioned = mentionedIn(src);
+  // The slice's main scenario: the shared setup and its first test that isn't a
+  // rejection. Where the slice sits on the timeline follows what that scenario
+  // presupposes; the specs that refuse a command once something has happened,
+  // or let it happen again after, don't move it.
+  const story = setup + (tests.find(t => !isRejection(t.body))?.body ?? '');
   const errors = [...new Set(
     [...src.matchAll(/(?:toThrow|toBeInstanceOf)\(\s*([A-Z]\w+)/g)].map(m => m[1]).filter(e => e !== 'Error'),
   )];
   const base = {
     id: dir,
+    context: ctx.id,
     title: describeTitle ?? pascal(dir),
     files: specFiles.map(f => rel(join(path, f))),
     specs,
     errors,
   };
+  const readers = (q) => ({ query: q.query, actors: actorList(q.query).length ? actorList(q.query) : ['vendor'] });
 
   if (processors[dir]) {
     const p = processors[dir];
@@ -289,8 +360,7 @@ for (const dir of readdirSync(SLICES_DIR).sort()) {
     continue;
   }
   if (projections[dir]) {
-    const readBy = queries.filter(q => q.reads.includes(dir))
-      .map(q => ({ query: q.query, actor: actorOf[q.query] ?? 'vendor' }));
+    const readBy = queries.filter(q => q.reads.includes(dir)).map(readers);
     // A view directory's specs cover several queries, each with its own describe;
     // the slice is named after the read model itself.
     const title = dir.split('-').map(w => w[0].toUpperCase() + w.slice(1)).join(' ');
@@ -300,23 +370,30 @@ for (const dir of readdirSync(SLICES_DIR).sort()) {
   if (/store\.newEvents\(\)/.test(src)) {
     const command = pascal(dir);
     // What the specs assert the command appended: every event type named inside an
-    // expectation on store.newEvents(). Setup done through other commands lands
-    // there too, so the slice's own event is resolved below, once every command
-    // slice has declared what it asserts.
+    // expectation on store.newEvents(), written out or built by a suite helper
+    // (`...orderPlaced()`). Setup done through other commands lands there too, so
+    // the slice's own events are resolved below, once every command slice has
+    // declared what it asserts.
     const asserted = new Set();
     for (const m of src.matchAll(/newEvents\(\)\)([\s\S]*?);/g)) {
       for (const t of m[1].matchAll(/type:\s*'(\w+)'/g)) if (eventAggregate[t[1]]) asserted.add(t[1]);
+      for (const [h, e] of builders) if (callsHelper(m[1], h)) asserted.add(e);
     }
+    // The stream: a literal id, or the suite helper that builds it.
     const sm = /streamId[\s\S]{0,200}?[`'"]([\w-]+\/[^`'"]+)[`'"]/.exec(src);
-    const stream = sm ? sm[1].replace(/\$\{[^}]+\}/g, '<' + '…>') : null;
-    const helpers = Object.keys(helperCommand).filter(h => new RegExp(`(?<![.\\w])${h}\\(`).test(src));
-    const givenCommands = [...new Set([
-      ...helpers.map(h => helperCommand[h]),
-      ...[...src.matchAll(/\bnew (\w+)Handler\(/g)].map(m => m[1]),
-      ...[...src.matchAll(/\bTest([A-Z]\w+)\.(?:valid|with)\b/g)].map(m => m[1]),
+    const hm = /streamId:\s*(\w+)\(/.exec(src);
+    const streamTemplate = sm ? sm[1] : hm ? helperStream[ctx.id][hm[1]] : null;
+    const stream = streamTemplate ? streamTemplate.replace(/\$\{[^}]+\}/g, '<' + '…>') : null;
+    const commandsIn = (text) => [...new Set([
+      ...Object.keys(helperCommand).filter(h => callsHelper(text, h)).map(h => helperCommand[h]),
+      ...[...text.matchAll(/\bnew (\w+)Handler\(/g)].map(m => m[1]),
+      ...[...text.matchAll(/\bTest([A-Z]\w+)\.(?:valid|with)\b/g)].map(m => m[1]),
     ])].filter(c => c !== command);
-    slices.push({ ...base, kind: 'command', command, actor: actorOf[command] ?? null, emits: [], given: [], givenCommands, stream, src, asserted, mentioned });
-    if (!actorOf[command]) warn(`command ${command}: no actor found in controllers or processors`);
+    const givenCommands = commandsIn(src);
+    const actors = actorList(command);
+    slices.push({ ...base, kind: 'command', command, actors, emits: [], given: [], givenCommands, stream, src, asserted, mentioned,
+      storyMentioned: mentionedIn(story), storyCommands: commandsIn(story) });
+    if (!actors.length) warn(`command ${command}: no actor found in the api's controllers or processors`);
     continue;
   }
   const own = queries.filter(q => q.dir === dir);
@@ -327,14 +404,16 @@ for (const dir of readdirSync(SLICES_DIR).sort()) {
     const consumes = [...new Set(derivedFrom.flatMap(v => projections[v].consumes))];
     const title = dir.split('-').map(w => w[0].toUpperCase() + w.slice(1)).join(' ');
     slices.push({ ...base, title, kind: 'view', derivedFrom, consumes,
-      readBy: own.map(q => ({ query: q.query, actor: actorOf[q.query] ?? 'vendor' })), sources: own.map(q => q.file) });
+      readBy: own.map(readers), sources: own.map(q => q.file) });
     continue;
   }
-  skipped.push(`${dir} (unclassified — not a command, view or automation spec)`);
+  skipped.push(`${ctx.id}/${dir} (unclassified — not a command, view or automation spec)`);
 }
 
-// The event each command emits. The name pairing settles most of them; the rest are
-// the one asserted type no other command claims, resolved until nothing moves.
+// The events each command emits. The name pairing settles most (ADR 0009); the
+// rest are the one asserted type no other command claims, resolved until nothing
+// moves. Last, a command deciding between outcomes — PlaceOrder's OrderPlaced or
+// OrderRefused — also emits every unclaimed type that only it asserts.
 {
   const commands = slices.filter(s => s.kind === 'command');
   const claimed = new Set();
@@ -350,21 +429,30 @@ for (const dir of readdirSync(SLICES_DIR).sort()) {
       if (left.length === 1) { s.emits = left; claimed.add(left[0]); moved = true; }
     }
   }
+  const asserters = {};
+  for (const s of commands) for (const e of s.asserted) (asserters[e] ??= []).push(s);
+  for (const s of commands) {
+    const outcomes = [...s.asserted].filter(e => !claimed.has(e) && asserters[e].length === 1);
+    s.emits.push(...outcomes.sort());
+  }
   for (const s of commands) {
     const own = s.emits[0] ?? null;
     if (!own) warn(`command ${s.command}: cannot tell which event it emits (asserted [${[...s.asserted]}])`);
-    // Example payload: the first asserted payload of the slice's own event.
+    // Example payload: the first asserted payload of the slice's own event, in
+    // the spec or in the suite helper that builds it.
     s.payload = null;
     if (own) {
       const at = s.src.indexOf(`type: '${own}'`);
-      if (at >= 0) {
-        const after = s.src.slice(at, at + 2000);
-        const pm = /payload:\s*(?:expect\.objectContaining\()?\s*\{/.exec(after);
-        if (pm) s.payload = balancedBraces(after, pm.index + pm[0].length - 1);
+      const after = at >= 0 ? s.src.slice(at, at + 2000) : helperEventSrc[s.context][own] ?? '';
+      const pm = /payload:\s*(?:expect\.objectContaining\()?\s*\{/.exec(after);
+      if (pm) {
+        s.payload = balancedBraces(after, pm.index + pm[0].length - 1);
+        s.payloadFrom = at >= 0 ? 'spec' : 'helper';
       }
     }
-    s.given = s.mentioned.filter(e => e !== own);
-    delete s.src; delete s.asserted; delete s.mentioned;
+    s.given = s.mentioned.filter(e => !s.emits.includes(e));
+    s.storyGiven = s.storyMentioned.filter(e => !s.emits.includes(e));
+    delete s.src; delete s.asserted; delete s.mentioned; delete s.storyMentioned;
   }
 }
 
@@ -377,8 +465,8 @@ for (const s of slices) if (s.kind === 'command') commandSlice[s.command] = s.id
 for (const s of slices) {
   const deps = new Set();
   if (s.kind === 'command') {
-    for (const e of s.given) if (producerOf[e]) deps.add(producerOf[e]);
-    for (const c of s.givenCommands) if (commandSlice[c]) deps.add(commandSlice[c]);
+    for (const e of s.storyGiven) if (producerOf[e]) deps.add(producerOf[e]);
+    for (const c of s.storyCommands) if (commandSlice[c]) deps.add(commandSlice[c]);
   } else {
     for (const e of s.consumes) if (producerOf[e]) deps.add(producerOf[e]);
     for (const v of s.derivedFrom ?? []) deps.add(v);
@@ -389,6 +477,7 @@ for (const s of slices) {
   }
   deps.delete(s.id);
   s.deps = [...deps];
+  delete s.storyGiven; delete s.storyCommands;
 }
 // An automation's dispatched command follows it.
 for (const s of slices) if (s.kind === 'automation') {
@@ -414,32 +503,47 @@ for (const s of slices) {
 
 // Timeline order: a topological pass over chapters (a chapter waits for every
 // chapter its slices presuppose), then over the slices within each chapter.
+// The tiebreak also sees the id placed last, so a chain can stay together.
 function topo(ids, depsOf, tiebreak) {
   const order = [];
   const pending = new Set(ids);
+  let last = null;
   while (pending.size) {
-    const ready = [...pending].filter(id => depsOf(id).every(d => d === id || !pending.has(d))).sort(tiebreak);
+    const ready = [...pending].filter(id => depsOf(id).every(d => d === id || !pending.has(d))).sort((a, b) => tiebreak(a, b, last));
     if (!ready.length) { warn(`dependency cycle among: ${[...pending]}`); ready.push([...pending][0]); }
-    order.push(ready[0]);
-    pending.delete(ready[0]);
+    last = ready[0];
+    order.push(last);
+    pending.delete(last);
   }
   return order;
 }
-const chapters = [...new Set(slices.map(s => s.chapter))];
-const chapterDeps = (c) => [...new Set(
-  slices.filter(s => s.chapter === c).flatMap(s => s.deps.map(d => byId.get(d).chapter)).filter(x => x !== c),
+// Each context in turn, so the two never interleave on the timeline.
+const chapterDeps = (ctx, c) => [...new Set(
+  slices.filter(s => s.context === ctx.id && s.chapter === c)
+    .flatMap(s => s.deps.map(d => byId.get(d))).filter(d => d.context === ctx.id && d.chapter !== c).map(d => d.chapter),
 )];
-const storyRank = (c) => { const i = STORY.indexOf(c); return i < 0 ? STORY.length : i; };
-const chapterOrder = topo(chapters, chapterDeps, (a, b) => (storyRank(a) - storyRank(b)) || a.localeCompare(b));
-const sliceOrder = chapterOrder.flatMap(c => topo(
-  slices.filter(s => s.chapter === c).map(s => s.id),
-  (id) => byId.get(id).deps,
-  (a, b) => {
-    const sa = byId.get(a), sb = byId.get(b);
-    const k = (s) => (s.kind === 'view' ? 1 : 0);      // views after the writes they read
-    return (k(sa) - k(sb)) || (sa.deps.length - sb.deps.length) || a.localeCompare(b);
-  },
-));
+const sliceOrder = CONTEXTS.flatMap(ctx => {
+  const mine = slices.filter(s => s.context === ctx.id);
+  const storyRank = (c) => { const i = ctx.story.indexOf(c); return i < 0 ? ctx.story.length : i; };
+  const chapterOrder = topo([...new Set(mine.map(s => s.chapter))], (c) => chapterDeps(ctx, c),
+    (a, b) => (storyRank(a) - storyRank(b)) || a.localeCompare(b));
+  return chapterOrder.flatMap(c => topo(
+    mine.filter(s => s.chapter === c).map(s => s.id),
+    (id) => byId.get(id).deps,
+    (a, b, last) => {
+      const sa = byId.get(a), sb = byId.get(b);
+      const k = (s) => (s.kind === 'view' ? 1 : 0);      // views after the writes they read
+      // Keep a chain together: an automation's commands right after it, in the
+      // order it sends them, then anything else that needs what was just placed.
+      const follows = (s) => {
+        const prev = byId.get(last);
+        const sent = prev?.kind === 'automation' ? prev.dispatches.indexOf(s.command) : -1;
+        return sent >= 0 ? sent : s.deps.includes(last) ? 100 : 200;
+      };
+      return (k(sa) - k(sb)) || (follows(sa) - follows(sb)) || (sa.deps.length - sb.deps.length) || a.localeCompare(b);
+    },
+  ));
+});
 slices.sort((a, b) => sliceOrder.indexOf(a.id) - sliceOrder.indexOf(b.id));
 
 // Aggregate lanes, ordered by first appearance on the timeline.
@@ -460,7 +564,8 @@ const counts = {
 const orphans = EVENT_TYPES.filter(e => !slices.some(s => (s.emits ?? []).includes(e)));
 if (orphans.length) warn(`events with no producing slice on the model: ${orphans}`);
 
-const data = { slices, lanes, eventAggregate, counts, skipped, unproduced: orphans };
+const contexts = CONTEXTS.filter(c => slices.some(s => s.context === c.id)).map(({ id, name }) => ({ id, name }));
+const data = { contexts, slices, lanes, eventAggregate, eventContext, counts, skipped, unproduced: orphans };
 const generated = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
 const html = read(resolve(HERE, 'template.html'))
   .replace('__DATA__', () => JSON.stringify(data))

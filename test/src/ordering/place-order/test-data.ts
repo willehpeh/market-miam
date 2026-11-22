@@ -1,6 +1,6 @@
 import { PlaceOrder } from '@market-miam/ordering';
 
-const PLACED_AT = '2026-11-21T11:42:00.000Z';
+const RECEIVED_AT = '2026-11-21T11:42:00.000Z';
 
 export class TestPlaceOrder {
   static valid(): PlaceOrder {
@@ -16,7 +16,7 @@ export class TestPlaceOrder {
         ],
         paymentIntentId: 'pi_test_1',
       },
-      PLACED_AT,
+      RECEIVED_AT,
     );
   }
 }

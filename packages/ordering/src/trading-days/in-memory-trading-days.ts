@@ -1,15 +1,30 @@
-import { VendorId } from '@market-miam/shared-kernel';
-import { HeldOrder, RefusalReason } from '../order';
+import { TradingDay, TradingDayFacts } from '../order';
 import { TradingDays } from './trading-days';
 
 export class InMemoryTradingDays extends TradingDays {
-  private readonly soldOut = new Set<string>();
+  private readonly facts: TradingDayFacts = { menuDishIds: [], soldOutDishIds: [], closed: false, ended: false };
 
-  markSoldOut(dishId: string): void {
-    this.soldOut.add(dishId);
+  setMenu(...dishIds: string[]): void {
+    this.facts.menuDishIds = dishIds;
   }
 
-  async refusalOf(vendorId: VendorId, order: HeldOrder): Promise<RefusalReason | undefined> {
-    return order.lines.some(line => this.soldOut.has(line.dishId)) ? 'sold-out' : undefined;
+  markSoldOut(dishId: string): void {
+    this.facts.soldOutDishIds.push(dishId);
+  }
+
+  close(): void {
+    this.facts.closed = true;
+  }
+
+  end(): void {
+    this.facts.ended = true;
+  }
+
+  async forVendorAtMarketOn(): Promise<TradingDay> {
+    return new TradingDay({
+      ...this.facts,
+      menuDishIds: [...this.facts.menuDishIds],
+      soldOutDishIds: [...this.facts.soldOutDishIds],
+    });
   }
 }

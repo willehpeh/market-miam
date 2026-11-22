@@ -5,6 +5,6 @@ export class PlaceOrder extends Command<void> {
   constructor(
     readonly vendorId: string,
     readonly order: HeldOrder,
-    readonly placedAt: string,
+    readonly receivedAt: string,
   ) { super(); }
 }
