@@ -40,7 +40,7 @@ const TONES: Record<PileName, string> = {
 
         @if (marketDay.isClosed()) {
           <mm-closed-notice />
-        <mm-reopen-stand [marketId]="marketId" [date]="date" />
+          <mm-reopen-stand (reopen)="reopenStand()" />
         } @else {
           <ul class="mt-6 space-y-3">
             @for (item of items(); track item.itemId) {
@@ -143,6 +143,10 @@ export class MenuEditor {
       next.add(itemId);
     }
     this.touched.set(next);
+  }
+
+  reopenStand(): void {
+    this.marketDays.reopen(this.marketId, this.date);
   }
 
   save(): void {

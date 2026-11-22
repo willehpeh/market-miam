@@ -39,7 +39,7 @@ import { ReopenStand } from './reopen-stand';
 
         @if (card.day.isClosed()) {
           <mm-closed-notice />
-          <mm-reopen-stand [marketId]="card.day.marketId()" [date]="card.day.date()" />
+          <mm-reopen-stand (reopen)="reopen(card.day)" />
         } @else {
           <a [routerLink]="card.link" class="btn-link mt-4">
             <i class="fa-solid fa-calendar-check" aria-hidden="true"></i>
@@ -80,6 +80,10 @@ export class MarketDayCards {
 
   callOff(day: MarketDay): void {
     this.marketDays.close(day.marketId(), day.date());
+  }
+
+  reopen(day: MarketDay): void {
+    this.marketDays.reopen(day.marketId(), day.date());
   }
 
   constructor() {
