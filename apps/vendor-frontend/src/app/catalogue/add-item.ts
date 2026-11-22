@@ -8,6 +8,7 @@ import { CloudinaryUrlPipe } from '../core/cloudinary-url.pipe';
 import { DismissOnOutsidePress } from '../core/dismiss-on-outside-press';
 import { CatalogueFacade } from './catalogue.facade';
 import { Dish } from './dish';
+import { Pricing, Variant } from './pricing';
 import { Euros } from '../core/euros';
 import { ALLERGENS } from './allergens';
 
@@ -455,7 +456,6 @@ export class AddItem {
   });
   protected readonly declaresNone = computed(() => this.allergens()?.length === 0);
 
-  private readonly priceCents = computed(() => Euros.parse(this.fields().value().price)?.inCents() ?? null);
   protected readonly cannotSubmit = computed(() => this.uploading() || this.fields().invalid() || this.allergens() === null);
 
   // A disabled button is not an explanation. These read the form's own state rather than
@@ -553,51 +553,33 @@ export class AddItem {
 
   protected submit(event: Event): void {
     event.preventDefault();
-    const { name, description } = this.fields().value();
     const allergens = this.allergens();
-    if (allergens === null) {
+    const pricing = this.typedPricing();
+    if (allergens === null || pricing === null) {
       return;
     }
-    if (this.mode() === 'variants') {
-      const variants = this.parseVariants();
-      if (variants === null) {
-        return;
-      }
-      if (this.isEditing) {
-        this.catalogue.reviseItem({ itemId: this.itemId(), name, description, variants, allergens });
-      } else {
-        this.catalogue.addItem({ itemId: this.itemId(), name, description, variants, imageReference: this.photoReference() || undefined, allergens });
-      }
-      return;
-    }
-    const cents = this.priceCents();
-    if (cents === null) {
-      return;
-    }
+    const { name, description } = this.fields().value();
+    const details = { itemId: this.itemId(), name, description, allergens, ...pricing.value() };
     if (this.isEditing) {
-      this.catalogue.reviseItem({ itemId: this.itemId(), name, description, price: cents, allergens });
+      this.catalogue.reviseItem(details);
     } else {
-      this.catalogue.addItem({
-        itemId: this.itemId(),
-        name,
-        description,
-        price: cents,
-        imageReference: this.photoReference() || undefined,
-        allergens,
-      });
+      this.catalogue.addItem({ ...details, imageReference: this.photoReference() || undefined });
     }
   }
 
-  private parseVariants(): { name: string; description: string; price: number }[] | null {
-    const rows = this.fields().value().variants.map((row) => ({
-      name: row.name,
-      description: row.description,
-      price: Euros.parse(row.price)?.inCents() ?? null,
-    }));
-    if (rows.some((row) => row.price === null)) {
-      return null;
+  // What the half of the form on show prices the dish at, or null while a price there does
+  // not read as an amount.
+  private typedPricing(): Pricing | null {
+    const { price, variants } = this.fields().value();
+    if (this.mode() === 'single') {
+      const euros = Euros.parse(price);
+      return euros ? Pricing.flat(euros) : null;
     }
-    return rows.map((row) => ({ name: row.name, description: row.description, price: row.price as number }));
+    const typed = variants.map((row) => {
+      const euros = Euros.parse(row.price);
+      return euros ? new Variant(row.name, row.description, euros) : null;
+    });
+    return typed.every((variant): variant is Variant => variant !== null) ? Pricing.byVariant(typed) : null;
   }
 }
 

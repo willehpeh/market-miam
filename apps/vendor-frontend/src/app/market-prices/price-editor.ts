@@ -166,7 +166,19 @@ export class PriceEditor {
     if (this.fields().invalid()) {
       return;
     }
-    this.prices.setPrices(this.marketId, listOf(this.fields().value().dishes));
+    this.prices.setPrices(this.marketId, this.priceListOf(this.fields().value().dishes));
+  }
+
+  private priceListOf(typed: DishModel[]): PriceList {
+    const list: PriceList = {};
+    for (const { itemId, rows } of typed) {
+      const dish = this.catalogue.items().find((candidate) => candidate.hasId(itemId));
+      const price = dish?.pricing().marketPriceFrom(rows.map((row) => Euros.parse(row.price)));
+      if (price !== undefined) {
+        list[itemId] = price;
+      }
+    }
+    return list;
   }
 
   private modelOf(dish: Dish, market: MarketPrice | undefined): DishModel {
@@ -177,19 +189,3 @@ export class PriceEditor {
     return { itemId: dish.itemId(), name: dish.name(), rows };
   }
 }
-
-function listOf(dishes: DishModel[]): PriceList {
-  const list: PriceList = {};
-  for (const dish of dishes) {
-    const priced = dish.rows.flatMap((row) => {
-      const cents = Euros.parse(row.price)?.inCents() ?? null;
-      return cents === null ? [] : [[row.label, cents] as const];
-    });
-    if (priced.length === 0) {
-      continue;
-    }
-    list[dish.itemId] = dish.rows.length > 1 ? Object.fromEntries(priced) : priced[0][1];
-  }
-  return list;
-}
-
