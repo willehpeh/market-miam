@@ -8,23 +8,15 @@ export type TradingDayFacts = {
 };
 
 export class TradingDay {
-  private readonly soldOut: Set<string>;
-  private readonly closed: boolean;
-  private readonly ended: boolean;
-
-  constructor({ soldOutDishIds, closed, ended }: TradingDayFacts) {
-    this.soldOut = new Set(soldOutDishIds);
-    this.closed = closed;
-    this.ended = ended;
-  }
+  constructor(private readonly facts: TradingDayFacts) {}
 
   refusalOf(lines: OrderLine[]): RefusalReason | undefined {
-    if (this.closed) {
+    if (this.facts.closed) {
       return 'closed';
     }
-    if (this.ended) {
+    if (this.facts.ended) {
       return 'ended';
     }
-    return lines.some(line => this.soldOut.has(line.dishId)) ? 'sold-out' : undefined;
+    return lines.some(line => this.facts.soldOutDishIds.includes(line.dishId)) ? 'sold-out' : undefined;
   }
 }
