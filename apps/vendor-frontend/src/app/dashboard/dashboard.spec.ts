@@ -8,6 +8,7 @@ import { FakeMarketScheduleFacade } from '../markets/fake.market-schedule.facade
 import { MarketScheduleView } from '../markets/market-schedules';
 import { FakeMarketDayFacade } from '../market-days/fake.market-day.facade';
 import { testMarketDayView } from '../market-days/test-market-day-view.builder';
+import { MarketDay } from '../market-days/market-day';
 import { FakeLegalIdentityFacade } from '../legal-identity/fake.legal-identity.facade';
 import { LegalIdentityView } from '../legal-identity/legal-identity';
 import { FakeShare } from '../core/fake.share';
@@ -563,7 +564,7 @@ describe('Dashboard', () => {
     const marketDays = new FakeMarketDayFacade();
     const page = await DashboardPageObject.render({ storefront, marketDays });
     marketDays.loading.set(true);
-    marketDays.days.set([testMarketDayView()]);
+    marketDays.days.set([new MarketDay(testMarketDayView())]);
     storefront.view.set({ ...completeStorefront, subdomain: 'acme', published: true });
     page.detectChanges();
 

@@ -1,6 +1,7 @@
-import { createFeature, createReducer, on } from '@ngrx/store';
+import { createFeature, createReducer, createSelector, on } from '@ngrx/store';
 import { AmendMarketScheduleSuccess, RegisterMarketScheduleSuccess } from '../../markets/market-schedule.state';
 import { MarketDaySlot, MarketDayView, UnratedMarketDay } from '../market-days';
+import { MarketDay } from '../market-day';
 import {
   ChangeItemAvailability,
   ChangeItemAvailabilityFailure,
@@ -23,7 +24,7 @@ export interface MarketDayState {
   loading: boolean;
   fresh: boolean;
   days: MarketDayView[];
-  day: MarketDaySlot;
+  day: MarketDaySlot<MarketDayView>;
   unrated: UnratedMarketDay[];
   unratedLoading: boolean;
   // Days whose bilan was saved whole and which the unrated query may still name anyway:
@@ -144,3 +145,13 @@ export const marketDayFeature = createFeature({
       patchAvailability(state, marketId, date, itemId, !soldOut)),
   ),
 });
+
+// Plain views in the store, days out of it: what the screens and the effects read.
+export const selectMarketDays = createSelector(marketDayFeature.selectDays, (days) =>
+  days.map((day) => new MarketDay(day)),
+);
+
+export const selectMarketDaySlot = createSelector(
+  marketDayFeature.selectDay,
+  (slot): MarketDaySlot<MarketDay> => (slot.status === 'found' ? { status: 'found', day: new MarketDay(slot.day) } : slot),
+);

@@ -1,12 +1,13 @@
 import { Injectable, signal } from '@angular/core';
 import { MarketDayFacade } from './market-day.facade';
 import { ItemOutcome, MarketDaySlot, MarketDayView, UnratedMarketDay } from './market-days';
+import { MarketDay } from './market-day';
 
 @Injectable()
 export class FakeMarketDayFacade implements MarketDayFacade {
-  readonly days = signal<MarketDayView[]>([]);
+  readonly days = signal<MarketDay[]>([]);
   readonly loading = signal(false);
-  readonly day = signal<MarketDaySlot>({ status: 'loading' });
+  readonly day = signal<MarketDaySlot<MarketDay>>({ status: 'loading' });
   readonly unrated = signal<UnratedMarketDay[]>([]);
   readonly unratedLoading = signal(false);
   loaded = false;
@@ -33,7 +34,8 @@ export class FakeMarketDayFacade implements MarketDayFacade {
 
   // The screen it stands for renders the slot, so a fake that moved only the list would
   // let a broken patch pass — the optimistic marks land on both copies (decision 58).
-  showing(day: MarketDayView): void {
+  showing(view: MarketDayView): void {
+    const day = new MarketDay(view);
     this.day.set({ status: 'found', day });
     this.days.set([day]);
   }
@@ -63,24 +65,18 @@ export class FakeMarketDayFacade implements MarketDayFacade {
   }
 
   // The optimistic patch is part of the port's contract — the row moves on the call, not
-  // on the response — so the fake moves it too.
+  // on the response — so the fake moves it too, through the day as the store does.
   private changeAvailability(marketId: string, date: string, itemId: string, soldOut: boolean): void {
     this.availabilityChanges.push({ marketId, date, itemId, soldOut });
-    const patch = (day: MarketDayView): MarketDayView => {
-      if (day.marketId !== marketId || day.date !== date) {
-        return day;
-      }
-      const others = day.soldOutItemIds.filter(id => id !== itemId);
-      return { ...day, soldOutItemIds: soldOut ? [...others, itemId] : others };
-    };
-    this.days.update(days => days.map(patch));
-    this.day.update(slot => (slot.status === 'found' ? { status: 'found', day: patch(slot.day) } : slot));
+    const marked = (day: MarketDay): MarketDay => (day.isOn(marketId, date) ? day.withAvailability(itemId, { soldOut }) : day);
+    this.days.update(days => days.map(marked));
+    this.day.update(slot => (slot.status === 'found' ? { status: 'found', day: marked(slot.day) } : slot));
   }
 }
 
 // Market days that have already loaded these days.
-export function marketDaysOf(...days: MarketDayView[]): FakeMarketDayFacade {
+export function marketDaysOf(...views: MarketDayView[]): FakeMarketDayFacade {
   const marketDays = new FakeMarketDayFacade();
-  marketDays.days.set(days);
+  marketDays.days.set(views.map((view) => new MarketDay(view)));
   return marketDays;
 }

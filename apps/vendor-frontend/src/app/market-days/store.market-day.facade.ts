@@ -2,10 +2,7 @@ import { inject, Injectable } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { MarketDayFacade } from './market-day.facade';
 import { ItemOutcome } from './market-days';
-import {
-  marketDayFeature,
-
-} from './store/market-day.state';
+import { marketDayFeature, selectMarketDays, selectMarketDaySlot } from './store/market-day.state';
 import {
   ChangeItemAvailability,
   ChangeStandClosure, LoadMarketDay, LoadMarketDays,
@@ -17,9 +14,9 @@ import {
 export class StoreMarketDayFacade implements MarketDayFacade {
   private readonly store = inject(Store);
 
-  readonly days = this.store.selectSignal(marketDayFeature.selectDays);
+  readonly days = this.store.selectSignal(selectMarketDays);
   readonly loading = this.store.selectSignal(marketDayFeature.selectLoading);
-  readonly day = this.store.selectSignal(marketDayFeature.selectDay);
+  readonly day = this.store.selectSignal(selectMarketDaySlot);
   readonly unrated = this.store.selectSignal(marketDayFeature.selectUnrated);
   readonly unratedLoading = this.store.selectSignal(marketDayFeature.selectUnratedLoading);
   private readonly fresh = this.store.selectSignal(marketDayFeature.selectFresh);

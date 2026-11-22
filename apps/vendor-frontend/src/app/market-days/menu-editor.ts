@@ -2,7 +2,6 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Card } from '../core/card';
 import { Spinner } from '../core/spinner';
-import { longDate } from '../core/french-date';
 import { CatalogueFacade } from '../catalogue/catalogue.facade';
 import { CatalogueItemView } from '../catalogue/catalogue';
 import { MarketPricesFacade } from '../market-prices/market-prices.facade';
@@ -10,7 +9,6 @@ import { SellingRecordFacade } from '../selling-record/selling-record.facade';
 import { pile, PileName } from '../selling-record/pile';
 import { formatEuros } from '../catalogue/money';
 import { MarketDayFacade } from './market-day.facade';
-import { hasLiveScreen } from './live-screen/live-status';
 import { ClosedNotice } from './closed-notice';
 import { ReopenStand } from './reopen-stand';
 
@@ -33,8 +31,8 @@ const TONES: Record<PileName, string> = {
           <mm-spinner label="Chargement du marché…" />
         </div>
       } @else if (day(); as marketDay) {
-        <h1 class="text-xl leading-tight">{{ marketDay.label }}</h1>
-        <p class="mt-3 text-sm text-ink-soft">{{ marketDay.marketName }}</p>
+        <h1 class="text-xl leading-tight">{{ marketDay.label() }}</h1>
+        <p class="mt-3 text-sm text-ink-soft">{{ marketDay.marketName() }}</p>
         <a
           [routerLink]="['/dashboard/market-prices', marketId]"
           class="mt-1 inline-block text-sm font-bold text-brand no-underline"
@@ -42,7 +40,7 @@ const TONES: Record<PileName, string> = {
           Tarifs de ce marché →
         </a>
 
-        @if (marketDay.closed) {
+        @if (marketDay.isClosed()) {
           <mm-closed-notice />
         <mm-reopen-stand [marketId]="marketId" [date]="date" />
         } @else {
@@ -104,23 +102,14 @@ export class MenuEditor {
       this.record.loading(),
   );
 
-  private readonly occurrence = computed(() =>
-    this.marketDays.days().find((candidate) => candidate.marketId === this.marketId && candidate.date === this.date),
-  );
+  readonly day = computed(() => this.marketDays.days().find((day) => day.isOn(this.marketId, this.date)));
 
   readonly back = computed(() =>
-    hasLiveScreen(this.occurrence()) ? `/dashboard/market/${this.marketId}/${this.date}/live` : '/dashboard',
+    this.day()?.hasLiveScreen() ? `/dashboard/market/${this.marketId}/${this.date}/live` : '/dashboard',
   );
 
-  readonly day = computed(() => {
-    const occurrence = this.occurrence();
-    return occurrence
-      ? { label: longDate(occurrence.day, occurrence.date), marketName: occurrence.market.name, closed: occurrence.closed }
-      : undefined;
-  });
-
   private readonly touched = signal<ReadonlySet<string> | null>(null);
-  private readonly selected = computed(() => this.touched() ?? new Set(this.occurrence()?.itemIds ?? []));
+  private readonly selected = computed(() => this.touched() ?? new Set(this.day()?.menuItemIds()));
 
   private readonly set = this.prices.pricesFor(this.marketId);
 

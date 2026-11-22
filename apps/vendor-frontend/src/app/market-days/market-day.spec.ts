@@ -4,7 +4,8 @@ import { provideRouter, Router } from '@angular/router';
 import { provideState, provideStore } from '@ngrx/store';
 import { provideEffects } from '@ngrx/effects';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { MarketDays } from './market-days';
+import { MarketDays, MarketDayView } from './market-days';
+import { MarketDay } from './market-day';
 import { HttpMarketDays } from './http.market-days';
 import { marketDayFeature } from './store/market-day.state';
 import { MarketDayEffects } from './store/market-day.effects';
@@ -17,7 +18,7 @@ import { MarketScheduleEffects } from '../markets/market-schedule.effects';
 import { MarketScheduleFacade } from '../markets/market-schedule.facade';
 import { StoreMarketScheduleFacade } from '../markets/store.market-schedule.facade';
 
-const day = {
+const day: Omit<MarketDayView, 'itemIds'> = {
   scheduleId: 'schedule-1',
   marketId: 'market-1',
   date: '2026-08-15',
@@ -27,6 +28,7 @@ const day = {
   absent: false,
   phase: 'future',
   closed: false,
+  calledOff: false,
   soldOutItemIds: [],
   outcomes: {},
   market: { name: 'Marché de la Croix-Rousse', town: 'Lyon', codePostal: '69004' },
@@ -89,7 +91,7 @@ describe('MarketDays', () => {
       asSent([{ itemId: 'item-1', name: 'Bourguignon', description: '', price: 1300, imageReference: 'v1/x' }]),
     );
 
-    expect(facade.days()).toEqual([{ ...day, itemIds: ['item-1'] }]);
+    expect(facade.days()).toEqual([new MarketDay({ ...day, itemIds: ['item-1'] })]);
     expect(facade.loading()).toBe(false);
   });
 
@@ -143,7 +145,10 @@ describe('MarketDays', () => {
 
       facade.markSoldOut('market-1', '2026-08-15', 'item-1');
 
-      expect(facade.day()).toMatchObject({ status: 'found', day: { soldOutItemIds: ['item-1'] } });
+      expect(facade.day()).toEqual({
+        status: 'found',
+        day: new MarketDay({ ...day, phase: 'trading', itemIds: ['item-1'], soldOutItemIds: ['item-1'] }),
+      });
       httpCtrl.expectOne(availability('item-1')).flush(null);
     });
 
@@ -158,7 +163,7 @@ describe('MarketDays', () => {
 
       expect(facade.day()).toEqual({
         status: 'found',
-        day: { ...day, phase: 'trading', itemIds: ['item-1'] },
+        day: new MarketDay({ ...day, phase: 'trading', itemIds: ['item-1'] }),
       });
     });
   });
@@ -255,7 +260,7 @@ describe('MarketDays', () => {
     facade.setMenu('market-1', '2026-08-15', ['item-2', 'item-3']);
     httpCtrl.expectOne('/api/market-days/market-1/2026-08-15/menu').flush(null);
 
-    await waitFor(() => expect(facade.days()).toEqual([{ ...day, itemIds: ['item-2', 'item-3'] }]));
+    await waitFor(() => expect(facade.days()).toEqual([new MarketDay({ ...day, itemIds: ['item-2', 'item-3'] })]));
     httpCtrl.expectNone('/api/market-days/upcoming');
   });
 
@@ -268,7 +273,7 @@ describe('MarketDays', () => {
     httpCtrl.expectOne('/api/market-days/market-1/2026-08-15/menu').flush(null);
 
     await waitFor(() =>
-      expect(facade.days().map(d => ({ marketId: d.marketId, itemIds: d.itemIds }))).toEqual([
+      expect(facade.days().map(d => ({ marketId: d.marketId(), itemIds: d.menuItemIds() }))).toEqual([
         { marketId: 'market-1', itemIds: ['item-9'] },
         { marketId: 'market-2', itemIds: [] },
       ]),
@@ -302,9 +307,9 @@ describe('MarketDays', () => {
 
     facade.markSoldOut('market-1', '2026-08-15', 'item-1');
 
-    expect(facade.days()[0].soldOutItemIds).toEqual(['item-1']);
+    expect(facade.days()[0].isSoldOut('item-1')).toBe(true);
     httpCtrl.expectOne(availability('item-1')).flush(null);
-    expect(facade.days()[0].soldOutItemIds).toEqual(['item-1']);
+    expect(facade.days()[0].isSoldOut('item-1')).toBe(true);
     httpCtrl.expectNone('/api/market-days/upcoming');
   });
 
@@ -326,11 +331,11 @@ describe('MarketDays', () => {
     httpCtrl.expectOne('/api/market-days/upcoming').flush(asSent([{ itemId: 'item-1' }]));
 
     facade.markSoldOut('market-1', '2026-08-15', 'item-1');
-    expect(facade.days()[0].soldOutItemIds).toEqual(['item-1']);
+    expect(facade.days()[0].isSoldOut('item-1')).toBe(true);
 
     httpCtrl.expectOne(availability('item-1')).flush(null, { status: 500, statusText: 'Server Error' });
 
-    expect(facade.days()[0].soldOutItemIds).toEqual([]);
+    expect(facade.days()[0].isSoldOut('item-1')).toBe(false);
   });
 
   it('snaps a failed restore back too', () => {
@@ -339,11 +344,11 @@ describe('MarketDays', () => {
       .flush({ marketDays: [{ ...day, items: [{ itemId: 'item-1' }], soldOutItemIds: ['item-1'] }] });
 
     facade.markAvailable('market-1', '2026-08-15', 'item-1');
-    expect(facade.days()[0].soldOutItemIds).toEqual([]);
+    expect(facade.days()[0].isSoldOut('item-1')).toBe(false);
 
     httpCtrl.expectOne(availability('item-1')).flush(null, { status: 500, statusText: 'Server Error' });
 
-    expect(facade.days()[0].soldOutItemIds).toEqual(['item-1']);
+    expect(facade.days()[0].isSoldOut('item-1')).toBe(true);
   });
 
   // Availability's shape for the same reasons (decision 44): a vendor packing up on bad
@@ -358,7 +363,7 @@ describe('MarketDays', () => {
 
     facade.markSoldOut('market-1', '2026-08-15', 'item-1');
 
-    expect(facade.days().map(each => each.soldOutItemIds)).toEqual([['item-1'], []]);
+    expect(facade.days().map(each => each.isSoldOut('item-1'))).toEqual([true, false]);
     httpCtrl.expectOne(availability('item-1')).flush(null);
   });
 
@@ -387,9 +392,9 @@ describe('MarketDays', () => {
 
     facade.close('market-1', '2026-08-15');
 
-    expect(facade.days()[0].closed).toBe(true);
+    expect(facade.days()[0].isClosed()).toBe(true);
     httpCtrl.expectOne(closure).flush(null);
-    expect(facade.days()[0].closed).toBe(true);
+    expect(facade.days()[0].isClosed()).toBe(true);
     httpCtrl.expectNone('/api/market-days/upcoming');
   });
 
@@ -401,11 +406,11 @@ describe('MarketDays', () => {
     httpCtrl.expectOne('/api/market-days/upcoming').flush(asSent([{ itemId: 'item-1' }]));
 
     facade.close('market-1', '2026-08-15');
-    expect(facade.days()[0].closed).toBe(true);
+    expect(facade.days()[0].isClosed()).toBe(true);
 
     httpCtrl.expectOne(closure).flush(null, { status: 500, statusText: 'Server Error' });
 
-    expect(facade.days()[0].closed).toBe(false);
+    expect(facade.days()[0].isClosed()).toBe(false);
   });
 
   // Two markets can share a date (decision 25's overlap), so the patch and its snap-back
@@ -417,11 +422,11 @@ describe('MarketDays', () => {
       .flush({ marketDays: [{ ...day, items: [] }, { ...day, marketId: 'market-2', items: [] }] });
 
     facade.close('market-1', '2026-08-15');
-    expect(facade.days().map(each => each.closed)).toEqual([true, false]);
+    expect(facade.days().map(each => each.isClosed())).toEqual([true, false]);
 
     httpCtrl.expectOne(closure).flush(null, { status: 500, statusText: 'Server Error' });
 
-    expect(facade.days().map(each => each.closed)).toEqual([false, false]);
+    expect(facade.days().map(each => each.isClosed())).toEqual([false, false]);
   });
 
   // Its own route, not a widening of the upcoming list: that one looks forward and drops a
@@ -539,7 +544,7 @@ describe('MarketDays', () => {
     facade.recordBilan('market-1', '2026-08-15', { 'item-1': 'did_well' }, true);
     httpCtrl.expectOne(bilan).flush(null);
 
-    await waitFor(() => expect(facade.days()[0].outcomes).toEqual({ 'item-1': 'did_well' }));
+    await waitFor(() => expect(facade.days()[0].outcomesSoFar()).toEqual({ 'item-1': 'did_well' }));
     httpCtrl.expectNone('/api/market-days/upcoming');
   });
 
