@@ -28,6 +28,7 @@ comes next; each line points at the doc that holds the detail. Update it when a 
 * Stripe support's answers on refused captures (Q5), the sandbox checks done, and on Express accounts if the preview ends (Q14), and the lawyer's DAC7 answer (Q10) (`docs/ordering-board/index.html`)
 * design: lo-fi wireframes of the market-day screen and the two-phase checklist, drafted and to agree (`docs/design/vendor-app-wireframes.html`); then the design system as a Design System artifact, and the screens mocked up in it (`docs/ORDERING-PLAN.md`, *Vendor app*)
 * then build, in the plan's order, starting with step 1's payment account in `packages/ordering` (board, *Step 1: the payment account*; ADRs 0066–0069; a restricted Stripe sandbox key as a GitHub secret before the first nightly run): the ordering context, the vendor app, the storefront, the website rebuilt around ordering with its price, a pilot with real cards (`docs/ORDERING-PLAN.md` steps 5–9)
+* the Stripe adapter, when it lands (ADR 0069): each Checkout line carries its dish and variant in the line's own metadata, read back with the session through `expand[]=line_items`, which Stripe's docs omit from their example (sandbox, 2026-11-22). An inline price leaves one inactive Product per line on the account; what `payment_status` reads once a held card completes a page is still to check
 
 ## Product
 
