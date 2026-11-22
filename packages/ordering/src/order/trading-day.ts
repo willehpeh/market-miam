@@ -2,7 +2,6 @@ import { Availability } from './availability';
 import { OrderLine } from './held-order';
 
 export type TradingDayFacts = {
-  menuDishIds: string[];
   soldOutDishIds: string[];
   closed: boolean;
   ended: boolean;
