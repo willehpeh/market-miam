@@ -121,9 +121,26 @@ export class MarketDay {
     return { ...soldOut, ...this.view.outcomes };
   }
 
+  withMenu(itemIds: string[]): MarketDay {
+    return new MarketDay({ ...this.view, itemIds });
+  }
+
   withAvailability(itemId: string, { soldOut }: { soldOut: boolean }): MarketDay {
     const others = this.view.soldOutItemIds.filter((id) => id !== itemId);
     return new MarketDay({ ...this.view, soldOutItemIds: soldOut ? [...others, itemId] : others });
+  }
+
+  withClosure({ closed }: { closed: boolean }): MarketDay {
+    return new MarketDay({ ...this.view, closed });
+  }
+
+  withOutcomes(outcomes: Record<string, ItemOutcome>): MarketDay {
+    return new MarketDay({ ...this.view, outcomes });
+  }
+
+  // The view back, for the store, which holds plain data.
+  value(): MarketDayView {
+    return this.view;
   }
 
   private hasMenu(): boolean {

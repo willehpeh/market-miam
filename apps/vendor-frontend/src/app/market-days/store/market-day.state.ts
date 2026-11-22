@@ -47,33 +47,30 @@ export const initialState: MarketDayState = {
 // recurrence — so stale, not patched like the menu save below.
 const wentStale = (state: MarketDayState): MarketDayState => ({ ...state, fresh: false });
 
-// A day's identity as one string, for the mask below — both halves of it, for the reason
-// patchDay gives underneath.
+// A day's identity as one string, for the mask below — both halves of it, since two markets
+// can share a date (decision 25).
 const dayKey = (marketId: string, date: string) => `${marketId}|${date}`;
 
-// Which day a patch addresses, said once. Two markets can share a date (decision 25), so
-// every optimistic patch below has to name both halves — and each rewriting of that made a
-// place to get it wrong.
+// Every optimistic patch below goes through the day it addresses, which knows both which
+// day it is and how it changes. The slot is a second copy of one day, so every patch
+// reaches it too — the live screen reads it, and that is the screen the marks and the close
+// are made from (decision 58).
 const patchDay = (
   state: MarketDayState,
   marketId: string,
   date: string,
-  change: (day: MarketDayView) => MarketDayView,
-): MarketDayState => ({
-  ...state,
-  days: state.days.map(day => (day.marketId === marketId && day.date === date ? change(day) : day)),
-  // The slot is a second copy of one day, so every patch reaches it too — the live screen
-  // reads it, and that is the screen the marks and the close are made from (decision 58).
-  day: state.day.status === 'found' && state.day.day.marketId === marketId && state.day.day.date === date
-    ? { status: 'found', day: change(state.day.day) }
-    : state.day,
-});
-
-const patchAvailability = (state: MarketDayState, marketId: string, date: string, itemId: string, soldOut: boolean): MarketDayState =>
-  patchDay(state, marketId, date, day => {
-    const others = day.soldOutItemIds.filter(id => id !== itemId);
-    return { ...day, soldOutItemIds: soldOut ? [...others, itemId] : others };
-  });
+  change: (day: MarketDay) => MarketDay,
+): MarketDayState => {
+  const patched = (view: MarketDayView): MarketDayView => {
+    const day = new MarketDay(view);
+    return day.isOn(marketId, date) ? change(day).value() : view;
+  };
+  return {
+    ...state,
+    days: state.days.map(patched),
+    day: state.day.status === 'found' ? { status: 'found', day: patched(state.day.day) } : state.day,
+  };
+};
 
 export const marketDayFeature = createFeature({
   name: 'marketDays',
@@ -96,7 +93,7 @@ export const marketDayFeature = createFeature({
     // ponytail: SetMarketDayMenuFailure is unreduced — same no-error-UX stance as the
     // catalogue's siblings; the interceptor surfaces 5xx and network failures.
     on(SetMarketDayMenuSuccess, (state, { marketId, date, itemIds }): MarketDayState =>
-      patchDay(state, marketId, date, day => ({ ...day, itemIds }))),
+      patchDay(state, marketId, date, day => day.withMenu(itemIds))),
     on(LoadUnratedMarketDays, (state): MarketDayState => ({ ...state, unratedLoading: true })),
     // The dashboard asks on every arrival, deliberately — a market ending mid-session has
     // nothing else to raise the prompt — so the answer is filtered rather than the question
@@ -123,7 +120,7 @@ export const marketDayFeature = createFeature({
     on(RecordBilanSuccess, (state, { marketId, date, outcomes, complete }): MarketDayState => {
       const key = dayKey(marketId, date);
       return {
-        ...patchDay(state, marketId, date, day => ({ ...day, outcomes })),
+        ...patchDay(state, marketId, date, day => day.withOutcomes(outcomes)),
         unrated: state.unrated.filter(day => day.marketId !== marketId || day.date !== date),
         judged: complete && !state.judged.includes(key) ? [...state.judged, key] : state.judged,
       };
@@ -131,18 +128,18 @@ export const marketDayFeature = createFeature({
     // Optimistic on dispatch like the marks below, and for the same reason one rung up:
     // the whole-screen flip is the vendor's receipt (decision 38).
     on(ChangeStandClosure, (state, { marketId, date, closed }): MarketDayState =>
-      patchDay(state, marketId, date, day => ({ ...day, closed }))),
+      patchDay(state, marketId, date, day => day.withClosure({ closed }))),
     // A failed close reopens the stand, silently — the state returning is the disclosure.
     on(ChangeStandClosureFailure, (state, { marketId, date, closed }): MarketDayState =>
-      patchDay(state, marketId, date, day => ({ ...day, closed: !closed }))),
+      patchDay(state, marketId, date, day => day.withClosure({ closed: !closed }))),
     // Optimistic on dispatch, not on success: the moving row is the vendor's receipt
     // (live-mode decision 7), so it cannot wait on market wifi.
     on(ChangeItemAvailability, (state, { marketId, date, itemId, soldOut }): MarketDayState =>
-      patchAvailability(state, marketId, date, itemId, soldOut)),
+      patchDay(state, marketId, date, day => day.withAvailability(itemId, { soldOut }))),
     // A failed tap snaps its own row back, silently — the row returning is the disclosure,
     // and the queued requests around it stand.
     on(ChangeItemAvailabilityFailure, (state, { marketId, date, itemId, soldOut }): MarketDayState =>
-      patchAvailability(state, marketId, date, itemId, !soldOut)),
+      patchDay(state, marketId, date, day => day.withAvailability(itemId, { soldOut: !soldOut }))),
   ),
 });
 
