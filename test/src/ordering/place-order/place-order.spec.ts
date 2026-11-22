@@ -12,6 +12,7 @@ describe('Place Order', () => {
   beforeEach(() => {
     store = new InMemoryEventStore();
     tradingDays = new InMemoryTradingDays();
+    tradingDays.setMenu('dish-id', 'another-dish-id');
     handler = new PlaceOrderHandler(new Orders(new VendorScopedEvents(store)), tradingDays);
   });
 
