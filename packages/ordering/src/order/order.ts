@@ -42,7 +42,7 @@ export class Order extends Aggregate {
       type: 'OrderPlaced',
       payload: {
         vendorId: vendorId.value(),
-        orderId: held.orderId,
+        orderId: this._id.value(),
         marketId: held.marketId,
         date: held.date,
         lines: held.lines,
@@ -58,7 +58,7 @@ export class Order extends Aggregate {
       type: 'OrderRefused',
       payload: {
         vendorId: vendorId.value(),
-        orderId: held.orderId,
+        orderId: this._id.value(),
         marketId: held.marketId,
         date: held.date,
         lines: held.lines,
