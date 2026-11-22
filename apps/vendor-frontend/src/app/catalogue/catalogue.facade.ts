@@ -1,8 +1,9 @@
 import { Signal } from '@angular/core';
-import { CatalogueItemView, ItemRevision, NewItem } from './catalogue';
+import { ItemRevision, NewItem } from './catalogue';
+import { Dish } from './dish';
 
 export abstract class CatalogueFacade {
-  abstract readonly items: Signal<CatalogueItemView[]>;
+  abstract readonly items: Signal<Dish[]>;
   abstract readonly loading: Signal<boolean>;
   abstract readonly photoUploading: Signal<boolean>;
   abstract readonly photoError: Signal<boolean>;

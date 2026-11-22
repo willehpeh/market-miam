@@ -1,5 +1,5 @@
 import { createAction, props } from '@ngrx/store';
-import { ItemOutcome, MarketDayView, UnratedMarketDay } from '../market-days';
+import { ItemOutcome, MarketDayView, UnratedMarketDayView } from '../market-days';
 
 export const LoadMarketDays = createAction('[Market Days] Load');
 export const LoadMarketDaysSuccess = createAction('[Market Days] Load Success', props<{ days: MarketDayView[] }>());
@@ -45,7 +45,7 @@ export const ChangeStandClosureFailure = createAction(
 export const LoadUnratedMarketDays = createAction('[Market Days] Load Unrated');
 export const LoadUnratedMarketDaysSuccess = createAction(
   '[Market Days] Load Unrated Success',
-  props<{ marketDays: UnratedMarketDay[] }>()
+  props<{ marketDays: UnratedMarketDayView[] }>()
 );
 // The prompt is a nudge, so a failed load leaves it silent rather than saying anything.
 export const LoadUnratedMarketDaysFailure = createAction('[Market Days] Load Unrated Failure');

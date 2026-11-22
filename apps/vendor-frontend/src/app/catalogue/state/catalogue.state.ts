@@ -1,5 +1,6 @@
-import { createFeature, createReducer, on } from '@ngrx/store';
+import { createFeature, createReducer, createSelector, on } from '@ngrx/store';
 import { CatalogueItemView } from '../catalogue';
+import { Dish } from '../dish';
 import {
   AddItemSuccess,
   BeginItem,
@@ -88,3 +89,6 @@ export const catalogueFeature = createFeature({
     })),
   ),
 });
+
+// Plain views in the store, dishes out of it.
+export const selectDishes = createSelector(catalogueFeature.selectItems, (items) => items.map((item) => new Dish(item)));

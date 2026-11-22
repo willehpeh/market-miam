@@ -1,10 +1,11 @@
 import { Injectable, signal } from '@angular/core';
 import { CatalogueFacade } from './catalogue.facade';
 import { CatalogueItemView, ItemRevision, NewItem } from './catalogue';
+import { Dish } from './dish';
 
 @Injectable()
 export class FakeCatalogueFacade implements CatalogueFacade {
-  readonly items = signal<CatalogueItemView[]>([]);
+  readonly items = signal<Dish[]>([]);
   readonly loading = signal(false);
   readonly photoUploading = signal(false);
   readonly photoError = signal(false);
@@ -19,6 +20,11 @@ export class FakeCatalogueFacade implements CatalogueFacade {
   changedPhoto: { itemId: string; imageReference: string } | undefined;
   reorderedItems: string[] | undefined;
   retiredItem: string | undefined;
+
+  // The dishes the catalogue holds, as the API answers them.
+  holding(...views: CatalogueItemView[]): void {
+    this.items.set(views.map((view) => new Dish(view)));
+  }
 
   load(): void {
     this.loaded = true;
@@ -56,6 +62,6 @@ export class FakeCatalogueFacade implements CatalogueFacade {
 // A catalogue that has already loaded these dishes.
 export function catalogueOf(...items: CatalogueItemView[]): FakeCatalogueFacade {
   const catalogue = new FakeCatalogueFacade();
-  catalogue.items.set(items);
+  catalogue.holding(...items);
   return catalogue;
 }

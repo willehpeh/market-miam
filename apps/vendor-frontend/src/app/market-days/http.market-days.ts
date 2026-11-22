@@ -1,7 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { map, Observable } from 'rxjs';
-import { ItemOutcome, MarketDays, MarketDayView, UnratedMarketDay } from './market-days';
+import { ItemOutcome, MarketDays, MarketDayView, UnratedMarketDayView } from './market-days';
 import { environment } from '../../environments/environment';
 
 type SentDay = Omit<MarketDayView, 'itemIds'> & { items: { itemId: string }[] };
@@ -23,9 +23,9 @@ export class HttpMarketDays implements MarketDays {
 
   // The one backward-looking read, and its own route: the upcoming list looks forward and
   // drops a day at endTime (decision 65).
-  unrated(): Observable<UnratedMarketDay[]> {
+  unrated(): Observable<UnratedMarketDayView[]> {
     return this.http
-      .get<{ marketDays: UnratedMarketDay[] }>(`${environment.apiBaseUrl}/api/market-days/unrated`)
+      .get<{ marketDays: UnratedMarketDayView[] }>(`${environment.apiBaseUrl}/api/market-days/unrated`)
       .pipe(map(({ marketDays }) => marketDays));
   }
 

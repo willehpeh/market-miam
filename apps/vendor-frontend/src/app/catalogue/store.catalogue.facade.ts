@@ -2,7 +2,7 @@ import { inject, Injectable } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { CatalogueFacade } from './catalogue.facade';
 import { ItemRevision, NewItem } from './catalogue';
-import { catalogueFeature } from './state/catalogue.state';
+import { catalogueFeature, selectDishes } from './state/catalogue.state';
 import {
   AddItem, BeginItem,
   ChangeItemPhoto, LoadCatalogue,
@@ -16,7 +16,7 @@ import {
 export class StoreCatalogueFacade implements CatalogueFacade {
   private readonly store = inject(Store);
 
-  readonly items = this.store.selectSignal(catalogueFeature.selectItems);
+  readonly items = this.store.selectSignal(selectDishes);
   readonly loading = this.store.selectSignal(catalogueFeature.selectLoading);
   private readonly fresh = this.store.selectSignal(catalogueFeature.selectFresh);
   readonly photoUploading = this.store.selectSignal(catalogueFeature.selectPhotoUploading);

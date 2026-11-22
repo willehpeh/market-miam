@@ -6,10 +6,6 @@ export type MarketDayPhase = 'future' | 'due' | 'trading' | 'over' | 'past';
 // only three the API accepts — an unknown word is a 400 at the edge.
 export type ItemOutcome = 'did_not_do_well' | 'did_well' | 'sold_out';
 
-export class MarketDay {
-  
-}
-
 // The day's menu is held as ids, not as the items the API joins on to it: the card counts
 // them and the editor ticks them, and both read names and prices from the catalogue store.
 export interface MarketDayView {
@@ -23,7 +19,7 @@ export interface MarketDayView {
   // Where now sits against this day, said by the server (decision 56): `due`, `trading` and
   // `over` are today, either side of the market's hours; `future` and `past` are the dates
   // around it. Never derived from the device clock (decision 21), and nothing the vendor does
-  // moves it — `closed` below is the fact they set. Read through live-status.ts, not directly.
+  // moves it — `closed` below is the fact they set. Read through MarketDay, not directly.
   phase: MarketDayPhase;
   // How long this phase has left, said by the server. The live screen sets one timer from
   // it instead of polling (decision 59). Absent for `future` and `past`, which no timer
@@ -56,7 +52,7 @@ export interface MarketDayView {
 // What the dashboard prompt renders (decision 65): a day to name and the two halves of the
 // link to its bilan. Deliberately not a MarketDayView — the prompt shows no menu, no hours
 // and no phase, and the bilan screen reads the day itself when the vendor arrives.
-export interface UnratedMarketDay {
+export interface UnratedMarketDayView {
   marketId: string;
   date: string;
   day: string;
@@ -65,15 +61,15 @@ export interface UnratedMarketDay {
 
 // The live screen's own slot (decision 58). Three states, not a day plus a boolean: the
 // screen must tell *not fetched yet* from *no such day*, or it flashes its guard state in
-// the moment before the day arrives.
-export type MarketDaySlot =
+// the moment before the day arrives. The store holds the view; the facade hands out the day.
+export type MarketDaySlot<Day> =
   | { status: 'loading' }
-  | { status: 'found'; day: MarketDayView }
+  | { status: 'found'; day: Day }
   | { status: 'missing' };
 
 export abstract class MarketDays {
   abstract upcoming(): Observable<MarketDayView[]>;
-  abstract unrated(): Observable<UnratedMarketDay[]>;
+  abstract unrated(): Observable<UnratedMarketDayView[]>;
   abstract day(marketId: string, date: string): Observable<MarketDayView>;
   abstract setMenu(marketId: string, date: string, itemIds: string[]): Observable<void>;
   abstract changeAvailability(marketId: string, date: string, itemId: string, soldOut: boolean): Observable<void>;

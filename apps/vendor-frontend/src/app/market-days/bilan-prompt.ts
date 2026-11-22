@@ -1,8 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Card } from '../core/card';
-import { longDate } from '../core/french-date';
 import { MarketDayFacade } from './market-day.facade';
+import { UnratedMarketDay } from './unrated-market-day';
 
 // Decision 65: the vendor this exists for is the one packing up and driving home, and they
 // are exactly the vendor who never judges the morning from the stall. The upcoming list
@@ -13,12 +13,12 @@ import { MarketDayFacade } from './market-day.facade';
   imports: [Card, RouterLink],
   host: { class: 'contents' },
   template: `
-    @if (unrated(); as day) {
+    @if (dayToJudge(); as day) {
       <mm-card>
         <h2 class="text-xl leading-tight">Bilan à faire</h2>
-        <p class="mt-4 font-bold text-ink">{{ day.label }}</p>
-        <p class="text-sm text-muted">{{ day.marketName }}</p>
-        <a [routerLink]="day.link" class="btn-link mt-4">
+        <p class="mt-4 font-bold text-ink">{{ day.label() }}</p>
+        <p class="text-sm text-muted">{{ day.marketName() }}</p>
+        <a [routerLink]="['/dashboard/market', day.marketId(), day.date(), 'bilan']" class="btn-link mt-4">
           <i class="fa-solid fa-clipboard-check" aria-hidden="true"></i>
           Faire le bilan
         </a>
@@ -31,15 +31,5 @@ export class BilanPrompt {
 
   // One day, never a list: a backlog is the cross-month retrospective this slice defers,
   // and the query answers oldest first, so this is the one about to fall out of the window.
-  readonly unrated = computed(() => {
-    const [day] = this.marketDays.unrated();
-    return day
-      ? {
-          label: longDate(day.day, day.date),
-          marketName: day.marketName,
-          link: ['/dashboard/market', day.marketId, day.date, 'bilan'],
-        }
-      : undefined;
-  });
-
+  readonly dayToJudge = computed((): UnratedMarketDay | undefined => this.marketDays.unrated()[0]);
 }

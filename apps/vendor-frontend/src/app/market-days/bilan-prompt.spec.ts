@@ -3,9 +3,10 @@ import { provideRouter } from '@angular/router';
 import { BilanPrompt } from './bilan-prompt';
 import { MarketDayFacade } from './market-day.facade';
 import { FakeMarketDayFacade } from './fake.market-day.facade';
-import { UnratedMarketDay } from './market-days';
+import { UnratedMarketDayView } from './market-days';
+import { UnratedMarketDay } from './unrated-market-day';
 
-const saturday: UnratedMarketDay = {
+const saturday: UnratedMarketDayView = {
   marketId: 'market-1',
   date: '2026-08-15',
   day: 'SAT',
@@ -26,7 +27,7 @@ describe('BilanPrompt', () => {
   // asking from in here dispatched a load that closed that gate, which destroyed this card,
   // which re-created it on the response, which asked again.
   it('reads the days the dashboard already asked for', async () => {
-    const { marketDays } = await renderPrompt((facade) => facade.unrated.set([saturday]));
+    const { marketDays } = await renderPrompt((facade) => facade.unrated.set([new UnratedMarketDay(saturday)]));
 
     expect(marketDays.loadedUnrated).toBe(0);
   });
@@ -42,7 +43,7 @@ describe('BilanPrompt', () => {
   // Decision 65: the upcoming list drops a day at endTime, so this is the only door back
   // to a market that finished — and it links at the bilan, not at the live screen.
   it('names the market to judge and links at its bilan', async () => {
-    await renderPrompt((marketDays) => marketDays.unrated.set([saturday]));
+    await renderPrompt((marketDays) => marketDays.unrated.set([new UnratedMarketDay(saturday)]));
 
     expect(screen.getByRole('heading', { name: /bilan/i })).toBeTruthy();
     expect(screen.getByText(/samedi 15 août/i)).toBeTruthy();
@@ -57,7 +58,10 @@ describe('BilanPrompt', () => {
   // about to fall out of the seven-day window.
   it('asks about one market at a time, the oldest first', async () => {
     await renderPrompt((marketDays) =>
-      marketDays.unrated.set([saturday, { ...saturday, date: '2026-08-16', day: 'SUN' }]),
+      marketDays.unrated.set([
+        new UnratedMarketDay(saturday),
+        new UnratedMarketDay({ ...saturday, date: '2026-08-16', day: 'SUN' }),
+      ]),
     );
 
     expect(screen.getAllByRole('link')).toHaveLength(1);

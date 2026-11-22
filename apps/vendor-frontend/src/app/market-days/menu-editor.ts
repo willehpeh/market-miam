@@ -2,15 +2,11 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Card } from '../core/card';
 import { Spinner } from '../core/spinner';
-import { longDate } from '../core/french-date';
 import { CatalogueFacade } from '../catalogue/catalogue.facade';
-import { CatalogueItemView } from '../catalogue/catalogue';
 import { MarketPricesFacade } from '../market-prices/market-prices.facade';
 import { SellingRecordFacade } from '../selling-record/selling-record.facade';
 import { pile, PileName } from '../selling-record/pile';
-import { formatEuros } from '../catalogue/money';
 import { MarketDayFacade } from './market-day.facade';
-import { hasLiveScreen } from './live-screen/live-status';
 import { ClosedNotice } from './closed-notice';
 import { ReopenStand } from './reopen-stand';
 
@@ -33,8 +29,8 @@ const TONES: Record<PileName, string> = {
           <mm-spinner label="Chargement du marché…" />
         </div>
       } @else if (day(); as marketDay) {
-        <h1 class="text-xl leading-tight">{{ marketDay.label }}</h1>
-        <p class="mt-3 text-sm text-ink-soft">{{ marketDay.marketName }}</p>
+        <h1 class="text-xl leading-tight">{{ marketDay.label() }}</h1>
+        <p class="mt-3 text-sm text-ink-soft">{{ marketDay.marketName() }}</p>
         <a
           [routerLink]="['/dashboard/market-prices', marketId]"
           class="mt-1 inline-block text-sm font-bold text-brand no-underline"
@@ -42,7 +38,7 @@ const TONES: Record<PileName, string> = {
           Tarifs de ce marché →
         </a>
 
-        @if (marketDay.closed) {
+        @if (marketDay.isClosed()) {
           <mm-closed-notice />
         <mm-reopen-stand [marketId]="marketId" [date]="date" />
         } @else {
@@ -104,39 +100,32 @@ export class MenuEditor {
       this.record.loading(),
   );
 
-  private readonly occurrence = computed(() =>
-    this.marketDays.days().find((candidate) => candidate.marketId === this.marketId && candidate.date === this.date),
-  );
+  readonly day = computed(() => this.marketDays.days().find((day) => day.isOn(this.marketId, this.date)));
 
   readonly back = computed(() =>
-    hasLiveScreen(this.occurrence()) ? `/dashboard/market/${this.marketId}/${this.date}/live` : '/dashboard',
+    this.day()?.hasLiveScreen() ? `/dashboard/market/${this.marketId}/${this.date}/live` : '/dashboard',
   );
 
-  readonly day = computed(() => {
-    const occurrence = this.occurrence();
-    return occurrence
-      ? { label: longDate(occurrence.day, occurrence.date), marketName: occurrence.market.name, closed: occurrence.closed }
-      : undefined;
-  });
-
   private readonly touched = signal<ReadonlySet<string> | null>(null);
-  private readonly selected = computed(() => this.touched() ?? new Set(this.occurrence()?.itemIds ?? []));
+  private readonly selected = computed(() => this.touched() ?? new Set(this.day()?.menuItemIds()));
 
-  private readonly set = this.prices.pricesFor(this.marketId);
+  private readonly marketPrices = this.prices.pricesFor(this.marketId);
 
   private readonly bilans = this.record.bilansFor(this.marketId);
 
   readonly items = computed(() => {
     const bilans = this.bilans();
-    return this.catalogue.items().map((item) => {
-      const pileName = pile(bilans[item.itemId] ?? []);
+    return this.catalogue.items().map((dish) => {
+      const pileName = pile(bilans[dish.itemId()] ?? []);
+      const quote = dish.pricing().quoteAt(this.marketPrices()[dish.itemId()]);
       return {
-        itemId: item.itemId,
-        name: item.name,
-        ...quote(item, this.set()[item.itemId]),
+        itemId: dish.itemId(),
+        name: dish.name(),
+        priceLabel: quote.label,
+        atMarketPrice: quote.setByMarket,
         pile: pileName,
         pileTone: pileName ? TONES[pileName] : '',
-        chosen: this.selected().has(item.itemId),
+        chosen: this.selected().has(dish.itemId()),
       };
     });
   });
@@ -159,20 +148,4 @@ export class MenuEditor {
   save(): void {
     this.marketDays.setMenu(this.marketId, this.date, [...this.selected()]);
   }
-}
-
-function quote(
-  item: CatalogueItemView,
-  set: number | Record<string, number> | undefined,
-): { priceLabel: string; atMarketPrice: boolean } {
-  if (!item.variants) {
-    const market = typeof set === 'number' ? set : undefined;
-    return { priceLabel: formatEuros(market ?? item.price ?? 0), atMarketPrice: market !== undefined };
-  }
-  const variants = item.variants.map((variant) => {
-    const market = typeof set === 'object' ? set[variant.name] : undefined;
-    return { price: market ?? variant.price, atMarketPrice: market !== undefined };
-  });
-  const cheapest = variants.reduce((lowest, variant) => (variant.price < lowest.price ? variant : lowest));
-  return { priceLabel: `dès ${formatEuros(cheapest.price)}`, atMarketPrice: cheapest.atMarketPrice };
 }

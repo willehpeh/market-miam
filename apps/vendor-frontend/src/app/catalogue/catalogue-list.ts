@@ -1,10 +1,9 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ITEM_PHOTO_THUMBNAIL_TRANSFORMATION } from '@market-miam/common';
 import { CloudinaryUrlPipe } from '../core/cloudinary-url.pipe';
 import { CatalogueFacade } from './catalogue.facade';
 import { StorefrontFacade } from '../storefront/storefront.facade';
-import { formatEuros } from './money';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -54,7 +53,7 @@ import { formatEuros } from './money';
         <i class="fa-solid fa-plus" aria-hidden="true"></i>
         Ajouter
       </a>
-      @if (items().length > 1) {
+      @if (dishes().length > 1) {
         <a routerLink="/dashboard/catalogue/order" class="btn-link-alt">
           <i class="fa-solid fa-list-ol" aria-hidden="true"></i>
           Changer l'ordre
@@ -63,17 +62,18 @@ import { formatEuros } from './money';
     </div>
 
     <ul class="mt-6 space-y-3">
-      @for (item of items(); track item.itemId) {
+      @for (dish of dishes(); track dish.itemId()) {
+        @let pricing = dish.pricing();
         <li>
           <a
-            [routerLink]="['/dashboard/catalogue', item.itemId, 'edit']"
+            [routerLink]="['/dashboard/catalogue', dish.itemId(), 'edit']"
             class="block rounded-card border border-line bg-surface p-3 no-underline"
           >
             <div class="flex items-center gap-4">
-              @if (item.imageReference) {
+              @if (dish.imageReference(); as reference) {
                 <img
                   class="size-16 shrink-0 rounded-field object-cover"
-                  [src]="item.imageReference | cloudinaryUrl: thumbnailTransformation"
+                  [src]="reference | cloudinaryUrl: thumbnailTransformation"
                   alt=""
                 >
               } @else {
@@ -82,25 +82,25 @@ import { formatEuros } from './money';
                 </span>
               }
               <div class="min-w-0 flex-1">
-                <p class="break-words text-sm font-bold text-ink">{{ item.name }}</p>
-                @if (item.formats) {
-                  <p class="font-mono text-xs uppercase tracking-label text-muted">{{ item.formats.length }} formats</p>
+                <p class="break-words text-sm font-bold text-ink">{{ dish.name() }}</p>
+                @if (pricing.isSoldByVariant()) {
+                  <p class="font-mono text-xs uppercase tracking-label text-muted">{{ pricing.variants().length }} formats</p>
                 }
-                @if (item.allergensUndeclared) {
+                @if (!dish.allergensDeclared()) {
                   <p class="mt-1 flex items-center gap-1.5 text-xs font-bold text-danger">
                     <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
                     Allergènes à renseigner
                   </p>
                 }
               </div>
-              <p class="shrink-0 whitespace-pre text-right font-mono text-sm font-bold text-ink">{{ item.priceLabel }}</p>
+              <p class="shrink-0 whitespace-pre text-right font-mono text-sm font-bold text-ink">{{ pricing.label() }}</p>
             </div>
-            @if (item.formats) {
+            @if (pricing.isSoldByVariant()) {
               <ul class="mt-3 space-y-1 border-t border-line pt-3">
-                @for (format of item.formats; track format.name) {
+                @for (variant of pricing.variants(); track variant.name()) {
                   <li class="flex justify-between gap-3 text-sm">
-                    <span class="min-w-0 break-words text-ink-soft">{{ format.name }}</span>
-                    <span class="shrink-0 font-mono text-ink-soft">{{ format.priceLabel }}</span>
+                    <span class="min-w-0 break-words text-ink-soft">{{ variant.name() }}</span>
+                    <span class="shrink-0 font-mono text-ink-soft">{{ variant.price().label() }}</span>
                   </li>
                 }
               </ul>
@@ -124,28 +124,7 @@ export class CatalogueList {
   }
 
   readonly thumbnailTransformation = ITEM_PHOTO_THUMBNAIL_TRANSFORMATION;
-  readonly items = computed(() =>
-    this.catalogue.items().map((item) => item.variants
-      ? {
-          itemId: item.itemId,
-          name: item.name,
-          imageReference: item.imageReference,
-          // The newline is load-bearing: whitespace-pre keeps it, so "dès" always sits on
-          // its own line and the price column stays as narrow as its widest price.
-          priceLabel: `dès\n${formatEuros(Math.min(...item.variants.map((v) => v.price)))}`,
-          formats: item.variants.map((v) => ({ name: v.name, priceLabel: formatEuros(v.price) })),
-          allergensUndeclared: item.allergens === null,
-        }
-      : {
-          itemId: item.itemId,
-          name: item.name,
-          imageReference: item.imageReference,
-          priceLabel: formatEuros(item.price ?? 0),
-          formats: null as { name: string; priceLabel: string }[] | null,
-          allergensUndeclared: item.allergens === null,
-        },
-    ),
-  );
+  readonly dishes = this.catalogue.items;
 
   constructor() {
     this.catalogue.load();

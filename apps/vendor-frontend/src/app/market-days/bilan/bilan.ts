@@ -2,10 +2,8 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Card } from '../../core/card';
 import { Spinner } from '../../core/spinner';
-import { longDate } from '../../core/french-date';
 import { CatalogueFacade } from '../../catalogue/catalogue.facade';
 import { MarketDayFacade } from '../market-day.facade';
-import { hasLiveScreen, isFinished } from '../live-screen/live-status';
 import { ItemOutcome } from '../market-days';
 
 // Worst to best, and the order the vendor reads them in. Working copy, not settled
@@ -29,10 +27,10 @@ const CHOICES: { outcome: ItemOutcome; label: string }[] = [
           <mm-spinner label="Chargement du marché…" />
         </div>
       } @else if (day(); as marketDay) {
-        <h1 class="text-xl leading-tight">{{ marketDay.label }}</h1>
-        <p class="mt-3 text-sm text-ink-soft">{{ marketDay.marketName }}</p>
+        <h1 class="text-xl leading-tight">{{ marketDay.label() }}</h1>
+        <p class="mt-3 text-sm text-ink-soft">{{ marketDay.marketName() }}</p>
 
-        @if (marketDay.finished) {
+        @if (marketDay.canBeJudged()) {
           <!-- Decision 64: one word. The three answers already say what is being asked,
                and a question above them states at day scale what the control answers at
                dish scale. -->
@@ -91,9 +89,11 @@ const CHOICES: { outcome: ItemOutcome; label: string }[] = [
                not a matter of waiting: a market called off before it opened never happened,
                and *pas encore* would promise a bilan that never comes. -->
           <p class="mt-6 text-sm text-ink-soft">
-            {{ marketDay.calledOff ? "Ce marché n'a pas eu lieu." : "Ce marché n'est pas encore terminé." }}
+            {{ marketDay.wasCalledOff() ? "Ce marché n'a pas eu lieu." : "Ce marché n'est pas encore terminé." }}
           </p>
-          @if (marketDay.live) {
+          <!-- Only a day the live screen would accept gets a link to it: a February market
+               is unfinished too, and that door opens onto a refusal. -->
+          @if (marketDay.hasLiveScreen()) {
             <a [routerLink]="liveLink" class="mt-4 inline-block font-bold text-brand no-underline">
               Voir le marché en direct
             </a>
@@ -125,50 +125,23 @@ export class Bilan {
 
   readonly loading = computed(() => this.marketDays.day().status === 'loading' || this.catalogue.loading());
 
-  private readonly occurrence = computed(() => {
+  readonly day = computed(() => {
     const slot = this.marketDays.day();
     return slot.status === 'found' ? slot.day : undefined;
-  });
-
-  readonly day = computed(() => {
-    const occurrence = this.occurrence();
-    return occurrence
-      ? {
-          label: longDate(occurrence.day, occurrence.date),
-          marketName: occurrence.market.name,
-          finished: isFinished(occurrence),
-          calledOff: occurrence.calledOff,
-          // Only a day the live screen would accept gets a link to it: a February market
-          // is unfinished too, and that door opens onto a refusal.
-          live: hasLiveScreen(occurrence),
-        }
-      : undefined;
   });
 
   // What the vendor answered this sitting, over what the day already knows. Owned from
   // the first tap, exactly as the menu editor's ticks are.
   private readonly answered = signal<Record<string, ItemOutcome>>({});
 
-  // The prefill is the service log, and a recorded bilan outranks it: a vendor who
-  // already overrode a mark should not meet the mark again on their second visit
-  // (decisions 49, 72).
-  private readonly recorded = computed<Record<string, ItemOutcome>>(() => {
-    const occurrence = this.occurrence();
-    const soldOut = Object.fromEntries(
-      (occurrence?.soldOutItemIds ?? []).map(itemId => [itemId, 'sold_out' as ItemOutcome]),
-    );
-    return { ...soldOut, ...occurrence?.outcomes };
-  });
-
-  // The day's menu joined to the catalogue, in catalogue order — the same join the live
-  // screen and the editor make.
   readonly rows = computed(() => {
-    const onMenu = new Set(this.occurrence()?.itemIds ?? []);
-    const outcomes = { ...this.recorded(), ...this.answered() };
-    return this.catalogue
-      .items()
-      .filter(item => onMenu.has(item.itemId))
-      .map(item => ({ itemId: item.itemId, name: item.name, outcome: outcomes[item.itemId] }));
+    const day = this.day();
+    const outcomes = { ...day?.outcomesSoFar(), ...this.answered() };
+    return (day?.menuOf(this.catalogue.items()) ?? []).map(dish => ({
+      itemId: dish.itemId(),
+      name: dish.name(),
+      outcome: outcomes[dish.itemId()],
+    }));
   });
 
   constructor() {

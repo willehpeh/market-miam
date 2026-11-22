@@ -7,8 +7,9 @@ import { Spinner } from '../core/spinner';
 import { CloudinaryUrlPipe } from '../core/cloudinary-url.pipe';
 import { DismissOnOutsidePress } from '../core/dismiss-on-outside-press';
 import { CatalogueFacade } from './catalogue.facade';
-import { CatalogueItemView } from './catalogue';
-import { centsToEuros, parseEurosToCents } from './money';
+import { Dish } from './dish';
+import { Pricing, Variant } from './pricing';
+import { Euros } from '../core/euros';
 import { ALLERGENS } from './allergens';
 
 type FormatModel = { name: string; price: string; description: string };
@@ -368,20 +369,20 @@ export class AddItem {
   protected readonly isEditing = this.routeItemId !== null;
   private readonly newItemId = crypto.randomUUID();
 
-  private readonly editing = computed(() =>
+  private readonly dish = computed(() =>
     this.routeItemId === null
       ? undefined
-      : this.catalogue.items().find((item) => item.itemId === this.routeItemId),
+      : this.catalogue.items().find((dish) => dish.hasId(this.routeItemId as string)),
   );
   // A new dish has nothing to wait for; an edit link waits for the dish it names, and
   // says so if the catalogue settles without it.
   protected readonly loading = computed(() => this.isEditing && this.catalogue.loading());
-  protected readonly missing = computed(() => this.isEditing && !this.loading() && this.editing() === undefined);
-  protected readonly itemId = computed(() => this.editing()?.itemId ?? this.newItemId);
+  protected readonly missing = computed(() => this.isEditing && !this.loading() && this.dish() === undefined);
+  protected readonly itemId = computed(() => this.dish()?.itemId() ?? this.newItemId);
 
   protected readonly previewTransformation = ITEM_PHOTO_PREVIEW_TRANSFORMATION;
   protected readonly photoReference = this.catalogue.newPhotoReference;
-  protected readonly previewRef = computed(() => this.photoReference() || this.editing()?.imageReference || '');
+  protected readonly previewRef = computed(() => this.photoReference() || this.dish()?.imageReference() || '');
   protected readonly uploading = this.catalogue.photoUploading;
   protected readonly uploadError = this.catalogue.photoError;
   protected readonly tooLarge = this.catalogue.photoTooLarge;
@@ -391,12 +392,12 @@ export class AddItem {
   // the identity check is made here against `previous.source`. Without it, a photo
   // finishing its upload patches the dish in the store and retypes the form under the
   // vendor.
-  protected readonly mode = linkedSignal<CatalogueItemView | undefined, 'single' | 'variants'>({
-    source: () => this.editing(),
-    computation: (item, previous) =>
-      previous && previous.source?.itemId === item?.itemId
+  protected readonly mode = linkedSignal<Dish | undefined, 'single' | 'variants'>({
+    source: () => this.dish(),
+    computation: (dish, previous) =>
+      previous && previous.source?.itemId() === dish?.itemId()
         ? previous.value
-        : item?.variants
+        : dish?.pricing().isSoldByVariant()
           ? 'variants'
           : 'single',
   });
@@ -408,10 +409,10 @@ export class AddItem {
   protected readonly confirmingFormat = signal<number | null>(null);
 
   // Same identity guard as `mode`, for the same reason.
-  private readonly model = linkedSignal<CatalogueItemView | undefined, ItemModel>({
-    source: () => this.editing(),
-    computation: (item, previous) =>
-      previous && previous.source?.itemId === item?.itemId ? previous.value : modelOf(item),
+  private readonly model = linkedSignal<Dish | undefined, ItemModel>({
+    source: () => this.dish(),
+    computation: (dish, previous) =>
+      previous && previous.source?.itemId() === dish?.itemId() ? previous.value : modelOf(dish),
   });
 
   // Every rule lives in the schema, so `fields().invalid()` is the whole answer and each
@@ -424,7 +425,7 @@ export class AddItem {
       path,
       () => this.mode() === 'single',
       (single) => {
-        validate(single.price, ({ value }) => (parseEurosToCents(value()) === null ? { kind: 'price' } : undefined));
+        validate(single.price, ({ value }) => (Euros.parse(value()) === null ? { kind: 'price' } : undefined));
       },
     );
     applyWhen(
@@ -434,7 +435,7 @@ export class AddItem {
         applyEach(formats.variants, (format) => {
           // Trimmed, not `required`: a name of spaces is a blank name on the storefront.
           validate(format.name, ({ value }) => (value().trim() === '' ? { kind: 'required' } : undefined));
-          validate(format.price, ({ value }) => (parseEurosToCents(value()) === null ? { kind: 'price' } : undefined));
+          validate(format.price, ({ value }) => (Euros.parse(value()) === null ? { kind: 'price' } : undefined));
         });
         // On the list itself: uniqueness is a property of the set, not of any one row.
         validate(formats.variants, ({ value }) => {
@@ -448,14 +449,13 @@ export class AddItem {
   protected readonly allergenChoices = ALLERGENS;
   // Null until declared. Same identity guard as `model`: a store update for the same dish
   // must not untick what the vendor ticked.
-  protected readonly allergens = linkedSignal<CatalogueItemView | undefined, string[] | null>({
-    source: () => this.editing(),
-    computation: (item, previous) =>
-      previous && previous.source?.itemId === item?.itemId ? previous.value : (item?.allergens ?? null),
+  protected readonly allergens = linkedSignal<Dish | undefined, string[] | null>({
+    source: () => this.dish(),
+    computation: (dish, previous) =>
+      previous && previous.source?.itemId() === dish?.itemId() ? previous.value : (dish?.allergens() ?? null),
   });
   protected readonly declaresNone = computed(() => this.allergens()?.length === 0);
 
-  private readonly priceCents = computed(() => parseEurosToCents(this.fields().value().price));
   protected readonly cannotSubmit = computed(() => this.uploading() || this.fields().invalid() || this.allergens() === null);
 
   // A disabled button is not an explanation. These read the form's own state rather than
@@ -553,51 +553,33 @@ export class AddItem {
 
   protected submit(event: Event): void {
     event.preventDefault();
-    const { name, description } = this.fields().value();
     const allergens = this.allergens();
-    if (allergens === null) {
+    const pricing = this.typedPricing();
+    if (allergens === null || pricing === null) {
       return;
     }
-    if (this.mode() === 'variants') {
-      const variants = this.parseVariants();
-      if (variants === null) {
-        return;
-      }
-      if (this.isEditing) {
-        this.catalogue.reviseItem({ itemId: this.itemId(), name, description, variants, allergens });
-      } else {
-        this.catalogue.addItem({ itemId: this.itemId(), name, description, variants, imageReference: this.photoReference() || undefined, allergens });
-      }
-      return;
-    }
-    const cents = this.priceCents();
-    if (cents === null) {
-      return;
-    }
+    const { name, description } = this.fields().value();
+    const details = { itemId: this.itemId(), name, description, allergens, ...pricing.value() };
     if (this.isEditing) {
-      this.catalogue.reviseItem({ itemId: this.itemId(), name, description, price: cents, allergens });
+      this.catalogue.reviseItem(details);
     } else {
-      this.catalogue.addItem({
-        itemId: this.itemId(),
-        name,
-        description,
-        price: cents,
-        imageReference: this.photoReference() || undefined,
-        allergens,
-      });
+      this.catalogue.addItem({ ...details, imageReference: this.photoReference() || undefined });
     }
   }
 
-  private parseVariants(): { name: string; description: string; price: number }[] | null {
-    const rows = this.fields().value().variants.map((row) => ({
-      name: row.name,
-      description: row.description,
-      price: parseEurosToCents(row.price),
-    }));
-    if (rows.some((row) => row.price === null)) {
-      return null;
+  // What the half of the form on show prices the dish at, or null while a price there does
+  // not read as an amount.
+  private typedPricing(): Pricing | null {
+    const { price, variants } = this.fields().value();
+    if (this.mode() === 'single') {
+      const euros = Euros.parse(price);
+      return euros ? Pricing.flat(euros) : null;
     }
-    return rows.map((row) => ({ name: row.name, description: row.description, price: row.price as number }));
+    const typed = variants.map((row) => {
+      const euros = Euros.parse(row.price);
+      return euros ? new Variant(row.name, row.description, euros) : null;
+    });
+    return typed.every((variant): variant is Variant => variant !== null) ? Pricing.byVariant(typed) : null;
   }
 }
 
@@ -605,13 +587,18 @@ function emptyFormat(): FormatModel {
   return { name: '', price: '', description: '' };
 }
 
-function modelOf(item: CatalogueItemView | undefined): ItemModel {
+function modelOf(dish: Dish | undefined): ItemModel {
+  const pricing = dish?.pricing();
   return {
-    name: item?.name ?? '',
-    price: item && item.price !== undefined ? centsToEuros(item.price) : '',
-    description: item?.description ?? '',
-    variants: item?.variants
-      ? item.variants.map((v) => ({ name: v.name, price: centsToEuros(v.price), description: v.description }))
+    name: dish?.name() ?? '',
+    price: pricing?.isFlat() ? pricing.price().asTyped() : '',
+    description: dish?.description() ?? '',
+    variants: pricing?.isSoldByVariant()
+      ? pricing.variants().map((variant) => ({
+          name: variant.name(),
+          price: variant.price().asTyped(),
+          description: variant.description(),
+        }))
       : [emptyFormat(), emptyFormat()],
   };
 }

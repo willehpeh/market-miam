@@ -607,7 +607,7 @@ describe('AddItem', () => {
     }
 
     function deliver(catalogue: FakeCatalogueFacade, items: CatalogueItemView[]) {
-      catalogue.items.set(items);
+      catalogue.holding(...items);
       catalogue.loading.set(false);
     }
 
@@ -675,7 +675,7 @@ describe('AddItem', () => {
       deliver(catalogue, [existing]);
       page.detectChanges().enterName('Bœuf mode');
 
-      catalogue.items.set([{ ...existing, imageReference: 'v2/items/acme/item-1' }]);
+      catalogue.holding({ ...existing, imageReference: 'v2/items/acme/item-1' });
       page.detectChanges();
 
       expect(page.nameField()).toHaveValue('Bœuf mode');

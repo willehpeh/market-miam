@@ -10,6 +10,7 @@ import { catalogueFeature } from './state/catalogue.state';
 import { CatalogueEffects } from './state/catalogue.effects';
 import { CatalogueFacade } from './catalogue.facade';
 import { StoreCatalogueFacade } from './store.catalogue.facade';
+import { Dish } from './dish';
 import { PhotoUploads } from '../storefront/photo-uploads';
 import { FakePhotoUploads } from '../storefront/fake.photo-uploads';
 import { MAX_SOURCE_BYTES, MAX_UPLOAD_BYTES, PhotoDownscale } from '../storefront/photo-downscale';
@@ -94,7 +95,7 @@ describe('Catalogue', () => {
 
     httpCtrl.expectOne('/api/catalogue').flush({ items });
 
-    expect(facade.items()).toEqual(items);
+    expect(facade.items()).toEqual(items.map((item) => new Dish(item)));
     expect(facade.loading()).toBe(false);
   });
 
@@ -228,7 +229,7 @@ describe('Catalogue', () => {
     expect(put.request.body).toEqual({ imageReference: 'v1/vendors/acme/items/item-1' });
     put.flush(null);
 
-    expect(facade.items()[0].imageReference).toBe('v1/vendors/acme/items/item-1');
+    expect(facade.items()[0].imageReference()).toBe('v1/vendors/acme/items/item-1');
   });
 
   it('does not persist an uploaded photo for an item not yet in the catalogue', () => {
@@ -273,7 +274,7 @@ describe('Catalogue', () => {
     httpCtrl.expectOne('/api/catalogue').flush(null);
 
     expect(facade.items()).toEqual([
-      { itemId: 'coq', name: 'Coq au vin', description: 'Mijoté', price: 1500, imageReference: 'v1/vendors/acme/items/coq', allergens: ['celery'] },
+      new Dish({ itemId: 'coq', name: 'Coq au vin', description: 'Mijoté', price: 1500, imageReference: 'v1/vendors/acme/items/coq', allergens: ['celery'] }),
     ]);
   });
 
@@ -282,7 +283,7 @@ describe('Catalogue', () => {
 
     httpCtrl.expectOne('/api/catalogue').flush(null);
 
-    expect(facade.items()[0].imageReference).toBe('');
+    expect(facade.items()[0].imageReference()).toBe('');
   });
 
   it('revises an item, putting its new fields to its item id', () => {
@@ -302,7 +303,7 @@ describe('Catalogue', () => {
     httpCtrl.expectOne('/api/catalogue/item-1').flush(null);
 
     expect(facade.items()).toEqual([
-      { itemId: 'item-1', name: 'Bœuf mode', description: 'Version express', price: 1400, imageReference: 'v1/items/acme/item-1', allergens: ['eggs'] },
+      new Dish({ itemId: 'item-1', name: 'Bœuf mode', description: 'Version express', price: 1400, imageReference: 'v1/items/acme/item-1', allergens: ['eggs'] }),
     ]);
   });
 
@@ -316,14 +317,14 @@ describe('Catalogue', () => {
   });
 
   it('reorders the items it holds on success', () => {
-    const second = { itemId: 'item-2', name: 'Blanquette de veau', description: 'À l\'ancienne', price: 1100, imageReference: 'v1/items/acme/item-2' };
+    const second: CatalogueItemView = { itemId: 'item-2', name: 'Blanquette de veau', description: 'À l\'ancienne', price: 1100, imageReference: 'v1/items/acme/item-2', allergens: null };
     facade.load();
     httpCtrl.expectOne('/api/catalogue').flush({ items: [...items, second] });
 
     facade.reorderItems(['item-2', 'item-1']);
     httpCtrl.expectOne('/api/catalogue/order').flush(null);
 
-    expect(facade.items()).toEqual([second, ...items]);
+    expect(facade.items()).toEqual([second, ...items].map((item) => new Dish(item)));
   });
 
   it('returns to the catalogue once the new order is saved', async () => {
@@ -342,14 +343,14 @@ describe('Catalogue', () => {
   });
 
   it('drops the retired item from the ones it holds on success', () => {
-    const second = { itemId: 'item-2', name: 'Blanquette de veau', description: 'À l\'ancienne', price: 1100, imageReference: 'v1/items/acme/item-2' };
+    const second: CatalogueItemView = { itemId: 'item-2', name: 'Blanquette de veau', description: 'À l\'ancienne', price: 1100, imageReference: 'v1/items/acme/item-2', allergens: null };
     facade.load();
     httpCtrl.expectOne('/api/catalogue').flush({ items: [...items, second] });
 
     facade.retireItem('item-1');
     httpCtrl.expectOne('/api/catalogue/item-1').flush(null);
 
-    expect(facade.items()).toEqual([second]);
+    expect(facade.items()).toEqual([new Dish(second)]);
   });
 
   it('keeps the item when the deletion fails', () => {
@@ -359,7 +360,7 @@ describe('Catalogue', () => {
     facade.retireItem('item-1');
     httpCtrl.expectOne('/api/catalogue/item-1').flush('nope', serverError);
 
-    expect(facade.items()).toEqual(items);
+    expect(facade.items()).toEqual(items.map((item) => new Dish(item)));
   });
 
   it('returns to the catalogue once the item is deleted', async () => {
@@ -386,7 +387,7 @@ describe('Catalogue', () => {
     httpCtrl.expectOne('/api/catalogue/item-1/photo').flush(null);
 
     expect(facade.items()).toEqual([
-      { itemId: 'item-1', name: 'Bœuf bourguignon', description: 'Mijoté maison', price: 1300, imageReference: 'v3/items/acme/item-1', allergens: ['gluten', 'milk'] },
+      new Dish({ itemId: 'item-1', name: 'Bœuf bourguignon', description: 'Mijoté maison', price: 1300, imageReference: 'v3/items/acme/item-1', allergens: ['gluten', 'milk'] }),
     ]);
   });
 });
