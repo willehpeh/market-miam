@@ -137,10 +137,10 @@ export class Bilan {
   readonly rows = computed(() => {
     const day = this.day();
     const outcomes = { ...day?.outcomesSoFar(), ...this.answered() };
-    return (day?.menuOf(this.catalogue.items()) ?? []).map(item => ({
-      itemId: item.itemId,
-      name: item.name,
-      outcome: outcomes[item.itemId],
+    return (day?.menuOf(this.catalogue.items()) ?? []).map(dish => ({
+      itemId: dish.itemId(),
+      name: dish.name(),
+      outcome: outcomes[dish.itemId()],
     }));
   });
 

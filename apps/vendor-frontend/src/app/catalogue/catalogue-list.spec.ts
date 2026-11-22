@@ -28,7 +28,7 @@ describe('CatalogueList', () => {
   it('lists each item with its name and price in euros', async () => {
     const catalogue = new FakeCatalogueFacade();
     const page = await CatalogueListPageObject.render({ catalogue });
-    catalogue.items.set([item(), item({ itemId: 'item-2', name: 'Blanquette de veau', price: 1100 })]);
+    catalogue.holding(item(), item({ itemId: 'item-2', name: 'Blanquette de veau', price: 1100 }));
     page.detectChanges();
 
     expect(screen.getByText('Bœuf bourguignon')).toBeInTheDocument();
@@ -40,7 +40,7 @@ describe('CatalogueList', () => {
   it('shows a variant item as "dès {min} €" with its formats listed', async () => {
     const catalogue = new FakeCatalogueFacade();
     const page = await CatalogueListPageObject.render({ catalogue });
-    catalogue.items.set([{
+    catalogue.holding({
       itemId: 'pizza',
       name: 'Pizza',
       description: 'Wood-fired',
@@ -50,7 +50,7 @@ describe('CatalogueList', () => {
         { name: 'Petite', description: '', price: 950 },
         { name: 'Grande', description: '', price: 1600 },
       ],
-    }]);
+    });
     page.detectChanges();
 
     expect(screen.getByText('dès 9,50 €')).toBeInTheDocument();
@@ -64,7 +64,7 @@ describe('CatalogueList', () => {
   it('flags a dish whose allergens are not declared yet', async () => {
     const catalogue = new FakeCatalogueFacade();
     const page = await CatalogueListPageObject.render({ catalogue });
-    catalogue.items.set([item({ itemId: 'old', name: 'Tarte tatin', allergens: null }), item({ itemId: 'new', name: 'Parmentier' })]);
+    catalogue.holding(item({ itemId: 'old', name: 'Tarte tatin', allergens: null }), item({ itemId: 'new', name: 'Parmentier' }));
     page.detectChanges();
 
     const flagged = screen.getAllByText('Allergènes à renseigner');
@@ -76,7 +76,7 @@ describe('CatalogueList', () => {
   it('flags nothing on a dish declared free of the 14', async () => {
     const catalogue = new FakeCatalogueFacade();
     const page = await CatalogueListPageObject.render({ catalogue });
-    catalogue.items.set([item({ allergens: [] })]);
+    catalogue.holding(item({ allergens: [] }));
     page.detectChanges();
 
     expect(screen.queryByText('Allergènes à renseigner')).not.toBeInTheDocument();
@@ -85,7 +85,7 @@ describe('CatalogueList', () => {
   it('lists the items in catalogue order, as the storefront shows them', async () => {
     const catalogue = new FakeCatalogueFacade();
     const page = await CatalogueListPageObject.render({ catalogue });
-    catalogue.items.set([item({ itemId: 'item-1' }), item({ itemId: 'item-2' })]);
+    catalogue.holding(item({ itemId: 'item-1' }), item({ itemId: 'item-2' }));
     page.detectChanges();
 
     const editHrefs = page.dishLinks().map((link) => link.getAttribute('href'));
@@ -95,7 +95,7 @@ describe('CatalogueList', () => {
   it('renders each item photo with a thumbnail rendition', async () => {
     const catalogue = new FakeCatalogueFacade();
     const page = await CatalogueListPageObject.render({ catalogue });
-    catalogue.items.set([item({ imageReference: 'v1/items/acme/item-1' })]);
+    catalogue.holding(item({ imageReference: 'v1/items/acme/item-1' }));
     page.detectChanges();
 
     expect(page.photo()).toHaveAttribute(
@@ -107,7 +107,7 @@ describe('CatalogueList', () => {
   it('shows a camera placeholder instead of a broken image for an item with no photo', async () => {
     const catalogue = new FakeCatalogueFacade();
     const page = await CatalogueListPageObject.render({ catalogue });
-    catalogue.items.set([item({ imageReference: '' })]);
+    catalogue.holding(item({ imageReference: '' }));
     page.detectChanges();
 
     expect(page.queryPhoto()).toBeNull();
@@ -117,7 +117,7 @@ describe('CatalogueList', () => {
   it('links each item to its edit route', async () => {
     const catalogue = new FakeCatalogueFacade();
     const page = await CatalogueListPageObject.render({ catalogue });
-    catalogue.items.set([item()]);
+    catalogue.holding(item());
     page.detectChanges();
 
     expect(page.dishLink(/bœuf bourguignon/i)).toHaveAttribute('href', '/dashboard/catalogue/item-1/edit');
@@ -126,7 +126,7 @@ describe('CatalogueList', () => {
   it('links the add-item button to the new-item route', async () => {
     const catalogue = new FakeCatalogueFacade();
     const page = await CatalogueListPageObject.render({ catalogue });
-    catalogue.items.set([item()]);
+    catalogue.holding(item());
     page.detectChanges();
 
     expect(page.addDishLink()).toHaveAttribute('href', '/dashboard/catalogue/new');
@@ -135,7 +135,7 @@ describe('CatalogueList', () => {
   it('offers to reorder once there are two items to put in an order', async () => {
     const catalogue = new FakeCatalogueFacade();
     const page = await CatalogueListPageObject.render({ catalogue });
-    catalogue.items.set([item(), item({ itemId: 'item-2', name: 'Blanquette de veau' })]);
+    catalogue.holding(item(), item({ itemId: 'item-2', name: 'Blanquette de veau' }));
     page.detectChanges();
 
     expect(page.reorderLink()).toHaveAttribute('href', '/dashboard/catalogue/order');
@@ -144,7 +144,7 @@ describe('CatalogueList', () => {
   it('has nothing to reorder with a single item', async () => {
     const catalogue = new FakeCatalogueFacade();
     const page = await CatalogueListPageObject.render({ catalogue });
-    catalogue.items.set([item()]);
+    catalogue.holding(item());
     page.detectChanges();
 
     expect(page.queryReorderLink()).toBeNull();
@@ -159,7 +159,7 @@ describe('CatalogueList', () => {
   it('drops the empty line once the catalogue has an item', async () => {
     const catalogue = new FakeCatalogueFacade();
     const page = await CatalogueListPageObject.render({ catalogue });
-    catalogue.items.set([item()]);
+    catalogue.holding(item());
     page.detectChanges();
 
     expect(screen.queryByText(/carte est vide/i)).toBeNull();

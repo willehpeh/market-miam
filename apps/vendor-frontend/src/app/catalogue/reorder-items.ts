@@ -14,12 +14,12 @@ import { CatalogueFacade } from './catalogue.facade';
     </div>
 
     <ul class="mt-6 divide-y divide-line">
-      @for (item of order(); track item.itemId; let index = $index) {
+      @for (dish of order(); track dish.itemId(); let index = $index) {
         <li class="flex items-center gap-2 py-2">
-          @if (item.imageReference) {
+          @if (dish.imageReference(); as reference) {
             <img
               class="size-16 shrink-0 rounded-field object-cover"
-              [src]="item.imageReference | cloudinaryUrl: thumbnailTransformation"
+              [src]="reference | cloudinaryUrl: thumbnailTransformation"
               alt=""
             >
           } @else {
@@ -27,11 +27,11 @@ import { CatalogueFacade } from './catalogue.facade';
               <i class="fa-solid fa-camera" aria-hidden="true"></i>
             </span>
           }
-          <span class="min-w-0 flex-1 break-words text-sm font-bold text-ink">{{ item.name }}</span>
+          <span class="min-w-0 flex-1 break-words text-sm font-bold text-ink">{{ dish.name() }}</span>
           <button
             type="button"
             class="icon-btn shrink-0"
-            [attr.aria-label]="'Descendre ' + item.name"
+            [attr.aria-label]="'Descendre ' + dish.name()"
             [disabled]="index === order().length - 1"
             (click)="moveDown(index)"
           >
@@ -40,7 +40,7 @@ import { CatalogueFacade } from './catalogue.facade';
           <button
             type="button"
             class="icon-btn shrink-0"
-            [attr.aria-label]="'Monter ' + item.name"
+            [attr.aria-label]="'Monter ' + dish.name()"
             [disabled]="index === 0"
             (click)="moveUp(index)"
           >
@@ -64,7 +64,7 @@ export class ReorderItems {
   }
 
   protected save(): void {
-    this.catalogue.reorderItems(this.order().map((item) => item.itemId));
+    this.catalogue.reorderItems(this.order().map((dish) => dish.itemId()));
   }
 
   protected moveUp(index: number): void {

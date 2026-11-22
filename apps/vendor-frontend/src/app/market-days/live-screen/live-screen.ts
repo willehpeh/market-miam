@@ -8,8 +8,7 @@ import { CatalogueFacade } from '../../catalogue/catalogue.facade';
 import { MarketDayFacade } from '../market-day.facade';
 import { ClosedNotice } from '../closed-notice';
 import { ReopenStand } from '../reopen-stand';
-
-type Row = { itemId: string; name: string };
+import { Dish } from '../../catalogue/dish';
 
 @Component({
   selector: 'mm-live-screen',
@@ -52,18 +51,18 @@ type Row = { itemId: string; name: string };
              the same two groups — and decision 70 left them there when the bilan took its
              own route, so nothing but availability has ever landed on them. -->
         <ul class="mt-6 space-y-2">
-          @for (item of active(); track item.itemId) {
+          @for (item of active(); track item.itemId()) {
             <li>
               <button
                 #row
                 type="button"
                 class="w-full rounded-card border p-3 text-left font-bold text-ink disabled:opacity-100"
                 [class]="marketDay.hasEnded() ? 'border-transparent bg-canvas' : 'border-line bg-surface'"
-                [attr.data-item]="item.itemId"
+                [attr.data-item]="item.itemId()"
                 [disabled]="marketDay.hasEnded()"
                 (click)="markSoldOut(item)"
               >
-                {{ item.name }}
+                {{ item.name() }}
               </button>
             </li>
           }
@@ -73,18 +72,18 @@ type Row = { itemId: string; name: string };
           <section class="mt-8" aria-labelledby="epuises-heading">
             <h2 id="epuises-heading" class="text-sm font-bold uppercase tracking-wide text-muted">Épuisés</h2>
             <ul class="mt-3 space-y-2">
-              @for (item of epuises(); track item.itemId) {
+              @for (item of epuises(); track item.itemId()) {
                 <li>
                   <button
                     #row
                     type="button"
                     class="w-full rounded-card border p-3 text-left font-bold text-muted disabled:opacity-100"
                     [class]="marketDay.hasEnded() ? 'border-transparent bg-canvas' : 'border-line bg-surface-sunk'"
-                    [attr.data-item]="item.itemId"
+                    [attr.data-item]="item.itemId()"
                     [disabled]="marketDay.hasEnded()"
                     (click)="markAvailable(item)"
                   >
-                    {{ item.name }}
+                    {{ item.name() }}
                   </button>
                 </li>
               }
@@ -226,8 +225,8 @@ export class LiveScreen {
     });
   }
 
-  private isSoldOut(item: Row): boolean {
-    return this.occurrence()?.isSoldOut(item.itemId) ?? false;
+  private isSoldOut(item: Dish): boolean {
+    return this.occurrence()?.isSoldOut(item.itemId()) ?? false;
   }
 
   private reask(): void {
@@ -238,14 +237,14 @@ export class LiveScreen {
     this.marketDays.close(this.marketId, this.date);
   }
 
-  markSoldOut(item: Row): void {
-    this.marketDays.markSoldOut(this.marketId, this.date, item.itemId);
-    this.moved(`${item.name} épuisé`, item.itemId);
+  markSoldOut(item: Dish): void {
+    this.marketDays.markSoldOut(this.marketId, this.date, item.itemId());
+    this.moved(`${item.name()} épuisé`, item.itemId());
   }
 
-  markAvailable(item: Row): void {
-    this.marketDays.markAvailable(this.marketId, this.date, item.itemId);
-    this.moved(`${item.name} disponible`, item.itemId);
+  markAvailable(item: Dish): void {
+    this.marketDays.markAvailable(this.marketId, this.date, item.itemId());
+    this.moved(`${item.name()} disponible`, item.itemId());
   }
 
   private moved(note: string, itemId: string): void {

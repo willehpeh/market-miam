@@ -1,13 +1,19 @@
 import { Observable } from 'rxjs';
 import { SignedUpload } from '../storefront/signed-upload';
 
+export interface VariantView {
+  name: string;
+  description: string;
+  price: number;
+}
+
 export interface CatalogueItemView {
   itemId: string;
   name: string;
   description: string;
   price?: number;
   imageReference: string;
-  variants?: { name: string; description: string; price: number }[];
+  variants?: VariantView[];
   // Codes of the 14. Null for a dish added before allergens existed: undeclared, not "none".
   allergens: string[] | null;
 }
@@ -22,7 +28,7 @@ export interface NewItem {
   description: string;
   price?: number;
   imageReference?: string;
-  variants?: { name: string; description: string; price: number }[];
+  variants?: VariantView[];
   allergens: string[];
 }
 
@@ -31,7 +37,7 @@ export interface ItemRevision {
   name: string;
   description: string;
   price?: number;
-  variants?: { name: string; description: string; price: number }[];
+  variants?: VariantView[];
   allergens: string[];
 }
 

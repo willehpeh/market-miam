@@ -78,7 +78,7 @@ function deliverReady(
   overrides: Partial<StorefrontView> = {},
 ) {
   storefront.view.set({ ...completeStorefront, subdomain: 'acme', ...overrides });
-  catalogue.items.set([aItem]);
+  catalogue.holding(aItem);
   markets.schedules.set([aSchedule]);
   legalIdentity.identity.set(anIdentity);
 }
@@ -297,7 +297,7 @@ describe('Dashboard', () => {
     const page = await DashboardPageObject.render({ storefront, catalogue });
     storefront.view.set(blankStorefront);
     page.detectChanges();
-    catalogue.items.set([aItem]);
+    catalogue.holding(aItem);
     page.detectChanges();
 
     const step = page.catalogueStep();
@@ -312,7 +312,7 @@ describe('Dashboard', () => {
     const page = await DashboardPageObject.render({ storefront, catalogue });
     storefront.view.set(blankStorefront);
     page.detectChanges();
-    catalogue.items.set([aItem, { ...aItem, itemId: 'item-2' }]);
+    catalogue.holding(aItem, { ...aItem, itemId: 'item-2' });
     page.detectChanges();
 
     const step = page.catalogueStep();

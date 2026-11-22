@@ -1,5 +1,6 @@
 import { formatTime, longDate, timeRange } from '../core/french-date';
 import { ItemOutcome, MarketDayView } from './market-days';
+import { Dish } from '../catalogue/dish';
 
 /**
  * One market on one date, as the server says it stands. Every question a screen asks of a
@@ -103,9 +104,9 @@ export class MarketDay {
 
   // In catalogue order. An id the catalogue has since retired drops out, as the API's own
   // readers ignore it.
-  menuOf<Item extends { itemId: string }>(catalogue: readonly Item[]): Item[] {
+  menuOf(catalogue: readonly Dish[]): Dish[] {
     const onMenu = new Set(this.view.itemIds);
-    return catalogue.filter((item) => onMenu.has(item.itemId));
+    return catalogue.filter((dish) => onMenu.has(dish.itemId()));
   }
 
   isSoldOut(itemId: string): boolean {

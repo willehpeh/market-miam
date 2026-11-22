@@ -3,11 +3,9 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Card } from '../core/card';
 import { Spinner } from '../core/spinner';
 import { CatalogueFacade } from '../catalogue/catalogue.facade';
-import { CatalogueItemView } from '../catalogue/catalogue';
 import { MarketPricesFacade } from '../market-prices/market-prices.facade';
 import { SellingRecordFacade } from '../selling-record/selling-record.facade';
 import { pile, PileName } from '../selling-record/pile';
-import { Euros } from '../core/euros';
 import { MarketDayFacade } from './market-day.facade';
 import { ClosedNotice } from './closed-notice';
 import { ReopenStand } from './reopen-stand';
@@ -111,21 +109,23 @@ export class MenuEditor {
   private readonly touched = signal<ReadonlySet<string> | null>(null);
   private readonly selected = computed(() => this.touched() ?? new Set(this.day()?.menuItemIds()));
 
-  private readonly set = this.prices.pricesFor(this.marketId);
+  private readonly marketPrices = this.prices.pricesFor(this.marketId);
 
   private readonly bilans = this.record.bilansFor(this.marketId);
 
   readonly items = computed(() => {
     const bilans = this.bilans();
-    return this.catalogue.items().map((item) => {
-      const pileName = pile(bilans[item.itemId] ?? []);
+    return this.catalogue.items().map((dish) => {
+      const pileName = pile(bilans[dish.itemId()] ?? []);
+      const quote = dish.pricing().quoteAt(this.marketPrices()[dish.itemId()]);
       return {
-        itemId: item.itemId,
-        name: item.name,
-        ...quote(item, this.set()[item.itemId]),
+        itemId: dish.itemId(),
+        name: dish.name(),
+        priceLabel: quote.label,
+        atMarketPrice: quote.setByMarket,
         pile: pileName,
         pileTone: pileName ? TONES[pileName] : '',
-        chosen: this.selected().has(item.itemId),
+        chosen: this.selected().has(dish.itemId()),
       };
     });
   });
@@ -148,20 +148,4 @@ export class MenuEditor {
   save(): void {
     this.marketDays.setMenu(this.marketId, this.date, [...this.selected()]);
   }
-}
-
-function quote(
-  item: CatalogueItemView,
-  set: number | Record<string, number> | undefined,
-): { priceLabel: string; atMarketPrice: boolean } {
-  if (!item.variants) {
-    const market = typeof set === 'number' ? set : undefined;
-    return { priceLabel: Euros.ofCents(market ?? item.price ?? 0).label(), atMarketPrice: market !== undefined };
-  }
-  const variants = item.variants.map((variant) => {
-    const market = typeof set === 'object' ? set[variant.name] : undefined;
-    return { price: market ?? variant.price, atMarketPrice: market !== undefined };
-  });
-  const cheapest = variants.reduce((lowest, variant) => (variant.price < lowest.price ? variant : lowest));
-  return { priceLabel: `dès ${Euros.ofCents(cheapest.price).label()}`, atMarketPrice: cheapest.atMarketPrice };
 }
