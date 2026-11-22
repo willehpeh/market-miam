@@ -24,61 +24,108 @@ const gitFiles = (...patterns) => execSync(
 // scenarios (`nx scenario api`) and the Auth0 test tenant (`nx run api:test:tenant`).
 const files = gitFiles('*.spec.ts', '*.scenario.ts', '*.tenant.ts');
 
-// Tokenizes just enough TypeScript to find describe/it/test calls and their
-// brace depth, skipping strings, template literals, and comments. Depth is what
-// rebuilds the nesting: a call's parent chain is every describe still open at a
-// shallower depth.
+// Each test links to its lines on GitHub at the commit the page was built from.
+const REPO_URL = 'https://github.com/willehpeh/market-miam';
+const commit = execSync(`git -C ${ROOT} rev-parse HEAD`, { encoding: 'utf8' }).trim();
+
+// Skips the comment or literal starting at `i` — comment, string, template, or
+// a regex where an operand may start — and returns the index just past it, or
+// -1 if none starts there. `prev` is the last significant character before `i`,
+// which is what tells a regex from a division.
+function skipLiteral(src, i, prev) {
+  const n = src.length, c = src[i];
+  if (c === '/' && src[i + 1] === '/') { while (i < n && src[i] !== '\n') i++; return i; }
+  if (c === '/' && src[i + 1] === '*') { i += 2; while (i < n && !(src[i] === '*' && src[i + 1] === '/')) i++; return i + 2; }
+  if (c === "'" || c === '"') { i++; while (i < n && src[i] !== c) { if (src[i] === '\\') i++; i++; } return i + 1; }
+  if (c === '`') {
+    i++;
+    while (i < n && src[i] !== '`') {
+      if (src[i] === '\\') { i += 2; continue; }
+      if (src[i] === '$' && src[i + 1] === '{') {
+        i += 2;
+        let d = 1, p = '{';
+        while (i < n && d > 0) {
+          const after = skipLiteral(src, i, p);
+          if (after >= 0) { i = after; p = ')'; continue; }
+          if (src[i] === '{') d++; else if (src[i] === '}') d--;
+          if (!/\s/.test(src[i])) p = src[i];
+          i++;
+        }
+        continue;
+      }
+      i++;
+    }
+    return i + 1;
+  }
+  if (c === '/' && (prev === '' || /[(,=:[!&|?{};+\-*%<>~^]/.test(prev))) {
+    let k = i + 1, inClass = false;
+    while (k < n && src[k] !== '\n') {
+      if (src[k] === '\\') { k += 2; continue; }
+      if (src[k] === '[') inClass = true;
+      else if (src[k] === ']') inClass = false;
+      else if (src[k] === '/' && !inClass) { k++; while (k < n && /[a-z]/.test(src[k])) k++; return k; }
+      k++;
+    }
+  }
+  return -1;
+}
+const isComment = (src, i) => src[i] === '/' && (src[i + 1] === '/' || src[i + 1] === '*');
+
+// The index just past the bracket that closes the one at `open`.
+function closeOf(src, open) {
+  let d = 0, prev = '';
+  for (let i = open; i < src.length;) {
+    const after = skipLiteral(src, i, prev);
+    if (after >= 0) { if (!isComment(src, i)) prev = ')'; i = after; continue; }
+    const c = src[i];
+    if (c === '(' || c === '[' || c === '{') d++;
+    else if (c === ')' || c === ']' || c === '}') { d--; if (d === 0) return i + 1; }
+    if (!/\s/.test(c)) prev = c;
+    i++;
+  }
+  return src.length;
+}
+
+// Tokenizes just enough TypeScript to find describe/it/test calls, their brace
+// depth and where each starts and ends. Depth is what rebuilds the nesting: a
+// call's parent chain is every describe still open at a shallower depth. The
+// offsets are what the page folds and highlights the code by.
 function parseSpecs(src) {
   const calls = [];
-  let i = 0, depth = 0;
+  let i = 0, depth = 0, prev = '';
   const n = src.length;
   while (i < n) {
+    const after = skipLiteral(src, i, prev);
+    if (after >= 0) { if (!isComment(src, i)) prev = ')'; i = after; continue; }
     const c = src[i];
-    if (c === '/' && src[i + 1] === '/') { while (i < n && src[i] !== '\n') i++; continue; }
-    if (c === '/' && src[i + 1] === '*') { i += 2; while (i < n && !(src[i] === '*' && src[i + 1] === '/')) i++; i += 2; continue; }
-    if (c === "'" || c === '"') {
-      i++; while (i < n && src[i] !== c) { if (src[i] === '\\') i++; i++; } i++; continue;
-    }
-    if (c === '`') {
-      i++;
-      while (i < n && src[i] !== '`') {
-        if (src[i] === '\\') { i += 2; continue; }
-        if (src[i] === '$' && src[i + 1] === '{') {
-          i += 2; let d = 1;
-          while (i < n && d > 0) { if (src[i] === '{') d++; else if (src[i] === '}') d--; i++; }
-          continue;
-        }
-        i++;
-      }
-      i++; continue;
-    }
-    if (c === '{') { depth++; i++; continue; }
-    if (c === '}') { depth--; i++; continue; }
-    if (/[A-Za-z_]/.test(c)) {
+    if (c === '{') { depth++; prev = c; i++; continue; }
+    if (c === '}') { depth--; prev = c; i++; continue; }
+    if (/[A-Za-z_$]/.test(c)) {
       // The 4000-char window must cover the longest it.each table between the
       // keyword and the test title.
       const m = /^(describe|it|test)((?:\.(?:each|skip|only|todo|concurrent|fails|skipIf|runIf)(?:\([^)]*\))?)*)\s*\(/.exec(src.slice(i, i + 4000));
-      if (m) {
+      if (m && !/[\w$.]/.test(src[i - 1] ?? '')) {
         let j = i + m[0].length;
         while (j < n && /\s/.test(src[j])) j++;
         const q = src[j];
-        let name = null;
         if (q === "'" || q === '"' || q === '`') {
-          let k = j + 1, buf = '';
+          let k = j + 1, name = '';
           while (k < n && src[k] !== q) {
-            if (src[k] === '\\') { buf += src[k + 1]; k += 2; continue; }
-            buf += src[k]; k++;
+            if (src[k] === '\\') { name += src[k + 1]; k += 2; continue; }
+            name += src[k]; k++;
           }
-          name = buf;
-        }
-        if (name !== null) {
-          calls.push({ type: m[1], mods: m[2] || '', name, depth });
-          i = j; continue;
+          calls.push({
+            type: m[1], mods: m[2] || '', name, depth,
+            start: i, titleStart: j, titleEnd: k + 1, end: closeOf(src, i + m[0].length - 1),
+          });
+          prev = q; i = k + 1; continue;
         }
       }
       while (i < n && /[A-Za-z0-9_$.]/.test(src[i])) i++;
+      prev = 'a';
       continue;
     }
+    if (!/\s/.test(c)) prev = c;
     i++;
   }
   return calls;
@@ -90,9 +137,47 @@ function testsFromCalls(calls) {
   for (const c of calls) {
     while (stack.length && stack[stack.length - 1].depth >= c.depth) stack.pop();
     if (c.type === 'describe') stack.push({ name: c.name, depth: c.depth });
-    else tests.push({ name: c.name, suite: stack.map(s => s.name), mods: c.mods });
+    else tests.push({ name: c.name, suite: stack.map(s => s.name), mods: c.mods, start: c.start, end: c.end });
   }
   return tests;
+}
+
+// Every file the page can show code from, parsed once: the specs, and the
+// contract suites they expand. Its text goes to sources.js, not the page.
+const sources = new Map();
+function load(absPath) {
+  if (!sources.has(absPath)) {
+    const text = readFileSync(absPath, 'utf8');
+    const calls = parseSpecs(text);
+    const lineStarts = [0];
+    for (let i = 0; i < text.length; i++) if (text[i] === '\n') lineStarts.push(i + 1);
+    const lineAt = offset => {
+      let lo = 0, hi = lineStarts.length - 1;
+      while (lo < hi) { const mid = (lo + hi + 1) >> 1; if (lineStarts[mid] <= offset) lo = mid; else hi = mid - 1; }
+      return lo + 1;
+    };
+    const tests = testsFromCalls(calls).map(({ start, end, ...t }) => ({
+      ...t, start, line: lineAt(start), endLine: lineAt(end - 1),
+    }));
+    sources.set(absPath, { rel: absPath.slice(ROOT.length + 1), text, calls, tests });
+  }
+  return sources.get(absPath);
+}
+
+// The run of import statements at the top of a file, which the page folds.
+function importBlock(text) {
+  const first = /^import\b/m.exec(text);
+  if (!first) return null;
+  let pos = first.index, end = pos;
+  while (text.startsWith('import', pos)) {
+    const semi = text.indexOf(';', pos);
+    if (semi < 0) break;
+    const eol = text.indexOf('\n', semi);
+    end = eol < 0 ? text.length : eol;
+    pos = end;
+    while (pos < text.length && /\s/.test(text[pos])) pos++;
+  }
+  return text.slice(first.index, end).includes('\n') ? [first.index, end] : null;
 }
 
 // Shared contract suites: the describe/it blocks live in a *.contract.ts file
@@ -107,7 +192,6 @@ for (const f of gitFiles('*.contract.ts')) {
     contractByName.set(m[1], f);
   }
 }
-const contractCache = new Map();
 function contractTests(specPath, src) {
   const results = [];
   const callRe = /\b(\w+Contract)\s*\(\s*(['"`])((?:\\.|(?!\2).)*)\2/g;
@@ -118,18 +202,15 @@ function contractTests(specPath, src) {
     const contractFile = imp[1].startsWith('.')
       ? resolve(dirname(specPath), imp[1]) + '.ts'
       : contractByName.get(fnName);
-    if (!contractFile) continue;
-    if (!contractCache.has(contractFile)) {
-      try {
-        contractCache.set(contractFile, testsFromCalls(parseSpecs(readFileSync(contractFile, 'utf8'))));
-      } catch { contractCache.set(contractFile, []); }
-    }
-    for (const t of contractCache.get(contractFile)) {
+    if (!contractFile || !existsSync(contractFile)) continue;
+    const contract = load(contractFile);
+    for (const t of contract.tests) {
       results.push({
+        ...t,
         name: t.name.replace(/\$\{[^}]+}/g, instanceName),
         suite: t.suite.map(s => s.replace(/\$\{[^}]+}/g, instanceName)),
-        mods: t.mods,
         contract: true,
+        src: contract.rel,
       });
     }
   }
@@ -240,17 +321,82 @@ function layerFor(relPath) {
   return 'other';
 }
 
+// What a spec exercises, read from its imports by the repo's own naming. A
+// reading aid, not a proof: a name the conventions miss lands nowhere.
+//   stand-ins  InMemory*, Fake*, Recording*, Handling*, Static*, the fixed clock
+//              — unless the spec is named after it, as an adapter's own spec is
+//   through    the page or api object it drives (ADRs 0062, 0064), or supertest
+//   real       code under test it constructs, renders, provides or calls
+// Test data (Test*, test*) and framework imports are none of these.
+const STAND_IN = /^(?:InMemory|Fake|Recording|Handling|Static|Stub|Spy)[A-Z]|^(?:fake|fixed|stub)[A-Z]/;
+const TEST_DATA = /^(?:Test|test)[A-Z]/;
+function importedNames(src) {
+  const names = [];
+  for (const m of src.matchAll(/^import\s+(?!type\b)([\s\S]*?)\s+from\s+['"]([^'"]+)['"]/gm)) {
+    const [, clause, from] = m;
+    const braced = /\{([^}]*)\}/.exec(clause);
+    const bare = clause.replace(/\{[^}]*\}/, '').replace(/,/g, ' ').trim();
+    for (const part of braced ? braced[1].split(',') : []) {
+      const name = part.trim().replace(/^type\s+/, '').split(/\s+as\s+/).pop().trim();
+      if (name && !/^type\s/.test(part.trim())) names.push({ name, from });
+    }
+    if (bare && !bare.startsWith('*')) names.push({ name: bare, from });
+  }
+  return names;
+}
+const kebab = name => name.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
+function rolesOf(absPath, src) {
+  const roles = { real: [], through: [], standIns: [] };
+  const subject = absPath.split('/').pop().split('.')[0];
+  for (const { name, from } of importedNames(src)) {
+    if (from === 'supertest') { roles.through.push('supertest'); continue; }
+    if (STAND_IN.test(name)) { (kebab(name) === subject ? roles.real : roles.standIns).push(name); continue; }
+    if (TEST_DATA.test(name) || !/^[A-Za-z][a-z]/.test(name)) continue;
+    const local = from.startsWith('.') ? resolve(dirname(absPath), from) : null;
+    const helper = local && local.includes('/testing/') ? local + '.ts' : null;
+    if (/\.page-object$/.test(from) || (helper && existsSync(helper) &&
+        importsOf(readFileSync(helper, 'utf8')).includes('supertest'))) {
+      roles.through.push(name);
+      continue;
+    }
+    const underTest = local
+      ? !local.startsWith(resolve(ROOT, 'test') + '/') && !/\/testing\/|\/fake[.-]|test-data/.test(local)
+      : from.startsWith('@market-miam/') && from !== '@market-miam/testing';
+    if (!underTest) continue;
+    // A class counts once the spec makes or mounts one, not when it only
+    // names it as a type; a function, once the spec calls it.
+    const n = name.replace(/\$/g, '\\$');
+    const used = /^[A-Z]/.test(name)
+      ? String.raw`new\s+${n}\b|\b${n}\.\w+\(|\b(?:render|createComponent)\(\s*${n}\b|useClass:\s*${n}\b|provideEffects\([^)]*\b${n}\b`
+      : String.raw`(?<![\w.])${n}\s*\(`;
+    if (new RegExp(used).test(src)) roles.real.push(name);
+  }
+  return roles;
+}
+
 const data = [];
 let totalTests = 0;
 for (const f of files) {
-  const rel = f.slice(ROOT.length + 1);
-  const src = readFileSync(f, 'utf8');
-  const tests = [...testsFromCalls(parseSpecs(src)), ...contractTests(f, src)];
+  const { rel, text, tests: own } = load(f);
+  const tests = [...own, ...contractTests(f, text)];
   totalTests += tests.length;
   data.push({
-    file: rel, context: contextFor(rel), kind: kindFor(rel, f, src), layer: layerFor(rel),
-    lines: src.split('\n').length, tests,
+    file: rel, context: contextFor(rel), kind: kindFor(rel, f, text), layer: layerFor(rel),
+    lines: text.split('\n').length, roles: rolesOf(f, text), tests,
   });
+}
+
+// The code the page shows sits in sources.js, loaded once the map has drawn,
+// so the map stays as quick to open as it was. A script rather than a fetch,
+// so the page still works opened straight from disk.
+const sourceFiles = {};
+for (const { rel, text, calls } of sources.values()) {
+  sourceFiles[rel] = {
+    text,
+    imports: importBlock(text),
+    // [describe?, start, titleStart, titleEnd, end] for every describe/it/test
+    spans: calls.map(c => [c.type === 'describe' ? 1 : 0, c.start, c.titleStart, c.titleEnd, c.end]),
+  };
 }
 
 const model = {
@@ -261,15 +407,19 @@ const model = {
   ],
   kinds: KINDS,
   files: data,
+  repo: REPO_URL,
+  commit,
 };
 const generated = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
 const html = readFileSync(resolve(HERE, 'template.html'), 'utf8')
   .replace('__DATA__', () => JSON.stringify(model))
+  .replace('__SOURCES_VERSION__', commit.slice(0, 12))
   .replace('__GENERATED__', generated);
 
 const OUT = resolve(ROOT, 'tmp/test-map');
 mkdirSync(OUT, { recursive: true });
 writeFileSync(resolve(OUT, 'index.html'), html);
+writeFileSync(resolve(OUT, 'sources.js'), `window.TEST_SOURCES = ${JSON.stringify(sourceFiles)};\n`);
 
 const empty = data.filter(f => f.tests.length === 0);
 console.log(`${data.length} test files, ${totalTests} tests → tmp/test-map/index.html`);

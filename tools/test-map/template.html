@@ -18,6 +18,12 @@
     --packages-tint: rgba(27, 175, 122, 0.15);
     --mark: rgba(237, 161, 0, 0.35);
     --shadow: 0 12px 32px rgba(11, 11, 11, 0.14);
+    --sel: rgba(42, 120, 214, 0.09);
+    --code-kw: #8a3ab9;
+    --code-str: #1a7f37;
+    --code-type: #a65200;
+    --code-fn: #1f63b5;
+    --code-num: #b3261e;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
@@ -37,6 +43,12 @@
       --packages-tint: rgba(25, 158, 112, 0.20);
       --mark: rgba(201, 133, 0, 0.45);
       --shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+      --sel: rgba(57, 135, 229, 0.16);
+      --code-kw: #c792ea;
+      --code-str: #8fd19e;
+      --code-type: #f0a35e;
+      --code-fn: #79b0f2;
+      --code-num: #f28b82;
     }
   }
   :root[data-theme="dark"] {
@@ -56,6 +68,12 @@
     --packages-tint: rgba(25, 158, 112, 0.20);
     --mark: rgba(201, 133, 0, 0.45);
     --shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+    --sel: rgba(57, 135, 229, 0.16);
+    --code-kw: #c792ea;
+    --code-str: #8fd19e;
+    --code-type: #f0a35e;
+    --code-fn: #79b0f2;
+    --code-num: #f28b82;
   }
 
   * { box-sizing: border-box; }
@@ -205,6 +223,7 @@
     display: flex; flex-direction: column;
   }
   #panel.open { transform: none; }
+  #panel.reading { width: min(940px, 96vw); }
   .panel-head { padding: 18px 20px 12px; border-bottom: 1px solid var(--hairline); }
   .panel-head .close {
     position: absolute; top: 12px; right: 12px; border: 1px solid var(--hairline);
@@ -215,13 +234,58 @@
   .panel-head .close:focus-visible { outline: 2px solid var(--backend); }
   .panel-head h2 { margin: 0 0 6px; font-size: 16.5px; line-height: 1.3; padding-right: 30px; word-break: break-word; }
   .panel-path { font-size: 11.5px; color: var(--ink-3); word-break: break-all; margin: 0 0 10px; }
+  .panel-path a { color: var(--backend); font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-weight: 600; text-decoration: none; white-space: nowrap; margin-left: 6px; }
+  .panel-path a:hover { text-decoration: underline; }
+  .panel-suite { font-size: 12px; color: var(--ink-3); margin: 0 0 3px; padding-right: 30px; }
+  .back {
+    border: 0; background: none; padding: 0; margin: 0 0 8px; cursor: pointer;
+    color: var(--backend); font-size: 12.5px; font-weight: 600;
+  }
+  .back:hover { text-decoration: underline; }
+  .back:focus-visible { outline: 2px solid var(--backend); outline-offset: 2px; border-radius: 3px; }
+  .roles { display: grid; grid-template-columns: auto 1fr; gap: 3px 10px; margin: 10px 0 0; font-size: 12px; }
+  .roles dt { color: var(--ink-3); font-weight: 600; }
+  .roles dd { margin: 0; color: var(--ink-2); }
+  .roles code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 11.5px;
+    background: var(--border); border-radius: 4px; padding: 0.5px 5px; margin: 0 3px 2px 0; display: inline-block;
+  }
   .badges { display: flex; flex-wrap: wrap; gap: 6px; }
   .badge {
     font-size: 11px; padding: 2.5px 9px; border-radius: 999px; border: 1px solid var(--hairline);
     color: var(--ink-2); display: inline-flex; align-items: center; gap: 5px;
   }
   .badge .dot { width: 7px; height: 7px; border-radius: 50%; }
-  .panel-body { overflow-y: auto; padding: 10px 20px 30px; flex: 1; }
+  .panel-body { overflow-y: auto; padding: 10px 20px 30px; flex: 1; position: relative; }
+  #panel.reading .panel-body { padding: 0 0 30px; }
+
+  /* ---- code view ---- */
+  .code-hint { font-size: 12px; color: var(--ink-3); margin: 0; padding: 10px 20px 8px; }
+  .code-note { font-size: 13px; color: var(--ink-2); padding: 14px 20px; margin: 0; }
+  .code { overflow-x: auto; font: 12px/1.65 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  .code-lines { display: inline-block; min-width: 100%; padding-bottom: 6px; }
+  .ln { display: flex; white-space: pre; min-height: 1.65em; }
+  .ln .no {
+    position: sticky; left: 0; flex: none; width: 4.2em; padding-right: 14px; text-align: right;
+    color: var(--ink-3); background: var(--surface); user-select: none;
+  }
+  .ln .src { padding-right: 20px; }
+  .ln.sel { background: var(--sel); }
+  .ln.sel .no { color: var(--ink); background: var(--sel); box-shadow: inset 3px 0 0 var(--backend); }
+  .tk-k { color: var(--code-kw); }
+  .tk-s { color: var(--code-str); }
+  .tk-t { color: var(--code-type); }
+  .tk-f { color: var(--code-fn); }
+  .tk-n { color: var(--code-num); }
+  .tk-c { color: var(--ink-3); font-style: italic; }
+  .fold {
+    font: inherit; border: 1px dashed var(--hairline); background: var(--plane); border-radius: 5px;
+    padding: 0 6px; cursor: pointer; color: var(--ink-2);
+  }
+  .fold:hover { border-color: var(--ink-3); background: var(--border); }
+  .fold:focus-visible { outline: 2px solid var(--backend); outline-offset: 1px; }
+  .fold .fold-n { color: var(--ink-3); font-family: system-ui, -apple-system, "Segoe UI", sans-serif; font-size: 11px; margin-left: 4px; }
   .suite-h {
     font-size: 12px; font-weight: 700; letter-spacing: 0.04em; color: var(--ink-2);
     margin: 16px 0 4px; text-transform: none;
@@ -233,6 +297,12 @@
     border-bottom: 1px solid var(--hairline); word-break: break-word;
   }
   .tests-ul li:last-child { border-bottom: 0; }
+  .test-link {
+    border: 0; background: none; padding: 0; margin: 0; font: inherit; text-align: left; cursor: pointer;
+    color: inherit; line-height: inherit;
+  }
+  .test-link:hover .t-title { text-decoration: underline; text-decoration-color: var(--ink-3); text-underline-offset: 3px; }
+  .test-link:focus-visible { outline: 2px solid var(--backend); outline-offset: 2px; border-radius: 3px; }
   .tests-ul li::before {
     content: ""; position: absolute; left: 2px; top: 12px; width: 7px; height: 7px;
     border-radius: 50%; background: var(--t-color, var(--ink-3));
@@ -304,7 +374,7 @@
   </header>
   <p class="subtitle">Every automated test in the monorepo, grouped by the bounded context it protects,
     then by kind of test, then by the app it lives in. Blocks are sized by test count. Click a header to
-    zoom in, click a file to read its tests.</p>
+    zoom in, a file to list its tests, and a test to read its code.</p>
 
   <div class="controls">
     <div class="search">
@@ -342,7 +412,9 @@
       and the <b>shared-packages suite</b> under <span class="mono">test/</span> that covers the domain
       libraries.</p>
     <p>Parameterised <span class="mono">it.each</span> tables count as one test. Shared contract suites
-      are expanded once per implementation that runs them.</p>
+      are expanded once per implementation that runs them. Click a test to read its code, with
+      everything else in its file folded away; <b>Real</b>, <b>Through</b> and <b>Stand-ins</b> are read
+      from the file's imports by the repo's naming, a reading aid rather than a proof.</p>
     <p>Snapshot generated from source on __GENERATED__.</p>
   </footer>
 </div>
@@ -352,9 +424,12 @@
 <aside id="panel" aria-label="Spec file detail" aria-hidden="true">
   <div class="panel-head">
     <button class="close" id="panelClose" aria-label="Close detail panel">✕</button>
+    <button class="back" id="panelBack" hidden>‹ All tests in this file</button>
+    <p class="panel-suite" id="panelSuite" hidden></p>
     <h2 id="panelTitle"></h2>
-    <p class="panel-path mono" id="panelPath"></p>
+    <p class="panel-path"><span class="mono" id="panelPath"></span><a id="panelGitHub" target="_blank" rel="noopener">GitHub ↗</a></p>
     <div class="badges" id="panelBadges"></div>
+    <div id="panelRoles"></div>
   </div>
   <div class="panel-body" id="panelBody"></div>
 </aside>
@@ -382,11 +457,12 @@ const PROJECT_LABELS = {
 const projectLabel = p => PROJECT_LABELS[p] || p;
 const SUPPORTING = new Set(MODEL.contexts.filter(c => c.supporting).map(c => c.name));
 const CONTEXT_ORDER = MODEL.contexts.map(c => c.name);
-for (const f of DATA) {
+DATA.forEach((f, index) => {
+  f.index = index;
   f.group = groupOf(f.layer);
   f.short = f.file.split('/').pop().replace(/\.spec\.ts$/, '').replace(/\.ts$/, '');
   f.container = /\.container\.spec\.ts$/.test(f.file);
-}
+});
 const PROJECTS = [...new Set(DATA.map(f => f.layer))]
   .sort((a, b) => DATA.filter(f => f.layer === b).length - DATA.filter(f => f.layer === a).length);
 const TOTAL_TESTS = DATA.reduce((s, f) => s + f.tests.length, 0);
@@ -447,6 +523,8 @@ const state = {
   projects: new Set(PROJECTS),
   view: 'map',
   openFile: null,
+  openTest: null,        // index into openFile.tests when reading a test's code
+  unfolded: new Set(),   // folds the reader has opened in the open file
 };
 
 /* ---------- header stats ---------- */
@@ -651,41 +729,85 @@ function showTip(e, f) {
 function hideTip() { tip.style.display = 'none'; }
 
 /* ---------- detail panel ---------- */
+// The panel shows a file's tests, or one test's code. state.openTest is the
+// index of that test in its file, or null for the list.
 const panel = document.getElementById('panel'), backdrop = document.getElementById('backdrop');
+const panelBody = document.getElementById('panelBody');
 function openPanel(f) {
+  if (state.openFile !== f) state.unfolded = new Set();
   state.openFile = f;
+  state.openTest = null;
+  showPanel(document.getElementById('panelClose'));
+}
+function openTest(f, i) {
+  if (state.openFile !== f) state.unfolded = new Set();
+  state.openFile = f;
+  state.openTest = i;
+  showPanel(document.getElementById('panelBack'));
+}
+function showPanel(focus) {
   hideTip();
-  document.getElementById('panelTitle').textContent = f.short;
-  document.getElementById('panelPath').textContent = f.file;
+  renderPanel();
+  panel.classList.add('open'); backdrop.classList.add('open');
+  panel.setAttribute('aria-hidden', 'false');
+  focus.focus({ preventScroll: true });
+}
+function closePanel() {
+  panel.classList.remove('open', 'reading'); backdrop.classList.remove('open');
+  panel.setAttribute('aria-hidden', 'true');
+  state.openFile = null;
+  state.openTest = null;
+}
+document.getElementById('panelClose').addEventListener('click', closePanel);
+document.getElementById('panelBack').addEventListener('click', () => openPanel(state.openFile));
+backdrop.addEventListener('click', closePanel);
+
+const githubUrl = (path, from, to) =>
+  `${MODEL.repo}/blob/${MODEL.commit}/${path}` + (from ? `#L${from}` + (to && to !== from ? `-L${to}` : '') : '');
+
+function renderPanel() {
+  const f = state.openFile, t = state.openTest == null ? null : f.tests[state.openTest];
+  const path = t ? t.src || f.file : f.file;
+  panel.classList.toggle('reading', !!t);
+  document.getElementById('panelBack').hidden = !t;
+  const suite = document.getElementById('panelSuite');
+  suite.hidden = !t || !t.suite.length;
+  suite.textContent = t ? t.suite.join(' › ') : '';
+  document.getElementById('panelTitle').textContent = t ? t.name : f.short;
+  document.getElementById('panelPath').textContent = t ? `${path}:${t.line}` : f.file;
+  document.getElementById('panelGitHub').href = t ? githubUrl(path, t.line, t.endLine) : githubUrl(f.file);
   const badges = [
     `<span class="badge">${esc(f.context)}${SUPPORTING.has(f.context) ? ' · supporting' : ''}</span>`,
     `<span class="badge">${esc(f.kind)}</span>`,
     `<span class="badge"><span class="dot" style="background:var(--${f.group})"></span>${esc(projectLabel(f.layer))}</span>`,
-    `<span class="badge">${f.tests.length} test${f.tests.length === 1 ? '' : 's'}</span>`,
   ];
+  if (!t) badges.push(`<span class="badge">${f.tests.length} test${f.tests.length === 1 ? '' : 's'}</span>`);
   if (f.container) badges.push('<span class="badge">🐳 Docker Postgres</span>');
-  if (f.tests.some(t => t.contract)) badges.push('<span class="badge">contract suite</span>');
+  if (t ? t.contract : f.tests.some(t => t.contract)) badges.push('<span class="badge">contract suite</span>');
   document.getElementById('panelBadges').innerHTML = badges.join('');
-  document.getElementById('panelBody').innerHTML = suiteTreeHTML(f);
-  panel.classList.add('open'); backdrop.classList.add('open');
-  panel.setAttribute('aria-hidden', 'false');
-  document.getElementById('panelClose').focus();
+  document.getElementById('panelRoles').innerHTML = rolesHTML(f);
+  panelBody.innerHTML = t ? codeViewHTML(f, state.openTest) : suiteTreeHTML(f);
+  panelBody.scrollLeft = 0;
+  const first = panelBody.querySelector('.ln.sel');
+  panelBody.scrollTop = first ? Math.max(0, first.offsetTop - panelBody.clientHeight / 5) : 0;
 }
-function closePanel() {
-  panel.classList.remove('open'); backdrop.classList.remove('open');
-  panel.setAttribute('aria-hidden', 'true');
-  state.openFile = null;
+
+function rolesHTML(f) {
+  const rows = [['Real', f.roles.real], ['Through', f.roles.through], ['Stand-ins', f.roles.standIns]]
+    .filter(([, names]) => names.length);
+  if (!rows.length) return '';
+  return `<dl class="roles" title="Read from the file's imports by the repo's naming: a reading aid, not a proof">` +
+    rows.map(([label, names]) => `<dt>${label}</dt><dd>${names.map(n => `<code>${esc(n)}</code>`).join('')}</dd>`).join('') +
+    '</dl>';
 }
-document.getElementById('panelClose').addEventListener('click', closePanel);
-backdrop.addEventListener('click', closePanel);
 
 function suiteTreeHTML(f) {
-  const groups = new Map();  // suite chain -> tests
-  for (const t of f.tests) {
+  const groups = new Map();  // suite chain -> [test, index in file]
+  f.tests.forEach((t, i) => {
     const key = t.suite.join(' › ');
     if (!groups.has(key)) groups.set(key, []);
-    groups.get(key).push(t);
-  }
+    groups.get(key).push([t, i]);
+  });
   let html = '';
   for (const [key, tests] of groups) {
     if (key) {
@@ -693,21 +815,182 @@ function suiteTreeHTML(f) {
       html += `<h3 class="suite-h">${esc(parts[0])}` +
         (parts.length > 1 ? ` <span class="sub">› ${esc(parts.slice(1).join(' › '))}</span>` : '') + '</h3>';
     } else html += '<h3 class="suite-h"><span class="sub">(top level)</span></h3>';
-    html += `<ul class="tests-ul" style="--t-color:var(--${f.group})">` + tests.map(t => {
+    html += `<ul class="tests-ul" style="--t-color:var(--${f.group})">` + tests.map(([t, i]) => {
       let name = esc(t.name);
       if (state.query) {
-        const i = t.name.toLowerCase().indexOf(state.query);
-        if (i >= 0) name = esc(t.name.slice(0, i)) + '<mark>' + esc(t.name.slice(i, i + state.query.length)) + '</mark>' + esc(t.name.slice(i + state.query.length));
+        const at = t.name.toLowerCase().indexOf(state.query);
+        if (at >= 0) name = esc(t.name.slice(0, at)) + '<mark>' + esc(t.name.slice(at, at + state.query.length)) + '</mark>' + esc(t.name.slice(at + state.query.length));
       }
       const flags = [];
       if (t.mods.includes('.each')) flags.push('each');
       if (t.mods.includes('.skip') || t.mods.includes('.todo')) flags.push('skipped');
       if (t.contract) flags.push('contract');
-      return `<li>${name}${flags.map(fl => `<span class="flag">${fl}</span>`).join('')}</li>`;
+      return `<li><button class="test-link" data-i="${i}" title="Read this test's code"><span class="t-title">${name}</span>` +
+        `${flags.map(fl => `<span class="flag">${fl}</span>`).join('')}</button></li>`;
     }).join('') + '</ul>';
   }
   return html;
 }
+
+panelBody.addEventListener('click', e => {
+  const link = e.target.closest('.test-link');
+  if (link) { openTest(state.openFile, +link.dataset.i); return; }
+  const fold = e.target.closest('.fold');
+  if (!fold) return;
+  if (fold.dataset.test) {
+    // Several call sites can run one contract: stay with the one being read.
+    const cur = state.openFile.tests[state.openTest];
+    const i = state.openFile.tests.findIndex(t => t.start === +fold.dataset.test &&
+      (t.src || '') === (cur.src || '') && (!t.contract || t.suite[0] === cur.suite[0]));
+    if (i >= 0) openTest(state.openFile, i);
+  } else {
+    state.unfolded.add(fold.dataset.open);
+    renderPanel();
+  }
+});
+
+/* ---------- code view ---------- */
+// The code lives in sources.js, loaded once the map has drawn.
+let SOURCES = null, sourcesFailed = false;
+function loadSources() {
+  const script = document.createElement('script');
+  script.src = 'sources.js?v=__SOURCES_VERSION__';
+  script.onload = () => { SOURCES = window.TEST_SOURCES || null; sourcesFailed = !SOURCES; rerenderCode(); };
+  script.onerror = () => { sourcesFailed = true; rerenderCode(); };
+  document.head.appendChild(script);
+}
+const rerenderCode = () => { if (state.openTest != null) renderPanel(); };
+
+const lineStartsCache = new Map();
+function lineAt(path, text, offset) {
+  if (!lineStartsCache.has(path)) {
+    const starts = [0];
+    for (let i = 0; i < text.length; i++) if (text[i] === '\n') starts.push(i + 1);
+    lineStartsCache.set(path, starts);
+  }
+  const starts = lineStartsCache.get(path);
+  let lo = 0, hi = starts.length - 1;
+  while (lo < hi) { const mid = (lo + hi + 1) >> 1; if (starts[mid] <= offset) lo = mid; else hi = mid - 1; }
+  return lo + 1;
+}
+
+// The test's file as written, with what the test doesn't depend on folded to
+// a line: the imports, every other test, and every describe it isn't inside.
+// What stays open is the test and everything in scope for it — its describes'
+// setup and the file's helpers. A fold opens on click; a folded test opens in
+// place of this one.
+function codeViewHTML(f, i) {
+  const t = f.tests[i];
+  const path = t.src || f.file;
+  const link = `<a href="${esc(githubUrl(path, t.line, t.endLine))}" target="_blank" rel="noopener">GitHub</a>`;
+  if (!SOURCES) {
+    return `<p class="code-note">${sourcesFailed ? `The code didn't load. Read it on ${link}.` : 'Loading the code…'}</p>`;
+  }
+  const source = SOURCES[path];
+  const sel = source && source.spans.find(sp => sp[1] === t.start);
+  if (!sel) return `<p class="code-note">This page's copy of the code is out of date. Read it on ${link}.</p>`;
+  const text = source.text, [, selStart, , , selEnd] = sel;
+
+  const folds = [];
+  if (source.imports && !state.unfolded.has(`${path}:imports`)) {
+    const [start, end] = source.imports;
+    folds.push({ start, end, open: `${path}:imports`,
+      label: tokensHTML('import …') + `<span class="fold-n">${lineAt(path, text, end) - lineAt(path, text, start) + 1} lines</span>` });
+  }
+  for (const [isDescribe, start, titleStart, titleEnd, end] of source.spans) {
+    if (start === selStart) continue;
+    if (isDescribe && ((start <= selStart && selEnd <= end) || state.unfolded.has(`${path}:${start}`))) continue;
+    let head = text.slice(start, titleStart);
+    if (head.includes('\n') || head.length > 32) head = head.slice(0, head.indexOf('(')) + '(…)(';
+    const label = tokensHTML(head + text.slice(titleStart, titleEnd) + ', …)');
+    folds.push(isDescribe ? { start, end, open: `${path}:${start}`, label } : { start, end, test: start, label });
+  }
+  folds.sort((a, b) => a.start - b.start || b.end - a.end);
+  const outer = [];
+  for (const fold of folds) if (!outer.length || fold.start >= outer[outer.length - 1].end) outer.push(fold);
+
+  // Lay the file out line by line, each numbered as in the file: a fold takes
+  // one line, numbered where it starts, and the numbering jumps past it.
+  const lines = [];
+  let fileLine = 1, cur = { no: 1, html: '' }, pos = 0;
+  const addText = chunk => {
+    for (const [cls, str] of tokens(chunk)) {
+      str.split('\n').forEach((part, k) => {
+        if (k > 0) { lines.push(cur); cur = { no: ++fileLine, html: '' }; }
+        if (part) cur.html += cls ? `<span class="tk-${cls}">${esc(part)}</span>` : esc(part);
+      });
+    }
+  };
+  for (const fold of outer) {
+    addText(text.slice(pos, fold.start));
+    cur.fold = true;
+    cur.html += `<button class="fold" ${fold.test != null ? `data-test="${fold.test}" title="Read this test"` : `data-open="${esc(fold.open)}" title="Unfold"`}>${fold.label}</button>`;
+    fileLine = lineAt(path, text, fold.end);
+    pos = fold.end;
+  }
+  addText(text.slice(pos));
+  lines.push(cur);
+  const selFrom = lineAt(path, text, selStart), selTo = lineAt(path, text, selEnd - 1);
+  const body = lines.map(line => {
+    const selected = line.no >= selFrom && line.no <= selTo && !line.fold;
+    return `<div class="ln${selected ? ' sel' : ''}"><span class="no">${line.no}</span><span class="src">${line.html || ' '}</span></div>`;
+  }).join('');
+  return '<p class="code-hint">Everything this test doesn’t rely on is folded. Click a fold to open it.</p>' +
+    `<div class="code"><div class="code-lines">${body}</div></div>`;
+}
+
+// Just enough TypeScript highlighting to read a test by: keywords, strings,
+// comments, numbers, types, and the test framework's own calls.
+const KEYWORDS = new Set(('import from export const let var function async await return new if else for of in while do ' +
+  'switch case break continue throw try catch finally typeof instanceof void delete class extends implements ' +
+  'interface type enum as readonly private public protected static this super null undefined true false').split(' '));
+const TEST_CALLS = new Set(['describe', 'it', 'test', 'expect', 'beforeEach', 'afterEach', 'beforeAll', 'afterAll', 'vi']);
+function tokens(text) {
+  const out = [];
+  let i = 0, prev = '', plain = '';
+  const n = text.length;
+  const emit = (cls, str) => { if (plain) { out.push(['', plain]); plain = ''; } out.push([cls, str]); };
+  while (i < n) {
+    const c = text[i];
+    if (c === '/' && text[i + 1] === '/') { let j = text.indexOf('\n', i); if (j < 0) j = n; emit('c', text.slice(i, j)); i = j; continue; }
+    if (c === '/' && text[i + 1] === '*') { let j = text.indexOf('*/', i + 2); j = j < 0 ? n : j + 2; emit('c', text.slice(i, j)); i = j; continue; }
+    if (c === "'" || c === '"' || c === '`') {
+      let j = i + 1;
+      while (j < n && text[j] !== c) { if (text[j] === '\\') j++; j++; }
+      emit('s', text.slice(i, j + 1)); i = j + 1; prev = ')'; continue;
+    }
+    if (c === '/' && (prev === '' || /[(,=:[!&|?{};]/.test(prev))) {
+      let j = i + 1, inClass = false, found = false;
+      while (j < n && text[j] !== '\n') {
+        if (text[j] === '\\') { j += 2; continue; }
+        if (text[j] === '[') inClass = true;
+        else if (text[j] === ']') inClass = false;
+        else if (text[j] === '/' && !inClass) { found = true; j++; while (j < n && /[a-z]/.test(text[j])) j++; break; }
+        j++;
+      }
+      if (found) { emit('s', text.slice(i, j)); i = j; prev = ')'; continue; }
+    }
+    if (/[A-Za-z_$]/.test(c)) {
+      let j = i;
+      while (j < n && /[\w$]/.test(text[j])) j++;
+      const word = text.slice(i, j);
+      const cls = KEYWORDS.has(word) ? 'k' : TEST_CALLS.has(word) ? 'f' : /^[A-Z][a-z]/.test(word) ? 't' : '';
+      if (cls) emit(cls, word); else plain += word;
+      i = j; prev = 'a'; continue;
+    }
+    if (/[0-9]/.test(c)) {
+      let j = i;
+      while (j < n && /[\w.]/.test(text[j])) j++;
+      emit('n', text.slice(i, j)); i = j; prev = 'a'; continue;
+    }
+    plain += c;
+    if (!/\s/.test(c)) prev = c;
+    i++;
+  }
+  if (plain) out.push(['', plain]);
+  return out;
+}
+const tokensHTML = text => tokens(text).map(([cls, str]) => cls ? `<span class="tk-${cls}">${esc(str)}</span>` : esc(str)).join('');
 
 /* ---------- list view ---------- */
 function renderList() {
@@ -732,13 +1015,18 @@ function groupHTML(node) {
   </details>`;
 }
 function fileHTML(f) {
-  return `<details class="lv-file" ${state.query ? 'open' : ''}>
+  return `<details class="lv-file" data-fi="${f.index}" ${state.query ? 'open' : ''}>
     <summary><span class="dot" style="background:var(--${f.group})"></span>
       <span>${esc(f.short)}</span><span class="path mono">${esc(f.file)}</span>
       <span class="lv-count">${f.tests.length}</span></summary>
     <div class="lv-tests">${suiteTreeHTML(f)}</div>
   </details>`;
 }
+
+document.getElementById('listview').addEventListener('click', e => {
+  const link = e.target.closest('.test-link');
+  if (link) openTest(DATA[+link.closest('.lv-file').dataset.fi], +link.dataset.i);
+});
 
 /* ---------- search + view toggle ---------- */
 const qEl = document.getElementById('q'), qClear = document.getElementById('qClear');
@@ -787,4 +1075,5 @@ function esc(s) {
 }
 
 refresh();
+(window.requestIdleCallback || setTimeout)(loadSources);
 </script>
