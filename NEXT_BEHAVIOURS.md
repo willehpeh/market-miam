@@ -52,6 +52,8 @@ comes next; each line points at the doc that holds the detail. Update it when a 
 * nine small OO refactors (#2–4, #7–12 — per-item fixes in `docs/archive/OO-SMELL-AUDIT.md`)
 * F1, the api suite's *socket hang up* flake: run `nx test api` 24 times on Linux; if it never reproduces, close it as a macOS-only annoyance (`docs/findings/f1-api-suite-socket-hang-up-flake.md`)
 * act on the frontend test-audit findings — vacuous tests, untested seams, customer-frontend coverage config (`docs/archive/VENDOR-FRONTEND-TEST-AUDIT.md` · `docs/archive/CUSTOMER-FRONTEND-TEST-AUDIT.md`)
+* the event model, redrawn as Dilger draws one on 2026-11-22: confirm the defaults taken while building it, the order within each stage of `tools/event-model/story.mjs` first (`docs/EVENT-MODEL-PLAN.md`)
+* Opens Vendor Accounts, Closes Vendor Accounts and Opens Storefronts: their specs assert the commands sent; rewrite them, test-first, to assert what is recorded (`docs/EVENT-MODEL-PLAN.md`, *Open*)
 
 ## Deferred — trigger-gated (rationale: `docs/archive/DEFERRED.md`)
 
