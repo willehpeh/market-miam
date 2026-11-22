@@ -3,6 +3,7 @@ import { Store } from '@ngrx/store';
 import { StorefrontFacade } from './storefront.facade';
 import {
   EditStorefront,
+  LoadStorefront,
   PublishStorefront,
   selectAddress,
   selectPublished,
@@ -25,8 +26,12 @@ export class StoreStorefrontFacade implements StorefrontFacade {
   readonly publishing = this.store.selectSignal(storefrontFeature.selectPublishing);
   readonly publishError = this.store.selectSignal(storefrontFeature.selectPublishError);
 
+  // Only an unknown storefront is asked for, and not twice at once: the sign-in asks first,
+  // and a re-GET could put a projection that lags a save back over it.
   load(): void {
-    // Nothing yet.
+    if (this.view() === undefined && !this.loading()) {
+      this.store.dispatch(LoadStorefront());
+    }
   }
 
   save(name: string, description: string, phone: string): void {

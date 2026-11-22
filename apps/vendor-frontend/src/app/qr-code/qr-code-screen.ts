@@ -76,6 +76,10 @@ export class QrCodeScreen {
   readonly busy = signal<'save' | 'share' | null>(null);
   readonly exportError = signal(false);
 
+  constructor() {
+    this.storefront.load();
+  }
+
   // Built from the address alone, in the browser: the app knows the subdomain and the
   // base domain, and nothing else goes into the code (ADR 0055).
   readonly code = computed(() => {

@@ -116,5 +116,6 @@ export class CatalogueList {
 
   constructor() {
     this.catalogue.load();
+    this.storefront.load();
   }
 }

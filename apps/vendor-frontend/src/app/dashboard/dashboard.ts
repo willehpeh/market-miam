@@ -95,6 +95,7 @@ export class Dashboard {
   constructor() {
     // Every read the home and its cards make, asked here once: nothing under this page asks
     // for itself, so nothing it renders can reopen the gate above.
+    this.storefront.load();
     this.catalogue.load();
     this.markets.load();
     this.marketDays.load();

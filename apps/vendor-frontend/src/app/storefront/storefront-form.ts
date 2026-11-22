@@ -108,6 +108,10 @@ export class StorefrontForm {
   protected readonly uploadError = this.storefront.coverPhotoError;
   protected readonly tooLarge = signal(false);
 
+  constructor() {
+    this.storefront.load();
+  }
+
   private readonly model = linkedSignal(() => {
     const view = this.storefront.view();
     return {

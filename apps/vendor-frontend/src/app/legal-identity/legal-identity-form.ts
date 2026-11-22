@@ -231,6 +231,7 @@ export class LegalIdentityForm {
 
   constructor() {
     this.legalIdentity.load();
+    this.storefront.load();
   }
 
   protected lookUp(event: Event): void {
