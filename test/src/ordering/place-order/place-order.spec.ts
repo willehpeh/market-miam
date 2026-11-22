@@ -40,6 +40,14 @@ describe('Place Order', () => {
     expect(store.newEvents()).toEqual([expect.objectContaining({ streamId: orderStream(), ...orderRefused() })]);
   });
 
+  it('refuses the order as sold out when the vendor took one of its dishes off the menu while the customer paid', async () => {
+    tradingDays.setMenu('dish-id');
+
+    await handler.execute(TestPlaceOrder.valid());
+
+    expect(store.newEvents()).toEqual([expect.objectContaining({ streamId: orderStream(), ...orderRefused() })]);
+  });
+
   it('refuses the order when the vendor closed the day while the customer paid', async () => {
     tradingDays.close();
 
