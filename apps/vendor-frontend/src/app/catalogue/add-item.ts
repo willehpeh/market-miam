@@ -5,6 +5,7 @@ import { ITEM_PHOTO_PREVIEW_TRANSFORMATION } from '@market-miam/common';
 import { Card } from '../core/card';
 import { SubmitButton } from '../core/submit-button';
 import { MoveButtons } from '../core/move-buttons';
+import { PhotoButton } from '../core/photo-button';
 import { Arrangement } from '../core/arrangement';
 import { Spinner } from '../core/spinner';
 import { CloudinaryUrlPipe } from '../core/cloudinary-url.pipe';
@@ -23,7 +24,7 @@ type ItemModel = { name: string; price: string; description: string; variants: F
 @Component({
   selector: 'mm-add-item',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, Card, FormField, CloudinaryUrlPipe, DismissOnOutsidePress, MoveButtons, Spinner, SubmitButton],
+  imports: [RouterLink, Card, FormField, CloudinaryUrlPipe, DismissOnOutsidePress, MoveButtons, PhotoButton, Spinner, SubmitButton],
   styles: `
     .segment {
       flex: 1;
@@ -65,16 +66,6 @@ type ItemModel = { name: string; price: string; description: string; variants: F
     .add-format:hover,
     .add-format:active {
       background: var(--color-surface-sunk);
-    }
-    .photo-alt {
-      background: transparent;
-      color: var(--color-brand);
-      border: 1px solid var(--color-brand);
-      box-shadow: none;
-    }
-    .photo-alt:hover:not(:disabled),
-    .photo-alt:active:not(:disabled) {
-      background: var(--color-brand-soft);
     }
     .retire {
       background: transparent;
@@ -140,19 +131,17 @@ type ItemModel = { name: string; price: string; description: string; variants: F
               <i class="fa-solid fa-camera" aria-hidden="true"></i>
             </div>
           }
-          <!-- Two inputs, not one: capture keeps the camera a single tap away for a vendor
-               standing at their stall, and its absence is the only way to reach the photo roll. -->
-          <input #cameraInput type="file" accept="image/*" capture="environment" hidden (change)="selectPhoto($event)" />
-          <input #rollInput type="file" accept="image/*" hidden (change)="selectPhoto($event)" />
+          <!-- Two buttons, not one: the camera stays a single tap away for a vendor standing at
+               their stall, and the other is the only way to reach the photo roll. -->
           <div class="flex justify-center gap-2 p-3">
-            <button type="button" (click)="cameraInput.click()" [disabled]="uploading()">
+            <mm-photo-button camera [disabled]="uploading()" (picked)="uploadPhoto($event)">
               <i class="fa-solid fa-camera" aria-hidden="true"></i>
               {{ previewRef() ? 'Reprendre' : 'Prendre en photo' }}
-            </button>
-            <button type="button" class="photo-alt" (click)="rollInput.click()" [disabled]="uploading()">
+            </mm-photo-button>
+            <mm-photo-button outlined [disabled]="uploading()" (picked)="uploadPhoto($event)">
               <i class="fa-solid fa-images" aria-hidden="true"></i>
               Choisir une photo
-            </button>
+            </mm-photo-button>
           </div>
           @if (tooLarge()) {
             <p role="alert" class="px-3 pb-3 text-xs text-danger">Cette photo est trop lourde. Choisissez-en une plus légère.</p>
@@ -506,13 +495,8 @@ export class AddItem {
     this.allergens.set(this.declaresNone() ? null : []);
   }
 
-  protected selectPhoto(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    const file = input.files?.[0];
-    if (!file) {
-      return;
-    }
-    this.catalogue.uploadItemPhoto(this.itemId(), file);
+  protected uploadPhoto(photo: File): void {
+    this.catalogue.uploadItemPhoto(this.itemId(), photo);
   }
 
   protected retire(): void {
