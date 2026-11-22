@@ -18,10 +18,10 @@ export class Order extends Aggregate {
     if (this._holdRecorded) {
       return;
     }
-    const reason = day.reasonToRefuse(held.lines);
-    this.raise(reason
-      ? this.orderRefused(vendorId, held, reason, receivedAt)
-      : this.orderPlaced(vendorId, held, receivedAt));
+    const availability = day.availabilityOf(held.lines);
+    this.raise(availability === 'available'
+      ? this.orderPlaced(vendorId, held, receivedAt)
+      : this.orderRefused(vendorId, held, availability, receivedAt));
   }
 
   streamId(): string {
