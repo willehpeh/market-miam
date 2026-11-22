@@ -3,7 +3,8 @@
 Conventions live in [CONTRIBUTING.md](CONTRIBUTING.md), the shape of the monorepo in
 [README.md](README.md), and the reasoning behind nearly everything in
 [`docs/adr/`](docs/adr/README.md) and the plan documents under [`docs/`](docs). Read those
-first — this file is only for things about *running* the repo that those pages get to assume.
+first — this file is only for things about *running* the repo, and how agent sessions work with its owner, that those
+pages get to assume.
 
 ## `nx test api` is flaky on local macOS
 
@@ -86,3 +87,38 @@ git checkout package-lock.json
 
 Never commit a lockfile written from one of these sessions. The next `npm ci` on Node 24
 is where that would land, and it would be real drift rather than this phantom.
+
+## A push rejected with *missing necessary objects*
+
+Seen on 22 November 2026 in a Claude Code web session: after a GitHub server error on one push, every later
+push sent an empty pack (`Total 0`) and was refused with *missing necessary objects*. The session's git config
+sets `push.negotiate`; pushing with it off sent the objects and went through:
+
+```sh
+git -c push.negotiate=false push -u origin <branch>
+```
+
+## Working with the owner in agent sessions
+
+The owner builds test-first with an agent, one step at a time, and reviews each step:
+
+- **Red, green, refactor, one cycle at a time.** Show each red, its failing output included, and wait for the
+  owner before going green unless they asked for several cycles at once.
+- **A red fails only its new test, on its assertion.** When the test needs scaffolding first, a preparation
+  commit under a green bar touches only fakes and spec setup; production code arrives only in a green. A pin on
+  code that already exists is shown red by breaking that code, then restoring it.
+- **Specs assert behaviour**, such as recorded events, never which commands were sent. Start in the `test`
+  project at the use case, then the api, through its api objects (ADR 0064).
+- **Object design and clear names over helpers**, no comments in new code, and no get or set accessors (ADR 0008,
+  enforced by lint). The owner questions names: offer alternatives with a recommendation.
+- **Decisions are grilled in chat, one question at a time**, never through the question dialog: options, their
+  costs, a recommendation. Check Stripe facts against Stripe's docs or the sandbox and say when something is
+  unverified. The sandbox key is a network secret for `api.stripe.com` on the cloud environment, never in GitHub;
+  tag sandbox objects with a `purpose` in their metadata.
+- **The ordering board says what was decided and why, never how.** A decided row is a default: when building shows
+  something new, put it back to the owner rather than ruling it out. ADRs record only what is hard to reverse or
+  crosses contexts, written when the code lands.
+- **Push failing specs to the branch only.** Before pushing to `main`, run CI's steps on the affected projects
+  (`lint`, `typecheck`, `test`, `test:container`, `build`) and `nx scenario api`, both against the throwaway
+  Postgres above.
+

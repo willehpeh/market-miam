@@ -32,7 +32,8 @@
       preview our <a href="#setup">Connect setup</a> needs (Q14). Steps 2
       to 6 were stormed on 31 October at sticky-note level (<a href="#orders">decisions</a>). On 15 November
       the design for building step 1 went into ADRs 0066 to 0069: the context and its contract with Market
-      Days, Stripe's notices, the payment account, and how the Stripe adapter is tested. Next, building it.
+      Days, Stripe's notices, the payment account, and how the Stripe adapter is tested. Step 1's payment account is
+      built, and step 2's first slice, an order placed, is under way (22 November).
     </p>
     <div class="table-wrap">
       <table>
@@ -334,7 +335,7 @@
 
   <section aria-labelledby="orders">
     <h2 id="orders">Steps 2 to 6, decided</h2>
-    <p class="intro">Stormed on 31 October 2026, at sticky-note level. How each is built is left to the build.</p>
+    <p class="intro">Stormed on 31 October 2026, at sticky-note level, and added to while building. Each row says what was decided and why, never how: the code, its specs and the ADRs carry the build. A row is a default, not a fence: when building shows something new, it goes back to the owner.</p>
     <div class="table-wrap">
       <table>
         <thead><tr><th>Step</th><th>Decided</th></tr></thead>
@@ -344,12 +345,12 @@
           <tr><td>2, when</td><td>Orders are taken while the market trades, its hours by the clock, not before it opens: an order at 6 a.m. for an 8 a.m. market would time out while the vendor sets up. Opening earlier can come if vendors ask (15 November 2026)</td></tr>
           <tr><td>2, price</td><td>Checkout prices the order from Market Days' menu at that moment; the order then records what Stripe holds, so a price changed in between never reaches it (15 November 2026)</td></tr>
           <tr><td>2, Checkout</td><td>A Checkout page lives 30 minutes, the least Stripe allows. An order refused after its hold then comes only from a page opened in the day's last 30 minutes, and a pause lets through at most 30 minutes of pages begun before it (22 November 2026)</td></tr>
-          <tr><td>2, identity</td><td>An order's ID is ours, made when the customer taps pay and recorded nowhere before the hold (R1). It is the Checkout page's idempotency key and sits in the metadata of its session and its PaymentIntent, so every later Stripe event, refunds and disputes included, finds the order by reading it back; a session without it is not ours. The order's stream is named after it, its first event the gate (ADR 0067). Whether a vendor on the full Dashboard could edit that metadata joins the message to Stripe support (<a href="#q5">Q5</a>) (22 November 2026)</td></tr>
-          <tr><td>2, checks</td><td>Every check runs before Checkout opens, from Market Days' views, as the storefront reads them. When the hold is recorded, the order's first event is placed or refused: refused for a dish sold out or off the menu, or a day closed, ended or no longer today. Market Days answers that check with a query it folds from the day's own stream in its log, its hours from its view. The pause isn't asked again. Nor is the account: the policy refusing a disabled account's held orders reads orders and account events in log order, so no order slips between them (22 November 2026)</td></tr>
+          <tr><td>2, identity</td><td>An order's ID is ours, made when the customer taps pay and recorded nowhere before the hold (R1). Stripe carries it back on every event about the order, refunds and disputes included; a payment without it is not ours (22 November 2026)</td></tr>
+          <tr><td>2, checks</td><td>Every check runs before Checkout opens. After the hold, a day closed or ended, or a dish sold out or taken off the menu, refuses the order. A closed day is the reason before a sold-out dish, and a dish taken off the menu counts as sold out for now. The pause isn't asked again, nor is the account: refusing a disabled account's held orders covers it (22 November 2026)</td></tr>
           <tr><td>3a, 3b</td><td>The vendor has 10 minutes to accept, capped at the day's end time (Q3). The customer can cancel until the vendor's acceptance reaches us, the one anonymous write (R1). The vendor's screen waits a few seconds before sending an acceptance, so a mistaken tap can be undone; until it arrives, the customer can still cancel</td></tr>
           <tr><td>5</td><td>Closing by hand with paid orders not collected asks the vendor to confirm. If the day then ends without reopening, those orders are refunded at the end time instead of becoming no-shows: the vendor chose to leave early</td></tr>
           <tr><td>5, erasure</td><td>A vendor erased with orders in flight: their holds are released, paid orders not yet collected refunded at once, and customers emailed as usual, their day's key living until the day ends. The admin app may warn the operator, never block (15 November 2026)</td></tr>
-          <tr><td>5, the day's key</td><td>The customer's email is sealed under the vendor's key for the market day, which lives until midnight, Paris time, on the market's date, so every end-of-market email goes out while it does; policy B says midnight. A hold recorded after midnight is refused without its email, and the customer learns it from the status page. A refund made on a later day sends no email of ours: Stripe's receipt, if it sends one, is the customer's (to check). Day keys need a sweep just after midnight (22 November 2026)</td></tr>
+          <tr><td>5, the day's key</td><td>The customer's email is sealed under the day's key, which lives until midnight, Paris time, on the market's date, so every end-of-market email goes out while it does; policy B says midnight. A hold recorded after midnight is refused without its email, and the customer learns it from the status page. A refund made on a later day sends no email of ours: Stripe's receipt, if it sends one, is the customer's (to check) (22 November 2026)</td></tr>
           <tr><td>6</td><td>Refunds go only to the card, never in cash, and start from the Express Dashboard for now (Q8). Each is recorded from Stripe's webhook with its amount, partial ones included. A dispute is not a refund: it gets its own events, opened then won or lost. How both enter the closings and VAT is the accountant's <a href="expert-comptable.html#k6">K6</a></td></tr>
           <tr><td>Payouts</td><td>Nothing of ours reacts to a payout, so it left the timeline; the vendor follows payouts in the Express Dashboard</td></tr>
           <tr><td>Customer emails</td><td>Order received, with the status link · refused or no answer in time · cancelled by them · paid, with the code · handed over, with or without the code · no-show, sent before the day's details are erased · refunded, on the market's date. Disputes send nothing: the customer's bank handles them</td></tr>

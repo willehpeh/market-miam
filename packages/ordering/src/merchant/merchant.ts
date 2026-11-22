@@ -33,6 +33,10 @@ export class Merchant extends Aggregate {
     this.raise(this.registrationStarted(registrationId, accountToken, startedAt));
   }
 
+  isPaidThrough(accountId: string): boolean {
+    return this._currentAccount?.is(accountId) ?? false;
+  }
+
   failPaymentAccountRegistration(registrationId: string, failedAt: Instant) {
     if (this._registration.isOpen(registrationId)) {
       this.raise(this.registrationFailed(registrationId, failedAt));

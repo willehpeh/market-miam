@@ -7,6 +7,7 @@ export type OrderLine = {
 
 export type HeldOrder = {
   orderId: string;
+  accountId: string;
   marketId: string;
   date: string;
   lines: OrderLine[];

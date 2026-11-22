@@ -1,4 +1,5 @@
-import { PlaceOrder } from '@market-miam/ordering';
+import { HeldOrder, PlaceOrder } from '@market-miam/ordering';
+import { TestDetectPaymentAccountUpdate } from '../detect-payment-account-update/test-data';
 
 const RECEIVED_AT = '2026-11-21T11:42:00.000Z';
 
@@ -8,6 +9,7 @@ export class TestPlaceOrder {
       'vendor-id',
       {
         orderId: 'order-id',
+        accountId: TestDetectPaymentAccountUpdate.valid().accountId,
         marketId: 'market-id',
         date: '2026-11-21',
         lines: [
@@ -18,5 +20,10 @@ export class TestPlaceOrder {
       },
       RECEIVED_AT,
     );
+  }
+
+  static withOrder(overrides: Partial<HeldOrder>): PlaceOrder {
+    const defaults = this.valid();
+    return new PlaceOrder(defaults.vendorId, { ...defaults.order, ...overrides }, defaults.receivedAt);
   }
 }
