@@ -47,4 +47,12 @@ describe('Place Order', () => {
 
     expect(store.newEvents()).toEqual([]);
   });
+
+  it('records nothing when Stripe sends a refused order’s hold again', async () => {
+    given(orderRefused());
+
+    await handler.execute(TestPlaceOrder.valid());
+
+    expect(store.newEvents()).toEqual([]);
+  });
 });
