@@ -34,6 +34,7 @@ export class Order extends Aggregate {
   apply(event: OrderEvent): void {
     switch (event.type) {
       case 'OrderPlaced':
+      case 'OrderRefused':
         this._placed = true;
         break;
     }
