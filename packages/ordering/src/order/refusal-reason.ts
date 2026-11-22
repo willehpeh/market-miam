@@ -1,1 +1,1 @@
-export type RefusalReason = 'sold-out';
+export type RefusalReason = 'sold-out' | 'closed';
