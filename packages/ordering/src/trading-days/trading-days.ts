@@ -1,6 +1,6 @@
 import { VendorId } from '@market-miam/shared-kernel';
-import { HeldOrder, RefusalReason } from '../order';
+import { TradingDay } from '../order';
 
 export abstract class TradingDays {
-  abstract refusalOf(vendorId: VendorId, order: HeldOrder): Promise<RefusalReason | undefined>;
+  abstract forVendorAtMarketOn(vendorId: VendorId, marketId: string, date: string): Promise<TradingDay>;
 }

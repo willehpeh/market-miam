@@ -4,4 +4,8 @@ export class OrderId {
   streamId(): string {
     return `ordering-order-${this._value}`;
   }
+
+  value(): string {
+    return this._value;
+  }
 }

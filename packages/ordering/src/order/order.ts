@@ -3,6 +3,7 @@ import { Instant } from '@market-miam/common';
 import { VendorId } from '@market-miam/shared-kernel';
 import { OrderEvent, OrderPlaced, OrderRefused } from './events';
 import { RefusalReason } from './refusal-reason';
+import { TradingDay } from './trading-day';
 import { HeldOrder } from './held-order';
 import { OrderId } from './order-id';
 
@@ -13,18 +14,14 @@ export class Order extends Aggregate {
     super();
   }
 
-  place(vendorId: VendorId, held: HeldOrder, placedAt: Instant) {
+  place(vendorId: VendorId, held: HeldOrder, day: TradingDay, receivedAt: Instant) {
     if (this._holdRecorded) {
       return;
     }
-    this.raise(this.orderPlaced(vendorId, held, placedAt));
-  }
-
-  refuse(vendorId: VendorId, held: HeldOrder, reason: RefusalReason, refusedAt: Instant) {
-    if (this._holdRecorded) {
-      return;
-    }
-    this.raise(this.orderRefused(vendorId, held, reason, refusedAt));
+    const availability = day.availabilityOf(held.lines);
+    this.raise(availability === 'available'
+      ? this.orderPlaced(vendorId, held, receivedAt)
+      : this.orderRefused(vendorId, held, availability, receivedAt));
   }
 
   streamId(): string {
@@ -45,7 +42,7 @@ export class Order extends Aggregate {
       type: 'OrderPlaced',
       payload: {
         vendorId: vendorId.value(),
-        orderId: held.orderId,
+        orderId: this._id.value(),
         marketId: held.marketId,
         date: held.date,
         lines: held.lines,
@@ -61,7 +58,7 @@ export class Order extends Aggregate {
       type: 'OrderRefused',
       payload: {
         vendorId: vendorId.value(),
-        orderId: held.orderId,
+        orderId: this._id.value(),
         marketId: held.marketId,
         date: held.date,
         lines: held.lines,

@@ -7,12 +7,12 @@ export const orderStream = (orderId = placement.order.orderId): string => `order
 
 export const orderPlaced = (overrides: Partial<OrderPlaced['payload']> = {}): OrderPlaced => ({
   type: 'OrderPlaced',
-  payload: { vendorId: placement.vendorId, ...placement.order, placedAt: placement.placedAt, ...overrides },
+  payload: { vendorId: placement.vendorId, ...placement.order, placedAt: placement.receivedAt, ...overrides },
   version: 1,
 });
 
 export const orderRefused = (overrides: Partial<OrderRefused['payload']> = {}): OrderRefused => ({
   type: 'OrderRefused',
-  payload: { vendorId: placement.vendorId, ...placement.order, reason: 'sold-out', refusedAt: placement.placedAt, ...overrides },
+  payload: { vendorId: placement.vendorId, ...placement.order, reason: 'sold-out', refusedAt: placement.receivedAt, ...overrides },
   version: 1,
 });

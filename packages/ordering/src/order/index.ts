@@ -1,5 +1,7 @@
 export * from './held-order';
+export * from './availability';
 export * from './refusal-reason';
+export * from './trading-day';
 export * from './order-id';
 export * from './order';
 export * from './orders';

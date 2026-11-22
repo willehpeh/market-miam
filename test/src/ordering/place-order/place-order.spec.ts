@@ -12,6 +12,7 @@ describe('Place Order', () => {
   beforeEach(() => {
     store = new InMemoryEventStore();
     tradingDays = new InMemoryTradingDays();
+    tradingDays.setMenu('dish-id', 'another-dish-id');
     handler = new PlaceOrderHandler(new Orders(new VendorScopedEvents(store)), tradingDays);
   });
 
@@ -37,6 +38,45 @@ describe('Place Order', () => {
     await handler.execute(TestPlaceOrder.valid());
 
     expect(store.newEvents()).toEqual([expect.objectContaining({ streamId: orderStream(), ...orderRefused() })]);
+  });
+
+  it('refuses the order as sold out when the vendor took one of its dishes off the menu while the customer paid', async () => {
+    tradingDays.setMenu('dish-id');
+
+    await handler.execute(TestPlaceOrder.valid());
+
+    expect(store.newEvents()).toEqual([expect.objectContaining({ streamId: orderStream(), ...orderRefused() })]);
+  });
+
+  it('refuses the order when the vendor closed the day while the customer paid', async () => {
+    tradingDays.close();
+
+    await handler.execute(TestPlaceOrder.valid());
+
+    expect(store.newEvents()).toEqual([
+      expect.objectContaining({ streamId: orderStream(), ...orderRefused({ reason: 'closed' }) }),
+    ]);
+  });
+
+  it('refuses for the closed day rather than a sold-out dish when both apply', async () => {
+    tradingDays.markSoldOut('another-dish-id');
+    tradingDays.close();
+
+    await handler.execute(TestPlaceOrder.valid());
+
+    expect(store.newEvents()).toEqual([
+      expect.objectContaining({ streamId: orderStream(), ...orderRefused({ reason: 'closed' }) }),
+    ]);
+  });
+
+  it('refuses the order when the market day ended while the customer paid', async () => {
+    tradingDays.end();
+
+    await handler.execute(TestPlaceOrder.valid());
+
+    expect(store.newEvents()).toEqual([
+      expect.objectContaining({ streamId: orderStream(), ...orderRefused({ reason: 'ended' }) }),
+    ]);
   });
 
   it('records nothing when Stripe sends a placed order’s hold again after its dish sold out', async () => {
