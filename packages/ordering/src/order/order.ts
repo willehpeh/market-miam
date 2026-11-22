@@ -7,21 +7,21 @@ import { HeldOrder } from './held-order';
 import { OrderId } from './order-id';
 
 export class Order extends Aggregate {
-  private _placed = false;
+  private _holdRecorded = false;
 
   constructor(private readonly _id: OrderId) {
     super();
   }
 
   place(vendorId: VendorId, held: HeldOrder, placedAt: Instant) {
-    if (this._placed) {
+    if (this._holdRecorded) {
       return;
     }
     this.raise(this.orderPlaced(vendorId, held, placedAt));
   }
 
   refuse(vendorId: VendorId, held: HeldOrder, reason: RefusalReason, refusedAt: Instant) {
-    if (this._placed) {
+    if (this._holdRecorded) {
       return;
     }
     this.raise(this.orderRefused(vendorId, held, reason, refusedAt));
@@ -35,7 +35,7 @@ export class Order extends Aggregate {
     switch (event.type) {
       case 'OrderPlaced':
       case 'OrderRefused':
-        this._placed = true;
+        this._holdRecorded = true;
         break;
     }
   }
