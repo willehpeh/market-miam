@@ -23,14 +23,16 @@
 // same contract as tools/test-map. The spec tokenizer is a copy of test-map's
 // (each tool stays self-contained so its Render build filter covers it).
 //
-// Contexts run left to right in the order declared. Within one, chapters are
-// the aggregates, laid out in its story order: dependencies between slices
-// always win, the declared order only breaks ties between chapters the tests
-// leave independent (publishing a storefront precedes trading a market day in
-// the vendor's story, but no spec presupposes it).
+// The board's timeline is the vendor's lifecycle, in the order kept by hand in
+// story.mjs; everything on it is still derived. A slice missing from the story
+// is shown under Unsorted, with a warning, and the story is checked against
+// what each slice presupposes (docs/EVENT-MODEL-PLAN.md). Within a context,
+// slices are also sorted topologically by aggregate, the order dependencies are
+// checked against.
 import { readFileSync, writeFileSync, mkdirSync, readdirSync, statSync } from 'node:fs';
 import { dirname, resolve, join, basename } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { STORY } from './story.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(HERE, '../..');
@@ -89,6 +91,44 @@ function skipLiteral(src, i, prev) {
 }
 const isComment = (src, i) => src[i] === '/' && (src[i + 1] === '/' || src[i + 1] === '*');
 
+// The index just past the bracket group opening at src[open], strings and
+// comments skipped; -1 if it never closes.
+function closeBracket(src, open) {
+  let d = 0, prev = '(';
+  for (let i = open; i < src.length;) {
+    const after = skipLiteral(src, i, prev);
+    if (after >= 0) { i = after; prev = ')'; continue; }
+    const c = src[i];
+    if ('([{'.includes(c)) d++;
+    else if (')]}'.includes(c) && --d === 0) return i + 1;
+    if (!/\s/.test(c)) prev = c;
+    i++;
+  }
+  return -1;
+}
+
+// A describe/it/test call starting at src[i]: its keyword, its modifiers and
+// the index just past the parenthesis its title follows. A table given to
+// .each — an array of any depth or a template — and a condition given to
+// .skipIf or .runIf are stepped over whole.
+function callHead(src, i) {
+  const k = /^(describe|it|test)\b/.exec(src.slice(i, i + 9));
+  if (!k) return null;
+  let j = i + k[1].length, mods = '';
+  while (src[j] === '.') {
+    const m = /^\.(each|skip|only|todo|concurrent|fails|skipIf|runIf)\b/.exec(src.slice(j, j + 12));
+    if (!m) return null;
+    mods += m[0]; j += m[0].length;
+    if (!['each', 'skipIf', 'runIf'].includes(m[1])) continue;
+    while (/\s/.test(src[j] ?? '')) j++;
+    if (src[j] === '`') j = skipLiteral(src, j, '(');
+    else if (src[j] === '(') j = closeBracket(src, j);
+    if (j < 0) return null;
+  }
+  while (/\s/.test(src[j] ?? '')) j++;
+  return src[j] === '(' ? { type: k[1], mods, end: j + 1 } : null;
+}
+
 // Finds describe/it/test calls, their brace depth and where each starts.
 function parseSpecs(src) {
   const calls = [];
@@ -101,11 +141,9 @@ function parseSpecs(src) {
     if (c === '{') { depth++; prev = c; i++; continue; }
     if (c === '}') { depth--; prev = c; i++; continue; }
     if (/[A-Za-z_$]/.test(c)) {
-      // The 4000-char window must cover the longest it.each table between the
-      // keyword and the test title.
-      const m = /^(describe|it|test)((?:\.(?:each|skip|only|todo|concurrent|fails|skipIf|runIf)(?:\([^)]*\))?)*)\s*\(/.exec(src.slice(i, i + 4000));
-      if (m && !/[\w$.]/.test(src[i - 1] ?? '')) {
-        let j = i + m[0].length;
+      const m = !/[\w$.]/.test(src[i - 1] ?? '') && callHead(src, i);
+      if (m) {
+        let j = m.end;
         while (j < n && /\s/.test(src[j])) j++;
         const q = src[j];
         if (q === "'" || q === '"' || q === '`') {
@@ -114,7 +152,7 @@ function parseSpecs(src) {
             if (src[k] === '\\') { name += src[k + 1]; k += 2; continue; }
             name += src[k]; k++;
           }
-          calls.push({ type: m[1], mods: m[2] || '', name, depth, start: i });
+          calls.push({ type: m.type, mods: m.mods, name, depth, start: i });
           prev = q; i = k + 1; continue;
         }
       }
@@ -275,7 +313,7 @@ for (const f of walk(API_DIR)) {
   if (!f.endsWith('.controller.ts') && !/\/ops\//.test(f)) continue;
   for (const m of read(f).matchAll(/new ([A-Z]\w+)\(/g)) (actorsOf[m[1]] ??= new Set()).add(actorOfFile(f));
 }
-for (const p of Object.values(processors)) for (const c of p.dispatches) actorsOf[c] = new Set(['automation']);
+for (const p of Object.values(processors)) for (const c of p.dispatches) (actorsOf[c] ??= new Set()).add('automation');
 const actorList = (cls) => actorsOf[cls] ? [...actorsOf[cls]].sort() : [];
 
 /* ---------- the test harnesses: which helper drives which command ---------- */
@@ -327,7 +365,6 @@ for (const ctx of CONTEXTS) for (const dir of readdirSync(ctx.slicesDir).sort())
   const src = specFiles.map(f => read(join(path, f))).join('\n');
   const { tests, setup, describeTitle } = testsWithBodies(src);
   const isRejection = (body) => /rejects\.|toThrow\(|toBeInstanceOf\(\s*[A-Z]/.test(body);
-  const specs = tests.map(t => ({ name: t.name, mods: t.mods, kind: isRejection(t.body) ? 'rejection' : 'happy' }));
   const builders = Object.entries(helperEvent[ctx.id]);
   const mentionedIn = (text) => [...new Set([
     ...EVENT_TYPES.filter(e => text.includes(`'${e}'`) || text.includes(`type: '${e}'`) || new RegExp(`\\b${e}\\b`).test(text)),
@@ -335,6 +372,70 @@ for (const ctx of CONTEXTS) for (const dir of readdirSync(ctx.slicesDir).sort())
     // seedCatalogue seeds the two catalogue items as events; the harness calls it.
     ...(text.includes('marketDayHarness(') || text.includes('seedCatalogue(') ? ['ItemAddedToCatalogue'] : []),
   ])];
+  // Each spec's Given / When / Then, read off its own body: what it asserts was
+  // recorded (or that nothing was), the error it expects, the commands an
+  // automation's spec expects sent; every event it mentions elsewhere, and every
+  // command it runs through a harness helper, is its Given.
+  const assertions = /expect\(\s*(?:store\.newEvents\(\)|gateway\.dispatched)\s*\)[\s\S]*?;/g;
+  // The spec file's own helpers (`given(registered())`, `await invite()`), so a
+  // spec that sets its history up through one is read as giving what the helper
+  // records. A helper that asserts is a Then, not a Given, and is left out.
+  const commandsRunIn = (text) => [
+    ...Object.keys(helperCommand).filter(h => callsHelper(text, h)).map(h => helperCommand[h]),
+    ...[...text.matchAll(/\bnew (\w+)Handler\(/g)].map(m => m[1]),
+    ...[...text.matchAll(/\bTest([A-Z]\w+)\.(?:valid|with)\b/g)].map(m => m[1]),
+  ];
+  // Read from the whole file: a helper written after the last test sits in that
+  // test's cut-out source, which ends where the first such helper starts.
+  const helperDefs = [...src.matchAll(/^[ \t]*(?:(?:const|let)\s+(\w+)\s*=\s*(?:async\s*)?(?:\([^)]*\)|\w+)\s*(?::[^=;]*)?=>|(?:async\s+)?function\s+(\w+)\s*\()/gm)]
+    .map((m, i, all) => {
+      const end = Math.min(all[i + 1]?.index ?? src.length, ...tests.map(t => t.start).filter(at => at > m.index), m.index + 1500);
+      return { name: m[1] || m[2], at: m.index, body: src.slice(m.index, end) };
+    });
+  const localHelpers = helperDefs.filter(h => !/\bexpect\(/.test(h.body));
+  for (const t of tests) {
+    const cut = helperDefs.find(h => h.at > t.start && h.at < t.start + t.body.length);
+    if (cut) t.body = t.body.slice(0, cut.at - t.start);
+  }
+  const givenIn = (text, seen = new Set()) => {
+    const events = new Set(mentionedIn(text)), commands = new Set(commandsRunIn(text));
+    for (const h of localHelpers) {
+      if (seen.has(h.name) || !callsHelper(text, h.name)) continue;
+      seen.add(h.name);
+      const inner = givenIn(h.body, seen);
+      inner.events.forEach(e => events.add(e)); inner.commands.forEach(c => commands.add(c));
+    }
+    return { events: [...events], commands: [...commands] };
+  };
+  // What every spec in the file is given: the history its beforeEach blocks set up.
+  const shared = [...setup.matchAll(/\bbeforeEach\(/g)].map(m => {
+    const open = setup.indexOf('{', m.index);
+    const close = open < 0 ? -1 : closeBracket(setup, open);
+    return close < 0 ? '' : setup.slice(open, close);
+  }).join('\n');
+  const sharedGiven = givenIn(shared);
+  const specs = tests.map(t => {
+    const then = { events: new Set(), errors: [], sent: [], nothing: false };
+    for (const m of t.body.matchAll(/newEvents\(\)\)([\s\S]*?);/g)) {
+      for (const e of m[1].matchAll(/type:\s*'(\w+)'/g)) if (eventAggregate[e[1]]) then.events.add(e[1]);
+      for (const [h, e] of builders) if (callsHelper(m[1], h)) then.events.add(e);
+      if (/^\s*\.\s*(?:toEqual\(\s*\[\s*\]\s*\)|toHaveLength\(\s*0\s*\))/.test(m[1])) then.nothing = true;
+    }
+    for (const m of t.body.matchAll(/dispatched\s*\)\s*\.\s*toEqual\(\s*\[([\s\S]*?)\]\s*\)/g)) {
+      const sent = [...m[1].matchAll(/new (\w+)\(/g)].map(x => x[1]);
+      if (sent.length) then.sent.push(...sent); else then.nothing = true;
+    }
+    then.errors = [...new Set([...t.body.matchAll(/(?:toThrow|toBeInstanceOf)\(\s*([A-Z]\w+)/g)].map(m => m[1]).filter(e => e !== 'Error'))];
+    const givenText = t.body.replace(assertions, '');
+    return {
+      name: t.name, mods: t.mods, kind: isRejection(t.body) ? 'rejection' : 'happy',
+      ...(({ events, commands }) => ({
+        given: [...new Set([...sharedGiven.events, ...events])],
+        givenCommands: [...new Set([...sharedGiven.commands, ...commands])],
+      }))(givenIn(givenText)),
+      then: { events: [...then.events], errors: then.errors, sent: [...new Set(then.sent)], nothing: then.nothing },
+    };
+  });
   const mentioned = mentionedIn(src);
   // The slice's main scenario: the shared setup and its first test that isn't a
   // rejection. Where the slice sits on the timeline follows what that scenario
@@ -456,6 +557,24 @@ for (const ctx of CONTEXTS) for (const dir of readdirSync(ctx.slicesDir).sort())
   }
 }
 
+// Each spec's Given and Then, once every command's events are known. A command
+// run through a harness helper is given as the event it records. A command's
+// spec that checks its outcome through a helper of its own asserts nothing the
+// reading above can see: it records the command's own event, unless its title
+// says nothing is recorded.
+{
+  const emitsOf = Object.fromEntries(slices.filter(s => s.kind === 'command').map(s => [s.command, s.emits]));
+  for (const s of slices) for (const t of s.specs) {
+    const own = s.kind === 'command' ? s.emits : [];
+    t.given = [...new Set([...t.given, ...t.givenCommands.filter(c => c !== s.command).flatMap(c => emitsOf[c] ?? [])])]
+      .filter(e => !t.then.events.includes(e));
+    delete t.givenCommands;
+    if (s.kind === 'command' && t.kind === 'happy' && !t.then.events.length && !t.then.nothing) {
+      if (/\bnothing\b/i.test(t.name)) t.then.nothing = true; else t.then.events = own.slice(0, 1);
+    }
+  }
+}
+
 /* ---------- ordering: a topological pass over what each slice presupposes ---------- */
 const producerOf = {};    // event type -> command slice id
 for (const s of slices) if (s.kind === 'command') for (const e of s.emits) producerOf[e] = s.id;
@@ -553,6 +672,103 @@ for (const s of slices) for (const e of [...(s.emits ?? []), ...(s.consumes ?? [
   if (a && !lanes.includes(a)) lanes.push(a);
 }
 
+/* ---------- the board's columns, in the order of the vendor's lifecycle (story.mjs) ---------- */
+// One column per command, read model or command-less automation. An automation
+// that sends commands has no column of its own: its gear sits over each command
+// it sends. A command placed twice keeps only the sender named for each place.
+const automationSending = {};   // command class -> automation slice
+for (const s of slices) if (s.kind === 'automation') for (const c of s.dispatches) automationSending[c] = s;
+const spaced = (camel) => camel.replace(/([a-z0-9])([A-Z])/g, '$1 $2');
+const queryLabel = (q) => spaced(q.replace(/^Find/, ''));
+
+function column(s, stage, by) {
+  const col = { stage, context: s.context, slice: s.id, kind: s.kind, title: s.title, ui: [], specs: [] };
+  if (s.kind === 'command') {
+    col.command = s.command;
+    col.events = s.emits;
+    for (const a of by ? [by] : s.actors) {
+      if (a === 'automation') {
+        const gear = automationSending[s.command];
+        if (gear) { col.gear = gear.id; col.ui.push({ lane: 'automation', kind: 'gear', label: gear.title, consumes: gear.consumes }); }
+      } else if (a === 'stripe') col.ui.push({ lane: 'stripe', kind: 'external', label: 'Stripe notice' });
+      else col.ui.push({ lane: a, kind: 'screen', label: s.title });
+    }
+  } else if (s.kind === 'view') {
+    col.consumes = s.consumes;
+    col.derivedFrom = s.derivedFrom ?? [];
+    const byActor = {};
+    for (const r of s.readBy ?? []) for (const a of r.actors) (byActor[a] ??= []).push(r.query);
+    for (const [a, qs] of Object.entries(byActor)) {
+      col.ui.push({ lane: a, kind: 'screen', label: queryLabel(qs[0]) + (qs.length > 1 ? ` +${qs.length - 1}` : ''), queries: qs });
+    }
+  } else {
+    col.consumes = s.consumes;
+    col.ui.push({ lane: 'automation', kind: 'gear', label: s.title, consumes: s.consumes });
+  }
+  return col;
+}
+
+const columns = [];
+const placed = new Set();
+for (const { stage, slices: entries } of STORY) for (const entry of entries) {
+  const { slice: id, by } = typeof entry === 'string' ? { slice: entry } : entry;
+  const s = byId.get(id);
+  if (!s) { warn(`story.mjs names ${id}, which is no slice on the model`); continue; }
+  if (s.kind === 'automation' && s.dispatches.length) { warn(`story.mjs names ${id}, an automation that sends commands: its gear sits over them`); continue; }
+  columns.push(column(s, stage, by));
+  placed.add(id);
+}
+for (const s of slices) {
+  if (placed.has(s.id) || (s.kind === 'automation' && s.dispatches.length)) continue;
+  warn(`slice ${s.id} is not in story.mjs: shown under Unsorted`);
+  columns.push(column(s, 'Unsorted'));
+}
+
+// The story's order against what each slice presupposes: some place of a slice
+// must come after the first place of everything it presupposes.
+{
+  const at = {};
+  columns.forEach((c, i) => (at[c.slice] ??= []).push(i));
+  for (const s of slices) {
+    if (!at[s.id]) continue;
+    for (const d of s.deps) {
+      if (!at[d]) continue;
+      if (Math.min(...at[d]) > Math.max(...at[s.id])) warn(`story.mjs places ${s.id} before ${d}, which it presupposes`);
+    }
+  }
+}
+
+// Which specs hang under which column. A slice's specs go under its column; a
+// slice placed twice files each spec wherever everything it is given has
+// happened by then, the last place if nowhere. An automation's specs go under
+// the gear over the command whose event they assert, else the command they
+// assert it sends, else under every one of its gears.
+{
+  const occurrences = {};
+  columns.forEach((c, i) => (occurrences[c.slice] ??= []).push(i));
+  const producedBefore = (i) => new Set(columns.slice(0, i).flatMap(c => c.events ?? []));
+  columns.forEach((c, i) => {
+    const s = byId.get(c.slice);
+    const mine = occurrences[c.slice];
+    s.specs.forEach((t, n) => {
+      if (mine.length === 1) { c.specs.push([s.id, n]); return; }
+      const before = (j) => t.given.every(e => producedBefore(j).has(e));
+      const reachable = mine.filter(before);
+      if ((reachable.length ? reachable : [mine[mine.length - 1]]).includes(i)) c.specs.push([s.id, n]);
+    });
+    if (!c.gear) return;
+    const gear = byId.get(c.gear);
+    const gearColumns = columns.filter(x => x.gear === c.gear);
+    gear.specs.forEach((t, n) => {
+      const byEvent = gearColumns.filter(x => x.events.some(e => t.then.events.includes(e)));
+      const byCommand = gearColumns.filter(x => t.then.sent.includes(x.command));
+      const targets = byEvent.length ? byEvent : byCommand.length ? byCommand : gearColumns;
+      if (targets.includes(c)) c.specs.push([gear.id, n]);
+    });
+  });
+}
+const stages = [...new Set(columns.map(c => c.stage))];
+
 const counts = {
   slices: slices.length,
   commands: slices.filter(s => s.kind === 'command').length,
@@ -565,7 +781,7 @@ const orphans = EVENT_TYPES.filter(e => !slices.some(s => (s.emits ?? []).includ
 if (orphans.length) warn(`events with no producing slice on the model: ${orphans}`);
 
 const contexts = CONTEXTS.filter(c => slices.some(s => s.context === c.id)).map(({ id, name }) => ({ id, name }));
-const data = { contexts, slices, lanes, eventAggregate, eventContext, counts, skipped, unproduced: orphans };
+const data = { contexts, slices, columns, stages, lanes, eventAggregate, eventContext, counts, skipped, unproduced: orphans };
 const generated = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
 const html = read(resolve(HERE, 'template.html'))
   .replace('__DATA__', () => JSON.stringify(data))
