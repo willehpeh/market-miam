@@ -155,6 +155,14 @@
   #arrows.focused path { opacity: 0.06; }
   #arrows.focused path.lit { opacity: 0.9; stroke-width: 2.2; }
 
+  .ctx {
+    align-self: end; padding: 4px 2px 3px; border-bottom: 2px solid var(--ink-3);
+    font-size: 13px; font-weight: 750; letter-spacing: 0.01em; color: var(--ink); white-space: nowrap;
+  }
+  .ctx .ctx-label { display: inline-block; }
+  .ctx .ctx-note { font-size: 11px; font-weight: 500; color: var(--ink-3); margin-left: 8px; }
+  .evstack { display: flex; flex-direction: column; gap: 6px; align-self: start; }
+  .triggers { align-self: end; display: flex; flex-wrap: wrap; gap: 4px; }
   .chap {
     align-self: end; padding: 6px 2px 2px; border-bottom: 2px solid var(--hairline);
     font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-3);
@@ -286,8 +294,8 @@
   </header>
   <p class="subtitle">The system's behaviour as an event model: vertical slices of
     <b>commands</b>, <b>events</b>, <b>read models</b> and <b>automations</b> on a timeline,
-    derived from the packages test suite and the domain package's event, projection and
-    processor declarations. Click any card for the slice's specifications — its Given/When/Then lines are the
+    derived from each bounded context's tests in the packages suite and its domain package's event,
+    projection and processor declarations. Click any card for the slice's specifications — its Given/When/Then lines are the
     <span class="mono">it</span> titles of its spec file.</p>
 
   <div class="controls">
@@ -320,9 +328,12 @@
       are appended to. Solid arrows carry events — from the command that appends one to the read
       models and automations that consume it; dashed arrows are commands dispatched by automations;
       dotted arrows are read models computed at query time from another.</p>
+    <p>The bounded contexts run left to right, Market Days then Ordering. Ordering asks Market Days
+      through published queries rather than its events (ADR 0066), so no arrow crosses between them.</p>
     <p>To change a card, change its source: slices and specifications in
-      <span class="mono">test/src/market-days</span>, lanes and wiring in
-      <span class="mono">packages/market-days</span>, actors in the API controllers.
+      <span class="mono">test/src/&lt;context&gt;</span>, lanes and wiring in
+      <span class="mono">packages/&lt;context&gt;</span>, actors in the api: its controllers, the operator
+      console under <span class="mono">ops/</span>, and Stripe's webhooks.
       Regenerate with <span class="mono">npm run event:model</span>.</p>
     <p id="skipnote"></p>
     <p>Snapshot generated from source on __GENERATED__.</p>
@@ -352,18 +363,24 @@ const KIND = {
 const ACTOR = {
   vendor: { icon: '🧑‍🍳', label: 'Vendor app' },
   customer: { icon: '🛒', label: 'Customer storefront' },
+  operator: { icon: '🛠️', label: 'Operator console' },
+  stripe: { icon: '💳', label: 'Stripe webhook' },
   automation: { icon: '⚙️', label: 'Automation' },
 };
+const actorsHTML = (actors) => (actors ?? []).filter(a => ACTOR[a]).map(a => `${ACTOR[a].icon} ${esc(ACTOR[a].label)}`);
 const CHAPTER_LABELS = {
   vendor: 'Vendor', calendar: 'Markets & schedules', catalogue: 'Catalogue',
   'market-day': 'Market day', storefront: 'Storefront', other: 'Other',
+  merchant: 'Merchant', 'payment-account-notices': 'Payment account notices', order: 'Orders',
 };
+const CONTEXT_NAME = Object.fromEntries(DATA.contexts.map(c => [c.id, c.name]));
 const chapterLabel = (c) => CHAPTER_LABELS[c] || c;
 const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
 for (const s of SLICES) {
   s.haystack = [
-    s.id, s.title, s.command, s.stream, ...(s.emits ?? []), ...(s.consumes ?? []), ...(s.dispatches ?? []),
+    s.id, s.title, s.command, s.stream, CONTEXT_NAME[s.context], ...(s.actors ?? []),
+    ...(s.emits ?? []), ...(s.consumes ?? []), ...(s.dispatches ?? []),
     ...s.errors, ...(s.readBy ?? []).map(r => r.query), ...s.specs.map(t => t.name),
   ].filter(Boolean).join(' ').toLowerCase();
 }
@@ -406,14 +423,22 @@ const scroller = document.getElementById('scroller');
 const sizer = document.getElementById('sizer');
 const board = document.getElementById('board');
 const N = SLICES.length;
-const ROW = { chap: 1, trigger: 2, slice: 3 };            // then one row per event lane
-const laneRow = (lane) => 4 + LANES.indexOf(lane);
+const ROW = { ctx: 1, chap: 2, trigger: 3, slice: 4 };    // then one row per event lane
+const laneRow = (lane) => 5 + LANES.indexOf(lane);
 
 function buildBoard() {
   board.style.gridTemplateColumns = `repeat(${N}, 196px)`;
   let html = '';
 
-  // chapter headers spanning their run of columns
+  // context and chapter headers spanning their runs of columns
+  let from = 0;
+  for (let i = 1; i <= N; i++) {
+    if (i === N || SLICES[i].context !== SLICES[from].context) {
+      html += `<div class="ctx" style="grid-row:${ROW.ctx};grid-column:${from + 1} / ${i + 1}"><span class="ctx-label">` +
+        `${esc(CONTEXT_NAME[SLICES[from].context] ?? SLICES[from].context)}<span class="ctx-note">bounded context</span></span></div>`;
+      from = i;
+    }
+  }
   let start = 0;
   for (let i = 1; i <= N; i++) {
     if (i === N || SLICES[i].chapter !== SLICES[start].chapter) {
@@ -424,9 +449,9 @@ function buildBoard() {
 
   SLICES.forEach((s, i) => {
     const col = `grid-column:${i + 1}`;
-    if (s.kind === 'command' && s.actor && ACTOR[s.actor]) {
-      const a = ACTOR[s.actor];
-      html += `<span class="trigger" style="grid-row:${ROW.trigger};${col}" data-col="${i}">${a.icon} ${esc(a.label)}</span>`;
+    if (s.kind === 'command' && actorsHTML(s.actors).length) {
+      html += `<div class="triggers" style="grid-row:${ROW.trigger};${col}">` +
+        actorsHTML(s.actors).map(a => `<span class="trigger" data-col="${i}">${a}</span>`).join('') + '</div>';
     }
     const rejections = s.specs.filter(t => t.kind === 'rejection').length;
     const meta = `<span>${s.specs.length} spec${s.specs.length === 1 ? '' : 's'}</span>` +
@@ -435,14 +460,17 @@ function buildBoard() {
       html += `<button class="card k-command" style="grid-row:${ROW.slice};${col}" data-slice="${esc(s.id)}" data-col="${i}">
         <span class="c-kind">Command</span><span class="c-name">${esc(s.title)}</span>
         <span class="c-meta">${meta}</span></button>`;
-      for (const e of s.emits) {
-        html += `<button class="card k-event" style="grid-row:${laneRow(DATA.eventAggregate[e])};${col}"
-          data-slice="${esc(s.id)}" data-event="${esc(e)}" data-col="${i}">
-          <span class="c-kind">Event</span><span class="c-sub">${esc(e)}</span></button>`;
+      // A command with several outcomes on one stream stacks them in its cell.
+      const byLane = {};
+      for (const e of s.emits) (byLane[DATA.eventAggregate[e]] ??= []).push(e);
+      for (const [lane, events] of Object.entries(byLane)) {
+        html += `<div class="evstack" style="grid-row:${laneRow(lane)};${col}">` + events.map(e =>
+          `<button class="card k-event" data-slice="${esc(s.id)}" data-event="${esc(e)}" data-col="${i}">
+            <span class="c-kind">Event</span><span class="c-sub">${esc(e)}</span></button>`).join('') + '</div>';
       }
     } else if (s.kind === 'view') {
       const readers = (s.readBy ?? []).map(r =>
-        `<span>${ACTOR[r.actor]?.icon ?? ''} ${esc(r.query)}</span>`).join('');
+        `<span>${r.actors.map(a => ACTOR[a]?.icon ?? '').join('')} ${esc(r.query)}</span>`).join('');
       const from = (s.derivedFrom ?? []).map(v => SLICES.find(x => x.id === v)?.title ?? v);
       html += `<button class="card k-view" style="grid-row:${ROW.slice};${col}" data-slice="${esc(s.id)}" data-col="${i}">
         <span class="c-kind">Read model</span><span class="c-name">${esc(s.title)}</span>
@@ -494,7 +522,14 @@ function buildEdges() {
   for (const s of SLICES) {
     const me = `[data-slice="${s.id}"][data-col]:not([data-event])`;
     if (s.kind === 'command') {
-      for (const e of s.emits) edges.push({ from: me, to: `[data-event="${e}"]`, cls: 'emit', slices: [s.id] });
+      // One arrow per stream: a stack of outcomes takes it at its top card.
+      const lanes = new Set();
+      for (const e of s.emits) {
+        const lane = DATA.eventAggregate[e];
+        if (lanes.has(lane)) continue;
+        lanes.add(lane);
+        edges.push({ from: me, to: `[data-event="${e}"]`, cls: 'emit', slices: [s.id] });
+      }
     } else if (s.derivedFrom?.length) {
       for (const v of s.derivedFrom) edges.push({ from: `[data-slice="${v}"]:not([data-event])`, to: me, cls: 'derive', slices: [s.id, v] });
     } else {
@@ -584,7 +619,7 @@ function fitSizer() {
 }
 function setZoom(z, anchor) {
   const prev = zoomLevel;
-  zoomLevel = Math.min(1.4, Math.max(0.22, z));
+  zoomLevel = Math.min(1.4, Math.max(0.1, z));
   board.style.transform = `scale(${zoomLevel})`;
   fitSizer();
   if (anchor !== false) scroller.scrollLeft = scroller.scrollLeft / prev * zoomLevel;
@@ -600,6 +635,12 @@ document.getElementById('zFit').addEventListener('click', () =>
 function syncLaneLabels() {
   const x = scroller.scrollLeft / zoomLevel;
   for (const el of board.querySelectorAll('.lane-l')) el.style.transform = `translateX(${x}px)`;
+  // A context's name stays in view while any of its columns are, clear of the lane labels.
+  for (const el of board.querySelectorAll('.ctx')) {
+    const label = el.firstElementChild;
+    const shift = Math.max(0, Math.min(x + 130 - el.offsetLeft, el.offsetWidth - label.offsetWidth - 4));
+    label.style.transform = `translateX(${shift}px)`;
+  }
 }
 scroller.addEventListener('scroll', syncLaneLabels, { passive: true });
 
@@ -652,11 +693,13 @@ function openPanel(s) {
   const k = KIND[s.kind];
   const badges = [
     `<span class="badge"><span class="dot" style="background:var(--${k.color})"></span>${k.label}</span>`,
-    `<span class="badge">${esc(chapterLabel(s.chapter))}</span>`,
+    `<span class="badge">${esc(CONTEXT_NAME[s.context] ?? s.context)} · ${esc(chapterLabel(s.chapter))}</span>`,
     `<span class="badge">${s.specs.length} spec${s.specs.length === 1 ? '' : 's'}</span>`,
   ];
-  if (s.kind === 'command' && s.actor && ACTOR[s.actor])
-    badges.push(`<span class="badge">${ACTOR[s.actor].icon} ${esc(ACTOR[s.actor].label)}</span>`);
+  if (s.kind === 'command') {
+    const actors = actorsHTML(s.actors);
+    badges.push(...(actors.length ? actors : ['no actor yet: no route issues it']).map(a => `<span class="badge">${a}</span>`));
+  }
   document.getElementById('panelBadges').innerHTML = badges.join('');
 
   let html = '';
@@ -667,8 +710,8 @@ function openPanel(s) {
       if (s.givenCommands.length) html += `<div class="pills" style="margin-top:6px">${s.givenCommands.map(c => `<span class="pill plain">via ${esc(c)}</span>`).join('')}</div>`;
     }
     html += `<h3 class="sect-h">When</h3>` + pills([s.command], 'cm');
-    html += `<h3 class="sect-h">Then</h3>` + pills(s.emits, 'ev');
-    if (s.payload) html += `<h3 class="sect-h">Example payload, as asserted</h3><pre class="codeblock">${esc(s.payload)}</pre>`;
+    html += `<h3 class="sect-h">Then${s.emits.length > 1 ? ', one of' : ''}</h3>` + pills(s.emits, 'ev');
+    if (s.payload) html += `<h3 class="sect-h">Example payload, ${s.payloadFrom === 'helper' ? 'as the suite builds it' : 'as asserted'}</h3><pre class="codeblock">${esc(s.payload)}</pre>`;
     if (s.stream) html += `<h3 class="sect-h">Stream</h3><pre class="codeblock">${esc(s.stream)}</pre>`;
     if (s.errors.length) html += `<h3 class="sect-h">Rejects with</h3>` + pills(s.errors, 'er');
   } else if (s.kind === 'view') {
@@ -678,7 +721,8 @@ function openPanel(s) {
     } else html += `<h3 class="sect-h">Projected from</h3>` + pills(s.consumes, 'ev');
     if ((s.readBy ?? []).length) {
       html += `<h3 class="sect-h">Read by</h3><div class="pills">` +
-        s.readBy.map(r => `<span class="pill vw">${esc(r.query)}</span><span class="pill plain">${ACTOR[r.actor]?.icon ?? ''} ${esc(ACTOR[r.actor]?.label ?? r.actor)}</span>`).join('') + '</div>';
+        s.readBy.map(r => `<span class="pill vw">${esc(r.query)}</span>` +
+          r.actors.map(a => `<span class="pill plain">${ACTOR[a]?.icon ?? ''} ${esc(ACTOR[a]?.label ?? a)}</span>`).join('')).join('') + '</div>';
     }
   } else {
     html += `<h3 class="sect-h">When</h3>` + pills(s.consumes, 'ev');
