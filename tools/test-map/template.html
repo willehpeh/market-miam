@@ -142,20 +142,29 @@
     background: var(--surface); border: 1px solid var(--hairline); border-radius: 12px;
     overflow: hidden;
   }
-  .tm-theme { position: absolute; }
-  .tm-theme-head {
-    position: absolute; left: 0; right: 0; top: 0; height: 26px;
+  .tm-group { position: absolute; border-radius: 7px; }
+  .tm-group:not(.depth-0) { box-shadow: inset 0 0 0 1px var(--hairline); }
+  .tm-head {
+    position: absolute; left: 0; right: 0; top: 0;
     display: flex; align-items: center; gap: 7px; padding: 0 8px;
     border: 0; background: none; cursor: zoom-in; text-align: left; overflow: hidden; white-space: nowrap;
     border-radius: 6px;
   }
-  .tm-theme-head:hover { background: var(--border); }
-  .tm-theme-head:focus-visible { outline: 2px solid var(--backend); outline-offset: -2px; }
-  .tm-theme-head .t-name {
+  .tm-head:hover { background: var(--border); }
+  .tm-head:focus-visible { outline: 2px solid var(--backend); outline-offset: -2px; }
+  .tm-head .t-name {
     font-size: 11.5px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase;
     color: var(--ink-2); overflow: hidden; text-overflow: ellipsis;
   }
-  .tm-theme-head .t-count { font-size: 11px; color: var(--ink-3); font-variant-numeric: tabular-nums; flex: none; }
+  .tm-group:not(.depth-0) > .tm-head { padding: 0 6px; gap: 6px; }
+  .tm-group:not(.depth-0) > .tm-head .t-name { font-size: 11px; font-weight: 650; letter-spacing: 0.01em; text-transform: none; }
+  .t-sep { color: var(--ink-3); font-weight: 400; margin: 0 4px; }
+  .tm-head .t-count { font-size: 11px; color: var(--ink-3); font-variant-numeric: tabular-nums; flex: none; }
+  .supporting > .tm-head .t-name { color: var(--ink-3); }
+  .tag {
+    font-size: 9.5px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; line-height: 15px;
+    color: var(--ink-3); border: 1px solid var(--hairline); border-radius: 999px; padding: 0 6px; flex: none;
+  }
   .tm-cell {
     position: absolute; border: 0; padding: 8px 4px 4px 7px; text-align: left; cursor: pointer;
     border-radius: 5px; overflow: hidden; display: block;
@@ -240,23 +249,27 @@
   /* ---- list view ---- */
   #listview { display: none; }
   #listview.show { display: block; }
-  .lv-theme {
+  .lv-group.depth-0 {
     background: var(--surface); border: 1px solid var(--hairline); border-radius: 12px;
     margin-bottom: 14px; overflow: hidden;
   }
-  .lv-theme > summary {
-    list-style: none; cursor: pointer; padding: 13px 18px; display: flex; align-items: baseline; gap: 12px;
+  .lv-group:not(.depth-0) { border-top: 1px solid var(--hairline); }
+  .lv-group > summary {
+    list-style: none; cursor: pointer; padding: 13px 18px; display: flex; align-items: center; gap: 12px;
   }
-  .lv-theme > summary::-webkit-details-marker { display: none; }
-  .lv-theme > summary:hover { background: var(--border); }
-  .lv-theme > summary:focus-visible { outline: 2px solid var(--backend); outline-offset: -2px; }
-  .lv-theme .marker { color: var(--ink-3); font-size: 11px; transition: transform 0.15s; flex: none; align-self: center; }
-  .lv-theme[open] > summary .marker { transform: rotate(90deg); }
-  .lv-theme h3 { margin: 0; font-size: 15px; }
-  .lv-theme .lv-count { margin-left: auto; color: var(--ink-2); font-size: 12.5px; font-variant-numeric: tabular-nums; flex: none; }
+  .lv-group.depth-1 > summary { padding: 9px 18px 9px 34px; }
+  .lv-group.depth-2 > summary { padding: 8px 18px 8px 50px; }
+  .lv-group > summary::-webkit-details-marker { display: none; }
+  .lv-group > summary:hover { background: var(--border); }
+  .lv-group > summary:focus-visible { outline: 2px solid var(--backend); outline-offset: -2px; }
+  .lv-group .marker { color: var(--ink-3); font-size: 11px; transition: transform 0.15s; flex: none; }
+  .lv-group[open] > summary > .marker { transform: rotate(90deg); }
+  .lv-group h3 { margin: 0; font-size: 15px; }
+  .lv-group:not(.depth-0) h3 { font-size: 13.5px; font-weight: 650; }
+  .lv-group .lv-count { margin-left: auto; color: var(--ink-2); font-size: 12.5px; font-variant-numeric: tabular-nums; flex: none; }
   .lv-file { border-top: 1px solid var(--hairline); }
   .lv-file > summary {
-    list-style: none; cursor: pointer; padding: 9px 18px 9px 22px; display: flex; align-items: center; gap: 9px; font-size: 13px;
+    list-style: none; cursor: pointer; padding: 9px 18px 9px 66px; display: flex; align-items: center; gap: 9px; font-size: 13px;
   }
   .lv-file > summary::-webkit-details-marker { display: none; }
   .lv-file > summary:hover { background: var(--border); }
@@ -264,7 +277,7 @@
   .lv-file .dot { width: 9px; height: 9px; border-radius: 3px; flex: none; }
   .lv-file .path { color: var(--ink-3); font-size: 11.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .lv-file .lv-count { margin-left: auto; color: var(--ink-2); font-size: 12px; font-variant-numeric: tabular-nums; flex: none; }
-  .lv-file .lv-tests { padding: 2px 18px 12px 40px; }
+  .lv-file .lv-tests { padding: 2px 18px 12px 84px; }
   .lv-hidden { display: none; }
 
   footer { margin-top: 22px; color: var(--ink-3); font-size: 12.5px; max-width: 78ch; }
@@ -277,7 +290,7 @@
     #treemap { height: max(440px, calc(100vh - 360px)); }
   }
   @media (prefers-reduced-motion: reduce) {
-    #panel, .tm-cell, .lv-theme .marker { transition: none; }
+    #panel, .tm-cell, .lv-group .marker { transition: none; }
   }
 </style>
 
@@ -289,8 +302,9 @@
     </div>
     <div class="stats" id="stats"></div>
   </header>
-  <p class="subtitle">Every automated test in the monorepo, grouped by what it protects rather than
-    where it lives. Blocks are sized by test count. Click a theme to zoom in, click a file to read its tests.</p>
+  <p class="subtitle">Every automated test in the monorepo, grouped by the bounded context it protects,
+    then by kind of test, then by the app it lives in. Blocks are sized by test count. Click a header to
+    zoom in, click a file to read its tests.</p>
 
   <div class="controls">
     <div class="search">
@@ -308,18 +322,27 @@
 
   <div class="map-shell" id="mapview">
     <div class="crumbs" id="crumbs"></div>
-    <div id="treemap" role="group" aria-label="Treemap of tests by theme"></div>
+    <div id="treemap" role="group" aria-label="Treemap of tests by context, kind of test and app"></div>
   </div>
 
   <div id="listview"></div>
 
   <footer>
-    <p>Colour marks the layer a test exercises: <b>backend APIs</b> (NestJS apps), <b>frontends</b>
-      (Angular apps), and the <b>shared-packages suite</b> under <span class="mono">test/</span> that
-      covers the domain libraries.</p>
+    <p><b>Contexts.</b> Market Days and Ordering are the bounded contexts (ADRs 0004, 0048, 0066).
+      Groups tagged <span class="tag">supporting</span> are what every context leans on; Cross-cutting
+      holds app shells, tooling and tests that span contexts. A test's context is the directory it sits in.</p>
+    <p><b>Kinds</b>, read from what a test drives. <b>Unit</b>: in-process, against fakes or in-memory
+      adapters — in the packages suite these are sociable, driven through use cases. <b>Component</b>:
+      a frontend component rendered and driven through its page object. <b>Integration</b>: across real
+      I/O — Postgres in Docker (<span class="mono">.container.spec.ts</span>), a local server, or the Auth0
+      test tenant (<span class="mono">.tenant.ts</span>, run by hand). <b>API</b>: the api booted in memory
+      and called over HTTP. <b>E2E</b>: the production app on real Postgres through a whole lifecycle
+      (<span class="mono">.scenario.ts</span>, nightly).</p>
+    <p>Colour marks the app's layer: <b>backend APIs</b> (NestJS apps), <b>frontends</b> (Angular apps),
+      and the <b>shared-packages suite</b> under <span class="mono">test/</span> that covers the domain
+      libraries.</p>
     <p>Parameterised <span class="mono">it.each</span> tables count as one test. Shared contract suites
-      are expanded once per implementation that runs them; files ending in
-      <span class="mono">.container.spec.ts</span> run against real Postgres in Docker.</p>
+      are expanded once per implementation that runs them.</p>
     <p>Snapshot generated from source on __GENERATED__.</p>
   </footer>
 </div>
@@ -337,7 +360,8 @@
 </aside>
 
 <script>
-const DATA = __DATA__;
+const MODEL = __DATA__;
+const DATA = MODEL.files;
 
 /* ---------- derived model ---------- */
 const GROUPS = {
@@ -355,22 +379,70 @@ const PROJECT_LABELS = {
   'customer-frontend': 'customer-frontend', 'admin-frontend': 'admin-frontend',
   'test (packages suite)': 'test/ (packages)',
 };
+const projectLabel = p => PROJECT_LABELS[p] || p;
+const SUPPORTING = new Set(MODEL.contexts.filter(c => c.supporting).map(c => c.name));
+const CONTEXT_ORDER = MODEL.contexts.map(c => c.name);
 for (const f of DATA) {
   f.group = groupOf(f.layer);
-  f.short = f.file.split('/').pop().replace(/\.spec\.ts$/, '');
+  f.short = f.file.split('/').pop().replace(/\.spec\.ts$/, '').replace(/\.ts$/, '');
   f.container = /\.container\.spec\.ts$/.test(f.file);
-  f.haystack = (f.file + ' ' + f.tests.map(t => t.suite.join(' ') + ' ' + t.name).join(' ')).toLowerCase();
 }
 const PROJECTS = [...new Set(DATA.map(f => f.layer))]
   .sort((a, b) => DATA.filter(f => f.layer === b).length - DATA.filter(f => f.layer === a).length);
-const themeTotals = {};
-for (const f of DATA) themeTotals[f.theme] = (themeTotals[f.theme] || 0) + f.tests.length;
-const THEMES = Object.keys(themeTotals).sort((a, b) => themeTotals[b] - themeTotals[a]);
 const TOTAL_TESTS = DATA.reduce((s, f) => s + f.tests.length, 0);
+
+// The hierarchy: context › kind › app › files. Contexts keep the generator's
+// order (bounded contexts first), kinds go up the test pyramid, apps by size.
+const LEVELS = [
+  { key: 'context', order: (a, b) => CONTEXT_ORDER.indexOf(a.name) - CONTEXT_ORDER.indexOf(b.name) },
+  { key: 'kind', order: (a, b) => MODEL.kinds.indexOf(a.name) - MODEL.kinds.indexOf(b.name) },
+  { key: 'layer', order: (a, b) => b.total - a.total },
+];
+function buildTree() {
+  const root = { name: 'All', label: 'All contexts', path: [], depth: -1, children: [], files: [], total: 0 };
+  for (const f of DATA) {
+    let node = root;
+    node.total += f.tests.length;
+    LEVELS.forEach((lv, depth) => {
+      const name = f[lv.key];
+      let child = node.children.find(c => c.name === name);
+      if (!child) {
+        child = { name, label: lv.key === 'layer' ? projectLabel(name) : name,
+          path: [...node.path, name], depth, children: [], files: [], total: 0 };
+        node.children.push(child);
+      }
+      child.total += f.tests.length;
+      node = child;
+    });
+    node.files.push(f);
+  }
+  (function sort(node) {
+    if (node.children.length) { node.children.sort(LEVELS[node.depth + 1].order); node.children.forEach(sort); }
+    node.files.sort((a, b) => b.tests.length - a.tests.length);
+  })(root);
+  return root;
+}
+const TREE = buildTree();
+function nodeAt(path) {
+  let node = TREE;
+  for (const name of path) node = node.children.find(c => c.name === name) || node;
+  return node;
+}
+// A group holding a single sub-group says nothing on its own: "API" with only
+// "api" in it is drawn as one block, "API · api".
+// A context keeps a header of its own even when it holds one kind.
+function descend(node) {
+  const labels = [node.label];
+  if (node.depth <= 0) return { node, labels };
+  while (node.children.length === 1) { node = node.children[0]; labels.push(node.label); }
+  return { node, labels };
+}
+const drawnAlike = path => path.length > 1 && nodeAt(path).children.length === 1;
+const filesUnder = node => node.children.length ? node.children.flatMap(filesUnder) : node.files;
 
 /* ---------- state ---------- */
 const state = {
-  zoom: null,            // theme name or null
+  zoom: [],              // path into TREE: [context, kind, app], or a prefix of it
   query: '',
   projects: new Set(PROJECTS),
   view: 'map',
@@ -379,8 +451,8 @@ const state = {
 
 /* ---------- header stats ---------- */
 document.getElementById('stats').innerHTML = [
-  [TOTAL_TESTS, 'tests'], [DATA.length, 'spec files'],
-  [THEMES.length, 'themes'], [PROJECTS.length, 'projects'],
+  [TOTAL_TESTS, 'tests'], [DATA.length, 'test files'],
+  [TREE.children.filter(c => !SUPPORTING.has(c.name)).length, 'bounded contexts'], [PROJECTS.length, 'projects'],
 ].map(([n, l]) => `<div class="stat"><b>${n}</b><span>${l}</span></div>`).join('');
 
 /* ---------- legend + chips ---------- */
@@ -405,18 +477,22 @@ chipsEl.addEventListener('click', e => {
 
 /* ---------- filtering ---------- */
 function fileVisible(f) {
-  if (!state.projects.has(f.layer)) return false;
-  if (state.query && !f.haystack.includes(state.query)) return false;
-  return true;
+  return state.projects.has(f.layer) && matchedTests(f) > 0;
+}
+// The tests a file contributes to the current search: those whose title
+// matches, or all of them when the query names the file, its context, kind or app.
+function matchedTests(f) {
+  if (!state.query) return f.tests.length;
+  const hits = f.tests.filter(t => (t.suite.join(' ') + ' ' + t.name).toLowerCase().includes(state.query)).length;
+  const fileHit = [f.file, f.context, f.kind, f.layer].some(s => s.toLowerCase().includes(state.query));
+  return hits || (fileHit ? f.tests.length : 0);
 }
 function matchCounts() {
   let files = 0, tests = 0;
   for (const f of DATA) {
     if (!state.projects.has(f.layer)) continue;
-    if (!state.query) { files++; tests += f.tests.length; continue; }
-    const hits = f.tests.filter(t => (t.suite.join(' ') + ' ' + t.name).toLowerCase().includes(state.query)).length;
-    const fileNameHit = f.file.toLowerCase().includes(state.query);
-    if (hits || fileNameHit) { files++; tests += hits || f.tests.length; }
+    const n = matchedTests(f);
+    if (n) { files++; tests += n; }
   }
   return { files, tests };
 }
@@ -470,38 +546,55 @@ function squarify(items, x, y, w, h) {
 
 /* ---------- rendering: treemap ---------- */
 const mapEl = document.getElementById('treemap');
-const GAP = 2, HEAD = 26, PAD = 3;
+const GAP = 2, PAD = 3;
+const headHeight = node => node.depth === 0 ? 26 : 20;
 
 function renderMap() {
   const W = mapEl.clientWidth, H = mapEl.clientHeight;
   mapEl.innerHTML = '';
-  if (state.zoom) { renderFiles(mapEl, state.zoom, GAP, GAP, W - GAP * 2, H - GAP * 2); }
-  else {
-    const items = THEMES.map(t => ({ id: t, value: themeTotals[t] }));
-    for (const r of squarify(items, GAP, GAP, W - GAP * 2, H - GAP * 2)) {
-      const t = r.item.id;
-      const block = document.createElement('div');
-      block.className = 'tm-theme';
-      block.style.cssText = `left:${r.x + 1}px;top:${r.y + 1}px;width:${r.w - GAP}px;height:${r.h - GAP}px;`;
-      const nFiles = DATA.filter(f => f.theme === t).length;
-      const head = document.createElement('button');
-      head.className = 'tm-theme-head';
-      head.innerHTML = `<span class="t-name">${esc(t)}</span><span class="t-count">${themeTotals[t]}</span>`;
-      head.title = `${t} — ${themeTotals[t]} tests in ${nFiles} files. Click to zoom.`;
-      head.addEventListener('click', () => { state.zoom = t; refresh(); });
-      block.appendChild(head);
-      renderFiles(block, t, PAD, HEAD, r.w - GAP - PAD * 2, r.h - GAP - HEAD - PAD);
-      mapEl.appendChild(block);
-    }
-  }
+  renderContent(mapEl, nodeAt(state.zoom), GAP, GAP, W - GAP * 2, H - GAP * 2);
   renderCrumbs();
 }
 
-function renderFiles(parent, theme, x, y, w, h) {
-  const files = DATA.filter(f => f.theme === theme && f.tests.length > 0)
-    .map(f => ({ id: f.file, value: f.tests.length, f }))
-    .sort((a, b) => b.value - a.value);
-  for (const r of squarify(files, x, y, w, h)) {
+// Lays out what a node holds: its sub-groups, or its files once it has none.
+function renderContent(parent, node, x, y, w, h) {
+  node = descend(node).node;
+  if (!node.children.length) { renderFiles(parent, node.files, x, y, w, h); return; }
+  const items = node.children.map(c => ({ id: c.name, value: c.total, node: c }));
+  for (const r of squarify(items, x, y, w, h)) renderGroup(parent, r.item.node, r);
+}
+
+function renderGroup(parent, node, r) {
+  const bw = r.w - GAP, bh = r.h - GAP;
+  if (bw < 3 || bh < 3) return;
+  const { node: inner, labels } = descend(node);
+  const supporting = node.depth === 0 && SUPPORTING.has(node.name);
+  const block = document.createElement('div');
+  block.className = `tm-group depth-${node.depth}` + (supporting ? ' supporting' : '');
+  block.style.cssText = `left:${r.x + 1}px;top:${r.y + 1}px;width:${bw}px;height:${bh}px;`;
+  const hh = headHeight(node);
+  const hasHead = bw >= 44 && bh >= hh + 16;
+  if (hasHead) {
+    const nFiles = filesUnder(inner).length;
+    const head = document.createElement('button');
+    head.className = 'tm-head';
+    head.style.height = `${hh}px`;
+    head.innerHTML = `<span class="t-name">${labels.map(esc).join('<span class="t-sep">·</span>')}</span>` +
+      (supporting && bw >= 160 ? '<span class="tag">supporting</span>' : '') +
+      `<span class="t-count">${node.total}</span>`;
+    head.title = `${labels.join(' · ')} — ${node.total} tests in ${nFiles} file${nFiles === 1 ? '' : 's'}. Click to zoom.`;
+    head.addEventListener('click', () => { state.zoom = inner.path; refresh(); });
+    block.appendChild(head);
+  }
+  const top = hasHead ? hh : PAD;
+  renderContent(block, inner, PAD, top, bw - PAD * 2, bh - top - PAD);
+  parent.appendChild(block);
+}
+
+function renderFiles(parent, files, x, y, w, h) {
+  const items = files.filter(f => f.tests.length > 0)
+    .map(f => ({ id: f.file, value: f.tests.length, f }));
+  for (const r of squarify(items, x, y, w, h)) {
     const f = r.item.f;
     const cw = Math.max(0, r.w - GAP), chh = Math.max(0, r.h - GAP);
     if (cw < 3 || chh < 3) continue;
@@ -513,7 +606,7 @@ function renderFiles(parent, theme, x, y, w, h) {
     const showCount = cw >= 52 && chh >= 44;
     cell.innerHTML = (showName ? `<span class="f-name">${esc(f.short)}</span>` : '') +
       (showCount ? `<span class="f-count">${f.tests.length}</span>` : '');
-    cell.setAttribute('aria-label', `${f.short}, ${f.tests.length} tests, ${f.layer}`);
+    cell.setAttribute('aria-label', `${f.short}, ${f.tests.length} tests, ${f.kind}, ${f.layer}`);
     cell.addEventListener('click', () => openPanel(f));
     cell.addEventListener('mousemove', e => showTip(e, f));
     cell.addEventListener('mouseleave', hideTip);
@@ -521,17 +614,23 @@ function renderFiles(parent, theme, x, y, w, h) {
   }
 }
 
+// One crumb per level that changes the view: a level holding a single
+// sub-group draws the same blocks as that sub-group, so it gets no crumb.
 function renderCrumbs() {
   const c = document.getElementById('crumbs');
-  if (!state.zoom) {
-    c.innerHTML = `<button class="crumb" disabled>All themes</button>
-      <span class="hint">Click a theme header to zoom</span>`;
-  } else {
-    c.innerHTML = `<button class="crumb" id="crumbRoot">All themes</button>
-      <span class="sep">›</span><button class="crumb" disabled>${esc(state.zoom)}</button>
-      <span class="hint">Esc to zoom out</span>`;
-    document.getElementById('crumbRoot').addEventListener('click', () => { state.zoom = null; refresh(); });
-  }
+  const paths = [[], ...state.zoom.map((_, i) => state.zoom.slice(0, i + 1))]
+    .filter((p, i, all) => i === all.length - 1 || !drawnAlike(p));
+  c.innerHTML = paths.map((p, i) => i === paths.length - 1
+    ? `<button class="crumb" disabled>${esc(nodeAt(p).label)}</button>`
+    : `<button class="crumb" data-i="${i}">${esc(nodeAt(p).label)}</button><span class="sep">›</span>`).join('') +
+    `<span class="hint">${state.zoom.length ? 'Esc to zoom out' : 'Click a header to zoom'}</span>`;
+  c.querySelectorAll('.crumb[data-i]').forEach(b =>
+    b.addEventListener('click', () => { state.zoom = paths[+b.dataset.i]; refresh(); }));
+}
+function zoomOut() {
+  const path = [...state.zoom];
+  do path.pop(); while (drawnAlike(path));
+  state.zoom = path;
 }
 
 /* ---------- tooltip ---------- */
@@ -539,7 +638,7 @@ const tip = document.getElementById('tooltip');
 function showTip(e, f) {
   tip.innerHTML = `<div class="tt-file mono">${esc(f.file)}</div>
     <div class="tt-meta"><span class="dot" style="background:var(--${f.group})"></span>
-    ${esc(PROJECT_LABELS[f.layer] || f.layer)} · ${f.tests.length} test${f.tests.length === 1 ? '' : 's'}` +
+    ${esc(projectLabel(f.layer))} · ${esc(f.kind)} · ${esc(f.context)} · ${f.tests.length} test${f.tests.length === 1 ? '' : 's'}` +
     (f.container ? ' · Docker Postgres' : '') +
     (f.tests.some(t => t.contract) ? ' · contract suite' : '') + `</div>`;
   tip.style.display = 'block';
@@ -559,8 +658,9 @@ function openPanel(f) {
   document.getElementById('panelTitle').textContent = f.short;
   document.getElementById('panelPath').textContent = f.file;
   const badges = [
-    `<span class="badge"><span class="dot" style="background:var(--${f.group})"></span>${esc(PROJECT_LABELS[f.layer] || f.layer)}</span>`,
-    `<span class="badge">${esc(f.theme)}</span>`,
+    `<span class="badge">${esc(f.context)}${SUPPORTING.has(f.context) ? ' · supporting' : ''}</span>`,
+    `<span class="badge">${esc(f.kind)}</span>`,
+    `<span class="badge"><span class="dot" style="background:var(--${f.group})"></span>${esc(projectLabel(f.layer))}</span>`,
     `<span class="badge">${f.tests.length} test${f.tests.length === 1 ? '' : 's'}</span>`,
   ];
   if (f.container) badges.push('<span class="badge">🐳 Docker Postgres</span>');
@@ -611,22 +711,33 @@ function suiteTreeHTML(f) {
 
 /* ---------- list view ---------- */
 function renderList() {
-  const lv = document.getElementById('listview');
-  lv.innerHTML = THEMES.map(t => {
-    const files = DATA.filter(f => f.theme === t && fileVisible(f));
-    const shown = files.length > 0;
-    const nTests = files.reduce((s, f) => s + f.tests.length, 0);
-    return `<details class="lv-theme${shown ? '' : ' lv-hidden'}" ${state.query ? 'open' : ''}>
-      <summary><span class="marker">▶</span><h3>${esc(t)}</h3>
-        <span class="lv-count">${nTests} tests · ${files.length} files</span></summary>
-      ${files.map(f => `<details class="lv-file" ${state.query ? 'open' : ''}>
-        <summary><span class="dot" style="background:var(--${f.group})"></span>
-          <span>${esc(f.short)}</span><span class="path mono">${esc(f.file)}</span>
-          <span class="lv-count">${f.tests.length}</span></summary>
-        <div class="lv-tests">${suiteTreeHTML(f)}</div>
-      </details>`).join('')}
-    </details>`;
-  }).join('');
+  document.getElementById('listview').innerHTML = TREE.children.map(groupHTML).join('');
+}
+// Contexts start closed; inside one, every kind and app is open down to its
+// files, which stay closed. A search opens everything it matches.
+function groupHTML(node) {
+  const { node: inner, labels } = descend(node);
+  const files = filesUnder(inner).filter(fileVisible);
+  const nTests = files.reduce((s, f) => s + matchedTests(f), 0);
+  const open = state.query || node.depth > 0;
+  const supporting = node.depth === 0 && SUPPORTING.has(node.name);
+  const body = inner.children.length
+    ? inner.children.map(groupHTML).join('')
+    : inner.files.filter(fileVisible).map(fileHTML).join('');
+  return `<details class="lv-group depth-${node.depth}${files.length ? '' : ' lv-hidden'}" ${open ? 'open' : ''}>
+    <summary><span class="marker">▶</span><h3>${labels.map(esc).join('<span class="t-sep">·</span>')}</h3>
+      ${supporting ? '<span class="tag">supporting</span>' : ''}
+      <span class="lv-count">${nTests} test${nTests === 1 ? '' : 's'} · ${files.length} file${files.length === 1 ? '' : 's'}</span></summary>
+    ${body}
+  </details>`;
+}
+function fileHTML(f) {
+  return `<details class="lv-file" ${state.query ? 'open' : ''}>
+    <summary><span class="dot" style="background:var(--${f.group})"></span>
+      <span>${esc(f.short)}</span><span class="path mono">${esc(f.file)}</span>
+      <span class="lv-count">${f.tests.length}</span></summary>
+    <div class="lv-tests">${suiteTreeHTML(f)}</div>
+  </details>`;
 }
 
 /* ---------- search + view toggle ---------- */
@@ -657,7 +768,7 @@ btnList.addEventListener('click', () => setView('list'));
 document.addEventListener('keydown', e => {
   if (e.key !== 'Escape') return;
   if (panel.classList.contains('open')) closePanel();
-  else if (state.zoom) { state.zoom = null; refresh(); }
+  else if (state.zoom.length) { zoomOut(); refresh(); }
 });
 
 /* ---------- refresh + resize ---------- */
