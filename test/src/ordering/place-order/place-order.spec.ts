@@ -49,6 +49,17 @@ describe('Place Order', () => {
     ]);
   });
 
+  it('refuses for the closed day rather than a sold-out dish when both apply', async () => {
+    tradingDays.markSoldOut('another-dish-id');
+    tradingDays.close();
+
+    await handler.execute(TestPlaceOrder.valid());
+
+    expect(store.newEvents()).toEqual([
+      expect.objectContaining({ streamId: orderStream(), ...orderRefused({ reason: 'closed' }) }),
+    ]);
+  });
+
   it('records nothing when Stripe sends a placed order’s hold again after its dish sold out', async () => {
     given(orderPlaced());
     tradingDays.markSoldOut('another-dish-id');
