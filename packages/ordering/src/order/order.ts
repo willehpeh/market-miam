@@ -21,6 +21,9 @@ export class Order extends Aggregate {
   }
 
   refuse(vendorId: VendorId, held: HeldOrder, reason: RefusalReason, refusedAt: Instant) {
+    if (this._placed) {
+      return;
+    }
     this.raise(this.orderRefused(vendorId, held, reason, refusedAt));
   }
 
