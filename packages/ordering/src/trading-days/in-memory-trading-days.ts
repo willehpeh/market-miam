@@ -22,6 +22,6 @@ export class InMemoryTradingDays extends TradingDays {
   }
 
   async forVendorAtMarketOn(): Promise<TradingDay> {
-    return new TradingDay({ ...this.facts, soldOutDishIds: [...this.facts.soldOutDishIds] });
+    return new TradingDay({ ...this.facts, menuDishIds: [...this.menu], soldOutDishIds: [...this.facts.soldOutDishIds] });
   }
 }
