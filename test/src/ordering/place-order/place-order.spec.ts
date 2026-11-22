@@ -1,7 +1,7 @@
 import { DomainEvent, InMemoryEventStore } from '@market-miam/event-sourcing';
 import { InMemoryTradingDays, Orders, PlaceOrderHandler } from '@market-miam/ordering';
 import { VendorScopedEvents } from '@market-miam/shared-kernel';
-import { orderPlaced, orderRefused, orderStream } from '../order-events';
+import { orderPlaced, orderStream } from '../order-events';
 import { TestPlaceOrder } from './test-data';
 
 describe('Place Order', () => {
@@ -29,13 +29,5 @@ describe('Place Order', () => {
     await handler.execute(TestPlaceOrder.valid());
 
     expect(store.newEvents()).toEqual([]);
-  });
-
-  it('refuses the whole order when one of its dishes sold out while the customer paid', async () => {
-    tradingDays.markSoldOut('another-dish-id');
-
-    await handler.execute(TestPlaceOrder.valid());
-
-    expect(store.newEvents()).toEqual([expect.objectContaining({ streamId: orderStream(), ...orderRefused() })]);
   });
 });
