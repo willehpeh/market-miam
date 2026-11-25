@@ -15,6 +15,8 @@ export class MarketDayOnRecord {
         return new MarketDayOnRecord(new Menu(event.payload.itemIds.map(itemId => new ItemId(itemId))), this.soldOut);
       case 'ItemMarkedAsSoldOut':
         return new MarketDayOnRecord(this.menu, this.soldOut.with(new ItemId(event.payload.itemId)));
+      case 'ItemMarkedAsAvailable':
+        return new MarketDayOnRecord(this.menu, this.soldOut.without(new ItemId(event.payload.itemId)));
       default:
         return this;
     }
