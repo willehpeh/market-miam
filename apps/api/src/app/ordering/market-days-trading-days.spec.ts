@@ -40,6 +40,6 @@ describe('Trading days, from Market Days’ live day', () => {
   });
 
   it('refuses the order as closed when Market Days reports no live day', async () => {
-    await expect(tradingDayFor().then(day => day.availabilityOf(lines))).resolves.toBe('closed');
+    expect((await tradingDayFor()).availabilityOf(lines)).toBe('closed');
   });
 });
