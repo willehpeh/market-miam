@@ -1,17 +1,17 @@
-import { CompletedPage, Payments } from './payments';
+import { CompletedCheckout, Payments } from './payments';
 
 export class InMemoryPayments extends Payments {
-  private readonly completedPages = new Map<string, CompletedPage>();
+  private readonly completedCheckouts = new Map<string, CompletedCheckout>();
 
-  complete(sessionId: string, page: CompletedPage): void {
-    this.completedPages.set(sessionId, page);
+  complete(checkoutId: string, checkout: CompletedCheckout): void {
+    this.completedCheckouts.set(checkoutId, checkout);
   }
 
-  async completedPage(sessionId: string): Promise<CompletedPage> {
-    const page = this.completedPages.get(sessionId);
-    if (!page) {
-      throw new Error(`No completed page ${sessionId}`);
+  async completedCheckout(checkoutId: string): Promise<CompletedCheckout> {
+    const checkout = this.completedCheckouts.get(checkoutId);
+    if (!checkout) {
+      throw new Error(`No completed checkout ${checkoutId}`);
     }
-    return page;
+    return checkout;
   }
 }

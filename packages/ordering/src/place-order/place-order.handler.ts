@@ -17,9 +17,9 @@ export class PlaceOrderHandler implements ICommandHandler<PlaceOrder> {
   ) {}
 
   async execute(request: PlaceOrder): Promise<void> {
-    const page = await this.payments.completedPage(request.sessionId, request.accountId);
-    const vendorId = new VendorId(page.vendorId);
-    const held = page.order;
+    const checkout = await this.payments.completedCheckout(request.checkoutId, request.accountId);
+    const vendorId = new VendorId(checkout.vendorId);
+    const held = checkout.order;
     const [order, day, merchant] = await Promise.all([
       this.orders.forId(new OrderId(held.orderId)),
       this.tradingDays.forVendorAtMarketOn(vendorId, held.marketId, held.date),

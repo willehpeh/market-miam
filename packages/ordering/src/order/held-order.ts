@@ -10,5 +10,5 @@ export type HeldOrder = {
   marketId: string;
   date: string;
   lines: OrderLine[];
-  paymentIntentId: string;
+  paymentId: string;
 };

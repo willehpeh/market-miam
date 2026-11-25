@@ -7,6 +7,6 @@ export type OrderPlaced = DomainEvent<'OrderPlaced', {
   marketId: string;
   date: string;
   lines: OrderLine[];
-  paymentIntentId: string;
+  paymentId: string;
   placedAt: string;
 }>

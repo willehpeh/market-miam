@@ -8,7 +8,7 @@ export type OrderRefused = DomainEvent<'OrderRefused', {
   marketId: string;
   date: string;
   lines: OrderLine[];
-  paymentIntentId: string;
+  paymentId: string;
   reason: RefusalReason;
   refusedAt: string;
 }>

@@ -1,11 +1,11 @@
 import { OrderPlaced, OrderRefused } from '@market-miam/ordering';
-import { TestCompletedPage, TestPlaceOrder } from './place-order/test-data';
+import { TestCompletedCheckout, TestPlaceOrder } from './place-order/test-data';
 
-const page = TestCompletedPage.valid();
+const checkout = TestCompletedCheckout.valid();
 const { receivedAt } = TestPlaceOrder.valid();
-const heldFacts = { vendorId: page.vendorId, ...page.order };
+const heldFacts = { vendorId: checkout.vendorId, ...checkout.order };
 
-export const orderStream = (id = page.order.orderId): string => `ordering-order-${id}`;
+export const orderStream = (id = checkout.order.orderId): string => `ordering-order-${id}`;
 
 export const orderPlaced = (overrides: Partial<OrderPlaced['payload']> = {}): OrderPlaced => ({
   type: 'OrderPlaced',

@@ -3,7 +3,7 @@ import { InMemoryPayments, InMemoryTradingDays, Merchants, Orders, PlaceOrderHan
 import { VendorScopedEvents } from '@market-miam/shared-kernel';
 import { merchantStream, registrationConfirmed, registrationStarted } from '../merchant-events';
 import { orderPlaced, orderRefused, orderStream } from '../order-events';
-import { TestCompletedPage, TestPlaceOrder } from './test-data';
+import { TestCompletedCheckout, TestPlaceOrder } from './test-data';
 
 describe('Place Order', () => {
   let store: InMemoryEventStore;
@@ -16,7 +16,7 @@ describe('Place Order', () => {
     tradingDays.setMenu('dish-id', 'another-dish-id');
     store.seedWith(merchantStream(), [registrationStarted(), registrationConfirmed()], { vendorId: 'vendor-id' });
     const payments = new InMemoryPayments();
-    payments.complete('cs_test_1', TestCompletedPage.valid());
+    payments.complete('cs_test_1', TestCompletedCheckout.valid());
     const events = new VendorScopedEvents(store);
     handler = new PlaceOrderHandler(payments, new Orders(events), tradingDays, new Merchants(events));
   });

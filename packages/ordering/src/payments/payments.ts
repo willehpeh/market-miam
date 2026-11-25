@@ -1,10 +1,10 @@
 import { HeldOrder } from '../order';
 
-export type CompletedPage = {
+export type CompletedCheckout = {
   vendorId: string;
   order: HeldOrder;
 };
 
 export abstract class Payments {
-  abstract completedPage(sessionId: string, accountId: string): Promise<CompletedPage>;
+  abstract completedCheckout(checkoutId: string, accountId: string): Promise<CompletedCheckout>;
 }
