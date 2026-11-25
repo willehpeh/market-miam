@@ -3,7 +3,7 @@ import { INestApplication } from '@nestjs/common';
 import { InMemoryPaymentAccounts, InMemoryPayments } from '@market-miam/ordering';
 import { bootApiTestApp, FIXED_NOW, fixedClock, publishStorefrontFor, testVendor } from '../testing/api-test-app';
 import { EventLog } from '../testing/event-log';
-import { StripeEvents } from '../testing/stripe-events';
+import { STRIPE_ACCOUNTS_SIGNING_SECRET, StripeEvents } from '../testing/stripe-events';
 import { VendorApi } from '../testing/vendor-api';
 import { Subscriptions } from '../event-sourcing/subscriptions';
 
@@ -90,6 +90,19 @@ describe('Placing an order over HTTP', () => {
         },
       }),
     ]);
+  });
+
+  it('refuses an event signed with the accounts destination’s secret, recording nothing', async () => {
+    const accountId = await confirmPaymentAccount();
+    await planToday();
+    payments.complete('cs_test_1', {
+      vendorId: 'acme-bakery',
+      order: { orderId: 'order-1', marketId: 'market-1', date: TUESDAY, lines, paymentId: 'pi_test_1' },
+    });
+
+    await new StripeEvents(app, STRIPE_ACCOUNTS_SIGNING_SECRET).checkoutCompleted('evt_test_2', 'cs_test_1', accountId).expect(400);
+
+    expect(await new EventLog(app).ofType('OrderPlaced')).toEqual([]);
   });
 
   async function confirmPaymentAccount(): Promise<string> {
