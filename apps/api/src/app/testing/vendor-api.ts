@@ -40,6 +40,10 @@ export class VendorApi {
     return this.call('post', '/market-schedules').send(schedule);
   }
 
+  setMenu(marketId: string, date: string, itemIds: string[]): Test {
+    return this.call('put', `/market-days/${marketId}/${date}/menu`).send({ itemIds });
+  }
+
   provideLegalIdentity(identity: object): Test {
     return this.call('put', '/legal-identity').send(identity);
   }
