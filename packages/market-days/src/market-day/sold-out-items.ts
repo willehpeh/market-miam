@@ -19,4 +19,8 @@ export class SoldOutItems {
   includes(itemId: ItemId): boolean {
     return this._itemIds.some(id => id.equals(itemId));
   }
+
+  value(): string[] {
+    return this._itemIds.map(id => id.value());
+  }
 }
