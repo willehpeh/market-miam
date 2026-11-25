@@ -35,27 +35,31 @@ comes next; each line points at the doc that holds the detail. Update it when a 
 
 ## Ordering, by importance and urgency
 
-Every ordering behaviour still to build, most important and most urgent first: what weakens what is built, then what a first real order needs, in the order the flow reaches it. Kept current as each lands or is found; decisions and their reasons live on the board (`docs/ordering-board/`).
+Every ordering behaviour still to build, back end and front end, most important and most urgent first: the flow in the order a first real order reaches it, each screen beside the behaviour it shows, then what a pilot needs. Kept current as each lands or is found; decisions and their reasons live on the board (`docs/ordering-board/`). Reranked with the owner on 2026-11-25: *Check out* before onboarding goes live.
 
-1. the live day reports a sold-out dish taken off the menu and put back as available, as the storefront does (`SoldOutItems.keptBy`): rare, but needed before the slice is live
-2. the order placed records the customer's email, sealed under the day's key, and a hold recorded after midnight is refused without it (board, *5, the day's key*): every customer email needs it, and `OrderPlaced`'s shape is cheapest to change before anything is live
-3. *Check out*: the customer's anonymous call that opens a 30-minute Checkout page on the vendor's account, the card held, not charged. Every check runs first: the account can take payments, the market is trading by its hours, the dishes are on the menu and not sold out, orders aren't paused. The price comes from Market Days' menu, the order is capped at 119,99 €, and our order ID, made here, rides in the page's metadata with the vendor, the market and the date, each line carrying its dish and variant (board, step 2)
-4. the Stripe adapter behind `Payments` and *Check out*: the page created on the vendor's account, the completed page fetched with `Stripe-Context` and its lines; its contract run nightly against the sandbox with a restricted key; both webhook secrets in `render.yaml` and `.env.example`; Ordering into `AppModule` (ADR 0069)
-5. the vendor accepts an order within 10 minutes, capped at the day's end; the hold is captured, the payment recorded from Stripe's webhook, and the customer given their code (step 3a, Q5)
-6. an order refused by the vendor, cancelled by the customer until the acceptance reaches us, or left unanswered for 10 minutes: its hold released, recorded from Stripe's webhook (step 3b)
-7. a payment account disabled: its held orders refused, and its storefront taking no orders until it can take payments again (step 3b, R4, Q11)
-8. a refused capture marks the order *payment refused, don't hand over* and alerts the vendor (Q5, waiting on Stripe support)
-9. an order handed over with its code, matched against the day's open orders (step 4)
-10. a paid order handed over without its code, as its own event, the customer emailed at once (step 4, Q7)
-11. the market day ends: remaining holds released; paid orders not collected become no-shows, unless the vendor closed by hand and didn't reopen, which refunds them (step 5)
-12. the day's customer details erased at midnight, Paris time, its key shredded (step 5)
-13. a vendor erased with orders in flight: holds released, paid orders not collected refunded at once, customers emailed (board, *5, erasure*)
-14. a refund recorded from Stripe's webhook, with its amount, partial ones included (step 6, Q8)
-15. a dispute opened, then won or lost, as events of its own (step 6, K6)
-16. the vendor pauses new orders without closing the day, for a set time or until they resume (board, *2, rush*)
-17. the customer's status page and emails, and the vendor's pushes, each landing with the step that sends it once the email provider is in (board, *Customer emails*, *Vendor pushes*; plan step 7)
+1. *Check out*: the customer's anonymous call that opens a 30-minute Checkout page on the vendor's account, the card held, not charged. Every check runs first: the account can take payments, the market is trading by its hours, the dishes are on the menu and not sold out. The price comes from Market Days' menu, the order is capped at 119,99 €, and our order ID, made here, rides in the page's metadata with the vendor, the market and the date, each line carrying its dish and variant (board, step 2). Broken into its checks when it starts
+2. the storefront's basket and its way into *Check out*, ordering shown unavailable wherever *Check out* would refuse (plan step 7)
+3. the vendor sees today's orders as they arrive: number, dishes, status, never the code, kept live on their screen (plan, *Flow* 2 and *Live updates*)
+4. the vendor app's live order list (plan step 6)
+5. `OrderPlaced`'s shape before anything is live: the customer's email, read from the completed page, sealed under the day's key, the day-key store and its expiry built with it, a hold recorded after midnight placed without it; and whether it records the account, which capture will need (board, *5, the day's key*)
+6. the Stripe adapter, accounts and payments: the account created from the registration, the page created on the vendor's account, the completed page fetched with `Stripe-Context` and its lines; its contract run nightly against the sandbox with a restricted key; both webhook secrets in `render.yaml` and `.env.example`; Ordering into `AppModule` (ADR 0069)
+7. the vendor app's *Connect Stripe*: the registration started from the vendor's browser with an account token, *Réessayer* resending the same registration (board, R3, R4)
+8. the vendor accepts an order within 10 minutes, capped at the day's end; the hold is captured, the payment recorded from Stripe's webhook, and the customer's code made (step 3a, Q5)
+9. the vendor app's accept and refuse, an acceptance held a few seconds so a mistaken tap can be undone; the storefront's status page, showing the code once the payment is taken (board, *3a, 3b*)
+10. an order refused by the vendor, cancelled by the customer from the status page until the acceptance reaches us, or left unanswered for 10 minutes: its hold released, recorded from Stripe's webhook; the scheduler built with it (step 3b)
+11. a payment account disabled: its held orders refused, and its storefront taking no orders until it can take payments again (step 3b, R4, Q11)
+12. an order handed over with its code, matched against the day's open orders; the vendor app's code input (step 4)
+13. a paid order handed over without its code, as its own event, the customer emailed at once; the vendor app's *remis sans code* (step 4, Q7)
+14. the market day ends: remaining holds released; paid orders not collected become no-shows, unless the vendor closed by hand and didn't reopen, which refunds them; closing by hand with paid orders not collected asks the vendor to confirm (step 5, board row 5)
+15. the day's customer details erased at midnight, Paris time, its key shredded (step 5)
+16. a refund recorded from Stripe's webhook, with its amount, partial ones included (step 6, Q8)
+17. a dispute opened, then won or lost, as events of its own (step 6, K6)
+18. the live day reports a sold-out dish taken off the menu and put back as available, as the storefront does (`SoldOutItems.keptBy`): rare, needed before the pilot
+19. the vendor pauses new orders without closing the day, for a set time or until they resume, and *Check out* refuses while paused; the vendor app's pause (board, *2, rush*)
+20. a vendor erased with orders in flight: holds released, paid orders not collected refunded at once, customers emailed (board, *5, erasure*)
+21. the customer emails and the vendor's pushes, each landing with the step that sends it once the email provider is in (board, *Customer emails*, *Vendor pushes*; plan step 7)
 
-Held for a trigger, unranked: whether today's absence closes the day for orders, when a screen can declare it; a checkout without our order ID going quiet and logged, if Q14 moves vendors to the full Dashboard; which of closed and ended wins, unpinned while only the customer's message differs.
+Held for a trigger, unranked: a refused capture marking the order *payment refused, don't hand over* and alerting the vendor, when Stripe support answers Q5, since the sandbox can't refuse one; whether today's absence closes the day for orders, when a screen can declare it; a checkout without our order ID going quiet and logged, if Q14 moves vendors to the full Dashboard; which of closed and ended wins, unpinned while only the customer's message differs.
 
 ## Product
 
