@@ -1,7 +1,7 @@
 import { DomainEvent, InMemoryEventStore } from '@market-miam/event-sourcing';
 import { FindLiveMarketDay, FindLiveMarketDayHandler } from '@market-miam/market-days';
 import { VendorScopedEvents } from '@market-miam/shared-kernel';
-import { menuSet, soldOut } from '../market-day-events';
+import { available, menuSet, soldOut } from '../market-day-events';
 import { TODAY } from '../set-market-day-menu/test-data';
 
 describe('Find Live Market Day', () => {
@@ -22,6 +22,14 @@ describe('Find Live Market Day', () => {
     expect(await handler.execute(new FindLiveMarketDay('vendor-1', 'market-1', TODAY))).toMatchObject({
       itemIds: ['item-1', 'item-2'],
       soldOutItemIds: ['item-2'],
+    });
+  });
+
+  it('no longer reports a dish sold out once the vendor marks it available again', async () => {
+    given(menuSet(TODAY, 'item-1', 'item-2'), soldOut(TODAY, 'item-2'), available(TODAY, 'item-2'));
+
+    expect(await handler.execute(new FindLiveMarketDay('vendor-1', 'market-1', TODAY))).toMatchObject({
+      soldOutItemIds: [],
     });
   });
 });
