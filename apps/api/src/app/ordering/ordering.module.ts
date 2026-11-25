@@ -37,10 +37,10 @@ import { StripeWebhooksController } from './stripe/stripe-webhooks.controller';
     { provide: Merchants, useFactory: (events: VendorScopedEvents) => new Merchants(events), inject: [VendorScopedEvents] },
     {
       provide: STRIPE_EVENT_DESTINATIONS,
-      useFactory: (config: ConfigService, clock: Clock) =>
-        ['STRIPE_ACCOUNTS_WEBHOOK_SECRET', 'STRIPE_PAYMENTS_WEBHOOK_SECRET'].map(
-          name => new StripeEventDestination(new SigningSecret(config.getOrThrow<string>(name)), clock),
-        ),
+      useFactory: (config: ConfigService, clock: Clock) => {
+        const destination = (secret: string) => new StripeEventDestination(new SigningSecret(config.getOrThrow<string>(secret)), clock);
+        return { accounts: destination('STRIPE_ACCOUNTS_WEBHOOK_SECRET'), payments: destination('STRIPE_PAYMENTS_WEBHOOK_SECRET') };
+      },
       inject: [ConfigService, Clock],
     },
     { provide: Orders, useFactory: (events: VendorScopedEvents) => new Orders(events), inject: [VendorScopedEvents] },
