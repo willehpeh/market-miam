@@ -8,7 +8,7 @@ import { ScheduledDay, scheduledDayAt } from '../market-schedule-view/scheduled-
 import { parisWallClock, standingOf } from '../market-schedule-view/market-day-clock';
 import { FindLiveMarketDay } from './find-live-market-day';
 import { LiveMarketDay } from './live-market-day';
-import { MarketDayOnRecord } from './market-day-on-record';
+import { Stand } from './stand';
 
 @QueryHandler(FindLiveMarketDay)
 export class FindLiveMarketDayHandler implements IQueryHandler<FindLiveMarketDay> {
@@ -29,7 +29,9 @@ export class FindLiveMarketDayHandler implements IQueryHandler<FindLiveMarketDay
       return undefined;
     }
     const { phase } = standingOf(scheduled, parisWallClock(this.clock.now()));
-    return events.reduce((record, event) => record.with(event), new MarketDayOnRecord()).answer(phase);
+    const stand = new Stand();
+    events.forEach(event => stand.apply(event));
+    return stand.answer(phase);
   }
 
   private async scheduledDay(vendorId: string, marketId: string, date: LocalDate): Promise<ScheduledDay | undefined> {
