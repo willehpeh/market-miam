@@ -64,4 +64,11 @@ describe('Find Live Market Day', () => {
   ])('reports the day as %s %s', async (phase, _, now) => {
     expect(await findLiveDay(now)).toMatchObject({ phase });
   });
+
+  it('reports no live day once no schedule covers the date, even with a menu on record', async () => {
+    given(menuSet(TODAY, 'item-1'));
+    await schedules.cancelSchedule('schedule-1', 'vendor-1');
+
+    await expect(findLiveDay()).resolves.toBeUndefined();
+  });
 });
