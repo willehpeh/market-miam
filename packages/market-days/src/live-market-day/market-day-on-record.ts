@@ -1,6 +1,7 @@
 import { ItemId } from '../catalogue';
 import { MarketDayEvent, Menu } from '../market-day';
 import { SoldOutItems } from '../market-day/sold-out-items';
+import { MarketDayPhase } from '../market-schedule-view/market-day-clock';
 import { LiveMarketDay } from './live-market-day';
 
 export class MarketDayOnRecord {
@@ -22,7 +23,7 @@ export class MarketDayOnRecord {
     }
   }
 
-  answer(): LiveMarketDay {
-    return { itemIds: this.menu.value(), soldOutItemIds: this.soldOut.value() };
+  answer(phase: MarketDayPhase): LiveMarketDay {
+    return { itemIds: this.menu.value(), soldOutItemIds: this.soldOut.value(), phase };
   }
 }
