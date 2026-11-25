@@ -8,7 +8,7 @@ const commandBusOnlyInTheGateway = {
 
 const orderingAsksMarketDaysOnlyWhatItsContractNames = {
   name: '@market-miam/market-days',
-  allowImportNames: ['IsStorefrontPublished'],
+  allowImportNames: ['IsStorefrontPublished', 'FindLiveMarketDay', 'LiveMarketDay'],
   message: 'Ordering reaches Market Days only through the queries Market Days offers it; add the query to this list when the contract grows.',
 };
 
