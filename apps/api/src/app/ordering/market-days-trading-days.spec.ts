@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import type { Query } from '@nestjs/cqrs';
 import { QueryGateway } from '@market-miam/event-sourcing';
 import { FindLiveMarketDay, LiveMarketDay } from '@market-miam/market-days';
-import { OrderLine } from '@market-miam/ordering';
+import { Availability, OrderLine } from '@market-miam/ordering';
 import { VendorId } from '@market-miam/shared-kernel';
 import { MarketDaysTradingDays } from './market-days-trading-days';
 
@@ -37,6 +37,13 @@ describe('Trading days, from Market Days’ live day', () => {
 
   it.each(['over', 'past'] as const)('refuses the order as ended when Market Days reports the day %s', async phase => {
     expect((await tradingDayFor({ ...trading, phase })).availabilityOf(lines)).toBe('ended');
+  });
+
+  it.each<[Availability, string, Partial<LiveMarketDay>]>([
+    ['closed', 'the day closed by hand', { closed: true }],
+    ['sold-out', 'one of its dishes sold out', { soldOutItemIds: ['dish-2'] }],
+  ])('refuses the order as %s when Market Days reports %s', async (availability, _, report) => {
+    expect((await tradingDayFor({ ...trading, ...report })).availabilityOf(lines)).toBe(availability);
   });
 
   it('refuses the order as closed when Market Days reports no live day', async () => {
