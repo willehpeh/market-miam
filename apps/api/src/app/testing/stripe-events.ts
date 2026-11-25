@@ -4,6 +4,7 @@ import { Clock } from '@market-miam/common';
 import { StripeSigning } from './stripe-signing';
 
 export const STRIPE_ACCOUNTS_SIGNING_SECRET = 'whsec_test_accounts';
+export const STRIPE_PAYMENTS_SIGNING_SECRET = 'whsec_test_payments';
 
 export class StripeEvents {
   constructor(
