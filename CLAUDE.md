@@ -113,6 +113,8 @@ The owner builds test-first with an agent, one step at a time, and reviews each 
   outer loop, and behaviour it would imply, such as a controller calling a port, belongs in a use case first.
 - **Object design and clear names over helpers**, no comments in new code, and no get or set accessors (ADR 0008,
   enforced by lint). The owner questions names: offer alternatives with a recommendation.
+- **Test doubles say what they are.** A fake, which works, is `InMemory…` in a package or `Fake…` in an app; a
+  stub, which only answers, is `Stub…` named for the type it stands in for, as `StubEvents` is.
 - **Polymorphism only when it is clean.** No `instanceof`, or anything equivalent, to choose behaviour: callers send
   a message without knowing which kind of object receives it, and the kind is chosen once, where the object is
   built. Prefer composition over inheritance; a contract that is not a DI token is an interface, which its kinds
