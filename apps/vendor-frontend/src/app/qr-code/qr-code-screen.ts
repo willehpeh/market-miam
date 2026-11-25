@@ -2,7 +2,6 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { Card } from '../core/card';
 import { Spinner } from '../core/spinner';
 import { StorefrontFacade } from '../storefront/storefront.facade';
-import { storefrontUrl } from '../storefront/storefront-url';
 import { brandedQrCode } from './branded-qr-code';
 import { QrCodeExport, QrCodeImage } from './qr-code-export';
 
@@ -72,25 +71,28 @@ export class QrCodeScreen {
   private readonly storefront = inject(StorefrontFacade);
   private readonly exports = inject(QrCodeExport);
   readonly view = this.storefront.view;
-  readonly published = computed(() => this.view()?.published === true);
+  readonly published = this.storefront.published;
   readonly shareable = this.exports.canShare();
   readonly busy = signal<'save' | 'share' | null>(null);
   readonly exportError = signal(false);
 
+  constructor() {
+    this.storefront.load();
+  }
+
   // Built from the address alone, in the browser: the app knows the subdomain and the
   // base domain, and nothing else goes into the code (ADR 0055).
   readonly code = computed(() => {
-    const subdomain = this.view()?.subdomain;
-    const url = storefrontUrl(subdomain);
-    if (!subdomain || !url) {
+    const address = this.storefront.address();
+    if (!address) {
       return null;
     }
-    const { svg } = brandedQrCode(url.href);
+    const { svg } = brandedQrCode(address.href());
     return {
       svg,
-      label: url.label,
+      label: address.label(),
       preview: `data:image/svg+xml;charset=utf-8,${ encodeURIComponent(svg) }`,
-      fileName: `qr-code-${ subdomain }.png`,
+      fileName: `qr-code-${ address.subdomain() }.png`,
     };
   });
 

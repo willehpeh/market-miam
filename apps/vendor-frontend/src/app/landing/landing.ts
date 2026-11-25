@@ -7,7 +7,7 @@ import { LoginButton } from '../core/auth/login-button';
   selector: 'mm-landing',
   host: { class: 'grid min-h-full place-items-center' },
   template: `
-    @if (status() === 'anonymous') {
+    @if (signedOut()) {
       <mm-login-button />
     } @else if (errorCode() !== undefined) {
       <section class="w-full max-w-sm rounded-card bg-surface p-6 text-center shadow-frame">
@@ -29,7 +29,7 @@ export class Landing {
   private readonly auth = inject(AuthFacade);
   private readonly onboarding = inject(OnboardingFacade);
 
-  protected readonly status = this.auth.status;
+  protected readonly signedOut = this.auth.signedOut;
   protected readonly errorCode = this.onboarding.errorCode;
 
   protected retry(): void {

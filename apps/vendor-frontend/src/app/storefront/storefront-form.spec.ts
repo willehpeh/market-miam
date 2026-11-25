@@ -3,6 +3,13 @@ import { StorefrontFormPageObject } from './storefront-form.page-object';
 import { FakeStorefrontFacade } from './fake.storefront.facade';
 
 describe('StorefrontForm', () => {
+
+  it('asks for the storefront on arrival', async () => {
+    const storefront = new FakeStorefrontFacade();
+    await StorefrontFormPageObject.render({ storefront });
+
+    expect(storefront.loaded).toBe(true);
+  });
   it('prefills the form from the current storefront', async () => {
     const storefront = new FakeStorefrontFacade();
     const page = await StorefrontFormPageObject.render({ storefront });

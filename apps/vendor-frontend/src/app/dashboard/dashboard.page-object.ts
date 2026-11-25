@@ -139,6 +139,70 @@ export class DashboardPageObject extends PageObject<Dashboard> {
     return screen.queryByRole('heading', { name: /prochain marché/i });
   }
 
+  // The market-day cards: today's market to run and the next one to plan, one heading each.
+  marketDayHeadings(): HTMLElement[] {
+    return screen.getAllByRole('heading', { name: /aujourd'hui|prochain marché/i });
+  }
+
+  // Whichever a card offers, to plan its menu or to change it.
+  menuLink(): HTMLElement {
+    return screen.getByRole('link', { name: /le menu/i });
+  }
+
+  queryMenuLink(): HTMLElement | null {
+    return screen.queryByRole('link', { name: /le menu/i });
+  }
+
+  planMenuLink(): HTMLElement {
+    return screen.getByRole('link', { name: /planifier le menu/i });
+  }
+
+  editMenuLink(): HTMLElement {
+    return screen.getByRole('link', { name: /modifier le menu/i });
+  }
+
+  followMarketLink(): HTMLElement {
+    return screen.getByRole('link', { name: /suivre le marché/i });
+  }
+
+  // Whichever an open today would offer, the planner or the live screen.
+  queryPlanOrFollowLink(): HTMLElement | null {
+    return screen.queryByRole('link', { name: /planifier le menu|suivre le marché/i });
+  }
+
+  private callOffButton(): HTMLElement {
+    return screen.getByRole('button', { name: "Je ne peux pas venir aujourd'hui" });
+  }
+
+  queryCallOffButton(): HTMLElement | null {
+    return screen.queryByRole('button', { name: "Je ne peux pas venir aujourd'hui" });
+  }
+
+  reopenStandButton(): HTMLElement {
+    return screen.getByRole('button', { name: 'Rouvrir le stand' });
+  }
+
+  callOff(): this {
+    return this.press(this.callOffButton());
+  }
+
+  reopenStand(): this {
+    return this.press(this.reopenStandButton());
+  }
+
+  // The bilan prompt: the one finished market still to judge.
+  bilanHeading(): HTMLElement {
+    return screen.getByRole('heading', { name: /bilan/i });
+  }
+
+  queryBilanHeading(): HTMLElement | null {
+    return screen.queryByRole('heading', { name: /bilan/i });
+  }
+
+  bilanLinks(): HTMLElement[] {
+    return screen.getAllByRole('link', { name: /faire le bilan/i });
+  }
+
   catalogueLink(): HTMLElement {
     return screen.getByRole('link', { name: 'Votre catalogue' });
   }

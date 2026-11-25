@@ -1,18 +1,21 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { Card } from '../core/card';
 import { Spinner } from '../core/spinner';
 import { StorefrontFacade } from '../storefront/storefront.facade';
 import { CatalogueFacade } from '../catalogue/catalogue.facade';
 import { MarketScheduleFacade } from '../markets/market-schedule.facade';
 import { MarketDayFacade } from '../market-days/market-day.facade';
+import { LegalIdentityFacade } from '../legal-identity/legal-identity.facade';
+import { MarketDay } from '../market-days/market-day';
+import { MarketDayCards } from '../market-days/market-day-cards';
+import { BilanPrompt } from '../market-days/bilan-prompt';
 import { StorefrontHome } from './storefront-home';
 import { SetupSteps } from './setup-steps';
-import { RouterLink } from '@angular/router';
-import { LegalIdentityFacade } from '../legal-identity/legal-identity.facade';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [Card, StorefrontHome, SetupSteps, Spinner, RouterLink],
+  imports: [Card, StorefrontHome, SetupSteps, MarketDayCards, BilanPrompt, Spinner, RouterLink],
   template: `
     @if (!loaded()) {
       <mm-card>
@@ -20,7 +23,7 @@ import { LegalIdentityFacade } from '../legal-identity/legal-identity.facade';
           <mm-spinner label="Chargement de votre stand…" />
         </div>
       </mm-card>
-    } @else {
+    } @else if (view(); as storefront) {
       <!-- The cards are siblings, so none of them is the page. Without this the document
            has two competing h1s and no name of its own. -->
       <h1 class="sr-only">Tableau de bord</h1>
@@ -37,21 +40,35 @@ import { LegalIdentityFacade } from '../legal-identity/legal-identity.facade';
         </mm-card>
       }
       @if (published()) {
-        <mm-storefront-home />
+        <mm-market-day-cards [days]="days()" (callOff)="callOff($event)" (reopen)="reopen($event)" />
+        <mm-bilan-prompt [unrated]="unrated()" />
+        <mm-storefront-home [storefront]="storefront" [address]="address()" />
       } @else {
-        <mm-setup-steps />
+        <mm-setup-steps
+          [storefront]="storefront"
+          [address]="address()"
+          [dishCount]="dishCount()"
+          [marketCount]="marketCount()"
+          [legalIdentityProvided]="legalIdentityProvided()"
+          [publishing]="publishing()"
+          [publishFailed]="publishFailed()"
+          (publish)="publish()"
+        />
       }
     }
   `
 })
 export class Dashboard {
   private readonly storefront = inject(StorefrontFacade);
+  private readonly catalogue = inject(CatalogueFacade);
+  private readonly markets = inject(MarketScheduleFacade);
   private readonly marketDays = inject(MarketDayFacade);
+  private readonly legalIdentity = inject(LegalIdentityFacade);
+
   // The next-menu card's empty state is a warning, so the whole home waits for the days
   // rather than letting the card paint "aucun marché" and take it back a moment later.
   // The bilan prompt joins the gate for the same reason: a card appearing a moment late
   // shifts everything under it out from beneath the vendor's thumb.
-  private readonly legalIdentity = inject(LegalIdentityFacade);
   readonly loaded = computed(
     () =>
       !!this.storefront.view() &&
@@ -59,22 +76,42 @@ export class Dashboard {
       !this.marketDays.unratedLoading() &&
       !this.legalIdentity.loading(),
   );
+  protected readonly view = this.storefront.view;
+  readonly published = this.storefront.published;
+  protected readonly address = this.storefront.address;
   // Null, not merely absent: an identity that failed to load says nothing about the vendor.
   // Published homes only: before publication, the setup steps ask for it.
   readonly legalIdentityMissing = computed(() => this.published() && this.legalIdentity.identity() === null);
-  readonly published = computed(() => this.storefront.view()?.published === true);
-  private readonly catalogue = inject(CatalogueFacade);
-  private readonly markets = inject(MarketScheduleFacade);
+
+  protected readonly days = this.marketDays.days;
+  protected readonly unrated = this.marketDays.unrated;
+
+  protected readonly dishCount = computed(() => this.catalogue.items().length);
+  protected readonly marketCount = computed(() => this.markets.schedules().length);
+  protected readonly legalIdentityProvided = computed(() => !!this.legalIdentity.identity());
+  protected readonly publishing = this.storefront.publishing;
+  protected readonly publishFailed = this.storefront.publishError;
 
   constructor() {
+    // Every read the home and its cards make, asked here once: nothing under this page asks
+    // for itself, so nothing it renders can reopen the gate above.
+    this.storefront.load();
     this.catalogue.load();
     this.markets.load();
-    // Both warmed here, ahead of the cards that read them: asking from inside the published
-    // branch flips loaded() back to false, and the branch that asked is destroyed with it.
-    // The days survived that as a flicker, being gated on freshness; the unrated days are
-    // deliberately not, so the response re-creates the card, which asks again, for ever.
     this.marketDays.load();
     this.marketDays.loadUnrated();
     this.legalIdentity.load();
+  }
+
+  protected publish(): void {
+    this.storefront.publish();
+  }
+
+  protected callOff(day: MarketDay): void {
+    this.marketDays.close(day.marketId(), day.date());
+  }
+
+  protected reopen(day: MarketDay): void {
+    this.marketDays.reopen(day.marketId(), day.date());
   }
 }

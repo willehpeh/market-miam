@@ -1,10 +1,10 @@
 import { TestBed } from '@angular/core/testing';
-import { provideState, provideStore, Store } from '@ngrx/store';
+import { provideState, provideStore } from '@ngrx/store';
 import { provideEffects } from '@ngrx/effects';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { Storefront } from './storefront';
 import { HttpStorefront } from './http.storefront';
-import { LoadStorefront, storefrontFeature } from './storefront.state';
+import { storefrontFeature } from './storefront.state';
 import { StorefrontEffects, STOREFRONT_RETRY } from './storefront.effects';
 import { StorefrontFacade } from './storefront.facade';
 import { StoreStorefrontFacade } from './store.storefront.facade';
@@ -38,7 +38,6 @@ const anImage = () => new File(['bytes'], 'stand.jpg', { type: 'image/jpeg' });
 const macrotask = () => new Promise((resolve) => setTimeout(resolve, 5));
 
 describe('Storefront', () => {
-  let store: Store;
   let facade: StorefrontFacade;
   let httpCtrl: HttpTestingController;
 
@@ -55,7 +54,6 @@ describe('Storefront', () => {
         { provide: STOREFRONT_RETRY, useValue: { delayMs: 0, maxAttempts: 1 } },
       ],
     });
-    store = TestBed.inject(Store);
     facade = TestBed.inject(StorefrontFacade);
     httpCtrl = TestBed.inject(HttpTestingController);
   });
@@ -64,22 +62,41 @@ describe('Storefront', () => {
     httpCtrl.verify();
   });
 
-  it('requests the storefront view when asked to load', () => {
-    store.dispatch(LoadStorefront());
+  // Every screen that reads the storefront asks for it, as the catalogue's readers ask for
+  // theirs.
+  it('asks for the storefront through its facade', () => {
+    facade.load();
 
-    const req = httpCtrl.expectOne('/api/storefront');
-    expect(req.request.method).toBe('GET');
+    expect(httpCtrl.expectOne('/api/storefront').request.method).toBe('GET');
+  });
+
+  // The sign-in asks first and the screens after it ask again, so only an unknown storefront
+  // is fetched: a re-GET could put a projection that lags a save back over it.
+  it('does not ask again once it holds the storefront', () => {
+    facade.load();
+    httpCtrl.expectOne('/api/storefront').flush(ACME);
+
+    facade.load();
+
+    httpCtrl.expectNone('/api/storefront');
+  });
+
+  it('does not ask again while it is already asking', () => {
+    facade.load();
+    facade.load();
+
+    httpCtrl.expectOne('/api/storefront').flush(ACME);
   });
 
   it('shows as loading until the view arrives', () => {
-    store.dispatch(LoadStorefront());
+    facade.load();
 
     httpCtrl.expectOne('/api/storefront');
     expect(facade.loading()).toBe(true);
   });
 
   it('exposes the view once loaded', () => {
-    store.dispatch(LoadStorefront());
+    facade.load();
 
     httpCtrl.expectOne('/api/storefront').flush(ACME);
 
@@ -88,15 +105,32 @@ describe('Storefront', () => {
   });
 
   it('reports a storefront the server calls published as published', () => {
-    store.dispatch(LoadStorefront());
+    facade.load();
 
     httpCtrl.expectOne('/api/storefront').flush({ ...ACME, published: true });
 
-    expect(facade.view()?.published).toBe(true);
+    expect(facade.published()).toBe(true);
+  });
+
+  it('gives the vitrine its address under the storefronts\' domain once it has a subdomain', () => {
+    facade.load();
+
+    httpCtrl.expectOne('/api/storefront').flush({ ...ACME, subdomain: 'acme' });
+
+    expect(facade.address()?.href()).toBe('https://acme.marketmiam.fr');
+    expect(facade.address()?.label()).toBe('acme.marketmiam.fr');
+  });
+
+  it('has no address before an operator assigns a subdomain', () => {
+    facade.load();
+
+    httpCtrl.expectOne('/api/storefront').flush(ACME);
+
+    expect(facade.address()).toBeNull();
   });
 
   it('retries after a 404 and loads once the storefront is projected', async () => {
-    store.dispatch(LoadStorefront());
+    facade.load();
 
     httpCtrl.expectOne('/api/storefront').flush(null, notFound);
     await macrotask();
@@ -107,7 +141,7 @@ describe('Storefront', () => {
   });
 
   it('gives up and reports no view once retries are exhausted', async () => {
-    store.dispatch(LoadStorefront());
+    facade.load();
 
     httpCtrl.expectOne('/api/storefront').flush(null, notFound);
     await macrotask();
@@ -118,7 +152,7 @@ describe('Storefront', () => {
   });
 
   it('stops loading without retrying on a non-404 error', () => {
-    store.dispatch(LoadStorefront());
+    facade.load();
 
     httpCtrl.expectOne('/api/storefront').flush(null, { status: 500, statusText: 'Server Error' });
 
@@ -140,7 +174,7 @@ describe('Storefront', () => {
   });
 
   it('reflects the saved information optimistically without re-fetching, keeping the photo', () => {
-    store.dispatch(LoadStorefront());
+    facade.load();
     httpCtrl.expectOne('/api/storefront').flush({ ...ACME, imageReference: 'v1/acme/cover' });
 
     facade.save('La Table de Margaux', 'Cuisine de marché', '06 12 34 56 78');
@@ -159,7 +193,7 @@ describe('Storefront', () => {
   });
 
   it('uploads a cover photo by signing, uploading to Cloudinary, then persisting the reference', () => {
-    store.dispatch(LoadStorefront());
+    facade.load();
     httpCtrl.expectOne('/api/storefront').flush(ACME);
 
     facade.uploadCoverPhoto(anImage());
@@ -216,31 +250,31 @@ describe('Storefront', () => {
   });
 
   it('marks the loaded storefront published on success', () => {
-    store.dispatch(LoadStorefront());
+    facade.load();
     httpCtrl.expectOne('/api/storefront').flush(ACME);
 
     facade.publish();
     httpCtrl.expectOne('/api/storefront/publish').flush(null);
 
-    expect(facade.view()?.published).toBe(true);
+    expect(facade.published()).toBe(true);
     expect(facade.publishError()).toBe(false);
   });
 
   it('flags an error and stops publishing when the storefront is not ready', () => {
-    store.dispatch(LoadStorefront());
+    facade.load();
     httpCtrl.expectOne('/api/storefront').flush(ACME);
 
     facade.publish();
     httpCtrl.expectOne('/api/storefront/publish').flush(null, { status: 400, statusText: 'Bad Request' });
 
     expect(facade.publishing()).toBe(false);
-    expect(facade.view()?.published).toBe(false);
+    expect(facade.published()).toBe(false);
     expect(facade.publishError()).toBe(true);
   });
 
   describe('carte prices', () => {
     const loaded = () => {
-      store.dispatch(LoadStorefront());
+      facade.load();
       httpCtrl.expectOne('/api/storefront').flush(ACME);
     };
 

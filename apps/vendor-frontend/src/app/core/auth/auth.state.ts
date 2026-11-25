@@ -34,3 +34,7 @@ export const selectAuthStatus = createSelector(
   (isLoading, userId): AuthStatus =>
     isLoading ? 'pending' : userId !== null ? 'authenticated' : 'anonymous',
 );
+
+export const selectSignedIn = createSelector(selectAuthStatus, (status) => status === 'authenticated');
+
+export const selectSignedOut = createSelector(selectAuthStatus, (status) => status === 'anonymous');

@@ -5,11 +5,12 @@ import { isSiret } from './siret';
 import { LegalIdentityView } from './legal-identity';
 import { StorefrontFacade } from '../storefront/storefront.facade';
 import { Card } from '../core/card';
+import { SubmitButton } from '../core/submit-button';
 
 @Component({
   selector: 'mm-legal-identity-form',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [Card, FormField],
+  imports: [Card, FormField, SubmitButton],
   template: `
     <mm-card back="/dashboard">
       <form (submit)="submit($event)">
@@ -117,21 +118,9 @@ import { Card } from '../core/card';
           }
         </div>
 
-        <button
-          type="submit"
-          class="mt-6 flex w-full max-w-xs mx-auto justify-center"
-          [disabled]="fields().invalid()"
-          [attr.aria-describedby]="blockers().length ? 'submit-blockers' : null"
-        >
+        <mm-submit-button [disabled]="fields().invalid()" [reasons]="blockers()">
           Enregistrer
-        </button>
-        @if (blockers().length) {
-          <ul id="submit-blockers" class="mt-2 space-y-0.5 text-center text-xs text-muted">
-            @for (blocker of blockers(); track blocker) {
-              <li>{{ blocker }}</li>
-            }
-          </ul>
-        }
+        </mm-submit-button>
         @if (saveFailed()) {
           <p role="alert" class="mt-2 text-center text-xs text-danger">L'enregistrement a échoué. Vérifiez vos informations et réessayez.</p>
         }
@@ -213,7 +202,7 @@ export class LegalIdentityForm {
     return siret.touched() && siret.value().trim() !== '' && siret.invalid();
   });
 
-  // A disabled button is not an explanation, and a field's own message waits for a touch.
+  // Said under the button because a field's own message waits for a touch.
   protected readonly blockers = computed(() => {
     const fields = this.fields;
     const missing = [
@@ -242,6 +231,7 @@ export class LegalIdentityForm {
 
   constructor() {
     this.legalIdentity.load();
+    this.storefront.load();
   }
 
   protected lookUp(event: Event): void {

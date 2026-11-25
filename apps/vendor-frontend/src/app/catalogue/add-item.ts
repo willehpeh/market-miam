@@ -3,6 +3,10 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { applyEach, applyWhen, form, FormField, required, validate } from '@angular/forms/signals';
 import { ITEM_PHOTO_PREVIEW_TRANSFORMATION } from '@market-miam/common';
 import { Card } from '../core/card';
+import { SubmitButton } from '../core/submit-button';
+import { MoveButtons } from '../core/move-buttons';
+import { PhotoButton } from '../core/photo-button';
+import { Arrangement } from '../core/arrangement';
 import { Spinner } from '../core/spinner';
 import { CloudinaryUrlPipe } from '../core/cloudinary-url.pipe';
 import { DismissOnOutsidePress } from '../core/dismiss-on-outside-press';
@@ -20,7 +24,7 @@ type ItemModel = { name: string; price: string; description: string; variants: F
 @Component({
   selector: 'mm-add-item',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, Card, FormField, CloudinaryUrlPipe, DismissOnOutsidePress, Spinner],
+  imports: [RouterLink, Card, FormField, CloudinaryUrlPipe, DismissOnOutsidePress, MoveButtons, PhotoButton, Spinner, SubmitButton],
   styles: `
     .segment {
       flex: 1;
@@ -62,16 +66,6 @@ type ItemModel = { name: string; price: string; description: string; variants: F
     .add-format:hover,
     .add-format:active {
       background: var(--color-surface-sunk);
-    }
-    .photo-alt {
-      background: transparent;
-      color: var(--color-brand);
-      border: 1px solid var(--color-brand);
-      box-shadow: none;
-    }
-    .photo-alt:hover:not(:disabled),
-    .photo-alt:active:not(:disabled) {
-      background: var(--color-brand-soft);
     }
     .retire {
       background: transparent;
@@ -137,19 +131,17 @@ type ItemModel = { name: string; price: string; description: string; variants: F
               <i class="fa-solid fa-camera" aria-hidden="true"></i>
             </div>
           }
-          <!-- Two inputs, not one: capture keeps the camera a single tap away for a vendor
-               standing at their stall, and its absence is the only way to reach the photo roll. -->
-          <input #cameraInput type="file" accept="image/*" capture="environment" hidden (change)="selectPhoto($event)" />
-          <input #rollInput type="file" accept="image/*" hidden (change)="selectPhoto($event)" />
+          <!-- Two buttons, not one: the camera stays a single tap away for a vendor standing at
+               their stall, and the other is the only way to reach the photo roll. -->
           <div class="flex justify-center gap-2 p-3">
-            <button type="button" (click)="cameraInput.click()" [disabled]="uploading()">
+            <mm-photo-button camera [disabled]="uploading()" (picked)="uploadPhoto($event)">
               <i class="fa-solid fa-camera" aria-hidden="true"></i>
               {{ previewRef() ? 'Reprendre' : 'Prendre en photo' }}
-            </button>
-            <button type="button" class="photo-alt" (click)="rollInput.click()" [disabled]="uploading()">
+            </mm-photo-button>
+            <mm-photo-button outlined [disabled]="uploading()" (picked)="uploadPhoto($event)">
               <i class="fa-solid fa-images" aria-hidden="true"></i>
               Choisir une photo
-            </button>
+            </mm-photo-button>
           </div>
           @if (tooLarge()) {
             <p role="alert" class="px-3 pb-3 text-xs text-danger">Cette photo est trop lourde. Choisissez-en une plus légère.</p>
@@ -240,24 +232,13 @@ type ItemModel = { name: string; price: string; description: string; variants: F
                           Supprimer
                         </button>
                       } @else {
-                        <button
-                          type="button"
-                          class="icon-btn shrink-0"
-                          [attr.aria-label]="'Descendre le format ' + ($index + 1)"
-                          [disabled]="$index === fields.variants.length - 1"
-                          (click)="moveFormatDown($index)"
-                        >
-                          <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
-                        </button>
-                        <button
-                          type="button"
-                          class="icon-btn shrink-0"
-                          [attr.aria-label]="'Monter le format ' + ($index + 1)"
-                          [disabled]="$index === 0"
-                          (click)="moveFormatUp($index)"
-                        >
-                          <i class="fa-solid fa-chevron-up" aria-hidden="true"></i>
-                        </button>
+                        <mm-move-buttons
+                          [label]="'le format ' + ($index + 1)"
+                          [first]="$first"
+                          [last]="$last"
+                          (moveUp)="moveFormatUp($index)"
+                          (moveDown)="moveFormatDown($index)"
+                        />
                         <button
                           type="button"
                           class="icon-btn shrink-0"
@@ -316,21 +297,9 @@ type ItemModel = { name: string; price: string; description: string; variants: F
           </label>
         </fieldset>
 
-        <button
-          type="submit"
-          class="mt-6 flex w-full max-w-xs mx-auto justify-center"
-          [disabled]="cannotSubmit()"
-          [attr.aria-describedby]="blockers().length ? 'submit-blockers' : null"
-        >
+        <mm-submit-button [disabled]="cannotSubmit()" [reasons]="blockers()">
           {{ isEditing ? 'Enregistrer' : 'Ajouter à ma carte ✓' }}
-        </button>
-        @if (blockers().length) {
-          <ul id="submit-blockers" class="mt-2 space-y-0.5 text-center text-xs text-muted">
-            @for (blocker of blockers(); track blocker) {
-              <li>{{ blocker }}</li>
-            }
-          </ul>
-        }
+        </mm-submit-button>
 
         <!-- Every button here is type="button": a stray Enter in the name field submits the
              form's default button, and none of these should be the one that answers it. -->
@@ -458,9 +427,7 @@ export class AddItem {
 
   protected readonly cannotSubmit = computed(() => this.uploading() || this.fields().invalid() || this.allergens() === null);
 
-  // A disabled button is not an explanation. These read the form's own state rather than
-  // re-deriving the rules — the schema owns those — and are tied to the button by
-  // aria-describedby, so a screen reader announces the reason with it.
+  // These read the form's own state rather than re-deriving the rules — the schema owns those.
   protected readonly blockers = computed(() => {
     const reasons: string[] = [];
     if (this.uploading()) {
@@ -507,23 +474,13 @@ export class AddItem {
   }
 
   protected moveFormatUp(index: number): void {
-    this.swapFormats(index, index - 1);
+    this.confirmingFormat.set(null);
+    this.model.update((m) => ({ ...m, variants: new Arrangement(m.variants).movedUp(index) }));
   }
 
   protected moveFormatDown(index: number): void {
-    this.swapFormats(index, index + 1);
-  }
-
-  private swapFormats(a: number, b: number): void {
     this.confirmingFormat.set(null);
-    this.model.update((m) => {
-      if (a < 0 || b < 0 || a >= m.variants.length || b >= m.variants.length) {
-        return m;
-      }
-      const variants = [...m.variants];
-      [variants[a], variants[b]] = [variants[b], variants[a]];
-      return { ...m, variants };
-    });
+    this.model.update((m) => ({ ...m, variants: new Arrangement(m.variants).movedDown(index) }));
   }
 
   // Kept in the regulation's order whatever order they are ticked in. Unticking the last one
@@ -538,13 +495,8 @@ export class AddItem {
     this.allergens.set(this.declaresNone() ? null : []);
   }
 
-  protected selectPhoto(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    const file = input.files?.[0];
-    if (!file) {
-      return;
-    }
-    this.catalogue.uploadItemPhoto(this.itemId(), file);
+  protected uploadPhoto(photo: File): void {
+    this.catalogue.uploadItemPhoto(this.itemId(), photo);
   }
 
   protected retire(): void {

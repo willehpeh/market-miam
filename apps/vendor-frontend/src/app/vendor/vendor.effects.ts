@@ -4,7 +4,7 @@ import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { catchError, map, of, switchMap } from 'rxjs';
 import { LoginSuccess } from '../core/auth/auth.state';
 import { Vendor } from './vendor';
-import { RegisterVendor, RegisterVendorFailure, RegisterVendorSuccess } from './vendor.state';
+import { RegisterVendor, RegisterVendorFailure, RegisterVendorSuccess } from './vendor.actions';
 
 @Injectable()
 export class VendorEffects {

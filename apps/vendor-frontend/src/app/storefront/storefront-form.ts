@@ -4,6 +4,8 @@ import { COVER_PHOTO_PREVIEW_TRANSFORMATION } from '@market-miam/common';
 import { StorefrontFacade } from './storefront.facade';
 import { CloudinaryUrlPipe } from '../core/cloudinary-url.pipe';
 import { Card } from '../core/card';
+import { SubmitButton } from '../core/submit-button';
+import { PhotoButton } from '../core/photo-button';
 import { Spinner } from '../core/spinner';
 
 const MAX_PHOTO_BYTES = 10 * 1024 * 1024;
@@ -11,7 +13,7 @@ const MAX_PHOTO_BYTES = 10 * 1024 * 1024;
 @Component({
   selector: 'mm-storefront-form',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [Card, FormField, CloudinaryUrlPipe, Spinner],
+  imports: [Card, FormField, CloudinaryUrlPipe, PhotoButton, Spinner, SubmitButton],
   template: `
     <mm-card back="/dashboard">
       <form (submit)="submit($event)">
@@ -36,11 +38,10 @@ const MAX_PHOTO_BYTES = 10 * 1024 * 1024;
           }
           <p class="mt-2 font-bold text-ink">Image de votre stand</p>
           <p class="text-sm text-muted">Une photo de votre activité ou votre logo</p>
-          <input #photoInput type="file" accept="image/*" hidden (change)="selectPhoto($event)" />
           <div class="mt-3 flex justify-center gap-2">
-            <button type="button" (click)="photoInput.click()" [disabled]="uploading()">
+            <mm-photo-button [disabled]="uploading()" (picked)="uploadPhoto($event)">
               {{ view()?.imageReference ? 'Changer la photo' : 'Ajouter image' }}
-            </button>
+            </mm-photo-button>
           </div>
           @if (tooLarge()) {
             <p role="alert" class="mt-2 text-xs text-danger">La photo dépasse 10 Mo. Choisissez-en une plus légère.</p>
@@ -82,21 +83,9 @@ const MAX_PHOTO_BYTES = 10 * 1024 * 1024;
           </div>
         </div>
 
-        <button
-          type="submit"
-          class="mt-6 flex w-full max-w-xs mx-auto justify-center"
-          [disabled]="fields().invalid()"
-          [attr.aria-describedby]="blockers().length ? 'submit-blockers' : null"
-        >
+        <mm-submit-button [disabled]="fields().invalid()" [reasons]="blockers()">
           Enregistrer
-        </button>
-        @if (blockers().length) {
-          <ul id="submit-blockers" class="mt-2 space-y-0.5 text-center text-xs text-muted">
-            @for (blocker of blockers(); track blocker) {
-              <li>{{ blocker }}</li>
-            }
-          </ul>
-        }
+        </mm-submit-button>
       </form>
     </mm-card>
 
@@ -119,6 +108,10 @@ export class StorefrontForm {
   protected readonly uploadError = this.storefront.coverPhotoError;
   protected readonly tooLarge = signal(false);
 
+  constructor() {
+    this.storefront.load();
+  }
+
   private readonly model = linkedSignal(() => {
     const view = this.storefront.view();
     return {
@@ -132,24 +125,19 @@ export class StorefrontForm {
     required(path.name);
   });
 
-  // A disabled button is not an explanation, and the field's own message waits for a
-  // touch the vendor has no reason to give it.
+  // Said under the button because the field's own message waits for a touch the vendor has
+  // no reason to give it.
   protected readonly blockers = computed(() =>
     this.fields.name().invalid() ? ['Indiquez le nom du stand.'] : [],
   );
 
-  protected selectPhoto(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    const file = input.files?.[0];
-    if (!file) {
-      return;
-    }
-    if (file.size > MAX_PHOTO_BYTES) {
+  protected uploadPhoto(photo: File): void {
+    if (photo.size > MAX_PHOTO_BYTES) {
       this.tooLarge.set(true);
       return;
     }
     this.tooLarge.set(false);
-    this.storefront.uploadCoverPhoto(file);
+    this.storefront.uploadCoverPhoto(photo);
   }
 
   protected submit(event: Event): void {

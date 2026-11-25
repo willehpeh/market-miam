@@ -6,9 +6,11 @@ import { FakeCatalogueFacade } from '../catalogue/fake.catalogue.facade';
 import { CatalogueItemView } from '../catalogue/catalogue';
 import { FakeMarketScheduleFacade } from '../markets/fake.market-schedule.facade';
 import { MarketScheduleView } from '../markets/market-schedules';
-import { FakeMarketDayFacade } from '../market-days/fake.market-day.facade';
+import { FakeMarketDayFacade, marketDaysOf } from '../market-days/fake.market-day.facade';
 import { testMarketDayView } from '../market-days/test-market-day-view.builder';
 import { MarketDay } from '../market-days/market-day';
+import { UnratedMarketDayView } from '../market-days/market-days';
+import { UnratedMarketDay } from '../market-days/unrated-market-day';
 import { FakeLegalIdentityFacade } from '../legal-identity/fake.legal-identity.facade';
 import { LegalIdentityView } from '../legal-identity/legal-identity';
 import { FakeShare } from '../core/fake.share';
@@ -580,5 +582,222 @@ describe('Dashboard', () => {
 
     expect(screen.getByText(/en cours d.attribution/i)).toBeInTheDocument();
     expect(page.queryPublishButton()).not.toBeInTheDocument();
+  });
+
+  // The published home over these market days, every setup step done.
+  async function publishedHome(marketDays: FakeMarketDayFacade = new FakeMarketDayFacade()) {
+    const stores = fakeStores();
+    const page = await DashboardPageObject.render({ ...stores, marketDays });
+    deliverReady(stores, { published: true });
+    page.detectChanges();
+    return page;
+  }
+
+  it('asks for the storefront on arrival', async () => {
+    const storefront = new FakeStorefrontFacade();
+    await DashboardPageObject.render({ storefront });
+
+    expect(storefront.loaded).toBe(true);
+  });
+
+  it('loads the market days on arrival', async () => {
+    const marketDays = new FakeMarketDayFacade();
+    await DashboardPageObject.render({ marketDays });
+
+    expect(marketDays.loaded).toBe(true);
+  });
+
+  describe('the market-day cards', () => {
+    const day = testMarketDayView;
+
+    it('names the next market day, with the hours a vendor plans quantities around', async () => {
+      const page = await publishedHome(marketDaysOf(day()));
+
+      expect(page.nextMarketHeading()).toBeTruthy();
+      expect(screen.getByText(/samedi 15 août/i)).toBeTruthy();
+      expect(screen.getByText(/Marché de la Croix-Rousse/)).toBeTruthy();
+      expect(screen.getByText('8h – 13h')).toBeTruthy();
+    });
+
+    it('counts the items once the day has a menu', async () => {
+      const page = await publishedHome(marketDaysOf(day({ itemIds: ['item-1', 'item-2', 'item-3'] })));
+
+      expect(screen.getByText('3 plats au menu')).toBeTruthy();
+      expect(page.editMenuLink()).toBeTruthy();
+    });
+
+    it('counts a single item in the singular', async () => {
+      await publishedHome(marketDaysOf(day({ itemIds: ['item-1'] })));
+
+      expect(screen.getByText('1 plat au menu')).toBeTruthy();
+    });
+
+    // Without this the card looks identical whether the vendor has not planned the day yet or
+    // planned it and cleared it — and both are legal.
+    it('says outright when the day carries no items', async () => {
+      const page = await publishedHome(marketDaysOf(day()));
+
+      expect(screen.getByText('Aucun plat au menu')).toBeTruthy();
+      expect(page.planMenuLink()).toBeTruthy();
+    });
+
+    // A day the vendor has declared themselves away from cannot carry a menu — the query
+    // suppresses it — so offering to plan one would be a save that renders nowhere.
+    it('skips a day the vendor is absent for', async () => {
+      await publishedHome(
+        marketDaysOf(day({ absent: true }), day({ marketId: 'market-2', date: '2026-08-22', day: 'SAT' })),
+      );
+
+      expect(screen.getByText(/samedi 22 août/i)).toBeTruthy();
+    });
+
+    // The horizon is named because the endpoint sees 56 days: a vendor on a longer cadence
+    // has a market this card cannot know about, and "aucun marché" alone would be a lie.
+    it('warns when no market day is in reach', async () => {
+      await publishedHome(marketDaysOf());
+
+      expect(screen.getByText(/aucun marché dans les 8 prochaines semaines/i)).toBeTruthy();
+    });
+
+    it('opens the day it names', async () => {
+      const page = await publishedHome(marketDaysOf(day()));
+
+      expect(page.menuLink().getAttribute('href')).toBe('/dashboard/market/market-1/2026-08-15/menu');
+    });
+
+    // The card is the switch (decisions 27, 41, 43): once the day is today and carries a
+    // menu, the doorway leads to the live screen, not the planner — from midnight, so the
+    // 6h sold-out case stays reachable.
+    it('opens the live screen once the day is today and has a menu', async () => {
+      const page = await publishedHome(marketDaysOf(day({ phase: 'due', itemIds: ['item-1'] })));
+
+      expect(page.followMarketLink().getAttribute('href')).toBe('/dashboard/market/market-1/2026-08-15/live');
+    });
+
+    // The flip is caused by planning, not by the clock — an unplanned today still opens
+    // the editor, whose neutral prompt is what a vendor who forgot needs.
+    it('keeps offering the planner while today has no menu', async () => {
+      const page = await publishedHome(marketDaysOf(day({ phase: 'due' })));
+
+      expect(page.planMenuLink().getAttribute('href')).toBe('/dashboard/market/market-1/2026-08-15/menu');
+    });
+
+    it('offers nothing to plan when there is no market day', async () => {
+      const page = await publishedHome(marketDaysOf());
+
+      expect(page.queryMenuLink()).toBeNull();
+    });
+
+    // Decision 55: the vendor who wakes ill opens the app to the dashboard and wants to say
+    // so — not to navigate through a button reading *Planifier le menu* to find it.
+    it('offers the call-off on a today, planned or not', async () => {
+      const marketDays = marketDaysOf(day({ phase: 'due' }));
+      const page = await publishedHome(marketDays);
+
+      page.callOff();
+
+      expect(marketDays.closures).toEqual([{ marketId: 'market-1', date: '2026-08-15', closed: true }]);
+    });
+
+    it('keeps the call-off off a day that is not today', async () => {
+      const page = await publishedHome(marketDaysOf(day({ itemIds: ['item-1'] })));
+
+      expect(page.queryCallOffButton()).toBeNull();
+    });
+
+    // Decision 76: two cards, because they answer different questions — today is a market to
+    // run, the next one a market to plan. One card could only ever be one of them.
+    it('names today and the market after it, in that order', async () => {
+      const page = await publishedHome(marketDaysOf(day({ phase: 'due' }), day({ date: '2026-08-16', day: 'SUN' })));
+
+      expect(page.marketDayHeadings().map(heading => heading.textContent?.trim()))
+        .toEqual(["Aujourd'hui", 'Prochain marché']);
+      expect(screen.getByText(/samedi 15 août/i)).toBeTruthy();
+      expect(screen.getByText(/dimanche 16 août/i)).toBeTruthy();
+    });
+
+    // The bug decision 76 was written for: a closed today held the only card in the app that
+    // opens a menu, so the vendor who called off Saturday morning could not plan Sunday until
+    // Saturday's hours ran out.
+    it('still opens the following market when today is closed', async () => {
+      const page = await publishedHome(
+        marketDaysOf(day({ phase: 'due', closed: true }), day({ date: '2026-08-16', day: 'SUN' })),
+      );
+
+      expect(screen.getByText('Stand fermé')).toBeTruthy();
+      expect(page.planMenuLink().getAttribute('href')).toBe('/dashboard/market/market-1/2026-08-16/menu');
+    });
+
+    // A vendor at their last booked market sees the day they are standing in, and nothing is
+    // owed about a next market the schedule does not have.
+    it('shows today alone when nothing follows it', async () => {
+      const page = await publishedHome(marketDaysOf(day({ phase: 'trading' })));
+
+      expect(page.marketDayHeadings().map(heading => heading.textContent?.trim())).toEqual(["Aujourd'hui"]);
+    });
+
+    // Decision 51: closed is read before items, or a closed menu-less day still reads
+    // *Planifier le menu* and leads to a save decision 29 refuses.
+    it('shows the closed state ahead of whatever the menu says', async () => {
+      const page = await publishedHome(marketDaysOf(day({ phase: 'due', closed: true })));
+
+      expect(screen.getByText('Stand fermé')).toBeTruthy();
+      expect(page.reopenStandButton()).toBeTruthy();
+      expect(page.queryPlanOrFollowLink()).toBeNull();
+      expect(page.queryCallOffButton()).toBeNull();
+    });
+
+    it('reopens a closed today', async () => {
+      const marketDays = marketDaysOf(day({ phase: 'due', closed: true }));
+      const page = await publishedHome(marketDays);
+
+      page.reopenStand();
+
+      expect(marketDays.closures).toEqual([{ marketId: 'market-1', date: '2026-08-15', closed: false }]);
+    });
+  });
+
+  describe('the bilan prompt', () => {
+    const saturday: UnratedMarketDayView = {
+      marketId: 'market-1',
+      date: '2026-08-15',
+      day: 'SAT',
+      marketName: 'Marché de la Croix-Rousse',
+    };
+
+    function judging(...days: UnratedMarketDayView[]): FakeMarketDayFacade {
+      const marketDays = new FakeMarketDayFacade();
+      marketDays.unrated.set(days.map((unrated) => new UnratedMarketDay(unrated)));
+      return marketDays;
+    }
+
+    // A nudge with nothing to nudge about is not a card — the dashboard is sparse enough
+    // that an empty *rien à juger* tile would be the loudest thing on it.
+    it('says nothing when every market has been judged', async () => {
+      const page = await publishedHome(judging());
+
+      expect(page.queryBilanHeading()).toBeNull();
+    });
+
+    // Decision 65: the upcoming list drops a day at endTime, so this is the only door back
+    // to a market that finished — and it links at the bilan, not at the live screen.
+    it('names the market to judge and links at its bilan', async () => {
+      const page = await publishedHome(judging(saturday));
+
+      expect(page.bilanHeading()).toBeTruthy();
+      expect(screen.getByText(/samedi 15 août/i)).toBeTruthy();
+      expect(screen.getByText('Marché de la Croix-Rousse')).toBeTruthy();
+      expect(page.bilanLinks()[0].getAttribute('href')).toBe('/dashboard/market/market-1/2026-08-15/bilan');
+    });
+
+    // One day, not a list (decision 65): a backlog turns a nudge into the cross-month
+    // retrospective this slice defers. The query answers oldest first, so this is the one
+    // about to fall out of the seven-day window.
+    it('asks about one market at a time, the oldest first', async () => {
+      const page = await publishedHome(judging(saturday, { ...saturday, date: '2026-08-16', day: 'SUN' }));
+
+      expect(page.bilanLinks()).toHaveLength(1);
+      expect(screen.getByText(/samedi 15 août/i)).toBeTruthy();
+    });
   });
 });

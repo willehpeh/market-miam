@@ -1,68 +1,52 @@
 import { TestBed } from '@angular/core/testing';
-import { provideState, provideStore, Store } from '@ngrx/store';
+import { provideRouter } from '@angular/router';
+import { provideState, provideStore } from '@ngrx/store';
 import { provideEffects } from '@ngrx/effects';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { LoginSuccess } from '../core/auth/auth.state';
+import { Auth } from '../core/auth/auth';
+import { FakeAuth } from '../core/auth/fake.auth';
+import { authFeature } from '../core/auth/auth.state';
+import { AuthEffects } from '../core/auth/auth.effects';
+import { AuthFacade } from '../core/auth/auth.facade';
+import { StoreAuthFacade } from '../core/auth/store.auth.facade';
 import { Vendor } from './vendor';
 import { HttpVendor } from './http.vendor';
-import { vendorFeature } from './vendor.state';
 import { VendorEffects } from './vendor.effects';
-import { VendorFacade } from './vendor.facade';
 
+// What registration leads to, the storefront loading or the landing page's error, is the
+// onboarding launch's to show; this is the sign-in reaching the api.
 describe('Vendor', () => {
-  let store: Store;
-  let facade: VendorFacade;
+  let auth: AuthFacade;
   let httpCtrl: HttpTestingController;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
       providers: [
         { provide: Vendor, useClass: HttpVendor },
+        { provide: Auth, useClass: FakeAuth },
         provideStore(),
-        provideState(vendorFeature),
-        provideEffects(VendorEffects),
+        provideState(authFeature),
+        provideEffects(AuthEffects, VendorEffects),
         provideHttpClientTesting(),
-        VendorFacade,
+        provideRouter([]),
+        { provide: AuthFacade, useClass: StoreAuthFacade },
       ],
     });
-    store = TestBed.inject(Store);
-    facade = TestBed.inject(VendorFacade);
+    auth = TestBed.inject(AuthFacade);
     httpCtrl = TestBed.inject(HttpTestingController);
-  });
-
-  it('should register vendor when login succeeds', () => {
-    store.dispatch(LoginSuccess({ userId: 'vendor-1' }));
-
-    const req = httpCtrl.expectOne('/api/vendors');
-    expect(req.request.method).toBe('POST');
-  });
-
-  it('should show as loading when registering', () => {
-    store.dispatch(LoginSuccess({ userId: 'vendor-1' }));
-
-    httpCtrl.expectOne('/api/vendors');
-    expect(facade.loading()).toBe(true);
-  });
-
-  it('should stop showing as loading when registration succeeds', () => {
-    store.dispatch(LoginSuccess({ userId: 'vendor-1' }));
-
-    const req = httpCtrl.expectOne('/api/vendors');
-    req.flush({ vendorId: '123' });
-
-    expect(facade.loading()).toBe(false);
-  });
-
-  it('should stop showing as loading when registration fails', () => {
-    store.dispatch(LoginSuccess({ userId: 'vendor-1' }));
-
-    const req = httpCtrl.expectOne('/api/vendors');
-    req.flush({ error: 'error' }, { status: 400, statusText: 'Bad Request' });
-
-    expect(facade.loading()).toBe(false);
   });
 
   afterEach(() => {
     httpCtrl.verify();
+  });
+
+  it('registers the vendor once they have signed in', () => {
+    auth.login();
+
+    expect(httpCtrl.expectOne('/api/vendors').request.method).toBe('POST');
+  });
+
+  it('registers no one before anyone signs in', () => {
+    httpCtrl.expectNone('/api/vendors');
   });
 });

@@ -1,13 +1,12 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { ITEM_PHOTO_THUMBNAIL_TRANSFORMATION } from '@market-miam/common';
-import { CloudinaryUrlPipe } from '../core/cloudinary-url.pipe';
 import { CatalogueFacade } from './catalogue.facade';
+import { DishThumbnail } from './dish-thumbnail';
 import { StorefrontFacade } from '../storefront/storefront.facade';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, CloudinaryUrlPipe],
+  imports: [RouterLink, DishThumbnail],
   template: `
     <!-- The choice lives here, not on the page above it: it governs the whole carte, so it
          has no business on the screens for one dish or for the ordering. Rendered only once
@@ -70,17 +69,7 @@ import { StorefrontFacade } from '../storefront/storefront.facade';
             class="block rounded-card border border-line bg-surface p-3 no-underline"
           >
             <div class="flex items-center gap-4">
-              @if (dish.imageReference(); as reference) {
-                <img
-                  class="size-16 shrink-0 rounded-field object-cover"
-                  [src]="reference | cloudinaryUrl: thumbnailTransformation"
-                  alt=""
-                >
-              } @else {
-                <span class="hatch grid size-16 shrink-0 place-items-center rounded-field text-lg text-line-strong">
-                  <i class="fa-solid fa-camera" aria-hidden="true"></i>
-                </span>
-              }
+              <mm-dish-thumbnail [dish]="dish" />
               <div class="min-w-0 flex-1">
                 <p class="break-words text-sm font-bold text-ink">{{ dish.name() }}</p>
                 @if (pricing.isSoldByVariant()) {
@@ -123,10 +112,10 @@ export class CatalogueList {
     this.storefront.setCartePricesVisible(visible);
   }
 
-  readonly thumbnailTransformation = ITEM_PHOTO_THUMBNAIL_TRANSFORMATION;
   readonly dishes = this.catalogue.items;
 
   constructor() {
     this.catalogue.load();
+    this.storefront.load();
   }
 }

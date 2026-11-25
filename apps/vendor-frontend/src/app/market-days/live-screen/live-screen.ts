@@ -113,7 +113,7 @@ import { Dish } from '../../catalogue/dish';
              snap-back. What lands here is the bilan's door, below. -->
         @if (!marketDay.isAfterHours()) {
           @if (marketDay.isClosed()) {
-            <mm-reopen-stand [marketId]="marketId" [date]="date" />
+            <mm-reopen-stand (reopen)="reopenStand()" />
           } @else {
             <button type="button" class="quiet mt-8 flex w-full max-w-xs mx-auto justify-center" (click)="closeStand()">
               @if (marketDay.isTrading()) {
@@ -235,6 +235,10 @@ export class LiveScreen {
 
   closeStand(): void {
     this.marketDays.close(this.marketId, this.date);
+  }
+
+  reopenStand(): void {
+    this.marketDays.reopen(this.marketId, this.date);
   }
 
   markSoldOut(item: Dish): void {
