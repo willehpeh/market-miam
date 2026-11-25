@@ -95,6 +95,18 @@ describe('Placing an order over HTTP', () => {
     expect(await new EventLog(app).ofType('OrderPlaced')).toEqual([]);
   });
 
+  it.each([
+    ['no account in its context', { context: undefined }],
+    ['no checkout in its related object', { related_object: undefined }],
+    ['a type the payments route doesn’t handle', { type: 'v1.checkout.session.expired' }],
+  ])('refuses an event with %s, recording nothing', async (_, changes) => {
+    const accountId = await holdAnOrderToday();
+
+    await new StripeEvents(app).checkoutCompleted('evt_test_2', 'cs_test_1', accountId, changes).expect(400);
+
+    expect(await new EventLog(app).ofType('OrderPlaced')).toEqual([]);
+  });
+
   async function holdAnOrderToday(): Promise<string> {
     const accountId = await confirmPaymentAccount();
     await planToday();

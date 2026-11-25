@@ -23,7 +23,7 @@ export class StripeEvents {
     });
   }
 
-  checkoutCompleted(eventId: string, checkoutId: string, accountId: string): Test {
+  checkoutCompleted(eventId: string, checkoutId: string, accountId: string, changes: object = {}): Test {
     return this.deliver('/webhooks/stripe/payments', STRIPE_PAYMENTS_SIGNING_SECRET, {
       id: eventId,
       object: 'v2.core.event',
@@ -32,6 +32,7 @@ export class StripeEvents {
       created: this.now(),
       context: accountId,
       related_object: { id: checkoutId, type: 'checkout.session', url: `/v1/checkout/sessions/${checkoutId}` },
+      ...changes,
     });
   }
 
