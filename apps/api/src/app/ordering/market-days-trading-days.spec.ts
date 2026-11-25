@@ -27,11 +27,11 @@ const lines: OrderLine[] = [
 
 const trading: LiveMarketDay = { itemIds: ['dish-1', 'dish-2'], soldOutItemIds: [], closed: false, phase: 'trading' };
 
-const dayFrom = (liveDay?: LiveMarketDay) =>
+const tradingDayFor = (liveDay?: LiveMarketDay) =>
   new MarketDaysTradingDays(new StubQueryGateway(liveDay)).forVendorAtMarketOn(new VendorId('vendor-1'), 'market-1', DATE);
 
 describe('Trading days, from Market Days’ live day', () => {
   it('takes an order on a trading day whose menu has its dishes', async () => {
-    expect((await dayFrom(trading)).availabilityOf(lines)).toBe('available');
+    expect((await tradingDayFor(trading)).availabilityOf(lines)).toBe('available');
   });
 });
