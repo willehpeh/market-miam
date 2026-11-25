@@ -19,16 +19,17 @@ export class FindLiveMarketDayHandler implements IQueryHandler<FindLiveMarketDay
   ) {}
 
   async execute({ vendorId, marketId, date }: FindLiveMarketDay): Promise<LiveMarketDay | undefined> {
-    const id = new MarketDayId(new MarketId(marketId), new LocalDate(date));
+    const day = new LocalDate(date);
+    const id = new MarketDayId(new MarketId(marketId), day);
     const [events, scheduled] = await Promise.all([
       this.vendorEvents.load(id.streamIdFor(new VendorId(vendorId))) as Promise<StoredEvent<MarketDayEvent>[]>,
-      this.scheduledDay(vendorId, marketId, new LocalDate(date)),
+      this.scheduledDay(vendorId, marketId, day),
     ]);
     if (!scheduled) {
       return undefined;
     }
     const { phase } = standingOf(scheduled, parisWallClock(this.clock.now()));
-    return events.reduce((day, event) => day.with(event), new MarketDayOnRecord()).answer(phase);
+    return events.reduce((record, event) => record.with(event), new MarketDayOnRecord()).answer(phase);
   }
 
   private async scheduledDay(vendorId: string, marketId: string, date: LocalDate): Promise<ScheduledDay | undefined> {
