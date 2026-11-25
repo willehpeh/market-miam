@@ -133,6 +133,8 @@ The owner builds test-first with an agent, one step at a time, and reviews each 
 - **The ordering board says what was decided and why, never how.** A decided row is a default: when building shows
   something new, put it back to the owner rather than ruling it out. ADRs record only what is hard to reverse or
   crosses contexts, written when the code lands.
+- **Keep `NEXT_BEHAVIOURS.md`'s *Ordering, by importance and urgency* current**: strike a behaviour when it lands,
+  add one where it ranks when it is found, and say which is next.
 - **Push failing specs to the branch only.** Before pushing to `main`, run CI's steps on the affected projects
   (`lint`, `typecheck`, `test`, `test:container`, `build`) and `nx scenario api`, both against the throwaway
   Postgres above.
