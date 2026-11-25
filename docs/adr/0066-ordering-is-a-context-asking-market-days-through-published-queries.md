@@ -64,3 +64,15 @@ outbox, which is the log again. The question reopens with the first of:
 | Ordering loads Market Days' aggregates | Strongly consistent, but it binds Ordering to Market Days' write model |
 | Market Days' queries carry Ordering's state | The dependency would point both ways |
 | A message broker | A second store of facts and a dual write, for a need the log meets |
+
+## Amendment (2026-11-25): the live day, read from the log
+
+- **Placing an order asks Market Days for the live day, which reads the day's own events.** The
+  storefront's projection can lag behind the vendor's last tap, and an order judged against it
+  could slip a dish sold out a moment before. `FindLiveMarketDay` folds the day's stream on each
+  call, takes its hours from the schedule view and its phase from the same derivation the
+  storefront uses, and answers no day when no schedule covers the date.
+- **The api's adapters are Ordering's anti-corruption layer.** Ordering's ports speak its own
+  words; the adapter beside each one turns Market Days' answer into them, and is the only code
+  that sees both. `MarketDaysTradingDays` turns the live day into a trading day: Market Days'
+  `over` and `past` phases into ended, and no day into one that refuses every order as closed.
