@@ -1,10 +1,9 @@
 import { Command } from '@nestjs/cqrs';
-import { HeldOrder } from '../order';
 
 export class PlaceOrder extends Command<void> {
   constructor(
-    readonly vendorId: string,
-    readonly order: HeldOrder,
+    readonly sessionId: string,
+    readonly accountId: string,
     readonly receivedAt: string,
   ) { super(); }
 }

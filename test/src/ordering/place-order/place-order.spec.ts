@@ -1,9 +1,9 @@
 import { DomainEvent, InMemoryEventStore } from '@market-miam/event-sourcing';
-import { InMemoryTradingDays, Merchants, Orders, PlaceOrderHandler } from '@market-miam/ordering';
+import { InMemoryPayments, InMemoryTradingDays, Merchants, Orders, PlaceOrderHandler } from '@market-miam/ordering';
 import { VendorScopedEvents } from '@market-miam/shared-kernel';
 import { merchantStream, registrationConfirmed, registrationStarted } from '../merchant-events';
 import { orderPlaced, orderRefused, orderStream } from '../order-events';
-import { TestPlaceOrder } from './test-data';
+import { TestCompletedPage, TestPlaceOrder } from './test-data';
 
 describe('Place Order', () => {
   let store: InMemoryEventStore;
@@ -15,8 +15,10 @@ describe('Place Order', () => {
     tradingDays = new InMemoryTradingDays();
     tradingDays.setMenu('dish-id', 'another-dish-id');
     store.seedWith(merchantStream(), [registrationStarted(), registrationConfirmed()], { vendorId: 'vendor-id' });
+    const payments = new InMemoryPayments();
+    payments.complete('cs_test_1', TestCompletedPage.valid());
     const events = new VendorScopedEvents(store);
-    handler = new PlaceOrderHandler(new Orders(events), tradingDays, new Merchants(events));
+    handler = new PlaceOrderHandler(payments, new Orders(events), tradingDays, new Merchants(events));
   });
 
   const given = (...history: DomainEvent[]): void => store.seedWith(orderStream(), history, { vendorId: 'vendor-id' });
@@ -28,7 +30,7 @@ describe('Place Order', () => {
   });
 
   it('records nothing when Stripe holds the card on an account other than the vendor’s current one', async () => {
-    await handler.execute(TestPlaceOrder.withOrder({ accountId: 'acct_left_over' }));
+    await handler.execute(TestPlaceOrder.with({ accountId: 'acct_left_over' }));
 
     expect(store.newEvents()).toEqual([]);
   });

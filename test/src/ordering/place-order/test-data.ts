@@ -1,15 +1,29 @@
-import { HeldOrder, PlaceOrder } from '@market-miam/ordering';
+import { CompletedPage, PlaceOrder } from '@market-miam/ordering';
 import { TestDetectPaymentAccountUpdate } from '../detect-payment-account-update/test-data';
 
 const RECEIVED_AT = '2026-11-21T11:42:00.000Z';
 
 export class TestPlaceOrder {
   static valid(): PlaceOrder {
+    return new PlaceOrder('cs_test_1', TestDetectPaymentAccountUpdate.valid().accountId, RECEIVED_AT);
+  }
+
+  static with(overrides: Partial<PlaceOrder>): PlaceOrder {
+    const defaults = this.valid();
     return new PlaceOrder(
-      'vendor-id',
-      {
+      overrides.sessionId ?? defaults.sessionId,
+      overrides.accountId ?? defaults.accountId,
+      overrides.receivedAt ?? defaults.receivedAt,
+    );
+  }
+}
+
+export class TestCompletedPage {
+  static valid(): CompletedPage {
+    return {
+      vendorId: 'vendor-id',
+      order: {
         orderId: 'order-id',
-        accountId: TestDetectPaymentAccountUpdate.valid().accountId,
         marketId: 'market-id',
         date: '2026-11-21',
         lines: [
@@ -18,12 +32,6 @@ export class TestPlaceOrder {
         ],
         paymentIntentId: 'pi_test_1',
       },
-      RECEIVED_AT,
-    );
-  }
-
-  static withOrder(overrides: Partial<HeldOrder>): PlaceOrder {
-    const defaults = this.valid();
-    return new PlaceOrder(defaults.vendorId, { ...defaults.order, ...overrides }, defaults.receivedAt);
+    };
   }
 }
