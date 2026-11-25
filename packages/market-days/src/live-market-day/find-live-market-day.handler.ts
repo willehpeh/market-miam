@@ -18,22 +18,21 @@ export class FindLiveMarketDayHandler implements IQueryHandler<FindLiveMarketDay
     private readonly clock: Clock,
   ) {}
 
-  async execute({ vendorId, marketId, date }: FindLiveMarketDay): Promise<LiveMarketDay> {
+  async execute({ vendorId, marketId, date }: FindLiveMarketDay): Promise<LiveMarketDay | undefined> {
     const id = new MarketDayId(new MarketId(marketId), new LocalDate(date));
     const [events, scheduled] = await Promise.all([
       this.vendorEvents.load(id.streamIdFor(new VendorId(vendorId))) as Promise<StoredEvent<MarketDayEvent>[]>,
       this.scheduledDay(vendorId, marketId, new LocalDate(date)),
     ]);
+    if (!scheduled) {
+      return undefined;
+    }
     const { phase } = standingOf(scheduled, parisWallClock(this.clock.now()));
     return events.reduce((day, event) => day.with(event), new MarketDayOnRecord()).answer(phase);
   }
 
-  private async scheduledDay(vendorId: string, marketId: string, date: LocalDate): Promise<ScheduledDay> {
+  private async scheduledDay(vendorId: string, marketId: string, date: LocalDate): Promise<ScheduledDay | undefined> {
     const { schedules } = await this.schedules.forVendor(vendorId);
-    const scheduled = scheduledDayAt(schedules, marketId, date);
-    if (!scheduled) {
-      throw new Error(`No schedule puts vendor ${vendorId} at market ${marketId} on ${date.value()}`);
-    }
-    return scheduled.occurrence;
+    return scheduledDayAt(schedules, marketId, date)?.occurrence;
   }
 }
