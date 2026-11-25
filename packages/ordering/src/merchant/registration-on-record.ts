@@ -1,39 +1,37 @@
 import { PaymentAccountAlreadyExistsError } from './payment-account-already-exists.error';
 import { RegistrationAlreadyOpenError } from './registration-already-open.error';
 
-export abstract class RegistrationOnRecord {
-  abstract allowNewRegistration(): void;
-  abstract isOpen(registrationId: string): boolean;
+export interface RegistrationOnRecord {
+  allowNewRegistration(): void;
+  isOpen(registrationId: string): boolean;
 }
 
-export class NoOpenRegistration extends RegistrationOnRecord {
-  override allowNewRegistration(): void {}
+export class NoOpenRegistration implements RegistrationOnRecord {
+  allowNewRegistration(): void {}
 
-  override isOpen(): boolean {
+  isOpen(): boolean {
     return false;
   }
 }
 
-export class OpenRegistration extends RegistrationOnRecord {
-  constructor(private readonly registrationId: string) {
-    super();
-  }
+export class OpenRegistration implements RegistrationOnRecord {
+  constructor(private readonly registrationId: string) {}
 
-  override allowNewRegistration(): void {
+  allowNewRegistration(): void {
     throw new RegistrationAlreadyOpenError();
   }
 
-  override isOpen(registrationId: string): boolean {
+  isOpen(registrationId: string): boolean {
     return registrationId === this.registrationId;
   }
 }
 
-export class ConfirmedRegistration extends RegistrationOnRecord {
-  override allowNewRegistration(): void {
+export class ConfirmedRegistration implements RegistrationOnRecord {
+  allowNewRegistration(): void {
     throw new PaymentAccountAlreadyExistsError();
   }
 
-  override isOpen(): boolean {
+  isOpen(): boolean {
     return false;
   }
 }
