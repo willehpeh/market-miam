@@ -99,7 +99,7 @@ export default [
   {
     files: ['**/*.ts', '**/*.tsx'],
     rules: {
-      '@typescript-eslint/no-empty-function': ['error', { allow: ['overrideMethods'] }],
+      '@typescript-eslint/no-empty-function': ['error', { allow: ['methods'] }],
     },
   },
   {
