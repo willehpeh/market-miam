@@ -53,3 +53,4 @@ export * from './vendor-legal-identity-view';
 export * from './subdomain-registry';
 export * from './vendor-accounts';
 export * from './customer-storefront';
+export * from './live-market-day';
