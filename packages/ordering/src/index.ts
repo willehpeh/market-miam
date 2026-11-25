@@ -11,3 +11,4 @@ export * from './observe-payment-account';
 export * from './order';
 export * from './place-order';
 export * from './trading-days';
+export * from './payments';

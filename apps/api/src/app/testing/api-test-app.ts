@@ -5,7 +5,7 @@ import { Clock, Email, Instant, LocalDate } from '@market-miam/common';
 import { VendorId } from '@market-miam/shared-kernel';
 import { EventStore } from '@market-miam/event-sourcing';
 import { InMemoryVendorAccounts, StorefrontOpened, StorefrontPublished, vendorPiiFields, vendorPiiKeyScopes, VendorAccounts } from '@market-miam/market-days';
-import { InMemoryPaymentAccounts, PaymentAccounts } from '@market-miam/ordering';
+import { InMemoryPaymentAccounts, InMemoryPayments, PaymentAccounts } from '@market-miam/ordering';
 import { StaticTokenVerifier, type VerifiedVendor } from '@market-miam/auth';
 import { AuthModule, OperatorAuthModule } from '@market-miam/auth-nestjs';
 import { MarketDaysModule } from '../market-days/market-days.module';
@@ -21,7 +21,7 @@ import { globalFilters } from '../global-filters';
 import { applicationOptions } from '../application-options';
 import { PollSchedule } from '../event-sourcing/poll-schedule';
 import { FakeSignedUploads, SignedUploads } from '../signed-uploads';
-import { STRIPE_ACCOUNTS_SIGNING_SECRET } from './stripe-events';
+import { STRIPE_ACCOUNTS_SIGNING_SECRET, STRIPE_PAYMENTS_SIGNING_SECRET } from './stripe-events';
 
 export const testVendor: VerifiedVendor = {
   vendorId: new VendorId('acme-bakery'),
@@ -47,6 +47,7 @@ export interface ApiTestOptions {
   // Vendors' sign-in accounts, as the invitation processor opens them.
   vendorAccounts?: InMemoryVendorAccounts;
   paymentAccounts?: PaymentAccounts;
+  payments?: InMemoryPayments;
 }
 
 export function apiTestModule(options: ApiTestOptions = {}): TestingModuleBuilder {
@@ -65,7 +66,12 @@ export function apiTestModule(options: ApiTestOptions = {}): TestingModuleBuilde
         isGlobal: true,
         ignoreEnvFile: true,
         skipProcessEnv: true,
-        load: [() => ({ STRIPE_ACCOUNTS_WEBHOOK_SECRET: STRIPE_ACCOUNTS_SIGNING_SECRET })],
+        load: [
+          () => ({
+            STRIPE_ACCOUNTS_WEBHOOK_SECRET: STRIPE_ACCOUNTS_SIGNING_SECRET,
+            STRIPE_PAYMENTS_WEBHOOK_SECRET: STRIPE_PAYMENTS_SIGNING_SECRET,
+          }),
+        ],
       }),
       AuthModule.forRootAsync({ useFactory: () => new StaticTokenVerifier(vendor) }),
       OperatorAuthModule.forRootAsync({ useFactory: () => new FakeOperatorTokenVerifier() }),
