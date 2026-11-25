@@ -113,6 +113,10 @@ The owner builds test-first with an agent, one step at a time, and reviews each 
   outer loop, and behaviour it would imply, such as a controller calling a port, belongs in a use case first.
 - **Object design and clear names over helpers**, no comments in new code, and no get or set accessors (ADR 0008,
   enforced by lint). The owner questions names: offer alternatives with a recommendation.
+- **Polymorphism only when it is clean.** No `instanceof`, or anything equivalent, to choose behaviour: callers send
+  a message without knowing which kind of object receives it, and the kind is chosen once, where the object is
+  built. Prefer composition over inheritance; a contract that is not a DI token is an interface, which its kinds
+  implement.
 - **Decisions are grilled in chat, one question at a time**, never through the question dialog: options, their
   costs, a recommendation. Check Stripe facts against Stripe's docs or the sandbox and say when something is
   unverified. The sandbox key is a network secret for `api.stripe.com` on the cloud environment, never in GitHub;
