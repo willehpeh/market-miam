@@ -23,6 +23,9 @@ export class Stand {
       case 'MarketDayClosed':
         this._closed = true;
         break;
+      case 'MarketDayReopened':
+        this._closed = false;
+        break;
     }
   }
 
