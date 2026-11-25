@@ -19,7 +19,7 @@ export class MarketDaysTradingDays extends TradingDays {
       menuDishIds: liveDay.itemIds,
       soldOutDishIds: liveDay.soldOutItemIds,
       closed: liveDay.closed,
-      ended: false,
+      ended: liveDay.phase === 'over' || liveDay.phase === 'past',
     });
   }
 }
