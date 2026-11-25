@@ -7,7 +7,7 @@ import {
 } from '@market-miam/market-days';
 import { VendorScopedEvents } from '@market-miam/shared-kernel';
 import { clockAt } from '../../clock-at';
-import { available, menuSet, soldOut } from '../market-day-events';
+import { available, closed, menuSet, soldOut } from '../market-day-events';
 import { TODAY } from '../set-market-day-menu/test-data';
 
 const fridaysAtBelleville: MarketScheduleView = {
@@ -53,6 +53,12 @@ describe('Find Live Market Day', () => {
     expect(await findLiveDay()).toMatchObject({
       soldOutItemIds: [],
     });
+  });
+
+  it('reports the day closed once the vendor closes it by hand', async () => {
+    given(menuSet(TODAY, 'item-1'), closed(TODAY));
+
+    expect(await findLiveDay()).toMatchObject({ closed: true });
   });
 
   it.each([
