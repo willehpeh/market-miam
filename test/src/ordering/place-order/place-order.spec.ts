@@ -69,6 +69,16 @@ describe('Place Order', () => {
     ]);
   });
 
+  it('refuses the order as closed when the vendor is no longer scheduled at the market that day', async () => {
+    tradingDays.unschedule();
+
+    await handler.execute(TestPlaceOrder.valid());
+
+    expect(store.newEvents()).toEqual([
+      expect.objectContaining({ streamId: orderStream(), ...orderRefused({ reason: 'closed' }) }),
+    ]);
+  });
+
   it('refuses for the closed day rather than a sold-out dish when both apply', async () => {
     tradingDays.markSoldOut('another-dish-id');
     tradingDays.close();
