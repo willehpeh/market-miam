@@ -3,6 +3,7 @@ import { TradingDays } from './trading-days';
 
 export class InMemoryTradingDays extends TradingDays {
   private readonly facts: TradingDayFacts = { menuDishIds: [], soldOutDishIds: [], closed: false, ended: false };
+  private scheduled = true;
 
   setMenu(...dishIds: string[]): void {
     this.facts.menuDishIds = dishIds;
@@ -18,6 +19,10 @@ export class InMemoryTradingDays extends TradingDays {
 
   end(): void {
     this.facts.ended = true;
+  }
+
+  unschedule(): void {
+    this.scheduled = false;
   }
 
   async forVendorAtMarketOn(): Promise<TradingDay> {
