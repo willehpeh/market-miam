@@ -34,4 +34,8 @@ describe('Trading days, from Market Days’ live day', () => {
   it('takes an order on a trading day whose menu has its dishes', async () => {
     expect((await tradingDayFor(trading)).availabilityOf(lines)).toBe('available');
   });
+
+  it.each(['over', 'past'] as const)('refuses the order as ended when Market Days reports the day %s', async phase => {
+    expect((await tradingDayFor({ ...trading, phase })).availabilityOf(lines)).toBe('ended');
+  });
 });
