@@ -7,7 +7,7 @@ import { MarketDayViews } from '../market-day-view/market-day-views';
 import { CatalogueViews } from '../catalogue-view/catalogue-views';
 import { MarketPricesViews } from '../market-prices-view/market-prices-views';
 import { dayMenus, menuFor } from './day-menus';
-import { scheduledDays } from './scheduled-days';
+import { scheduledDayAt } from './scheduled-days';
 import { calledOff, parisWallClock, standingOf } from './market-day-clock';
 
 @QueryHandler(FindMarketDay)
@@ -23,15 +23,11 @@ export class FindMarketDayHandler implements IQueryHandler<FindMarketDay> {
   async execute(query: FindMarketDay): Promise<MarketDayOccurrence | undefined> {
     const date = new LocalDate(query.date);
     const { schedules } = await this.views.forVendor(query.vendorId);
-    // A vendor may hold several schedules at one market, so the date picks the schedule —
-    // taking the first that names the market would answer for the wrong weekday.
-    const covering = schedules
-      .filter(schedule => schedule.marketId === query.marketId)
-      .flatMap(schedule => scheduledDays(schedule, date, date).map(occurrence => ({ schedule, occurrence })));
-    if (covering.length === 0) {
+    const covering = scheduledDayAt(schedules, query.marketId, date);
+    if (!covering) {
       return undefined;
     }
-    const { schedule: scheduled, occurrence } = covering[0];
+    const { schedule: scheduled, occurrence } = covering;
     const now = parisWallClock(this.clock.now());
     const { absent } = occurrence;
     const day = menuFor(

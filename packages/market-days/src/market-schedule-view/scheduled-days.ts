@@ -17,6 +17,18 @@ export function scheduledDays(schedule: MarketScheduleView, from: LocalDate, to:
     .map(occurrence => ({ ...occurrence, absent: isAbsent(schedule, occurrence.date) }));
 }
 
+// A vendor may hold several schedules at one market, so the date picks the schedule —
+// taking the first that names the market would answer for the wrong weekday.
+export function scheduledDayAt(
+  schedules: MarketScheduleView[],
+  marketId: string,
+  date: LocalDate,
+): { schedule: MarketScheduleView; occurrence: ScheduledDay } | undefined {
+  return schedules
+    .filter(schedule => schedule.marketId === marketId)
+    .flatMap(schedule => scheduledDays(schedule, date, date).map(occurrence => ({ schedule, occurrence })))[0];
+}
+
 // Inclusive both ends: a one-day absence is recorded as a range whose bounds are the same
 // date, so a half-open test would let that day through.
 function isAbsent(schedule: MarketScheduleView, date: string): boolean {
