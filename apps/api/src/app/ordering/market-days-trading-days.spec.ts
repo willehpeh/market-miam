@@ -38,4 +38,8 @@ describe('Trading days, from Market Days’ live day', () => {
   it.each(['over', 'past'] as const)('refuses the order as ended when Market Days reports the day %s', async phase => {
     expect((await tradingDayFor({ ...trading, phase })).availabilityOf(lines)).toBe('ended');
   });
+
+  it('refuses the order as closed when Market Days reports no live day', async () => {
+    await expect(tradingDayFor().then(day => day.availabilityOf(lines))).resolves.toBe('closed');
+  });
 });
