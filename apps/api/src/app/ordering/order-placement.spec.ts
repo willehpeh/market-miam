@@ -68,12 +68,7 @@ describe('Placing an order over HTTP', () => {
   });
 
   it('places the order whose card Stripe holds on the vendor’s account', async () => {
-    const accountId = await confirmPaymentAccount();
-    await planToday();
-    payments.complete('cs_test_1', {
-      vendorId: 'acme-bakery',
-      order: { orderId: 'order-1', marketId: 'market-1', date: TUESDAY, lines, paymentId: 'pi_test_1' },
-    });
+    const accountId = await holdAnOrderToday();
 
     await new StripeEvents(app).checkoutCompleted('evt_test_2', 'cs_test_1', accountId).expect(200);
 
@@ -93,17 +88,22 @@ describe('Placing an order over HTTP', () => {
   });
 
   it('refuses an event signed with the accounts destination’s secret, recording nothing', async () => {
+    const accountId = await holdAnOrderToday();
+
+    await new StripeEvents(app, STRIPE_ACCOUNTS_SIGNING_SECRET).checkoutCompleted('evt_test_2', 'cs_test_1', accountId).expect(400);
+
+    expect(await new EventLog(app).ofType('OrderPlaced')).toEqual([]);
+  });
+
+  async function holdAnOrderToday(): Promise<string> {
     const accountId = await confirmPaymentAccount();
     await planToday();
     payments.complete('cs_test_1', {
       vendorId: 'acme-bakery',
       order: { orderId: 'order-1', marketId: 'market-1', date: TUESDAY, lines, paymentId: 'pi_test_1' },
     });
-
-    await new StripeEvents(app, STRIPE_ACCOUNTS_SIGNING_SECRET).checkoutCompleted('evt_test_2', 'cs_test_1', accountId).expect(400);
-
-    expect(await new EventLog(app).ofType('OrderPlaced')).toEqual([]);
-  });
+    return accountId;
+  }
 
   async function confirmPaymentAccount(): Promise<string> {
     await publishStorefrontFor(app, 'acme-bakery');
