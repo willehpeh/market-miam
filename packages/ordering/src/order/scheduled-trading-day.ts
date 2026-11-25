@@ -2,7 +2,7 @@ import { Availability } from './availability';
 import { OrderLine } from './held-order';
 import { TradingDay } from './trading-day';
 
-export type TradingDayFacts = {
+export type Stand = {
   menuDishIds: string[];
   soldOutDishIds: string[];
   closed: boolean;
@@ -10,19 +10,19 @@ export type TradingDayFacts = {
 };
 
 export class ScheduledTradingDay implements TradingDay {
-  constructor(private readonly facts: TradingDayFacts) {}
+  constructor(private readonly stand: Stand) {}
 
   availabilityOf(lines: OrderLine[]): Availability {
-    if (this.facts.closed) {
+    if (this.stand.closed) {
       return 'closed';
     }
-    if (this.facts.ended) {
+    if (this.stand.ended) {
       return 'ended';
     }
     return lines.every(line => this.offers(line)) ? 'available' : 'sold-out';
   }
 
   private offers({ dishId }: OrderLine): boolean {
-    return this.facts.menuDishIds.includes(dishId) && !this.facts.soldOutDishIds.includes(dishId);
+    return this.stand.menuDishIds.includes(dishId) && !this.stand.soldOutDishIds.includes(dishId);
   }
 }

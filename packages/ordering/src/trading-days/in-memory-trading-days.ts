@@ -1,24 +1,24 @@
-import { ScheduledTradingDay, TradingDay, TradingDayFacts, NoTradingDay } from '../order';
+import { NoTradingDay, ScheduledTradingDay, Stand, TradingDay } from '../order';
 import { TradingDays } from './trading-days';
 
 export class InMemoryTradingDays extends TradingDays {
-  private readonly facts: TradingDayFacts = { menuDishIds: [], soldOutDishIds: [], closed: false, ended: false };
+  private readonly stand: Stand = { menuDishIds: [], soldOutDishIds: [], closed: false, ended: false };
   private scheduled = true;
 
   setMenu(...dishIds: string[]): void {
-    this.facts.menuDishIds = dishIds;
+    this.stand.menuDishIds = dishIds;
   }
 
   markSoldOut(dishId: string): void {
-    this.facts.soldOutDishIds.push(dishId);
+    this.stand.soldOutDishIds.push(dishId);
   }
 
   close(): void {
-    this.facts.closed = true;
+    this.stand.closed = true;
   }
 
   end(): void {
-    this.facts.ended = true;
+    this.stand.ended = true;
   }
 
   unschedule(): void {
@@ -30,9 +30,9 @@ export class InMemoryTradingDays extends TradingDays {
       return new NoTradingDay();
     }
     return new ScheduledTradingDay({
-      ...this.facts,
-      menuDishIds: [...this.facts.menuDishIds],
-      soldOutDishIds: [...this.facts.soldOutDishIds],
+      ...this.stand,
+      menuDishIds: [...this.stand.menuDishIds],
+      soldOutDishIds: [...this.stand.soldOutDishIds],
     });
   }
 }
