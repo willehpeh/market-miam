@@ -7,7 +7,11 @@ export class InMemoryPayments extends Payments {
     this.completedPages.set(sessionId, page);
   }
 
-  async completedPage(sessionId: string): Promise<CompletedPage | undefined> {
-    return this.completedPages.get(sessionId);
+  async completedPage(sessionId: string): Promise<CompletedPage> {
+    const page = this.completedPages.get(sessionId);
+    if (!page) {
+      throw new Error(`No completed page ${sessionId}`);
+    }
+    return page;
   }
 }

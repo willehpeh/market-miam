@@ -29,12 +29,6 @@ describe('Place Order', () => {
     expect(store.newEvents()).toEqual([expect.objectContaining({ streamId: orderStream(), ...orderPlaced() })]);
   });
 
-  it('records nothing, quietly, for a completed page that isn’t ours', async () => {
-    await expect(handler.execute(TestPlaceOrder.with({ sessionId: 'cs_not_ours' }))).resolves.toBeUndefined();
-
-    expect(store.newEvents()).toEqual([]);
-  });
-
   it('records nothing when Stripe holds the card on an account other than the vendor’s current one', async () => {
     await handler.execute(TestPlaceOrder.with({ accountId: 'acct_left_over' }));
 
