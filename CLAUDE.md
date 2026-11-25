@@ -98,6 +98,13 @@ sets `push.negotiate`; pushing with it off sent the objects and went through:
 git -c push.negotiate=false push -u origin <branch>
 ```
 
+## Stripe's hosted pages can't be paid from a cloud session
+
+The cloud environment's proxy adds the sandbox secret key to every request to `api.stripe.com`, the browser's
+included. A Checkout page filled in from this container is refused at *Pay* with a 402, *Sending credit card numbers
+directly to the Stripe API is generally unsafe*: Stripe sees raw card data sent with a secret key. Create the page by
+API here, and have the owner pay it in their own browser with `4242 4242 4242 4242`.
+
 ## Working with the owner in agent sessions
 
 The owner builds test-first with an agent, one step at a time, and reviews each step:
