@@ -7,7 +7,11 @@ import { shapeOf } from '../../shape-of.pipe';
 import { DeliveredTo, StripeSignatureGuard } from './stripe-signature.guard';
 
 const AccountEvent = z.object({ id: z.string(), related_object: z.object({ id: z.string() }) });
-const PaymentEvent = z.object({ context: z.string(), related_object: z.object({ id: z.string() }) });
+const PaymentEvent = z.object({
+  type: z.literal('v1.checkout.session.completed'),
+  context: z.string(),
+  related_object: z.object({ id: z.string() }),
+});
 
 @Controller('webhooks/stripe')
 @UseGuards(StripeSignatureGuard)
