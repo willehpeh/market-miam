@@ -35,11 +35,9 @@ describe('Trading days, from Market Days’ live day', () => {
     expect((await tradingDayFor(trading)).availabilityOf(lines)).toBe('available');
   });
 
-  it.each(['over', 'past'] as const)('refuses the order as ended when Market Days reports the day %s', async phase => {
-    expect((await tradingDayFor({ ...trading, phase })).availabilityOf(lines)).toBe('ended');
-  });
-
   it.each<[Availability, string, Partial<LiveMarketDay>]>([
+    ['ended', 'the day over', { phase: 'over' }],
+    ['ended', 'the day past', { phase: 'past' }],
     ['closed', 'the day closed by hand', { closed: true }],
     ['sold-out', 'one of its dishes sold out', { soldOutItemIds: ['dish-2'] }],
   ])('refuses the order as %s when Market Days reports %s', async (availability, _, report) => {
