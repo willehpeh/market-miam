@@ -4,6 +4,8 @@ import { FindLiveMarketDay } from '@market-miam/market-days';
 import { ScheduledTradingDay, TradingDay, TradingDays } from '@market-miam/ordering';
 import { VendorId } from '@market-miam/shared-kernel';
 
+const ENDED_PHASES = ['over', 'past'];
+
 @Injectable()
 export class MarketDaysTradingDays extends TradingDays {
   constructor(private readonly queries: QueryGateway) {
@@ -19,7 +21,7 @@ export class MarketDaysTradingDays extends TradingDays {
       menuDishIds: liveDay.itemIds,
       soldOutDishIds: liveDay.soldOutItemIds,
       closed: liveDay.closed,
-      ended: liveDay.phase === 'over' || liveDay.phase === 'past',
+      ended: ENDED_PHASES.includes(liveDay.phase),
     });
   }
 }
