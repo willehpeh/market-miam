@@ -4,16 +4,15 @@ import { Clock } from '@market-miam/common';
 import { StripeSigning } from './stripe-signing';
 
 export const STRIPE_ACCOUNTS_SIGNING_SECRET = 'whsec_test_accounts';
-export const STRIPE_PAYMENTS_SIGNING_SECRET = 'whsec_test_payments';
 
 export class StripeEvents {
   constructor(
     private readonly app: INestApplication,
-    private readonly signedWith?: string,
+    private readonly secret: string = STRIPE_ACCOUNTS_SIGNING_SECRET,
   ) {}
 
   accountUpdated(noticeId: string, accountId: string): Test {
-    return this.deliver('/webhooks/stripe/accounts', STRIPE_ACCOUNTS_SIGNING_SECRET, {
+    return this.deliver('/webhooks/stripe/accounts', {
       id: noticeId,
       object: 'v2.core.event',
       type: 'v2.core.account.updated',
@@ -23,24 +22,12 @@ export class StripeEvents {
     });
   }
 
-  checkoutCompleted(eventId: string, sessionId: string, accountId: string): Test {
-    return this.deliver('/webhooks/stripe/payments', STRIPE_PAYMENTS_SIGNING_SECRET, {
-      id: eventId,
-      object: 'v2.core.event',
-      type: 'v1.checkout.session.completed',
-      livemode: false,
-      created: this.now(),
-      context: accountId,
-      related_object: { id: sessionId, type: 'checkout.session', url: `/v1/checkout/sessions/${sessionId}` },
-    });
-  }
-
-  private deliver(path: string, destinationSecret: string, event: object): Test {
+  private deliver(path: string, event: object): Test {
     const body = JSON.stringify(event, null, 2);
     return request(this.app.getHttpServer())
       .post(path)
       .set('Content-Type', 'application/json')
-      .set('Stripe-Signature', new StripeSigning(this.signedWith ?? destinationSecret, this.now()).header(body))
+      .set('Stripe-Signature', new StripeSigning(this.secret, this.now()).header(body))
       .send(body);
   }
 

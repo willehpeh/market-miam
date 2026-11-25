@@ -107,8 +107,10 @@ The owner builds test-first with an agent, one step at a time, and reviews each 
 - **A red fails only its new test, on its assertion.** When the test needs scaffolding first, a preparation
   commit under a green bar touches only fakes and spec setup; production code arrives only in a green. A pin on
   code that already exists is shown red by breaking that code, then restoring it.
-- **Specs assert behaviour**, such as recorded events, never which commands were sent. Start in the `test`
-  project at the use case, then the api, through its api objects (ADR 0064).
+- **Specs assert behaviour**, such as recorded events, never which commands were sent.
+- **Start every behaviour with a use-case test in the `test` project, outside in, wherever possible.** The api
+  spec comes last, as the one check that the wiring holds, through its api objects (ADR 0064); it is not the
+  outer loop, and behaviour it would imply, such as a controller calling a port, belongs in a use case first.
 - **Object design and clear names over helpers**, no comments in new code, and no get or set accessors (ADR 0008,
   enforced by lint). The owner questions names: offer alternatives with a recommendation.
 - **Decisions are grilled in chat, one question at a time**, never through the question dialog: options, their
