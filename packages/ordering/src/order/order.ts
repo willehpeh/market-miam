@@ -4,7 +4,6 @@ import { VendorId } from '@market-miam/shared-kernel';
 import { OrderEvent, OrderPlaced, OrderRefused } from './events';
 import { RefusalReason } from './refusal-reason';
 import { TradingDay } from './trading-day';
-import { UnscheduledDay } from './unscheduled-day';
 import { HeldOrder } from './held-order';
 import { OrderId } from './order-id';
 
@@ -15,7 +14,7 @@ export class Order extends Aggregate {
     super();
   }
 
-  place(vendorId: VendorId, held: HeldOrder, day: TradingDay | UnscheduledDay, receivedAt: Instant) {
+  place(vendorId: VendorId, held: HeldOrder, day: TradingDay, receivedAt: Instant) {
     if (this._holdRecorded) {
       return;
     }

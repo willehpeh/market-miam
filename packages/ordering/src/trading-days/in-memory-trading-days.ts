@@ -1,4 +1,4 @@
-import { TradingDay, TradingDayFacts, UnscheduledDay } from '../order';
+import { ScheduledTradingDay, TradingDay, TradingDayFacts, UnscheduledDay } from '../order';
 import { TradingDays } from './trading-days';
 
 export class InMemoryTradingDays extends TradingDays {
@@ -25,11 +25,11 @@ export class InMemoryTradingDays extends TradingDays {
     this.scheduled = false;
   }
 
-  async forVendorAtMarketOn(): Promise<TradingDay | UnscheduledDay> {
+  async forVendorAtMarketOn(): Promise<TradingDay> {
     if (!this.scheduled) {
       return new UnscheduledDay();
     }
-    return new TradingDay({
+    return new ScheduledTradingDay({
       ...this.facts,
       menuDishIds: [...this.facts.menuDishIds],
       soldOutDishIds: [...this.facts.soldOutDishIds],
