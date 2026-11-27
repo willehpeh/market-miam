@@ -45,4 +45,18 @@ describe('Start Checkout', () => {
       expiresAt: `${TODAY}T10:42:00.000Z`,
     });
   });
+
+  it('prices a dish with variants by the variant chosen', async () => {
+    tradingDays.setMenu('dish-id', 'pizza-id');
+    tradingDays.setVariantPrice('pizza-id', 'Margherita', 900);
+    tradingDays.setVariantPrice('pizza-id', 'Pepperoni', 1200);
+
+    const address = await handler.execute(
+      new StartCheckout('vendor-id', 'market-id', [{ dishId: 'pizza-id', variant: 'Pepperoni', quantity: 1 }]),
+    );
+
+    expect(payments.checkoutAt(address)).toMatchObject({
+      lines: [{ dishId: 'pizza-id', variant: 'Pepperoni', quantity: 1, unitPrice: 1200 }],
+    });
+  });
 });
