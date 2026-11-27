@@ -1,8 +1,9 @@
-import { NoTradingDay, ScheduledTradingDay, Stand, TradingDay } from '../order';
+import { NoTradingDay, OnePrice, PriceByVariant, ScheduledTradingDay, Stand, TradingDay } from '../order';
 import { TradingDays } from './trading-days';
 
 export class InMemoryTradingDays extends TradingDays {
-  private readonly stand: Stand = { menuDishIds: [], soldOutDishIds: [], closed: false, ended: false, prices: {}, variantPrices: {} };
+  private readonly stand: Stand = { menuDishIds: [], soldOutDishIds: [], closed: false, ended: false, prices: {} };
+  private readonly variantPrices: Record<string, Record<string, number>> = {};
   private scheduled = true;
 
   setMenu(...dishIds: string[]): void {
@@ -22,11 +23,12 @@ export class InMemoryTradingDays extends TradingDays {
   }
 
   setPrice(dishId: string, unitPrice: number): void {
-    this.stand.prices[dishId] = unitPrice;
+    this.stand.prices[dishId] = new OnePrice(unitPrice);
   }
 
   setVariantPrice(dishId: string, variant: string, unitPrice: number): void {
-    this.stand.variantPrices[dishId] = { ...this.stand.variantPrices[dishId], [variant]: unitPrice };
+    this.variantPrices[dishId] = { ...this.variantPrices[dishId], [variant]: unitPrice };
+    this.stand.prices[dishId] = new PriceByVariant(this.variantPrices[dishId]);
   }
 
   unschedule(): void {
@@ -42,7 +44,6 @@ export class InMemoryTradingDays extends TradingDays {
       menuDishIds: [...this.stand.menuDishIds],
       soldOutDishIds: [...this.stand.soldOutDishIds],
       prices: { ...this.stand.prices },
-      variantPrices: { ...this.stand.variantPrices },
     });
   }
 }

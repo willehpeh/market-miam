@@ -1,5 +1,6 @@
 import { Availability } from './availability';
 import { BasketLine } from './basket-line';
+import { DishPrice } from './dish-price';
 import { OrderLine } from './held-order';
 import { TradingDay } from './trading-day';
 
@@ -8,8 +9,7 @@ export type Stand = {
   soldOutDishIds: string[];
   closed: boolean;
   ended: boolean;
-  prices: Record<string, number>;
-  variantPrices: Record<string, Record<string, number>>;
+  prices: Record<string, DishPrice>;
 };
 
 export class ScheduledTradingDay implements TradingDay {
@@ -26,10 +26,7 @@ export class ScheduledTradingDay implements TradingDay {
   }
 
   price(basket: BasketLine[]): OrderLine[] {
-    return basket.map(line => ({
-      ...line,
-      unitPrice: line.variant ? this.stand.variantPrices[line.dishId][line.variant] : this.stand.prices[line.dishId],
-    }));
+    return basket.map(line => ({ ...line, unitPrice: this.stand.prices[line.dishId].of(line) }));
   }
 
   private offers({ dishId }: OrderLine): boolean {

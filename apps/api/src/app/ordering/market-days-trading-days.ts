@@ -23,7 +23,6 @@ export class MarketDaysTradingDays extends TradingDays {
       closed: liveDay.closed,
       ended: ENDED_PHASES.includes(liveDay.phase),
       prices: {},
-      variantPrices: {},
     });
   }
 }
