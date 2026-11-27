@@ -1,8 +1,8 @@
-import { InMemoryEventStore } from '@market-miam/event-sourcing';
+import { DomainEvent, InMemoryEventStore } from '@market-miam/event-sourcing';
 import { InMemoryPayments, InMemoryTradingDays, Merchants, StartCheckout, StartCheckoutHandler } from '@market-miam/ordering';
 import { VendorScopedEvents } from '@market-miam/shared-kernel';
 import { clockAt } from '../../clock-at';
-import { accountEnabled, merchantStream, registrationConfirmed, registrationStarted } from '../merchant-events';
+import { accountDisabled, accountEnabled, merchantStream, registrationConfirmed, registrationStarted } from '../merchant-events';
 
 const TODAY = '2026-11-21';
 const NOW = `${TODAY}T10:12:00.000Z`;
@@ -44,6 +44,22 @@ describe('Start Checkout', () => {
       ],
       expiresAt: `${TODAY}T10:42:00.000Z`,
     });
+  });
+
+  it.each<[string, DomainEvent[]]>([
+    ['has no payment account', []],
+    ['is still registering its account', [registrationStarted('vendor-2')]],
+    ['has an account not yet taking card payments', [registrationStarted('vendor-2'), registrationConfirmed('vendor-2')]],
+    [
+      'had its account disabled',
+      [registrationStarted('vendor-2'), registrationConfirmed('vendor-2'), accountEnabled('vendor-2'), accountDisabled('vendor-2')],
+    ],
+  ])('refuses to start a checkout when the vendor %s', async (_, history) => {
+    store.seedWith(merchantStream('vendor-2'), history, { vendorId: 'vendor-2' });
+
+    await expect(
+      handler.execute(new StartCheckout('vendor-2', 'market-id', [{ dishId: 'dish-id', quantity: 1 }])),
+    ).rejects.toMatchObject({ name: 'MerchantCannotTakePaymentsError' });
   });
 
   it('prices a dish with variants by the variant chosen', async () => {
