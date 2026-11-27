@@ -5,6 +5,7 @@ export class InMemoryTradingDays extends TradingDays {
   private readonly stand: Stand = { menuDishIds: [], soldOutDishIds: [], closed: false, ended: false, pricing: {} };
   private readonly variantPrices: Record<string, Record<string, number>> = {};
   private scheduled = true;
+  private opened = true;
 
   setMenu(...dishIds: string[]): void {
     this.stand.menuDishIds = dishIds;
@@ -29,6 +30,10 @@ export class InMemoryTradingDays extends TradingDays {
   setVariantPrice(dishId: string, variant: string, unitPrice: number): void {
     this.variantPrices[dishId] = { ...this.variantPrices[dishId], [variant]: unitPrice };
     this.stand.pricing[dishId] = new VariantPricing(this.variantPrices[dishId]);
+  }
+
+  beforeOpening(): void {
+    this.opened = false;
   }
 
   unschedule(): void {
