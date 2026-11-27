@@ -33,6 +33,13 @@ export class Merchant extends Aggregate {
     this.raise(this.registrationStarted(registrationId, accountToken, startedAt));
   }
 
+  paymentAccountId(): string {
+    if (!this._currentAccount) {
+      throw new Error(`Vendor ${this._id.value()} has no payment account`);
+    }
+    return this._currentAccount.id();
+  }
+
   isPaidThrough(accountId: string): boolean {
     return this._currentAccount?.is(accountId) ?? false;
   }

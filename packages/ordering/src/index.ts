@@ -12,3 +12,4 @@ export * from './order';
 export * from './place-order';
 export * from './trading-days';
 export * from './payments';
+export * from './start-checkout';

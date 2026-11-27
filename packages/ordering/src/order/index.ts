@@ -1,4 +1,5 @@
 export * from './held-order';
+export * from './basket-line';
 export * from './availability';
 export * from './refusal-reason';
 export * from './trading-day';

@@ -22,6 +22,7 @@ export class MarketDaysTradingDays extends TradingDays {
       soldOutDishIds: liveDay.soldOutItemIds,
       closed: liveDay.closed,
       ended: ENDED_PHASES.includes(liveDay.phase),
+      prices: {},
     });
   }
 }

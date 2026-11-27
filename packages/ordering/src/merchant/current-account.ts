@@ -6,6 +6,10 @@ export class CurrentAccount {
 
   constructor(private readonly accountId: string) {}
 
+  id(): string {
+    return this.accountId;
+  }
+
   is(accountId: string): boolean {
     return accountId === this.accountId;
   }
