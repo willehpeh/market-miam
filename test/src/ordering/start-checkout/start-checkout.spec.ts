@@ -1,5 +1,12 @@
 import { DomainEvent, InMemoryEventStore } from '@market-miam/event-sourcing';
-import { InMemoryPayments, InMemoryTradingDays, Merchants, StartCheckout, StartCheckoutHandler } from '@market-miam/ordering';
+import {
+  InMemoryPayments,
+  InMemoryTradingDays,
+  MerchantCannotTakePaymentsError,
+  Merchants,
+  StartCheckout,
+  StartCheckoutHandler,
+} from '@market-miam/ordering';
 import { VendorScopedEvents } from '@market-miam/shared-kernel';
 import { clockAt } from '../../clock-at';
 import { accountDisabled, accountEnabled, merchantStream, registrationConfirmed, registrationStarted } from '../merchant-events';
@@ -59,7 +66,7 @@ describe('Start Checkout', () => {
 
     await expect(
       handler.execute(new StartCheckout('vendor-2', 'market-id', [{ dishId: 'dish-id', quantity: 1 }])),
-    ).rejects.toMatchObject({ name: 'MerchantCannotTakePaymentsError' });
+    ).rejects.toThrow(MerchantCannotTakePaymentsError);
   });
 
   it('prices a dish with variants by the variant chosen', async () => {

@@ -113,7 +113,9 @@ The owner builds test-first with an agent, one step at a time, and reviews each 
   owner before going green unless they asked for several cycles at once.
 - **A red fails only its new test, on its assertion.** When the test needs scaffolding first, a preparation
   commit under a green bar touches only fakes and spec setup; production code arrives only in a green. A pin on
-  code that already exists is shown red by breaking that code, then restoring it.
+  code that already exists is shown red by breaking that code, then restoring it. A refusal is asserted with its
+  error class, as elsewhere, even before the class exists: a row that passes early is acceptable when we know why,
+  and the red says so.
 - **Specs assert behaviour**, such as recorded events, never which commands were sent.
 - **Start every behaviour with a use-case test in the `test` project, outside in, wherever possible.** The api
   spec comes last, as the one check that the wiring holds, through its api objects (ADR 0064); it is not the
