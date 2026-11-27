@@ -12,6 +12,7 @@ import {
   RefusalReason,
   StartCheckout,
   StartCheckoutHandler,
+  StorefrontNotPublishedError,
 } from '@market-miam/ordering';
 import { VendorScopedEvents } from '@market-miam/shared-kernel';
 import { clockAt } from '../../clock-at';
@@ -61,6 +62,12 @@ describe('Start Checkout', () => {
       ],
       expiresAt: `${TODAY}T10:42:00.000Z`,
     });
+  });
+
+  it('refuses a checkout at a subdomain where no storefront is published', async () => {
+    await expect(
+      handler.execute(new StartCheckout('nobody-bakery', 'market-id', [{ dishId: 'dish-id', quantity: 1 }])),
+    ).rejects.toThrow(StorefrontNotPublishedError);
   });
 
   it.each<[string, DomainEvent[]]>([
