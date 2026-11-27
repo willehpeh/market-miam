@@ -37,21 +37,20 @@ comes next; each line points at the doc that holds the detail. Update it when a 
 
 Every ordering behaviour still to build, back end and front end, most important and most urgent first: the flow in the order a first real order reaches it, each screen beside the behaviour it shows, then what a pilot needs. Kept current as each lands or is found; decisions and their reasons live on the board (`docs/ordering-board/`). Reranked with the owner on 2026-11-25: *Check out* before onboarding goes live.
 
-1. *Check out*: the customer's anonymous call that opens a 30-minute Checkout page on the vendor's account, the card held, not charged. Every check runs first: the account can take payments, the market is trading by its hours, the dishes are on the menu and not sold out. The price comes from Market Days' menu, the order is capped at 119,99 €, and our order ID, made here, rides in the page's metadata with the vendor, the market and the date, each line carrying its dish and variant (board, step 2). Decided 2026-11-26: Market Days' live day answers its dishes named and priced as the storefront prices them, each marked sold out or not, Market Days joining its log and its views, so the page charges what the customer saw; before its market opens a day answers `not-yet-open`, Market Days' `due` translated so by the adapter, a day closed by hand still answering closed first; the order is for today, in Paris, by the server's clock, the customer sending no date (decided 2026-11-27). Named `StartCheckout` (2026-11-27), its first spec built: a basket of today's dishes starts a checkout on the vendor's account, priced from the trading day, for today, living 30 minutes, with a new order ID, answering its address; the merchant puts its own account on the checkout, and will refuse there when it can't take payments; the trading day's pricing will refuse for itself, `NoTradingDay` as closed, so the handler sends one message. Its next specs, in order:
-   1. prices a dish with variants by the variant chosen
-   2. refuses when the vendor can't take payments: no account, a registration still open, an account not yet enabled, or disabled (R4)
-   3. refuses when the day isn't trading: not yet open, closed by hand, ended, or no schedule for today
-   4. refuses the whole basket when one dish is off the menu or sold out
-   5. refuses a basket over 119,99 €
-   6. refuses a basket it can't read: empty, a quantity below 1, a dish with variants and none chosen, a variant the dish doesn't have, a variant on a dish without any
-   7. gives each page a new order ID
-   8. records nothing (R1), a pin
-   9. Market Days' live day names and prices its dishes as the storefront does, each marked sold out or not
-   10. a dish on the log's menu that the views can't price yet is left out of the live day
-   11. the trading-day adapter prices a basket from the live day's dishes, and reads `due` as not yet open
-   12. the anonymous call over HTTP answers the page's address: the wiring check
-   13. a refusal over HTTP says why
-   14. the call's request shape
+1. *Check out*: the customer's anonymous call that opens a 30-minute Checkout page on the vendor's account, the card held, not charged. Every check runs first: the account can take payments, the market is trading by its hours, the dishes are on the menu and not sold out. The price comes from Market Days' menu, the order is capped at 119,99 €, and our order ID, made here, rides in the page's metadata with the vendor, the market and the date, each line carrying its dish and variant (board, step 2). Decided 2026-11-26: Market Days' live day answers its dishes named and priced as the storefront prices them, each marked sold out or not, Market Days joining its log and its views, so the page charges what the customer saw; before its market opens a day answers `not-yet-open`, Market Days' `due` translated so by the adapter, a day closed by hand still answering closed first; the order is for today, in Paris, by the server's clock, the customer sending no date (decided 2026-11-27). Named `StartCheckout` (2026-11-27), its first two specs built: a basket of today's dishes starts a checkout on the vendor's account, priced from the trading day, a dish with variants by the variant chosen, for today, living 30 minutes, with a new order ID, answering its address; the merchant puts its own account on the checkout, and will refuse there when it can't take payments; the trading day's pricing will refuse for itself, `NoTradingDay` as closed, so the handler sends one message. Its next specs, in order:
+   1. refuses when the vendor can't take payments: no account, a registration still open, an account not yet enabled, or disabled (R4)
+   2. refuses when the day isn't trading: not yet open, closed by hand, ended, or no schedule for today
+   3. refuses the whole basket when one dish is off the menu or sold out
+   4. refuses a basket over 119,99 €
+   5. refuses a basket it can't read: empty, a quantity below 1, a dish with variants and none chosen, a variant the dish doesn't have, a variant on a dish without any
+   6. gives each page a new order ID
+   7. records nothing (R1), a pin
+   8. Market Days' live day names and prices its dishes as the storefront does, each marked sold out or not
+   9. a dish on the log's menu that the views can't price yet is left out of the live day
+   10. the trading-day adapter prices a basket from the live day's dishes, and reads `due` as not yet open
+   11. the anonymous call over HTTP answers the page's address: the wiring check
+   12. a refusal over HTTP says why
+   13. the call's request shape
 2. the anonymous calls rate-limited per IP, read from Render's forwarded header: new to the api, needed before *Check out* is reachable from the storefront (board, *Calls with no login*)
 3. the storefront's basket and its way into *Check out*, ordering shown unavailable wherever *Check out* would refuse (plan step 7)
 4. the vendor sees today's orders as they arrive: number, dishes, status, never the code, kept live on their screen (plan, *Flow* 2 and *Live updates*)
