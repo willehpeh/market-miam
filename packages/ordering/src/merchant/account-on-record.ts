@@ -5,7 +5,7 @@ import { MerchantCannotTakePaymentsError } from './merchant-cannot-take-payments
 export interface AccountOnRecord {
   startCheckout(checkout: Checkout, payments: Payments): Promise<string>;
   is(accountId: string): boolean;
-  cardPaymentsChangeTo(cardPayments: CardPayments): boolean;
+  cardPaymentsChangeWith(cardPayments: CardPayments): boolean;
   issueChangesWith(informationDueBy: string | undefined): boolean;
   enable(): void;
   disable(): void;
@@ -22,7 +22,7 @@ export class NoAccount implements AccountOnRecord {
     return false;
   }
 
-  cardPaymentsChangeTo(): boolean {
+  cardPaymentsChangeWith(): boolean {
     return false;
   }
 

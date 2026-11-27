@@ -92,7 +92,7 @@ export class Merchant extends Aggregate {
   }
 
   private recordCardPayments(account: AccountOnRecord, cardPayments: CardPayments, observedAt: Instant) {
-    if (account.cardPaymentsChangeTo(cardPayments)) {
+    if (account.cardPaymentsChangeWith(cardPayments)) {
       this.raise(cardPayments === 'active' ? this.accountEnabled(observedAt) : this.accountDisabled(observedAt));
     }
   }

@@ -20,7 +20,7 @@ export class CurrentAccount implements AccountOnRecord {
     return accountId === this.accountId;
   }
 
-  cardPaymentsChangeTo(cardPayments: CardPayments): boolean {
+  cardPaymentsChangeWith(cardPayments: CardPayments): boolean {
     return cardPayments !== this.cardPayments;
   }
 
