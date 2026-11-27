@@ -44,6 +44,14 @@ export class VendorApi {
     return this.call('put', `/market-days/${marketId}/${date}/menu`).send({ itemIds });
   }
 
+  closeDay(marketId: string, date: string): Test {
+    return this.call('put', `/market-days/${marketId}/${date}/closed`).send({ closed: true });
+  }
+
+  markSoldOut(marketId: string, date: string, itemId: string): Test {
+    return this.call('put', `/market-days/${marketId}/${date}/items/${itemId}/availability`).send({ soldOut: true });
+  }
+
   provideLegalIdentity(identity: object): Test {
     return this.call('put', '/legal-identity').send(identity);
   }
