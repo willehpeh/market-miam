@@ -1,3 +1,4 @@
+import { NewCheckout } from '../payments/payments';
 import { CardPayments } from './card-payments';
 
 export class CurrentAccount {
@@ -6,8 +7,8 @@ export class CurrentAccount {
 
   constructor(private readonly accountId: string) {}
 
-  id(): string {
-    return this.accountId;
+  checkoutFor(checkout: Omit<NewCheckout, 'accountId'>): NewCheckout {
+    return { ...checkout, accountId: this.accountId };
   }
 
   is(accountId: string): boolean {

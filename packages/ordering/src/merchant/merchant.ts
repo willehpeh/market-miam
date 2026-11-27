@@ -1,6 +1,7 @@
 import { Aggregate } from '@market-miam/event-sourcing';
 import { Instant } from '@market-miam/common';
 import { VendorId } from '@market-miam/shared-kernel';
+import { NewCheckout } from '../payments/payments';
 import { CardPayments } from './card-payments';
 import { ObservedAccount } from './observed-account';
 import {
@@ -33,11 +34,11 @@ export class Merchant extends Aggregate {
     this.raise(this.registrationStarted(registrationId, accountToken, startedAt));
   }
 
-  paymentAccountId(): string {
+  checkoutFor(checkout: Omit<NewCheckout, 'accountId'>): NewCheckout {
     if (!this._currentAccount) {
       throw new Error(`Vendor ${this._id.value()} has no payment account`);
     }
-    return this._currentAccount.id();
+    return this._currentAccount.checkoutFor(checkout);
   }
 
   isPaidThrough(accountId: string): boolean {

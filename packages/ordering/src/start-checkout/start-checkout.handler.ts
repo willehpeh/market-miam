@@ -7,7 +7,7 @@ import { Payments } from '../payments';
 import { TradingDays } from '../trading-days';
 import { StartCheckout } from './start-checkout';
 
-const CHECKOUT_LIFETIME_IN_MS = 30 * 60 * 1000;
+const CHECKOUT_LIFETIME_IN_MINUTES = 30;
 
 @CommandHandler(StartCheckout)
 export class StartCheckoutHandler implements ICommandHandler<StartCheckout> {
@@ -25,14 +25,15 @@ export class StartCheckoutHandler implements ICommandHandler<StartCheckout> {
       this.tradingDays.forVendorAtMarketOn(vendor, marketId, date),
       this.merchants.forVendor(vendor),
     ]);
-    return this.payments.startCheckout({
-      accountId: merchant.paymentAccountId(),
-      orderId: randomUUID(),
-      vendorId,
-      marketId,
-      date,
-      lines: day.price(basket),
-      expiresAt: new Date(Date.parse(this.clock.now().value()) + CHECKOUT_LIFETIME_IN_MS).toISOString(),
-    });
+    return this.payments.startCheckout(
+      merchant.checkoutFor({
+        orderId: randomUUID(),
+        vendorId,
+        marketId,
+        date,
+        lines: day.price(basket),
+        expiresAt: this.clock.now().plusMinutes(CHECKOUT_LIFETIME_IN_MINUTES).value(),
+      }),
+    );
   }
 }
