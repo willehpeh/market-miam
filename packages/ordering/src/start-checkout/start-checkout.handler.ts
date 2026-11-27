@@ -3,7 +3,7 @@ import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { Clock } from '@market-miam/common';
 import { Merchants } from '../merchant';
 import { Payments } from '../payments';
-import { PublishedStorefronts } from '../published-storefronts';
+import { PublishedStorefronts, StorefrontNotPublishedError } from '../published-storefronts';
 import { TradingDays } from '../trading-days';
 import { StartCheckout } from './start-checkout';
 
@@ -22,7 +22,7 @@ export class StartCheckoutHandler implements ICommandHandler<StartCheckout> {
   async execute({ subdomain, marketId, basket }: StartCheckout): Promise<string> {
     const vendor = await this.storefronts.vendorAt(subdomain);
     if (!vendor) {
-      throw new Error(`No published storefront at ${subdomain}`);
+      throw new StorefrontNotPublishedError();
     }
     const date = this.clock.today().value();
     const [day, merchant] = await Promise.all([
