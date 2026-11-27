@@ -3,6 +3,7 @@ export * from './basket-line';
 export * from './dish-pricing';
 export * from './availability';
 export * from './refusal-reason';
+export * from './basket-refused.error';
 export * from './trading-day';
 export * from './scheduled-trading-day';
 export * from './no-trading-day';

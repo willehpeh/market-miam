@@ -31,7 +31,7 @@ export class StartCheckoutHandler implements ICommandHandler<StartCheckout> {
         vendorId,
         marketId,
         date,
-        lines: day.price(basket),
+        lines: day.quote(basket),
         expiresAt: this.clock.now().plusMinutes(CHECKOUT_LIFETIME_IN_MINUTES).value(),
       },
       this.payments,

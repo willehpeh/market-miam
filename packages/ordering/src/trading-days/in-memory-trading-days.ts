@@ -2,10 +2,9 @@ import { NoTradingDay, FlatPricing, VariantPricing, ScheduledTradingDay, Stand, 
 import { TradingDays } from './trading-days';
 
 export class InMemoryTradingDays extends TradingDays {
-  private readonly stand: Stand = { menuDishIds: [], soldOutDishIds: [], closed: false, ended: false, pricing: {} };
+  private readonly stand: Stand = { menuDishIds: [], soldOutDishIds: [], closed: false, opened: true, ended: false, pricing: {} };
   private readonly variantPrices: Record<string, Record<string, number>> = {};
   private scheduled = true;
-  private opened = true;
 
   setMenu(...dishIds: string[]): void {
     this.stand.menuDishIds = dishIds;
@@ -33,7 +32,7 @@ export class InMemoryTradingDays extends TradingDays {
   }
 
   beforeOpening(): void {
-    this.opened = false;
+    this.stand.opened = false;
   }
 
   unschedule(): void {
