@@ -63,6 +63,16 @@ describe('Start Checkout', () => {
     });
   });
 
+  it('starts the checkout for the vendor who publishes the storefront at the subdomain', async () => {
+    storefronts.publishAt('acme-bakery', 'vendor-id');
+
+    const checkout = handler
+      .execute(new StartCheckout('acme-bakery', 'market-id', [{ dishId: 'dish-id', quantity: 1 }]))
+      .then(address => payments.checkoutAt(address));
+
+    await expect(checkout).resolves.toMatchObject({ accountId: 'acct_test_1', vendorId: 'vendor-id' });
+  });
+
   it.each<[string, DomainEvent[]]>([
     ['has no payment account', []],
     ['is still registering its account', [registrationStarted('vendor-2')]],
