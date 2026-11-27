@@ -1,8 +1,8 @@
 import { Availability } from './availability';
 import { BasketLine } from './basket-line';
-import { OrderLine } from './held-order';
+import { Quote } from './quote';
 
 export interface TradingDay {
   availabilityOf(lines: BasketLine[]): Availability;
-  quote(basket: BasketLine[]): OrderLine[];
+  quote(basket: BasketLine[]): Quote;
 }

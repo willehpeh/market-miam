@@ -3,13 +3,11 @@ import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { Clock } from '@market-miam/common';
 import { VendorId } from '@market-miam/shared-kernel';
 import { Merchants } from '../merchant';
-import { BasketOverCapError } from '../order';
 import { Payments } from '../payments';
 import { TradingDays } from '../trading-days';
 import { StartCheckout } from './start-checkout';
 
 const CHECKOUT_LIFETIME_IN_MINUTES = 30;
-const ORDER_CAP_IN_CENTS = 11999;
 
 @CommandHandler(StartCheckout)
 export class StartCheckoutHandler implements ICommandHandler<StartCheckout> {
@@ -27,17 +25,14 @@ export class StartCheckoutHandler implements ICommandHandler<StartCheckout> {
       this.tradingDays.forVendorAtMarketOn(vendor, marketId, date),
       this.merchants.forVendor(vendor),
     ]);
-    const lines = day.quote(basket);
-    if (lines.reduce((total, line) => total + line.unitPrice * line.quantity, 0) > ORDER_CAP_IN_CENTS) {
-      throw new BasketOverCapError();
-    }
+    const quote = day.quote(basket);
     return merchant.startCheckout(
       {
         orderId: randomUUID(),
         vendorId,
         marketId,
         date,
-        lines,
+        lines: quote.lines(),
         expiresAt: this.clock.now().plusMinutes(CHECKOUT_LIFETIME_IN_MINUTES).value(),
       },
       this.payments,

@@ -1,6 +1,6 @@
 import { Availability } from './availability';
 import { BasketRefusedError } from './basket-refused.error';
-import { OrderLine } from './held-order';
+import { Quote } from './quote';
 import { TradingDay } from './trading-day';
 
 export class NoTradingDay implements TradingDay {
@@ -8,7 +8,7 @@ export class NoTradingDay implements TradingDay {
     return 'closed';
   }
 
-  quote(): OrderLine[] {
+  quote(): Quote {
     throw new BasketRefusedError('closed');
   }
 }

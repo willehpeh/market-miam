@@ -2,7 +2,7 @@ import { Availability } from './availability';
 import { BasketLine } from './basket-line';
 import { BasketRefusedError } from './basket-refused.error';
 import { DishPricing } from './dish-pricing';
-import { OrderLine } from './held-order';
+import { Quote } from './quote';
 import { TradingDay } from './trading-day';
 
 export type Stand = {
@@ -30,12 +30,12 @@ export class ScheduledTradingDay implements TradingDay {
     return lines.every(line => this.offers(line)) ? 'available' : 'sold-out';
   }
 
-  quote(basket: BasketLine[]): OrderLine[] {
+  quote(basket: BasketLine[]): Quote {
     const availability = this.availabilityOf(basket);
     if (availability !== 'available') {
       throw new BasketRefusedError(availability);
     }
-    return basket.map(line => ({ ...line, unitPrice: this.stand.pricing[line.dishId].unitPriceFor(line) }));
+    return new Quote(basket.map(line => ({ ...line, unitPrice: this.stand.pricing[line.dishId].unitPriceFor(line) })));
   }
 
   private offers({ dishId }: BasketLine): boolean {
