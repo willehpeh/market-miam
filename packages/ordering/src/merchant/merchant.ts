@@ -3,6 +3,7 @@ import { Instant } from '@market-miam/common';
 import { VendorId } from '@market-miam/shared-kernel';
 import { NewCheckout } from '../payments/payments';
 import { CardPayments } from './card-payments';
+import { MerchantCannotTakePaymentsError } from './merchant-cannot-take-payments.error';
 import { ObservedAccount } from './observed-account';
 import {
   MerchantEvent,
@@ -36,7 +37,7 @@ export class Merchant extends Aggregate {
 
   checkoutFor(checkout: Omit<NewCheckout, 'accountId'>): NewCheckout {
     if (!this._currentAccount) {
-      throw new Error(`Vendor ${this._id.value()} has no payment account`);
+      throw new MerchantCannotTakePaymentsError();
     }
     return this._currentAccount.checkoutFor(checkout);
   }

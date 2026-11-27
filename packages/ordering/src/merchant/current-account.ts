@@ -1,5 +1,6 @@
 import { NewCheckout } from '../payments/payments';
 import { CardPayments } from './card-payments';
+import { MerchantCannotTakePaymentsError } from './merchant-cannot-take-payments.error';
 
 export class CurrentAccount {
   private cardPayments: CardPayments = 'inactive';
@@ -8,6 +9,9 @@ export class CurrentAccount {
   constructor(private readonly accountId: string) {}
 
   checkoutFor(checkout: Omit<NewCheckout, 'accountId'>): NewCheckout {
+    if (this.cardPayments !== 'active') {
+      throw new MerchantCannotTakePaymentsError();
+    }
     return { ...checkout, accountId: this.accountId };
   }
 
