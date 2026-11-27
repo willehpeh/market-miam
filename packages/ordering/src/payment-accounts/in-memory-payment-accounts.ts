@@ -20,6 +20,13 @@ export class InMemoryPaymentAccounts extends PaymentAccounts {
     return Promise.resolve('created');
   }
 
+  enableCardPayments(accountId: string): void {
+    const account = this.accountsById.get(accountId);
+    if (account) {
+      this.accountsById.set(accountId, { ...account, cardPayments: 'active' });
+    }
+  }
+
   find(accountId: string): Promise<PaymentAccount | undefined> {
     return Promise.resolve(this.accountsById.get(accountId));
   }
