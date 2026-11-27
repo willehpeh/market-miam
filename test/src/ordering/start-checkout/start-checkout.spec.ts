@@ -1,5 +1,6 @@
 import { DomainEvent, InMemoryEventStore } from '@market-miam/event-sourcing';
 import {
+  BasketOverCapError,
   BasketRefusedError,
   InMemoryPayments,
   InMemoryTradingDays,
@@ -90,6 +91,14 @@ describe('Start Checkout', () => {
 
     await expect(refusal).rejects.toThrow(BasketRefusedError);
     await expect(refusal).rejects.toMatchObject({ reason });
+  });
+
+  it('refuses a basket costing 120 € or more', async () => {
+    tradingDays.setPrice('dish-id', 4000);
+
+    await expect(
+      handler.execute(new StartCheckout('vendor-id', 'market-id', [{ dishId: 'dish-id', quantity: 3 }])),
+    ).rejects.toThrow(BasketOverCapError);
   });
 
   it('prices a dish with variants by the variant chosen', async () => {
