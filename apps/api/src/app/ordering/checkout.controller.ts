@@ -8,7 +8,7 @@ import { NoStorefrontFilter } from './no-storefront.filter';
 
 const CheckoutRequest = z.object({
   marketId: z.string(),
-  basket: z.array(z.object({ dishId: z.string(), variant: z.string().optional(), quantity: z.number() })),
+  basket: z.array(z.object({ dishId: z.string(), variant: z.string().optional(), quantity: z.number().int() })),
 });
 
 @Controller('public/storefront')
