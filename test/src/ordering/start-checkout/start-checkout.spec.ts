@@ -76,10 +76,17 @@ describe('Start Checkout', () => {
     ['closed', 'once the vendor has closed it by hand', days => days.close()],
     ['ended', 'once its market has ended', days => days.end()],
     ['closed', 'when no schedule puts the vendor at the market today', days => days.unschedule()],
+    ['sold-out', 'once one of its dishes has sold out', days => days.markSoldOut('another-dish-id')],
+    ['sold-out', 'once one of its dishes has left the menu', days => days.setMenu('dish-id')],
   ])('refuses the basket as %s %s', async (reason, _, arrange) => {
     arrange(tradingDays);
 
-    const refusal = handler.execute(new StartCheckout('vendor-id', 'market-id', [{ dishId: 'dish-id', quantity: 1 }]));
+    const refusal = handler.execute(
+      new StartCheckout('vendor-id', 'market-id', [
+        { dishId: 'dish-id', quantity: 1 },
+        { dishId: 'another-dish-id', quantity: 1 },
+      ]),
+    );
 
     await expect(refusal).rejects.toThrow(BasketRefusedError);
     await expect(refusal).rejects.toMatchObject({ reason });
