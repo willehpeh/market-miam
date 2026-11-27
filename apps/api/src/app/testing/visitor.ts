@@ -8,4 +8,8 @@ export class Visitor {
   storefront(subdomain: string): Test {
     return request(this.app.getHttpServer()).get(`/public/storefront/${subdomain}`);
   }
+
+  startCheckout(subdomain: string, checkout: object): Test {
+    return request(this.app.getHttpServer()).post(`/public/storefront/${subdomain}/checkout`).send(checkout);
+  }
 }
