@@ -1,6 +1,6 @@
 export * from './held-order';
 export * from './basket-line';
-export * from './dish-price';
+export * from './dish-pricing';
 export * from './availability';
 export * from './refusal-reason';
 export * from './trading-day';

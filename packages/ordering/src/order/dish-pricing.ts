@@ -1,21 +1,21 @@
 import { BasketLine } from './basket-line';
 
-export interface DishPrice {
-  of(line: BasketLine): number;
+export interface DishPricing {
+  unitPriceFor(line: BasketLine): number;
 }
 
-export class OnePrice implements DishPrice {
+export class FlatPricing implements DishPricing {
   constructor(private readonly unitPrice: number) {}
 
-  of(): number {
+  unitPriceFor(): number {
     return this.unitPrice;
   }
 }
 
-export class PriceByVariant implements DishPrice {
+export class VariantPricing implements DishPricing {
   constructor(private readonly unitPrices: Record<string, number>) {}
 
-  of({ variant }: BasketLine): number {
+  unitPriceFor({ variant }: BasketLine): number {
     return this.unitPrices[variant ?? ''];
   }
 }
