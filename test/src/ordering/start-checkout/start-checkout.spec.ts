@@ -1,9 +1,11 @@
 import { DomainEvent, InMemoryEventStore } from '@market-miam/event-sourcing';
 import {
+  BasketLine,
   BasketOverCapError,
   BasketRefusedError,
   InMemoryPayments,
   InMemoryTradingDays,
+  MalformedBasketError,
   MerchantCannotTakePaymentsError,
   Merchants,
   RefusalReason,
@@ -107,6 +109,27 @@ describe('Start Checkout', () => {
     const address = await handler.execute(new StartCheckout('vendor-id', 'market-id', [{ dishId: 'dish-id', quantity: 1 }]));
 
     expect(payments.checkoutAt(address)).toMatchObject({ lines: [{ dishId: 'dish-id', quantity: 1, unitPrice: 11999 }] });
+  });
+
+  it.each<[string, BasketLine[]]>([
+    ['an empty basket', []],
+    ['a basket asking for none of a dish', [{ dishId: 'dish-id', quantity: 0 }]],
+  ])('refuses %s as malformed', async (_, basket) => {
+    await expect(handler.execute(new StartCheckout('vendor-id', 'market-id', basket))).rejects.toThrow(MalformedBasketError);
+  });
+
+  it.each<[string, BasketLine]>([
+    ['a dish with variants and none chosen', { dishId: 'pizza-id', quantity: 1 }],
+    ['a variant the dish doesn’t have', { dishId: 'pizza-id', variant: 'Calzone', quantity: 1 }],
+    ['a variant on a dish without any', { dishId: 'dish-id', variant: 'Large', quantity: 1 }],
+  ])('refuses as sold-out a basket naming %s', async (_, line) => {
+    tradingDays.setMenu('dish-id', 'pizza-id');
+    tradingDays.setVariantPrice('pizza-id', 'Margherita', 900);
+
+    const refusal = handler.execute(new StartCheckout('vendor-id', 'market-id', [line]));
+
+    await expect(refusal).rejects.toThrow(BasketRefusedError);
+    await expect(refusal).rejects.toMatchObject({ reason: 'sold-out' });
   });
 
   it('gives each checkout a new order ID', async () => {
