@@ -4,6 +4,7 @@ import { TradingDays } from './trading-days';
 export class InMemoryTradingDays extends TradingDays {
   private readonly stand: Stand = { menuDishIds: [], soldOutDishIds: [], closed: false, ended: false, prices: {} };
   private scheduled = true;
+  private readonly variantPrices = new Map<string, Map<string, number>>();
 
   setMenu(...dishIds: string[]): void {
     this.stand.menuDishIds = dishIds;
@@ -23,6 +24,10 @@ export class InMemoryTradingDays extends TradingDays {
 
   setPrice(dishId: string, unitPrice: number): void {
     this.stand.prices[dishId] = unitPrice;
+  }
+
+  setVariantPrice(dishId: string, variant: string, unitPrice: number): void {
+    this.variantPrices.set(dishId, (this.variantPrices.get(dishId) ?? new Map()).set(variant, unitPrice));
   }
 
   unschedule(): void {
