@@ -48,6 +48,11 @@ describe('Request shape', () => {
     ['a legal identity leaving out its médiateur rather than sending null', 'put', '/legal-identity', { ...legalIdentityBody(), mediatorName: undefined }, 'mediatorName'],
     ['a payment account registration without its id', 'post', '/payment-account/registrations', { accountToken: 'accttok_test_1' }, 'registrationId'],
     ['a payment account registration without its account token', 'post', '/payment-account/registrations', { registrationId: 'registration-1' }, 'accountToken'],
+    ['a checkout without its market', 'post', '/public/storefront/acme/checkout', { basket: [] }, 'marketId'],
+    ['a checkout whose basket is not an array', 'post', '/public/storefront/acme/checkout', { marketId: 'market-1', basket: 'pizza' }, 'basket'],
+    ['a basket line without its dish', 'post', '/public/storefront/acme/checkout', { marketId: 'market-1', basket: [{ quantity: 1 }] }, 'basket.0.dishId'],
+    ['a basket line whose quantity is not a number', 'post', '/public/storefront/acme/checkout', { marketId: 'market-1', basket: [{ dishId: 'item-1', quantity: 'two' }] }, 'basket.0.quantity'],
+    ['a basket line whose quantity is not a whole number', 'post', '/public/storefront/acme/checkout', { marketId: 'market-1', basket: [{ dishId: 'item-1', quantity: 1.5 }] }, 'basket.0.quantity'],
   ];
 
   it.each(cases)('rejects %s as a 400 naming the field', async (_description, method, url, body, field) => {
