@@ -39,6 +39,8 @@ describe('Trading days, from Market Days’ live day', () => {
   });
 
   it.each<[Availability, string, Partial<LiveMarketDay>]>([
+    ['not-yet-open', 'the day due to open', { phase: 'due' }],
+    ['not-yet-open', 'the day still to come', { phase: 'future' }],
     ['ended', 'the day over', { phase: 'over' }],
     ['ended', 'the day past', { phase: 'past' }],
     ['closed', 'the day closed by hand', { closed: true }],
