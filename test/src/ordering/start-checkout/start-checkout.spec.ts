@@ -118,6 +118,12 @@ describe('Start Checkout', () => {
     expect(payments.checkoutAt(first)?.orderId).not.toEqual(payments.checkoutAt(second)?.orderId);
   });
 
+  it('records nothing, an order existing only once Stripe holds its card', async () => {
+    await handler.execute(new StartCheckout('vendor-id', 'market-id', [{ dishId: 'dish-id', quantity: 1 }]));
+
+    expect(store.newEvents()).toEqual([]);
+  });
+
   it('prices a dish with variants by the variant chosen', async () => {
     tradingDays.setMenu('dish-id', 'pizza-id');
     tradingDays.setVariantPrice('pizza-id', 'Margherita', 900);
