@@ -25,15 +25,16 @@ export class StartCheckoutHandler implements ICommandHandler<StartCheckout> {
       this.tradingDays.forVendorAtMarketOn(vendor, marketId, date),
       this.merchants.forVendor(vendor),
     ]);
-    return this.payments.startCheckout(
-      merchant.checkoutFor({
+    return merchant.startCheckout(
+      {
         orderId: randomUUID(),
         vendorId,
         marketId,
         date,
         lines: day.price(basket),
         expiresAt: this.clock.now().plusMinutes(CHECKOUT_LIFETIME_IN_MINUTES).value(),
-      }),
+      },
+      this.payments,
     );
   }
 }

@@ -1,7 +1,7 @@
 import { Aggregate } from '@market-miam/event-sourcing';
 import { Instant } from '@market-miam/common';
 import { VendorId } from '@market-miam/shared-kernel';
-import { NewCheckout } from '../payments/payments';
+import { Checkout, Payments } from '../payments/payments';
 import { CardPayments } from './card-payments';
 import { AccountOnRecord, NoAccount } from './account-on-record';
 import { ObservedAccount } from './observed-account';
@@ -35,8 +35,8 @@ export class Merchant extends Aggregate {
     this.raise(this.registrationStarted(registrationId, accountToken, startedAt));
   }
 
-  checkoutFor(checkout: Omit<NewCheckout, 'accountId'>): NewCheckout {
-    return this._currentAccount.checkoutFor(checkout);
+  startCheckout(checkout: Checkout, payments: Payments): Promise<string> {
+    return this._currentAccount.startCheckout(checkout, payments);
   }
 
   isPaidThrough(accountId: string): boolean {

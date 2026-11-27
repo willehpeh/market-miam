@@ -1,9 +1,9 @@
-import { NewCheckout } from '../payments/payments';
+import { Checkout, Payments } from '../payments/payments';
 import { CardPayments } from './card-payments';
 import { MerchantCannotTakePaymentsError } from './merchant-cannot-take-payments.error';
 
 export interface AccountOnRecord {
-  checkoutFor(checkout: Omit<NewCheckout, 'accountId'>): NewCheckout;
+  startCheckout(checkout: Checkout, payments: Payments): Promise<string>;
   is(accountId: string): boolean;
   cardPaymentsChangeTo(cardPayments: CardPayments): boolean;
   issueChangesWith(informationDueBy: string | undefined): boolean;
@@ -14,7 +14,7 @@ export interface AccountOnRecord {
 }
 
 export class NoAccount implements AccountOnRecord {
-  checkoutFor(): NewCheckout {
+  async startCheckout(): Promise<string> {
     throw new MerchantCannotTakePaymentsError();
   }
 

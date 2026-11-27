@@ -1,20 +1,22 @@
-import { CompletedCheckout, NewCheckout, Payments } from './payments';
+import { Checkout, CompletedCheckout, Payments } from './payments';
+
+type StartedCheckout = Checkout & { accountId: string };
 
 export class InMemoryPayments extends Payments {
   private readonly completedCheckouts = new Map<string, CompletedCheckout>();
-  private readonly startedCheckouts = new Map<string, NewCheckout>();
+  private readonly startedCheckouts = new Map<string, StartedCheckout>();
 
   complete(checkoutId: string, checkout: CompletedCheckout): void {
     this.completedCheckouts.set(checkoutId, checkout);
   }
 
-  async startCheckout(checkout: NewCheckout): Promise<string> {
+  async startCheckout(accountId: string, checkout: Checkout): Promise<string> {
     const address = `https://checkout.stripe.test/${this.startedCheckouts.size + 1}`;
-    this.startedCheckouts.set(address, checkout);
+    this.startedCheckouts.set(address, { ...checkout, accountId });
     return address;
   }
 
-  checkoutAt(address: string): NewCheckout | undefined {
+  checkoutAt(address: string): StartedCheckout | undefined {
     return this.startedCheckouts.get(address);
   }
 

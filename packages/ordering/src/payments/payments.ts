@@ -5,8 +5,7 @@ export type CompletedCheckout = {
   order: HeldOrder;
 };
 
-export type NewCheckout = {
-  accountId: string;
+export type Checkout = {
   orderId: string;
   vendorId: string;
   marketId: string;
@@ -16,6 +15,6 @@ export type NewCheckout = {
 };
 
 export abstract class Payments {
-  abstract startCheckout(checkout: NewCheckout): Promise<string>;
+  abstract startCheckout(accountId: string, checkout: Checkout): Promise<string>;
   abstract completedCheckout(checkoutId: string, accountId: string): Promise<CompletedCheckout>;
 }

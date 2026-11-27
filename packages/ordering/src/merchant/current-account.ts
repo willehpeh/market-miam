@@ -1,4 +1,4 @@
-import { NewCheckout } from '../payments/payments';
+import { Checkout, Payments } from '../payments/payments';
 import { CardPayments } from './card-payments';
 import { MerchantCannotTakePaymentsError } from './merchant-cannot-take-payments.error';
 import { AccountOnRecord } from './account-on-record';
@@ -9,11 +9,11 @@ export class CurrentAccount implements AccountOnRecord {
 
   constructor(private readonly accountId: string) {}
 
-  checkoutFor(checkout: Omit<NewCheckout, 'accountId'>): NewCheckout {
+  async startCheckout(checkout: Checkout, payments: Payments): Promise<string> {
     if (this.cardPayments !== 'active') {
       throw new MerchantCannotTakePaymentsError();
     }
-    return { ...checkout, accountId: this.accountId };
+    return payments.startCheckout(this.accountId, checkout);
   }
 
   is(accountId: string): boolean {
