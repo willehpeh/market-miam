@@ -3,7 +3,7 @@ import { Instant } from '@market-miam/common';
 import { VendorId } from '@market-miam/shared-kernel';
 import { NewCheckout } from '../payments/payments';
 import { CardPayments } from './card-payments';
-import { MerchantCannotTakePaymentsError } from './merchant-cannot-take-payments.error';
+import { AccountOnRecord, NoAccount } from './account-on-record';
 import { ObservedAccount } from './observed-account';
 import {
   MerchantEvent,
@@ -21,7 +21,7 @@ import { ConfirmedRegistration, NoOpenRegistration, OpenRegistration, Registrati
 export class Merchant extends Aggregate {
   private _registration: RegistrationOnRecord = new NoOpenRegistration();
   private readonly _registrationsMade = new Set<string>();
-  private _currentAccount?: CurrentAccount;
+  private _currentAccount: AccountOnRecord = new NoAccount();
 
   constructor(private readonly _id: VendorId) {
     super();
@@ -36,14 +36,11 @@ export class Merchant extends Aggregate {
   }
 
   checkoutFor(checkout: Omit<NewCheckout, 'accountId'>): NewCheckout {
-    if (!this._currentAccount) {
-      throw new MerchantCannotTakePaymentsError();
-    }
     return this._currentAccount.checkoutFor(checkout);
   }
 
   isPaidThrough(accountId: string): boolean {
-    return this._currentAccount?.is(accountId) ?? false;
+    return this._currentAccount.is(accountId);
   }
 
   failPaymentAccountRegistration(registrationId: string, failedAt: Instant) {
@@ -54,7 +51,7 @@ export class Merchant extends Aggregate {
 
   observePaymentAccount(account: ObservedAccount, observedAt: Instant) {
     this.confirmRegistration(account, observedAt);
-    if (this._currentAccount?.is(account.accountId)) {
+    if (this._currentAccount.is(account.accountId)) {
       this.recordCardPayments(this._currentAccount, account.cardPayments, observedAt);
       this.recordInformationDue(this._currentAccount, account.informationDueBy, observedAt);
     }
@@ -74,16 +71,16 @@ export class Merchant extends Aggregate {
         this._currentAccount = new CurrentAccount(event.payload.accountId);
         break;
       case 'PaymentAccountEnabled':
-        this._currentAccount?.enable();
+        this._currentAccount.enable();
         break;
       case 'PaymentAccountDisabled':
-        this._currentAccount?.disable();
+        this._currentAccount.disable();
         break;
       case 'PaymentAccountIssueDetected':
-        this._currentAccount?.openIssue();
+        this._currentAccount.openIssue();
         break;
       case 'PaymentAccountIssueResolved':
-        this._currentAccount?.resolveIssue();
+        this._currentAccount.resolveIssue();
         break;
     }
   }
@@ -94,13 +91,13 @@ export class Merchant extends Aggregate {
     }
   }
 
-  private recordCardPayments(account: CurrentAccount, cardPayments: CardPayments, observedAt: Instant) {
+  private recordCardPayments(account: AccountOnRecord, cardPayments: CardPayments, observedAt: Instant) {
     if (account.cardPaymentsChangeTo(cardPayments)) {
       this.raise(cardPayments === 'active' ? this.accountEnabled(observedAt) : this.accountDisabled(observedAt));
     }
   }
 
-  private recordInformationDue(account: CurrentAccount, informationDueBy: string | undefined, observedAt: Instant) {
+  private recordInformationDue(account: AccountOnRecord, informationDueBy: string | undefined, observedAt: Instant) {
     if (account.issueChangesWith(informationDueBy)) {
       this.raise(informationDueBy ? this.issueDetected(informationDueBy, observedAt) : this.issueResolved(observedAt));
     }

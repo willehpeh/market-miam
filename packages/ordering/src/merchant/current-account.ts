@@ -1,8 +1,9 @@
 import { NewCheckout } from '../payments/payments';
 import { CardPayments } from './card-payments';
 import { MerchantCannotTakePaymentsError } from './merchant-cannot-take-payments.error';
+import { AccountOnRecord } from './account-on-record';
 
-export class CurrentAccount {
+export class CurrentAccount implements AccountOnRecord {
   private cardPayments: CardPayments = 'inactive';
   private issueOpen = false;
 
