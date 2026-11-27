@@ -38,6 +38,18 @@ describe('Trading days, from Market Days’ live day', () => {
     expect((await tradingDayFor(trading)).availabilityOf(lines)).toBe('available');
   });
 
+  it('prices a basket from the live day’s dishes, at one price or by variant', async () => {
+    const quote = (await tradingDayFor(trading)).quote([
+      { dishId: 'dish-1', quantity: 2 },
+      { dishId: 'dish-2', variant: 'Small', quantity: 1 },
+    ]);
+
+    expect(quote.lines()).toEqual([
+      { dishId: 'dish-1', quantity: 2, unitPrice: 1250 },
+      { dishId: 'dish-2', variant: 'Small', quantity: 1, unitPrice: 900 },
+    ]);
+  });
+
   it.each<[Availability, string, Partial<LiveMarketDay>]>([
     ['not-yet-open', 'the day due to open', { phase: 'due' }],
     ['not-yet-open', 'the day still to come', { phase: 'future' }],
