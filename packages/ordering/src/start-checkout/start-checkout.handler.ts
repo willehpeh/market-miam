@@ -1,7 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { Clock } from '@market-miam/common';
-import { VendorId } from '@market-miam/shared-kernel';
 import { Merchants } from '../merchant';
 import { Payments } from '../payments';
 import { PublishedStorefronts } from '../published-storefronts';
@@ -13,11 +12,11 @@ const CHECKOUT_LIFETIME_IN_MINUTES = 30;
 @CommandHandler(StartCheckout)
 export class StartCheckoutHandler implements ICommandHandler<StartCheckout> {
   constructor(
+    private readonly storefronts: PublishedStorefronts,
     private readonly payments: Payments,
     private readonly tradingDays: TradingDays,
     private readonly merchants: Merchants,
     private readonly clock: Clock,
-    private readonly storefronts: PublishedStorefronts,
   ) {}
 
   async execute({ subdomain, marketId, basket }: StartCheckout): Promise<string> {

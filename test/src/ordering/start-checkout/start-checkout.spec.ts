@@ -36,14 +36,14 @@ describe('Start Checkout', () => {
     tradingDays.setPrice('dish-id', 1250);
     tradingDays.setPrice('another-dish-id', 900);
     storefronts = new InMemoryPublishedStorefronts();
-    storefronts.publishAt('vendor-id', 'vendor-id');
-    storefronts.publishAt('vendor-2', 'vendor-2');
-    handler = new StartCheckoutHandler(payments, tradingDays, new Merchants(new VendorScopedEvents(store)), clockAt(TODAY, NOW), storefronts);
+    storefronts.publishAt('acme-bakery', 'vendor-id');
+    storefronts.publishAt('other-bakery', 'vendor-2');
+    handler = new StartCheckoutHandler(storefronts, payments, tradingDays, new Merchants(new VendorScopedEvents(store)), clockAt(TODAY, NOW));
   });
 
-  it('starts a checkout for a basket of today’s dishes on the vendor’s account, and answers its address', async () => {
+  it('starts a checkout for a basket of today’s dishes on the account of the vendor publishing at the subdomain, and answers its address', async () => {
     const address = await handler.execute(
-      new StartCheckout('vendor-id', 'market-id', [
+      new StartCheckout('acme-bakery', 'market-id', [
         { dishId: 'dish-id', quantity: 2 },
         { dishId: 'another-dish-id', quantity: 1 },
       ]),
@@ -63,16 +63,6 @@ describe('Start Checkout', () => {
     });
   });
 
-  it('starts the checkout for the vendor who publishes the storefront at the subdomain', async () => {
-    storefronts.publishAt('acme-bakery', 'vendor-id');
-
-    const checkout = handler
-      .execute(new StartCheckout('acme-bakery', 'market-id', [{ dishId: 'dish-id', quantity: 1 }]))
-      .then(address => payments.checkoutAt(address));
-
-    await expect(checkout).resolves.toMatchObject({ accountId: 'acct_test_1', vendorId: 'vendor-id' });
-  });
-
   it.each<[string, DomainEvent[]]>([
     ['has no payment account', []],
     ['is still registering its account', [registrationStarted('vendor-2')]],
@@ -85,7 +75,7 @@ describe('Start Checkout', () => {
     store.seedWith(merchantStream('vendor-2'), history, { vendorId: 'vendor-2' });
 
     await expect(
-      handler.execute(new StartCheckout('vendor-2', 'market-id', [{ dishId: 'dish-id', quantity: 1 }])),
+      handler.execute(new StartCheckout('other-bakery', 'market-id', [{ dishId: 'dish-id', quantity: 1 }])),
     ).rejects.toThrow(MerchantCannotTakePaymentsError);
   });
 
@@ -100,7 +90,7 @@ describe('Start Checkout', () => {
     arrange(tradingDays);
 
     const refusal = handler.execute(
-      new StartCheckout('vendor-id', 'market-id', [
+      new StartCheckout('acme-bakery', 'market-id', [
         { dishId: 'dish-id', quantity: 1 },
         { dishId: 'another-dish-id', quantity: 1 },
       ]),
@@ -114,14 +104,14 @@ describe('Start Checkout', () => {
     tradingDays.setPrice('dish-id', 4000);
 
     await expect(
-      handler.execute(new StartCheckout('vendor-id', 'market-id', [{ dishId: 'dish-id', quantity: 3 }])),
+      handler.execute(new StartCheckout('acme-bakery', 'market-id', [{ dishId: 'dish-id', quantity: 3 }])),
     ).rejects.toThrow(BasketOverCapError);
   });
 
   it('starts a checkout for a basket costing exactly 119,99 €', async () => {
     tradingDays.setPrice('dish-id', 11999);
 
-    const address = await handler.execute(new StartCheckout('vendor-id', 'market-id', [{ dishId: 'dish-id', quantity: 1 }]));
+    const address = await handler.execute(new StartCheckout('acme-bakery', 'market-id', [{ dishId: 'dish-id', quantity: 1 }]));
 
     expect(payments.checkoutAt(address)).toMatchObject({ lines: [{ dishId: 'dish-id', quantity: 1, unitPrice: 11999 }] });
   });
@@ -130,7 +120,7 @@ describe('Start Checkout', () => {
     ['an empty basket', []],
     ['a basket asking for none of a dish', [{ dishId: 'dish-id', quantity: 0 }]],
   ])('refuses %s as malformed', async (_, basket) => {
-    await expect(handler.execute(new StartCheckout('vendor-id', 'market-id', basket))).rejects.toThrow(MalformedBasketError);
+    await expect(handler.execute(new StartCheckout('acme-bakery', 'market-id', basket))).rejects.toThrow(MalformedBasketError);
   });
 
   it.each<[string, BasketLine]>([
@@ -141,7 +131,7 @@ describe('Start Checkout', () => {
     tradingDays.setMenu('dish-id', 'pizza-id');
     tradingDays.setVariantPrice('pizza-id', 'Margherita', 900);
 
-    const refusal = handler.execute(new StartCheckout('vendor-id', 'market-id', [line]));
+    const refusal = handler.execute(new StartCheckout('acme-bakery', 'market-id', [line]));
 
     await expect(refusal).rejects.toThrow(BasketRefusedError);
     await expect(refusal).rejects.toMatchObject({ reason: 'sold-out' });
@@ -150,14 +140,14 @@ describe('Start Checkout', () => {
   it('gives each checkout a new order ID', async () => {
     const basket = [{ dishId: 'dish-id', quantity: 1 }];
 
-    const first = await handler.execute(new StartCheckout('vendor-id', 'market-id', basket));
-    const second = await handler.execute(new StartCheckout('vendor-id', 'market-id', basket));
+    const first = await handler.execute(new StartCheckout('acme-bakery', 'market-id', basket));
+    const second = await handler.execute(new StartCheckout('acme-bakery', 'market-id', basket));
 
     expect(payments.checkoutAt(first)?.orderId).not.toEqual(payments.checkoutAt(second)?.orderId);
   });
 
   it('records nothing, an order existing only once Stripe holds its card', async () => {
-    await handler.execute(new StartCheckout('vendor-id', 'market-id', [{ dishId: 'dish-id', quantity: 1 }]));
+    await handler.execute(new StartCheckout('acme-bakery', 'market-id', [{ dishId: 'dish-id', quantity: 1 }]));
 
     expect(store.newEvents()).toEqual([]);
   });
@@ -168,7 +158,7 @@ describe('Start Checkout', () => {
     tradingDays.setVariantPrice('pizza-id', 'Pepperoni', 1200);
 
     const address = await handler.execute(
-      new StartCheckout('vendor-id', 'market-id', [{ dishId: 'pizza-id', variant: 'Pepperoni', quantity: 1 }]),
+      new StartCheckout('acme-bakery', 'market-id', [{ dishId: 'pizza-id', variant: 'Pepperoni', quantity: 1 }]),
     );
 
     expect(payments.checkoutAt(address)).toMatchObject({
