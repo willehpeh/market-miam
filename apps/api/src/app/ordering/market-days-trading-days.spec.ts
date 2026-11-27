@@ -2,7 +2,7 @@ import { isDeepStrictEqual } from 'node:util';
 import { describe, expect, it } from 'vitest';
 import type { Query } from '@nestjs/cqrs';
 import { QueryGateway } from '@market-miam/event-sourcing';
-import { FindLiveMarketDay, LiveMarketDay } from '@market-miam/market-days';
+import { FindLiveMarketDay, LiveDish, LiveMarketDay } from '@market-miam/market-days';
 import { Availability, OrderLine } from '@market-miam/ordering';
 import { VendorId } from '@market-miam/shared-kernel';
 import { MarketDaysTradingDays } from './market-days-trading-days';
@@ -25,7 +25,10 @@ const lines: OrderLine[] = [
   { dishId: 'dish-2', variant: 'Small', quantity: 1, unitPrice: 900 },
 ];
 
-const trading: LiveMarketDay = { itemIds: ['dish-1', 'dish-2'], soldOutItemIds: [], dishes: [], closed: false, phase: 'trading' };
+const dishOne: LiveDish = { itemId: 'dish-1', name: 'Dish one', price: 1250, soldOut: false };
+const dishTwo: LiveDish = { itemId: 'dish-2', name: 'Dish two', variants: [{ name: 'Small', price: 900 }], soldOut: false };
+
+const trading: LiveMarketDay = { dishes: [dishOne, dishTwo], closed: false, phase: 'trading' };
 
 const tradingDayFor = (liveDay?: LiveMarketDay) =>
   new MarketDaysTradingDays(new StubQueryGateway(liveDay)).forVendorAtMarketOn(new VendorId('vendor-1'), 'market-1', DATE);
@@ -39,7 +42,7 @@ describe('Trading days, from Market Days’ live day', () => {
     ['ended', 'the day over', { phase: 'over' }],
     ['ended', 'the day past', { phase: 'past' }],
     ['closed', 'the day closed by hand', { closed: true }],
-    ['sold-out', 'one of its dishes sold out', { soldOutItemIds: ['dish-2'] }],
+    ['sold-out', 'one of its dishes sold out', { dishes: [dishOne, { ...dishTwo, soldOut: true }] }],
   ])('refuses the order as %s when Market Days reports %s', async (availability, _, report) => {
     expect((await tradingDayFor({ ...trading, ...report })).availabilityOf(lines)).toBe(availability);
   });

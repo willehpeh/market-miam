@@ -18,9 +18,9 @@ export class FindLiveMarketDayHandler implements IQueryHandler<FindLiveMarketDay
   constructor(
     private readonly vendorEvents: VendorScopedEvents,
     private readonly schedules: MarketScheduleViews,
-    private readonly clock: Clock,
     private readonly catalogues: CatalogueViews,
     private readonly prices: MarketPricesViews,
+    private readonly clock: Clock,
   ) {}
 
   async execute({ vendorId, marketId, date }: FindLiveMarketDay): Promise<LiveMarketDay | undefined> {
@@ -38,8 +38,8 @@ export class FindLiveMarketDayHandler implements IQueryHandler<FindLiveMarketDay
     const { phase } = standingOf(scheduled, parisWallClock(this.clock.now()));
     const stand = new Stand();
     events.forEach(event => stand.apply(event));
-    const pricesHere = marketPrices.find(market => market.marketId === marketId)?.prices ?? {};
-    return stand.answer(phase, priced(items, pricesHere));
+    const pricesAtMarket = marketPrices.find(market => market.marketId === marketId)?.prices ?? {};
+    return stand.answer(phase, priced(items, pricesAtMarket));
   }
 
   private async scheduledDay(vendorId: string, marketId: string, date: LocalDate): Promise<ScheduledDay | undefined> {

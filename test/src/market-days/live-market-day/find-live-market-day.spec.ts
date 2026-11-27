@@ -1,5 +1,6 @@
 import { DomainEvent, InMemoryEventStore } from '@market-miam/event-sourcing';
 import {
+  CatalogueViewItem,
   FindLiveMarketDay,
   FindLiveMarketDayHandler,
   InMemoryCatalogueViews,
@@ -21,6 +22,27 @@ const fridaysAtBelleville: MarketScheduleView = {
   frequency: { weeks: 1 },
 };
 
+const bourguignon: CatalogueViewItem = {
+  itemId: 'item-1',
+  name: 'Bourguignon',
+  description: '',
+  price: 500,
+  imageReference: '',
+  allergens: null,
+};
+
+const pizza: CatalogueViewItem = {
+  itemId: 'item-2',
+  name: 'Pizza',
+  description: '',
+  imageReference: '',
+  allergens: null,
+  variants: [
+    { name: 'Margherita', description: '', price: 900 },
+    { name: 'Pepperoni', description: '', price: 1200 },
+  ],
+};
+
 const MID_MARKET = `${TODAY}T09:00:00.000Z`;
 
 describe('Find Live Market Day', () => {
@@ -35,43 +57,18 @@ describe('Find Live Market Day', () => {
     catalogues = new InMemoryCatalogueViews();
     prices = new InMemoryMarketPricesViews();
     await schedules.recordSchedule(fridaysAtBelleville, 'vendor-1');
+    await catalogues.addItemToCatalogue(bourguignon, 'vendor-1');
+    await catalogues.addItemToCatalogue(pizza, 'vendor-1');
   });
 
   const given = (...history: DomainEvent[]): void =>
     store.seedWith(`market-day/vendor-1/market-1/${TODAY}`, history, { vendorId: 'vendor-1' });
 
   const findLiveDay = (now = MID_MARKET) =>
-    new FindLiveMarketDayHandler(new VendorScopedEvents(store), schedules, clockAt(now.slice(0, 10), now), catalogues, prices)
+    new FindLiveMarketDayHandler(new VendorScopedEvents(store), schedules, catalogues, prices, clockAt(now.slice(0, 10), now))
       .execute(new FindLiveMarketDay('vendor-1', 'market-1', TODAY));
 
-  it('reports the day’s menu and its sold-out dishes, read from the day’s own events', async () => {
-    given(menuSet(TODAY, 'item-1', 'item-2'), soldOut(TODAY, 'item-2'));
-
-    expect(await findLiveDay()).toMatchObject({
-      itemIds: ['item-1', 'item-2'],
-      soldOutItemIds: ['item-2'],
-    });
-  });
-
   it('names and prices its dishes as the storefront does, each marked sold out or not', async () => {
-    await catalogues.addItemToCatalogue(
-      { itemId: 'item-1', name: 'Bourguignon', description: '', price: 500, imageReference: '', allergens: null },
-      'vendor-1',
-    );
-    await catalogues.addItemToCatalogue(
-      {
-        itemId: 'item-2',
-        name: 'Pizza',
-        description: '',
-        imageReference: '',
-        allergens: null,
-        variants: [
-          { name: 'Margherita', description: '', price: 900 },
-          { name: 'Pepperoni', description: '', price: 1200 },
-        ],
-      },
-      'vendor-1',
-    );
     await prices.setPrices({ marketId: 'market-1', prices: { 'item-1': 600 } }, 'vendor-1');
     given(menuSet(TODAY, 'item-1', 'item-2'), soldOut(TODAY, 'item-2'));
 
@@ -92,9 +89,10 @@ describe('Find Live Market Day', () => {
   it('no longer reports a dish sold out once the vendor marks it available again', async () => {
     given(menuSet(TODAY, 'item-1', 'item-2'), soldOut(TODAY, 'item-2'), available(TODAY, 'item-2'));
 
-    expect(await findLiveDay()).toMatchObject({
-      soldOutItemIds: [],
-    });
+    expect((await findLiveDay())?.dishes).toMatchObject([
+      { itemId: 'item-1', soldOut: false },
+      { itemId: 'item-2', soldOut: false },
+    ]);
   });
 
   it('reports the day closed once the vendor closes it by hand', async () => {

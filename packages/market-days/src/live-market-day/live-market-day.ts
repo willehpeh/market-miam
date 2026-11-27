@@ -9,8 +9,6 @@ export type LiveDish = {
 };
 
 export type LiveMarketDay = {
-  itemIds: string[];
-  soldOutItemIds: string[];
   dishes: LiveDish[];
   closed: boolean;
   phase: MarketDayPhase;

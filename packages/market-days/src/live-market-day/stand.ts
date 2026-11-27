@@ -30,11 +30,9 @@ export class Stand {
     }
   }
 
-  answer(phase: MarketDayPhase, catalogue: CatalogueViewItem[]): LiveMarketDay {
+  answer(phase: MarketDayPhase, pricedCatalogue: CatalogueViewItem[]): LiveMarketDay {
     return {
-      itemIds: this._menu.value(),
-      soldOutItemIds: this._soldOut.value(),
-      dishes: catalogue
+      dishes: pricedCatalogue
         .filter(item => this._menu.includes(new ItemId(item.itemId)))
         .map(item => ({
           itemId: item.itemId,
