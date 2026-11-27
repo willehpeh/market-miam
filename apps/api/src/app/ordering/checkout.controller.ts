@@ -1,8 +1,10 @@
-import { Body, Controller, HttpCode, HttpStatus, Param, Post } from '@nestjs/common';
+import { Body, Controller, HttpCode, HttpStatus, Param, Post, UseFilters } from '@nestjs/common';
 import { z } from 'zod';
 import { CommandGateway } from '@market-miam/event-sourcing';
 import { StartCheckout } from '@market-miam/ordering';
 import { shapeOf } from '../shape-of.pipe';
+import { CheckoutRefusalFilter } from './checkout-refusal.filter';
+import { NoStorefrontFilter } from './no-storefront.filter';
 
 const CheckoutRequest = z.object({
   marketId: z.string(),
@@ -10,6 +12,7 @@ const CheckoutRequest = z.object({
 });
 
 @Controller('public/storefront')
+@UseFilters(CheckoutRefusalFilter, NoStorefrontFilter)
 export class CheckoutController {
   constructor(private readonly commands: CommandGateway) {}
 
