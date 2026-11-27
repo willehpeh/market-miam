@@ -4,6 +4,7 @@ import {
   BasketOverCapError,
   BasketRefusedError,
   InMemoryPayments,
+  InMemoryPublishedStorefronts,
   InMemoryTradingDays,
   MalformedBasketError,
   MerchantCannotTakePaymentsError,
@@ -23,6 +24,7 @@ describe('Start Checkout', () => {
   let store: InMemoryEventStore;
   let payments: InMemoryPayments;
   let tradingDays: InMemoryTradingDays;
+  let storefronts: InMemoryPublishedStorefronts;
   let handler: StartCheckoutHandler;
 
   beforeEach(() => {
@@ -33,7 +35,10 @@ describe('Start Checkout', () => {
     tradingDays.setMenu('dish-id', 'another-dish-id');
     tradingDays.setPrice('dish-id', 1250);
     tradingDays.setPrice('another-dish-id', 900);
-    handler = new StartCheckoutHandler(payments, tradingDays, new Merchants(new VendorScopedEvents(store)), clockAt(TODAY, NOW));
+    storefronts = new InMemoryPublishedStorefronts();
+    storefronts.publishAt('vendor-id', 'vendor-id');
+    storefronts.publishAt('vendor-2', 'vendor-2');
+    handler = new StartCheckoutHandler(payments, tradingDays, new Merchants(new VendorScopedEvents(store)), clockAt(TODAY, NOW), storefronts);
   });
 
   it('starts a checkout for a basket of today’s dishes on the vendor’s account, and answers its address', async () => {
