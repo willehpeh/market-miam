@@ -1,8 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { INestApplication } from '@nestjs/common';
-import { InMemorySubdomainRegistry } from '@market-miam/market-days';
 import { InMemoryPaymentAccounts, InMemoryPayments } from '@market-miam/ordering';
-import { bootApiTestApp, fixedClock, publishStorefrontFor, testVendor } from '../testing/api-test-app';
+import { assignSubdomainFor, bootApiTestApp, fixedClock, publishStorefrontFor, testVendor } from '../testing/api-test-app';
 import { StripeEvents } from '../testing/stripe-events';
 import { VendorApi } from '../testing/vendor-api';
 import { Visitor } from '../testing/visitor';
@@ -93,7 +92,7 @@ describe('Starting a checkout over HTTP', () => {
 
   async function openForOrders(): Promise<string> {
     await publishStorefrontFor(app, 'acme-bakery');
-    await app.get(InMemorySubdomainRegistry).register('acme', 'acme-bakery');
+    await assignSubdomainFor(app, 'acme-bakery', 'acme');
     await app.get(Subscriptions).drain();
     await vendor.startPaymentAccountRegistration(registration).expect(202);
     await app.get(Subscriptions).drain();

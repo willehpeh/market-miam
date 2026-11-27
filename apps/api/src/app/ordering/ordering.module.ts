@@ -17,6 +17,7 @@ import {
   Payments,
   PlaceOrderHandler,
   PublishedStorefronts,
+  StartCheckoutHandler,
   StartPaymentAccountRegistrationHandler,
   TradingDays,
 } from '@market-miam/ordering';
@@ -25,6 +26,7 @@ import { ClockModule } from '../clock.module';
 import { MarketDaysPublishedStorefronts } from './market-days-published-storefronts';
 import { MarketDaysTradingDays } from './market-days-trading-days';
 import { PaymentAccountController } from './payment-account.controller';
+import { CheckoutController } from './checkout.controller';
 import { SigningSecret } from './stripe/signing-secret';
 import { StripeEventDestination } from './stripe/stripe-event-destination';
 import { STRIPE_EVENT_DESTINATIONS } from './stripe/stripe-signature.guard';
@@ -32,7 +34,7 @@ import { StripeWebhooksController } from './stripe/stripe-webhooks.controller';
 
 @Module({
   imports: [ClockModule],
-  controllers: [PaymentAccountController, StripeWebhooksController],
+  controllers: [PaymentAccountController, StripeWebhooksController, CheckoutController],
   providers: [
     { provide: Merchants, useFactory: (events: VendorScopedEvents) => new Merchants(events), inject: [VendorScopedEvents] },
     {
@@ -66,6 +68,7 @@ import { StripeWebhooksController } from './stripe/stripe-webhooks.controller';
     ObservePaymentAccountHandler,
     DetectPaymentAccountUpdateHandler,
     PlaceOrderHandler,
+    StartCheckoutHandler,
   ],
 })
 export class OrderingModule {}

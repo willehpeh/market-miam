@@ -4,7 +4,15 @@ import { ConfigModule } from '@nestjs/config';
 import { Clock, Email, Instant, LocalDate } from '@market-miam/common';
 import { VendorId } from '@market-miam/shared-kernel';
 import { EventStore } from '@market-miam/event-sourcing';
-import { InMemoryVendorAccounts, StorefrontOpened, StorefrontPublished, vendorPiiFields, vendorPiiKeyScopes, VendorAccounts } from '@market-miam/market-days';
+import {
+  InMemorySubdomainRegistry,
+  InMemoryVendorAccounts,
+  StorefrontOpened,
+  StorefrontPublished,
+  vendorPiiFields,
+  vendorPiiKeyScopes,
+  VendorAccounts,
+} from '@market-miam/market-days';
 import { InMemoryPaymentAccounts, InMemoryPayments, PaymentAccounts, Payments } from '@market-miam/ordering';
 import { StaticTokenVerifier, type VerifiedVendor } from '@market-miam/auth';
 import { AuthModule, OperatorAuthModule } from '@market-miam/auth-nestjs';
@@ -113,6 +121,10 @@ export async function openStorefrontFor(app: INestApplication, vendorId: string)
   const opened: StorefrontOpened = { type: 'StorefrontOpened', payload: { vendorId }, version: 1 };
   const store = app.get(EventStore);
   await store.append(`storefront-${vendorId}`, [opened], 0, { vendorId });
+}
+
+export async function assignSubdomainFor(app: INestApplication, vendorId: string, subdomain: string): Promise<void> {
+  await app.get(InMemorySubdomainRegistry).register(subdomain, vendorId);
 }
 
 export async function publishStorefrontFor(app: INestApplication, vendorId: string): Promise<void> {

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { QueryGateway } from '@market-miam/event-sourcing';
-import { IsStorefrontPublished } from '@market-miam/market-days';
+import { FindVendorPublishingAt, IsStorefrontPublished } from '@market-miam/market-days';
 import { PublishedStorefronts } from '@market-miam/ordering';
 import { VendorId } from '@market-miam/shared-kernel';
 
@@ -14,7 +14,8 @@ export class MarketDaysPublishedStorefronts extends PublishedStorefronts {
     return this.queries.execute(new IsStorefrontPublished(vendorId.value()));
   }
 
-  vendorAt(subdomain: string): Promise<VendorId | undefined> {
-    return Promise.reject(new Error(`Market Days can't yet say who publishes at ${subdomain}`));
+  async vendorAt(subdomain: string): Promise<VendorId | undefined> {
+    const vendorId = await this.queries.execute(new FindVendorPublishingAt(subdomain));
+    return vendorId === undefined ? undefined : new VendorId(vendorId);
   }
 }
