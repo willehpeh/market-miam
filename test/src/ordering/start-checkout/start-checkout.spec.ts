@@ -101,6 +101,14 @@ describe('Start Checkout', () => {
     ).rejects.toThrow(BasketOverCapError);
   });
 
+  it('starts a checkout for a basket costing exactly 119,99 €', async () => {
+    tradingDays.setPrice('dish-id', 11999);
+
+    const address = await handler.execute(new StartCheckout('vendor-id', 'market-id', [{ dishId: 'dish-id', quantity: 1 }]));
+
+    expect(payments.checkoutAt(address)).toMatchObject({ lines: [{ dishId: 'dish-id', quantity: 1, unitPrice: 11999 }] });
+  });
+
   it('prices a dish with variants by the variant chosen', async () => {
     tradingDays.setMenu('dish-id', 'pizza-id');
     tradingDays.setVariantPrice('pizza-id', 'Margherita', 900);
