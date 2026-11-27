@@ -86,6 +86,12 @@ describe('Find Live Market Day', () => {
     ]);
   });
 
+  it('leaves out a dish on its menu that the catalogue doesn’t hold yet, so no price is guessed', async () => {
+    given(menuSet(TODAY, 'item-1', 'item-3'));
+
+    expect((await findLiveDay())?.dishes.map(dish => dish.itemId)).toEqual(['item-1']);
+  });
+
   it('no longer reports a dish sold out once the vendor marks it available again', async () => {
     given(menuSet(TODAY, 'item-1', 'item-2'), soldOut(TODAY, 'item-2'), available(TODAY, 'item-2'));
 
