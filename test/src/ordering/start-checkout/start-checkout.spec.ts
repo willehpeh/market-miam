@@ -109,6 +109,15 @@ describe('Start Checkout', () => {
     expect(payments.checkoutAt(address)).toMatchObject({ lines: [{ dishId: 'dish-id', quantity: 1, unitPrice: 11999 }] });
   });
 
+  it('gives each checkout a new order ID', async () => {
+    const basket = [{ dishId: 'dish-id', quantity: 1 }];
+
+    const first = await handler.execute(new StartCheckout('vendor-id', 'market-id', basket));
+    const second = await handler.execute(new StartCheckout('vendor-id', 'market-id', basket));
+
+    expect(payments.checkoutAt(first)?.orderId).not.toEqual(payments.checkoutAt(second)?.orderId);
+  });
+
   it('prices a dish with variants by the variant chosen', async () => {
     tradingDays.setMenu('dish-id', 'pizza-id');
     tradingDays.setVariantPrice('pizza-id', 'Margherita', 900);
