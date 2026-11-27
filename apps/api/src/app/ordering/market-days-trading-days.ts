@@ -4,6 +4,7 @@ import { FindLiveMarketDay } from '@market-miam/market-days';
 import { NoTradingDay, ScheduledTradingDay, TradingDay, TradingDays } from '@market-miam/ordering';
 import { VendorId } from '@market-miam/shared-kernel';
 
+const NOT_YET_OPEN_PHASES = ['due', 'future'];
 const ENDED_PHASES = ['over', 'past'];
 
 @Injectable()
@@ -21,7 +22,7 @@ export class MarketDaysTradingDays extends TradingDays {
       menuDishIds: liveDay.dishes.map(dish => dish.itemId),
       soldOutDishIds: liveDay.dishes.filter(dish => dish.soldOut).map(dish => dish.itemId),
       closed: liveDay.closed,
-      opened: true,
+      opened: !NOT_YET_OPEN_PHASES.includes(liveDay.phase),
       ended: ENDED_PHASES.includes(liveDay.phase),
       pricing: {},
     });
