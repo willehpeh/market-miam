@@ -8,3 +8,5 @@ export { InMemoryVendorStorefrontViews } from './in-memory-vendor-storefront.vie
 export { PostgresVendorStorefrontViews } from './postgres-vendor-storefront.views';
 export { IsStorefrontPublished } from './is-storefront-published';
 export { IsStorefrontPublishedHandler } from './is-storefront-published.handler';
+export { FindVendorPublishingAt } from './find-vendor-publishing-at';
+export { FindVendorPublishingAtHandler } from './find-vendor-publishing-at.handler';
