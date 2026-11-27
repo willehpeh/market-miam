@@ -11,6 +11,10 @@ export class FindVendorPublishingAtHandler implements IQueryHandler<FindVendorPu
   ) {}
 
   async execute({ subdomain }: FindVendorPublishingAt): Promise<string | undefined> {
-    return this.registry.vendorFor(subdomain);
+    const vendorId = await this.registry.vendorFor(subdomain);
+    if (!vendorId) {
+      return undefined;
+    }
+    return (await this.storefronts.findByVendor(vendorId))?.published ? vendorId : undefined;
   }
 }
