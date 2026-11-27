@@ -2,6 +2,7 @@ import { ItemId } from '../catalogue';
 import { MarketDayEvent, Menu } from '../market-day';
 import { SoldOutItems } from '../market-day/sold-out-items';
 import { MarketDayPhase } from '../market-schedule-view/market-day-clock';
+import { CatalogueViewItem } from '../catalogue-view/catalogue-view';
 import { LiveMarketDay } from './live-market-day';
 
 export class Stand {
@@ -29,7 +30,21 @@ export class Stand {
     }
   }
 
-  answer(phase: MarketDayPhase): LiveMarketDay {
-    return { itemIds: this._menu.value(), soldOutItemIds: this._soldOut.value(), closed: this._closed, phase };
+  answer(phase: MarketDayPhase, catalogue: CatalogueViewItem[]): LiveMarketDay {
+    return {
+      itemIds: this._menu.value(),
+      soldOutItemIds: this._soldOut.value(),
+      dishes: catalogue
+        .filter(item => this._menu.includes(new ItemId(item.itemId)))
+        .map(item => ({
+          itemId: item.itemId,
+          name: item.name,
+          price: item.price,
+          variants: item.variants?.map(({ name, price }) => ({ name, price })),
+          soldOut: this._soldOut.includes(new ItemId(item.itemId)),
+        })),
+      closed: this._closed,
+      phase,
+    };
   }
 }

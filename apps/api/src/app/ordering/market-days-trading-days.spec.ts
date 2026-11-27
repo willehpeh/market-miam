@@ -25,7 +25,7 @@ const lines: OrderLine[] = [
   { dishId: 'dish-2', variant: 'Small', quantity: 1, unitPrice: 900 },
 ];
 
-const trading: LiveMarketDay = { itemIds: ['dish-1', 'dish-2'], soldOutItemIds: [], closed: false, phase: 'trading' };
+const trading: LiveMarketDay = { itemIds: ['dish-1', 'dish-2'], soldOutItemIds: [], dishes: [], closed: false, phase: 'trading' };
 
 const tradingDayFor = (liveDay?: LiveMarketDay) =>
   new MarketDaysTradingDays(new StubQueryGateway(liveDay)).forVendorAtMarketOn(new VendorId('vendor-1'), 'market-1', DATE);
