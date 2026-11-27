@@ -4,6 +4,7 @@ import { Clock } from '@market-miam/common';
 import { VendorId } from '@market-miam/shared-kernel';
 import { Merchants } from '../merchant';
 import { Payments } from '../payments';
+import { PublishedStorefronts } from '../published-storefronts';
 import { TradingDays } from '../trading-days';
 import { StartCheckout } from './start-checkout';
 
@@ -16,10 +17,14 @@ export class StartCheckoutHandler implements ICommandHandler<StartCheckout> {
     private readonly tradingDays: TradingDays,
     private readonly merchants: Merchants,
     private readonly clock: Clock,
+    private readonly storefronts: PublishedStorefronts,
   ) {}
 
-  async execute({ vendorId, marketId, basket }: StartCheckout): Promise<string> {
-    const vendor = new VendorId(vendorId);
+  async execute({ subdomain, marketId, basket }: StartCheckout): Promise<string> {
+    const vendor = await this.storefronts.vendorAt(subdomain);
+    if (!vendor) {
+      throw new Error(`No published storefront at ${subdomain}`);
+    }
     const date = this.clock.today().value();
     const [day, merchant] = await Promise.all([
       this.tradingDays.forVendorAtMarketOn(vendor, marketId, date),
@@ -29,7 +34,7 @@ export class StartCheckoutHandler implements ICommandHandler<StartCheckout> {
     return merchant.startCheckout(
       {
         orderId: randomUUID(),
-        vendorId,
+        vendorId: vendor.value(),
         marketId,
         date,
         lines: quote.lines(),

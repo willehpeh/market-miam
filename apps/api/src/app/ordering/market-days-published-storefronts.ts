@@ -13,4 +13,8 @@ export class MarketDaysPublishedStorefronts extends PublishedStorefronts {
   include(vendorId: VendorId): Promise<boolean> {
     return this.queries.execute(new IsStorefrontPublished(vendorId.value()));
   }
+
+  vendorAt(subdomain: string): Promise<VendorId | undefined> {
+    return Promise.reject(new Error(`Market Days can't yet say who publishes at ${subdomain}`));
+  }
 }

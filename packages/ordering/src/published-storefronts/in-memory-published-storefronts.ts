@@ -17,4 +17,9 @@ export class InMemoryPublishedStorefronts extends PublishedStorefronts {
   async include(vendorId: VendorId): Promise<boolean> {
     return this.published.has(vendorId.value());
   }
+
+  async vendorAt(subdomain: string): Promise<VendorId | undefined> {
+    const vendorId = this.vendorsAt.get(subdomain);
+    return vendorId === undefined ? undefined : new VendorId(vendorId);
+  }
 }
