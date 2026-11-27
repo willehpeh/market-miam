@@ -22,6 +22,10 @@ export class Instant {
     return !Instant.ISO_INSTANT.test(registeredAt);
   }
 
+  plusMinutes(minutes: number): Instant {
+    return new Instant(new Date(Date.parse(this._registeredAt) + minutes * 60_000).toISOString());
+  }
+
   value(): string {
     return this._registeredAt;
   }
