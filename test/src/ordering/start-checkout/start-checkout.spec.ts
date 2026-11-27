@@ -1,0 +1,48 @@
+import { InMemoryEventStore } from '@market-miam/event-sourcing';
+import { InMemoryPayments, InMemoryTradingDays, Merchants, StartCheckout, StartCheckoutHandler } from '@market-miam/ordering';
+import { VendorScopedEvents } from '@market-miam/shared-kernel';
+import { clockAt } from '../../clock-at';
+import { accountEnabled, merchantStream, registrationConfirmed, registrationStarted } from '../merchant-events';
+
+const TODAY = '2026-11-21';
+const NOW = `${TODAY}T10:12:00.000Z`;
+
+describe('Start Checkout', () => {
+  let store: InMemoryEventStore;
+  let payments: InMemoryPayments;
+  let tradingDays: InMemoryTradingDays;
+  let handler: StartCheckoutHandler;
+
+  beforeEach(() => {
+    store = new InMemoryEventStore();
+    store.seedWith(merchantStream(), [registrationStarted(), registrationConfirmed(), accountEnabled()], { vendorId: 'vendor-id' });
+    payments = new InMemoryPayments();
+    tradingDays = new InMemoryTradingDays();
+    tradingDays.setMenu('dish-id', 'another-dish-id');
+    tradingDays.setPrice('dish-id', 1250);
+    tradingDays.setPrice('another-dish-id', 900);
+    handler = new StartCheckoutHandler(payments, tradingDays, new Merchants(new VendorScopedEvents(store)), clockAt(TODAY, NOW));
+  });
+
+  it('starts a checkout for a basket of today’s dishes on the vendor’s account, and answers its address', async () => {
+    const address = await handler.execute(
+      new StartCheckout('vendor-id', 'market-id', [
+        { dishId: 'dish-id', quantity: 2 },
+        { dishId: 'another-dish-id', quantity: 1 },
+      ]),
+    );
+
+    expect(payments.checkoutAt(address)).toEqual({
+      accountId: 'acct_test_1',
+      orderId: expect.any(String),
+      vendorId: 'vendor-id',
+      marketId: 'market-id',
+      date: TODAY,
+      lines: [
+        { dishId: 'dish-id', quantity: 2, unitPrice: 1250 },
+        { dishId: 'another-dish-id', quantity: 1, unitPrice: 900 },
+      ],
+      expiresAt: `${TODAY}T10:42:00.000Z`,
+    });
+  });
+});
