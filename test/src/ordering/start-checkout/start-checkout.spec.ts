@@ -1,9 +1,11 @@
 import { DomainEvent, InMemoryEventStore } from '@market-miam/event-sourcing';
 import {
+  BasketRefusedError,
   InMemoryPayments,
   InMemoryTradingDays,
   MerchantCannotTakePaymentsError,
   Merchants,
+  RefusalReason,
   StartCheckout,
   StartCheckoutHandler,
 } from '@market-miam/ordering';
@@ -67,6 +69,20 @@ describe('Start Checkout', () => {
     await expect(
       handler.execute(new StartCheckout('vendor-2', 'market-id', [{ dishId: 'dish-id', quantity: 1 }])),
     ).rejects.toThrow(MerchantCannotTakePaymentsError);
+  });
+
+  it.each<[RefusalReason, string, (days: InMemoryTradingDays) => void]>([
+    ['not-yet-open', 'before its market opens', days => days.beforeOpening()],
+    ['closed', 'once the vendor has closed it by hand', days => days.close()],
+    ['ended', 'once its market has ended', days => days.end()],
+    ['closed', 'when no schedule puts the vendor at the market today', days => days.unschedule()],
+  ])('refuses the basket as %s %s', async (reason, _, arrange) => {
+    arrange(tradingDays);
+
+    const refusal = handler.execute(new StartCheckout('vendor-id', 'market-id', [{ dishId: 'dish-id', quantity: 1 }]));
+
+    await expect(refusal).rejects.toThrow(BasketRefusedError);
+    await expect(refusal).rejects.toMatchObject({ reason });
   });
 
   it('prices a dish with variants by the variant chosen', async () => {
