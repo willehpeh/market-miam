@@ -9,6 +9,7 @@ export type Stand = {
   closed: boolean;
   ended: boolean;
   prices: Record<string, number>;
+  variantPrices: Record<string, Record<string, number>>;
 };
 
 export class ScheduledTradingDay implements TradingDay {
@@ -25,7 +26,10 @@ export class ScheduledTradingDay implements TradingDay {
   }
 
   price(basket: BasketLine[]): OrderLine[] {
-    return basket.map(line => ({ ...line, unitPrice: this.stand.prices[line.dishId] }));
+    return basket.map(line => ({
+      ...line,
+      unitPrice: line.variant ? this.stand.variantPrices[line.dishId][line.variant] : this.stand.prices[line.dishId],
+    }));
   }
 
   private offers({ dishId }: OrderLine): boolean {
