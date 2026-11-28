@@ -1,10 +1,14 @@
-import { DomainEvent, InMemoryEventStore } from '@market-miam/event-sourcing';
+import { DomainEvent, EventStore, InMemoryEventStore, StoredEvent } from '@market-miam/event-sourcing';
 import { DetectPaymentAccountUpdateHandler, PaymentAccountNotices } from '@market-miam/ordering';
 import { noticeStream, updateDetected } from '../notice-events';
 import { TestDetectPaymentAccountUpdate } from './test-data';
 
-class UnreachableEventStore extends InMemoryEventStore {
-  override append(): Promise<void> {
+class StubEventStore implements EventStore {
+  append(): Promise<void> {
+    return Promise.reject(new Error('connection refused'));
+  }
+
+  load(): Promise<StoredEvent[]> {
     return Promise.reject(new Error('connection refused'));
   }
 }
@@ -35,7 +39,7 @@ describe('Detect Payment Account Update', () => {
   });
 
   it('lets a failure to record the notice through, so Stripe sends it again', async () => {
-    const unreachable = new DetectPaymentAccountUpdateHandler(new PaymentAccountNotices(new UnreachableEventStore()));
+    const unreachable = new DetectPaymentAccountUpdateHandler(new PaymentAccountNotices(new StubEventStore()));
 
     await expect(unreachable.execute(TestDetectPaymentAccountUpdate.valid())).rejects.toThrow('connection refused');
   });

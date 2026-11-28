@@ -1,4 +1,4 @@
-import { ConcurrencyError, EventStore } from '@market-miam/event-sourcing';
+import { EventStore } from '@market-miam/event-sourcing';
 import { PaymentAccountUpdateDetected } from './events';
 
 export type Notice = PaymentAccountUpdateDetected['payload'];
@@ -15,15 +15,15 @@ export class PaymentAccountNotices {
   }
 
   private recordOnce(streamId: string, detected: PaymentAccountUpdateDetected): Promise<void> {
-    return this.store.append(streamId, [detected], 0).catch((error: unknown) => {
-      if (this.isReplay(error)) {
+    return this.store.append(streamId, [detected], 0).catch(async (error: unknown) => {
+      if (await this.isRecorded(streamId)) {
         return;
       }
       throw error;
     });
   }
 
-  private isReplay(error: unknown): boolean {
-    return error instanceof ConcurrencyError;
+  private async isRecorded(streamId: string): Promise<boolean> {
+    return (await this.store.load(streamId)).length > 0;
   }
 }
