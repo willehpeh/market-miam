@@ -19,10 +19,8 @@ const NOT_YET_OPEN_PHASES = ['due', 'future'];
 const ENDED_PHASES = ['over', 'past'];
 
 @Injectable()
-export class MarketDaysTradingDays extends TradingDays {
-  constructor(private readonly queries: QueryGateway) {
-    super();
-  }
+export class MarketDaysTradingDays implements TradingDays {
+  constructor(private readonly queries: QueryGateway) {}
 
   async forVendorAtMarketOn(vendorId: VendorId, marketId: string, date: string): Promise<TradingDay> {
     const liveDay = await this.queries.execute(new FindLiveMarketDay(vendorId.value(), marketId, date));

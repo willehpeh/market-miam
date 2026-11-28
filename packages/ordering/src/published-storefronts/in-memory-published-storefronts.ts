@@ -1,7 +1,7 @@
 import { VendorId } from '@market-miam/shared-kernel';
 import { PublishedStorefronts } from './published-storefronts';
 
-export class InMemoryPublishedStorefronts extends PublishedStorefronts {
+export class InMemoryPublishedStorefronts implements PublishedStorefronts {
   private readonly published = new Set<string>();
   private readonly vendorsAt = new Map<string, string>();
 

@@ -2,7 +2,7 @@ import { Checkout, CompletedCheckout, Payments } from './payments';
 
 type StartedCheckout = Checkout & { accountId: string };
 
-export class InMemoryPayments extends Payments {
+export class InMemoryPayments implements Payments {
   private readonly completedCheckouts = new Map<string, CompletedCheckout>();
   private readonly startedCheckouts = new Map<string, StartedCheckout>();
 

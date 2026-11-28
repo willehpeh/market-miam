@@ -1,7 +1,7 @@
 import { DishOnSale, FlatPricing, NoTradingDay, ScheduledTradingDay, SoldOutDish, Stand, TradingDay, VariantPricing } from '../order';
 import { TradingDays } from './trading-days';
 
-export class InMemoryTradingDays extends TradingDays {
+export class InMemoryTradingDays implements TradingDays {
   private readonly stand: Stand = { menu: new Map(), closed: false, opened: true, ended: false };
   private scheduled = true;
 

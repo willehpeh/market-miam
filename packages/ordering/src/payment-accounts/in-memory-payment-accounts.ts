@@ -1,6 +1,6 @@
 import { AccountCreation, PaymentAccount, PaymentAccounts, Registration } from './payment-accounts';
 
-export class InMemoryPaymentAccounts extends PaymentAccounts {
+export class InMemoryPaymentAccounts implements PaymentAccounts {
   private readonly created: Registration[] = [];
   private readonly accountsById: Map<string, PaymentAccount>;
 
@@ -9,7 +9,6 @@ export class InMemoryPaymentAccounts extends PaymentAccounts {
   }
 
   constructor(existing: PaymentAccount[] = []) {
-    super();
     this.accountsById = new Map(existing.map((account) => [account.accountId, account]));
   }
 

@@ -5,10 +5,8 @@ import { PublishedStorefronts } from '@market-miam/ordering';
 import { VendorId } from '@market-miam/shared-kernel';
 
 @Injectable()
-export class MarketDaysPublishedStorefronts extends PublishedStorefronts {
-  constructor(private readonly queries: QueryGateway) {
-    super();
-  }
+export class MarketDaysPublishedStorefronts implements PublishedStorefronts {
+  constructor(private readonly queries: QueryGateway) {}
 
   include(vendorId: VendorId): Promise<boolean> {
     return this.queries.execute(new IsStorefrontPublished(vendorId.value()));
