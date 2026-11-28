@@ -126,8 +126,9 @@ The owner builds test-first with an agent, one step at a time, and reviews each 
   stub, which only answers, is `Stub…` named for the type it stands in for, as `StubEvents` is.
 - **Polymorphism only when it is clean.** No `instanceof`, or anything equivalent, to choose behaviour: callers send
   a message without knowing which kind of object receives it, and the kind is chosen once, where the object is
-  built. Prefer composition over inheritance; a contract that is not a DI token is an interface, which its kinds
-  implement.
+  built (lint forbids `instanceof` and `typeof` checks in Ordering). Prefer composition over inheritance; a contract
+  that is not a DI token is an interface, which its kinds implement, and a port that is a token is implemented, not
+  extended.
 - **Decisions are grilled in chat, one question at a time**, never through the question dialog: options, their
   costs, a recommendation. Check Stripe facts against Stripe's docs or the sandbox and say when something is
   unverified. The sandbox key is a network secret for `api.stripe.com` on the cloud environment, never in GitHub;

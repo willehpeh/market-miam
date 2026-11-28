@@ -1,4 +1,4 @@
-import baseConfig, { domainObjectsExposeNoAccessors } from '../../eslint.config.mjs';
+import baseConfig, { behaviourNeverChosenByType, domainObjectsExposeNoAccessors, spansOnlyThroughTraced } from '../../eslint.config.mjs';
 
 const commandBusOnlyInTheGateway = {
   name: '@nestjs/cqrs',
@@ -31,7 +31,10 @@ export default [
   },
   {
     files: ['src/app/ordering/**/*.ts'],
-    rules: restrictedImports(orderingAsksMarketDaysOnlyWhatItsContractNames),
+    rules: {
+      ...restrictedImports(orderingAsksMarketDaysOnlyWhatItsContractNames),
+      'no-restricted-syntax': ['error', spansOnlyThroughTraced, ...behaviourNeverChosenByType],
+    },
   },
   {
     files: ['src/app/market-days/**/*.ts'],

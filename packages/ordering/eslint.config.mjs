@@ -1,4 +1,4 @@
-import baseConfig, { domainObjectsExposeNoAccessors, spansOnlyThroughTraced } from '../../eslint.config.mjs';
+import baseConfig, { behaviourNeverChosenByType, domainObjectsExposeNoAccessors, spansOnlyThroughTraced } from '../../eslint.config.mjs';
 
 const appendsOnlyThroughVendorScopedEvents = {
   selector: "MemberExpression[property.name='append']",
@@ -14,13 +14,13 @@ export default [
   {
     files: ['**/*.ts'],
     rules: {
-      'no-restricted-syntax': ['error', spansOnlyThroughTraced, appendsOnlyThroughVendorScopedEvents],
+      'no-restricted-syntax': ['error', spansOnlyThroughTraced, appendsOnlyThroughVendorScopedEvents, ...behaviourNeverChosenByType],
     },
   },
   {
     files: noticesBelongToNoVendor,
     rules: {
-      'no-restricted-syntax': ['error', spansOnlyThroughTraced],
+      'no-restricted-syntax': ['error', spansOnlyThroughTraced, ...behaviourNeverChosenByType],
     },
   },
 ];

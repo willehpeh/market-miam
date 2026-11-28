@@ -42,6 +42,17 @@ const moduleBoundaries = ({ appsMayUseTheTestProject }) => [
 // never ends (so never exports) and errors pass through unrecorded. traced()
 // in with-span.ts is the only door to a work-wrapping span; marker spans
 // (startSpan + immediate end) are unaffected.
+export const behaviourNeverChosenByType = [
+  {
+    selector: "BinaryExpression[operator='instanceof']",
+    message: 'Choose behaviour by sending a message, never by asking an object its class: give the kinds an interface they implement.',
+  },
+  {
+    selector: "UnaryExpression[operator='typeof']",
+    message: 'Choose behaviour by sending a message, never by asking a value its type: give each kind an object of its own.',
+  },
+];
+
 export const spansOnlyThroughTraced = {
   selector: "MemberExpression[property.name='startActiveSpan']",
   message:
