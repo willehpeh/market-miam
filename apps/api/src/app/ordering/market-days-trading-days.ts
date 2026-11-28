@@ -27,12 +27,11 @@ export class MarketDaysTradingDays extends TradingDays {
       return new NoTradingDay();
     }
     return new ScheduledTradingDay({
-      menuDishIds: liveDay.dishes.map(dish => dish.itemId),
       soldOutDishIds: liveDay.dishes.filter(dish => dish.soldOut).map(dish => dish.itemId),
       closed: liveDay.closed,
       opened: !NOT_YET_OPEN_PHASES.includes(liveDay.phase),
       ended: ENDED_PHASES.includes(liveDay.phase),
-      pricing: Object.fromEntries(liveDay.dishes.map(dish => [dish.itemId, this.pricingOf(dish)])),
+      menu: new Map(liveDay.dishes.map(dish => [dish.itemId, this.pricingOf(dish)])),
     });
   }
 

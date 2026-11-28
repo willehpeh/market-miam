@@ -13,7 +13,8 @@ describe('Place Order', () => {
   beforeEach(() => {
     store = new InMemoryEventStore();
     tradingDays = new InMemoryTradingDays();
-    tradingDays.setMenu('dish-id', 'another-dish-id');
+    tradingDays.offer('dish-id', 1250);
+    tradingDays.offer('another-dish-id', 900);
     store.seedWith(merchantStream(), [registrationStarted(), registrationConfirmed()], { vendorId: 'vendor-id' });
     const payments = new InMemoryPayments();
     payments.complete('cs_test_1', TestCompletedCheckout.valid());
@@ -52,7 +53,7 @@ describe('Place Order', () => {
   });
 
   it('refuses the order as sold out when the vendor took one of its dishes off the menu while the customer paid', async () => {
-    tradingDays.setMenu('dish-id');
+    tradingDays.takeOffMenu('another-dish-id');
 
     await handler.execute(TestPlaceOrder.valid());
 

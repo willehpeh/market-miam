@@ -6,12 +6,11 @@ import { Quote } from './quote';
 import { TradingDay } from './trading-day';
 
 export type Stand = {
-  menuDishIds: string[];
+  menu: Map<string, DishPricing>;
   soldOutDishIds: string[];
   closed: boolean;
   opened: boolean;
   ended: boolean;
-  pricing: Record<string, DishPricing>;
 };
 
 export class ScheduledTradingDay implements TradingDay {
@@ -35,10 +34,18 @@ export class ScheduledTradingDay implements TradingDay {
     if (availability !== 'available') {
       throw new BasketRefusedError(availability);
     }
-    return new Quote(basket.map(line => ({ ...line, unitPrice: this.stand.pricing[line.dishId].unitPriceFor(line) })));
+    return new Quote(basket.map(line => ({ ...line, unitPrice: this.pricingOf(line).unitPriceFor(line) })));
   }
 
   private offers({ dishId }: BasketLine): boolean {
-    return this.stand.menuDishIds.includes(dishId) && !this.stand.soldOutDishIds.includes(dishId);
+    return this.stand.menu.has(dishId) && !this.stand.soldOutDishIds.includes(dishId);
+  }
+
+  private pricingOf({ dishId }: BasketLine): DishPricing {
+    const pricing = this.stand.menu.get(dishId);
+    if (!pricing) {
+      throw new BasketRefusedError('sold-out');
+    }
+    return pricing;
   }
 }

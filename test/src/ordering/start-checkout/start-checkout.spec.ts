@@ -33,9 +33,8 @@ describe('Start Checkout', () => {
     store.seedWith(merchantStream(), [registrationStarted(), registrationConfirmed(), accountEnabled()], { vendorId: 'vendor-id' });
     payments = new InMemoryPayments();
     tradingDays = new InMemoryTradingDays();
-    tradingDays.setMenu('dish-id', 'another-dish-id');
-    tradingDays.setPrice('dish-id', 1250);
-    tradingDays.setPrice('another-dish-id', 900);
+    tradingDays.offer('dish-id', 1250);
+    tradingDays.offer('another-dish-id', 900);
     storefronts = new InMemoryPublishedStorefronts();
     storefronts.publishAt('acme-bakery', 'vendor-id');
     storefronts.publishAt('other-bakery', 'vendor-2');
@@ -92,7 +91,7 @@ describe('Start Checkout', () => {
     ['ended', 'once its market has ended', days => days.end()],
     ['closed', 'when no schedule puts the vendor at the market today', days => days.unschedule()],
     ['sold-out', 'once one of its dishes has sold out', days => days.markSoldOut('another-dish-id')],
-    ['sold-out', 'once one of its dishes has left the menu', days => days.setMenu('dish-id')],
+    ['sold-out', 'once one of its dishes has left the menu', days => days.takeOffMenu('another-dish-id')],
   ])('refuses the basket as %s %s', async (reason, _, arrange) => {
     arrange(tradingDays);
 
@@ -108,7 +107,7 @@ describe('Start Checkout', () => {
   });
 
   it('refuses a basket costing 120 € or more', async () => {
-    tradingDays.setPrice('dish-id', 4000);
+    tradingDays.offer('dish-id', 4000);
 
     await expect(
       handler.execute(new StartCheckout('acme-bakery', 'market-id', [{ dishId: 'dish-id', quantity: 3 }])),
@@ -116,7 +115,7 @@ describe('Start Checkout', () => {
   });
 
   it('starts a checkout for a basket costing exactly 119,99 €', async () => {
-    tradingDays.setPrice('dish-id', 11999);
+    tradingDays.offer('dish-id', 11999);
 
     const address = await handler.execute(new StartCheckout('acme-bakery', 'market-id', [{ dishId: 'dish-id', quantity: 1 }]));
 
@@ -135,8 +134,7 @@ describe('Start Checkout', () => {
     ['a variant the dish doesn’t have', { dishId: 'pizza-id', variant: 'Calzone', quantity: 1 }],
     ['a variant on a dish without any', { dishId: 'dish-id', variant: 'Large', quantity: 1 }],
   ])('refuses as sold-out a basket naming %s', async (_, line) => {
-    tradingDays.setMenu('dish-id', 'pizza-id');
-    tradingDays.setVariantPrice('pizza-id', 'Margherita', 900);
+    tradingDays.offerVariants('pizza-id', { Margherita: 900 });
 
     const refusal = handler.execute(new StartCheckout('acme-bakery', 'market-id', [line]));
 
@@ -160,9 +158,7 @@ describe('Start Checkout', () => {
   });
 
   it('prices a dish with variants by the variant chosen', async () => {
-    tradingDays.setMenu('dish-id', 'pizza-id');
-    tradingDays.setVariantPrice('pizza-id', 'Margherita', 900);
-    tradingDays.setVariantPrice('pizza-id', 'Pepperoni', 1200);
+    tradingDays.offerVariants('pizza-id', { Margherita: 900, Pepperoni: 1200 });
 
     const address = await handler.execute(
       new StartCheckout('acme-bakery', 'market-id', [{ dishId: 'pizza-id', variant: 'Pepperoni', quantity: 1 }]),

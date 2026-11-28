@@ -1,13 +1,20 @@
-import { NoTradingDay, FlatPricing, VariantPricing, ScheduledTradingDay, Stand, TradingDay } from '../order';
+import { FlatPricing, NoTradingDay, ScheduledTradingDay, Stand, TradingDay, VariantPricing } from '../order';
 import { TradingDays } from './trading-days';
 
 export class InMemoryTradingDays extends TradingDays {
-  private readonly stand: Stand = { menuDishIds: [], soldOutDishIds: [], closed: false, opened: true, ended: false, pricing: {} };
-  private readonly variantPrices: Record<string, Record<string, number>> = {};
+  private readonly stand: Stand = { menu: new Map(), soldOutDishIds: [], closed: false, opened: true, ended: false };
   private scheduled = true;
 
-  setMenu(...dishIds: string[]): void {
-    this.stand.menuDishIds = dishIds;
+  offer(dishId: string, unitPrice: number): void {
+    this.stand.menu.set(dishId, new FlatPricing(unitPrice));
+  }
+
+  offerVariants(dishId: string, unitPrices: Record<string, number>): void {
+    this.stand.menu.set(dishId, new VariantPricing(unitPrices));
+  }
+
+  takeOffMenu(dishId: string): void {
+    this.stand.menu.delete(dishId);
   }
 
   markSoldOut(dishId: string): void {
@@ -20,15 +27,6 @@ export class InMemoryTradingDays extends TradingDays {
 
   end(): void {
     this.stand.ended = true;
-  }
-
-  setPrice(dishId: string, unitPrice: number): void {
-    this.stand.pricing[dishId] = new FlatPricing(unitPrice);
-  }
-
-  setVariantPrice(dishId: string, variant: string, unitPrice: number): void {
-    this.variantPrices[dishId] = { ...this.variantPrices[dishId], [variant]: unitPrice };
-    this.stand.pricing[dishId] = new VariantPricing(this.variantPrices[dishId]);
   }
 
   beforeOpening(): void {
@@ -45,9 +43,8 @@ export class InMemoryTradingDays extends TradingDays {
     }
     return new ScheduledTradingDay({
       ...this.stand,
-      menuDishIds: [...this.stand.menuDishIds],
+      menu: new Map(this.stand.menu),
       soldOutDishIds: [...this.stand.soldOutDishIds],
-      pricing: { ...this.stand.pricing },
     });
   }
 }
