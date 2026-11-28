@@ -1,4 +1,5 @@
 import { Availability } from './availability';
+import { Basket } from './basket';
 import { BasketLine } from './basket-line';
 import { BasketRefusedError } from './basket-refused.error';
 import { DishOnMenu, SoldOutDish } from './dish-on-menu';
@@ -30,12 +31,13 @@ export class ScheduledTradingDay implements TradingDay {
     return lines.every(line => this.dishFor(line).isOnSale()) ? 'available' : 'sold-out';
   }
 
-  quote(basket: BasketLine[]): Quote {
-    const availability = this.availabilityOf(basket);
+  quote(basket: Basket): Quote {
+    const lines = basket.lines();
+    const availability = this.availabilityOf(lines);
     if (availability !== 'available') {
       throw new BasketRefusedError(availability);
     }
-    return new Quote(basket.map(line => ({ ...line, unitPrice: this.dishFor(line).unitPriceFor(line) })));
+    return new Quote(lines.map(line => ({ ...line, unitPrice: this.dishFor(line).unitPriceFor(line) })));
   }
 
   private dishFor({ dishId }: BasketLine): DishOnMenu {

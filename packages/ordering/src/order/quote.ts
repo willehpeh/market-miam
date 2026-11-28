@@ -1,14 +1,10 @@
 import { BasketOverCapError } from './basket-over-cap.error';
 import { OrderLine } from './order-line';
-import { MalformedBasketError } from './malformed-basket.error';
 
 const ORDER_CAP_IN_CENTS = 11999;
 
 export class Quote {
   constructor(private readonly _lines: OrderLine[]) {
-    if (_lines.length === 0 || _lines.some(line => line.quantity < 1)) {
-      throw new MalformedBasketError();
-    }
     if (this.total() > ORDER_CAP_IN_CENTS) {
       throw new BasketOverCapError();
     }

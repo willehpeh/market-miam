@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { Clock } from '@market-miam/common';
 import { Merchants } from '../merchant';
+import { Basket } from '../order';
 import { Payments } from '../payments';
 import { PublishedStorefronts, StorefrontNotPublishedError } from '../published-storefronts';
 import { TradingDays } from '../trading-days';
@@ -19,7 +20,8 @@ export class StartCheckoutHandler implements ICommandHandler<StartCheckout> {
     private readonly clock: Clock,
   ) {}
 
-  async execute({ subdomain, marketId, basket }: StartCheckout): Promise<string> {
+  async execute({ subdomain, marketId, basket: lines }: StartCheckout): Promise<string> {
+    const basket = new Basket(lines);
     const vendor = await this.storefronts.vendorAt(subdomain);
     if (!vendor) {
       throw new StorefrontNotPublishedError();

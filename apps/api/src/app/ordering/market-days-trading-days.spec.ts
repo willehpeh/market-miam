@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import type { Query } from '@nestjs/cqrs';
 import { QueryGateway } from '@market-miam/event-sourcing';
 import { FindLiveMarketDay, LiveDish, LiveMarketDay } from '@market-miam/market-days';
-import { Availability, OrderLine } from '@market-miam/ordering';
+import { Availability, Basket, OrderLine } from '@market-miam/ordering';
 import { VendorId } from '@market-miam/shared-kernel';
 import { MarketDaysTradingDays } from './market-days-trading-days';
 
@@ -39,10 +39,12 @@ describe('Trading days, from Market Days’ live day', () => {
   });
 
   it('prices a basket from the live day’s dishes, at one price or by variant', async () => {
-    const quote = (await tradingDayFor(trading)).quote([
-      { dishId: 'dish-1', quantity: 2 },
-      { dishId: 'dish-2', variant: 'Small', quantity: 1 },
-    ]);
+    const quote = (await tradingDayFor(trading)).quote(
+      new Basket([
+        { dishId: 'dish-1', quantity: 2 },
+        { dishId: 'dish-2', variant: 'Small', quantity: 1 },
+      ]),
+    );
 
     expect(quote.lines()).toEqual([
       { dishId: 'dish-1', quantity: 2, unitPrice: 1250 },

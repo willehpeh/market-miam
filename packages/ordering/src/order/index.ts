@@ -1,5 +1,6 @@
 export * from './held-order';
 export * from './basket-line';
+export * from './basket';
 export * from './order-line';
 export * from './dish-pricing';
 export * from './dish-on-menu';
