@@ -30,6 +30,14 @@ describe('Place Order', () => {
     expect(store.newEvents()).toEqual([expect.objectContaining({ streamId: orderStream(), ...orderPlaced() })]);
   });
 
+  it('places an order whose variant the dish no longer offers, leaving it to the vendor to refuse', async () => {
+    tradingDays.offerVariants('another-dish-id', { Large: 1400 });
+
+    await handler.execute(TestPlaceOrder.valid());
+
+    expect(store.newEvents()).toEqual([expect.objectContaining({ streamId: orderStream(), ...orderPlaced() })]);
+  });
+
   it('records nothing when Stripe holds the card on an account other than the vendor’s current one', async () => {
     await handler.execute(TestPlaceOrder.with({ accountId: 'acct_left_over' }));
 
