@@ -1,16 +1,16 @@
-import { FlatPricing, NoTradingDay, ScheduledTradingDay, Stand, TradingDay, VariantPricing } from '../order';
+import { DishOnSale, FlatPricing, NoTradingDay, ScheduledTradingDay, SoldOutDish, Stand, TradingDay, VariantPricing } from '../order';
 import { TradingDays } from './trading-days';
 
 export class InMemoryTradingDays extends TradingDays {
-  private readonly stand: Stand = { menu: new Map(), soldOutDishIds: [], closed: false, opened: true, ended: false };
+  private readonly stand: Stand = { menu: new Map(), closed: false, opened: true, ended: false };
   private scheduled = true;
 
   offer(dishId: string, unitPrice: number): void {
-    this.stand.menu.set(dishId, new FlatPricing(unitPrice));
+    this.stand.menu.set(dishId, new DishOnSale(new FlatPricing(unitPrice)));
   }
 
   offerVariants(dishId: string, unitPrices: Record<string, number>): void {
-    this.stand.menu.set(dishId, new VariantPricing(unitPrices));
+    this.stand.menu.set(dishId, new DishOnSale(new VariantPricing(unitPrices)));
   }
 
   takeOffMenu(dishId: string): void {
@@ -18,7 +18,7 @@ export class InMemoryTradingDays extends TradingDays {
   }
 
   markSoldOut(dishId: string): void {
-    this.stand.soldOutDishIds.push(dishId);
+    this.stand.menu.set(dishId, new SoldOutDish());
   }
 
   close(): void {
@@ -41,10 +41,6 @@ export class InMemoryTradingDays extends TradingDays {
     if (!this.scheduled) {
       return new NoTradingDay();
     }
-    return new ScheduledTradingDay({
-      ...this.stand,
-      menu: new Map(this.stand.menu),
-      soldOutDishIds: [...this.stand.soldOutDishIds],
-    });
+    return new ScheduledTradingDay({ ...this.stand, menu: new Map(this.stand.menu) });
   }
 }

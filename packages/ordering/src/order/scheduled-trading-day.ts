@@ -1,13 +1,14 @@
 import { Availability } from './availability';
 import { BasketLine } from './basket-line';
 import { BasketRefusedError } from './basket-refused.error';
-import { DishPricing } from './dish-pricing';
+import { DishOnMenu, SoldOutDish } from './dish-on-menu';
 import { Quote } from './quote';
 import { TradingDay } from './trading-day';
 
+const OFF_THE_MENU = new SoldOutDish();
+
 export type Stand = {
-  menu: Map<string, DishPricing>;
-  soldOutDishIds: string[];
+  menu: Map<string, DishOnMenu>;
   closed: boolean;
   opened: boolean;
   ended: boolean;
@@ -26,7 +27,7 @@ export class ScheduledTradingDay implements TradingDay {
     if (this.stand.ended) {
       return 'ended';
     }
-    return lines.every(line => this.offers(line)) ? 'available' : 'sold-out';
+    return lines.every(line => this.dishFor(line).isOnSale()) ? 'available' : 'sold-out';
   }
 
   quote(basket: BasketLine[]): Quote {
@@ -34,18 +35,10 @@ export class ScheduledTradingDay implements TradingDay {
     if (availability !== 'available') {
       throw new BasketRefusedError(availability);
     }
-    return new Quote(basket.map(line => ({ ...line, unitPrice: this.pricingOf(line).unitPriceFor(line) })));
+    return new Quote(basket.map(line => ({ ...line, unitPrice: this.dishFor(line).unitPriceFor(line) })));
   }
 
-  private offers({ dishId }: BasketLine): boolean {
-    return this.stand.menu.has(dishId) && !this.stand.soldOutDishIds.includes(dishId);
-  }
-
-  private pricingOf({ dishId }: BasketLine): DishPricing {
-    const pricing = this.stand.menu.get(dishId);
-    if (!pricing) {
-      throw new BasketRefusedError('sold-out');
-    }
-    return pricing;
+  private dishFor({ dishId }: BasketLine): DishOnMenu {
+    return this.stand.menu.get(dishId) ?? OFF_THE_MENU;
   }
 }

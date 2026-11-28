@@ -2,10 +2,13 @@ import { Injectable } from '@nestjs/common';
 import { QueryGateway } from '@market-miam/event-sourcing';
 import { FindLiveMarketDay, LiveDish } from '@market-miam/market-days';
 import {
+  DishOnMenu,
+  DishOnSale,
   DishPricing,
   FlatPricing,
   NoTradingDay,
   ScheduledTradingDay,
+  SoldOutDish,
   TradingDay,
   TradingDays,
   VariantPricing,
@@ -27,12 +30,15 @@ export class MarketDaysTradingDays extends TradingDays {
       return new NoTradingDay();
     }
     return new ScheduledTradingDay({
-      soldOutDishIds: liveDay.dishes.filter(dish => dish.soldOut).map(dish => dish.itemId),
       closed: liveDay.closed,
       opened: !NOT_YET_OPEN_PHASES.includes(liveDay.phase),
       ended: ENDED_PHASES.includes(liveDay.phase),
-      menu: new Map(liveDay.dishes.map(dish => [dish.itemId, this.pricingOf(dish)])),
+      menu: new Map(liveDay.dishes.map(dish => [dish.itemId, this.dishOnMenu(dish)])),
     });
+  }
+
+  private dishOnMenu(dish: LiveDish): DishOnMenu {
+    return dish.soldOut ? new SoldOutDish() : new DishOnSale(this.pricingOf(dish));
   }
 
   private pricingOf({ price, variants = [] }: LiveDish): DishPricing {
