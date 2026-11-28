@@ -129,6 +129,12 @@ describe('Start Checkout', () => {
     await expect(handler.execute(new StartCheckout('acme-bakery', 'market-id', basket))).rejects.toThrow(MalformedBasketError);
   });
 
+  it('refuses a malformed basket as malformed whatever the day, before asking whether it would sell', async () => {
+    tradingDays.close();
+
+    await expect(handler.execute(new StartCheckout('acme-bakery', 'market-id', []))).rejects.toThrow(MalformedBasketError);
+  });
+
   it.each<[string, BasketLine]>([
     ['a dish with variants and none chosen', { dishId: 'pizza-id', quantity: 1 }],
     ['a variant the dish doesn’t have', { dishId: 'pizza-id', variant: 'Calzone', quantity: 1 }],
