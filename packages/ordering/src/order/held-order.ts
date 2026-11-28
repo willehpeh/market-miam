@@ -1,9 +1,4 @@
-export type OrderLine = {
-  dishId: string;
-  variant?: string;
-  quantity: number;
-  unitPrice: number;
-};
+import { OrderLine } from './order-line';
 
 export type HeldOrder = {
   orderId: string;

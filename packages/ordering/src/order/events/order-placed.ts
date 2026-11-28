@@ -1,5 +1,5 @@
 import { DomainEvent } from '@market-miam/event-sourcing';
-import { OrderLine } from '../held-order';
+import { OrderLine } from '../order-line';
 
 export type OrderPlaced = DomainEvent<'OrderPlaced', {
   vendorId: string;

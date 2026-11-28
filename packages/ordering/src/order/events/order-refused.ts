@@ -1,5 +1,5 @@
 import { DomainEvent } from '@market-miam/event-sourcing';
-import { OrderLine } from '../held-order';
+import { OrderLine } from '../order-line';
 import { RefusalReason } from '../refusal-reason';
 
 export type OrderRefused = DomainEvent<'OrderRefused', {

@@ -1,5 +1,5 @@
 import { BasketOverCapError } from './basket-over-cap.error';
-import { OrderLine } from './held-order';
+import { OrderLine } from './order-line';
 import { MalformedBasketError } from './malformed-basket.error';
 
 const ORDER_CAP_IN_CENTS = 11999;
